@@ -26,3 +26,9 @@ Use free/public/permitted sources and respect terms and rate limits. Never treat
 **Why:** The user requires real functioning data flows, not simulated success.
 
 **How to apply:** Report implemented/running, tested, unverified and deferred functionality separately. A synthetic system exercise is not a real-deal exercise.
+
+Preserve working authentication. The owner should use her own app account and the existing secure workspace claim; do not require manual auth infrastructure setup or credentials in chat. Do not stop the broader build waiting for the owner to sign in.
+
+**Why:** The user explicitly separated owner authentication for UI verification from continued implementation.
+
+**How to apply:** Keep owner participation as a verification step, not a development dependency. Synthetic browser accounts must not take the real first-owner claim. Exercise claim/role changes in isolated data and report any browser verification limitation without weakening authentication.

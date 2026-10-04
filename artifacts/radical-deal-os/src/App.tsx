@@ -82,7 +82,11 @@ function AuthFrame({ children }: { children: ReactNode }) {
   return (
     <div className="flex min-h-[100dvh] flex-col items-center justify-center gap-4 bg-background px-4 py-8">
       {children}
-      <p className="max-w-sm text-center text-xs text-muted-foreground">Internal team tool. New accounts are held as pending until the owner approves them.</p>
+      <div className="max-w-sm space-y-2 text-center text-xs text-muted-foreground" data-testid="auth-owner-instructions">
+        <p><b>First owner:</b> create your own app account, complete the verification shown, then choose “Claim workspace as owner.” No auth configuration is needed.</p>
+        <p>Already have an account? Sign in with that same account. Once the workspace is claimed, new teammates need owner approval.</p>
+        <a className="inline-block underline" href={window.location.href} target="_blank" rel="noopener noreferrer" data-testid="link-auth-new-tab">Open this page in a new tab</a>
+      </div>
     </div>
   );
 }
@@ -148,9 +152,11 @@ function ClerkProviderWithRoutes() {
       appearance={clerkAppearance}
       signInUrl={`${basePath}/sign-in`}
       signUpUrl={`${basePath}/sign-up`}
+      signInFallbackRedirectUrl={`${basePath}/dashboard`}
+      signUpFallbackRedirectUrl={`${basePath}/dashboard`}
       localization={{
         signIn: { start: { title: 'Back to the desk', subtitle: 'Sign in to Radical Deal OS' } },
-        signUp: { start: { title: 'Request a seat', subtitle: 'The owner approves new accounts' } },
+        signUp: { start: { title: 'Create your account', subtitle: 'Your account for Radical Deal OS' } },
       }}
       routerPush={(to) => setLocation(stripBase(to))}
       routerReplace={(to) => setLocation(stripBase(to), { replace: true })}

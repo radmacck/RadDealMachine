@@ -31,9 +31,9 @@ export default function Landing() {
             <p className="mt-5 max-w-xl text-lg text-muted-foreground">Radical Deal OS is the working desk for our wholesaling team. Analysts research. The math is fixed. Mom calls the next seller with a brief in hand.</p>
             <div className="mt-7 flex flex-wrap gap-3">
               <Button asChild size="lg" data-testid="button-hero-sign-in"><Link href="/sign-in">Sign in to the desk <ArrowRight className="ml-2 h-4 w-4" /></Link></Button>
-              <Button asChild size="lg" variant="outline" data-testid="button-hero-sign-up"><Link href="/sign-up">New teammate</Link></Button>
+              <Button asChild size="lg" variant="outline" data-testid="button-hero-sign-up"><Link href="/sign-up">Create your account</Link></Button>
             </div>
-            <p className="mt-3 text-xs text-muted-foreground">New accounts wait for owner approval. No seller data is visible before sign-in.</p>
+            <p className="mt-3 text-xs text-muted-foreground" data-testid="text-owner-start">First owner: create your own account, complete verification, then claim the workspace. Existing users can sign in above. Claim before sharing this link; new teammates then need owner approval. No seller data is visible before sign-in.</p>
           </div>
           <div className="ledger self-start p-4" data-testid="panel-provenance-legend">
             <p className="eyebrow mb-3">Every statement is filed as one of</p>

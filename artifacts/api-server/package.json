@@ -4,6 +4,7 @@
   "private": true,
   "type": "module",
   "scripts": {
+    "test:auth": "tsx --test src/services/access.test.ts",
     "exercise:seller": "tsx src/services/seller-exercise.ts",
     "exercise:offers": "tsx src/services/offer-exercise.ts",
     "dev": "export NODE_ENV=development && pnpm run build && pnpm run start",

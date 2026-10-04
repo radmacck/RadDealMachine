@@ -1,5 +1,5 @@
 import { useMemo, useState, type ReactNode } from 'react';
-import { useClerk } from '@clerk/react';
+import { useClerk, useUser } from '@clerk/react';
 import { useQueryClient } from '@tanstack/react-query';
 import { Copy, KeyRound, ShieldAlert } from 'lucide-react';
 import { getGetAccessQueryKey, useClaimWorkspace, useGetAccess } from '@workspace/api-client-react';
@@ -20,6 +20,7 @@ function Centered({ children }: { children: ReactNode }) {
 export function AccessGate({ children }: { children: ReactNode }) {
   const qc = useQueryClient();
   const { signOut } = useClerk();
+  const { user } = useUser();
   const { toast } = useToast();
   const [copied, setCopied] = useState(false);
   const q = useGetAccess({ query: { queryKey: getGetAccessQueryKey(), staleTime: 20_000, refetchInterval: 20_000 } });
@@ -44,15 +45,17 @@ export function AccessGate({ children }: { children: ReactNode }) {
         <Logo />
         <p className="eyebrow">First-time setup</p>
         <h1 className="text-3xl font-semibold">This workspace has no owner</h1>
+        <p className="text-sm text-muted-foreground" data-testid="text-claim-account">Signed in as {user?.primaryEmailAddress?.emailAddress ?? user?.fullName ?? 'your app account'}. Claiming grants ownership to this account, not your Replit login.</p>
         <div className="flex gap-3 border border-signal bg-signal/10 p-3 text-sm" data-testid="notice-setup">
           <ShieldAlert className="mt-0.5 h-4 w-4 shrink-0 text-signal" />
           <p><b>Claim first owner before sharing this link.</b> Whoever claims becomes the only owner. Every person who signs in after that waits as pending until the owner approves them.</p>
         </div>
         {claim.isError && <ErrorNotice error={claim.error} />}
         <Button className="w-full" disabled={claim.isPending} data-testid="button-claim-workspace"
-          onClick={() => claim.mutate(undefined, { onSuccess: (r) => { qc.setQueryData(getGetAccessQueryKey(), r); toast({ title: 'Workspace claimed', description: 'You are the owner.' }); } })}>
+          onClick={() => claim.mutate(undefined, { onSuccess: (r) => { qc.setQueryData(getGetAccessQueryKey(), r); toast({ title: 'Workspace claimed', description: 'You are the owner.' }); }, onError: () => { void q.refetch(); } })}>
           <KeyRound className="mr-2 h-4 w-4" />{claim.isPending ? 'Claiming' : 'Claim workspace as owner'}
         </Button>
+        <Button className="w-full" variant="ghost" onClick={() => signOut({ redirectUrl: base || '/' })} data-testid="button-claim-signout">Use a different account</Button>
       </Centered>
     );
   }
