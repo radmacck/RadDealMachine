@@ -60,10 +60,7 @@ router.put("/leads/:id/underwriting",research,async (req,res) => {
 });
 router.post("/leads/:id/transition",roles("OWNER","ANALYST","OPERATOR"),async (req,res) => {
   const input = parse(contract.TransitionLeadBody,req.body);
-  if (res.locals.role === "OPERATOR" && !["CONTACTED","CONVERSATION","DEAD_DEAL"].includes(input.to)) {
-    throw new DomainError("Operators handle seller conversations; analysts handle research and call-readiness.",403);
-  }
-  send(res,contract.TransitionLeadResponse,await store.transitionLead(leadId(req),input,String(res.locals.actor)));
+  send(res,contract.TransitionLeadResponse,await store.transitionLeadForActor(leadId(req),input,{id:String(res.locals.actor),role:String(res.locals.role)}));
 });
 router.post("/leads/:id/calls",operate,async (req,res) => {
   send(res,contract.RecordCallResponse,await store.recordCall(leadId(req),parse(contract.RecordCallBody,req.body),String(res.locals.actor)),201);

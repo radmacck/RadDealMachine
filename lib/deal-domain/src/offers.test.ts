@@ -2,7 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import {
   analyzeDeal, DEFAULT_ASSUMPTIONS, evaluateOffer, validateOfferDraft, validateOfferApproval,
-  validateOfferCommunication, validateOfferWithdrawal, assertOfferPermission, buildCallBrief,
+  validateOfferCommunication, validateOfferWithdrawal, assertOfferPermission, assertTransitionPermission, buildCallBrief,
   type Lead, type OfferContext, type StoredOffer, type OfferApprovalInput,
   type OfferCommunicationInput, type OfferDraftInput,
 } from "./index";
@@ -66,6 +66,15 @@ test("offer permissions enforce owner-only approval and revocation even below HT
   assert.throws(() => assertOfferPermission("DRAFT","OPERATOR"));
   assert.throws(() => assertOfferPermission("COMMUNICATE","ANALYST"));
   assert.throws(() => assertOfferPermission("WITHDRAW","ANALYST",approved));
+});
+test("operators can log negotiation but cannot gain research or offer approval permissions",() => {
+  assertTransitionPermission("OPERATOR","NEGOTIATING");
+  assertTransitionPermission("OWNER","ENRICHING");
+  assertTransitionPermission("ANALYST","CALL_READY");
+  for (const to of ["ENRICHING","CALL_READY","OFFER_READY","UNDER_CONTRACT"] as const) {
+    assert.throws(() => assertTransitionPermission("OPERATOR",to),e => (e as {status:number}).status===403);
+  }
+  for (const role of ["VIEWER","PENDING"]) assert.throws(() => assertTransitionPermission(role,"NEGOTIATING"));
 });
 test("complete reviewed draft authorizes deterministically without modifying research",() => {
   const before = structuredClone(ctx.analysis);

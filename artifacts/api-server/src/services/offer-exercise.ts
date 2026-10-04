@@ -104,7 +104,8 @@ async function exercise() {
     detail = await store.recordCall(id,{version:detail.lead.version,outcome:"NO_ANSWER",notes:"Synthetic follow-up attempt.",nextAction:"Continue follow-up.",followUpAt:future(1)},actorId,now);
     assert.equal(detail.lead.stage,"OFFER_SENT","Routine follow-up must not regress offer stage.");
     await assert.rejects(store.transitionLead(id,{version:detail.lead.version,to:"NEGOTIATING",reason:"Synthetic next stage.",nextAction:"Discuss seller response.",followUpAt:null},actorId,now),/future follow-up/);
-    detail = await store.transitionLead(id,{version:detail.lead.version,to:"NEGOTIATING",reason:"Synthetic seller wishes to discuss terms.",nextAction:"Prepare revised terms.",followUpAt:future(1)},actorId,now);
+    await assert.rejects(store.transitionLeadForActor(id,{version:detail.lead.version,to:"ENRICHING",reason:"Operator research bypass attempt.",nextAction:"Must remain blocked."},operator,now),e => (e as {status:number}).status===403);
+    detail = await store.transitionLeadForActor(id,{version:detail.lead.version,to:"NEGOTIATING",reason:"Synthetic seller wishes to discuss terms.",nextAction:"Prepare revised terms.",followUpAt:future(1)},operator,now);
     await assert.rejects(store.transitionLead(id,{version:detail.lead.version,to:"UNDER_CONTRACT",reason:"Contract bypass attempt.",nextAction:"Must remain blocked."},actorId,now),/not available/);
     // Owner approval supersedes rather than edits an earlier communicated proposal.
     detail = await offers.createOfferDraft(id,{...draftInput,version:detail.lead.version,amount:109000},analyst,now);

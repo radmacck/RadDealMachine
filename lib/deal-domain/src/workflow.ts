@@ -7,6 +7,12 @@ export const DEAL_PATH: Stage[] = [
   "BUYER_COMMITTED","CLOSING","CLOSED","DEAD_DEAL",
 ];
 
+export function assertTransitionPermission(role: string, to: Stage): void {
+  if (["OWNER","ANALYST"].includes(role)) return;
+  if (role === "OPERATOR" && ["CONTACTED","CONVERSATION","NEGOTIATING","DEAD_DEAL"].includes(to)) return;
+  throw new DomainError("Your role cannot make this stage change. Operators handle seller conversations and negotiation; analysts handle research and call-readiness.",403);
+}
+
 // Downstream states exist as a domain contract, NOT as implemented transaction workflows.
 const manualEdges: Partial<Record<Stage, Stage[]>> = {
   DISCOVERED: ["ENRICHING", "DEAD_DEAL"],

@@ -5,9 +5,9 @@ import {
 } from "@workspace/db";
 import {
   analyzeDeal, allowedTransitions, buildCallBrief, prioritizeCallQueue, validateProvenance,
-  validateTransition, validateAssumptions, DEFAULT_ASSUMPTIONS, DomainError,
+  validateTransition, validateAssumptions, assertTransitionPermission, DEFAULT_ASSUMPTIONS, DomainError,
   type Lead, type LeadInput, type LeadDetail, type Intelligence, type IntelligenceInput,
-  type UnderwritingInput, type Assumptions, type TransitionInput, type CallInput, type Analysis, type Stage,
+  type UnderwritingInput, type Assumptions, type TransitionInput, type CallInput, type Analysis, type Stage, type OfferActor,
 } from "@workspace/deal-domain";
 import { CreateLeadResponse, GetLeadResponse, AddIntelligenceResponse, GetAssumptionsResponse } from "@workspace/api-zod";
 import { offersForLead, invalidateOffers, invalidateOffersForPolicyChange } from "./offer-records";
@@ -187,6 +187,10 @@ export function followupDate(value: string | null | undefined, now: Date): Date 
   const date = new Date(value);
   if (!Number.isFinite(date.getTime()) || date.getTime() <= now.getTime()) throw new DomainError("Follow-up must be a valid future date.");
   return date;
+}
+export async function transitionLeadForActor(id: string, input: TransitionInput, actor: OfferActor, now = new Date()): Promise<LeadDetail> {
+  assertTransitionPermission(actor.role,input.to);
+  return transitionLead(id,input,actor.id,now);
 }
 export async function transitionLead(id: string, input: TransitionInput, actor: string, now = new Date()): Promise<LeadDetail> {
   return db.transaction(async tx => {

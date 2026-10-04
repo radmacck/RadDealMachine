@@ -1,3 +1,4 @@
 - [Canonical build direction](build-direction.md) — reuse-first, verified vertical slices; Google Form is historical reference only.
 - [Domain interoperability](domain-interoperability.md) — wire dates stay strings; calendar dates differ from timestamps across reusable adapters.
 - [Offer authority boundaries](offer-authority.md) — a ceiling is not permission to vary commercial terms; preserve prior communication when approval changes.
+- [Managed workflow port conflicts](workflow-port-conflicts.md) — a failed workflow can coexist with an old listener; verify process ownership before restarting.
