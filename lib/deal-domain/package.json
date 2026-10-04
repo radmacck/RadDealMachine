@@ -1,0 +1,10 @@
+{
+  "name": "@workspace/deal-domain",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "exports": { ".": "./src/index.ts" },
+  "dependencies": { "@workspace/api-zod": "workspace:*", "zod": "catalog:" },
+  "devDependencies": { "@types/node": "catalog:", "tsx": "^4.20.0" },
+  "scripts": { "test": "tsx --test src/*.test.ts" }
+}

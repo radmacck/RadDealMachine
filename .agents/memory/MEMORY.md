@@ -1,0 +1,2 @@
+- [Canonical build direction](build-direction.md) — reuse-first, verified vertical slices; Google Form is historical reference only.
+- [Domain interoperability](domain-interoperability.md) — wire dates stay strings; calendar dates differ from timestamps across reusable adapters.

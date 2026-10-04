@@ -1,36 +1,495 @@
 openapi: 3.1.0
 info:
-  # Do not change the title, if the title changes, the import paths will be broken
   title: Api
-  version: 0.1.0
-  description: API specification
+  version: 1.0.0
+  description: Radical Deal OS vertical seller intake and underwriting contract
 servers:
   - url: /api
-    description: Base API path
-tags:
-  - name: health
-    description: Health operations
 paths:
   /healthz:
     get:
       operationId: healthCheck
-      tags: [health]
-      summary: Health check
-      description: Returns server health status
       responses:
         "200":
           description: Healthy
           content:
             application/json:
-              schema:
-                $ref: "#/components/schemas/HealthStatus"
+              schema: { $ref: "#/components/schemas/HealthStatus" }
+  /access:
+    get:
+      operationId: getAccess
+      responses:
+        "200":
+          description: Membership and bootstrap state
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Access" }
+    post:
+      operationId: claimWorkspace
+      responses:
+        "200":
+          description: Claim an unowned workspace, once
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Access" }
+  /members:
+    get:
+      operationId: listMembers
+      responses:
+        "200":
+          description: Members
+          content:
+            application/json:
+              schema: { type: array, items: { $ref: "#/components/schemas/Member" } }
+  /members/{id}:
+    parameters:
+      - { name: id, in: path, required: true, schema: { type: string } }
+    patch:
+      operationId: updateMember
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/MemberUpdate" }
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Member" }
+  /dashboard:
+    get:
+      operationId: getDashboard
+      responses:
+        "200":
+          description: Real pipeline summary
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Dashboard" }
+  /leads:
+    get:
+      operationId: listLeads
+      responses:
+        "200":
+          description: Leads
+          content:
+            application/json:
+              schema: { type: array, items: { $ref: "#/components/schemas/Lead" } }
+    post:
+      operationId: createLead
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/LeadInput" }
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Lead" }
+  /leads/{id}:
+    parameters:
+      - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
+    get:
+      operationId: getLead
+      responses:
+        "200":
+          description: Lead detail
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/LeadDetail" }
+    patch:
+      operationId: updateLead
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/LeadUpdate" }
+      responses:
+        "200":
+          description: Updated and previous underwriting invalidated
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Lead" }
+  /leads/{id}/intelligence:
+    parameters:
+      - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
+    post:
+      operationId: addIntelligence
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/IntelligenceInput" }
+      responses:
+        "201":
+          description: Immutable sourced statement
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Intelligence" }
+  /leads/{id}/underwriting:
+    parameters:
+      - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
+    put:
+      operationId: saveUnderwriting
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/UnderwritingInput" }
+      responses:
+        "200":
+          description: Deterministic analysis and saved input snapshot
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/LeadDetail" }
+  /leads/{id}/transition:
+    parameters:
+      - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
+    post:
+      operationId: transitionLead
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/TransitionInput" }
+      responses:
+        "200":
+          description: Guarded and audited state transition
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/LeadDetail" }
+  /leads/{id}/calls:
+    parameters:
+      - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
+    post:
+      operationId: recordCall
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/CallInput" }
+      responses:
+        "201":
+          description: Call notes and follow-up saved
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/LeadDetail" }
+  /call-next:
+    get:
+      operationId: getCallQueue
+      responses:
+        "200":
+          description: Prioritized due seller conversations with provenance and boundaries
+          content:
+            application/json:
+              schema: { type: array, items: { $ref: "#/components/schemas/CallBrief" } }
+  /assumptions:
+    get:
+      operationId: getAssumptions
+      responses:
+        "200":
+          description: Configurable assumptions
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Assumptions" }
+    put:
+      operationId: updateAssumptions
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/Assumptions" }
+      responses:
+        "200":
+          description: Updated; existing snapshots remain reproducible
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Assumptions" }
+  /audit:
+    get:
+      operationId: listAudit
+      responses:
+        "200":
+          description: Latest audit events
+          content:
+            application/json:
+              schema: { type: array, items: { $ref: "#/components/schemas/AuditEvent" } }
 components:
   schemas:
     HealthStatus:
       type: object
+      required: [status]
+      properties: { status: { type: string } }
+    Role:
+      type: string
+      enum: [OWNER, OPERATOR, ANALYST, VIEWER, PENDING]
+    Access:
+      type: object
+      required: [userId, role, unclaimed]
       properties:
-        status:
-          type: string
-      required:
-        - status
-
+        userId: { type: string }
+        role: { $ref: "#/components/schemas/Role" }
+        unclaimed: { type: boolean }
+    Member:
+      type: object
+      required: [id, role, createdAt]
+      properties:
+        id: { type: string }
+        role: { $ref: "#/components/schemas/Role" }
+        createdAt: { type: string }
+    MemberUpdate:
+      type: object
+      required: [role]
+      properties:
+        role: { type: string, enum: [OPERATOR, ANALYST, VIEWER, PENDING] }
+    DealStage:
+      type: string
+      enum: [DISCOVERED, ENRICHING, ANALYZED, STRONG, NEGOTIABLE, PASS, CALL_READY, CONTACTED, CONVERSATION, OFFER_READY, OFFER_SENT, NEGOTIATING, CONTRACT_PENDING, UNDER_CONTRACT, BUYER_MATCHED, BUYER_INTERESTED, BUYER_COMMITTED, CLOSING, CLOSED, DEAD_DEAL]
+    LeadInput:
+      type: object
+      required: [address, city, state, county, zip, propertyType, sqft, beds, baths, units, sellerName, source]
+      properties:
+        address: { type: string, minLength: 3, maxLength: 250 }
+        city: { type: string, minLength: 1, maxLength: 100 }
+        state: { type: string, minLength: 2, maxLength: 2 }
+        county: { type: string, minLength: 1, maxLength: 100 }
+        zip: { type: string, pattern: '^\d{5}(-\d{4})?$' }
+        propertyType: { type: string, enum: [SINGLE_FAMILY, MULTIFAMILY, CONDO, TOWNHOUSE, LAND, OTHER] }
+        sqft: { type: number, minimum: 0, maximum: 1000000 }
+        beds: { type: integer, minimum: 0, maximum: 100 }
+        baths: { type: number, minimum: 0, maximum: 100 }
+        units: { type: integer, minimum: 1, maximum: 10000 }
+        askingPrice: { type: ["number", "null"], minimum: 0, maximum: 1000000000 }
+        sellerName: { type: string, minLength: 1, maxLength: 200 }
+        sellerPhone: { type: string, maxLength: 50 }
+        sellerEmail: { type: string, maxLength: 200 }
+        sellerDescription: { type: string, maxLength: 5000 }
+        sellingReason: { type: string, maxLength: 2000 }
+        urgency: { type: string, enum: [UNKNOWN, LOW, MEDIUM, HIGH] }
+        source: { type: string, minLength: 1, maxLength: 2000 }
+        nextAction: { type: string, maxLength: 1000 }
+    Lead:
+      allOf:
+        - { $ref: "#/components/schemas/LeadInput" }
+        - type: object
+          required: [id, stage, version, nextAction, createdAt, updatedAt]
+          properties:
+            id: { type: string }
+            stage: { $ref: "#/components/schemas/DealStage" }
+            version: { type: integer }
+            nextAction: { type: string }
+            followUpAt: { type: ["string", "null"] }
+            createdAt: { type: string }
+            updatedAt: { type: string }
+    LeadUpdate:
+      allOf:
+        - { $ref: "#/components/schemas/LeadInput" }
+        - type: object
+          required: [version]
+          properties: { version: { type: integer, minimum: 1 } }
+    ProvenanceClass:
+      type: string
+      enum: [VERIFIED_FACTS, OBSERVED, INDICATED, AI_HYPOTHESIS]
+    IntelligenceInput:
+      type: object
+      required: [classification, category, statement, source, sourceType, confidence, capturedAt]
+      properties:
+        classification: { $ref: "#/components/schemas/ProvenanceClass" }
+        category: { type: string, minLength: 1, maxLength: 100 }
+        statement: { type: string, minLength: 1, maxLength: 5000 }
+        source: { type: string, minLength: 1, maxLength: 2000 }
+        sourceUrl: { type: string, maxLength: 2000 }
+        sourceType: { type: string, enum: [PUBLIC_RECORD, PERMITTED_LISTING, SELLER, INSPECTION, PUBLIC_PAGE, ANALYST, MODEL] }
+        confidence: { type: number, minimum: 0, maximum: 1 }
+        capturedAt: { type: string, format: date-time }
+        verificationNote: { type: string, maxLength: 2000 }
+        question: { type: string, maxLength: 2000 }
+        action: { type: string, maxLength: 2000 }
+    Intelligence:
+      allOf:
+        - { $ref: "#/components/schemas/IntelligenceInput" }
+        - type: object
+          required: [id, leadId, createdAt, createdBy]
+          properties:
+            id: { type: string }
+            leadId: { type: string }
+            createdAt: { type: string }
+            createdBy: { type: string }
+    Comp:
+      type: object
+      required: [id, address, salePrice, sqft, soldAt, distanceMiles, propertyType, condition, source, verified]
+      properties:
+        id: { type: string, minLength: 1 }
+        address: { type: string, minLength: 3 }
+        salePrice: { type: number, exclusiveMinimum: 0, maximum: 1000000000 }
+        sqft: { type: number, exclusiveMinimum: 0, maximum: 1000000 }
+        soldAt: { type: string, format: date }
+        distanceMiles: { type: number, minimum: 0, maximum: 10000 }
+        propertyType: { type: string }
+        condition: { type: string, enum: [RENOVATED, SIMILAR, UNKNOWN] }
+        source: { type: string, minLength: 1 }
+        verified: { type: boolean }
+    Repair:
+      type: object
+      required: [category, low, expected, high, confidence, source]
+      properties:
+        category: { type: string, minLength: 1 }
+        low: { type: number, minimum: 0, maximum: 1000000000 }
+        expected: { type: number, minimum: 0, maximum: 1000000000 }
+        high: { type: number, minimum: 0, maximum: 1000000000 }
+        confidence: { type: number, minimum: 0, maximum: 1 }
+        source: { type: string, minLength: 1 }
+    Assumptions:
+      type: object
+      required: [arvMultiplier, sellingCostPct, acquisitionCost, holdingMonthly, holdingMonths, assignmentTarget, contingencyPct, strongMargin, openingLowPct, openingHighPct, maxCompAgeDays, maxDistanceMiles, maxSqftDifferencePct, minComps, minConfidence, approvalRequired]
+      properties:
+        arvMultiplier: { type: number, minimum: 0.1, maximum: 1 }
+        sellingCostPct: { type: number, minimum: 0, maximum: 0.5 }
+        acquisitionCost: { type: number, minimum: 0, maximum: 1000000000 }
+        holdingMonthly: { type: number, minimum: 0, maximum: 1000000000 }
+        holdingMonths: { type: number, minimum: 0, maximum: 120 }
+        assignmentTarget: { type: number, minimum: 0, maximum: 1000000000 }
+        contingencyPct: { type: number, minimum: 0, maximum: 1 }
+        strongMargin: { type: number, minimum: 0, maximum: 1000000000 }
+        openingLowPct: { type: number, minimum: 0, maximum: 1 }
+        openingHighPct: { type: number, minimum: 0, maximum: 1 }
+        maxCompAgeDays: { type: integer, minimum: 1, maximum: 1095 }
+        maxDistanceMiles: { type: number, exclusiveMinimum: 0, maximum: 100 }
+        maxSqftDifferencePct: { type: number, minimum: 0, maximum: 1 }
+        minComps: { type: integer, minimum: 3, maximum: 20 }
+        minConfidence: { type: number, minimum: 0.3, maximum: 1 }
+        approvalRequired: { type: boolean }
+    UnderwritingInput:
+      type: object
+      required: [version, comps, repairs, repairsComplete, conditionConfirmed]
+      properties:
+        version: { type: integer, minimum: 1 }
+        comps: { type: array, maxItems: 100, items: { $ref: "#/components/schemas/Comp" } }
+        repairs: { type: array, maxItems: 50, items: { $ref: "#/components/schemas/Repair" } }
+        repairsComplete: { type: boolean }
+        conditionConfirmed: { type: boolean }
+    Range:
+      type: object
+      required: [low, expected, high, confidence]
+      properties:
+        low: { type: number }
+        expected: { type: number }
+        high: { type: number }
+        confidence: { type: number }
+    CompDecision:
+      type: object
+      required: [id, included, reasons]
+      properties:
+        id: { type: string }
+        included: { type: boolean }
+        reasons: { type: array, items: { type: string } }
+    Analysis:
+      type: object
+      required: [engineVersion, calculatedAt, classification, arv, repairs, mao, openingLow, openingHigh, maximumApprovedAcquisitionPrice, spreadAtAsking, assumptions, risks, blockers, compDecisions, formula]
+      properties:
+        engineVersion: { type: string }
+        calculatedAt: { type: string }
+        classification: { type: string, enum: [STRONG, NEGOTIABLE, PASS, INCOMPLETE] }
+        arv: { $ref: "#/components/schemas/Range" }
+        repairs: { $ref: "#/components/schemas/Range" }
+        mao: { type: number }
+        openingLow: { type: number }
+        openingHigh: { type: number }
+        maximumApprovedAcquisitionPrice: { type: ["number", "null"] }
+        spreadAtAsking: { type: ["number", "null"] }
+        assumptions: { $ref: "#/components/schemas/Assumptions" }
+        risks: { type: array, items: { type: string } }
+        blockers: { type: array, items: { type: string } }
+        compDecisions: { type: array, items: { $ref: "#/components/schemas/CompDecision" } }
+        formula: { type: string }
+    TransitionInput:
+      type: object
+      required: [version, to, reason, nextAction]
+      properties:
+        version: { type: integer, minimum: 1 }
+        to: { $ref: "#/components/schemas/DealStage" }
+        reason: { type: string, minLength: 3, maxLength: 2000 }
+        nextAction: { type: string, minLength: 3, maxLength: 1000 }
+        followUpAt: { type: ["string", "null"], format: date-time }
+    Transition:
+      type: object
+      required: [id, from, to, reason, nextAction, actor, createdAt]
+      properties:
+        id: { type: string }
+        from: { type: string }
+        to: { type: string }
+        reason: { type: string }
+        nextAction: { type: string }
+        actor: { type: string }
+        createdAt: { type: string }
+    CallInput:
+      type: object
+      required: [version, outcome, notes, nextAction, followUpAt]
+      properties:
+        version: { type: integer, minimum: 1 }
+        outcome: { type: string, enum: [NO_ANSWER, VOICEMAIL, CONNECTED, NOT_INTERESTED] }
+        notes: { type: string, minLength: 1, maxLength: 10000 }
+        nextAction: { type: string, minLength: 3, maxLength: 1000 }
+        followUpAt: { type: ["string", "null"], format: date-time }
+    Call:
+      allOf:
+        - { $ref: "#/components/schemas/CallInput" }
+        - type: object
+          required: [id, createdAt, actor]
+          properties:
+            id: { type: string }
+            createdAt: { type: string }
+            actor: { type: string }
+    LeadDetail:
+      type: object
+      required: [lead, intelligence, analysis, underwriting, transitions, calls, allowedTransitions]
+      properties:
+        lead: { $ref: "#/components/schemas/Lead" }
+        intelligence: { type: array, items: { $ref: "#/components/schemas/Intelligence" } }
+        analysis:
+          oneOf: [{ $ref: "#/components/schemas/Analysis" }, { type: "null" }]
+        underwriting:
+          oneOf: [{ $ref: "#/components/schemas/UnderwritingInput" }, { type: "null" }]
+        transitions: { type: array, items: { $ref: "#/components/schemas/Transition" } }
+        calls: { type: array, items: { $ref: "#/components/schemas/Call" } }
+        allowedTransitions: { type: array, items: { $ref: "#/components/schemas/DealStage" } }
+    CallBrief:
+      type: object
+      required: [lead, objective, intelligence, questions, actions, boundaries, analysis]
+      properties:
+        lead: { $ref: "#/components/schemas/Lead" }
+        objective: { type: string }
+        intelligence: { type: array, items: { $ref: "#/components/schemas/Intelligence" } }
+        questions: { type: array, items: { type: string } }
+        actions: { type: array, items: { type: string } }
+        boundaries: { type: string }
+        analysis: { $ref: "#/components/schemas/Analysis" }
+    Dashboard:
+      type: object
+      required: [total, callReady, needsResearch, overdue, strong, negotiable, pass, stages, recentActivity]
+      properties:
+        total: { type: integer }
+        callReady: { type: integer }
+        needsResearch: { type: integer }
+        overdue: { type: integer }
+        strong: { type: integer }
+        negotiable: { type: integer }
+        pass: { type: integer }
+        stages: { type: array, items: { $ref: "#/components/schemas/StageCount" } }
+        recentActivity: { type: array, items: { $ref: "#/components/schemas/AuditEvent" } }
+    StageCount:
+      type: object
+      required: [stage, count]
+      properties: { stage: { type: string }, count: { type: integer } }
+    AuditEvent:
+      type: object
+      required: [id, actor, action, entityId, detail, createdAt]
+      properties:
+        id: { type: string }
+        actor: { type: string }
+        action: { type: string }
+        entityId: { type: string }
+        detail: { type: string }
+        createdAt: { type: string }
