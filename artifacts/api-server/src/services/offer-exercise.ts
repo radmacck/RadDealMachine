@@ -10,6 +10,7 @@ import { db, pool, leadsTable, offersTable, analysesTable, auditTable } from "@w
 import { type LeadInput, type UnderwritingInput, type OfferApprovalInput } from "@workspace/deal-domain";
 import { logger } from "../lib/logger";
 import * as store from "./deal-store";
+import { exerciseEvidence } from "./exercise-evidence";
 import * as offers from "./offer-store";
 
 async function exercise() {
@@ -45,7 +46,7 @@ async function exercise() {
       })),
       repairs:[{category:"Whole synthetic scope",low:10000,expected:20000,high:30000,confidence:0.8,source:"Synthetic repair quote"}],
     };
-    detail = await store.saveUnderwriting(id,underwriting,actorId,now);
+    detail = await store.saveUnderwriting(id,await exerciseEvidence(id,underwriting,actorId,now),actorId,now);
     assert.ok(detail.analysisSnapshotId);
     const draftInput = {
       version:detail.lead.version,amount:110000,earnestMoney:1000,closingDays:30,

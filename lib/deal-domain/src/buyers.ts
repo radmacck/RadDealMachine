@@ -52,6 +52,9 @@ export function matchBuyer(buyer: Buyer, detail: LeadDetail, contract: DealContr
   check(price!=null && price<=c.maxPurchasePrice,`Acquisition plus target assignment fits the $${c.maxPurchasePrice.toLocaleString()} budget.`,
     price==null?"An executed acquisition contract is needed to establish the buyer price.":"Buyer price exceeds the stated budget.");
   const channel = buyer.destinationKind==="DEAL_FINDER" || buyer.destinationKind==="GURU";
+  check(channel || (!!c.fundingTypes?.includes("CASH") && !!buyer.verifiedFundingTypes?.includes("CASH")),
+    channel?"Destination routing does not assert end-buyer financing.":"Documented cash funding matches the native assignment funding method.",
+    "Native assignment requires CASH in both reviewed criteria and evidenced funding methods. Loan-dependent funding needs a financing/contingency adapter; funds alone do not prove compatibility.");
   check(channel || (price!=null && (buyer.availableFunds ?? 0)-reservedFunds>=price),channel?"Approved destination routing only; an end buyer is still required.":"Reviewed available funds after active commitments cover the buyer price.","Reviewed available funds after active commitments do not cover the buyer price.");
   check(!!analysis && analysis.repairs.high<=c.maxRepairs,"High-case repairs fit the rehab capacity.","Research is missing or high-case repairs exceed the rehab capacity.");
   check(lead.beds>=c.minBeds && lead.sqft>=c.minSqft && lead.sqft<=c.maxSqft,"Beds and size fit.","Beds or square footage do not fit.");

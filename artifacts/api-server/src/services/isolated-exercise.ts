@@ -7,7 +7,7 @@
 import { randomUUID } from "node:crypto";
 import { spawnSync } from "node:child_process";
 import { pool } from "@workspace/db";
-const allowed = new Set(["seller-exercise.ts","offer-exercise.ts","buyer-exercise.ts","buyer-pool-exercise.ts","transaction-exercise.ts","research-exercise.ts","research-lifecycle-exercise.ts","property-source-exercise.ts"]);
+const allowed = new Set(["evidence-intake-exercise.ts","seller-exercise.ts","offer-exercise.ts","buyer-exercise.ts","buyer-pool-exercise.ts","transaction-exercise.ts","research-exercise.ts","research-lifecycle-exercise.ts","property-source-exercise.ts"]);
 const file = process.argv[2];
 if (!file || !allowed.has(file)) throw new Error("Choose a registered service exercise.");
 const schema = `exercise_${randomUUID().replaceAll("-","")}`;

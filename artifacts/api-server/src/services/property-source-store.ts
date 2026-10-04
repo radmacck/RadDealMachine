@@ -160,7 +160,7 @@ export async function addSourceComps(id: string, input: ReturnType<typeof AddSou
   }
   // Reuse the existing snapshot, deterministic engine and reapproval boundaries.
   return saveUnderwriting(id,{
-    version:parsed.version,comps:[...(old?.comps??[]),...append],repairs:old?.repairs??[],
+    ...old,version:parsed.version,comps:[...(old?.comps??[]),...append],repairs:old?.repairs??[],
     repairsComplete:old?.repairsComplete??false,conditionConfirmed:old?.conditionConfirmed??false,
   },actor.id,now);
 }

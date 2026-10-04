@@ -7,21 +7,22 @@ import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { ErrorNotice } from '@/components/state-views';
-import type { Comp, CompCondition, Repair, UnderwritingInput } from '@workspace/api-client-react';
+import type { Comp, CompCondition, Intelligence, Repair, UnderwritingInput } from '@workspace/api-client-react';
 import { PROPERTY_TYPES, REPAIR_CATEGORIES, money, num, toDateInput } from '@/lib/format';
+import { SELECT } from '@/components/field-row';
 import { useBaseVersion } from '@/hooks/use-base-version';
 
-interface CompD { id: string; address: string; salePrice: string; sqft: string; soldAt: string; distanceMiles: string; propertyType: string; condition: CompCondition; source: string; verified: boolean }
-interface RepD { key: string; category: string; low: string; expected: string; high: string; confidence: string; source: string }
+interface CompD { id: string; address: string; salePrice: string; sqft: string; soldAt: string; distanceMiles: string; propertyType: string; condition: CompCondition; source: string; verified: boolean; saleEv: string; condEv: string }
+interface RepD { key: string; category: string; low: string; expected: string; high: string; confidence: string; source: string; ev: string }
 
 const uid = () => (typeof crypto !== 'undefined' && 'randomUUID' in crypto ? crypto.randomUUID() : String(Math.random()).slice(2));
-const compToD = (c: Comp): CompD => ({ id: c.id, address: c.address, salePrice: String(c.salePrice), sqft: String(c.sqft), soldAt: toDateInput(c.soldAt), distanceMiles: String(c.distanceMiles), propertyType: c.propertyType, condition: c.condition, source: c.source, verified: c.verified });
-const repToD = (r: Repair): RepD => ({ key: uid(), category: r.category, low: String(r.low), expected: String(r.expected), high: String(r.high), confidence: String(Math.round(r.confidence * 100)), source: r.source });
+const compToD = (c: Comp): CompD => ({ id: c.id, address: c.address, salePrice: String(c.salePrice), sqft: String(c.sqft), soldAt: toDateInput(c.soldAt), distanceMiles: String(c.distanceMiles), propertyType: c.propertyType, condition: c.condition, source: c.source, verified: c.verified, saleEv: c.saleEvidenceId ?? '', condEv: c.conditionEvidenceId ?? '' });
+const repToD = (r: Repair): RepD => ({ key: uid(), category: r.category, low: String(r.low), expected: String(r.expected), high: String(r.high), confidence: String(Math.round(r.confidence * 100)), source: r.source, ev: r.evidenceId ?? '' });
 
 export function UnderwritingEditor({
-  leadVersion, server, pending, error, disabled, onSave, onDiscard,
+  leadVersion, server, intelligence, pending, error, disabled, onSave, onDiscard,
 }: {
-  leadVersion: number; server: UnderwritingInput | null; pending: boolean; error: unknown; disabled: boolean;
+  leadVersion: number; server: UnderwritingInput | null; intelligence: Intelligence[]; pending: boolean; error: unknown; disabled: boolean;
   onSave: (d: UnderwritingInput, done: () => void) => void; onDiscard: () => void;
 }) {
   const { base, stale, rebase } = useBaseVersion(leadVersion);
@@ -29,16 +30,19 @@ export function UnderwritingEditor({
   const [repairs, setRepairs] = useState<RepD[]>(() => (server?.repairs ?? []).map(repToD));
   const [repairsComplete, setRC] = useState(server?.repairsComplete ?? false);
   const [conditionConfirmed, setCC] = useState(server?.conditionConfirmed ?? false);
+  const [subjEv, setSubjEv] = useState(server?.subjectEvidenceId ?? '');
+  const [condEv, setCondEv] = useState(server?.conditionEvidenceId ?? '');
+  const [contEv, setContEv] = useState(server?.sellerContactEvidenceId ?? '');
   const [problems, setProblems] = useState<string[]>([]);
-  const snapshot = useRef(JSON.stringify([comps, repairs.map(({ key: _k, ...r }) => r), repairsComplete, conditionConfirmed]));
-  const dirty = JSON.stringify([comps, repairs.map(({ key: _k, ...r }) => r), repairsComplete, conditionConfirmed]) !== snapshot.current;
+  const snapshot = useRef(JSON.stringify([comps, repairs.map(({ key: _k, ...r }) => r), repairsComplete, conditionConfirmed, subjEv, condEv, contEv]));
+  const dirty = JSON.stringify([comps, repairs.map(({ key: _k, ...r }) => r), repairsComplete, conditionConfirmed, subjEv, condEv, contEv]) !== snapshot.current;
 
   const sum = useMemo(() => repairs.reduce((a, r) => ({ low: a.low + (num(r.low) || 0), exp: a.exp + (num(r.expected) || 0), high: a.high + (num(r.high) || 0) }), { low: 0, exp: 0, high: 0 }), [repairs]);
 
   const upC = (i: number, p: Partial<CompD>) => setComps((l) => l.map((c, j) => (j === i ? { ...c, ...p } : c)));
   const upR = (i: number, p: Partial<RepD>) => setRepairs((l) => l.map((c, j) => (j === i ? { ...c, ...p } : c)));
-  const addComp = () => setComps((l) => [...l, { id: uid(), address: '', salePrice: '', sqft: '', soldAt: '', distanceMiles: '', propertyType: 'SINGLE_FAMILY', condition: 'UNKNOWN', source: '', verified: false }]);
-  const addRepair = (category = '') => setRepairs((l) => [...l, { key: uid(), category, low: '', expected: '', high: '', confidence: '60', source: '' }]);
+  const addComp = () => setComps((l) => [...l, { id: uid(), address: '', salePrice: '', sqft: '', soldAt: '', distanceMiles: '', propertyType: 'SINGLE_FAMILY', condition: 'UNKNOWN', source: '', verified: false, saleEv: '', condEv: '' }]);
+  const addRepair = (category = '') => setRepairs((l) => [...l, { key: uid(), category, low: '', expected: '', high: '', confidence: '60', source: '', ev: '' }]);
   const missing = REPAIR_CATEGORIES.filter((c) => !repairs.some((r) => r.category.toLowerCase() === c.toLowerCase()));
 
   const save = () => {
@@ -52,7 +56,7 @@ export function UnderwritingEditor({
       if (!c.soldAt) errs.push(`${n}: sold date is required.`);
       if (Number.isNaN(di) || di < 0) errs.push(`${n}: distance must be 0 or more.`);
       if (!c.source.trim()) errs.push(`${n}: source is required.`);
-      return { id: c.id, address: c.address.trim(), salePrice: sp, sqft: sq, soldAt: c.soldAt, distanceMiles: di, propertyType: c.propertyType, condition: c.condition, source: c.source.trim(), verified: c.verified };
+      return { id: c.id, address: c.address.trim(), salePrice: sp, sqft: sq, soldAt: c.soldAt, distanceMiles: di, propertyType: c.propertyType, condition: c.condition, source: c.source.trim(), verified: c.verified, ...(c.saleEv ? { saleEvidenceId: c.saleEv } : {}), ...(c.condEv ? { conditionEvidenceId: c.condEv } : {}) };
     });
     const outRep: Repair[] = repairs.map((r, i) => {
       const n = `Repair ${i + 1}`;
@@ -62,16 +66,22 @@ export function UnderwritingEditor({
       else if (!(lo <= ex && ex <= hi)) errs.push(`${n}: low must be at most expected, expected at most high.`);
       if (Number.isNaN(cf) || cf < 0 || cf > 1) errs.push(`${n}: confidence must be 0 to 100.`);
       if (!r.source.trim()) errs.push(`${n}: source is required.`);
-      return { category: r.category.trim(), low: lo, expected: ex, high: hi, confidence: cf, source: r.source.trim() };
+      return { category: r.category.trim(), low: lo, expected: ex, high: hi, confidence: cf, source: r.source.trim(), ...(r.ev ? { evidenceId: r.ev } : {}) };
     });
     setProblems(errs);
     if (errs.length) return;
-    onSave({ version: base, comps: outComps, repairs: outRep, repairsComplete, conditionConfirmed }, () => {
+    onSave({ version: base, comps: outComps, repairs: outRep, repairsComplete, conditionConfirmed, ...(subjEv ? { subjectEvidenceId: subjEv } : {}), ...(condEv ? { conditionEvidenceId: condEv } : {}), ...(contEv ? { sellerContactEvidenceId: contEv } : {}) }, () => {
       rebase();
-      snapshot.current = JSON.stringify([comps, repairs.map(({ key: _k, ...r }) => r), repairsComplete, conditionConfirmed]);
+      snapshot.current = JSON.stringify([comps, repairs.map(({ key: _k, ...r }) => r), repairsComplete, conditionConfirmed, subjEv, condEv, contEv]);
     });
   };
 
+  const evSel = (value: string, set: (v: string) => void, tid: string) => (
+    <select className={SELECT} value={value} disabled={disabled} onChange={(e) => set(e.target.value)} data-testid={tid}>
+      <option value="">No evidence linked</option>
+      {value && !intelligence.some((x) => x.id === value) && <option value={value}>{value} (not in this deal)</option>}
+      {intelligence.map((x) => <option key={x.id} value={x.id}>{x.classification.replace(/_/g, ' ')} / {x.category} / {x.statement.slice(0, 60)}</option>)}
+    </select>);
   const cell = (label: string, el: ReactNode, cls = '') => (<div className={`space-y-1 ${cls}`}><Label className="text-[11px] text-muted-foreground">{label}</Label>{el}</div>);
 
   return (
@@ -85,6 +95,15 @@ export function UnderwritingEditor({
           </div>
         </div>
       )}
+      <section className="ledger space-y-2 p-3" data-testid="section-uw-evidence">
+        <h3 className="text-xl font-semibold">Evidence links</h3>
+        <p className="text-xs text-muted-foreground">Link existing statements. Linking does not mark anything reviewed; the backend decides whether each record qualifies.</p>
+        <div className="grid gap-2 sm:grid-cols-3">
+          {cell('Subject property record', evSel(subjEv, setSubjEv, 'select-uw-subject-evidence'))}
+          {cell('Condition evidence', evSel(condEv, setCondEv, 'select-uw-condition-evidence'))}
+          {cell('Seller contact evidence', evSel(contEv, setContEv, 'select-uw-contact-evidence'))}
+        </div>
+      </section>
       <section>
         <div className="mb-2 flex items-center justify-between">
           <div><h3 className="text-xl font-semibold">Comparable sales <span className="font-mono text-sm text-muted-foreground">{comps.length}</span></h3>
@@ -111,6 +130,8 @@ export function UnderwritingEditor({
                   <SelectContent>{['RENOVATED', 'SIMILAR', 'UNKNOWN'].map((p) => <SelectItem key={p} value={p}>{p}</SelectItem>)}</SelectContent>
                 </Select>), 'sm:col-span-3')}
               {cell('Source', <Input value={c.source} disabled={disabled} onChange={(e) => upC(i, { source: e.target.value })} data-testid={`input-comp-source-${i}`} />, 'sm:col-span-2')}
+              {cell('Sale evidence', evSel(c.saleEv, (v) => upC(i, { saleEv: v }), `select-comp-sale-evidence-${i}`), 'sm:col-span-6')}
+              {cell('Condition evidence', evSel(c.condEv, (v) => upC(i, { condEv: v }), `select-comp-condition-evidence-${i}`), 'sm:col-span-6')}
               <div className="flex items-end justify-between gap-2 sm:col-span-12">
                 <label className="flex items-center gap-2 text-sm"><Switch checked={c.verified} disabled={disabled} onCheckedChange={(v) => upC(i, { verified: v })} data-testid={`switch-comp-verified-${i}`} />Verified against public record</label>
                 <Button size="sm" variant="ghost" disabled={disabled} onClick={() => setComps((l) => l.filter((_, j) => j !== i))} data-testid={`button-remove-comp-${i}`}><Trash2 className="mr-1 h-3.5 w-3.5" />Remove</Button>
@@ -140,6 +161,7 @@ export function UnderwritingEditor({
               {cell('High', <Input type="number" value={r.high} disabled={disabled} onChange={(e) => upR(i, { high: e.target.value })} data-testid={`input-repair-high-${i}`} />, 'sm:col-span-2')}
               {cell('Confidence %', <Input type="number" min={0} max={100} value={r.confidence} disabled={disabled} onChange={(e) => upR(i, { confidence: e.target.value })} data-testid={`input-repair-confidence-${i}`} />, 'sm:col-span-3')}
               {cell('Source of estimate', <Input value={r.source} disabled={disabled} onChange={(e) => upR(i, { source: e.target.value })} data-testid={`input-repair-source-${i}`} />, 'sm:col-span-9')}
+              {cell('Repair evidence', evSel(r.ev, (v) => upR(i, { ev: v }), `select-repair-evidence-${i}`), 'sm:col-span-9')}
               <div className="flex items-end justify-end sm:col-span-3"><Button size="sm" variant="ghost" disabled={disabled} onClick={() => setRepairs((l) => l.filter((_, j) => j !== i))} data-testid={`button-remove-repair-${i}`}><Trash2 className="mr-1 h-3.5 w-3.5" />Remove</Button></div>
             </div>
           ))}

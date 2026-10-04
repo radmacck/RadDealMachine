@@ -25,6 +25,7 @@ try {
     currentBuyingStatus:"BUYING" as const,buyingEvidenceAt:now.toISOString(),buyingEvidenceUrl:"https://example.com/synthetic-buying",
     criteriaEvidenceUrl:"https://example.com/synthetic-criteria",verificationSource:"Synthetic reviewed response",confidence:0.9};
   await assert.rejects(verifyBuyer(id,verification,{...actor,role:"OPERATOR"},now),e=>(e as {status:number}).status===403);
+  Object.assign(verification,{verifiedFundingTypes:["CASH"]});
   const verified = await verifyBuyer(id,verification,actor,now);
   assert.equal(verified.verificationStatus,"VERIFIED");
   assert.equal(verified.approvalStatus,"APPROVED");

@@ -64,6 +64,7 @@ export async function verifyBuyer(id: string, input: z.infer<typeof VerifyBuyerB
       if (missing.length) throw new DomainError(missing.join("; "));
       if (parsed.confidence<0.65) throw new DomainError("Review confidence must meet the 0.65 current-buying qualification threshold.");
       if (buyer.destinationKind==="BUYER"&&(!parsed.fundingEvidenceUrl||!parsed.availableFunds)) throw new DomainError("An acquisition buyer requires reviewed funding evidence and positive available funds.");
+      if (buyer.destinationKind==="BUYER"&&!parsed.verifiedFundingTypes?.length) throw new DomainError("Record actual evidenced funding methods before approving an acquisition buyer. Do not infer them from the buy box.");
     }
     const {version:_,...evidence} = parsed;
     const history = Array.isArray(row.payload.verificationHistory)?row.payload.verificationHistory:[];

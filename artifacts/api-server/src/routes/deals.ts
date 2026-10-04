@@ -7,6 +7,7 @@ import * as store from "../services/deal-store";
 import * as access from "../services/access";
 import * as offers from "../services/offer-store";
 import { commandCenter } from "../services/command-center";
+import { intakePropertyEvidence } from "../services/evidence-intake";
 
 const router: IRouter = Router();
 // Trim strings before schema validation so required fields cannot be whitespace-only.
@@ -37,6 +38,10 @@ router.post("/access",async (_req,res) => {
   send(res,contract.ClaimWorkspaceResponse,await access.claimWorkspace(String(res.locals.actor)));
 });
 router.use(membership);
+router.post("/leads/:id/evidence-intake",research,async(req,res)=>{
+  send(res,contract.IntakePropertyEvidenceResponse,await intakePropertyEvidence(leadId(req),parse(contract.IntakePropertyEvidenceBody,req.body),
+    {id:String(res.locals.actor),role:String(res.locals.role)}));
+});
 router.get("/command-center",async (_req,res) => {
   send(res,contract.GetCommandCenterResponse,await commandCenter(String(res.locals.role)));
 });

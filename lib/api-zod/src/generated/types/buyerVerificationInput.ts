@@ -6,6 +6,7 @@
  * OpenAPI spec version: 1.0.0
  */
 import type { BuyerVerificationInputCurrentBuyingStatus } from './buyerVerificationInputCurrentBuyingStatus';
+import type { BuyerVerificationInputVerifiedFundingTypesItem } from './buyerVerificationInputVerifiedFundingTypesItem';
 
 export interface BuyerVerificationInput {
   /** @minimum 1 */
@@ -30,6 +31,8 @@ export interface BuyerVerificationInput {
      * @maximum 1000000000
      */
   availableFunds?: number;
+  /** @minItems 1 */
+  verifiedFundingTypes?: BuyerVerificationInputVerifiedFundingTypesItem[];
   evidenceAt: string;
   validUntil: string;
   currentBuyingStatus: BuyerVerificationInputCurrentBuyingStatus;

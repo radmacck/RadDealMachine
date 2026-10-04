@@ -36,6 +36,7 @@ export function buyerQualification(b: Buyer, now: Date) {
   if (status!=="VERIFIED") blockers.push("Identity/funding review is missing or stale.");
   if (!b.identityEvidenceUrl) blockers.push("Reviewed identity evidence is missing.");
   if ((b.destinationKind??"BUYER")==="BUYER" && (!b.fundingEvidenceUrl || !(b.availableFunds && b.availableFunds>0))) blockers.push("An acquisition buyer requires current documented available funds.");
+  if ((b.destinationKind??"BUYER")==="BUYER" && !b.verifiedFundingTypes?.length) blockers.push("An acquisition buyer requires documented, owner-reviewed funding methods; preferences are not verification.");
   if (b.currentBuyingStatus!=="BUYING") blockers.push("Current buying/accepting status has not been verified as active.");
   if (!b.buyingVerifiedAt || !b.buyingEvidenceUrl || !b.buyingEvidenceAt || !b.criteriaEvidenceUrl || !b.verificationSource) blockers.push("Current buying and criteria require dated evidence, source and reviewer.");
   if (b.confidence==null || b.confidence<0.65) blockers.push("Reviewer confidence is below the 0.65 qualification threshold; it is not a probability guarantee.");

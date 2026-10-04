@@ -53,6 +53,7 @@ import type {
   OfferCommunicationInput,
   OfferDraftInput,
   OfferWithdrawalInput,
+  PropertyEvidencePacket,
   PropertySource,
   PublicPropertyImport,
   PublicPropertySearch,
@@ -61,6 +62,7 @@ import type {
   SourceRefreshInput,
   SourceResearch,
   SourceReviewInput,
+  TransactionExceptionInput,
   TransitionInput,
   UnderwritingInput,
   WorkerJob,
@@ -93,6 +95,172 @@ const withQueryKey = <T extends object, K>(query: T, queryKey: K): T & { queryKe
   }
   return result;
 };
+
+export const getRecordTransactionExceptionUrl = (id: string,) => {
+
+
+
+
+  return `/api/deals/${id}/contract/exception`
+}
+
+export const recordTransactionException = async (id: string,
+    transactionExceptionInput: TransactionExceptionInput, options?: Parameters<typeof customFetch>[1]): Promise<DealOperations> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return customFetch<DealOperations>(getRecordTransactionExceptionUrl(id),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(transactionExceptionInput)
+  }
+);}
+
+
+
+
+
+export const getRecordTransactionExceptionMutationKey = () => ['recordTransactionException'] as const;
+
+export const getRecordTransactionExceptionMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof recordTransactionException>>, TError,RecordTransactionExceptionMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof recordTransactionException>>, TError,RecordTransactionExceptionMutationVariables, TContext> => {
+
+const mutationKey = getRecordTransactionExceptionMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof recordTransactionException>>, RecordTransactionExceptionMutationVariables> = (props) => {
+          const {id,data} = props ?? {};
+
+          return  recordTransactionException(id,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type RecordTransactionExceptionMutationResult = NonNullable<Awaited<ReturnType<typeof recordTransactionException>>>
+    export type RecordTransactionExceptionMutationBody = BodyType<TransactionExceptionInput>
+    export type RecordTransactionExceptionMutationError = ErrorType<unknown>
+    export type RecordTransactionExceptionMutationVariables = {id: string;data: BodyType<TransactionExceptionInput>}
+
+    export const useRecordTransactionException = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof recordTransactionException>>, TError,RecordTransactionExceptionMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof recordTransactionException>>,
+        TError,
+        RecordTransactionExceptionMutationVariables,
+        TContext
+      > => {
+      return useMutation(getRecordTransactionExceptionMutationOptions(options));
+    }
+
+export const getIntakePropertyEvidenceUrl = (id: string,) => {
+
+
+
+
+  return `/api/leads/${id}/evidence-intake`
+}
+
+export const intakePropertyEvidence = async (id: string,
+    propertyEvidencePacket: PropertyEvidencePacket, options?: Parameters<typeof customFetch>[1]): Promise<LeadDetail> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return customFetch<LeadDetail>(getIntakePropertyEvidenceUrl(id),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(propertyEvidencePacket)
+  }
+);}
+
+
+
+
+
+export const getIntakePropertyEvidenceMutationKey = () => ['intakePropertyEvidence'] as const;
+
+export const getIntakePropertyEvidenceMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof intakePropertyEvidence>>, TError,IntakePropertyEvidenceMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof intakePropertyEvidence>>, TError,IntakePropertyEvidenceMutationVariables, TContext> => {
+
+const mutationKey = getIntakePropertyEvidenceMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof intakePropertyEvidence>>, IntakePropertyEvidenceMutationVariables> = (props) => {
+          const {id,data} = props ?? {};
+
+          return  intakePropertyEvidence(id,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type IntakePropertyEvidenceMutationResult = NonNullable<Awaited<ReturnType<typeof intakePropertyEvidence>>>
+    export type IntakePropertyEvidenceMutationBody = BodyType<PropertyEvidencePacket>
+    export type IntakePropertyEvidenceMutationError = ErrorType<unknown>
+    export type IntakePropertyEvidenceMutationVariables = {id: string;data: BodyType<PropertyEvidencePacket>}
+
+    export const useIntakePropertyEvidence = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof intakePropertyEvidence>>, TError,IntakePropertyEvidenceMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof intakePropertyEvidence>>,
+        TError,
+        IntakePropertyEvidenceMutationVariables,
+        TContext
+      > => {
+      return useMutation(getIntakePropertyEvidenceMutationOptions(options));
+    }
 
 export const getHealthCheckUrl = () => {
 

@@ -6,7 +6,9 @@
  * OpenAPI spec version: 1.0.0
  */
 import type { ClosingMilestone } from './closingMilestone';
+import type { CommitmentSnapshot } from './commitmentSnapshot';
 import type { DealContractStatus } from './dealContractStatus';
+import type { TransactionHistoryEntry } from './transactionHistoryEntry';
 
 export interface DealContract {
   id: string;
@@ -19,6 +21,14 @@ export interface DealContract {
   earnestMoney: number;
   assignmentAllowed: boolean;
   closingAt: string;
+  /** @minimum 1 */
+  attemptNumber?: number;
+  history?: TransactionHistoryEntry[];
+  /** @nullable */
+  buyerCommittedAt?: string | null;
+  commitmentSnapshot?: CommitmentSnapshot | null;
+  cancelledAt?: string;
+  outcomeRecordedAt?: string;
   contingencies: string;
   /** @nullable */
   executedDocumentUrl?: string | null;

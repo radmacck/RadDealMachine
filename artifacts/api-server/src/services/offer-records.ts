@@ -17,7 +17,7 @@ export async function offersForLead(tx: typeof db|Tx, id: string, context: Offer
 export async function invalidateOffers(tx: Tx, id: string, actor: string, reason: string, now: Date) {
   const rows = await tx.select().from(offersTable).where(and(eq(offersTable.leadId,id),inArray(offersTable.status,["DRAFT","AUTHORIZED","COMMUNICATED"])));
   for (const row of rows) {
-    await tx.update(offersTable).set({status:"INVALIDATED",payload:{...row.payload,withdrawalReason:reason},updatedAt:now}).where(eq(offersTable.id,row.id));
+    await tx.update(offersTable).set({status:"INVALIDATED",payload:{...row.payload,authorityEndedAt:now.toISOString(),withdrawalReason:reason},updatedAt:now}).where(eq(offersTable.id,row.id));
     await tx.insert(auditTable).values({actor,action:"OFFER_INVALIDATED",entityId:id,detail:`Offer ${row.id}: ${reason}. Historical seller communications are not recalled.`,createdAt:now});
   }
 }

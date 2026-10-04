@@ -6,6 +6,38 @@ info:
 servers:
   - url: /api
 paths:
+  /deals/{id}/contract/exception:
+    parameters:
+      - { name: id, in: path, required: true, schema: { type: string } }
+    post:
+      operationId: recordTransactionException
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/TransactionExceptionInput" }
+      responses:
+        "200":
+          description: Evidenced owner-reviewed amendment, buyer release or restart
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/DealOperations" }
+  /leads/{id}/evidence-intake:
+    parameters:
+      - { name: id, in: path, required: true, schema: { type: string } }
+    post:
+      operationId: intakePropertyEvidence
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/PropertyEvidencePacket" }
+      responses:
+        "200":
+          description: Atomic sourced property intake and deterministic evidence-reviewed underwriting
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/LeadDetail" }
   /healthz:
     get:
       operationId: healthCheck
@@ -718,6 +750,7 @@ components:
       type: object
       required: [reviewedBy, reviewedAt, currentBuyingStatus, buyingEvidenceUrl, criteriaEvidenceUrl, verificationSource]
       properties:
+        verifiedFundingTypes: { type: array, items: { type: string, enum: [CASH, HARD_MONEY, PRIVATE_LENDING, CONVENTIONAL, OTHER] } }
         reviewedBy: { type: string }
         reviewedAt: { type: string }
         currentBuyingStatus: { type: string, enum: [BUYING, PAUSED, NOT_BUYING] }
@@ -794,6 +827,7 @@ components:
         fundingEvidenceUrl: { type: string, minLength: 8, maxLength: 2000 }
         verificationNote: { type: string, minLength: 10, maxLength: 3000 }
         availableFunds: { type: number, minimum: 0, maximum: 1000000000 }
+        verifiedFundingTypes: { type: array, minItems: 1, uniqueItems: true, items: { type: string, enum: [CASH, HARD_MONEY, PRIVATE_LENDING, CONVENTIONAL, OTHER] } }
         evidenceAt: { type: string }
         validUntil: { type: string }
         currentBuyingStatus: { type: string, enum: [BUYING, PAUSED, NOT_BUYING] }
@@ -815,6 +849,7 @@ components:
             fundingEvidenceUrl: { type: [string, "null"] }
             verificationNote: { type: [string, "null"] }
             availableFunds: { type: [number, "null"] }
+            verifiedFundingTypes: { type: array, items: { type: string, enum: [CASH, HARD_MONEY, PRIVATE_LENDING, CONVENTIONAL, OTHER] } }
             evidenceAt: { type: [string, "null"] }
             validUntil: { type: [string, "null"] }
             verifiedBy: { type: [string, "null"] }
@@ -903,6 +938,40 @@ components:
         note: { type: string, minLength: 10, maxLength: 3000 }
         assignmentFeeReceived: { type: number, minimum: 0, maximum: 1000000000 }
         closingCosts: { type: number, minimum: 0, maximum: 1000000000 }
+        buyerReleaseEvidenceUrl: { type: string, minLength: 8, maxLength: 2000 }
+        occurredAt: { type: string }
+    CommitmentSnapshot:
+      type: object
+      required: [buyer, detail, reservedCount, reservedFunds]
+      properties:
+        recordedAt: { type: string }
+        buyer: { $ref: "#/components/schemas/Buyer" }
+        detail: { $ref: "#/components/schemas/LeadDetail" }
+        reservedCount: { type: integer }
+        reservedFunds: { type: number }
+    TransactionExceptionInput:
+      type: object
+      required: [version, kind, evidenceUrl, note, effectiveAt]
+      properties:
+        version: { type: integer, minimum: 1 }
+        kind: { type: string, enum: [AMEND_CLOSING, RELEASE_BUYER, RESTART_CANCELLED] }
+        evidenceUrl: { type: string, minLength: 8, maxLength: 2000 }
+        note: { type: string, minLength: 10, maxLength: 3000 }
+        effectiveAt: { type: string }
+        newClosingAt: { type: string }
+        buyerId: { type: string }
+        buyerConsentEvidenceUrl: { type: string, minLength: 8, maxLength: 2000 }
+    TransactionHistoryEntry:
+      type: object
+      required: [kind, effectiveAt, recordedAt, recordedBy, evidenceUrl, note, previousState]
+      properties:
+        kind: { type: string, enum: [AMEND_CLOSING, RELEASE_BUYER, RESTART_CANCELLED, CANCELLED_ATTEMPT, ELIGIBILITY_REVIEW] }
+        effectiveAt: { type: string }
+        recordedAt: { type: string }
+        recordedBy: { type: string }
+        evidenceUrl: { type: string }
+        note: { type: string }
+        previousState: { type: object, additionalProperties: true }
     DealContract:
       type: object
       required: [id, leadId, offerId, version, status, purchasePrice, assignmentTarget, earnestMoney, assignmentAllowed, closingAt, contingencies, milestones, createdAt]
@@ -917,6 +986,12 @@ components:
         earnestMoney: { type: number }
         assignmentAllowed: { type: boolean }
         closingAt: { type: string }
+        attemptNumber: { type: integer, minimum: 1 }
+        history: { type: array, items: { $ref: "#/components/schemas/TransactionHistoryEntry" } }
+        buyerCommittedAt: { type: [string, "null"] }
+        commitmentSnapshot: { oneOf: [{ $ref: "#/components/schemas/CommitmentSnapshot" }, { type: "null" }] }
+        cancelledAt: { type: string }
+        outcomeRecordedAt: { type: string }
         contingencies: { type: string }
         executedDocumentUrl: { type: [string, "null"] }
         sellerSignedAt: { type: [string, "null"] }
@@ -1105,6 +1180,8 @@ components:
         condition: { type: string, enum: [RENOVATED, SIMILAR, UNKNOWN] }
         source: { type: string, minLength: 1 }
         verified: { type: boolean }
+        saleEvidenceId: { type: string, maxLength: 200 }
+        conditionEvidenceId: { type: string, maxLength: 200 }
     Repair:
       type: object
       required: [category, low, expected, high, confidence, source]
@@ -1115,6 +1192,7 @@ components:
         high: { type: number, minimum: 0, maximum: 1000000000 }
         confidence: { type: number, minimum: 0, maximum: 1 }
         source: { type: string, minLength: 1 }
+        evidenceId: { type: string, maxLength: 200 }
     Assumptions:
       type: object
       required: [arvMultiplier, sellingCostPct, acquisitionCost, holdingMonthly, holdingMonths, assignmentTarget, contingencyPct, strongMargin, openingLowPct, openingHighPct, maxCompAgeDays, maxDistanceMiles, maxSqftDifferencePct, minComps, minConfidence, approvalRequired]
@@ -1144,6 +1222,27 @@ components:
         repairs: { type: array, maxItems: 50, items: { $ref: "#/components/schemas/Repair" } }
         repairsComplete: { type: boolean }
         conditionConfirmed: { type: boolean }
+        subjectEvidenceId: { type: string, maxLength: 200 }
+        conditionEvidenceId: { type: string, maxLength: 200 }
+        sellerContactEvidenceId: { type: string, maxLength: 200 }
+    PropertyEvidencePacket:
+      type: object
+      required: [version, lead, entries, underwriting]
+      properties:
+        version: { type: integer, minimum: 1 }
+        lead: { $ref: "#/components/schemas/LeadInput" }
+        entries:
+          type: array
+          minItems: 1
+          maxItems: 150
+          items:
+            allOf:
+              - { $ref: "#/components/schemas/IntelligenceInput" }
+              - type: object
+                required: [key]
+                properties:
+                  key: { type: string, minLength: 1, maxLength: 200 }
+        underwriting: { $ref: "#/components/schemas/UnderwritingInput" }
     Range:
       type: object
       required: [low, expected, high, confidence]

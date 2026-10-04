@@ -8,8 +8,10 @@
 import type { BuyerCriteria } from './buyerCriteria';
 import type { BuyerVerificationHistoryCurrentBuyingStatus } from './buyerVerificationHistoryCurrentBuyingStatus';
 import type { BuyerVerificationHistoryDestinationKind } from './buyerVerificationHistoryDestinationKind';
+import type { BuyerVerificationHistoryVerifiedFundingTypesItem } from './buyerVerificationHistoryVerifiedFundingTypesItem';
 
 export interface BuyerVerificationHistory {
+  verifiedFundingTypes?: BuyerVerificationHistoryVerifiedFundingTypesItem[];
   reviewedBy: string;
   reviewedAt: string;
   currentBuyingStatus: BuyerVerificationHistoryCurrentBuyingStatus;

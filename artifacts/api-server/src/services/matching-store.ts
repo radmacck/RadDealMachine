@@ -28,7 +28,7 @@ export async function dealOperations(id: string, now = new Date()) {
     const matches = await evaluatedMatches(detail,contract,tx,now);
     const rows = await tx.select().from(jobsTable).where(eq(jobsTable.leadId,id)).orderBy(desc(jobsTable.createdAt)).limit(10);
     let nextAction = contract?.status==="CLOSED"?"Deal closed. Review recorded proceeds and preserve settlement evidence.":
-      contract?.status==="CANCELLED"?"Contract cancelled. Retain evidence and review the deal outcome.":
+      contract?.status==="CANCELLED"?(detail.lead.stage==="DEAD_DEAL"?"Contract cancelled. Retain evidence; owner may restart as a new reviewed attempt.":"Reopened for a new attempt. Refresh evidence and underwriting; a new approved communicated offer is required."):
       contract?.status==="DRAFT"?"Review the external contract against these frozen approved terms, then record both signatures.":
       contract?.committedBuyerId?"Complete title, earnest money, assignment and funds evidence; review the closing deadline.":
       contract?`Review ${matches.filter(m=>m.eligible&&m.destinationKind==="BUYER").length} current acquisition buyers and ${matches.filter(m=>m.eligible&&m.destinationKind!=="BUYER").length} approved destinations. Record real interest; only an acquisition buyer can commit.`:

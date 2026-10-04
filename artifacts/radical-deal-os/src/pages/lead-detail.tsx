@@ -3,7 +3,7 @@ import { Link, useParams } from 'wouter';
 import { useQueryClient } from '@tanstack/react-query';
 import { ArrowLeft, PhoneCall } from 'lucide-react';
 import {
-  getGetLeadQueryKey, useAddIntelligence, useGetLead, useSaveUnderwriting, useTransitionLead, useUpdateLead, useRecordCall,
+  getGetLeadQueryKey, useAddIntelligence, useIntakePropertyEvidence, useGetLead, useSaveUnderwriting, useTransitionLead, useUpdateLead, useRecordCall,
   type LeadDetail, type ProvenanceClass,
 } from '@workspace/api-client-react';
 import { ErrorNotice, RowsSkeleton } from '@/components/state-views';
@@ -14,6 +14,7 @@ import { IntelligenceForm } from '@/components/intelligence-form';
 import { LeadForm } from '@/components/lead-form';
 import { UnderwritingEditor } from '@/components/underwriting-editor';
 import { SourceResearchPanel } from '@/components/source-research';
+import { EvidenceIntake } from '@/components/evidence-intake';
 import { OffersPanel } from '@/components/offers-panel';
 import { DealOperationsPanel } from '@/components/deal-operations-panel';
 import { CallLogForm } from '@/components/call-log-form';
@@ -42,6 +43,7 @@ export default function LeadDetailPage() {
   const q = useGetLead(id, { query: { queryKey: getGetLeadQueryKey(id), enabled: !!id, staleTime: 5_000, refetchInterval: 15_000 } });
   const updateLead = useUpdateLead();
   const addIntel = useAddIntelligence();
+  const intake = useIntakePropertyEvidence();
   const saveUw = useSaveUnderwriting();
   const transition = useTransitionLead();
   const recordCall = useRecordCall();
@@ -111,11 +113,12 @@ export default function LeadDetailPage() {
 
         <TabsContent value="intel" forceMount className={KEEP}>
           <ProvenanceSections items={d.intelligence} onAdd={canResearch ? setAddClass : undefined} />
+          <EvidenceIntake detail={d} disabled={!canResearch} pending={intake.isPending} error={intake.error} onSubmit={(data, done) => intake.mutate({ id, data }, { onSuccess: (detail) => { qc.setQueryData(getGetLeadQueryKey(id), detail); invalidate(id); setUwEpoch((e) => e + 1); setLeadEpoch((e) => e + 1); done(); toast({ title: 'Evidence packet accepted' }); } })} />
           {!canResearch && <p className="mt-3 text-xs text-muted-foreground">Your role can read research but not add to it.</p>}
         </TabsContent>
 
         <TabsContent value="uw" forceMount className={KEEP}>
-          <UnderwritingEditor key={`${id}:${uwEpoch}`} leadVersion={lead.version} server={d.underwriting} disabled={!canResearch} pending={saveUw.isPending} error={saveUw.error}
+          <UnderwritingEditor key={`${id}:${uwEpoch}`} leadVersion={lead.version} server={d.underwriting} intelligence={d.intelligence} disabled={!canResearch} pending={saveUw.isPending} error={saveUw.error}
             onDiscard={() => setUwEpoch((e) => e + 1)}
             onSave={(data, done) => saveUw.mutate({ id, data }, { onSuccess: (detail) => { qc.setQueryData(getGetLeadQueryKey(id), detail); invalidate(id); done(); toast({ title: 'Underwriting calculated', description: detail.analysis ? `Result: ${detail.analysis.classification}` : undefined }); } })} />
         </TabsContent>

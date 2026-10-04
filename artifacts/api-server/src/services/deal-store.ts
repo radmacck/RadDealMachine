@@ -9,6 +9,7 @@ import {
   validateTransition, validateAssumptions, assertTransitionPermission, DEFAULT_ASSUMPTIONS, DomainError,
   type Lead, type LeadInput, type LeadDetail, type Intelligence, type IntelligenceInput,
   type UnderwritingInput, type Assumptions, type TransitionInput, type CallInput, type Analysis, type Stage, type OfferActor,
+  evidenceReviewedAnalysis,
 } from "@workspace/deal-domain";
 import { CreateLeadResponse, GetLeadResponse, AddIntelligenceResponse, GetAssumptionsResponse } from "@workspace/api-zod";
 import { offersForLead, invalidateOffers, invalidateOffersForPolicyChange } from "./offer-records";
@@ -65,15 +66,16 @@ export async function leadDetail(id: string, database: typeof db | Tx = db, now 
   const intelligence = intel.map(e => AddIntelligenceResponse.parse({
     ...e.payload, id:e.id, leadId:e.leadId, createdBy:e.createdBy, createdAt:iso(e.createdAt),
   }));
+  const analysis = evidenceReviewedAnalysis(row.analysis as Analysis|null,lead,row.underwriting as UnderwritingInput|null,intelligence,now);
   const offers = await offersForLead(database,id,{
-    lead,intelligence,analysis:row.analysis as Analysis|null,analysisSnapshotId:row.analysisSnapshotId,
+    lead,intelligence,analysis,analysisSnapshotId:row.analysisSnapshotId,
     currentPolicy:await getAssumptions(database),conversationLogged:calls.some(c => c.payload.outcome === "CONNECTED"),now,
   });
   return GetLeadResponse.parse({
-    lead, intelligence, analysis:row.analysis, analysisSnapshotId:row.analysisSnapshotId, underwriting:row.underwriting, offers,
+    lead, intelligence, analysis, analysisSnapshotId:row.analysisSnapshotId, underwriting:row.underwriting, offers,
     transitions:transitions.map(e => ({...e, createdAt:iso(e.createdAt)})),
     calls:calls.map(e => ({...e.payload,id:e.id,actor:e.actor,createdAt:iso(e.createdAt)})),
-    allowedTransitions:allowedTransitions(lead,row.analysis as Analysis | null,now),
+    allowedTransitions:allowedTransitions(lead,analysis,now),
   });
 }
 
@@ -119,10 +121,14 @@ export async function createLead(input: LeadInput, actor: string, now = new Date
   };
   return transaction ? write(transaction) : db.transaction(write);
 }
-export async function updateLead(id: string, input: LeadInput & {version:number}, actor: string, now = new Date()) {
-  return db.transaction(async tx => {
+export async function updateLead(id: string, input: LeadInput & {version:number}, actor: string, now = new Date(), transaction?: Tx) {
+  const write = async (tx: Tx) => {
     const row = await lockedLead(tx,id,input.version);
     const {version:_,...payload} = input;
+    if (["UNDER_CONTRACT","BUYER_MATCHED","BUYER_INTERESTED","BUYER_COMMITTED","CLOSING"].includes(row.stage) &&
+      ["address","city","state","zip","propertyType","units"].some(k=>row.payload[k]!== (payload as Record<string,unknown>)[k])) {
+      throw new DomainError("Executed agreement subject identity is frozen. Do not attach new property evidence to another signed transaction.",409);
+    }
     const nextAction = "Property information changed. Reconfirm sources and refresh underwriting before calling.";
     await invalidateOffers(tx,id,actor,"Property inputs changed; previous offer authorization is no longer valid.",now);
     await move(tx,row,"ENRICHING","Property inputs changed; previous underwriting invalidated",nextAction,actor,now);
@@ -146,7 +152,8 @@ export async function updateLead(id: string, input: LeadInput & {version:number}
       }
     }
     return toLead(saved);
-  });
+  };
+  return transaction ? write(transaction) : db.transaction(write);
 }
 export async function addIntelligence(id: string, input: IntelligenceInput, actor: string, now = new Date()): Promise<Intelligence> {
   validateProvenance(input,now);
@@ -168,12 +175,13 @@ export async function addIntelligence(id: string, input: IntelligenceInput, acto
     return AddIntelligenceResponse.parse({...entry.payload,id:entry.id,leadId:id,createdBy:actor,createdAt:iso(now)});
   });
 }
-export async function saveUnderwriting(id: string, input: UnderwritingInput, actor: string, now = new Date()): Promise<LeadDetail> {
-  return db.transaction(async tx => {
+export async function saveUnderwriting(id: string, input: UnderwritingInput, actor: string, now = new Date(), transaction?: Tx): Promise<LeadDetail> {
+  const write = async (tx: Tx) => {
     const row = await lockedLead(tx,id,input.version);
     const lead = toLead(row);
     const assumptions = await getAssumptions(tx);
-    const analysis = analyzeDeal(lead,input,assumptions,now);
+    const intelligence = (await tx.select().from(intelligenceTable).where(eq(intelligenceTable.leadId,id))).map(e=>AddIntelligenceResponse.parse({...e.payload,id:e.id,leadId:id,createdBy:e.createdBy,createdAt:iso(e.createdAt)}));
+    const analysis = evidenceReviewedAnalysis(analyzeDeal(lead,input,assumptions,now),lead,input,intelligence,now)!;
     const [snapshot] = await tx.insert(analysesTable).values({
       leadId:id,createdBy:actor,createdAt:now,snapshot:jsonRecord({lead,input,analysis}),
     }).returning({id:analysesTable.id});
@@ -194,7 +202,8 @@ export async function saveUnderwriting(id: string, input: UnderwritingInput, act
     await audit(tx,actor,"UNDERWRITING_SAVED",id,`${analysis.engineVersion}: ${analysis.classification}; MAO $${analysis.mao}. Snapshot preserves inputs, policy, excluded comps and calculation time. No offer authorized.`);
     if (["STRONG","NEGOTIABLE"].includes(analysis.classification)) await queueJob(tx,"PREPARE_BRIEF",id,`brief:${id}:${snapshot.id}`,actor);
     return leadDetail(id,tx,now);
-  });
+  };
+  return transaction ? write(transaction) : db.transaction(write);
 }
 
 export function followupDate(value: string | null | undefined, now: Date): Date | null {
@@ -210,7 +219,8 @@ export async function transitionLeadForActor(id: string, input: TransitionInput,
 export async function transitionLead(id: string, input: TransitionInput, actor: string, now = new Date()): Promise<LeadDetail> {
   return db.transaction(async tx => {
     const row = await lockedLead(tx,id,input.version);
-    validateTransition(toLead(row),row.analysis as Analysis|null,input,now);
+    const detail = await leadDetail(id,tx,now);
+    validateTransition(toLead(row),detail.analysis,input,now);
     if (["ENRICHING","DEAD_DEAL"].includes(input.to)) await invalidateOffers(tx,id,actor,`Deal moved to ${input.to}; offer approval invalidated.`,now);
     const followUpAt = input.followUpAt === undefined ? row.followUpAt : followupDate(input.followUpAt,now);
     if (["CONTACTED","CONVERSATION","NEGOTIATING"].includes(input.to) && (!followUpAt || followUpAt.getTime() <= now.getTime())) {

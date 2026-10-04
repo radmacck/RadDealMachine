@@ -8,6 +8,7 @@ import * as buyers from "../services/buyer-store";
 import { allBuyerRecords, getBuyerRecord } from "../services/operations-records";
 import { dealOperations, refreshMatches } from "../services/matching-store";
 import * as transactions from "../services/transaction-store";
+import { recordTransactionException } from "../services/transaction-exceptions";
 import * as workers from "../services/workers";
 
 const router: IRouter = Router();
@@ -55,6 +56,10 @@ router.patch("/deals/:id/matches/:buyerId",roles("OWNER","OPERATOR"),async(req,r
 router.post("/deals/:id/contract",roles("OWNER","OPERATOR"),async(req,res)=>{
   const {id} = parse(schemas.CreateContractParams,req.params);
   res.status(201).json(schemas.CreateContractResponse.parse(await transactions.createContract(id,parse(schemas.CreateContractBody,req.body),actor(res))));
+});
+router.post("/deals/:id/contract/exception",roles("OWNER"),async(req,res)=>{
+  const {id} = parse(schemas.RecordTransactionExceptionParams,req.params);
+  res.json(schemas.RecordTransactionExceptionResponse.parse(await recordTransactionException(id,parse(schemas.RecordTransactionExceptionBody,req.body),actor(res))));
 });
 router.post("/deals/:id/contract/execution",roles("OWNER"),async(req,res)=>{
   const {id} = parse(schemas.ExecuteContractParams,req.params);

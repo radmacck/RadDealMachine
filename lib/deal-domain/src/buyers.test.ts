@@ -10,7 +10,7 @@ const buyer: Buyer = {
   criteria:{states:["TX"],cities:["Test City"],zipCodes:[],propertyTypes:["SINGLE_FAMILY"],maxPurchasePrice:200000,maxRepairs:50000,
     minBeds:2,minSqft:500,maxSqft:2000,closingDays:3,counties:[],excludedCounties:[],excludedCities:[],excludedZipCodes:[],
     minPurchasePrice:0,minUnits:1,maxUnits:1,minBaths:1,rehabTolerance:"HEAVY",strategies:["FLIP"],fundingTypes:["CASH"],maxConcurrentDeals:2},
-  verificationStatus:"VERIFIED",verifiedBy:"synthetic-owner",verifiedAt:now.toISOString(),evidenceAt:now.toISOString(),
+  verifiedFundingTypes:["CASH"],verificationStatus:"VERIFIED",verifiedBy:"synthetic-owner",verifiedAt:now.toISOString(),evidenceAt:now.toISOString(),
   validUntil:"2026-10-20T12:00:00Z",availableFunds:200000,createdAt:now.toISOString(),updatedAt:now.toISOString(),
   destinationKind:"BUYER",identityEvidenceUrl:"https://example.com/synthetic-id",fundingEvidenceUrl:"https://example.com/synthetic-funds",
   currentBuyingStatus:"BUYING",buyingVerifiedAt:now.toISOString(),buyingEvidenceAt:now.toISOString(),
@@ -39,6 +39,13 @@ test("matching explains current qualified fit, not just a magic score",()=>{
   const m = matchBuyer(buyer,detail,contract,now);
   assert.equal(m.eligible,true); assert.equal(m.score,100);
   assert.equal(m.mismatches.length,0); assert.ok(m.reasons.length>10);
+});
+test("funding preferences are not evidenced methods and loan funding does not pass native cash assignment",()=>{
+  const missing = matchBuyer({...buyer,verifiedFundingTypes:undefined},detail,contract,now);
+  assert.equal(missing.eligible,false);
+  const loan = matchBuyer({...buyer,verifiedFundingTypes:["CONVENTIONAL"],criteria:{...buyer.criteria!,fundingTypes:["CONVENTIONAL"]}},detail,contract,now);
+  assert.equal(loan.eligible,false); assert.ok(loan.mismatches.some(m=>m.includes("requires CASH")));
+  assert.equal(matchBuyer({...buyer,criteria:{...buyer.criteria!,fundingTypes:["HARD_MONEY"]}},detail,contract,now).eligible,false);
 });
 test("matching exposes geographical, budget, rehab, size and funding exclusions",()=>{
   const b = {...buyer,availableFunds:50000,criteria:{...buyer.criteria!,states:["CA"],cities:["Other City"],maxPurchasePrice:50000,maxRepairs:1000,minBeds:5}};

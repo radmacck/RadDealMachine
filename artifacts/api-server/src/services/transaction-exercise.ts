@@ -4,6 +4,7 @@ import { db,pool,contractsTable,jobsTable,matchesTable } from "@workspace/db";
 import { eq } from "drizzle-orm";
 import { logger } from "../lib/logger";
 import * as seller from "./deal-store";
+import { exerciseEvidence } from "./exercise-evidence";
 import * as offers from "./offer-store";
 import * as transactions from "./transaction-store";
 import * as buyers from "./buyer-store";
@@ -11,6 +12,7 @@ import { dealOperations,refreshMatches } from "./matching-store";
 import { submitWorkerJob,runWorkerOnce } from "./workers";
 import { commandCenter } from "./command-center";
 import { CLOSING_MILESTONES } from "@workspace/deal-domain";
+import { recordTransactionException } from "./transaction-exceptions";
 const actor = {id:`synthetic-transaction:${randomUUID()}`,role:"OWNER"};
 const operator = {...actor,role:"OPERATOR"};
 const now = new Date();
@@ -30,6 +32,7 @@ try {
       salePrice,soldAt:new Date(now.getTime()-10*86400000).toISOString().slice(0,10),distanceMiles:0.5,
       propertyType:"SINGLE_FAMILY" as const,condition:"RENOVATED" as const,source:"Synthetic sold-property fixture",verified:true})),
     repairs:[{category:"Synthetic repairs",low:10000,expected:20000,high:30000,confidence:0.8,source:"Synthetic repair scope"}]};
+  Object.assign(uw,await exerciseEvidence(id,uw,actor.id,now));
   detail = await seller.saveUnderwriting(id,uw,actor.id,now);
   detail = await seller.transitionLead(id,{version:detail.lead.version,to:"CALL_READY",reason:"Synthetic research complete.",nextAction:"Synthetic call."},actor.id,now);
   detail = await seller.recordCall(id,{version:detail.lead.version,outcome:"CONNECTED",notes:"Synthetic conversation, no external call.",nextAction:"Review terms.",followUpAt:future(1)},actor.id,now);
@@ -54,7 +57,8 @@ try {
     sellerSignedAt:now.toISOString(),acquisitionSignedAt:now.toISOString(),reviewNote:"Synthetic owner verification, not real signatures."};
   await assert.rejects(transactions.executeContract(id,execute,operator,now),e=>(e as {status:number}).status===403);
   await assert.rejects(transactions.executeContract(id,{...execute,sellerSignedAt:future(1)},actor,now),/future/);
-  op = await transactions.executeContract(id,execute,actor,now);
+  // Recording after approval expiry is allowed ONLY for historically valid signatures.
+  op = await transactions.executeContract(id,execute,actor,new Date(now.getTime()+3*86400000));
   assert.equal(op.contract?.status,"UNDER_CONTRACT");
   assert.equal((await seller.leadDetail(id)).lead.stage,"UNDER_CONTRACT");
   detail = await seller.leadDetail(id);
@@ -70,7 +74,7 @@ try {
       minBaths:1,rehabTolerance:"HEAVY",strategies:["FLIP"],fundingTypes:["CASH"],maxConcurrentDeals:2}},actor);
   op = await refreshMatches(id,now);
   assert.equal(op.matches.find(m=>m.buyerId===buyer.id)?.eligible,false);
-  buyer = await buyers.verifyBuyer(buyer.id,{version:buyer.version,identityEvidenceUrl:"https://example.com/synthetic-id",
+  buyer = await buyers.verifyBuyer(buyer.id,{version:buyer.version,verifiedFundingTypes:["CASH"],identityEvidenceUrl:"https://example.com/synthetic-id",
     fundingEvidenceUrl:"https://example.com/synthetic-funds",availableFunds:200000,verificationNote:"Synthetic review, not real bank proof.",
     evidenceAt:now.toISOString(),validUntil:future(25),currentBuyingStatus:"BUYING",buyingEvidenceAt:now.toISOString(),
     buyingEvidenceUrl:"https://example.com/synthetic-buying",criteriaEvidenceUrl:"https://example.com/synthetic-criteria",
@@ -105,6 +109,33 @@ try {
   await assert.rejects(transactions.recordBuyerResponse(id,buyer.id,{...commitment,agreedPrice:100000},actor,now));
   op = await transactions.recordBuyerResponse(id,buyer.id,commitment,actor,now);
   assert.equal(op.contract?.agreedBuyerPrice,130000);
+  const amend = {version:op.contract!.version,kind:"AMEND_CLOSING" as const,effectiveAt:now.toISOString(),
+    newClosingAt:future(4),evidenceUrl:"https://example.com/synthetic-amendment",note:"SYNTHETIC signed date amendment, no real agreement."};
+  await assert.rejects(recordTransactionException(id,amend,operator,now),e=>(e as {status:number}).status===403);
+  await assert.rejects(recordTransactionException(id,amend,actor,now),/buyer consent/);
+  op = await recordTransactionException(id,{...amend,buyerConsentEvidenceUrl:"https://example.com/synthetic-buyer-consent"},actor,now);
+  assert.equal(op.contract?.closingAt,future(4)); assert.equal(op.contract?.purchasePrice,110000);
+  assert.equal(op.contract?.history?.[0]?.previousState.closingAt,future(20));
+  op = await transactions.recordClosingMilestone(id,{version:op.contract!.version,kind:"ASSIGNMENT_SIGNED",
+    evidenceUrl:"https://example.com/synthetic-old-assignment",note:"SYNTHETIC former buyer assignment."},actor,now);
+  const oldBuyerId = buyer.id;
+  op = await recordTransactionException(id,{version:op.contract!.version,kind:"RELEASE_BUYER",buyerId:oldBuyerId,
+    effectiveAt:now.toISOString(),evidenceUrl:"https://example.com/synthetic-release",note:"SYNTHETIC externally reviewed release only."},actor,now);
+  assert.equal(op.contract?.committedBuyerId,null);
+  assert.ok(!op.contract?.milestones.some(m=>m.kind==="ASSIGNMENT_SIGNED"));
+  assert.ok(op.contract?.history?.some(h=>h.kind==="RELEASE_BUYER"&&h.previousState.committedBuyerId===oldBuyerId));
+  buyer = await buyers.createBuyer({name:"SYNTHETIC REPLACEMENT",email:"replacement@example.com",phone:"",
+    source:"SYNTHETIC replacement fixture",status:"ACTIVE",criteria:buyer.criteria},actor);
+  buyer = await buyers.verifyBuyer(buyer.id,{version:buyer.version,verifiedFundingTypes:["CASH"],identityEvidenceUrl:"https://example.com/synthetic-replacement-id",
+    fundingEvidenceUrl:"https://example.com/synthetic-replacement-funds",availableFunds:200000,verificationNote:"SYNTHETIC replacement review only.",
+    evidenceAt:now.toISOString(),validUntil:future(25),currentBuyingStatus:"BUYING",buyingEvidenceAt:now.toISOString(),
+    buyingEvidenceUrl:"https://example.com/synthetic-replacement-buying",criteriaEvidenceUrl:"https://example.com/synthetic-replacement-criteria",
+    verificationSource:"SYNTHETIC response",confidence:0.9},actor,now);
+  op = await transactions.recordBuyerResponse(id,buyer.id,{version:op.contract!.version,buyerVersion:buyer.version,status:"INTERESTED",
+    evidence:"SYNTHETIC replacement actual-interest fixture."},operator,now);
+  op = await transactions.recordBuyerResponse(id,buyer.id,{...commitment,version:op.contract!.version,buyerVersion:buyer.version,
+    commitmentEvidenceUrl:"https://example.com/synthetic-replacement-assignment"},actor,now);
+  assert.equal(op.contract?.committedBuyerId,buyer.id);
   const before = await seller.leadDetail(id);
   await seller.addIntelligence(id,{classification:"OBSERVED",category:"condition",statement:"Synthetic new research",
     source:"Synthetic independent observation",sourceType:"INSPECTION",confidence:0.8,capturedAt:now.toISOString()},actor.id,now);
@@ -123,8 +154,9 @@ try {
       evidenceUrl:`https://example.com/synthetic-${kind.toLowerCase()}`,note:"Synthetic reviewed evidence, no actual escrow activity."},actor,now);
   }
   await assert.rejects(transactions.recordDealOutcome(id,{...outcome,version:op.contract!.version,assignmentFeeReceived:19999},actor,now),/reconcile/);
-  op = await transactions.recordDealOutcome(id,{...outcome,version:op.contract!.version},actor,now);
+  op = await transactions.recordDealOutcome(id,{...outcome,version:op.contract!.version,occurredAt:future(2)},actor,new Date(now.getTime()+5*86400000));
   assert.equal(op.contract?.status,"CLOSED"); assert.equal(op.contract?.netProceeds,18000);
+  assert.equal(op.contract?.closedAt,future(2)); assert.equal(op.contract?.outcomeRecordedAt,future(5));
   assert.equal((await seller.leadDetail(id)).lead.stage,"CLOSED");
   assert.ok(!(await commandCenter("OWNER",now)).actions.some(a=>a.leadId===id));
   await assert.rejects(transactions.recordDealOutcome(id,{...outcome,version:op.contract!.version},actor,now));
@@ -132,5 +164,53 @@ try {
   assert.equal((await runWorkerOnce(now,false,deadline.id))?.state,"SUCCEEDED");
   const fail = await submitWorkerJob({kind:"MATCH_BUYERS",leadId:id,idempotencyKey:"synthetic-terminal-failure"},actor);
   assert.equal((await runWorkerOnce(now,false,fail.id))?.state,"FAILED");
-  logger.info({checks:"approved terms → draft → recorded signatures → real matching; duplicate-job/concurrent-claim safety; interest → owner commitment; research refresh preserves lifecycle; four milestones; settlement fee reconciliation; terminal history; persistent worker success/failure"},"Full lifecycle persistence exercise PASSED (isolated synthetic schema)");
+  const restart = {version:op.contract!.version,kind:"RESTART_CANCELLED" as const,effectiveAt:now.toISOString(),
+    evidenceUrl:"https://example.com/synthetic-restart",note:"SYNTHETIC reviewed attempt restart only."};
+  await assert.rejects(recordTransactionException(id,restart,actor,now),/Only an evidenced cancelled/);
+  // A separate cancelled agreement restarts through real authority/underwriting
+  // commands, never by deleting prior contracts or reusing its old authorization.
+  let next = await seller.createLead({address:"SYNTHETIC CANCELLED ATTEMPT",city:"Synthetic City",state:"TX",county:"Synthetic County",zip:"75001",
+    propertyType:"SINGLE_FAMILY",sqft:1000,beds:3,baths:2,units:1,askingPrice:100000,sellerName:"SYNTHETIC ONLY",sellerPhone:"000-000-0000",
+    source:"SYNTHETIC restart exercise"},actor.id,now);
+  const nextId = next.id;
+  const nextAuthority = await seller.addIntelligence(nextId,{classification:"VERIFIED_FACTS",category:"ownership",
+    statement:"SYNTHETIC owner fixture",source:"SYNTHETIC public record",sourceType:"PUBLIC_RECORD",confidence:0.9,
+    sourceUrl:"https://example.com/synthetic-owner",capturedAt:now.toISOString(),verificationNote:"SYNTHETIC fixture only."},actor.id,now);
+  const newUw = await exerciseEvidence(nextId,{...uw,version:(await seller.leadDetail(nextId)).lead.version},actor.id,now);
+  async function prepareNewAttempt() {
+    let d = await seller.leadDetail(nextId,undefined,now);
+    d = await seller.saveUnderwriting(nextId,{...newUw,version:d.lead.version},actor.id,now);
+    d = await seller.transitionLead(nextId,{version:d.lead.version,to:"CALL_READY",reason:"SYNTHETIC refreshed evidence",nextAction:"Synthetic call."},actor.id,now);
+    d = await seller.recordCall(nextId,{version:d.lead.version,outcome:"CONNECTED",notes:"SYNTHETIC new-attempt conversation.",
+      nextAction:"Review fresh exact terms.",followUpAt:future(1)},actor.id,now);
+    d = await offers.createOfferDraft(nextId,{version:d.lead.version,amount:110000,earnestMoney:1000,closingDays:30,
+      contingencies:"SYNTHETIC review",assignmentIntent:true,reason:"SYNTHETIC separate new offer"},actor,now);
+    const newOffer = d.offers.find(o=>o.status==="DRAFT")!;
+    d = await offers.authorizeOffer(nextId,newOffer.id,{version:d.lead.version,maximumApprovedAcquisitionPrice:120000,authorityEvidenceId:nextAuthority.id,
+      expiresAt:future(2),reason:"SYNTHETIC new approval",nextAction:"Record new exact communication.",followUpAt:future(1)},actor,now);
+    d = await offers.communicateOffer(nextId,newOffer.id,{version:d.lead.version,amount:110000,channel:"PHONE",
+      evidence:"SYNTHETIC communication, not actual outreach.",nextAction:"Record agreement.",followUpAt:future(1)},operator,now);
+    return transactions.createContract(nextId,{version:d.lead.version,offerId:newOffer.id,closingAt:future(20)},operator,now);
+  }
+  let restarted = await prepareNewAttempt();
+  restarted = await transactions.executeContract(nextId,{...execute,version:restarted.contract!.version},actor,now);
+  const priorOfferId = restarted.contract!.offerId;
+  restarted = await transactions.recordDealOutcome(nextId,{version:restarted.contract!.version,outcome:"CANCELLED",
+    evidenceUrl:"https://example.com/synthetic-cancel",note:"SYNTHETIC externally documented cancellation."},actor,now);
+  assert.equal((await seller.leadDetail(nextId)).lead.stage,"DEAD_DEAL");
+  await assert.rejects(recordTransactionException(nextId,{...restart,version:restarted.contract!.version},operator,now),e=>(e as {status:number}).status===403);
+  restarted = await recordTransactionException(nextId,{...restart,version:restarted.contract!.version},actor,now);
+  assert.equal((await seller.leadDetail(nextId)).lead.stage,"ENRICHING");
+  assert.equal(restarted.contract?.status,"CANCELLED");
+  assert.equal((await seller.leadDetail(nextId)).analysis,null);
+  const retained = restarted.contract!.history?.length;
+  restarted = await prepareNewAttempt();
+  assert.equal(restarted.contract?.attemptNumber,2);
+  assert.notEqual(restarted.contract?.offerId,priorOfferId);
+  assert.ok(restarted.contract?.history!.length!>retained!);
+  assert.ok(restarted.contract?.history?.some(h=>h.kind==="CANCELLED_ATTEMPT"&&h.previousState.outcomeEvidenceUrl==="https://example.com/synthetic-cancel"));
+  assert.equal((await db.select().from(contractsTable).where(eq(contractsTable.leadId,nextId))).length,1);
+  assert.equal((await seller.leadDetail(nextId)).offers.length,2);
+  logger.info("Cancellation/restart PASSED: owner-only, fresh underwriting/approval/communication, distinct attempt, original cancellation/signatures/terms/buyer history retained; CLOSED cannot reopen.");
+  logger.info({checks:"approved terms → draft → historically authorized late execution → matching; leases; owner/buyer-consented amendment; evidenced release archives old assignment → verified replacement → commitment; refreshed research preserves lifecycle; four milestones; late evidenced settlement preserves actual/recorded times; reconciliation and terminal guards"},"Full lifecycle persistence exercise PASSED (isolated synthetic schema)");
 } finally { await pool.end(); }

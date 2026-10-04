@@ -17,4 +17,10 @@ export interface UnderwritingInput {
   repairs: Repair[];
   repairsComplete: boolean;
   conditionConfirmed: boolean;
+  /** @maxLength 200 */
+  subjectEvidenceId?: string;
+  /** @maxLength 200 */
+  conditionEvidenceId?: string;
+  /** @maxLength 200 */
+  sellerContactEvidenceId?: string;
 }

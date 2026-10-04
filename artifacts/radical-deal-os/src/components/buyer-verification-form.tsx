@@ -5,7 +5,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { ErrorNotice } from '@/components/state-views';
 import { Field, SELECT } from '@/components/field-row';
 import { fromLocalInput, num } from '@/lib/format';
-import type { Buyer, BuyerVerificationInput, BuyerVerificationInputCurrentBuyingStatus } from '@workspace/api-client-react';
+import { BuyerVerificationInputVerifiedFundingTypesItem as FT, type BuyerVerificationInputVerifiedFundingTypesItem as FTItem, type Buyer, BuyerVerificationInput, BuyerVerificationInputCurrentBuyingStatus } from '@workspace/api-client-react';
 
 export function BuyerVerificationForm({ buyer, disabled, pending, error, onSubmit }: {
   buyer: Buyer; disabled: boolean; pending: boolean; error: unknown; onSubmit: (d: BuyerVerificationInput, done: () => void) => void;
@@ -19,6 +19,7 @@ export function BuyerVerificationForm({ buyer, disabled, pending, error, onSubmi
   const [bStatus, setBStatus] = useState<BuyerVerificationInputCurrentBuyingStatus | ''>('');
   const [bUrl, setBUrl] = useState(''); const [bAt, setBAt] = useState(''); const [cUrl, setCUrl] = useState('');
   const [vSrc, setVSrc] = useState(''); const [conf, setConf] = useState('');
+  const [vft, setVft] = useState<FTItem[]>([]);
   const [local, setLocal] = useState<string | null>(null);
 
   const submit = () => {
@@ -40,9 +41,10 @@ export function BuyerVerificationForm({ buyer, disabled, pending, error, onSubmi
     const bd = (new Date(u).getTime() - new Date(b).getTime()) / 86_400_000;
     if (bd <= 0 || bd > 30) return setLocal('Valid-until must be within 30 days of the buying evidence as well.');
     if (days <= 0 || days > 30) return setLocal('Verification may last at most 30 days after the evidence was captured.');
+    if (vft.length === 0) return setLocal('Select the funding methods actually documented in the evidence.');
     setLocal(null);
-    onSubmit({ version: buyer.version, identityEvidenceUrl: idUrl.trim(), ...(fundUrl.trim() ? { fundingEvidenceUrl: fundUrl.trim() } : {}), verificationNote: note.trim(), ...(Number.isFinite(f) ? { availableFunds: f } : {}), evidenceAt: a, validUntil: u, currentBuyingStatus: bStatus, buyingEvidenceUrl: bUrl.trim(), buyingEvidenceAt: b, criteriaEvidenceUrl: cUrl.trim(), verificationSource: vSrc.trim(), confidence: cf },
-      () => { setIdUrl(''); setFundUrl(''); setNote(''); setFunds(''); setAt(''); setUntil(''); setBStatus(''); setBUrl(''); setBAt(''); setCUrl(''); setVSrc(''); setConf(''); });
+    onSubmit({ version: buyer.version, verifiedFundingTypes: vft, identityEvidenceUrl: idUrl.trim(), ...(fundUrl.trim() ? { fundingEvidenceUrl: fundUrl.trim() } : {}), verificationNote: note.trim(), ...(Number.isFinite(f) ? { availableFunds: f } : {}), evidenceAt: a, validUntil: u, currentBuyingStatus: bStatus, buyingEvidenceUrl: bUrl.trim(), buyingEvidenceAt: b, criteriaEvidenceUrl: cUrl.trim(), verificationSource: vSrc.trim(), confidence: cf },
+      () => { setIdUrl(''); setFundUrl(''); setNote(''); setFunds(''); setAt(''); setUntil(''); setBStatus(''); setBUrl(''); setBAt(''); setCUrl(''); setVSrc(''); setConf(''); setVft([]); });
   };
 
   return (
@@ -62,6 +64,12 @@ export function BuyerVerificationForm({ buyer, disabled, pending, error, onSubmi
         <Field label="Evidence captured"><Input type="datetime-local" value={at} disabled={disabled} onChange={(e) => setAt(e.target.value)} data-testid="input-verify-at" /></Field>
         <Field label="Valid until" hint="No more than 30 days after capture"><Input type="datetime-local" value={until} disabled={disabled} onChange={(e) => setUntil(e.target.value)} data-testid="input-verify-until" /></Field>
       </div>
+      <fieldset className="space-y-1" data-testid="fieldset-verified-funding">
+        <legend className="text-sm font-medium">Verified funding methods</legend>
+        <p className="text-xs text-muted-foreground">Select only methods your evidence documents. Do not infer from buyer criteria. Native matching supports CASH only; other methods are recorded but excluded pending financing adapters.</p>
+        <div className="flex flex-wrap gap-4">{Object.values(FT).map((t) => (
+          <label key={t} className="flex items-center gap-2 text-sm"><input type="checkbox" checked={vft.includes(t)} disabled={disabled} onChange={(e) => setVft((l) => e.target.checked ? [...l, t] : l.filter((x) => x !== t))} data-testid={`check-verified-funding-${t}`} />{t.replace(/_/g, ' ')}</label>))}</div>
+      </fieldset>
       <Field label="Review note"><Textarea rows={3} value={note} disabled={disabled} onChange={(e) => setNote(e.target.value)} data-testid="input-verify-note" /></Field>
       {local && <p className="text-sm text-destructive" data-testid="text-verify-error">{local}</p>}
       {error != null && <ErrorNotice error={error} />}

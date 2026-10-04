@@ -31,4 +31,6 @@ export interface Repair {
   confidence: number;
   /** @minLength 1 */
   source: string;
+  /** @maxLength 200 */
+  evidenceId?: string;
 }

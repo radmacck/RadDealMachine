@@ -57,7 +57,7 @@ export async function authorizeOffer(id: string,offerId: string,input: OfferAppr
     // Exactly one live approval per lead. Superseding does not erase a past communication.
     const older = await tx.select().from(offersTable).where(and(eq(offersTable.leadId,id),inArray(offersTable.status,["AUTHORIZED","COMMUNICATED"])));
     for (const old of older) {
-      await saveOffer(tx,old,"REVOKED",{withdrawalReason:`Superseded by owner-approved offer ${offerId}; prior seller communication is not recalled.`},now);
+      await saveOffer(tx,old,"REVOKED",{authorityEndedAt:now.toISOString(),withdrawalReason:`Superseded by owner-approved offer ${offerId}; prior seller communication is not recalled.`},now);
       await audit(tx,actor.id,"OFFER_SUPERSEDED",id,`Offer ${old.id} superseded by ${offerId}. Prior communications retained.`);
     }
     await saveOffer(tx,offer,"AUTHORIZED",{
@@ -103,7 +103,7 @@ export async function withdrawOffer(id: string,offerId: string,input: OfferWithd
       throw new DomainError("Analysts may cancel only their own drafts; ask the owner to withdraw this draft.",403);
     }
     validateOfferWithdrawal(toStoredOffer(offer),input,now);
-    await saveOffer(tx,offer,"REVOKED",{withdrawalReason:input.reason},now);
+    await saveOffer(tx,offer,"REVOKED",{authorityEndedAt:offer.payload.authorityEndedAt??now.toISOString(),withdrawalReason:input.reason},now);
     const newStage = offer.status === "DRAFT" ? toLead(lead).stage : "CONVERSATION";
     await move(tx,lead,newStage,`Offer ${offerId} withdrawn internally: ${input.reason}. Prior communications are not recalled.`,input.nextAction,actor.id,now);
     await tx.update(leadsTable).set({

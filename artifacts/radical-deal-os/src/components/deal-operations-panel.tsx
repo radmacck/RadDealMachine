@@ -3,8 +3,8 @@ import { Link } from 'wouter';
 import { RefreshCw } from 'lucide-react';
 import {
   getGetDealOperationsQueryKey, useCreateContract, useExecuteContract, useGetDealOperations, useRecordBuyerResponse,
-  useRecordClosingMilestone, useRecordDealOutcome, useRefreshMatches,
-  type BuyerMatch, type BuyerResponseInputStatus, type ClosingMilestoneInputKind, type DealContract, type DealOutcomeInputOutcome, type LeadDetail,
+  useRecordClosingMilestone, useRecordDealOutcome, useRecordTransactionException, useRefreshMatches,
+  type BuyerMatch, type BuyerResponseInputStatus, type ClosingMilestoneInputKind, type DealContract, type DealOutcomeInputOutcome, type TransactionExceptionInputKind, type LeadDetail,
 } from '@workspace/api-client-react';
 import { ErrorNotice, RowsSkeleton } from '@/components/state-views';
 import { EvidenceLink, Field, SELECT } from '@/components/field-row';
@@ -70,7 +70,7 @@ function ExecuteContract({ contract, onDone }: { contract: DealContract; onDone:
   };
   return (
     <div className="space-y-3" data-testid="form-execute-contract">
-      <p className="text-sm text-muted-foreground">Signatures happen outside this system. Record the evidence of a document that is already signed by both sides.</p>
+      <p className="text-sm text-muted-foreground">Signatures happen outside this system. Record the evidence of a document that is already signed by both sides. The original offer approval and source proof are checked as of the actual signature times; approval cannot be backdated.</p>
       <Field label="Executed document link"><Input value={url} onChange={(e) => setUrl(e.target.value)} disabled={!isOwner} data-testid="input-exec-url" /></Field>
       <div className="grid gap-3 sm:grid-cols-2">
         <Field label="Seller signed"><Input type="datetime-local" value={seller} onChange={(e) => setSeller(e.target.value)} disabled={!isOwner} data-testid="input-exec-seller" /></Field>
@@ -154,27 +154,33 @@ function OutcomeForm({ contract, onDone }: { contract: DealContract; onDone: () 
   const rec = useRecordDealOutcome();
   const { toast } = useToast();
   const [outcome, setOutcome] = useState<DealOutcomeInputOutcome>('CLOSED');
-  const [url, setUrl] = useState(''); const [note, setNote] = useState(''); const [fee, setFee] = useState(''); const [costs, setCosts] = useState('');
+  const [url, setUrl] = useState(''); const [note, setNote] = useState(''); const [fee, setFee] = useState(''); const [costs, setCosts] = useState(''); const [relUrl, setRelUrl] = useState(''); const [occ, setOcc] = useState('');
   const [local, setLocal] = useState<string | null>(null);
   const expected = contract.agreedBuyerPrice != null ? contract.agreedBuyerPrice - contract.purchasePrice : null;
   const missing = MILESTONES.filter((m) => !contract.milestones.some((x) => x.kind === m.k));
   const submit = () => {
     if (url.trim().length < 8 || note.trim().length < 3) return setLocal('Evidence link and a note are required.');
     const f = num(fee); const c = num(costs);
+    const oc = fromLocalInput(occ);
+    if (!oc || new Date(oc).getTime() > Date.now()) return setLocal('Enter when the outcome actually happened outside this system; it cannot be in the future.');
     if (outcome === 'CLOSED') {
       if (missing.length) return setLocal(`Cannot close: missing ${missing.map((m) => m.label.toLowerCase()).join(', ')}.`);
       if (!contract.committedBuyerId) return setLocal('Cannot close without a committed, currently qualified buyer.');
       if (!Number.isFinite(f) || !Number.isFinite(c)) return setLocal('Enter the actual assignment fee received and closing costs.');
       if (expected != null && Math.abs(f - expected) > 0.005) return setLocal(`Fee received must equal agreed price minus purchase price: ${money(expected)}.`);
     }
+    if (outcome === 'CANCELLED' && contract.committedBuyerId && relUrl.trim().length < 8) return setLocal('A committed buyer exists: link the external evidence of that buyer\'s release.');
     setLocal(null);
-    rec.mutate({ id: contract.leadId, data: { version: contract.version, outcome, evidenceUrl: url.trim(), note: note.trim(), ...(outcome === 'CLOSED' ? { assignmentFeeReceived: f, closingCosts: c } : {}) } }, { onSuccess: () => { onDone(); toast({ title: outcome === 'CLOSED' ? 'Deal closed' : 'Deal cancelled' }); } });
+    rec.mutate({ id: contract.leadId, data: { version: contract.version, outcome, evidenceUrl: url.trim(), note: note.trim(), occurredAt: oc, ...(outcome === 'CANCELLED' && contract.committedBuyerId ? { buyerReleaseEvidenceUrl: relUrl.trim() } : {}), ...(outcome === 'CLOSED' ? { assignmentFeeReceived: f, closingCosts: c } : {}) } }, { onSuccess: () => { onDone(); toast({ title: outcome === 'CLOSED' ? 'Deal closed' : 'Deal cancelled' }); } });
   };
   return (
     <div className="space-y-3" data-testid="form-outcome">
       <Field label="Outcome"><select className={SELECT} value={outcome} onChange={(e) => setOutcome(e.target.value as DealOutcomeInputOutcome)} disabled={!isOwner} data-testid="select-outcome"><option value="CLOSED">Closed</option><option value="CANCELLED">Cancelled</option></select></Field>
       <Field label="Evidence link"><Input value={url} onChange={(e) => setUrl(e.target.value)} disabled={!isOwner} data-testid="input-outcome-url" /></Field>
+      <Field label="When it actually happened"><Input type="datetime-local" value={occ} onChange={(e) => setOcc(e.target.value)} disabled={!isOwner} data-testid="input-outcome-occurred" /></Field>
+      <p className="text-xs text-muted-foreground">Late recording is allowed only when the retained eligibility snapshot predates this event and no financial, source or buyer change before the event contradicts it. Current snapshots are sealed as you record milestones; originals stay in history as ELIGIBILITY REVIEW.</p>
       <Field label="Note"><Textarea rows={2} value={note} onChange={(e) => setNote(e.target.value)} disabled={!isOwner} data-testid="input-outcome-note" /></Field>
+      {outcome === 'CANCELLED' && contract.committedBuyerId && <Field label="Buyer release evidence link" hint="External evidence the committed buyer was released"><Input value={relUrl} onChange={(e) => setRelUrl(e.target.value)} disabled={!isOwner} data-testid="input-outcome-release-url" /></Field>}
       {outcome === 'CLOSED' && <div className="grid gap-3 sm:grid-cols-2">
         <Field label="Assignment fee received" hint={expected != null ? `Must equal ${money(expected)}` : 'Needs a committed buyer'}><Input inputMode="decimal" value={fee} onChange={(e) => setFee(e.target.value)} disabled={!isOwner} data-testid="input-outcome-fee" /></Field>
         <Field label="Closing costs paid"><Input inputMode="decimal" value={costs} onChange={(e) => setCosts(e.target.value)} disabled={!isOwner} data-testid="input-outcome-costs" /></Field></div>}
@@ -182,6 +188,72 @@ function OutcomeForm({ contract, onDone }: { contract: DealContract; onDone: () 
       {rec.error != null && <ErrorNotice error={rec.error} />}
       <Button size="sm" variant={outcome === 'CANCELLED' ? 'destructive' : 'default'} disabled={!isOwner || rec.isPending} onClick={submit} data-testid="button-record-outcome">{rec.isPending ? 'Recording...' : outcome === 'CLOSED' ? 'Record closing' : 'Record cancellation'}</Button>
       {!isOwner && <p className="text-xs text-muted-foreground">Only the owner can record the outcome.</p>}
+    </div>
+  );
+}
+
+function ExceptionForm({ contract, reopened, onDone }: { contract: DealContract; reopened: boolean; onDone: () => void }) {
+  const { isOwner } = useAccess();
+  const rec = useRecordTransactionException();
+  const { toast } = useToast();
+  const live = contract.status === 'UNDER_CONTRACT' || contract.status === 'CLOSING';
+  const kinds: { k: TransactionExceptionInputKind; label: string }[] = [
+    ...(live ? [{ k: 'AMEND_CLOSING' as const, label: 'Signed closing-date amendment' }] : []),
+    ...(live && contract.committedBuyerId ? [{ k: 'RELEASE_BUYER' as const, label: 'Release committed buyer (externally evidenced)' }] : []),
+    ...(contract.status === 'CANCELLED' && !reopened ? [{ k: 'RESTART_CANCELLED' as const, label: 'Restart cancelled deal for a new reviewed attempt' }] : []),
+  ];
+  const [kind, setKind] = useState<TransactionExceptionInputKind | ''>(kinds[0]?.k ?? '');
+  const [url, setUrl] = useState(''); const [note, setNote] = useState(''); const [eff, setEff] = useState(''); const [newAt, setNewAt] = useState(''); const [consent, setConsent] = useState('');
+  const [local, setLocal] = useState<string | null>(null);
+  if (kinds.length === 0) return <p className="text-sm text-muted-foreground">No exception applies to this contract state. A closed deal cannot be restarted, and a cancelled deal that is already reopened cannot be restarted again.</p>;
+  const submit = () => {
+    const e = fromLocalInput(eff); const n = fromLocalInput(newAt);
+    if (!kind) return setLocal('Select the exception.');
+    if (url.trim().length < 8) return setLocal('Evidence link is required.');
+    if (note.trim().length < 10) return setLocal('A note of at least 10 characters is required.');
+    if (!e || new Date(e).getTime() > Date.now()) return setLocal('Effective time is when it actually happened and cannot be in the future.');
+    if (kind === 'AMEND_CLOSING') {
+      if (!n) return setLocal('Enter the new closing date from the signed amendment.');
+      if (contract.committedBuyerId && consent.trim().length < 8) return setLocal('A buyer is committed: separate buyer consent evidence is required.');
+    }
+    setLocal(null);
+    rec.mutate({ id: contract.leadId, data: { version: contract.version, kind, evidenceUrl: url.trim(), note: note.trim(), effectiveAt: e,
+      ...(kind === 'AMEND_CLOSING' && n ? { newClosingAt: n } : {}),
+      ...(kind === 'AMEND_CLOSING' && contract.committedBuyerId ? { buyerConsentEvidenceUrl: consent.trim() } : {}),
+      ...(kind === 'RELEASE_BUYER' && contract.committedBuyerId ? { buyerId: contract.committedBuyerId } : {}) } },
+      { onSuccess: () => { onDone(); setUrl(''); setNote(''); setEff(''); setNewAt(''); setConsent(''); toast({ title: 'Exception recorded' }); } });
+  };
+  return (
+    <div className="space-y-3" data-testid="form-exception">
+      <p className="text-xs text-muted-foreground">Recorded server time is set automatically. Earlier dates, commitments and prior states stay in history. An effective time cannot overwrite a later exception. Price, deposit and assignment terms are preserved.</p>
+      <Field label="Exception"><select className={SELECT} value={kind} onChange={(e) => setKind(e.target.value as TransactionExceptionInputKind)} disabled={!isOwner} data-testid="select-exception-kind">{kinds.map((x) => <option key={x.k} value={x.k}>{x.label}</option>)}</select></Field>
+      <Field label="Evidence link"><Input value={url} onChange={(e) => setUrl(e.target.value)} disabled={!isOwner} data-testid="input-exception-url" /></Field>
+      <Field label="When it actually took effect"><Input type="datetime-local" value={eff} onChange={(e) => setEff(e.target.value)} disabled={!isOwner} data-testid="input-exception-effective" /></Field>
+      {kind === 'AMEND_CLOSING' && <Field label="New closing date"><Input type="datetime-local" value={newAt} onChange={(e) => setNewAt(e.target.value)} disabled={!isOwner} data-testid="input-exception-new-closing" /></Field>}
+      {kind === 'AMEND_CLOSING' && contract.committedBuyerId && <Field label="Buyer consent evidence link" hint="Separate from the amendment"><Input value={consent} onChange={(e) => setConsent(e.target.value)} disabled={!isOwner} data-testid="input-exception-consent" /></Field>}
+      <Field label="Note"><Textarea rows={2} value={note} onChange={(e) => setNote(e.target.value)} disabled={!isOwner} data-testid="input-exception-note" /></Field>
+      {local && <p className="text-sm text-destructive" data-testid="text-exception-error">{local}</p>}
+      {rec.error != null && <ErrorNotice error={rec.error} />}
+      <Button size="sm" disabled={!isOwner || rec.isPending} onClick={submit} data-testid="button-record-exception">{rec.isPending ? 'Recording...' : 'Record exception'}</Button>
+      {!isOwner && <p className="text-xs text-muted-foreground">Only the owner can amend closing dates, release a committed buyer or restart a cancelled deal. Other roles can read the history below.</p>}
+    </div>
+  );
+}
+
+function ExceptionHistory({ contract }: { contract: DealContract }) {
+  const h = contract.history ?? [];
+  return (
+    <div data-testid="panel-exception-history">
+      <p className="eyebrow mb-2">Attempt {contract.attemptNumber ?? 1} / retained history ({h.length})</p>
+      {h.length === 0 ? <p className="text-sm text-muted-foreground">No amendments, releases or restarts recorded.</p> : (
+        <ol className="space-y-2">{[...h].reverse().map((x, i) => (
+          <li key={`${x.recordedAt}:${i}`} className="border-t border-border pt-2 text-sm">
+            <p><span className="tag tone-ink mr-2">{x.kind.replace(/_/g, ' ')}</span><span className="font-mono text-xs text-muted-foreground">effective {fmtDate(x.effectiveAt)} / recorded {fmtDate(x.recordedAt)} by {x.recordedBy}</span></p>
+            <p className="whitespace-pre-wrap">{x.note} <EvidenceLink url={x.evidenceUrl} label="evidence" /></p>
+            <details className="text-xs"><summary className="cursor-pointer text-muted-foreground">Previous state</summary>
+              <pre className="mt-1 overflow-x-auto whitespace-pre-wrap font-mono">{JSON.stringify(x.previousState, null, 2)}</pre></details>
+          </li>))}</ol>
+      )}
     </div>
   );
 }
@@ -211,6 +283,13 @@ export function DealOperationsPanel({ detail }: { detail: LeadDetail }) {
       <Block title="Contract" tid="panel-contract">
         {!c ? <CreateContract detail={detail} onDone={done} /> : (
           <div className="space-y-4">
+            {c.status === 'CANCELLED' && detail.lead.stage !== 'DEAD_DEAL' && (
+              <div className="border border-signal p-3" data-testid="panel-new-attempt">
+                <p className="eyebrow mb-2">New attempt {(c.attemptNumber ?? 1) + 1}</p>
+                <p className="mb-2 text-xs text-muted-foreground">The cancelled contract below is retained. Drafting archives that attempt and starts the next one.</p>
+                <CreateContract detail={detail} onDone={done} />
+              </div>
+            )}
             <div className="flex flex-wrap items-center gap-2"><span className={`tag ${STATUS_TONE[c.status]}`} data-testid="tag-contract-status">{STATUS_LABEL[c.status]}</span>
               <span className={`font-mono text-xs ${isOverdue(c.closingAt) && c.status !== 'CLOSED' && c.status !== 'CANCELLED' ? 'font-semibold text-destructive' : 'text-muted-foreground'}`}>Closing {fmtDate(c.closingAt)} ({ago(c.closingAt)})</span></div>
             <dl className="grid gap-x-6 gap-y-2 text-sm sm:grid-cols-2 lg:grid-cols-4" data-testid="list-contract-terms">
@@ -264,7 +343,8 @@ export function DealOperationsPanel({ detail }: { detail: LeadDetail }) {
               })}</ul>
               {c.status === 'CLOSED' || c.status === 'CANCELLED' ? (
                 <div className="mt-4 border-t border-border pt-3 text-sm" data-testid="panel-outcome">
-                  <p className="font-semibold">{c.status === 'CLOSED' ? 'Closed' : 'Cancelled'} {fmtDate(c.closedAt)}</p>
+                  <p className="font-semibold">{c.status === 'CLOSED' ? 'Closed' : 'Cancelled'}: actual outcome {fmtDate(c.status === 'CLOSED' ? c.closedAt : c.cancelledAt)}</p>
+                  <p className="text-xs text-muted-foreground">Recorded in this system: {fmtDate(c.outcomeRecordedAt)}. History and milestone entries have their own recording times.</p>
                   {c.status === 'CLOSED' && <p className="font-mono text-xs">Fee {money(c.assignmentFeeReceived)} / costs {money(c.closingCosts)} / net {money(c.netProceeds)}</p>}
                   <p className="text-muted-foreground">{c.outcomeNote} <EvidenceLink url={c.outcomeEvidenceUrl} label="evidence" /></p></div>
               ) : <div className="mt-4 border-t border-border pt-3"><MilestoneForm key={c.version} contract={c} onDone={done} /></div>}
@@ -273,6 +353,15 @@ export function DealOperationsPanel({ detail }: { detail: LeadDetail }) {
           </div>
         )}
       </Block>
+
+        {c && c.status !== 'DRAFT' && (
+        <Block title="Exceptions and history" tid="panel-exceptions">
+          <div className="grid gap-5 lg:grid-cols-2">
+            <ExceptionForm key={`${c.version}:${c.status}:${detail.lead.stage === 'DEAD_DEAL'}`} reopened={detail.lead.stage !== 'DEAD_DEAL'} contract={c} onDone={done} />
+            <div className="border-border lg:border-l lg:pl-5"><ExceptionHistory contract={c} /></div>
+          </div>
+        </Block>
+      )}
 
       {ops.jobs.length > 0 && (
         <Block title="Worker activity on this deal" tid="panel-ops-jobs">

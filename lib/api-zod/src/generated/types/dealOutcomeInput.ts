@@ -31,4 +31,10 @@ export interface DealOutcomeInput {
      * @maximum 1000000000
      */
   closingCosts?: number;
+  /**
+     * @minLength 8
+     * @maxLength 2000
+     */
+  buyerReleaseEvidenceUrl?: string;
+  occurredAt?: string;
 }

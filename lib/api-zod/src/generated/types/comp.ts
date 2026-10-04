@@ -33,4 +33,8 @@ export interface Comp {
   /** @minLength 1 */
   source: string;
   verified: boolean;
+  /** @maxLength 200 */
+  saleEvidenceId?: string;
+  /** @maxLength 200 */
+  conditionEvidenceId?: string;
 }

@@ -12,6 +12,7 @@ import type { BuyerInput } from './buyerInput';
 import type { BuyerQualificationTask } from './buyerQualificationTask';
 import type { BuyerVerificationHistory } from './buyerVerificationHistory';
 import type { BuyerVerificationStatus } from './buyerVerificationStatus';
+import type { BuyerVerifiedFundingTypesItem } from './buyerVerifiedFundingTypesItem';
 
 export type Buyer = BuyerInput & ({
   id: string;
@@ -25,6 +26,7 @@ export type Buyer = BuyerInput & ({
   verificationNote?: string | null;
   /** @nullable */
   availableFunds?: number | null;
+  verifiedFundingTypes?: BuyerVerifiedFundingTypesItem[];
   /** @nullable */
   evidenceAt?: string | null;
   /** @nullable */

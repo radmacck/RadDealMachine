@@ -9,6 +9,7 @@ import { eq, and, sql } from "drizzle-orm";
 import { db, pool, leadsTable, auditTable, analysesTable, intelligenceTable } from "@workspace/db";
 import { logger } from "../lib/logger";
 import * as store from "./deal-store";
+import { exerciseEvidence } from "./exercise-evidence";
 import { commandCenter } from "./command-center";
 import { DEFAULT_ASSUMPTIONS, type LeadInput, type UnderwritingInput } from "@workspace/deal-domain";
 
@@ -47,7 +48,7 @@ async function exercise() {
     },actor,now);
     let detail = await store.leadDetail(id);
     assert.equal(detail.lead.stage,"ENRICHING");
-    const underwriting: UnderwritingInput = {
+    let underwriting: UnderwritingInput = {
       version:detail.lead.version,conditionConfirmed:true,repairsComplete:true,
       comps:[290000,300000,310000].map((salePrice,index) => ({
         id:`synthetic-${index}`,address:`SYNTHETIC COMP ${index} Example Lane`,salePrice,sqft:1000,
@@ -56,6 +57,7 @@ async function exercise() {
       })),
       repairs:[{category:"Synthetic repair scope",low:10000,expected:20000,high:30000,confidence:0.8,source:"Synthetic quote"}],
     };
+    underwriting = await exerciseEvidence(id,underwriting,actor,now);
     detail = await store.saveUnderwriting(id,underwriting,actor,now);
     // Current policy may differ from default; test determinism with its persisted snapshot.
     assert.ok(detail.analysis);
