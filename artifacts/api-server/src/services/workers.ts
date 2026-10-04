@@ -1,8 +1,9 @@
 import { and, eq, lt, desc } from "drizzle-orm";
 import type { z } from "zod";
-import { db, jobsTable, contractsTable } from "@workspace/db";
+import { db, jobsTable, contractsTable, leadsTable } from "@workspace/db";
 import { SubmitWorkerJobBody } from "@workspace/api-zod";
-import { assertOperationsRole, type OfferActor } from "@workspace/deal-domain";
+import { assertOperationsRole, DomainError, type OfferActor } from "@workspace/deal-domain";
+import { enrichProperty, prepareSellerBrief } from "./research-worker";
 import { queueJob, jobRecord, allBuyerRecords, contractRecord } from "./operations-records";
 import { refreshMatches, refreshAllMatches } from "./matching-store";
 import { listLeads, leadDetail } from "./deal-store";
@@ -14,8 +15,12 @@ export async function listWorkerJobs() {
 export async function submitWorkerJob(input: z.infer<typeof SubmitWorkerJobBody>, actor: OfferActor) {
   assertOperationsRole(actor,["OWNER","ANALYST"]);
   const parsed = SubmitWorkerJobBody.parse(input);
+  if (["ENRICH_PROPERTY","PREPARE_BRIEF"].includes(parsed.kind)&&!parsed.leadId) throw new DomainError("Address checks and prepared briefs require one selected deal.");
   if (parsed.leadId) await leadDetail(parsed.leadId);
-  return queueJob(db,parsed.kind,parsed.leadId??null,`manual:${actor.id}:${parsed.idempotencyKey}`,actor.id);
+  return db.transaction(async tx=>{
+    if (parsed.leadId) await tx.select({id:leadsTable.id}).from(leadsTable).where(eq(leadsTable.id,parsed.leadId)).for("update");
+    return queueJob(tx,parsed.kind,parsed.leadId??null,`manual:${actor.id}:${parsed.idempotencyKey}`,actor.id);
+  });
 }
 export async function reviewDeadlines(now = new Date()) {
   const leads = await listLeads();
@@ -31,6 +36,23 @@ export async function runWorkerOnce(now = new Date(), schedule = false, onlyJobI
     const bucket = Math.floor(now.getTime()/(5*60000));
     await queueJob(db,"REVIEW_DEADLINES",null,`scheduled:deadlines:${bucket}`,"system:scheduler");
     await queueJob(db,"MATCH_BUYERS",null,`scheduled:matches:${bucket}`,"system:scheduler");
+    // Bootstrap existing reviewed deals once per snapshot, not a paid AI run every tick.
+    const rows = await db.select().from(leadsTable);
+    let seeded = 0;
+    for (const lead of rows) {
+      const age = now.getTime()-Date.parse(String(lead.analysis?.calculatedAt));
+      if (seeded>=10) break;
+      if (!lead.analysisSnapshotId || !["STRONG","NEGOTIABLE"].includes(String(lead.analysis?.classification)) ||
+        ["CLOSED","DEAD_DEAL"].includes(lead.stage) || !Number.isFinite(age) || age<0 || age>=7*86400000) continue;
+      const key = `brief:${lead.id}:${lead.analysisSnapshotId}`;
+      const [exists] = await db.select({id:jobsTable.id}).from(jobsTable).where(eq(jobsTable.idempotencyKey,key));
+      if (exists) continue;
+      await db.transaction(async tx=>{
+        await tx.select({id:leadsTable.id}).from(leadsTable).where(eq(leadsTable.id,lead.id)).for("update");
+        await queueJob(tx,"PREPARE_BRIEF",lead.id,key,"system:scheduler");
+      });
+      seeded++;
+    }
   }
   await db.update(jobsTable).set({state:"QUEUED",message:"Worker lease expired; work requeued.",updatedAt:now})
     .where(and(eq(jobsTable.state,"RUNNING"),lt(jobsTable.updatedAt,new Date(now.getTime()-3*60000)),lt(jobsTable.attempts,3)));
@@ -43,6 +65,12 @@ export async function runWorkerOnce(now = new Date(), schedule = false, onlyJobI
     return claimed??null;
   });
   if (!row) return null;
+  const heartbeat = setInterval(()=>{
+    void db.update(jobsTable).set({updatedAt:new Date()})
+      .where(and(eq(jobsTable.id,row.id),eq(jobsTable.state,"RUNNING"),eq(jobsTable.attempts,row.attempts)))
+      .catch(()=>logger.warn({jobId:row.id},"Worker heartbeat failed; the persisted lease may need recovery."));
+  },15000);
+  heartbeat.unref();
   try {
     let message: string;
     if (row.kind==="MATCH_BUYERS") {
@@ -51,22 +79,30 @@ export async function runWorkerOnce(now = new Date(), schedule = false, onlyJobI
         message = `Reviewed ${result.matches.length} buyers; ${result.matches.filter(m=>m.eligible).length} currently qualified for this exact deal.`;
       } else message = `Recomputed criteria, funding, verification and deadlines for ${await refreshAllMatches(now)} active signed transactions.`;
     } else if (row.kind==="REVIEW_DEADLINES") message = await reviewDeadlines(now);
+    else if (row.kind==="ENRICH_PROPERTY"&&row.leadId) message = await enrichProperty(row.leadId,row.id,now);
+    else if (row.kind==="PREPARE_BRIEF"&&row.leadId) message = await prepareSellerBrief(row.leadId,row.id,now);
     else throw new Error("No executor is registered for this worker kind.");
-    const [finished] = await db.update(jobsTable).set({state:"SUCCEEDED",message,updatedAt:new Date()}).where(and(eq(jobsTable.id,row.id),eq(jobsTable.state,"RUNNING"))).returning();
+    const [finished] = await db.update(jobsTable).set({state:"SUCCEEDED",message,updatedAt:new Date()}).where(and(eq(jobsTable.id,row.id),eq(jobsTable.state,"RUNNING"),eq(jobsTable.attempts,row.attempts))).returning();
     return finished?jobRecord(finished):null;
   } catch (error) {
     const message = error instanceof Error?error.message:"Worker failed. No success was recorded.";
-    const [failed] = await db.update(jobsTable).set({state:"FAILED",message,updatedAt:new Date()}).where(eq(jobsTable.id,row.id)).returning();
+    const [failed] = await db.update(jobsTable).set({state:"FAILED",message,updatedAt:new Date()}).where(and(eq(jobsTable.id,row.id),eq(jobsTable.state,"RUNNING"),eq(jobsTable.attempts,row.attempts))).returning();
     logger.warn({jobId:row.id,kind:row.kind},"Worker failed; inspect the persisted failure and retry safely.");
     return failed?jobRecord(failed):null;
-  }
+  } finally { clearInterval(heartbeat); }
 }
 export function startWorkers() {
   let busy = false;
+  let lastScheduledBucket = -1;
   const tick = async () => {
     if (busy) return;
     busy = true;
-    try { await runWorkerOnce(new Date(),true); }
+    try {
+      const now = new Date(), bucket = Math.floor(now.getTime()/(5*60000));
+      const schedule = bucket!==lastScheduledBucket;
+      await runWorkerOnce(now,schedule);
+      if (schedule) lastScheduledBucket = bucket;
+    }
     catch (error) { logger.error({err:error},"Worker polling failed; queued jobs remain persisted."); }
     finally { busy=false; }
   };

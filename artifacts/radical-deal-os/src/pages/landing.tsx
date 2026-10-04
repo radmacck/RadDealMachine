@@ -61,9 +61,9 @@ export default function Landing() {
         <section className="grid gap-6 py-8 md:grid-cols-2">
           <div>
             <p className="eyebrow mb-2">Honest about scope</p>
-            <p className="text-sm text-muted-foreground">This release covers research, underwriting, calls, immutable offer drafts, owner authorization, and recording offers a person actually communicated. It also tracks buyers, contracts, closing evidence and worker activity. It never sends messages, never generates signatures, and does not scrape external sources or run AI research.</p>
+            <p className="text-sm text-muted-foreground">An action-oriented command center connects sourced research, deterministic underwriting, prepared seller questions, owner-approved offers, qualified buyer matches, recorded contracts and closing evidence. Public Census address checks and AI hypothesis preparation run as observable jobs. It never sends messages, generates signatures or transfers funds.</p>
           </div>
-          <div><p className="eyebrow mb-2">Not supported</p><p className="text-sm text-muted-foreground">External source automation and AI research workers are not implemented. Verification is human review, not bank or API checks.</p></div>
+          <div><p className="eyebrow mb-2">Explicit boundaries</p><p className="text-sm text-muted-foreground">Listing discovery, comparable-sale feeds, automated ownership checks and restricted-site scraping are not implemented. Buyer funding and signed documents require human review. AI hypotheses use Replit credits and never become verified facts or offer authority.</p></div>
         </section>
       </main>
     </div>

@@ -1,10 +1,10 @@
-# [Project name]
+# Radical Deal OS
 
-_Replace the heading above with the project's name, and this line with one sentence describing what this app does for users._
+Internal wholesaling operating system connecting research, seller conversations, owner-approved offers, qualified buyers, recorded contracts and evidenced closing.
 
 ## Run & Operate
 
-- `pnpm --filter @workspace/api-server run dev` — run the API server (port 5000)
+- Start the registered artifact workflows for frontend and API; they inject the managed port and route configuration.
 - `pnpm run typecheck` — full typecheck across all packages
 - `pnpm run build` — typecheck + build all packages
 - `pnpm --filter @workspace/api-spec run codegen` — regenerate API hooks and Zod schemas from the OpenAPI spec
@@ -18,27 +18,36 @@ _Replace the heading above with the project's name, and this line with one sente
 - DB: PostgreSQL + Drizzle ORM
 - Validation: Zod (`zod/v4`), `drizzle-zod`
 - API codegen: Orval (from OpenAPI spec)
-- Build: esbuild (CJS bundle)
+- Build: esbuild (ESM API bundle), Vite web frontend
 
 ## Where things live
 
-_Populate as you build — short repo map plus pointers to the source-of-truth file for DB schema, API contracts, theme files, etc._
+- `lib/deal-domain` — deterministic underwriting, provenance, permissions, readiness and buyer fit.
+- `lib/api-spec/openapi.yaml` — API contract; regenerate, never hand-edit generated hooks and validators.
+- `lib/db` — persisted domain records and audit history.
+- `artifacts/api-server/src/services` — transactional commands and leased workers.
+- `artifacts/radical-deal-os/src` — existing authenticated web experience and reusable forms.
 
 ## Architecture decisions
 
-_Populate as you build — non-obvious choices a reader couldn't infer from the code (3-5 bullets)._
+See `.agents/memory/MEMORY.md` and its topic files for durable product direction and authority decisions. Keep authentication in place during testing.
 
 ## Product
 
-_Describe the high-level user-facing capabilities of this app once they exist._
+The command center derives actionable work from live state and role. Seller work, financial approval, buyer qualification, transaction milestones and outcome reconciliation have connected views.
+
+Public Census geocoding observes address geography, not ownership or comps. Managed OpenAI prepares bounded, source-linked hypotheses and questions using Replit credits. It sends no messages and performs no signatures or funds transfers. Listing/comparable feeds and automated bank/ownership verification are not implemented.
 
 ## User preferences
 
-_Populate as you build — explicit user instructions worth remembering across sessions._
+Canonical user direction is maintained in `.agents/memory/build-direction.md`.
 
 ## Gotchas
 
-_Populate as you build — sharp edges, "always run X before Y" rules._
+- Run `test:auth`, `test:research` and `lib/deal-domain` tests, then the API's `exercise:seller`, `exercise:offers`, `exercise:buyers`, `exercise:transactions` and `exercise:research` scripts.
+- Service exercises use isolated PostgreSQL schemas. Do not exercise owner claims, paid-provider fixtures or transaction outcomes against real workspace records.
+- Research exercise makes actual Census/OpenAI calls on conspicuously synthetic input and uses credits.
+- Screenshot capture is anonymous. Do not claim signed-in UI was verified from it or add an authentication bypass.
 
 ## Pointers
 

@@ -40,6 +40,13 @@ try {
     authorityEvidenceId:authority.id,expiresAt:future(2),reason:"Synthetic owner review",nextAction:"Synthetic exact terms",followUpAt:future(1)},actor,now);
   detail = await offers.communicateOffer(id,offerId,{version:detail.lead.version,amount:110000,channel:"PHONE",
     evidence:"Synthetic human communication only.",nextAction:"Prepare contract.",followUpAt:future(1)},operator,now);
+  const approvedSnapshot = detail.analysisSnapshotId;
+  await seller.addIntelligence(id,{classification:"AI_HYPOTHESIS",category:"prepared_questions",statement:"The seller may value clear coordination.",
+    source:"Synthetic model-only test",sourceType:"MODEL",confidence:0.4,capturedAt:now.toISOString(),
+    question:"What coordination would help?",action:"Ask the seller and record the actual answer."},actor.id,now);
+  detail = await seller.leadDetail(id);
+  assert.equal(detail.analysisSnapshotId,approvedSnapshot);
+  assert.equal(detail.offers[0]?.effectiveStatus,"COMMUNICATED");
   await assert.rejects(transactions.createContract(id,{version:detail.lead.version,offerId,closingAt:future(31)},operator,now),/approved closing/);
   let op = await transactions.createContract(id,{version:detail.lead.version,offerId,closingAt:future(20)},operator,now);
   assert.equal(op.contract?.status,"DRAFT"); assert.equal(op.contract?.purchasePrice,110000);
@@ -50,6 +57,12 @@ try {
   op = await transactions.executeContract(id,execute,actor,now);
   assert.equal(op.contract?.status,"UNDER_CONTRACT");
   assert.equal((await seller.leadDetail(id)).lead.stage,"UNDER_CONTRACT");
+  detail = await seller.leadDetail(id);
+  await assert.rejects(seller.recordCall(id,{version:detail.lead.version,outcome:"NOT_INTERESTED",notes:"Synthetic only.",nextAction:"Try to cancel.",followUpAt:future(1)},actor.id,now),/cannot cancel/);
+  detail = await seller.recordCall(id,{version:detail.lead.version,outcome:"CONNECTED",notes:"Synthetic closing coordination; no external call.",
+    nextAction:"Confirm escrow status.",followUpAt:future(1)},actor.id,now);
+  assert.equal(detail.lead.stage,"UNDER_CONTRACT");
+  assert.equal((await dealOperations(id,now)).contract?.purchasePrice,110000);
   let buyer = await buyers.createBuyer({name:"SYNTHETIC QUALIFIED BUYER",email:"synthetic@example.com",phone:"",
     source:"Synthetic service exercise",status:"ACTIVE",criteria:{states:["TX"],cities:["Synthetic City"],zipCodes:[],
       propertyTypes:["SINGLE_FAMILY"],maxPurchasePrice:200000,maxRepairs:50000,minBeds:2,minSqft:500,maxSqft:2000,closingDays:3}},actor);

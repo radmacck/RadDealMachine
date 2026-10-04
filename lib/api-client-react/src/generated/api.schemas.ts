@@ -369,6 +369,8 @@ export type WorkerJobInputKind = typeof WorkerJobInputKind[keyof typeof WorkerJo
 export const WorkerJobInputKind = {
   MATCH_BUYERS: 'MATCH_BUYERS',
   REVIEW_DEADLINES: 'REVIEW_DEADLINES',
+  ENRICH_PROPERTY: 'ENRICH_PROPERTY',
+  PREPARE_BRIEF: 'PREPARE_BRIEF',
 } as const;
 
 export interface WorkerJobInput {
@@ -387,6 +389,8 @@ export type WorkerJobKind = typeof WorkerJobKind[keyof typeof WorkerJobKind];
 export const WorkerJobKind = {
   MATCH_BUYERS: 'MATCH_BUYERS',
   REVIEW_DEADLINES: 'REVIEW_DEADLINES',
+  ENRICH_PROPERTY: 'ENRICH_PROPERTY',
+  PREPARE_BRIEF: 'PREPARE_BRIEF',
 } as const;
 
 export type WorkerJobState = typeof WorkerJobState[keyof typeof WorkerJobState];

@@ -643,7 +643,7 @@ components:
       type: object
       required: [kind, idempotencyKey]
       properties:
-        kind: { type: string, enum: [MATCH_BUYERS, REVIEW_DEADLINES] }
+        kind: { type: string, enum: [MATCH_BUYERS, REVIEW_DEADLINES, ENRICH_PROPERTY, PREPARE_BRIEF] }
         leadId: { type: string }
         idempotencyKey: { type: string, minLength: 8, maxLength: 200 }
     WorkerJob:
@@ -651,7 +651,7 @@ components:
       required: [id, kind, state, leadId, requestedBy, message, attempts, createdAt, updatedAt]
       properties:
         id: { type: string }
-        kind: { type: string, enum: [MATCH_BUYERS, REVIEW_DEADLINES] }
+        kind: { type: string, enum: [MATCH_BUYERS, REVIEW_DEADLINES, ENRICH_PROPERTY, PREPARE_BRIEF] }
         state: { type: string, enum: [QUEUED, RUNNING, SUCCEEDED, FAILED] }
         leadId: { type: [string, "null"] }
         requestedBy: { type: string }

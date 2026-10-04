@@ -4771,7 +4771,7 @@ export const GetCommandCenterResponse = zod.object({
 })),
   "jobs": zod.array(zod.object({
   "id": zod.string(),
-  "kind": zod.enum(['MATCH_BUYERS', 'REVIEW_DEADLINES']),
+  "kind": zod.enum(['MATCH_BUYERS', 'REVIEW_DEADLINES', 'ENRICH_PROPERTY', 'PREPARE_BRIEF']),
   "state": zod.enum(['QUEUED', 'RUNNING', 'SUCCEEDED', 'FAILED']),
   "leadId": zod.string().nullable(),
   "requestedBy": zod.string(),
@@ -4817,7 +4817,7 @@ export const GetCommandCenterResponse = zod.object({
 }))),
   "jobs": zod.array(zod.object({
   "id": zod.string(),
-  "kind": zod.enum(['MATCH_BUYERS', 'REVIEW_DEADLINES']),
+  "kind": zod.enum(['MATCH_BUYERS', 'REVIEW_DEADLINES', 'ENRICH_PROPERTY', 'PREPARE_BRIEF']),
   "state": zod.enum(['QUEUED', 'RUNNING', 'SUCCEEDED', 'FAILED']),
   "leadId": zod.string().nullable(),
   "requestedBy": zod.string(),
@@ -5378,7 +5378,7 @@ export const GetDealOperationsResponse = zod.object({
 })),
   "jobs": zod.array(zod.object({
   "id": zod.string(),
-  "kind": zod.enum(['MATCH_BUYERS', 'REVIEW_DEADLINES']),
+  "kind": zod.enum(['MATCH_BUYERS', 'REVIEW_DEADLINES', 'ENRICH_PROPERTY', 'PREPARE_BRIEF']),
   "state": zod.enum(['QUEUED', 'RUNNING', 'SUCCEEDED', 'FAILED']),
   "leadId": zod.string().nullable(),
   "requestedBy": zod.string(),
@@ -5446,7 +5446,7 @@ export const RefreshMatchesResponse = zod.object({
 })),
   "jobs": zod.array(zod.object({
   "id": zod.string(),
-  "kind": zod.enum(['MATCH_BUYERS', 'REVIEW_DEADLINES']),
+  "kind": zod.enum(['MATCH_BUYERS', 'REVIEW_DEADLINES', 'ENRICH_PROPERTY', 'PREPARE_BRIEF']),
   "state": zod.enum(['QUEUED', 'RUNNING', 'SUCCEEDED', 'FAILED']),
   "leadId": zod.string().nullable(),
   "requestedBy": zod.string(),
@@ -5536,7 +5536,7 @@ export const RecordBuyerResponseResponse = zod.object({
 })),
   "jobs": zod.array(zod.object({
   "id": zod.string(),
-  "kind": zod.enum(['MATCH_BUYERS', 'REVIEW_DEADLINES']),
+  "kind": zod.enum(['MATCH_BUYERS', 'REVIEW_DEADLINES', 'ENRICH_PROPERTY', 'PREPARE_BRIEF']),
   "state": zod.enum(['QUEUED', 'RUNNING', 'SUCCEEDED', 'FAILED']),
   "leadId": zod.string().nullable(),
   "requestedBy": zod.string(),
@@ -5613,7 +5613,7 @@ export const CreateContractResponse = zod.object({
 })),
   "jobs": zod.array(zod.object({
   "id": zod.string(),
-  "kind": zod.enum(['MATCH_BUYERS', 'REVIEW_DEADLINES']),
+  "kind": zod.enum(['MATCH_BUYERS', 'REVIEW_DEADLINES', 'ENRICH_PROPERTY', 'PREPARE_BRIEF']),
   "state": zod.enum(['QUEUED', 'RUNNING', 'SUCCEEDED', 'FAILED']),
   "leadId": zod.string().nullable(),
   "requestedBy": zod.string(),
@@ -5698,7 +5698,7 @@ export const ExecuteContractResponse = zod.object({
 })),
   "jobs": zod.array(zod.object({
   "id": zod.string(),
-  "kind": zod.enum(['MATCH_BUYERS', 'REVIEW_DEADLINES']),
+  "kind": zod.enum(['MATCH_BUYERS', 'REVIEW_DEADLINES', 'ENRICH_PROPERTY', 'PREPARE_BRIEF']),
   "state": zod.enum(['QUEUED', 'RUNNING', 'SUCCEEDED', 'FAILED']),
   "leadId": zod.string().nullable(),
   "requestedBy": zod.string(),
@@ -5782,7 +5782,7 @@ export const RecordClosingMilestoneResponse = zod.object({
 })),
   "jobs": zod.array(zod.object({
   "id": zod.string(),
-  "kind": zod.enum(['MATCH_BUYERS', 'REVIEW_DEADLINES']),
+  "kind": zod.enum(['MATCH_BUYERS', 'REVIEW_DEADLINES', 'ENRICH_PROPERTY', 'PREPARE_BRIEF']),
   "state": zod.enum(['QUEUED', 'RUNNING', 'SUCCEEDED', 'FAILED']),
   "leadId": zod.string().nullable(),
   "requestedBy": zod.string(),
@@ -5874,7 +5874,7 @@ export const RecordDealOutcomeResponse = zod.object({
 })),
   "jobs": zod.array(zod.object({
   "id": zod.string(),
-  "kind": zod.enum(['MATCH_BUYERS', 'REVIEW_DEADLINES']),
+  "kind": zod.enum(['MATCH_BUYERS', 'REVIEW_DEADLINES', 'ENRICH_PROPERTY', 'PREPARE_BRIEF']),
   "state": zod.enum(['QUEUED', 'RUNNING', 'SUCCEEDED', 'FAILED']),
   "leadId": zod.string().nullable(),
   "requestedBy": zod.string(),
@@ -5889,7 +5889,7 @@ export const RecordDealOutcomeResponse = zod.object({
 
 export const ListWorkerJobsResponseItem = zod.object({
   "id": zod.string(),
-  "kind": zod.enum(['MATCH_BUYERS', 'REVIEW_DEADLINES']),
+  "kind": zod.enum(['MATCH_BUYERS', 'REVIEW_DEADLINES', 'ENRICH_PROPERTY', 'PREPARE_BRIEF']),
   "state": zod.enum(['QUEUED', 'RUNNING', 'SUCCEEDED', 'FAILED']),
   "leadId": zod.string().nullable(),
   "requestedBy": zod.string(),
@@ -5907,14 +5907,14 @@ export const submitWorkerJobBodyIdempotencyKeyMax = 200;
 
 
 export const SubmitWorkerJobBody = zod.object({
-  "kind": zod.enum(['MATCH_BUYERS', 'REVIEW_DEADLINES']),
+  "kind": zod.enum(['MATCH_BUYERS', 'REVIEW_DEADLINES', 'ENRICH_PROPERTY', 'PREPARE_BRIEF']),
   "leadId": zod.string().optional(),
   "idempotencyKey": zod.string().min(submitWorkerJobBodyIdempotencyKeyMin).max(submitWorkerJobBodyIdempotencyKeyMax)
 })
 
 export const SubmitWorkerJobResponse = zod.object({
   "id": zod.string(),
-  "kind": zod.enum(['MATCH_BUYERS', 'REVIEW_DEADLINES']),
+  "kind": zod.enum(['MATCH_BUYERS', 'REVIEW_DEADLINES', 'ENRICH_PROPERTY', 'PREPARE_BRIEF']),
   "state": zod.enum(['QUEUED', 'RUNNING', 'SUCCEEDED', 'FAILED']),
   "leadId": zod.string().nullable(),
   "requestedBy": zod.string(),

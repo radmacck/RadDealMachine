@@ -109,7 +109,7 @@ export default function Dashboard() {
             </section>
             <section data-testid="panel-jobs">
               <div className="mb-3 flex items-center justify-between"><p className="eyebrow">Worker activity ({d.jobs.length})</p><Link href="/workers" className="text-xs underline" data-testid="link-workers">Open workers</Link></div>
-              {d.jobs.length === 0 ? <p className="ledger p-4 text-sm text-muted-foreground">No jobs yet. Matching and deadline review only; no external scraping or AI runs.</p> : (
+              {d.jobs.length === 0 ? <p className="ledger p-4 text-sm text-muted-foreground">No jobs yet. Intake queues public address checks; underwriting queues AI hypotheses. Matching and deadline checks recur. Results and failures appear here.</p> : (
                 <ul className="space-y-2">{d.jobs.slice(0, 6).map((j) => (
                   <li key={j.id} className="ledger flex items-center gap-2 p-3 text-sm"><span className={`tag ${j.state === 'FAILED' ? 'tone-stop' : j.state === 'SUCCEEDED' ? 'tone-go' : 'tone-muted'}`}>{j.state}</span><span className="min-w-0 flex-1 truncate">{j.message || j.kind.replace(/_/g, ' ').toLowerCase()}</span><span className="font-mono text-[11px] text-muted-foreground">{ago(j.updatedAt)}</span></li>))}</ul>
               )}

@@ -5,6 +5,8 @@
   "type": "module",
   "scripts": {
     "test:auth": "tsx --test src/services/access.test.ts",
+    "test:research": "tsx --test src/services/research-worker.test.ts",
+    "exercise:research": "tsx src/services/isolated-exercise.ts research-exercise.ts",
     "exercise:buyers": "tsx src/services/isolated-exercise.ts buyer-exercise.ts",
     "exercise:seller": "tsx src/services/isolated-exercise.ts seller-exercise.ts",
     "exercise:offers": "tsx src/services/isolated-exercise.ts offer-exercise.ts",
@@ -15,6 +17,7 @@
     "typecheck": "tsc -p tsconfig.json --noEmit"
   },
   "dependencies": {
+    "@workspace/integrations-openai-ai-server": "workspace:*",
     "zod": "catalog:",
     "@workspace/deal-domain": "workspace:*",
     "@clerk/express": "^2.1.75",

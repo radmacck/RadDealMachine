@@ -3,7 +3,7 @@ import { Link, useParams } from 'wouter';
 import { useQueryClient } from '@tanstack/react-query';
 import { ArrowLeft, PhoneCall } from 'lucide-react';
 import {
-  getGetLeadQueryKey, useAddIntelligence, useGetLead, useSaveUnderwriting, useTransitionLead, useUpdateLead,
+  getGetLeadQueryKey, useAddIntelligence, useGetLead, useSaveUnderwriting, useTransitionLead, useUpdateLead, useRecordCall,
   type LeadDetail, type ProvenanceClass,
 } from '@workspace/api-client-react';
 import { ErrorNotice, RowsSkeleton } from '@/components/state-views';
@@ -15,6 +15,7 @@ import { LeadForm } from '@/components/lead-form';
 import { UnderwritingEditor } from '@/components/underwriting-editor';
 import { OffersPanel } from '@/components/offers-panel';
 import { DealOperationsPanel } from '@/components/deal-operations-panel';
+import { CallLogForm } from '@/components/call-log-form';
 import { TransitionPanel } from '@/components/transition-panel';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -42,6 +43,7 @@ export default function LeadDetailPage() {
   const addIntel = useAddIntelligence();
   const saveUw = useSaveUnderwriting();
   const transition = useTransitionLead();
+  const recordCall = useRecordCall();
 
   const loaded = !!q.data;
   useEffect(() => {
@@ -56,6 +58,7 @@ export default function LeadDetailPage() {
   }
   const d = q.data;
   const lead = d.lead;
+  const coordination = ['CONTRACT_PENDING','UNDER_CONTRACT','BUYER_MATCHED','BUYER_INTERESTED','BUYER_COMMITTED','CLOSING'].includes(lead.stage);
   const blockers = [...(d.analysis?.blockers ?? []), ...d.offers.filter((o) => o.effectiveStatus === 'DRAFT').flatMap((o) => o.blockers)];
   const authorized = d.offers.find((o) => o.effectiveStatus === 'AUTHORIZED' || o.effectiveStatus === 'COMMUNICATED');
   const patch = (fn: (o: LeadDetail) => LeadDetail) => qc.setQueryData<LeadDetail>(getGetLeadQueryKey(id), (o) => (o ? fn(o) : o));
@@ -88,7 +91,8 @@ export default function LeadDetailPage() {
       <div className="flex flex-wrap gap-2 text-sm" id="workflow" data-testid="bar-workflow">
         {([['intel', 'Evidence'], ['uw', 'Underwriting'], ['offers', 'Offers'], ['tx', 'Transaction'], ['stage', 'Lifecycle']] as const).map(([v, l]) => (
           <button key={v} type="button" onClick={() => setTab(v)} className={`border px-3 py-1.5 ${tab === v ? 'border-signal bg-card font-semibold' : 'border-border'}`} data-testid={`button-focus-${v}`}>{l}</button>))}
-        <Link href={`/calls?lead=${lead.id}`} className="inline-flex items-center gap-1.5 border border-signal px-3 py-1.5 font-semibold hover:bg-card" data-testid="link-call-seller"><PhoneCall className="h-3.5 w-3.5" />Call this seller</Link>
+        {coordination ? <button type="button" onClick={() => setTab('calls')} className="inline-flex items-center gap-1.5 border border-signal px-3 py-1.5 font-semibold hover:bg-card" data-testid="link-call-seller"><PhoneCall className="h-3.5 w-3.5" />Log seller / closing follow-up</button> :
+          <Link href={`/calls?lead=${lead.id}`} className="inline-flex items-center gap-1.5 border border-signal px-3 py-1.5 font-semibold hover:bg-card" data-testid="link-call-seller"><PhoneCall className="h-3.5 w-3.5" />Call this seller</Link>}
       </div>
       <AnalysisPanel analysis={d.analysis} comps={d.underwriting?.comps} />
 
@@ -134,6 +138,13 @@ export default function LeadDetailPage() {
         </TabsContent>
 
         <TabsContent value="calls" forceMount className={KEEP}>
+          {coordination && <section className="ledger mb-4 p-4">
+            <p className="eyebrow mb-2">Seller / closing follow-up</p>
+            <p className="mb-3 text-sm text-muted-foreground">Record coordination and the next follow-up. This does not alter executed terms or authorize a new price. A phone response cannot cancel a signed agreement.</p>
+            {lead.sellerPhone && <a className="mb-3 inline-block font-semibold underline" href={`tel:${lead.sellerPhone.replace(/[^+\d]/g,'')}`}>Call {lead.sellerName}: {lead.sellerPhone}</a>}
+            <CallLogForm lead={lead} disabled={!canCall} pending={recordCall.isPending} error={recordCall.error}
+              onSubmit={(data, done) => recordCall.mutate({id, data}, {onSuccess:() => {invalidate(id); done(); toast({title:'Follow-up recorded'});}})} />
+          </section>}
           {d.calls.length === 0 ? <p className="ledger p-4 text-sm text-muted-foreground" data-testid="empty-calls">No calls logged for this seller. Calls are logged from the Call next screen.</p> : (
             <ol className="space-y-2">{[...d.calls].reverse().map((c) => (
               <li key={c.id} className="ledger p-3" data-testid={`call-${c.id}`}>

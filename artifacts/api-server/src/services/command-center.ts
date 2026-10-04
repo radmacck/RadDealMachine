@@ -17,6 +17,7 @@ export async function commandCenter(role: string, now = new Date()) {
   const operate = ["OWNER","OPERATOR"].includes(role);
   for (const op of operations) {
     const d = deals.find(x=>x.lead.id===op.leadId)!;
+    if (["CLOSED","DEAD_DEAL"].includes(d.lead.stage)) continue;
     const c = op.contract;
     const add = (category: typeof actions[number]["category"],priority:number,title:string,reason:string,cta:string) =>
       actions.push({id:`${category}:${op.leadId}`,category,priority,title,reason,cta,leadId:op.leadId,href:`/deals/${op.leadId}?work=transaction`,dueAt:c?.closingAt??null});

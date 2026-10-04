@@ -17,6 +17,11 @@ export function dealActions(deals: LeadDetail[], calls: CallBrief[], role: strin
     const add = (category: CommandAction["category"], priority: number, title: string, reason: string, cta: string, work: string) =>
       actions.push({id:`${category}:${lead.id}`,category,priority,title,reason,leadId:lead.id,href:`/deals/${lead.id}?work=${work}`,cta,dueAt:lead.followUpAt});
     const due = !!lead.followUpAt && Date.parse(lead.followUpAt) <= now.getTime();
+    if (operate && due && ["CONTRACT_PENDING","UNDER_CONTRACT","BUYER_MATCHED","BUYER_INTERESTED","BUYER_COMMITTED","CLOSING"].includes(lead.stage)) {
+      add("FOLLOW_UP",100,`Coordinate closing with ${lead.sellerName}`,
+        `${lead.nextAction} Record the conversation and next follow-up; preserve the signed agreement and existing price boundaries.`,
+        "Log coordination","call");
+    }
     if (operate && callIds.has(lead.id)) {
       add(due?"FOLLOW_UP":"CALL",due?100:75,`${due?"Follow up with":"Call"} ${lead.sellerName}`,
         `${lead.nextAction} ${analysis?.classification === "STRONG" ? "Conservative economics classify this as STRONG." : "Review the seller situation and current offer boundaries."}`,

@@ -2,3 +2,5 @@
 - [Domain interoperability](domain-interoperability.md) — wire dates stay strings; calendar dates differ from timestamps across reusable adapters.
 - [Offer authority boundaries](offer-authority.md) — a ceiling is not permission to vary commercial terms; preserve prior communication when approval changes.
 - [Managed workflow port conflicts](workflow-port-conflicts.md) — a failed workflow can coexist with an old listener; verify process ownership before restarting.
+- [Executed transaction boundaries](executed-transactions.md) — supplemental reasoning and ordinary coordination cannot erase financial authority or external commitments.
+- [Isolated persistence exercises](isolated-service-exercises.md) — isolate every pooled connection and preserve relational constraints without mutating real workspace records.

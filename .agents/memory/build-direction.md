@@ -5,6 +5,12 @@ description: User's standing product scope and delivery rules for the Radical re
 
 This is a serious, reusable production-oriented internal wholesaling operating system, not a mock dashboard or public marketplace. It must stand alone without unfinished Radical infrastructure and later plug into Naelo/RDS/RDC through clean boundaries.
 
+The scope is the full wholesaling lifecycle, not a prettier/manual CRM. Mom should receive the best next action, prepared seller intelligence and explainable qualified buyer matches without repetitive administration.
+
+**Why:** The user explicitly corrected the product direction: "not a request for a prettier CRM" and "Do not throw away the verified domain foundation or rebuild working backend/auth/test pieces."
+
+**How to apply:** Implement connected functioning lifecycle slices; do not replace verified foundations or duplicate working components. Declare source-feed and external-execution limitations instead of depicting unsupported capabilities as working.
+
 **Why:** The user explicitly said, "Build the actual system described directly and vertically" and "I do not want 50 versions."
 
 **How to apply:** Inspect and reuse existing modules/components/services first. Do not duplicate working capabilities, redesign cosmetics, or spend usage on speculative broad audits. Select the earliest incomplete end-to-end blocker. Implement → automated test → exercise actual persistence/system → objectively verify before moving to another slice. Do not call a capability complete merely because UI exists.

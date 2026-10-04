@@ -25,7 +25,7 @@ export function buildCallBrief(lead: Lead, intelligence: Intelligence[], analysi
 export function prioritizeCallQueue(items: CallBrief[], now: Date): CallBrief[] {
   const urgency = { UNKNOWN: 0, LOW: 1, MEDIUM: 2, HIGH: 3 };
   return items.filter(b =>
-    ["CALL_READY","CONTACTED","CONVERSATION","OFFER_READY","OFFER_SENT","NEGOTIATING"].includes(b.lead.stage) &&
+    ["CALL_READY","CONTACTED","CONVERSATION","OFFER_READY","OFFER_SENT","NEGOTIATING","CONTRACT_PENDING"].includes(b.lead.stage) &&
     !callReadyBlockers(b.lead, b.analysis, now).length &&
     (!b.lead.followUpAt || Date.parse(b.lead.followUpAt) <= now.getTime()),
   ).sort((a,b) => {

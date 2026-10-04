@@ -12,4 +12,6 @@ export type WorkerJobInputKind = typeof WorkerJobInputKind[keyof typeof WorkerJo
 export const WorkerJobInputKind = {
   MATCH_BUYERS: 'MATCH_BUYERS',
   REVIEW_DEADLINES: 'REVIEW_DEADLINES',
+  ENRICH_PROPERTY: 'ENRICH_PROPERTY',
+  PREPARE_BRIEF: 'PREPARE_BRIEF',
 } as const;

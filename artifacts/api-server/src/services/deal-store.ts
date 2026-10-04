@@ -1,7 +1,8 @@
 import { eq, desc, sql } from "drizzle-orm";
+import { queueJob } from "./operations-records";
 import {
   db, leadsTable, intelligenceTable, analysesTable, callsTable, transitionsTable,
-  auditTable, settingsTable, type LeadRow,
+  auditTable, settingsTable, contractsTable, type LeadRow,
 } from "@workspace/db";
 import {
   analyzeDeal, allowedTransitions, buildCallBrief, prioritizeCallQueue, validateProvenance,
@@ -113,6 +114,7 @@ export async function createLead(input: LeadInput, actor: string, now = new Date
         },
       });
     }
+    await queueJob(tx,"ENRICH_PROPERTY",row.id,`address:${row.id}:${row.version}`,actor);
     return toLead(row);
   });
 }
@@ -129,6 +131,9 @@ export async function updateLead(id: string, input: LeadInput & {version:number}
     }).where(eq(leadsTable.id,id)).returning();
     await audit(tx,actor,"LEAD_UPDATED",id,"Saved revised property/seller inputs. Previous analysis retained in snapshots; not call-ready until refreshed.");
     if (!saved) throw new Error("Lead update failed");
+    if (["address","city","state","zip"].some(k=>row.payload[k]!==saved.payload[k])) {
+      await queueJob(tx,"ENRICH_PROPERTY",id,`address:${id}:${saved.version}`,actor);
+    }
     // Revised seller descriptions remain indicated, not facts.
     for (const [category, field] of [["seller_description","sellerDescription"],["selling_reason","sellingReason"]] as const) {
       const statement = payload[field];
@@ -146,16 +151,17 @@ export async function addIntelligence(id: string, input: IntelligenceInput, acto
   validateProvenance(input,now);
   return db.transaction(async tx => {
     const row = await lockedLead(tx,id);
-    await invalidateOffers(tx,id,actor,"New intelligence requires refreshed underwriting and new owner approval.",now);
+    const supplemental = input.classification==="AI_HYPOTHESIS";
+    if (!supplemental) await invalidateOffers(tx,id,actor,"New intelligence requires refreshed underwriting and new owner approval.",now);
     const [entry] = await tx.insert(intelligenceTable).values({
       leadId:id,payload:jsonRecord(input),createdBy:actor,createdAt:now,
     }).returning();
     if (!entry) throw new Error("Intelligence insert failed");
-    if (row.analysis || row.stage === "DISCOVERED") {
+    if ((!supplemental && row.analysis) || row.stage === "DISCOVERED") {
       await move(tx,row,"ENRICHING","New sourced intelligence requires underwriting review","Review new evidence and refresh underwriting.",actor,now);
     }
     await tx.update(leadsTable).set({
-      stage:row.stage,analysis:null,analysisSnapshotId:null,nextAction:row.nextAction,version:row.version+1,updatedAt:now,
+      stage:row.stage,...(supplemental?{}:{analysis:null,analysisSnapshotId:null}),nextAction:row.nextAction,version:row.version+1,updatedAt:now,
     }).where(eq(leadsTable.id,id));
     await audit(tx,actor,"INTELLIGENCE_ADDED",id,`${input.classification} / ${input.category}; source: ${input.source}; confidence: ${input.confidence}. Append-only, no promotion.`);
     return AddIntelligenceResponse.parse({...entry.payload,id:entry.id,leadId:id,createdBy:actor,createdAt:iso(now)});
@@ -185,6 +191,7 @@ export async function saveUnderwriting(id: string, input: UnderwritingInput, act
       nextAction:row.nextAction,version:row.version+1,updatedAt:now,
     }).where(eq(leadsTable.id,id));
     await audit(tx,actor,"UNDERWRITING_SAVED",id,`${analysis.engineVersion}: ${analysis.classification}; MAO $${analysis.mao}. Snapshot preserves inputs, policy, excluded comps and calculation time. No offer authorized.`);
+    if (["STRONG","NEGOTIABLE"].includes(analysis.classification)) await queueJob(tx,"PREPARE_BRIEF",id,`brief:${id}:${snapshot.id}`,actor);
     return leadDetail(id,tx,now);
   });
 }
@@ -219,7 +226,9 @@ export async function transitionLead(id: string, input: TransitionInput, actor: 
 export async function recordCall(id: string, input: CallInput, actor: string, now = new Date()): Promise<LeadDetail> {
   return db.transaction(async tx => {
     const row = await lockedLead(tx,id,input.version);
-    if (!["CALL_READY","CONTACTED","CONVERSATION","OFFER_READY","OFFER_SENT","NEGOTIATING"].includes(row.stage)) throw new DomainError("Calls can only be recorded for call-ready or active seller conversations.");
+    const executed = ["UNDER_CONTRACT","BUYER_MATCHED","BUYER_INTERESTED","BUYER_COMMITTED","CLOSING"].includes(row.stage);
+    if (!["CALL_READY","CONTACTED","CONVERSATION","OFFER_READY","OFFER_SENT","NEGOTIATING","CONTRACT_PENDING"].includes(row.stage)&&!executed) throw new DomainError("Calls can only be recorded for call-ready or active seller/closing conversations.");
+    if (executed&&input.outcome==="NOT_INTERESTED") throw new DomainError("A phone response cannot cancel an executed contract. Record the conversation with a follow-up and use the owner-reviewed external cancellation evidence workflow.",409);
     const followUpAt = followupDate(input.followUpAt,now);
     if (input.outcome !== "NOT_INTERESTED" && !followUpAt) throw new DomainError("Set a future follow-up so the seller conversation does not become a dead end.");
     const stage: Stage = input.outcome === "NOT_INTERESTED" ? "DEAD_DEAL" : input.outcome === "CONNECTED" ? "CONVERSATION" : "CONTACTED";
@@ -229,16 +238,24 @@ export async function recordCall(id: string, input: CallInput, actor: string, no
       await move(tx,row,"CONTACTED","Seller answered the call","Continue the seller conversation.",actor,now);
     }
     // No-answer followups cannot regress an existing CONVERSATION.
-    const nextStage: Stage = ["CONVERSATION","OFFER_READY","OFFER_SENT","NEGOTIATING"].includes(row.stage) && stage !== "DEAD_DEAL" ? toLead(row).stage : stage;
+    const nextStage: Stage = (executed || ["CONVERSATION","OFFER_READY","OFFER_SENT","NEGOTIATING","CONTRACT_PENDING"].includes(row.stage)) && stage !== "DEAD_DEAL" ? toLead(row).stage : stage;
     if (nextStage === "DEAD_DEAL") await invalidateOffers(tx,id,actor,"Seller is not interested; deal closed and offer authorization invalidated.",now);
+    if (nextStage==="DEAD_DEAL") {
+      const [draft] = await tx.select().from(contractsTable).where(eq(contractsTable.leadId,id)).for("update");
+      if (draft?.payload.status==="DRAFT") await tx.update(contractsTable).set({
+        payload:{...draft.payload,status:"CANCELLED",outcomeNote:"Unexecuted draft abandoned following the recorded seller decline. No executed agreement or legal obligation was cancelled."},
+        version:draft.version+1,updatedAt:now,
+      }).where(eq(contractsTable.id,draft.id));
+    }
     await move(tx,row,nextStage,`Call outcome: ${input.outcome}. ${input.notes}`,input.nextAction,actor,now);
     await tx.update(leadsTable).set({stage:row.stage,nextAction:input.nextAction,followUpAt,version:row.version+1,updatedAt:now}).where(eq(leadsTable.id,id));
     await audit(tx,actor,"CALL_RECORDED",id,`${input.outcome}; follow-up ${followUpAt?.toISOString() ?? "none (terminal)"}; next: ${input.nextAction}`);
+    if (input.outcome==="CONNECTED") await queueJob(tx,"PREPARE_BRIEF",id,`conversation-brief:${id}:${row.version+1}`,actor);
     return leadDetail(id,tx,now);
   });
 }
 export async function callQueue(now = new Date()) {
-  const rows = await db.select().from(leadsTable).where(sql`${leadsTable.stage} in ('CALL_READY','CONTACTED','CONVERSATION','OFFER_READY','OFFER_SENT','NEGOTIATING')`);
+  const rows = await db.select().from(leadsTable).where(sql`${leadsTable.stage} in ('CALL_READY','CONTACTED','CONVERSATION','OFFER_READY','OFFER_SENT','NEGOTIATING','CONTRACT_PENDING')`);
   const briefs = await Promise.all(rows.map(async row => {
     const detail = await leadDetail(row.id,db,now);
     const approved = detail.offers.find(o => ["AUTHORIZED","COMMUNICATED"].includes(o.effectiveStatus)) ?? null;

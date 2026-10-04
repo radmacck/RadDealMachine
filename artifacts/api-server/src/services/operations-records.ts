@@ -1,4 +1,4 @@
-import { eq, desc } from "drizzle-orm";
+import { eq, desc, and, gte } from "drizzle-orm";
 import { db, buyersTable, contractsTable, jobsTable } from "@workspace/db";
 import { GetBuyerResponse, GetDealOperationsResponse, ListWorkerJobsResponse } from "@workspace/api-zod";
 import { verificationStatus, DomainError } from "@workspace/deal-domain";
@@ -30,8 +30,15 @@ export async function getContractRecord(id: string, database: Store = db) {
 export function jobRecord(row: typeof jobsTable.$inferSelect) {
   return ListWorkerJobsResponse.element.parse({...row,createdAt:row.createdAt.toISOString(),updatedAt:row.updatedAt.toISOString()});
 }
-export async function queueJob(tx: Store, kind: "MATCH_BUYERS"|"REVIEW_DEADLINES", leadId: string|null, key: string, requestedBy: string) {
-  await tx.insert(jobsTable).values({kind,leadId,idempotencyKey:key,requestedBy}).onConflictDoNothing();
+export async function queueJob(tx: Store, kind: "MATCH_BUYERS"|"REVIEW_DEADLINES"|"ENRICH_PROPERTY"|"PREPARE_BRIEF", leadId: string|null, key: string, requestedBy: string) {
+  let budgetReached = false;
+  if (kind==="PREPARE_BRIEF"&&leadId) {
+    const since = new Date(); since.setUTCHours(0,0,0,0);
+    const today = await tx.select({id:jobsTable.id}).from(jobsTable).where(and(eq(jobsTable.leadId,leadId),eq(jobsTable.kind,kind),gte(jobsTable.createdAt,since)));
+    budgetReached = today.length>=6;
+  }
+  await tx.insert(jobsTable).values({kind,leadId,idempotencyKey:key,requestedBy,
+    ...(budgetReached?{state:"FAILED",message:"Daily AI budget reached: six prepared-brief jobs per deal per UTC day. No model call was made. Core deal actions are not blocked."}:{})}).onConflictDoNothing();
   const [row] = await tx.select().from(jobsTable).where(eq(jobsTable.idempotencyKey,key));
   if (!row) throw new Error("Queued job could not be read.");
   if (row.kind!==kind || row.leadId!==leadId || row.requestedBy!==requestedBy) throw new DomainError("Idempotency key belongs to another command.",409);

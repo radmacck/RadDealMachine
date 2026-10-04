@@ -11,7 +11,10 @@ import { useInvalidateWork } from '@/hooks/use-invalidate';
 import { useToast } from '@/hooks/use-toast';
 import { ago, fmtDate } from '@/lib/format';
 
-const KIND: Record<WorkerJobInputKind, string> = { MATCH_BUYERS: 'Match buyers to deals', REVIEW_DEADLINES: 'Review contract deadlines' };
+const KIND: Record<WorkerJobInputKind, string> = {
+  MATCH_BUYERS:'Match buyers to deals',REVIEW_DEADLINES:'Review contract deadlines',
+  ENRICH_PROPERTY:'Check public address geography',PREPARE_BRIEF:'Prepare AI hypotheses and seller questions',
+};
 const STATE_TONE: Record<WorkerJob['state'], string> = { QUEUED: 'tone-muted', RUNNING: 'tone-warn', SUCCEEDED: 'tone-go', FAILED: 'tone-stop' };
 const newKey = () => `ui-${crypto.randomUUID()}`;
 
@@ -38,16 +41,17 @@ export default function Workers() {
       <div className="mb-6 grid gap-4 lg:grid-cols-[1fr_22rem]">
         <section className="ledger p-4" data-testid="panel-worker-scope">
           <p className="eyebrow mb-2">What runs today</p>
-          <p className="text-sm">Buyer matching and contract deadline review run against the deal data in this system. Jobs persist, show attempts and results, and can be queued by hand here.</p>
-          <p className="mt-2 border-l-2 border-dashed border-border pl-3 text-sm text-muted-foreground" data-testid="text-unsupported">Not supported: scraping outside sources, listing discovery, and AI research. No job here contacts a seller, a buyer, or any external site.</p>
+          <p className="text-sm">Matching and deadline checks recur every five minutes. New intake queues a public Census address check. Reviewed underwriting and connected seller calls queue AI hypotheses, questions and human verification actions. Jobs persist, show attempts and results, and failed work can be retried.</p>
+          <p className="mt-2 text-sm text-muted-foreground">OpenAI runs use Replit AI Integrations and are billed to your credits. Prepared briefs are capped at six jobs per deal per UTC day. Model output remains AI HYPOTHESIS, never verified facts or permission to quote.</p>
+          <p className="mt-2 border-l-2 border-dashed border-border pl-3 text-sm text-muted-foreground" data-testid="text-unsupported">Not supported: automatic listing discovery, sales-comparable feeds, ownership verification, or restricted-site scraping. Census checks address geography only. No job contacts sellers or buyers, signs documents or transfers funds.</p>
         </section>
         <section className="ledger p-4" data-testid="panel-queue-job">
           <p className="eyebrow mb-3">Queue a job</p>
           <div className="space-y-3">
             <Field label="Job"><select className={SELECT} value={kind} onChange={(e) => setKind(e.target.value as WorkerJobInputKind)} data-testid="select-job-kind">{(Object.keys(KIND) as WorkerJobInputKind[]).map((k) => <option key={k} value={k}>{KIND[k]}</option>)}</select></Field>
-            <Field label="Scope" hint="Leave on all deals unless you need one property."><select className={SELECT} value={leadId} onChange={(e) => setLeadId(e.target.value)} data-testid="select-job-lead"><option value="">All deals</option>{(leads.data ?? []).map((l) => <option key={l.id} value={l.id}>{l.address}</option>)}</select></Field>
+            <Field label="Scope" hint={['ENRICH_PROPERTY','PREPARE_BRIEF'].includes(kind) ? 'Select one deal for this research job.' : 'All deals, or select one property.'}><select className={SELECT} value={leadId} onChange={(e) => setLeadId(e.target.value)} data-testid="select-job-lead"><option value="">All deals</option>{(leads.data ?? []).map((l) => <option key={l.id} value={l.id}>{l.address}</option>)}</select></Field>
             {submit.error != null && <ErrorNotice error={submit.error} />}
-            <Button disabled={!can || submit.isPending} onClick={() => queue(kind, leadId || null, key)} data-testid="button-queue-job">{submit.isPending ? 'Queuing...' : 'Queue job'}</Button>
+            <Button disabled={!can || submit.isPending || (['ENRICH_PROPERTY','PREPARE_BRIEF'].includes(kind) && !leadId)} onClick={() => queue(kind, leadId || null, key)} data-testid="button-queue-job">{submit.isPending ? 'Queuing...' : 'Queue job'}</Button>
           </div>
         </section>
       </div>
