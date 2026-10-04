@@ -1,4 +1,4 @@
-import { and, eq, lt, desc } from "drizzle-orm";
+import { and, eq, lt, desc, sql } from "drizzle-orm";
 import type { z } from "zod";
 import { db, jobsTable, contractsTable, leadsTable } from "@workspace/db";
 import { SubmitWorkerJobBody } from "@workspace/api-zod";
@@ -8,6 +8,7 @@ import { queueJob, jobRecord, allBuyerRecords, contractRecord } from "./operatio
 import { refreshMatches, refreshAllMatches } from "./matching-store";
 import { listLeads, leadDetail } from "./deal-store";
 import { logger } from "../lib/logger";
+import { discoverPublicBuyers, reviewBuyerPool } from "./buyer-pool";
 
 export async function listWorkerJobs() {
   return (await db.select().from(jobsTable).orderBy(desc(jobsTable.createdAt)).limit(100)).map(jobRecord);
@@ -17,9 +18,11 @@ export async function submitWorkerJob(input: z.infer<typeof SubmitWorkerJobBody>
   const parsed = SubmitWorkerJobBody.parse(input);
   if (["ENRICH_PROPERTY","PREPARE_BRIEF"].includes(parsed.kind)&&!parsed.leadId) throw new DomainError("Address checks and prepared briefs require one selected deal.");
   if (parsed.leadId) await leadDetail(parsed.leadId);
+  if (parsed.kind==="BUYER_DISCOVERY"&&(!parsed.termsReviewed||parsed.leadId)) throw new DomainError("Buyer discovery requires reviewed source terms and cannot target a seller lead.");
   return db.transaction(async tx=>{
     if (parsed.leadId) await tx.select({id:leadsTable.id}).from(leadsTable).where(eq(leadsTable.id,parsed.leadId)).for("update");
-    return queueJob(tx,parsed.kind,parsed.leadId??null,`manual:${actor.id}:${parsed.idempotencyKey}`,actor.id);
+    return queueJob(tx,parsed.kind,parsed.leadId??null,`manual:${actor.id}:${parsed.idempotencyKey}`,actor.id,
+      parsed.kind==="BUYER_DISCOVERY"?{termsReviewed:true,recurringDiscovery:parsed.recurringDiscovery===true}:{});
   });
 }
 export async function reviewDeadlines(now = new Date()) {
@@ -27,8 +30,9 @@ export async function reviewDeadlines(now = new Date()) {
   const followups = leads.filter(l=>!["CLOSED","DEAD_DEAL"].includes(l.stage)&&l.followUpAt&&Date.parse(l.followUpAt)<=now.getTime()).length;
   const contracts = (await db.select().from(contractsTable)).map(contractRecord);
   const deadlines = contracts.filter(c=>!["CLOSED","CANCELLED"].includes(c.status)&&Date.parse(c.closingAt)<now.getTime()+3*86400000).length;
-  const stale = (await allBuyerRecords(db,now)).filter(b=>b.status==="ACTIVE"&&b.verificationStatus!=="VERIFIED").length;
-  return `${followups} seller follow-ups due; ${deadlines} transaction deadlines within three days or overdue; ${stale} buyers need current verification. Action center reflects each current item. No messages sent.`;
+  const stale = (await allBuyerRecords(db,now)).filter(b=>b.approvalStatus!=="APPROVED"&&b.currentBuyingStatus!=="NOT_BUYING").length;
+  const staleLeads = leads.filter(l=>!["CLOSED","DEAD_DEAL"].includes(l.stage)&&now.getTime()-Date.parse(l.updatedAt)>30*86400000).length;
+  return `${followups} seller follow-ups due; ${staleLeads} leads unchanged for 30 days; ${deadlines} transaction deadlines within three days or overdue; ${stale} buyers need current qualification. Action center reflects current work. No messages sent.`;
 }
 /** Durable leased claims: concurrent instances cannot execute the same queued row. */
 export async function runWorkerOnce(now = new Date(), schedule = false, onlyJobId?: string) {
@@ -36,6 +40,13 @@ export async function runWorkerOnce(now = new Date(), schedule = false, onlyJobI
     const bucket = Math.floor(now.getTime()/(5*60000));
     await queueJob(db,"REVIEW_DEADLINES",null,`scheduled:deadlines:${bucket}`,"system:scheduler");
     await queueJob(db,"MATCH_BUYERS",null,`scheduled:matches:${bucket}`,"system:scheduler");
+    await queueJob(db,"REVIEW_BUYER_POOL",null,`scheduled:buyer-pool:${bucket}`,"system:scheduler");
+    const [policy] = await db.select().from(jobsTable).where(and(eq(jobsTable.kind,"BUYER_DISCOVERY"),
+      sql`${jobsTable.idempotencyKey} like 'manual:%'`)).orderBy(desc(jobsTable.createdAt)).limit(1);
+    if (policy?.payload.termsReviewed===true && policy.payload.recurringDiscovery===true) {
+      await queueJob(db,"BUYER_DISCOVERY",null,`scheduled:buyer-discovery:${Math.floor(now.getTime()/(6*3600000))}`,
+        "system:scheduler",{termsReviewed:true,recurringDiscovery:true});
+    }
     // Bootstrap existing reviewed deals once per snapshot, not a paid AI run every tick.
     const rows = await db.select().from(leadsTable);
     let seeded = 0;
@@ -79,6 +90,8 @@ export async function runWorkerOnce(now = new Date(), schedule = false, onlyJobI
         message = `Reviewed ${result.matches.length} buyers; ${result.matches.filter(m=>m.eligible).length} currently qualified for this exact deal.`;
       } else message = `Recomputed criteria, funding, verification and deadlines for ${await refreshAllMatches(now)} active signed transactions.`;
     } else if (row.kind==="REVIEW_DEADLINES") message = await reviewDeadlines(now);
+    else if (row.kind==="REVIEW_BUYER_POOL") message = await reviewBuyerPool(now);
+    else if (row.kind==="BUYER_DISCOVERY"&&row.payload.termsReviewed===true) message = await discoverPublicBuyers(now);
     else if (row.kind==="ENRICH_PROPERTY"&&row.leadId) message = await enrichProperty(row.leadId,row.id,now);
     else if (row.kind==="PREPARE_BRIEF"&&row.leadId) message = await prepareSellerBrief(row.leadId,row.id,now);
     else throw new Error("No executor is registered for this worker kind.");

@@ -189,6 +189,9 @@ importers:
       '@workspace/integrations-openai-ai-server':
         specifier: workspace:*
         version: link:../../lib/integrations-openai-ai-server
+      '@workspace/property-sources':
+        specifier: workspace:*
+        version: link:../../lib/property-sources
       cookie-parser:
         specifier: ^1.4.7
         version: 1.4.7
@@ -698,6 +701,19 @@ importers:
       '@types/node':
         specifier: 'catalog:'
         version: 25.9.6
+
+  lib/property-sources:
+    dependencies:
+      zod:
+        specifier: 'catalog:'
+        version: 3.25.76
+    devDependencies:
+      '@types/node':
+        specifier: 'catalog:'
+        version: 25.9.6
+      tsx:
+        specifier: ^4.20.0
+        version: 4.23.13
 
   scripts:
     devDependencies:

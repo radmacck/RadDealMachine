@@ -3,6 +3,7 @@
  * Future orchestrators call domain commands through adapters, never bypass guards.
  * This is deliberately an interface, not a running worker framework.
  */
+import type { WorkerExecutionPort } from "./worker-interface";
 export interface DomainCommand {
   kind: "enrich_property" | "refresh_underwriting" | "verify_buyer" | "match_buyers" | "follow_up";
   entityId: string;
@@ -10,6 +11,7 @@ export interface DomainCommand {
   requestedBy: string;
 }
 export interface OrchestrationPort {
+  execution?: WorkerExecutionPort;
   submit(command: DomainCommand): Promise<{ jobId: string }>;
   status(jobId: string): Promise<{ state: "queued" | "running" | "succeeded" | "failed"; error?: string }>;
 }

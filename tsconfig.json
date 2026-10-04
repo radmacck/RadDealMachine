@@ -3,6 +3,7 @@
   "compileOnSave": false,
   "files": [],
   "references": [
+    { "path": "./lib/property-sources" },
     { "path": "./lib/integrations-openai-ai-server" },
     {
       "path": "./lib/deal-domain"

@@ -5,7 +5,7 @@ import {
   CreateContractBody, ExecuteContractBody, RecordBuyerResponseBody, RecordClosingMilestoneBody, RecordDealOutcomeBody,
 } from "@workspace/api-zod";
 import {
-  assertOperationsRole, evidenceUrl, pastInstant, wholeDollars, closingBlockers, matchBuyer, DomainError, DAY,
+  assertOperationsRole, buyerReservations, evidenceUrl, pastInstant, wholeDollars, closingBlockers, matchBuyer, DomainError, DAY,
   type OfferActor, type DealContract,
 } from "@workspace/deal-domain";
 import { lockedLead, leadDetail, move, audit } from "./deal-store";
@@ -83,7 +83,9 @@ export async function recordBuyerResponse(id: string,buyerId: string,input: z.in
     if (!buyerRow) throw new DomainError("Buyer not found.",404);
     if (buyerRow.version!==parsed.buyerVersion) throw new DomainError("Buyer criteria or evidence changed. Review the current match.",409);
     const buyer = buyerRecord(buyerRow,now), detail = await leadDetail(id,tx,now);
-    const evaluated = matchBuyer(buyer,detail,contract,now,parsed.status==="COMMITTED"?parsed.agreedPrice:undefined);
+    if (parsed.status==="COMMITTED"&&buyer.destinationKind!=="BUYER") throw new DomainError("A deal-finder/guru destination cannot commit as the acquisition buyer. Qualify and record the actual end buyer.",409);
+    const reservations = buyerReservations((await tx.select().from(contractsTable)).map(contractRecord),buyer.id,contract.id);
+    const evaluated = matchBuyer(buyer,detail,contract,now,parsed.status==="COMMITTED"?parsed.agreedPrice:undefined,reservations.count,reservations.funds);
     const [existing] = await tx.select().from(matchesTable).where(and(eq(matchesTable.leadId,id),eq(matchesTable.buyerId,buyerId)));
     if (existing?.payload.status==="COMMITTED") throw new DomainError("A committed buyer cannot be silently changed or declined; record an externally evidenced transaction cancellation if the contract is released.",409);
     if (parsed.status!=="DECLINED"&&!evaluated.eligible) throw new DomainError(evaluated.mismatches.join("; "),409);
@@ -96,7 +98,7 @@ export async function recordBuyerResponse(id: string,buyerId: string,input: z.in
       Object.assign(contract,{committedBuyerId:buyerId,agreedBuyerPrice:parsed.agreedPrice});
       await save(tx,row,contract,now);
       await move(tx,lead,"BUYER_COMMITTED","Owner recorded buyer commitment with reviewed external evidence","Record title, earnest money, assignment and funds evidence before settlement.",actor.id,now);
-    } else if (parsed.status==="INTERESTED" && !contract.committedBuyerId && ["UNDER_CONTRACT","BUYER_MATCHED"].includes(lead.stage)) {
+    } else if (parsed.status==="INTERESTED" && buyer.destinationKind==="BUYER" && !contract.committedBuyerId && ["UNDER_CONTRACT","BUYER_MATCHED"].includes(lead.stage)) {
       await move(tx,lead,"BUYER_INTERESTED","Actual buyer interest recorded", "Review buyer commitment evidence and obtain owner approval.",actor.id,now);
       // Version the transaction for every response, not only financial commitment.
       await save(tx,row,contract,now);
@@ -137,7 +139,10 @@ export async function recordDealOutcome(id: string,input: z.infer<typeof RecordD
       const detail = await leadDetail(id,tx,now);
       const [buyerRow] = contract.committedBuyerId?await tx.select().from(buyersTable).where(eq(buyersTable.id,contract.committedBuyerId)).for("update"):[];
       const [recorded] = contract.committedBuyerId?await tx.select().from(matchesTable).where(and(eq(matchesTable.leadId,id),eq(matchesTable.buyerId,contract.committedBuyerId))):[];
-      const match = buyerRow?{...matchBuyer(buyerRecord(buyerRow,now),detail,contract,now,contract.agreedBuyerPrice??undefined),status:recorded?.payload.status as "COMMITTED"}:undefined;
+      const reservations = buyerReservations((await tx.select().from(contractsTable)).map(contractRecord),contract.committedBuyerId??"",contract.id);
+      const currentBuyer = buyerRow?buyerRecord(buyerRow,now):null;
+      if (currentBuyer?.destinationKind!=="BUYER") throw new DomainError("Closing requires a current qualified acquisition buyer, not a deal-finder/guru destination.",409);
+      const match = currentBuyer?{...matchBuyer(currentBuyer,detail,contract,now,contract.agreedBuyerPrice??undefined,reservations.count,reservations.funds),status:recorded?.payload.status as "COMMITTED"}:undefined;
       const blockers = closingBlockers(contract,match);
       if (blockers.length) throw new DomainError(blockers.join("; "),409);
       if (parsed.assignmentFeeReceived==null || parsed.closingCosts==null) throw new DomainError("Record actual received assignment fee and actual closing costs.");

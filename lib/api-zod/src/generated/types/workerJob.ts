@@ -11,6 +11,7 @@ import type { WorkerJobState } from './workerJobState';
 export interface WorkerJob {
   id: string;
   kind: WorkerJobKind;
+  recurringDiscovery?: boolean;
   state: WorkerJobState;
   /** @nullable */
   leadId: string | null;

@@ -1,7 +1,7 @@
 import type { ReactNode } from 'react';
 import { Link, useLocation } from 'wouter';
 import { useClerk, useUser } from '@clerk/react';
-import { ClipboardList, Cog, Gauge, History, LogOut, PhoneCall, Settings, Users } from 'lucide-react';
+import { ClipboardList, Cog, Gauge, History, LogOut, Radar, PhoneCall, Settings, Users } from 'lucide-react';
 import { getGetDashboardQueryKey, useGetDashboard } from '@workspace/api-client-react';
 import { Logo } from '@/components/logo';
 import { Button } from '@/components/ui/button';
@@ -11,6 +11,7 @@ const NAV = [
   { href: '/dashboard', label: 'Command center', icon: Gauge },
   { href: '/calls', label: 'Call next', icon: PhoneCall },
   { href: '/leads', label: 'Deal inventory', icon: ClipboardList },
+  { href: '/sources', label: 'Sources', icon: Radar },
   { href: '/buyers', label: 'Buyers', icon: Users },
   { href: '/workers', label: 'Workers', icon: Cog },
   { href: '/audit', label: 'Audit', icon: History },

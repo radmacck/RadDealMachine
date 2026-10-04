@@ -479,8 +479,261 @@ paths:
           content:
             application/json:
               schema: { $ref: "#/components/schemas/WorkerJob" }
+  /property-sources:
+    # Source coverage remains explicit; no source is silently treated as nationwide.
+    get:
+      operationId: listPropertySources
+      responses:
+        "200":
+          description: Explicitly supported public source coverage and limits
+          content:
+            application/json:
+              schema: { type: array, items: { $ref: "#/components/schemas/PropertySource" } }
+  /property-sources/phila-opa/records:
+    get:
+      operationId: searchPublicProperties
+      parameters:
+        - { name: zip, in: query, schema: { type: string, pattern: '^191\d{2}$' } }
+        - { name: lane, in: query, schema: { type: string, enum: [properties, buyer_candidates] } }
+      responses:
+        "200":
+          description: Real source records, not listings or approved buyers
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/PublicPropertySearch" }
+  /property-sources/phila-opa/records/{recordId}/import:
+    post:
+      operationId: importPublicProperty
+      parameters:
+        - { name: recordId, in: path, required: true, schema: { type: string, pattern: '^\d{9}$' } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/SourceReviewInput" }
+      responses:
+        "200":
+          description: Idempotent research intake with no inferred seller or offer authority
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/PublicPropertyImport" }
+  /leads/{id}/source-research:
+    get:
+      operationId: getSourceResearch
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string } }
+      responses:
+        "200":
+          description: Persisted source research; null when not yet collected
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [research]
+                properties:
+                  research: { oneOf: [{ $ref: "#/components/schemas/SourceResearch" }, { type: "null" }] }
+    post:
+      operationId: refreshSourceResearch
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/SourceRefreshInput" }
+      responses:
+        "200":
+          description: Current property record and candidate sales without changing approved inputs
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/SourceResearch" }
+  /leads/{id}/source-research/comps:
+    post:
+      operationId: addSourceComps
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/SourceCompsInput" }
+      responses:
+        "200":
+          description: Source candidates added to underwriting as unverified, condition unknown
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/LeadDetail" }
+  /buyers/discovered:
+    post:
+      operationId: discoverBuyer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/BuyerProspectInput" }
+      responses:
+        "201":
+          description: Unverified prospect without invented criteria, funding or current intent
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Buyer" }
+  /worker-capabilities:
+    get:
+      operationId: getWorkerCapabilities
+      responses:
+        "200":
+          description: Registered execution ports and explicit unavailable integrations
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  required: [id, capability, state, reason, nextAction]
+                  properties:
+                    id: { type: string }
+                    capability: { type: string }
+                    state: { type: string, enum: [AVAILABLE, PENDING_CONNECTION] }
+                    reason: { type: string }
+                    nextAction: { type: string }
 components:
   schemas:
+    PropertySource:
+      type: object
+      required: [id, name, coverage, termsUrl, capabilities, limitations]
+      properties:
+        id: { type: string }
+        name: { type: string }
+        coverage: { type: string }
+        termsUrl: { type: string }
+        capabilities: { type: array, items: { type: string } }
+        limitations: { type: array, items: { type: string } }
+    PublicProperty:
+      type: object
+      required: [id, provider, classification, address, city, state, zip, propertyType, sqft, beds, baths, recordedOwner, entityCandidate, assessedValue, lastSalePrice, lastSaleAt, interiorCondition, exteriorCondition, lat, lng, sourceUrl, capturedAt]
+      properties:
+        id: { type: string }
+        provider: { type: string }
+        classification: { type: string, enum: [OBSERVED] }
+        address: { type: string }
+        city: { type: string }
+        state: { type: string }
+        zip: { type: string }
+        propertyType: { type: string, enum: [SINGLE_FAMILY, TOWNHOUSE] }
+        sqft: { type: ["number", "null"] }
+        beds: { type: ["integer", "null"] }
+        baths: { type: ["number", "null"] }
+        recordedOwner: { type: ["string", "null"] }
+        entityCandidate: { type: boolean }
+        assessedValue: { type: ["number", "null"] }
+        lastSalePrice: { type: ["number", "null"] }
+        lastSaleAt: { type: ["string", "null"] }
+        interiorCondition: { type: ["string", "null"] }
+        exteriorCondition: { type: ["string", "null"] }
+        lat: { type: ["number", "null"] }
+        lng: { type: ["number", "null"] }
+        sourceUrl: { type: string }
+        capturedAt: { type: string }
+    PublicPropertySearch:
+      type: object
+      required: [source, records, capturedAt]
+      properties:
+        source: { $ref: "#/components/schemas/PropertySource" }
+        records: { type: array, items: { $ref: "#/components/schemas/PublicProperty" } }
+        capturedAt: { type: string }
+    SourceSaleCandidate:
+      type: object
+      required: [record, comp, reasons]
+      properties:
+        record: { $ref: "#/components/schemas/PublicProperty" }
+        comp: { $ref: "#/components/schemas/Comp" }
+        reasons: { type: array, items: { type: string } }
+    SourceResearch:
+      type: object
+      required: [source, subject, candidates, capturedAt, limitations]
+      properties:
+        source: { $ref: "#/components/schemas/PropertySource" }
+        subject: { $ref: "#/components/schemas/PublicProperty" }
+        candidates: { type: array, items: { $ref: "#/components/schemas/SourceSaleCandidate" } }
+        capturedAt: { type: string }
+        limitations: { type: array, items: { type: string } }
+    SourceReviewInput:
+      type: object
+      required: [termsReviewed]
+      properties:
+        termsReviewed: { type: boolean }
+    SourceRefreshInput:
+      allOf:
+        - { $ref: "#/components/schemas/SourceReviewInput" }
+        - type: object
+          required: [version]
+          properties:
+            version: { type: integer, minimum: 1 }
+    SourceCompsInput:
+      type: object
+      required: [version, recordIds]
+      properties:
+        version: { type: integer, minimum: 1 }
+        recordIds: { type: array, minItems: 1, maxItems: 30, items: { type: string } }
+    PublicPropertyImport:
+      type: object
+      required: [leadId, created, research]
+      properties:
+        leadId: { type: string }
+        created: { type: boolean }
+        research: { $ref: "#/components/schemas/SourceResearch" }
+    BuyerProspectInput:
+      type: object
+      required: [name, source, sourceUrl, capturedAt, confidence]
+      properties:
+        name: { type: string, minLength: 1, maxLength: 200 }
+        email: { type: string, maxLength: 200 }
+        phone: { type: string, maxLength: 50 }
+        source: { type: string, minLength: 1, maxLength: 2000 }
+        sourceUrl: { type: string, minLength: 8, maxLength: 2000 }
+        capturedAt: { type: string }
+        confidence: { type: number, minimum: 0, maximum: 1 }
+        destinationKind: { type: string, enum: [BUYER, DEAL_FINDER, GURU] }
+    BuyerQualificationTask:
+      type: object
+      required: [id, kind, state, reason, preparedMessage, dueAt, updatedAt]
+      properties:
+        id: { type: string }
+        kind: { type: string, enum: [QUALIFY, REVERIFY] }
+        state: { type: string, enum: [PENDING_EXECUTION, WAITING_EXTERNAL, COMPLETED] }
+        reason: { type: string }
+        preparedMessage: { type: string }
+        dueAt: { type: string }
+        updatedAt: { type: string }
+    BuyerDiscoveryEvidence:
+      type: object
+      required: [classification, source, sourceUrl, capturedAt, confidence]
+      properties:
+        classification: { type: string, enum: [OBSERVED] }
+        source: { type: string }
+        sourceUrl: { type: string }
+        capturedAt: { type: string }
+        confidence: { type: number, minimum: 0, maximum: 1 }
+    BuyerVerificationHistory:
+      type: object
+      required: [reviewedBy, reviewedAt, currentBuyingStatus, buyingEvidenceUrl, criteriaEvidenceUrl, verificationSource]
+      properties:
+        reviewedBy: { type: string }
+        reviewedAt: { type: string }
+        currentBuyingStatus: { type: string, enum: [BUYING, PAUSED, NOT_BUYING] }
+        buyingEvidenceUrl: { type: string }
+        buyingEvidenceAt: { type: string }
+        criteriaEvidenceUrl: { type: string }
+        verificationSource: { type: string }
+        identityEvidenceUrl: { type: string }
+        fundingEvidenceUrl: { type: string }
+        availableFunds: { type: number }
+        evidenceAt: { type: string }
+        validUntil: { type: string }
+        confidence: { type: number }
+        verificationNote: { type: string }
+        destinationKind: { type: string, enum: [BUYER, DEAL_FINDER, GURU] }
+        criteria: { oneOf: [{ $ref: "#/components/schemas/BuyerCriteria" }, { type: "null" }] }
     BuyerCriteria:
       type: object
       required: [states, cities, zipCodes, propertyTypes, maxPurchasePrice, maxRepairs, minBeds, minSqft, maxSqft, closingDays]
@@ -495,6 +748,24 @@ components:
         minSqft: { type: number, minimum: 0, maximum: 1000000 }
         maxSqft: { type: number, exclusiveMinimum: 0, maximum: 1000000 }
         closingDays: { type: integer, minimum: 1, maximum: 365 }
+        counties: { type: array, items: { type: string, minLength: 1, maxLength: 200 } }
+        excludedCounties: { type: array, items: { type: string, minLength: 1, maxLength: 200 } }
+        excludedCities: { type: array, items: { type: string, minLength: 1, maxLength: 200 } }
+        excludedZipCodes: { type: array, items: { type: string, pattern: '^\d{5}$' } }
+        minPurchasePrice: { type: number, minimum: 0, maximum: 1000000000 }
+        minArv: { type: ["number", "null"], minimum: 0, maximum: 1000000000 }
+        maxArv: { type: ["number", "null"], minimum: 0, maximum: 1000000000 }
+        minUnits: { type: integer, minimum: 0, maximum: 10000 }
+        maxUnits: { type: integer, minimum: 0, maximum: 10000 }
+        minBaths: { type: number, minimum: 0, maximum: 100 }
+        maxBeds: { type: ["integer", "null"], minimum: 0, maximum: 100 }
+        maxBaths: { type: ["number", "null"], minimum: 0, maximum: 100 }
+        rehabTolerance: { type: string, enum: [NONE, LIGHT, MODERATE, HEAVY, ANY] }
+        strategies: { type: array, minItems: 1, items: { type: string, enum: [FLIP, RENTAL, BRRRR, WHOLESALE, DEVELOPMENT, OTHER] } }
+        fundingTypes: { type: array, minItems: 1, items: { type: string, enum: [CASH, HARD_MONEY, PRIVATE_LENDING, CONVENTIONAL, OTHER] } }
+        maxConcurrentDeals: { type: integer, minimum: 1, maximum: 1000 }
+        minSpread: { type: ["number", "null"], minimum: 0, maximum: 1000000000 }
+        minCapRate: { type: ["number", "null"], minimum: 0, maximum: 1 }
     BuyerInput:
       type: object
       required: [name, email, phone, source, criteria, status]
@@ -503,8 +774,11 @@ components:
         email: { type: string, maxLength: 200 }
         phone: { type: string, maxLength: 50 }
         source: { type: string, minLength: 1, maxLength: 2000 }
-        criteria: { $ref: "#/components/schemas/BuyerCriteria" }
+        criteria: { oneOf: [{ $ref: "#/components/schemas/BuyerCriteria" }, { type: "null" }] }
         status: { type: string, enum: [ACTIVE, PAUSED] }
+        destinationKind: { type: string, enum: [BUYER, DEAL_FINDER, GURU] }
+        qualifiedDealFee: { type: ["number", "null"], minimum: 0, maximum: 1000000000 }
+        feeTermsSource: { type: string, maxLength: 2000 }
     BuyerUpdate:
       allOf:
         - { $ref: "#/components/schemas/BuyerInput" }
@@ -513,15 +787,21 @@ components:
           properties: { version: { type: integer, minimum: 1 } }
     BuyerVerificationInput:
       type: object
-      required: [version, identityEvidenceUrl, fundingEvidenceUrl, verificationNote, availableFunds, evidenceAt, validUntil]
+      required: [version, identityEvidenceUrl, verificationNote, evidenceAt, validUntil, currentBuyingStatus, buyingEvidenceUrl, buyingEvidenceAt, criteriaEvidenceUrl, verificationSource, confidence]
       properties:
         version: { type: integer, minimum: 1 }
         identityEvidenceUrl: { type: string, minLength: 8, maxLength: 2000 }
         fundingEvidenceUrl: { type: string, minLength: 8, maxLength: 2000 }
         verificationNote: { type: string, minLength: 10, maxLength: 3000 }
-        availableFunds: { type: number, exclusiveMinimum: 0, maximum: 1000000000 }
+        availableFunds: { type: number, minimum: 0, maximum: 1000000000 }
         evidenceAt: { type: string }
         validUntil: { type: string }
+        currentBuyingStatus: { type: string, enum: [BUYING, PAUSED, NOT_BUYING] }
+        buyingEvidenceUrl: { type: string, minLength: 8, maxLength: 2000 }
+        buyingEvidenceAt: { type: string }
+        criteriaEvidenceUrl: { type: string, minLength: 8, maxLength: 2000 }
+        verificationSource: { type: string, minLength: 3, maxLength: 2000 }
+        confidence: { type: number, minimum: 0, maximum: 1 }
     Buyer:
       allOf:
         - { $ref: "#/components/schemas/BuyerInput" }
@@ -539,6 +819,18 @@ components:
             validUntil: { type: [string, "null"] }
             verifiedBy: { type: [string, "null"] }
             verifiedAt: { type: [string, "null"] }
+            approvalStatus: { type: string, enum: [DISCOVERED, QUALIFICATION_REQUIRED, APPROVED, REVERIFICATION_REQUIRED] }
+            currentBuyingStatus: { type: string, enum: [UNKNOWN, BUYING, PAUSED, NOT_BUYING] }
+            buyingEvidenceUrl: { type: [string, "null"] }
+            buyingEvidenceAt: { type: [string, "null"] }
+            buyingVerifiedAt: { type: [string, "null"] }
+            criteriaEvidenceUrl: { type: [string, "null"] }
+            verificationSource: { type: [string, "null"] }
+            confidence: { type: [number, "null"] }
+            qualificationBlockers: { type: array, items: { type: string } }
+            discoveryEvidence: { $ref: "#/components/schemas/BuyerDiscoveryEvidence" }
+            verificationHistory: { type: array, items: { $ref: "#/components/schemas/BuyerVerificationHistory" } }
+            qualificationTask: { oneOf: [{ $ref: "#/components/schemas/BuyerQualificationTask" }, { type: "null" }] }
             createdAt: { type: string }
             updatedAt: { type: string }
     BuyerMatch:
@@ -548,6 +840,7 @@ components:
         buyerId: { type: string }
         leadId: { type: string }
         buyerName: { type: string }
+        destinationKind: { type: string, enum: [BUYER, DEAL_FINDER, GURU] }
         eligible: { type: boolean }
         score: { type: number }
         reasons: { type: array, items: { type: string } }
@@ -643,15 +936,18 @@ components:
       type: object
       required: [kind, idempotencyKey]
       properties:
-        kind: { type: string, enum: [MATCH_BUYERS, REVIEW_DEADLINES, ENRICH_PROPERTY, PREPARE_BRIEF] }
+        kind: { type: string, enum: [MATCH_BUYERS, REVIEW_DEADLINES, ENRICH_PROPERTY, PREPARE_BRIEF, BUYER_DISCOVERY, REVIEW_BUYER_POOL] }
         leadId: { type: string }
+        termsReviewed: { type: boolean }
+        recurringDiscovery: { type: boolean }
         idempotencyKey: { type: string, minLength: 8, maxLength: 200 }
     WorkerJob:
       type: object
       required: [id, kind, state, leadId, requestedBy, message, attempts, createdAt, updatedAt]
       properties:
         id: { type: string }
-        kind: { type: string, enum: [MATCH_BUYERS, REVIEW_DEADLINES, ENRICH_PROPERTY, PREPARE_BRIEF] }
+        kind: { type: string, enum: [MATCH_BUYERS, REVIEW_DEADLINES, ENRICH_PROPERTY, PREPARE_BRIEF, BUYER_DISCOVERY, REVIEW_BUYER_POOL] }
+        recurringDiscovery: { type: boolean }
         state: { type: string, enum: [QUEUED, RUNNING, SUCCEEDED, FAILED] }
         leadId: { type: [string, "null"] }
         requestedBy: { type: string }

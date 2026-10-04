@@ -1,7 +1,8 @@
 import { Router, type IRouter } from "express";
 import { z } from "zod";
 import * as schemas from "@workspace/api-zod";
-import { DomainError, type OfferActor } from "@workspace/deal-domain";
+import { DomainError, WORKER_CAPABILITIES, type OfferActor } from "@workspace/deal-domain";
+import * as poolOperations from "../services/buyer-pool";
 import { authenticated, membership, roles } from "../middlewares/access";
 import * as buyers from "../services/buyer-store";
 import { allBuyerRecords, getBuyerRecord } from "../services/operations-records";
@@ -20,6 +21,10 @@ export function parse<T extends z.ZodType>(schema: T,value: unknown): z.infer<T>
   return parsed.data;
 }
 router.get("/buyers",async (_req,res)=>{res.json(schemas.ListBuyersResponse.parse(await allBuyerRecords()));});
+router.post("/buyers/discovered",roles("OWNER","ANALYST"),async(req,res)=>{
+  res.status(201).json(schemas.DiscoverBuyerResponse.parse(await poolOperations.discoverBuyer(parse(schemas.DiscoverBuyerBody,req.body),actor(res))));
+});
+router.get("/worker-capabilities",(_req,res)=>res.json(schemas.GetWorkerCapabilitiesResponse.parse(WORKER_CAPABILITIES)));
 router.post("/buyers",roles("OWNER","ANALYST"),async(req,res)=>{
   res.status(201).json(schemas.CreateBuyerResponse.parse(await buyers.createBuyer(parse(schemas.CreateBuyerBody,req.body),actor(res))));
 });

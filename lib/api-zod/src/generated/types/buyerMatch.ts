@@ -5,12 +5,14 @@
  * Radical Deal OS seller intake, underwriting, conversations and approved offers
  * OpenAPI spec version: 1.0.0
  */
+import type { BuyerMatchDestinationKind } from './buyerMatchDestinationKind';
 import type { BuyerMatchStatus } from './buyerMatchStatus';
 
 export interface BuyerMatch {
   buyerId: string;
   leadId: string;
   buyerName: string;
+  destinationKind?: BuyerMatchDestinationKind;
   eligible: boolean;
   score: number;
   reasons: string[];

@@ -27,7 +27,7 @@ export default function Landing() {
           <div>
             <p className="eyebrow mb-4">Internal tool / team access only</p>
             <h1 className="text-5xl font-semibold leading-[1.02] md:text-7xl">Know the number before you pick up the phone.</h1>
-            <p className="mt-5 max-w-xl text-lg text-muted-foreground">Radical Deal OS is the working desk for our wholesaling team. Analysts research. The math is fixed. Mom calls the next seller with a brief in hand.</p>
+            <p className="mt-5 max-w-xl text-lg text-muted-foreground">Radical Deal OS is the working desk for our wholesaling team. Analysts research. The math is fixed. The operator calls the next seller with a brief in hand.</p>
             <div className="mt-7 flex flex-wrap gap-3">
               <Button asChild size="lg" data-testid="button-hero-sign-in"><Link href="/sign-in">Sign in to the desk <ArrowRight className="ml-2 h-4 w-4" /></Link></Button>
               <Button asChild size="lg" variant="outline" data-testid="button-hero-sign-up"><Link href="/sign-up">Create your account</Link></Button>

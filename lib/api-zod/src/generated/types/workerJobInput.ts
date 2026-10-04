@@ -10,6 +10,8 @@ import type { WorkerJobInputKind } from './workerJobInputKind';
 export interface WorkerJobInput {
   kind: WorkerJobInputKind;
   leadId?: string;
+  termsReviewed?: boolean;
+  recurringDiscovery?: boolean;
   /**
      * @minLength 8
      * @maxLength 200

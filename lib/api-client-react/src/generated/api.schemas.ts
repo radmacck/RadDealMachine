@@ -5,6 +5,250 @@
  * Radical Deal OS seller intake, underwriting, conversations and approved offers
  * OpenAPI spec version: 1.0.0
  */
+export interface PropertySource {
+  id: string;
+  name: string;
+  coverage: string;
+  termsUrl: string;
+  capabilities: string[];
+  limitations: string[];
+}
+
+export type PublicPropertyClassification = typeof PublicPropertyClassification[keyof typeof PublicPropertyClassification];
+
+
+export const PublicPropertyClassification = {
+  OBSERVED: 'OBSERVED',
+} as const;
+
+export type PublicPropertyPropertyType = typeof PublicPropertyPropertyType[keyof typeof PublicPropertyPropertyType];
+
+
+export const PublicPropertyPropertyType = {
+  SINGLE_FAMILY: 'SINGLE_FAMILY',
+  TOWNHOUSE: 'TOWNHOUSE',
+} as const;
+
+export interface PublicProperty {
+  id: string;
+  provider: string;
+  classification: PublicPropertyClassification;
+  address: string;
+  city: string;
+  state: string;
+  zip: string;
+  propertyType: PublicPropertyPropertyType;
+  /** @nullable */
+  sqft: number | null;
+  /** @nullable */
+  beds: number | null;
+  /** @nullable */
+  baths: number | null;
+  /** @nullable */
+  recordedOwner: string | null;
+  entityCandidate: boolean;
+  /** @nullable */
+  assessedValue: number | null;
+  /** @nullable */
+  lastSalePrice: number | null;
+  /** @nullable */
+  lastSaleAt: string | null;
+  /** @nullable */
+  interiorCondition: string | null;
+  /** @nullable */
+  exteriorCondition: string | null;
+  /** @nullable */
+  lat: number | null;
+  /** @nullable */
+  lng: number | null;
+  sourceUrl: string;
+  capturedAt: string;
+}
+
+export interface PublicPropertySearch {
+  source: PropertySource;
+  records: PublicProperty[];
+  capturedAt: string;
+}
+
+export type CompCondition = typeof CompCondition[keyof typeof CompCondition];
+
+
+export const CompCondition = {
+  RENOVATED: 'RENOVATED',
+  SIMILAR: 'SIMILAR',
+  UNKNOWN: 'UNKNOWN',
+} as const;
+
+export interface Comp {
+  /** @minLength 1 */
+  id: string;
+  /** @minLength 3 */
+  address: string;
+  /**
+     * @maximum 1000000000
+     * @exclusiveMinimum 0
+     */
+  salePrice: number;
+  /**
+     * @maximum 1000000
+     * @exclusiveMinimum 0
+     */
+  sqft: number;
+  soldAt: string;
+  /**
+     * @minimum 0
+     * @maximum 10000
+     */
+  distanceMiles: number;
+  propertyType: string;
+  condition: CompCondition;
+  /** @minLength 1 */
+  source: string;
+  verified: boolean;
+}
+
+export interface SourceSaleCandidate {
+  record: PublicProperty;
+  comp: Comp;
+  reasons: string[];
+}
+
+export interface SourceResearch {
+  source: PropertySource;
+  subject: PublicProperty;
+  candidates: SourceSaleCandidate[];
+  capturedAt: string;
+  limitations: string[];
+}
+
+export interface SourceReviewInput {
+  termsReviewed: boolean;
+}
+
+export type SourceRefreshInput = SourceReviewInput & {
+  /** @minimum 1 */
+  version: number;
+};
+
+export interface SourceCompsInput {
+  /** @minimum 1 */
+  version: number;
+  /**
+     * @minItems 1
+     * @maxItems 30
+     */
+  recordIds: string[];
+}
+
+export interface PublicPropertyImport {
+  leadId: string;
+  created: boolean;
+  research: SourceResearch;
+}
+
+export type BuyerProspectInputDestinationKind = typeof BuyerProspectInputDestinationKind[keyof typeof BuyerProspectInputDestinationKind];
+
+
+export const BuyerProspectInputDestinationKind = {
+  BUYER: 'BUYER',
+  DEAL_FINDER: 'DEAL_FINDER',
+  GURU: 'GURU',
+} as const;
+
+export interface BuyerProspectInput {
+  /**
+     * @minLength 1
+     * @maxLength 200
+     */
+  name: string;
+  /** @maxLength 200 */
+  email?: string;
+  /** @maxLength 50 */
+  phone?: string;
+  /**
+     * @minLength 1
+     * @maxLength 2000
+     */
+  source: string;
+  /**
+     * @minLength 8
+     * @maxLength 2000
+     */
+  sourceUrl: string;
+  capturedAt: string;
+  /**
+     * @minimum 0
+     * @maximum 1
+     */
+  confidence: number;
+  destinationKind?: BuyerProspectInputDestinationKind;
+}
+
+export type BuyerQualificationTaskKind = typeof BuyerQualificationTaskKind[keyof typeof BuyerQualificationTaskKind];
+
+
+export const BuyerQualificationTaskKind = {
+  QUALIFY: 'QUALIFY',
+  REVERIFY: 'REVERIFY',
+} as const;
+
+export type BuyerQualificationTaskState = typeof BuyerQualificationTaskState[keyof typeof BuyerQualificationTaskState];
+
+
+export const BuyerQualificationTaskState = {
+  PENDING_EXECUTION: 'PENDING_EXECUTION',
+  WAITING_EXTERNAL: 'WAITING_EXTERNAL',
+  COMPLETED: 'COMPLETED',
+} as const;
+
+export interface BuyerQualificationTask {
+  id: string;
+  kind: BuyerQualificationTaskKind;
+  state: BuyerQualificationTaskState;
+  reason: string;
+  preparedMessage: string;
+  dueAt: string;
+  updatedAt: string;
+}
+
+export type BuyerDiscoveryEvidenceClassification = typeof BuyerDiscoveryEvidenceClassification[keyof typeof BuyerDiscoveryEvidenceClassification];
+
+
+export const BuyerDiscoveryEvidenceClassification = {
+  OBSERVED: 'OBSERVED',
+} as const;
+
+export interface BuyerDiscoveryEvidence {
+  classification: BuyerDiscoveryEvidenceClassification;
+  source: string;
+  sourceUrl: string;
+  capturedAt: string;
+  /**
+     * @minimum 0
+     * @maximum 1
+     */
+  confidence: number;
+}
+
+export type BuyerVerificationHistoryCurrentBuyingStatus = typeof BuyerVerificationHistoryCurrentBuyingStatus[keyof typeof BuyerVerificationHistoryCurrentBuyingStatus];
+
+
+export const BuyerVerificationHistoryCurrentBuyingStatus = {
+  BUYING: 'BUYING',
+  PAUSED: 'PAUSED',
+  NOT_BUYING: 'NOT_BUYING',
+} as const;
+
+export type BuyerVerificationHistoryDestinationKind = typeof BuyerVerificationHistoryDestinationKind[keyof typeof BuyerVerificationHistoryDestinationKind];
+
+
+export const BuyerVerificationHistoryDestinationKind = {
+  BUYER: 'BUYER',
+  DEAL_FINDER: 'DEAL_FINDER',
+  GURU: 'GURU',
+} as const;
+
 export type BuyerCriteriaPropertyTypesItem = typeof BuyerCriteriaPropertyTypesItem[keyof typeof BuyerCriteriaPropertyTypesItem];
 
 
@@ -14,6 +258,40 @@ export const BuyerCriteriaPropertyTypesItem = {
   CONDO: 'CONDO',
   TOWNHOUSE: 'TOWNHOUSE',
   LAND: 'LAND',
+  OTHER: 'OTHER',
+} as const;
+
+export type BuyerCriteriaRehabTolerance = typeof BuyerCriteriaRehabTolerance[keyof typeof BuyerCriteriaRehabTolerance];
+
+
+export const BuyerCriteriaRehabTolerance = {
+  NONE: 'NONE',
+  LIGHT: 'LIGHT',
+  MODERATE: 'MODERATE',
+  HEAVY: 'HEAVY',
+  ANY: 'ANY',
+} as const;
+
+export type BuyerCriteriaStrategiesItem = typeof BuyerCriteriaStrategiesItem[keyof typeof BuyerCriteriaStrategiesItem];
+
+
+export const BuyerCriteriaStrategiesItem = {
+  FLIP: 'FLIP',
+  RENTAL: 'RENTAL',
+  BRRRR: 'BRRRR',
+  WHOLESALE: 'WHOLESALE',
+  DEVELOPMENT: 'DEVELOPMENT',
+  OTHER: 'OTHER',
+} as const;
+
+export type BuyerCriteriaFundingTypesItem = typeof BuyerCriteriaFundingTypesItem[keyof typeof BuyerCriteriaFundingTypesItem];
+
+
+export const BuyerCriteriaFundingTypesItem = {
+  CASH: 'CASH',
+  HARD_MONEY: 'HARD_MONEY',
+  PRIVATE_LENDING: 'PRIVATE_LENDING',
+  CONVENTIONAL: 'CONVENTIONAL',
   OTHER: 'OTHER',
 } as const;
 
@@ -60,6 +338,108 @@ export interface BuyerCriteria {
      * @maximum 365
      */
   closingDays: number;
+  /**
+     * @items.minLength 1
+     * @items.maxLength 200
+     */
+  counties?: string[];
+  /**
+     * @items.minLength 1
+     * @items.maxLength 200
+     */
+  excludedCounties?: string[];
+  /**
+     * @items.minLength 1
+     * @items.maxLength 200
+     */
+  excludedCities?: string[];
+  /** @items.pattern ^\d{5}$ */
+  excludedZipCodes?: string[];
+  /**
+     * @minimum 0
+     * @maximum 1000000000
+     */
+  minPurchasePrice?: number;
+  /**
+     * @minimum 0
+     * @maximum 1000000000
+     * @nullable
+     */
+  minArv?: number | null;
+  /**
+     * @minimum 0
+     * @maximum 1000000000
+     * @nullable
+     */
+  maxArv?: number | null;
+  /**
+     * @minimum 0
+     * @maximum 10000
+     */
+  minUnits?: number;
+  /**
+     * @minimum 0
+     * @maximum 10000
+     */
+  maxUnits?: number;
+  /**
+     * @minimum 0
+     * @maximum 100
+     */
+  minBaths?: number;
+  /**
+     * @minimum 0
+     * @maximum 100
+     * @nullable
+     */
+  maxBeds?: number | null;
+  /**
+     * @minimum 0
+     * @maximum 100
+     * @nullable
+     */
+  maxBaths?: number | null;
+  rehabTolerance?: BuyerCriteriaRehabTolerance;
+  /** @minItems 1 */
+  strategies?: BuyerCriteriaStrategiesItem[];
+  /** @minItems 1 */
+  fundingTypes?: BuyerCriteriaFundingTypesItem[];
+  /**
+     * @minimum 1
+     * @maximum 1000
+     */
+  maxConcurrentDeals?: number;
+  /**
+     * @minimum 0
+     * @maximum 1000000000
+     * @nullable
+     */
+  minSpread?: number | null;
+  /**
+     * @minimum 0
+     * @maximum 1
+     * @nullable
+     */
+  minCapRate?: number | null;
+}
+
+export interface BuyerVerificationHistory {
+  reviewedBy: string;
+  reviewedAt: string;
+  currentBuyingStatus: BuyerVerificationHistoryCurrentBuyingStatus;
+  buyingEvidenceUrl: string;
+  buyingEvidenceAt?: string;
+  criteriaEvidenceUrl: string;
+  verificationSource: string;
+  identityEvidenceUrl?: string;
+  fundingEvidenceUrl?: string;
+  availableFunds?: number;
+  evidenceAt?: string;
+  validUntil?: string;
+  confidence?: number;
+  verificationNote?: string;
+  destinationKind?: BuyerVerificationHistoryDestinationKind;
+  criteria?: BuyerCriteria | null;
 }
 
 export type BuyerInputStatus = typeof BuyerInputStatus[keyof typeof BuyerInputStatus];
@@ -68,6 +448,15 @@ export type BuyerInputStatus = typeof BuyerInputStatus[keyof typeof BuyerInputSt
 export const BuyerInputStatus = {
   ACTIVE: 'ACTIVE',
   PAUSED: 'PAUSED',
+} as const;
+
+export type BuyerInputDestinationKind = typeof BuyerInputDestinationKind[keyof typeof BuyerInputDestinationKind];
+
+
+export const BuyerInputDestinationKind = {
+  BUYER: 'BUYER',
+  DEAL_FINDER: 'DEAL_FINDER',
+  GURU: 'GURU',
 } as const;
 
 export interface BuyerInput {
@@ -85,14 +474,32 @@ export interface BuyerInput {
      * @maxLength 2000
      */
   source: string;
-  criteria: BuyerCriteria;
+  criteria: BuyerCriteria | null;
   status: BuyerInputStatus;
+  destinationKind?: BuyerInputDestinationKind;
+  /**
+     * @minimum 0
+     * @maximum 1000000000
+     * @nullable
+     */
+  qualifiedDealFee?: number | null;
+  /** @maxLength 2000 */
+  feeTermsSource?: string;
 }
 
 export type BuyerUpdate = BuyerInput & {
   /** @minimum 1 */
   version: number;
 };
+
+export type BuyerVerificationInputCurrentBuyingStatus = typeof BuyerVerificationInputCurrentBuyingStatus[keyof typeof BuyerVerificationInputCurrentBuyingStatus];
+
+
+export const BuyerVerificationInputCurrentBuyingStatus = {
+  BUYING: 'BUYING',
+  PAUSED: 'PAUSED',
+  NOT_BUYING: 'NOT_BUYING',
+} as const;
 
 export interface BuyerVerificationInput {
   /** @minimum 1 */
@@ -106,19 +513,41 @@ export interface BuyerVerificationInput {
      * @minLength 8
      * @maxLength 2000
      */
-  fundingEvidenceUrl: string;
+  fundingEvidenceUrl?: string;
   /**
      * @minLength 10
      * @maxLength 3000
      */
   verificationNote: string;
   /**
+     * @minimum 0
      * @maximum 1000000000
-     * @exclusiveMinimum 0
      */
-  availableFunds: number;
+  availableFunds?: number;
   evidenceAt: string;
   validUntil: string;
+  currentBuyingStatus: BuyerVerificationInputCurrentBuyingStatus;
+  /**
+     * @minLength 8
+     * @maxLength 2000
+     */
+  buyingEvidenceUrl: string;
+  buyingEvidenceAt: string;
+  /**
+     * @minLength 8
+     * @maxLength 2000
+     */
+  criteriaEvidenceUrl: string;
+  /**
+     * @minLength 3
+     * @maxLength 2000
+     */
+  verificationSource: string;
+  /**
+     * @minimum 0
+     * @maximum 1
+     */
+  confidence: number;
 }
 
 export type BuyerVerificationStatus = typeof BuyerVerificationStatus[keyof typeof BuyerVerificationStatus];
@@ -128,6 +557,26 @@ export const BuyerVerificationStatus = {
   UNVERIFIED: 'UNVERIFIED',
   VERIFIED: 'VERIFIED',
   STALE: 'STALE',
+} as const;
+
+export type BuyerApprovalStatus = typeof BuyerApprovalStatus[keyof typeof BuyerApprovalStatus];
+
+
+export const BuyerApprovalStatus = {
+  DISCOVERED: 'DISCOVERED',
+  QUALIFICATION_REQUIRED: 'QUALIFICATION_REQUIRED',
+  APPROVED: 'APPROVED',
+  REVERIFICATION_REQUIRED: 'REVERIFICATION_REQUIRED',
+} as const;
+
+export type BuyerCurrentBuyingStatus = typeof BuyerCurrentBuyingStatus[keyof typeof BuyerCurrentBuyingStatus];
+
+
+export const BuyerCurrentBuyingStatus = {
+  UNKNOWN: 'UNKNOWN',
+  BUYING: 'BUYING',
+  PAUSED: 'PAUSED',
+  NOT_BUYING: 'NOT_BUYING',
 } as const;
 
 export type Buyer = BuyerInput & ({
@@ -150,9 +599,36 @@ export type Buyer = BuyerInput & ({
   verifiedBy?: string | null;
   /** @nullable */
   verifiedAt?: string | null;
+  approvalStatus?: BuyerApprovalStatus;
+  currentBuyingStatus?: BuyerCurrentBuyingStatus;
+  /** @nullable */
+  buyingEvidenceUrl?: string | null;
+  /** @nullable */
+  buyingEvidenceAt?: string | null;
+  /** @nullable */
+  buyingVerifiedAt?: string | null;
+  /** @nullable */
+  criteriaEvidenceUrl?: string | null;
+  /** @nullable */
+  verificationSource?: string | null;
+  /** @nullable */
+  confidence?: number | null;
+  qualificationBlockers?: string[];
+  discoveryEvidence?: BuyerDiscoveryEvidence;
+  verificationHistory?: BuyerVerificationHistory[];
+  qualificationTask?: BuyerQualificationTask | null;
   createdAt: string;
   updatedAt: string;
 });
+
+export type BuyerMatchDestinationKind = typeof BuyerMatchDestinationKind[keyof typeof BuyerMatchDestinationKind];
+
+
+export const BuyerMatchDestinationKind = {
+  BUYER: 'BUYER',
+  DEAL_FINDER: 'DEAL_FINDER',
+  GURU: 'GURU',
+} as const;
 
 export type BuyerMatchStatus = typeof BuyerMatchStatus[keyof typeof BuyerMatchStatus];
 
@@ -168,6 +644,7 @@ export interface BuyerMatch {
   buyerId: string;
   leadId: string;
   buyerName: string;
+  destinationKind?: BuyerMatchDestinationKind;
   eligible: boolean;
   score: number;
   reasons: string[];
@@ -371,11 +848,15 @@ export const WorkerJobInputKind = {
   REVIEW_DEADLINES: 'REVIEW_DEADLINES',
   ENRICH_PROPERTY: 'ENRICH_PROPERTY',
   PREPARE_BRIEF: 'PREPARE_BRIEF',
+  BUYER_DISCOVERY: 'BUYER_DISCOVERY',
+  REVIEW_BUYER_POOL: 'REVIEW_BUYER_POOL',
 } as const;
 
 export interface WorkerJobInput {
   kind: WorkerJobInputKind;
   leadId?: string;
+  termsReviewed?: boolean;
+  recurringDiscovery?: boolean;
   /**
      * @minLength 8
      * @maxLength 200
@@ -391,6 +872,8 @@ export const WorkerJobKind = {
   REVIEW_DEADLINES: 'REVIEW_DEADLINES',
   ENRICH_PROPERTY: 'ENRICH_PROPERTY',
   PREPARE_BRIEF: 'PREPARE_BRIEF',
+  BUYER_DISCOVERY: 'BUYER_DISCOVERY',
+  REVIEW_BUYER_POOL: 'REVIEW_BUYER_POOL',
 } as const;
 
 export type WorkerJobState = typeof WorkerJobState[keyof typeof WorkerJobState];
@@ -406,6 +889,7 @@ export const WorkerJobState = {
 export interface WorkerJob {
   id: string;
   kind: WorkerJobKind;
+  recurringDiscovery?: boolean;
   state: WorkerJobState;
   /** @nullable */
   leadId: string | null;
@@ -846,43 +1330,6 @@ export type Offer = OfferTerms & ({
   withdrawalReason: string | null;
 });
 
-export type CompCondition = typeof CompCondition[keyof typeof CompCondition];
-
-
-export const CompCondition = {
-  RENOVATED: 'RENOVATED',
-  SIMILAR: 'SIMILAR',
-  UNKNOWN: 'UNKNOWN',
-} as const;
-
-export interface Comp {
-  /** @minLength 1 */
-  id: string;
-  /** @minLength 3 */
-  address: string;
-  /**
-     * @maximum 1000000000
-     * @exclusiveMinimum 0
-     */
-  salePrice: number;
-  /**
-     * @maximum 1000000
-     * @exclusiveMinimum 0
-     */
-  sqft: number;
-  soldAt: string;
-  /**
-     * @minimum 0
-     * @maximum 10000
-     */
-  distanceMiles: number;
-  propertyType: string;
-  condition: CompCondition;
-  /** @minLength 1 */
-  source: string;
-  verified: boolean;
-}
-
 export interface Repair {
   /** @minLength 1 */
   category: string;
@@ -1170,4 +1617,40 @@ export interface Dashboard {
   stages: StageCount[];
   recentActivity: AuditEvent[];
 }
+
+export type SearchPublicPropertiesParams = {
+/**
+ * @pattern ^191\d{2}$
+ */
+zip?: string;
+lane?: SearchPublicPropertiesLane;
+};
+
+export type SearchPublicPropertiesLane = typeof SearchPublicPropertiesLane[keyof typeof SearchPublicPropertiesLane];
+
+
+export const SearchPublicPropertiesLane = {
+  properties: 'properties',
+  buyer_candidates: 'buyer_candidates',
+} as const;
+
+export type GetSourceResearch200 = {
+  research: SourceResearch | null;
+};
+
+export type GetWorkerCapabilities200ItemState = typeof GetWorkerCapabilities200ItemState[keyof typeof GetWorkerCapabilities200ItemState];
+
+
+export const GetWorkerCapabilities200ItemState = {
+  AVAILABLE: 'AVAILABLE',
+  PENDING_CONNECTION: 'PENDING_CONNECTION',
+} as const;
+
+export type GetWorkerCapabilities200Item = {
+  id: string;
+  capability: string;
+  state: GetWorkerCapabilities200ItemState;
+  reason: string;
+  nextAction: string;
+};
 

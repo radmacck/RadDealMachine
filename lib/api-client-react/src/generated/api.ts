@@ -25,6 +25,7 @@ import type {
   AuditEvent,
   Buyer,
   BuyerInput,
+  BuyerProspectInput,
   BuyerResponseInput,
   BuyerUpdate,
   BuyerVerificationInput,
@@ -37,6 +38,8 @@ import type {
   Dashboard,
   DealOperations,
   DealOutcomeInput,
+  GetSourceResearch200,
+  GetWorkerCapabilities200Item,
   HealthStatus,
   Intelligence,
   IntelligenceInput,
@@ -50,6 +53,14 @@ import type {
   OfferCommunicationInput,
   OfferDraftInput,
   OfferWithdrawalInput,
+  PropertySource,
+  PublicPropertyImport,
+  PublicPropertySearch,
+  SearchPublicPropertiesParams,
+  SourceCompsInput,
+  SourceRefreshInput,
+  SourceResearch,
+  SourceReviewInput,
   TransitionInput,
   UnderwritingInput,
   WorkerJob,
@@ -2959,4 +2970,626 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
       > => {
       return useMutation(getSubmitWorkerJobMutationOptions(options));
     }
+
+export const getListPropertySourcesUrl = () => {
+
+
+
+
+  return `/api/property-sources`
+}
+
+export const listPropertySources = async ( options?: Parameters<typeof customFetch>[1]): Promise<PropertySource[]> => {
+
+  return customFetch<PropertySource[]>(getListPropertySourcesUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getListPropertySourcesQueryKey = () => {
+    return [
+    `/api/property-sources`
+    ] as const;
+    }
+
+
+export const getListPropertySourcesQueryOptions = <TData = Awaited<ReturnType<typeof listPropertySources>>, TError = ErrorType<unknown>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listPropertySources>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getListPropertySourcesQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listPropertySources>>> = ({ signal }) => listPropertySources({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listPropertySources>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type ListPropertySourcesQueryResult = NonNullable<Awaited<ReturnType<typeof listPropertySources>>>
+export type ListPropertySourcesQueryError = ErrorType<unknown>
+
+
+
+export function useListPropertySources<TData = Awaited<ReturnType<typeof listPropertySources>>, TError = ErrorType<unknown>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listPropertySources>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getListPropertySourcesQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getSearchPublicPropertiesUrl = (params?: SearchPublicPropertiesParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/api/property-sources/phila-opa/records?${stringifiedParams}` : `/api/property-sources/phila-opa/records`
+}
+
+export const searchPublicProperties = async (params?: SearchPublicPropertiesParams, options?: Parameters<typeof customFetch>[1]): Promise<PublicPropertySearch> => {
+
+  return customFetch<PublicPropertySearch>(getSearchPublicPropertiesUrl(params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getSearchPublicPropertiesQueryKey = (params?: SearchPublicPropertiesParams,) => {
+    return [
+    `/api/property-sources/phila-opa/records`, ...(params ? [params] : [])
+    ] as const;
+    }
+
+
+export const getSearchPublicPropertiesQueryOptions = <TData = Awaited<ReturnType<typeof searchPublicProperties>>, TError = ErrorType<unknown>>(params?: SearchPublicPropertiesParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof searchPublicProperties>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getSearchPublicPropertiesQueryKey(params);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof searchPublicProperties>>> = ({ signal }) => searchPublicProperties(params, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof searchPublicProperties>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type SearchPublicPropertiesQueryResult = NonNullable<Awaited<ReturnType<typeof searchPublicProperties>>>
+export type SearchPublicPropertiesQueryError = ErrorType<unknown>
+
+
+
+export function useSearchPublicProperties<TData = Awaited<ReturnType<typeof searchPublicProperties>>, TError = ErrorType<unknown>>(
+ params?: SearchPublicPropertiesParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof searchPublicProperties>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getSearchPublicPropertiesQueryOptions(params,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getImportPublicPropertyUrl = (recordId: string,) => {
+
+
+
+
+  return `/api/property-sources/phila-opa/records/${recordId}/import`
+}
+
+export const importPublicProperty = async (recordId: string,
+    sourceReviewInput: SourceReviewInput, options?: Parameters<typeof customFetch>[1]): Promise<PublicPropertyImport> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return customFetch<PublicPropertyImport>(getImportPublicPropertyUrl(recordId),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(sourceReviewInput)
+  }
+);}
+
+
+
+
+
+export const getImportPublicPropertyMutationKey = () => ['importPublicProperty'] as const;
+
+export const getImportPublicPropertyMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof importPublicProperty>>, TError,ImportPublicPropertyMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof importPublicProperty>>, TError,ImportPublicPropertyMutationVariables, TContext> => {
+
+const mutationKey = getImportPublicPropertyMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof importPublicProperty>>, ImportPublicPropertyMutationVariables> = (props) => {
+          const {recordId,data} = props ?? {};
+
+          return  importPublicProperty(recordId,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type ImportPublicPropertyMutationResult = NonNullable<Awaited<ReturnType<typeof importPublicProperty>>>
+    export type ImportPublicPropertyMutationBody = BodyType<SourceReviewInput>
+    export type ImportPublicPropertyMutationError = ErrorType<unknown>
+    export type ImportPublicPropertyMutationVariables = {recordId: string;data: BodyType<SourceReviewInput>}
+
+    export const useImportPublicProperty = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof importPublicProperty>>, TError,ImportPublicPropertyMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof importPublicProperty>>,
+        TError,
+        ImportPublicPropertyMutationVariables,
+        TContext
+      > => {
+      return useMutation(getImportPublicPropertyMutationOptions(options));
+    }
+
+export const getGetSourceResearchUrl = (id: string,) => {
+
+
+
+
+  return `/api/leads/${id}/source-research`
+}
+
+export const getSourceResearch = async (id: string, options?: Parameters<typeof customFetch>[1]): Promise<GetSourceResearch200> => {
+
+  return customFetch<GetSourceResearch200>(getGetSourceResearchUrl(id),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetSourceResearchQueryKey = (id: string,) => {
+    return [
+    `/api/leads/${id}/source-research`
+    ] as const;
+    }
+
+
+export const getGetSourceResearchQueryOptions = <TData = Awaited<ReturnType<typeof getSourceResearch>>, TError = ErrorType<unknown>>(id: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getSourceResearch>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetSourceResearchQueryKey(id);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getSourceResearch>>> = ({ signal }) => getSourceResearch(id, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: id !== null && id !== undefined, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getSourceResearch>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetSourceResearchQueryResult = NonNullable<Awaited<ReturnType<typeof getSourceResearch>>>
+export type GetSourceResearchQueryError = ErrorType<unknown>
+
+
+
+export function useGetSourceResearch<TData = Awaited<ReturnType<typeof getSourceResearch>>, TError = ErrorType<unknown>>(
+ id: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getSourceResearch>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetSourceResearchQueryOptions(id,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getRefreshSourceResearchUrl = (id: string,) => {
+
+
+
+
+  return `/api/leads/${id}/source-research`
+}
+
+export const refreshSourceResearch = async (id: string,
+    sourceRefreshInput: SourceRefreshInput, options?: Parameters<typeof customFetch>[1]): Promise<SourceResearch> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return customFetch<SourceResearch>(getRefreshSourceResearchUrl(id),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(sourceRefreshInput)
+  }
+);}
+
+
+
+
+
+export const getRefreshSourceResearchMutationKey = () => ['refreshSourceResearch'] as const;
+
+export const getRefreshSourceResearchMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof refreshSourceResearch>>, TError,RefreshSourceResearchMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof refreshSourceResearch>>, TError,RefreshSourceResearchMutationVariables, TContext> => {
+
+const mutationKey = getRefreshSourceResearchMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof refreshSourceResearch>>, RefreshSourceResearchMutationVariables> = (props) => {
+          const {id,data} = props ?? {};
+
+          return  refreshSourceResearch(id,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type RefreshSourceResearchMutationResult = NonNullable<Awaited<ReturnType<typeof refreshSourceResearch>>>
+    export type RefreshSourceResearchMutationBody = BodyType<SourceRefreshInput>
+    export type RefreshSourceResearchMutationError = ErrorType<unknown>
+    export type RefreshSourceResearchMutationVariables = {id: string;data: BodyType<SourceRefreshInput>}
+
+    export const useRefreshSourceResearch = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof refreshSourceResearch>>, TError,RefreshSourceResearchMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof refreshSourceResearch>>,
+        TError,
+        RefreshSourceResearchMutationVariables,
+        TContext
+      > => {
+      return useMutation(getRefreshSourceResearchMutationOptions(options));
+    }
+
+export const getAddSourceCompsUrl = (id: string,) => {
+
+
+
+
+  return `/api/leads/${id}/source-research/comps`
+}
+
+export const addSourceComps = async (id: string,
+    sourceCompsInput: SourceCompsInput, options?: Parameters<typeof customFetch>[1]): Promise<LeadDetail> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return customFetch<LeadDetail>(getAddSourceCompsUrl(id),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(sourceCompsInput)
+  }
+);}
+
+
+
+
+
+export const getAddSourceCompsMutationKey = () => ['addSourceComps'] as const;
+
+export const getAddSourceCompsMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof addSourceComps>>, TError,AddSourceCompsMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof addSourceComps>>, TError,AddSourceCompsMutationVariables, TContext> => {
+
+const mutationKey = getAddSourceCompsMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof addSourceComps>>, AddSourceCompsMutationVariables> = (props) => {
+          const {id,data} = props ?? {};
+
+          return  addSourceComps(id,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type AddSourceCompsMutationResult = NonNullable<Awaited<ReturnType<typeof addSourceComps>>>
+    export type AddSourceCompsMutationBody = BodyType<SourceCompsInput>
+    export type AddSourceCompsMutationError = ErrorType<unknown>
+    export type AddSourceCompsMutationVariables = {id: string;data: BodyType<SourceCompsInput>}
+
+    export const useAddSourceComps = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof addSourceComps>>, TError,AddSourceCompsMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof addSourceComps>>,
+        TError,
+        AddSourceCompsMutationVariables,
+        TContext
+      > => {
+      return useMutation(getAddSourceCompsMutationOptions(options));
+    }
+
+export const getDiscoverBuyerUrl = () => {
+
+
+
+
+  return `/api/buyers/discovered`
+}
+
+export const discoverBuyer = async (buyerProspectInput: BuyerProspectInput, options?: Parameters<typeof customFetch>[1]): Promise<Buyer> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return customFetch<Buyer>(getDiscoverBuyerUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(buyerProspectInput)
+  }
+);}
+
+
+
+
+
+export const getDiscoverBuyerMutationKey = () => ['discoverBuyer'] as const;
+
+export const getDiscoverBuyerMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof discoverBuyer>>, TError,DiscoverBuyerMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof discoverBuyer>>, TError,DiscoverBuyerMutationVariables, TContext> => {
+
+const mutationKey = getDiscoverBuyerMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof discoverBuyer>>, DiscoverBuyerMutationVariables> = (props) => {
+          const {data} = props ?? {};
+
+          return  discoverBuyer(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type DiscoverBuyerMutationResult = NonNullable<Awaited<ReturnType<typeof discoverBuyer>>>
+    export type DiscoverBuyerMutationBody = BodyType<BuyerProspectInput>
+    export type DiscoverBuyerMutationError = ErrorType<unknown>
+    export type DiscoverBuyerMutationVariables = {data: BodyType<BuyerProspectInput>}
+
+    export const useDiscoverBuyer = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof discoverBuyer>>, TError,DiscoverBuyerMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof discoverBuyer>>,
+        TError,
+        DiscoverBuyerMutationVariables,
+        TContext
+      > => {
+      return useMutation(getDiscoverBuyerMutationOptions(options));
+    }
+
+export const getGetWorkerCapabilitiesUrl = () => {
+
+
+
+
+  return `/api/worker-capabilities`
+}
+
+export const getWorkerCapabilities = async ( options?: Parameters<typeof customFetch>[1]): Promise<GetWorkerCapabilities200Item[]> => {
+
+  return customFetch<GetWorkerCapabilities200Item[]>(getGetWorkerCapabilitiesUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetWorkerCapabilitiesQueryKey = () => {
+    return [
+    `/api/worker-capabilities`
+    ] as const;
+    }
+
+
+export const getGetWorkerCapabilitiesQueryOptions = <TData = Awaited<ReturnType<typeof getWorkerCapabilities>>, TError = ErrorType<unknown>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getWorkerCapabilities>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetWorkerCapabilitiesQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getWorkerCapabilities>>> = ({ signal }) => getWorkerCapabilities({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getWorkerCapabilities>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetWorkerCapabilitiesQueryResult = NonNullable<Awaited<ReturnType<typeof getWorkerCapabilities>>>
+export type GetWorkerCapabilitiesQueryError = ErrorType<unknown>
+
+
+
+export function useGetWorkerCapabilities<TData = Awaited<ReturnType<typeof getWorkerCapabilities>>, TError = ErrorType<unknown>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getWorkerCapabilities>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetWorkerCapabilitiesQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
 

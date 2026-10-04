@@ -5,7 +5,12 @@
  * Radical Deal OS seller intake, underwriting, conversations and approved offers
  * OpenAPI spec version: 1.0.0
  */
+import type { BuyerApprovalStatus } from './buyerApprovalStatus';
+import type { BuyerCurrentBuyingStatus } from './buyerCurrentBuyingStatus';
+import type { BuyerDiscoveryEvidence } from './buyerDiscoveryEvidence';
 import type { BuyerInput } from './buyerInput';
+import type { BuyerQualificationTask } from './buyerQualificationTask';
+import type { BuyerVerificationHistory } from './buyerVerificationHistory';
 import type { BuyerVerificationStatus } from './buyerVerificationStatus';
 
 export type Buyer = BuyerInput & ({
@@ -28,6 +33,24 @@ export type Buyer = BuyerInput & ({
   verifiedBy?: string | null;
   /** @nullable */
   verifiedAt?: string | null;
+  approvalStatus?: BuyerApprovalStatus;
+  currentBuyingStatus?: BuyerCurrentBuyingStatus;
+  /** @nullable */
+  buyingEvidenceUrl?: string | null;
+  /** @nullable */
+  buyingEvidenceAt?: string | null;
+  /** @nullable */
+  buyingVerifiedAt?: string | null;
+  /** @nullable */
+  criteriaEvidenceUrl?: string | null;
+  /** @nullable */
+  verificationSource?: string | null;
+  /** @nullable */
+  confidence?: number | null;
+  qualificationBlockers?: string[];
+  discoveryEvidence?: BuyerDiscoveryEvidence;
+  verificationHistory?: BuyerVerificationHistory[];
+  qualificationTask?: BuyerQualificationTask | null;
   createdAt: string;
   updatedAt: string;
 });

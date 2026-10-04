@@ -5,6 +5,7 @@
  * Radical Deal OS seller intake, underwriting, conversations and approved offers
  * OpenAPI spec version: 1.0.0
  */
+import type { BuyerVerificationInputCurrentBuyingStatus } from './buyerVerificationInputCurrentBuyingStatus';
 
 export interface BuyerVerificationInput {
   /** @minimum 1 */
@@ -18,17 +19,39 @@ export interface BuyerVerificationInput {
      * @minLength 8
      * @maxLength 2000
      */
-  fundingEvidenceUrl: string;
+  fundingEvidenceUrl?: string;
   /**
      * @minLength 10
      * @maxLength 3000
      */
   verificationNote: string;
   /**
+     * @minimum 0
      * @maximum 1000000000
-     * @exclusiveMinimum 0
      */
-  availableFunds: number;
+  availableFunds?: number;
   evidenceAt: string;
   validUntil: string;
+  currentBuyingStatus: BuyerVerificationInputCurrentBuyingStatus;
+  /**
+     * @minLength 8
+     * @maxLength 2000
+     */
+  buyingEvidenceUrl: string;
+  buyingEvidenceAt: string;
+  /**
+     * @minLength 8
+     * @maxLength 2000
+     */
+  criteriaEvidenceUrl: string;
+  /**
+     * @minLength 3
+     * @maxLength 2000
+     */
+  verificationSource: string;
+  /**
+     * @minimum 0
+     * @maximum 1
+     */
+  confidence: number;
 }

@@ -5,7 +5,10 @@
  * Radical Deal OS seller intake, underwriting, conversations and approved offers
  * OpenAPI spec version: 1.0.0
  */
+import type { BuyerCriteriaFundingTypesItem } from './buyerCriteriaFundingTypesItem';
 import type { BuyerCriteriaPropertyTypesItem } from './buyerCriteriaPropertyTypesItem';
+import type { BuyerCriteriaRehabTolerance } from './buyerCriteriaRehabTolerance';
+import type { BuyerCriteriaStrategiesItem } from './buyerCriteriaStrategiesItem';
 
 export interface BuyerCriteria {
   /**
@@ -50,4 +53,87 @@ export interface BuyerCriteria {
      * @maximum 365
      */
   closingDays: number;
+  /**
+     * @items.minLength 1
+     * @items.maxLength 200
+     */
+  counties?: string[];
+  /**
+     * @items.minLength 1
+     * @items.maxLength 200
+     */
+  excludedCounties?: string[];
+  /**
+     * @items.minLength 1
+     * @items.maxLength 200
+     */
+  excludedCities?: string[];
+  /** @items.pattern ^\d{5}$ */
+  excludedZipCodes?: string[];
+  /**
+     * @minimum 0
+     * @maximum 1000000000
+     */
+  minPurchasePrice?: number;
+  /**
+     * @minimum 0
+     * @maximum 1000000000
+     * @nullable
+     */
+  minArv?: number | null;
+  /**
+     * @minimum 0
+     * @maximum 1000000000
+     * @nullable
+     */
+  maxArv?: number | null;
+  /**
+     * @minimum 0
+     * @maximum 10000
+     */
+  minUnits?: number;
+  /**
+     * @minimum 0
+     * @maximum 10000
+     */
+  maxUnits?: number;
+  /**
+     * @minimum 0
+     * @maximum 100
+     */
+  minBaths?: number;
+  /**
+     * @minimum 0
+     * @maximum 100
+     * @nullable
+     */
+  maxBeds?: number | null;
+  /**
+     * @minimum 0
+     * @maximum 100
+     * @nullable
+     */
+  maxBaths?: number | null;
+  rehabTolerance?: BuyerCriteriaRehabTolerance;
+  /** @minItems 1 */
+  strategies?: BuyerCriteriaStrategiesItem[];
+  /** @minItems 1 */
+  fundingTypes?: BuyerCriteriaFundingTypesItem[];
+  /**
+     * @minimum 1
+     * @maximum 1000
+     */
+  maxConcurrentDeals?: number;
+  /**
+     * @minimum 0
+     * @maximum 1000000000
+     * @nullable
+     */
+  minSpread?: number | null;
+  /**
+     * @minimum 0
+     * @maximum 1
+     * @nullable
+     */
+  minCapRate?: number | null;
 }

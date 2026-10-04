@@ -13,6 +13,7 @@ import { ProvenanceSections } from '@/components/provenance-sections';
 import { IntelligenceForm } from '@/components/intelligence-form';
 import { LeadForm } from '@/components/lead-form';
 import { UnderwritingEditor } from '@/components/underwriting-editor';
+import { SourceResearchPanel } from '@/components/source-research';
 import { OffersPanel } from '@/components/offers-panel';
 import { DealOperationsPanel } from '@/components/deal-operations-panel';
 import { CallLogForm } from '@/components/call-log-form';
@@ -100,6 +101,7 @@ export default function LeadDetailPage() {
         <TabsList className="flex h-auto flex-wrap justify-start" data-testid="tabs-lead">
           <TabsTrigger value="intel" data-testid="tab-intel">Intelligence ({d.intelligence.length})</TabsTrigger>
           <TabsTrigger value="uw" data-testid="tab-underwriting">Underwriting</TabsTrigger>
+          <TabsTrigger value="source" data-testid="tab-source">Source research</TabsTrigger>
           <TabsTrigger value="offers" data-testid="tab-offers">Offers ({d.offers.length})</TabsTrigger>
           <TabsTrigger value="tx" data-testid="tab-transaction">Transaction</TabsTrigger>
           <TabsTrigger value="record" data-testid="tab-record">Lead record</TabsTrigger>
@@ -116,6 +118,10 @@ export default function LeadDetailPage() {
           <UnderwritingEditor key={`${id}:${uwEpoch}`} leadVersion={lead.version} server={d.underwriting} disabled={!canResearch} pending={saveUw.isPending} error={saveUw.error}
             onDiscard={() => setUwEpoch((e) => e + 1)}
             onSave={(data, done) => saveUw.mutate({ id, data }, { onSuccess: (detail) => { qc.setQueryData(getGetLeadQueryKey(id), detail); invalidate(id); done(); toast({ title: 'Underwriting calculated', description: detail.analysis ? `Result: ${detail.analysis.classification}` : undefined }); } })} />
+        </TabsContent>
+
+        <TabsContent value="source" forceMount className={KEEP}>
+          <SourceResearchPanel leadId={id} version={lead.version} terminal={lead.stage === 'CLOSED' || lead.stage === 'DEAD_DEAL'} canResearch={canResearch} onAdded={() => { setUwEpoch((e) => e + 1); setTab('uw'); }} />
         </TabsContent>
 
         <TabsContent value="offers" forceMount className={KEEP}>

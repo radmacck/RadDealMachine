@@ -5,7 +5,7 @@ description: User's standing product scope and delivery rules for the Radical re
 
 This is a serious, reusable production-oriented internal wholesaling operating system, not a mock dashboard or public marketplace. It must stand alone without unfinished Radical infrastructure and later plug into Naelo/RDS/RDC through clean boundaries.
 
-The scope is the full wholesaling lifecycle, not a prettier/manual CRM. Mom should receive the best next action, prepared seller intelligence and explainable qualified buyer matches without repetitive administration.
+The scope is the full wholesaling lifecycle and a two-sided deal-flow engine, not a prettier/manual CRM. Seller acquisition runs through closing in parallel with proactive buyer discovery, qualification, current-buying verification and automatic matching. The seller-facing operator should receive the best next action, prepared seller intelligence and explainable qualified buyer matches without repetitive administration.
 
 **Why:** The user explicitly corrected the product direction: "not a request for a prettier CRM" and "Do not throw away the verified domain foundation or rebuild working backend/auth/test pieces."
 
@@ -15,13 +15,13 @@ The scope is the full wholesaling lifecycle, not a prettier/manual CRM. Mom shou
 
 **How to apply:** Inspect and reuse existing modules/components/services first. Do not duplicate working capabilities, redesign cosmetics, or spend usage on speculative broad audits. Select the earliest incomplete end-to-end blocker. Implement → automated test → exercise actual persistence/system → objectively verify before moving to another slice. Do not call a capability complete merely because UI exists.
 
-Mom is the primary seller-facing human, responsible for rapport, negotiation and closing. Her CALL NEXT workflow must expose objective, intelligence, questions, offer boundaries and next action without technical/research/admin work.
+The primary seller-facing operator is responsible for rapport, negotiation and closing. CALL NEXT must expose objective, intelligence, questions, offer boundaries and next action without technical/research/admin work.
 
-**Why:** The user specified Mom's role and minimal administrative burden.
+**Why:** The user specified the seller-facing human's role and minimal administrative burden, and requires neutral reusable branding without family references or a fixed operator identity.
 
 **How to apply:** Keep research and administration with analyst/owner capabilities. Preserve all four intelligence sections: VERIFIED FACTS, OBSERVED, INDICATED, AI HYPOTHESIS. Hypotheses require confidence and questions/actions, never silent promotion. Calculations must be deterministic, sourced and configurable.
 
-The old Google Form is historical reference only, NOT the product specification or ceiling. The buyer model may improve beyond it; reuse supplied response data through an adapter when available.
+The old Google Form is historical reference only, NOT the product specification or ceiling. The buyer model may improve beyond it; reuse supplied response data through an adapter when available. Buyer discovery is distinct from current-buying approval; structured criteria, dated source/evidence/confidence and stale-buyer re-verification are core, not optional extensions. Approved deal-finder/guru destinations are distinct from actual acquisition buyers.
 
 **Why:** The user's latest canonical direction explicitly superseded the earlier form-as-design-constraint instruction.
 
@@ -31,7 +31,13 @@ Use free/public/permitted sources and respect terms and rate limits. Never treat
 
 **Why:** The user requires real functioning data flows, not simulated success.
 
-**How to apply:** Report implemented/running, tested, unverified and deferred functionality separately. A synthetic system exercise is not a real-deal exercise.
+**How to apply:** Report implemented/running, tested, unverified and deferred functionality separately. A synthetic system exercise is not a real-deal exercise. GREEN requires automated tests, database-backed exercises, real-system exercises and objective verification.
+
+The user's hard delivery window is October 4, 2026 at 10:45 AM through October 18, 2026 at 10:45 AM (timezone unspecified). Target real properties/deal flow by Week 2 and a real deal ready to close by Week 3.
+
+**Why:** These are explicit delivery constraints in the user's canonical product vision, not estimates or a guarantee of a seller/buyer agreement.
+
+**How to apply:** Prioritize verified, connected operating capabilities over cosmetic or speculative work. Do not substitute fixture data for actual source flow or silently interpret the window as a deal's legal closing deadline.
 
 Preserve working authentication. The owner should use her own app account and the existing secure workspace claim; do not require manual auth infrastructure setup or credentials in chat. Do not stop the broader build waiting for the owner to sign in.
 

@@ -36,7 +36,9 @@ See `.agents/memory/MEMORY.md` and its topic files for durable product direction
 
 The command center derives actionable work from live state and role. Seller work, financial approval, buyer qualification, transaction milestones and outcome reconciliation have connected views.
 
-Public Census geocoding observes address geography, not ownership or comps. Managed OpenAI prepares bounded, source-linked hypotheses and questions using Replit credits. It sends no messages and performs no signatures or funds transfers. Listing/comparable feeds and automated bank/ownership verification are not implemented.
+Public Census geocoding observes address geography, not ownership or comps. Philadelphia OPA provides sourced public property observations and unverified sale/corporate-owner candidates, not nationwide coverage or buying/title verification. Managed OpenAI prepares bounded, source-linked hypotheses and questions using Replit credits. It sends no messages and performs no signatures or funds transfers. Broad listing/comparable feeds and automated bank/ownership verification are not connected.
+
+Buyer discovery never means approval. Current buying and reviewed criteria have separate dated evidence; stale evidence blocks matching and creates persistent re-verification work. Deal-finder/guru destinations cannot commit or close as the acquisition buyer. See `docs/requirements-checklist.md` for implementation, evidence and remaining acceptance levels.
 
 ## User preferences
 

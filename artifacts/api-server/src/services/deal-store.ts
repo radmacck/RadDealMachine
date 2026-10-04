@@ -92,8 +92,8 @@ export async function saveAssumptions(input: Assumptions, actor: string) {
   });
 }
 
-export async function createLead(input: LeadInput, actor: string, now = new Date()): Promise<Lead> {
-  return db.transaction(async tx => {
+export async function createLead(input: LeadInput, actor: string, now = new Date(), transaction?: Tx): Promise<Lead> {
+  const write = async (tx: Tx) => {
     const action = input.nextAction?.trim() || "Research ownership, confirm property characteristics and collect sourced comps and repair scope.";
     const payload = { ...input, state:input.state.toUpperCase() };
     const [row] = await tx.insert(leadsTable).values({
@@ -116,7 +116,8 @@ export async function createLead(input: LeadInput, actor: string, now = new Date
     }
     await queueJob(tx,"ENRICH_PROPERTY",row.id,`address:${row.id}:${row.version}`,actor);
     return toLead(row);
-  });
+  };
+  return transaction ? write(transaction) : db.transaction(write);
 }
 export async function updateLead(id: string, input: LeadInput & {version:number}, actor: string, now = new Date()) {
   return db.transaction(async tx => {

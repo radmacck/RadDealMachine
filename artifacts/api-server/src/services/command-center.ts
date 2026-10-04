@@ -31,9 +31,9 @@ export async function commandCenter(role: string, now = new Date()) {
         `${c.status==="DRAFT"?"Record signed contract":c.committedBuyerId?"Complete closing":"Review qualified buyers"}: ${d.lead.address}`,op.nextAction,"Open transaction");
     }
   }
-  if (role==="OWNER") for (const b of buyers.filter(b=>b.status==="ACTIVE"&&b.verificationStatus!=="VERIFIED")) {
-    actions.push({id:`BUYER_VERIFICATION:${b.id}`,category:"BUYER_VERIFICATION",priority:b.verificationStatus==="STALE"?92:60,
-      title:`${b.verificationStatus==="STALE"?"Reverify":"Qualify"} ${b.name}`,reason:"Review current dated identity and funding evidence before this buyer can be treated as qualified.",
+  if (["OWNER","ANALYST"].includes(role)) for (const b of buyers.filter(b=>b.approvalStatus!=="APPROVED"&&b.currentBuyingStatus!=="NOT_BUYING")) {
+    actions.push({id:`BUYER_VERIFICATION:${b.id}`,category:"BUYER_VERIFICATION",priority:b.approvalStatus==="REVERIFICATION_REQUIRED"?92:60,
+      title:`${b.approvalStatus==="REVERIFICATION_REQUIRED"?"Reverify":"Qualify"} ${b.name}`,reason:(b.qualificationBlockers??[]).join("; ") || "Current buying and structured criteria require reviewed dated evidence; discovery is not approval.",
       cta:"Review buyer evidence",leadId:null,href:`/buyers/${b.id}`,dueAt:b.validUntil??null});
   }
   if (["OWNER","ANALYST"].includes(role)) for (const j of jobs.filter(j=>j.state==="FAILED")) {

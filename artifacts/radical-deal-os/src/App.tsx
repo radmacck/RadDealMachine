@@ -20,6 +20,7 @@ import Audit from '@/pages/audit';
 import Buyers from '@/pages/buyers';
 import BuyerDetail from '@/pages/buyer-detail';
 import Workers from '@/pages/workers';
+import Sources from '@/pages/sources';
 
 const clerkPubKey = publishableKeyFromHost(window.location.hostname, import.meta.env.VITE_CLERK_PUBLISHABLE_KEY);
 const clerkProxyUrl = import.meta.env.VITE_CLERK_PROXY_URL;
@@ -148,6 +149,7 @@ const AuditRoute = page(Audit);
 const BuyersRoute = page(Buyers);
 const BuyerDetailRoute = page(BuyerDetail);
 const WorkersRoute = page(Workers);
+const SourcesRoute = page(Sources);
 
 function ClerkProviderWithRoutes() {
   const [, setLocation] = useLocation();
@@ -181,6 +183,7 @@ function ClerkProviderWithRoutes() {
               <Route path="/deals/:id" component={LeadRoute} />
               <Route path="/buyers" component={BuyersRoute} />
               <Route path="/buyers/:id" component={BuyerDetailRoute} />
+              <Route path="/sources" component={SourcesRoute} />
               <Route path="/workers" component={WorkersRoute} />
               <Route path="/calls" component={CallsRoute} />
               <Route path="/settings" component={SettingsRoute} />

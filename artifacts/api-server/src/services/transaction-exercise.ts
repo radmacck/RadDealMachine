@@ -65,12 +65,16 @@ try {
   assert.equal((await dealOperations(id,now)).contract?.purchasePrice,110000);
   let buyer = await buyers.createBuyer({name:"SYNTHETIC QUALIFIED BUYER",email:"synthetic@example.com",phone:"",
     source:"Synthetic service exercise",status:"ACTIVE",criteria:{states:["TX"],cities:["Synthetic City"],zipCodes:[],
-      propertyTypes:["SINGLE_FAMILY"],maxPurchasePrice:200000,maxRepairs:50000,minBeds:2,minSqft:500,maxSqft:2000,closingDays:3}},actor);
+      propertyTypes:["SINGLE_FAMILY"],maxPurchasePrice:200000,maxRepairs:50000,minBeds:2,minSqft:500,maxSqft:2000,closingDays:3,
+      counties:[],excludedCounties:[],excludedCities:[],excludedZipCodes:[],minPurchasePrice:0,minUnits:1,maxUnits:1,
+      minBaths:1,rehabTolerance:"HEAVY",strategies:["FLIP"],fundingTypes:["CASH"],maxConcurrentDeals:2}},actor);
   op = await refreshMatches(id,now);
   assert.equal(op.matches.find(m=>m.buyerId===buyer.id)?.eligible,false);
   buyer = await buyers.verifyBuyer(buyer.id,{version:buyer.version,identityEvidenceUrl:"https://example.com/synthetic-id",
     fundingEvidenceUrl:"https://example.com/synthetic-funds",availableFunds:200000,verificationNote:"Synthetic review, not real bank proof.",
-    evidenceAt:now.toISOString(),validUntil:future(25)},actor,now);
+    evidenceAt:now.toISOString(),validUntil:future(25),currentBuyingStatus:"BUYING",buyingEvidenceAt:now.toISOString(),
+    buyingEvidenceUrl:"https://example.com/synthetic-buying",criteriaEvidenceUrl:"https://example.com/synthetic-criteria",
+    verificationSource:"Synthetic investor response",confidence:0.9},actor,now);
   const job = await submitWorkerJob({kind:"MATCH_BUYERS",leadId:id,idempotencyKey:"synthetic-matching-once"},actor);
   assert.equal((await submitWorkerJob({kind:"MATCH_BUYERS",leadId:id,idempotencyKey:"synthetic-matching-once"},actor)).id,job.id);
   const races = await Promise.all([runWorkerOnce(now,false,job.id),runWorkerOnce(now,false,job.id)]);
@@ -80,6 +84,20 @@ try {
   op = await dealOperations(id,now);
   assert.equal(op.matches.find(m=>m.buyerId===buyer.id)?.eligible,true);
   assert.equal((await seller.leadDetail(id)).lead.stage,"BUYER_MATCHED");
+  let destination = await buyers.createBuyer({name:"SYNTHETIC GURU DESTINATION",email:"synthetic-guru@example.com",phone:"",
+    source:"Synthetic destination exercise",status:"ACTIVE",destinationKind:"GURU",qualifiedDealFee:500,feeTermsSource:"Synthetic quoted terms, not receipt",
+    criteria:buyer.criteria},actor);
+  destination = await buyers.verifyBuyer(destination.id,{version:destination.version,identityEvidenceUrl:"https://example.com/synthetic-guru-id",
+    verificationNote:"Synthetic destination identity/criteria review; no bank or payment claim.",evidenceAt:now.toISOString(),validUntil:future(25),
+    currentBuyingStatus:"BUYING",buyingEvidenceAt:now.toISOString(),buyingEvidenceUrl:"https://example.com/synthetic-guru-accepting",
+    criteriaEvidenceUrl:"https://example.com/synthetic-guru-criteria",verificationSource:"Synthetic reviewed destination",confidence:0.9},actor,now);
+  assert.equal(destination.approvalStatus,"APPROVED");
+  op = await transactions.recordBuyerResponse(id,destination.id,{version:op.contract!.version,buyerVersion:destination.version,
+    status:"INTERESTED",evidence:"Synthetic destination interest, not end-buyer commitment."},operator,now);
+  assert.equal((await seller.leadDetail(id)).lead.stage,"BUYER_MATCHED","Destination interest must not impersonate buyer interest");
+  await assert.rejects(transactions.recordBuyerResponse(id,destination.id,{version:op.contract!.version,buyerVersion:destination.version,
+    status:"COMMITTED",evidence:"Synthetic attempt to commit a non-acquisition destination.",agreedPrice:130000,
+    commitmentEvidenceUrl:"https://example.com/synthetic-invalid-destination-commitment"},actor,now),/cannot commit/);
   op = await transactions.recordBuyerResponse(id,buyer.id,{version:op.contract!.version,buyerVersion:buyer.version,status:"INTERESTED",evidence:"Synthetic actual-interest attestation."},operator,now);
   const commitment = {version:op.contract!.version,buyerVersion:buyer.version,status:"COMMITTED" as const,
     evidence:"Synthetic owner commitment review.",commitmentEvidenceUrl:"https://example.com/synthetic-assignment",agreedPrice:130000};

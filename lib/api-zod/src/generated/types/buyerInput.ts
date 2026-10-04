@@ -6,6 +6,7 @@
  * OpenAPI spec version: 1.0.0
  */
 import type { BuyerCriteria } from './buyerCriteria';
+import type { BuyerInputDestinationKind } from './buyerInputDestinationKind';
 import type { BuyerInputStatus } from './buyerInputStatus';
 
 export interface BuyerInput {
@@ -23,6 +24,15 @@ export interface BuyerInput {
      * @maxLength 2000
      */
   source: string;
-  criteria: BuyerCriteria;
+  criteria: BuyerCriteria | null;
   status: BuyerInputStatus;
+  destinationKind?: BuyerInputDestinationKind;
+  /**
+     * @minimum 0
+     * @maximum 1000000000
+     * @nullable
+     */
+  qualifiedDealFee?: number | null;
+  /** @maxLength 2000 */
+  feeTermsSource?: string;
 }

@@ -26,6 +26,7 @@ export const matchesTable = pgTable("re_buyer_matches",{
 export const jobsTable = pgTable("re_worker_jobs",{
   id:uuid("id").primaryKey().defaultRandom(),
   kind:text("kind").notNull(),
+  payload:jsonb("payload").$type<Record<string,unknown>>().notNull().default({}),
   state:text("state").notNull().default("QUEUED"),
   leadId:uuid("lead_id").references(()=>leadsTable.id,{onDelete:"cascade"}),
   idempotencyKey:text("idempotency_key").notNull(),

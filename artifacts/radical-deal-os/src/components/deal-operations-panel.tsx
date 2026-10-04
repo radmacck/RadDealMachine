@@ -93,7 +93,8 @@ function RespondForm({ contract, match, onDone }: { contract: DealContract; matc
   const [evidence, setEvidence] = useState(''); const [url, setUrl] = useState(''); const [price, setPrice] = useState('');
   const [local, setLocal] = useState<string | null>(null);
   const floor = contract.purchasePrice + contract.assignmentTarget;
-  const commit = status === 'COMMITTED';
+  const isBuyer = (match.destinationKind ?? 'BUYER') === 'BUYER';
+  const commit = status === 'COMMITTED' && isBuyer;
   const submit = () => {
     if (evidence.trim().length < 10) return setLocal('Describe the response with evidence (10+ characters).');
     const p = num(price);
@@ -108,7 +109,7 @@ function RespondForm({ contract, match, onDone }: { contract: DealContract; matc
   return (
     <div className="mt-3 space-y-3 border-t border-border pt-3" data-testid={`form-response-${match.buyerId}`}>
       <Field label="Response"><select className={SELECT} value={status} onChange={(e) => setStatus(e.target.value as BuyerResponseInputStatus)} data-testid={`select-response-${match.buyerId}`}>
-        <option value="INTERESTED">Interested</option><option value="COMMITTED" disabled={!isOwner}>Committed (owner only)</option><option value="DECLINED">Declined</option></select></Field>
+        <option value="INTERESTED">Interested</option><option value="COMMITTED" disabled={!isOwner || !isBuyer}>{isBuyer ? 'Committed (owner only)' : 'Commitment unavailable for this destination'}</option><option value="DECLINED">Declined</option></select></Field>
       <Field label="What the buyer said or sent"><Textarea rows={2} value={evidence} onChange={(e) => setEvidence(e.target.value)} disabled={!(canCall || isOwner)} data-testid={`input-response-evidence-${match.buyerId}`} /></Field>
       {commit && <div className="grid gap-3 sm:grid-cols-2">
         <Field label="Commitment evidence link"><Input value={url} onChange={(e) => setUrl(e.target.value)} data-testid={`input-response-url-${match.buyerId}`} /></Field>
@@ -241,6 +242,7 @@ export function DealOperationsPanel({ detail }: { detail: LeadDetail }) {
             {m.mismatches.length > 0 && <p className="mt-1 text-xs text-muted-foreground">Watch: {m.mismatches.join('; ')}</p>}
             {m.status === 'COMMITTED' && m.agreedPrice != null && <p className="mt-1 font-mono text-xs">Agreed {money(m.agreedPrice)}</p>}
             {m.evidence && <p className="mt-1 text-xs">Evidence: {m.evidence}</p>}
+            {(m.destinationKind ?? 'BUYER') !== 'BUYER' && <p className="mt-1 text-xs" data-testid={`text-destination-${m.buyerId}`}><span className="tag tone-signal mr-1">{(m.destinationKind ?? '').replace('_', ' ')}</span>Not an end buyer. Interest here is a referral route, not a purchase commitment.</p>}
             {live && c && (respondTo === m.buyerId ? <RespondForm key={`${c.version}:${m.buyerVersion}`} contract={c} match={m} onDone={done} /> :
               <Button size="sm" variant="outline" className="mt-2" onClick={() => setRespondTo(m.buyerId)} data-testid={`button-respond-${m.buyerId}`}>Record buyer response</Button>)}
           </li>))}</ul>

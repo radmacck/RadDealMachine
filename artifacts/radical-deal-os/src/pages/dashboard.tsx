@@ -22,7 +22,7 @@ export default function Dashboard() {
   const actions = d ? [...d.actions].sort((a, b) => b.priority - a.priority) : [];
   const contracts = d ? d.operations.filter((o) => o.contract) : [];
   const deadlines = contracts.filter((o) => o.contract!.status !== 'CLOSED' && o.contract!.status !== 'CANCELLED').sort((a, b) => a.contract!.closingAt.localeCompare(b.contract!.closingAt));
-  const qualified = d ? d.buyers.filter(isQualified) : [];
+  const qualified = d ? d.buyers.filter(b=>isQualified(b)&&(b.destinationKind??'BUYER')==='BUYER') : [];
   return (
     <div>
       <PageHeader eyebrow={d ? `Live / updated ${ago(d.generatedAt)}` : 'Live'} title="Command center" />
@@ -31,7 +31,7 @@ export default function Dashboard() {
       {d && (
         <div className="space-y-8">
           <section data-testid="panel-actions">
-            <p className="eyebrow mb-3">Do next ({actions.length})</p>
+            <div className="mb-3 flex items-center justify-between"><p className="eyebrow">Do next ({actions.length})</p><Link href="/sources" className="text-xs underline" data-testid="link-sources">Find properties from official records</Link></div>
             {actions.length === 0 ? (
               <EmptyState title="Nothing is waiting on you" body="New work appears here as leads are researched, approved and followed up."
                 action={<Link href="/leads" className="text-sm underline" data-testid="link-empty-inventory">Open deal inventory</Link>} />
@@ -100,10 +100,10 @@ export default function Dashboard() {
           <div className="grid gap-6 lg:grid-cols-2">
             <section data-testid="panel-buyers">
               <div className="mb-3 flex items-center justify-between"><p className="eyebrow">Qualified buyers ({qualified.length} of {d.buyers.length})</p><Link href="/buyers" className="text-xs underline" data-testid="link-buyers">All buyers</Link></div>
-              {d.buyers.length === 0 ? <p className="ledger p-4 text-sm text-muted-foreground">No buyers entered. Qualification is a human review; nothing is sourced automatically.</p> : (
+              {d.buyers.length === 0 ? <p className="ledger p-4 text-sm text-muted-foreground">No buyers recorded. Enable permitted public-source discovery in Workers; prospects still require evidenced current-buying qualification.</p> : (
                 <ul className="space-y-2">{d.buyers.slice(0, 8).map((b) => (
                   <li key={b.id}><Link href={`/buyers/${b.id}`} className="ledger flex items-center justify-between gap-2 p-3 hover:border-signal" data-testid={`link-buyer-${b.id}`}>
-                    <div className="min-w-0"><p className="truncate font-semibold">{b.name}</p><p className="font-mono text-xs text-muted-foreground">{b.criteria.states.join(', ')} / up to {money(b.criteria.maxPurchasePrice)}</p></div>
+                    <div className="min-w-0"><p className="truncate font-semibold">{b.name}</p><p className="font-mono text-xs text-muted-foreground">{b.criteria ? `${b.criteria.states.join(', ')} / up to ${money(b.criteria.maxPurchasePrice)}` : 'Criteria not yet collected'}</p></div>
                     <span className={`tag ${isQualified(b) ? 'tone-go' : b.verificationStatus === 'STALE' ? 'tone-warn' : 'tone-muted'}`}>{isQualified(b) ? 'Qualified' : b.verificationStatus === 'STALE' ? 'Stale' : b.status === 'PAUSED' ? 'Paused' : 'Unverified'}</span></Link></li>))}</ul>
               )}
             </section>
