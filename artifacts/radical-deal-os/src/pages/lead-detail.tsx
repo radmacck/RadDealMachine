@@ -13,6 +13,7 @@ import { ProvenanceSections } from '@/components/provenance-sections';
 import { IntelligenceForm } from '@/components/intelligence-form';
 import { LeadForm } from '@/components/lead-form';
 import { UnderwritingEditor } from '@/components/underwriting-editor';
+import { OffersPanel } from '@/components/offers-panel';
 import { TransitionPanel } from '@/components/transition-panel';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -30,6 +31,7 @@ export default function LeadDetailPage() {
   const { toast } = useToast();
   const invalidate = useInvalidateWork();
   const [addClass, setAddClass] = useState<ProvenanceClass | null>(null);
+  const [tab, setTab] = useState('intel');
   const [leadEpoch, setLeadEpoch] = useState(0);
   const [uwEpoch, setUwEpoch] = useState(0);
 
@@ -65,10 +67,11 @@ export default function LeadDetailPage() {
       <p className="ledger border-l-4 border-l-signal p-3 text-sm" data-testid="text-next-action"><b>Next action:</b> {lead.nextAction || 'none recorded'}</p>
       <AnalysisPanel analysis={d.analysis} comps={d.underwriting?.comps} />
 
-      <Tabs defaultValue="intel">
+      <Tabs value={tab} onValueChange={setTab}>
         <TabsList className="flex h-auto flex-wrap justify-start" data-testid="tabs-lead">
           <TabsTrigger value="intel" data-testid="tab-intel">Intelligence ({d.intelligence.length})</TabsTrigger>
           <TabsTrigger value="uw" data-testid="tab-underwriting">Underwriting</TabsTrigger>
+          <TabsTrigger value="offers" data-testid="tab-offers">Offers ({d.offers.length})</TabsTrigger>
           <TabsTrigger value="record" data-testid="tab-record">Lead record</TabsTrigger>
           <TabsTrigger value="stage" data-testid="tab-stage">Stage and history</TabsTrigger>
           <TabsTrigger value="calls" data-testid="tab-calls">Calls ({d.calls.length})</TabsTrigger>
@@ -83,6 +86,10 @@ export default function LeadDetailPage() {
           <UnderwritingEditor key={`${id}:${uwEpoch}`} leadVersion={lead.version} server={d.underwriting} disabled={!canResearch} pending={saveUw.isPending} error={saveUw.error}
             onDiscard={() => setUwEpoch((e) => e + 1)}
             onSave={(data, done) => saveUw.mutate({ id, data }, { onSuccess: (detail) => { qc.setQueryData(getGetLeadQueryKey(id), detail); invalidate(id); done(); toast({ title: 'Underwriting calculated', description: detail.analysis ? `Result: ${detail.analysis.classification}` : undefined }); } })} />
+        </TabsContent>
+
+        <TabsContent value="offers" forceMount className={KEEP}>
+          <OffersPanel detail={d} onGoIntel={() => setTab('intel')} />
         </TabsContent>
 
         <TabsContent value="record" forceMount className={KEEP}>

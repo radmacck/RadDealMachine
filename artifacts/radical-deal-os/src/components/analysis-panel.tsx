@@ -50,7 +50,7 @@ export function AnalysisPanel({ analysis, comps, full = true }: { analysis: Anal
         <Big tid="text-mao" label="MAO" value={money(a.mao)} note="Maximum allowable offer" />
         <Big tid="text-opening" label="Opening range" value={`${money(a.openingLow)} to ${money(a.openingHigh)}`} note="Conversation guide only" />
         <Big tid="text-spread" label="Spread at asking" value={money(a.spreadAtAsking)} note={a.spreadAtAsking == null ? 'No asking price recorded' : 'Margin if bought at asking'} />
-        <Big tid="text-approved" label="Approved acquisition price" value={a.maximumApprovedAcquisitionPrice == null ? 'Not authorized' : money(a.maximumApprovedAcquisitionPrice)} note="Offer authorization is not part of this slice" />
+        <Big tid="text-approved" label="Research is not authorization" value={a.maximumApprovedAcquisitionPrice == null ? 'Not authorized' : money(a.maximumApprovedAcquisitionPrice)} note="Actual owner approval appears on a specific offer, never on this research snapshot" />
       </div>
       <div className="mt-4">
         <div className="grid grid-cols-[6rem_1fr_1fr_1fr_4rem] gap-2 border-b border-border pb-1">

@@ -2,7 +2,7 @@ openapi: 3.1.0
 info:
   title: Api
   version: 1.0.0
-  description: Radical Deal OS vertical seller intake and underwriting contract
+  description: Radical Deal OS seller intake, underwriting, conversations and approved offers
 servers:
   - url: /api
 paths:
@@ -173,6 +173,73 @@ paths:
       responses:
         "201":
           description: Call notes and follow-up saved
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/LeadDetail" }
+  /leads/{id}/offers:
+    parameters:
+      - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
+    post:
+      operationId: createOfferDraft
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/OfferDraftInput" }
+      responses:
+        "201":
+          description: Immutable proposal draft, not authorized or sent
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/LeadDetail" }
+  /leads/{id}/offers/{offerId}/authorize:
+    parameters:
+      - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
+      - { name: offerId, in: path, required: true, schema: { type: string, format: uuid } }
+    post:
+      operationId: authorizeOffer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/OfferApprovalInput" }
+      responses:
+        "200":
+          description: Owner-authorized proposal bound to a current underwriting snapshot
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/LeadDetail" }
+  /leads/{id}/offers/{offerId}/communicate:
+    parameters:
+      - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
+      - { name: offerId, in: path, required: true, schema: { type: string, format: uuid } }
+    post:
+      operationId: communicateOffer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/OfferCommunicationInput" }
+      responses:
+        "200":
+          description: Records human communication of the approved proposal; does not send a message or execute a contract
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/LeadDetail" }
+  /leads/{id}/offers/{offerId}/withdraw:
+    parameters:
+      - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
+      - { name: offerId, in: path, required: true, schema: { type: string, format: uuid } }
+    post:
+      operationId: withdrawOffer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/OfferWithdrawalInput" }
+      responses:
+        "200":
+          description: Cancels a draft or revokes internal approval; historical seller communication remains on record
           content:
             application/json:
               schema: { $ref: "#/components/schemas/LeadDetail" }
@@ -444,12 +511,14 @@ components:
             actor: { type: string }
     LeadDetail:
       type: object
-      required: [lead, intelligence, analysis, underwriting, transitions, calls, allowedTransitions]
+      required: [lead, intelligence, analysis, analysisSnapshotId, underwriting, transitions, calls, offers, allowedTransitions]
       properties:
         lead: { $ref: "#/components/schemas/Lead" }
         intelligence: { type: array, items: { $ref: "#/components/schemas/Intelligence" } }
         analysis:
           oneOf: [{ $ref: "#/components/schemas/Analysis" }, { type: "null" }]
+        analysisSnapshotId: { type: ["string", "null"] }
+        offers: { type: array, items: { $ref: "#/components/schemas/Offer" } }
         underwriting:
           oneOf: [{ $ref: "#/components/schemas/UnderwritingInput" }, { type: "null" }]
         transitions: { type: array, items: { $ref: "#/components/schemas/Transition" } }
@@ -457,7 +526,7 @@ components:
         allowedTransitions: { type: array, items: { $ref: "#/components/schemas/DealStage" } }
     CallBrief:
       type: object
-      required: [lead, objective, intelligence, questions, actions, boundaries, analysis]
+      required: [lead, objective, intelligence, questions, actions, boundaries, analysis, authorizedOffer]
       properties:
         lead: { $ref: "#/components/schemas/Lead" }
         objective: { type: string }
@@ -466,6 +535,85 @@ components:
         actions: { type: array, items: { type: string } }
         boundaries: { type: string }
         analysis: { $ref: "#/components/schemas/Analysis" }
+        authorizedOffer:
+          oneOf: [{ $ref: "#/components/schemas/Offer" }, { type: "null" }]
+    OfferStatus:
+      type: string
+      enum: [DRAFT, AUTHORIZED, COMMUNICATED, REVOKED, INVALIDATED, EXPIRED]
+    OfferTerms:
+      type: object
+      required: [amount, earnestMoney, closingDays, contingencies, assignmentIntent]
+      properties:
+        amount: { type: number, exclusiveMinimum: 0, maximum: 1000000000 }
+        earnestMoney: { type: number, minimum: 0, maximum: 1000000000 }
+        closingDays: { type: integer, minimum: 1, maximum: 180 }
+        contingencies: { type: string, minLength: 3, maxLength: 5000 }
+        assignmentIntent: { type: boolean }
+    OfferDraftInput:
+      allOf:
+        - { $ref: "#/components/schemas/OfferTerms" }
+        - type: object
+          required: [version, reason]
+          properties:
+            version: { type: integer, minimum: 1 }
+            reason: { type: string, minLength: 3, maxLength: 2000 }
+    OfferApprovalInput:
+      type: object
+      required: [version, maximumApprovedAcquisitionPrice, expiresAt, authorityEvidenceId, reason, nextAction, followUpAt]
+      properties:
+        version: { type: integer, minimum: 1 }
+        maximumApprovedAcquisitionPrice: { type: number, exclusiveMinimum: 0, maximum: 1000000000 }
+        expiresAt: { type: string, format: date-time }
+        authorityEvidenceId: { type: string, format: uuid }
+        reason: { type: string, minLength: 3, maxLength: 2000 }
+        nextAction: { type: string, minLength: 3, maxLength: 1000 }
+        followUpAt: { type: string, format: date-time }
+    OfferCommunicationInput:
+      type: object
+      required: [version, amount, channel, evidence, nextAction, followUpAt]
+      properties:
+        version: { type: integer, minimum: 1 }
+        amount: { type: number, exclusiveMinimum: 0, maximum: 1000000000 }
+        channel: { type: string, enum: [PHONE, IN_PERSON, EMAIL, SMS] }
+        evidence: { type: string, minLength: 3, maxLength: 5000 }
+        nextAction: { type: string, minLength: 3, maxLength: 1000 }
+        followUpAt: { type: string, format: date-time }
+    OfferWithdrawalInput:
+      type: object
+      required: [version, reason, nextAction, followUpAt]
+      properties:
+        version: { type: integer, minimum: 1 }
+        reason: { type: string, minLength: 3, maxLength: 2000 }
+        nextAction: { type: string, minLength: 3, maxLength: 1000 }
+        followUpAt: { type: string, format: date-time }
+    Offer:
+      allOf:
+        - { $ref: "#/components/schemas/OfferTerms" }
+        - type: object
+          required: [id, leadId, analysisSnapshotId, status, effectiveStatus, blockers, reason, createdBy, createdAt, updatedAt, maximumApprovedAcquisitionPrice, authorityEvidenceId, approvedBy, approvedAt, approvalReason, expiresAt, communicatedBy, communicatedAt, communicatedAmount, channel, evidence, withdrawalReason]
+          properties:
+            id: { type: string, format: uuid }
+            leadId: { type: string, format: uuid }
+            analysisSnapshotId: { type: string, format: uuid }
+            status: { $ref: "#/components/schemas/OfferStatus" }
+            effectiveStatus: { $ref: "#/components/schemas/OfferStatus" }
+            blockers: { type: array, items: { type: string } }
+            reason: { type: string }
+            createdBy: { type: string }
+            createdAt: { type: string, format: date-time }
+            updatedAt: { type: string, format: date-time }
+            maximumApprovedAcquisitionPrice: { type: ["number", "null"] }
+            authorityEvidenceId: { type: ["string", "null"] }
+            approvedBy: { type: ["string", "null"] }
+            approvedAt: { type: ["string", "null"] }
+            approvalReason: { type: ["string", "null"] }
+            expiresAt: { type: ["string", "null"] }
+            communicatedBy: { type: ["string", "null"] }
+            communicatedAt: { type: ["string", "null"] }
+            communicatedAmount: { type: ["number", "null"] }
+            channel: { type: ["string", "null"] }
+            evidence: { type: ["string", "null"] }
+            withdrawalReason: { type: ["string", "null"] }
     Dashboard:
       type: object
       required: [total, callReady, needsResearch, overdue, strong, negotiable, pass, stages, recentActivity]

@@ -43,7 +43,7 @@ export function TransitionPanel({
             ))}
           </div>
         )}
-        {allowedTransitions.some(isDownstream) && <p className="mt-2 text-xs text-muted-foreground">Dashed stages are labels the server accepts. Offers, contracts, buyers and closing are later slices and have no screens here.</p>}
+        {allowedTransitions.some(isDownstream) && <p className="mt-2 text-xs text-muted-foreground">Dashed stages are labels the server accepts. Contracts and closing are later slices and have no screens here.</p>}
         {to && (
           <div className="mt-4 space-y-3 border-t border-border pt-3">
             <p className="flex items-center gap-2 text-sm font-semibold"><StageBadge stage={lead.stage} /><ArrowRight className="h-4 w-4" /><StageBadge stage={to} /></p>

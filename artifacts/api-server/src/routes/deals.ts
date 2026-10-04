@@ -5,6 +5,7 @@ import { DomainError } from "@workspace/deal-domain";
 import { authenticated, membership, roles } from "../middlewares/access";
 import * as store from "../services/deal-store";
 import * as access from "../services/access";
+import * as offers from "../services/offer-store";
 
 const router: IRouter = Router();
 // Trim strings before schema validation so required fields cannot be whitespace-only.
@@ -66,6 +67,24 @@ router.post("/leads/:id/transition",roles("OWNER","ANALYST","OPERATOR"),async (r
 });
 router.post("/leads/:id/calls",operate,async (req,res) => {
   send(res,contract.RecordCallResponse,await store.recordCall(leadId(req),parse(contract.RecordCallBody,req.body),String(res.locals.actor)),201);
+});
+router.post("/leads/:id/offers",research,async (req,res) => {
+  send(res,contract.CreateOfferDraftResponse,await offers.createOfferDraft(
+    leadId(req),parse(contract.CreateOfferDraftBody,req.body),
+    {id:String(res.locals.actor),role:String(res.locals.role)},
+  ),201);
+});
+router.post("/leads/:id/offers/:offerId/authorize",roles("OWNER"),async (req,res) => {
+  const {id,offerId} = parse(contract.AuthorizeOfferParams,req.params);
+  send(res,contract.AuthorizeOfferResponse,await offers.authorizeOffer(id,offerId,parse(contract.AuthorizeOfferBody,req.body),{id:String(res.locals.actor),role:String(res.locals.role)}));
+});
+router.post("/leads/:id/offers/:offerId/communicate",operate,async (req,res) => {
+  const {id,offerId} = parse(contract.CommunicateOfferParams,req.params);
+  send(res,contract.CommunicateOfferResponse,await offers.communicateOffer(id,offerId,parse(contract.CommunicateOfferBody,req.body),{id:String(res.locals.actor),role:String(res.locals.role)}));
+});
+router.post("/leads/:id/offers/:offerId/withdraw",research,async (req,res) => {
+  const {id,offerId} = parse(contract.WithdrawOfferParams,req.params);
+  send(res,contract.WithdrawOfferResponse,await offers.withdrawOffer(id,offerId,parse(contract.WithdrawOfferBody,req.body),{id:String(res.locals.actor),role:String(res.locals.role)}));
 });
 router.get("/call-next",async (_req,res) => send(res,contract.GetCallQueueResponse,await store.callQueue()));
 router.get("/assumptions",async (_req,res) => send(res,contract.GetAssumptionsResponse,await store.getAssumptions()));

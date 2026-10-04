@@ -3,6 +3,7 @@ import type { CallBrief } from '@workspace/api-client-react';
 import { Link } from 'wouter';
 import { ProvenanceSections } from '@/components/provenance-sections';
 import { StageBadge } from '@/components/stage-badge';
+import { ApprovedTerms } from '@/components/offers-panel';
 import { ago, fmtDate, isOverdue, money } from '@/lib/format';
 
 export function CallBriefCard({ brief }: { brief: CallBrief }) {
@@ -30,6 +31,12 @@ export function CallBriefCard({ brief }: { brief: CallBrief }) {
           <div><p className="eyebrow">Follow up</p><p className={`font-mono ${isOverdue(lead.followUpAt) ? 'font-semibold text-destructive' : ''}`}>{lead.followUpAt ? `${fmtDate(lead.followUpAt)} (${ago(lead.followUpAt)})` : 'none'}</p></div>
         </div>
         <p className="mt-3 border border-dashed border-border bg-muted/50 p-2 text-xs" data-testid="text-brief-boundaries"><b>Boundaries:</b> {brief.boundaries}</p>
+      </div>
+      <div className="ledger p-3" data-testid="panel-brief-offer">
+        <p className="eyebrow mb-1.5">Owner-approved offer</p>
+        {brief.authorizedOffer && brief.authorizedOffer.effectiveStatus === 'AUTHORIZED' ? (
+          <><ApprovedTerms offer={brief.authorizedOffer} /><p className="mt-2 text-xs">Do not exceed the ceiling. Record only what you actually communicate.</p></>
+        ) : <p className="text-sm text-muted-foreground">No currently authorized offer. Do not state an offer amount on this call.</p>}
       </div>
       <div className="grid gap-3 md:grid-cols-2">
         <div className="ledger p-3"><p className="eyebrow mb-1.5">Questions to ask</p>

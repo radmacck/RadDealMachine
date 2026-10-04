@@ -69,7 +69,7 @@ export function errInfo(e: unknown): ErrInfo {
 export const stageLabel = (s: string) => s.replace(/_/g, ' ');
 
 const DOWNSTREAM: string[] = [
-  'OFFER_READY', 'OFFER_SENT', 'NEGOTIATING', 'CONTRACT_PENDING', 'UNDER_CONTRACT',
+  'CONTRACT_PENDING', 'UNDER_CONTRACT',
   'BUYER_MATCHED', 'BUYER_INTERESTED', 'BUYER_COMMITTED', 'CLOSING', 'CLOSED',
 ];
 export const isDownstream = (s: string) => DOWNSTREAM.includes(s);

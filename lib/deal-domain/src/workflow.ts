@@ -18,13 +18,20 @@ const manualEdges: Partial<Record<Stage, Stage[]>> = {
   CALL_READY: ["CONTACTED", "ENRICHING", "DEAD_DEAL"],
   CONTACTED: ["CONVERSATION", "ENRICHING", "DEAD_DEAL"],
   CONVERSATION: ["ENRICHING", "DEAD_DEAL"],
+  OFFER_READY: ["ENRICHING", "DEAD_DEAL"],
+  OFFER_SENT: ["NEGOTIATING","ENRICHING","DEAD_DEAL"],
+  NEGOTIATING: ["ENRICHING","DEAD_DEAL"],
 };
 
 export function callReadyBlockers(lead: Lead, analysis: Analysis | null, now: Date): string[] {
   const errors: string[] = [];
   if (!analysis || !["STRONG","NEGOTIABLE"].includes(analysis.classification)) errors.push("Need complete STRONG or NEGOTIABLE analysis");
   if (!lead.sellerPhone?.trim()) errors.push("Seller phone is required");
-  if (analysis && (now.getTime() - Date.parse(analysis.calculatedAt)) > 7 * 86_400_000) errors.push("Analysis is older than 7 days; refresh underwriting");
+  if (analysis) {
+    const age = now.getTime() - Date.parse(analysis.calculatedAt);
+    if (!Number.isFinite(age) || age < 0) errors.push("Analysis has an invalid or future calculation timestamp; refresh underwriting");
+    else if (age >= 7 * 86_400_000) errors.push("Analysis is 7 days old or older; refresh underwriting");
+  }
   if (analysis?.blockers.length) errors.push(...analysis.blockers);
   return errors;
 }

@@ -62,7 +62,7 @@ export default function Landing() {
         <section className="grid gap-6 py-8 md:grid-cols-2">
           <div>
             <p className="eyebrow mb-2">Honest about scope</p>
-            <p className="text-sm text-muted-foreground">This release stops after the first logged seller conversation. It does not make offers, write contracts, match buyers, or run background jobs, and no screen pretends otherwise.</p>
+            <p className="text-sm text-muted-foreground">This release covers research, underwriting, calls, immutable offer drafts, owner authorization, and recording offers a person actually communicated. It never sends messages and does not execute contracts. Contracts and closing are not built.</p>
           </div>
           <NextSlices />
         </section>

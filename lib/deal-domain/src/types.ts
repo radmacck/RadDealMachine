@@ -3,6 +3,7 @@ import type {
   CreateLeadResponse, CreateLeadBody, AddIntelligenceBody, AddIntelligenceResponse,
   SaveUnderwritingBody, UpdateAssumptionsBody, GetLeadResponse, TransitionLeadBody,
   RecordCallBody, GetCallQueueResponse,
+  CreateOfferDraftBody, AuthorizeOfferBody, CommunicateOfferBody, WithdrawOfferBody,
 } from "@workspace/api-zod";
 
 export type Lead = z.infer<typeof CreateLeadResponse>;
@@ -17,6 +18,12 @@ export type Stage = Lead["stage"];
 export type TransitionInput = z.infer<typeof TransitionLeadBody>;
 export type CallInput = z.infer<typeof RecordCallBody>;
 export type CallBrief = z.infer<typeof GetCallQueueResponse>[number];
+export type Offer = LeadDetail["offers"][number];
+export type StoredOffer = Omit<Offer,"effectiveStatus"|"blockers">;
+export type OfferDraftInput = z.infer<typeof CreateOfferDraftBody>;
+export type OfferApprovalInput = z.infer<typeof AuthorizeOfferBody>;
+export type OfferCommunicationInput = z.infer<typeof CommunicateOfferBody>;
+export type OfferWithdrawalInput = z.infer<typeof WithdrawOfferBody>;
 
 export class DomainError extends Error {
   constructor(message: string, public readonly status = 422) {

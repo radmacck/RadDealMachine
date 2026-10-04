@@ -34,7 +34,7 @@ export function validateAssumptions(a: Assumptions): void {
   const parsed = UpdateAssumptionsBody.safeParse(a);
   if (!parsed.success) throw new DomainError(`Invalid calculation assumptions: ${parsed.error.message}`);
   if (a.openingLowPct > a.openingHighPct) throw new DomainError("Opening range low cannot exceed high.");
-  if (!a.approvalRequired) throw new DomainError("Offer authorization cannot be disabled. Offer release is not implemented in this slice.");
+  if (!a.approvalRequired) throw new DomainError("Offer authorization cannot be disabled. Every seller offer requires explicit owner approval.");
 }
 
 /** All numeric inputs are supplied with source records. No LLM, fetch or database dependency. */

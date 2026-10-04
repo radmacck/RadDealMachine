@@ -6,13 +6,15 @@ import { PageHeader } from '@/components/page-header';
 import { ErrorNotice, EmptyState, RowsSkeleton } from '@/components/state-views';
 import { CallBriefCard } from '@/components/call-brief-card';
 import { CallLogForm } from '@/components/call-log-form';
+import { CommunicateForm, useOfferCommunicate } from '@/components/offers-panel';
 import { useAccess } from '@/hooks/use-access';
 import { useInvalidateWork } from '@/hooks/use-invalidate';
 import { useToast } from '@/hooks/use-toast';
 import { ago, isOverdue, money } from '@/lib/format';
 
 export default function Calls() {
-  const { canCall } = useAccess();
+  const { canCall, isOwner } = useAccess();
+  const comm = useOfferCommunicate();
   const { toast } = useToast();
   const invalidate = useInvalidateWork();
   const [sel, setSel] = useState<string | null>(null);
@@ -52,6 +54,13 @@ export default function Calls() {
             <p className="eyebrow mb-3 flex items-center gap-1.5"><PhoneCall className="h-3.5 w-3.5" />Log this call</p>
             <CallLogForm key={current.lead.id} lead={current.lead} disabled={!canCall} pending={rec.isPending} error={rec.error}
               onSubmit={(data, done) => rec.mutate({ id: current.lead.id, data }, { onSuccess: () => { invalidate(current.lead.id); done(); toast({ title: 'Call saved', description: `${current.lead.sellerName}: follow-up recorded.` }); } })} />
+            {current.authorizedOffer && current.authorizedOffer.effectiveStatus === 'AUTHORIZED' && (
+              <div className="mt-5 border-t border-border pt-4" data-testid="panel-record-offer">
+                <p className="eyebrow mb-3">Record communicated offer</p>
+                <CommunicateForm key={current.authorizedOffer.id} offer={current.authorizedOffer} lead={current.lead} disabled={!(canCall || isOwner)} pending={comm.pending} error={comm.error}
+                  onSubmit={(data, done) => comm.run(current.lead, current.authorizedOffer!, data, done)} />
+              </div>
+            )}
           </aside>
         </div>
       )}

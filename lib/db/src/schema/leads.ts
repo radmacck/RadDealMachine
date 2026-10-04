@@ -10,6 +10,7 @@ export const leadsTable = pgTable("re_leads", {
   followUpAt: timestamp("follow_up_at", { withTimezone: true }),
   underwriting: jsonb("underwriting").$type<Record<string, unknown>>(),
   analysis: jsonb("analysis").$type<Record<string, unknown>>(),
+  analysisSnapshotId: uuid("analysis_snapshot_id"),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
 }, t => [index("re_leads_stage_idx").on(t.stage), index("re_leads_follow_up_idx").on(t.followUpAt)]);

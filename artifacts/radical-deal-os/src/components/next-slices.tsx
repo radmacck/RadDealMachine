@@ -1,6 +1,6 @@
 const SLICES = [
-  { name: 'Buyers', note: 'Buyer list and matching' },
-  { name: 'Offers, contracts, closing', note: 'Everything after the first conversation' },
+  { name: 'Buyers', note: 'Buyer discovery, qualification, verification and matching' },
+  { name: 'Contracts and closing', note: 'Everything from contract onward' },
   { name: 'Recurring workers', note: 'Scheduled sourcing and refresh jobs' },
 ];
 
