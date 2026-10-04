@@ -50,8 +50,8 @@ export default function Leads() {
             <thead><tr className="border-b border-border text-left"><th className="eyebrow p-3">Property</th><th className="eyebrow p-3">Seller</th><th className="eyebrow p-3">Stage</th><th className="eyebrow p-3 text-right">Asking</th><th className="eyebrow p-3">Follow up</th></tr></thead>
             <tbody>
               {rows.map((l) => (
-                <tr key={l.id} className="cursor-pointer border-b border-border/70 transition-colors last:border-0 hover:bg-accent/50" onClick={() => nav(`/leads/${l.id}`)} data-testid={`row-lead-${l.id}`}>
-                  <td className="p-3"><Link href={`/leads/${l.id}`} className="font-semibold hover:text-signal" onClick={(e) => e.stopPropagation()} data-testid={`link-lead-${l.id}`}>{l.address}</Link><p className="text-xs text-muted-foreground">{l.city}, {l.state} {l.zip} / {l.beds}bd {l.baths}ba {l.sqft.toLocaleString()} sf</p></td>
+                <tr key={l.id} className="cursor-pointer border-b border-border/70 transition-colors last:border-0 hover:bg-accent/50" onClick={() => nav(`/deals/${l.id}`)} data-testid={`row-lead-${l.id}`}>
+                  <td className="p-3"><Link href={`/deals/${l.id}`} className="font-semibold hover:text-signal" onClick={(e) => e.stopPropagation()} data-testid={`link-lead-${l.id}`}>{l.address}</Link><p className="text-xs text-muted-foreground">{l.city}, {l.state} {l.zip} / {l.beds}bd {l.baths}ba {l.sqft.toLocaleString()} sf</p></td>
                   <td className="p-3">{l.sellerName}<p className="font-mono text-xs text-muted-foreground">{l.sellerPhone ?? 'no phone'}</p></td>
                   <td className="p-3"><StageBadge stage={l.stage} /></td>
                   <td className="p-3 text-right font-mono">{money(l.askingPrice)}</td>
@@ -66,7 +66,7 @@ export default function Leads() {
         <DialogContent className="max-h-[90dvh] max-w-3xl overflow-y-auto">
           <DialogHeader><DialogTitle>New lead</DialogTitle><DialogDescription>Seller statements entered here are recorded as indicated, never verified.</DialogDescription></DialogHeader>
           <LeadForm pending={create.isPending} error={create.error} submitLabel="Create lead" onCancel={() => setOpen(false)}
-            onSubmit={(data) => create.mutate({ data }, { onSuccess: (lead) => { invalidate(); setOpen(false); toast({ title: 'Lead created', description: lead.address }); nav(`/leads/${lead.id}`); } })} />
+            onSubmit={(data) => create.mutate({ data }, { onSuccess: (lead) => { invalidate(); setOpen(false); toast({ title: 'Lead created', description: lead.address }); nav(`/deals/${lead.id}`); } })} />
         </DialogContent>
       </Dialog>
     </div>

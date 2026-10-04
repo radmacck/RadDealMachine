@@ -9,6 +9,7 @@ import { eq, and, sql } from "drizzle-orm";
 import { db, pool, leadsTable, auditTable, analysesTable, intelligenceTable } from "@workspace/db";
 import { logger } from "../lib/logger";
 import * as store from "./deal-store";
+import { commandCenter } from "./command-center";
 import { DEFAULT_ASSUMPTIONS, type LeadInput, type UnderwritingInput } from "@workspace/deal-domain";
 
 async function exercise() {
@@ -27,6 +28,11 @@ async function exercise() {
     const created = await store.createLead(payload,actor,now);
     id = created.id;
     assert.equal(created.stage,"DISCOVERED");
+    const center = await commandCenter("OWNER",now);
+    assert.ok(center.actions.some(a => a.leadId === id && a.category === "RESEARCH"));
+    assert.ok(center.deals.some(d => d.lead.id === id));
+    const operatorCenter = await commandCenter("OPERATOR",now);
+    assert.ok(!operatorCenter.actions.some(a => a.leadId === id && a.category === "RESEARCH"));
     const initial = await store.leadDetail(id);
     assert.equal(initial.intelligence.length,2);
     assert.ok(initial.intelligence.every(i => i.classification === "INDICATED"));

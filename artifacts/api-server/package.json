@@ -5,8 +5,10 @@
   "type": "module",
   "scripts": {
     "test:auth": "tsx --test src/services/access.test.ts",
-    "exercise:seller": "tsx src/services/seller-exercise.ts",
-    "exercise:offers": "tsx src/services/offer-exercise.ts",
+    "exercise:buyers": "tsx src/services/isolated-exercise.ts buyer-exercise.ts",
+    "exercise:seller": "tsx src/services/isolated-exercise.ts seller-exercise.ts",
+    "exercise:offers": "tsx src/services/isolated-exercise.ts offer-exercise.ts",
+    "exercise:transactions": "tsx src/services/isolated-exercise.ts transaction-exercise.ts",
     "dev": "export NODE_ENV=development && pnpm run build && pnpm run start",
     "build": "node ./build.mjs",
     "start": "node --enable-source-maps ./dist/index.mjs",

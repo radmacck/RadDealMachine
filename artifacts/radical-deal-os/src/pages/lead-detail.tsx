@@ -1,7 +1,7 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Link, useParams } from 'wouter';
 import { useQueryClient } from '@tanstack/react-query';
-import { ArrowLeft } from 'lucide-react';
+import { ArrowLeft, PhoneCall } from 'lucide-react';
 import {
   getGetLeadQueryKey, useAddIntelligence, useGetLead, useSaveUnderwriting, useTransitionLead, useUpdateLead,
   type LeadDetail, type ProvenanceClass,
@@ -14,6 +14,7 @@ import { IntelligenceForm } from '@/components/intelligence-form';
 import { LeadForm } from '@/components/lead-form';
 import { UnderwritingEditor } from '@/components/underwriting-editor';
 import { OffersPanel } from '@/components/offers-panel';
+import { DealOperationsPanel } from '@/components/deal-operations-panel';
 import { TransitionPanel } from '@/components/transition-panel';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -31,7 +32,8 @@ export default function LeadDetailPage() {
   const { toast } = useToast();
   const invalidate = useInvalidateWork();
   const [addClass, setAddClass] = useState<ProvenanceClass | null>(null);
-  const [tab, setTab] = useState('intel');
+  const work = new URLSearchParams(window.location.search).get('work');
+  const [tab, setTab] = useState(work === 'uw' ? 'uw' : work === 'stage' ? 'stage' : work === 'offers' ? 'offers' : work === 'call' ? 'calls' : work === 'transaction' ? 'tx' : 'intel');
   const [leadEpoch, setLeadEpoch] = useState(0);
   const [uwEpoch, setUwEpoch] = useState(0);
 
@@ -41,17 +43,26 @@ export default function LeadDetailPage() {
   const saveUw = useSaveUnderwriting();
   const transition = useTransitionLead();
 
+  const loaded = !!q.data;
+  useEffect(() => {
+    if (!loaded || !work) return;
+    setTab(work === 'uw' ? 'uw' : work === 'stage' ? 'stage' : work === 'offers' ? 'offers' : work === 'call' ? 'calls' : work === 'transaction' ? 'tx' : 'intel');
+    document.getElementById('workflow')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }, [loaded, work]);
+
   if (q.isLoading) return <RowsSkeleton rows={6} />;
   if (q.isError || !q.data) {
     return <div className="space-y-3"><Link href="/leads" className="text-sm underline" data-testid="link-back-leads">Back to leads</Link><ErrorNotice error={q.error} onRetry={() => q.refetch()} /></div>;
   }
   const d = q.data;
   const lead = d.lead;
+  const blockers = [...(d.analysis?.blockers ?? []), ...d.offers.filter((o) => o.effectiveStatus === 'DRAFT').flatMap((o) => o.blockers)];
+  const authorized = d.offers.find((o) => o.effectiveStatus === 'AUTHORIZED' || o.effectiveStatus === 'COMMUNICATED');
   const patch = (fn: (o: LeadDetail) => LeadDetail) => qc.setQueryData<LeadDetail>(getGetLeadQueryKey(id), (o) => (o ? fn(o) : o));
 
   return (
     <div className="space-y-5">
-      <Link href="/leads" className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground" data-testid="link-back-leads"><ArrowLeft className="h-4 w-4" />Leads</Link>
+      <Link href="/dashboard" className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground" data-testid="link-back-leads"><ArrowLeft className="h-4 w-4" />Command center</Link>
       <header className="rise flex flex-wrap items-end justify-between gap-3 border-b border-border pb-4">
         <div>
           <p className="eyebrow mb-2">Lead / version {lead.version}</p>
@@ -65,6 +76,20 @@ export default function LeadDetailPage() {
         </div>
       </header>
       <p className="ledger border-l-4 border-l-signal p-3 text-sm" data-testid="text-next-action"><b>Next action:</b> {lead.nextAction || 'none recorded'}</p>
+      <section className="grid gap-3 md:grid-cols-3" data-testid="panel-deal-status">
+        <div className="ledger p-3"><p className="eyebrow mb-1">Blocked</p>
+          {blockers.length === 0 ? <p className="text-sm">Nothing blocking the numbers.</p> : <ul className="list-disc space-y-0.5 pl-4 text-sm">{blockers.slice(0, 5).map((b, i) => <li key={i}>{b}</li>)}</ul>}</div>
+        <div className="ledger p-3"><p className="eyebrow mb-1">Authorization (separate from research)</p>
+          <p className="text-sm" data-testid="text-authorization">{authorized ? `Owner-approved offer: ${money(authorized.amount)}, ceiling ${money(authorized.maximumApprovedAcquisitionPrice)}.` : 'No owner-approved offer. Research and underwriting do not authorize any number to be quoted.'}</p></div>
+        <div className="ledger p-3"><p className="eyebrow mb-1">Seller situation</p>
+          <p className="text-sm">{lead.sellingReason || lead.sellerDescription || 'No seller statement yet.'}</p>
+          <p className="mt-1 text-xs text-muted-foreground">Urgency {lead.urgency ?? 'UNKNOWN'} / {d.calls.length} call{d.calls.length === 1 ? '' : 's'} logged</p></div>
+      </section>
+      <div className="flex flex-wrap gap-2 text-sm" id="workflow" data-testid="bar-workflow">
+        {([['intel', 'Evidence'], ['uw', 'Underwriting'], ['offers', 'Offers'], ['tx', 'Transaction'], ['stage', 'Lifecycle']] as const).map(([v, l]) => (
+          <button key={v} type="button" onClick={() => setTab(v)} className={`border px-3 py-1.5 ${tab === v ? 'border-signal bg-card font-semibold' : 'border-border'}`} data-testid={`button-focus-${v}`}>{l}</button>))}
+        <Link href={`/calls?lead=${lead.id}`} className="inline-flex items-center gap-1.5 border border-signal px-3 py-1.5 font-semibold hover:bg-card" data-testid="link-call-seller"><PhoneCall className="h-3.5 w-3.5" />Call this seller</Link>
+      </div>
       <AnalysisPanel analysis={d.analysis} comps={d.underwriting?.comps} />
 
       <Tabs value={tab} onValueChange={setTab}>
@@ -72,6 +97,7 @@ export default function LeadDetailPage() {
           <TabsTrigger value="intel" data-testid="tab-intel">Intelligence ({d.intelligence.length})</TabsTrigger>
           <TabsTrigger value="uw" data-testid="tab-underwriting">Underwriting</TabsTrigger>
           <TabsTrigger value="offers" data-testid="tab-offers">Offers ({d.offers.length})</TabsTrigger>
+          <TabsTrigger value="tx" data-testid="tab-transaction">Transaction</TabsTrigger>
           <TabsTrigger value="record" data-testid="tab-record">Lead record</TabsTrigger>
           <TabsTrigger value="stage" data-testid="tab-stage">Stage and history</TabsTrigger>
           <TabsTrigger value="calls" data-testid="tab-calls">Calls ({d.calls.length})</TabsTrigger>
@@ -90,6 +116,10 @@ export default function LeadDetailPage() {
 
         <TabsContent value="offers" forceMount className={KEEP}>
           <OffersPanel detail={d} onGoIntel={() => setTab('intel')} />
+        </TabsContent>
+
+        <TabsContent value="tx" forceMount className={KEEP}>
+          <DealOperationsPanel detail={d} />
         </TabsContent>
 
         <TabsContent value="record" forceMount className={KEEP}>

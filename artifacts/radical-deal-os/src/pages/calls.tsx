@@ -17,7 +17,7 @@ export default function Calls() {
   const comm = useOfferCommunicate();
   const { toast } = useToast();
   const invalidate = useInvalidateWork();
-  const [sel, setSel] = useState<string | null>(null);
+  const [sel, setSel] = useState<string | null>(() => new URLSearchParams(window.location.search).get('lead'));
   const q = useGetCallQueue({ query: { queryKey: getGetCallQueueQueryKey(), staleTime: 15_000, refetchInterval: 30_000 } });
   const rec = useRecordCall();
   const queue = q.data ?? [];

@@ -1,80 +1,134 @@
 import { Link } from 'wouter';
-import { ArrowRight } from 'lucide-react';
-import { getGetDashboardQueryKey, useGetDashboard } from '@workspace/api-client-react';
+import { ArrowRight, PhoneCall } from 'lucide-react';
+import { getGetCommandCenterQueryKey, useGetCommandCenter, type CommandAction } from '@workspace/api-client-react';
 import { PageHeader } from '@/components/page-header';
-import { ErrorNotice, RowsSkeleton } from '@/components/state-views';
-import { NextSlices } from '@/components/next-slices';
+import { EmptyState, ErrorNotice, RowsSkeleton } from '@/components/state-views';
+import { isQualified } from '@/components/buyer-status';
 import { StageBadge } from '@/components/stage-badge';
-import { Skeleton } from '@/components/ui/skeleton';
-import { ago } from '@/lib/format';
+import { ago, fmtDate, isOverdue, money } from '@/lib/format';
 
-function Stat({ label, value, tone, tid }: { label: string; value: number; tone?: string; tid: string }) {
-  return (
-    <div className="ledger p-4">
-      <p className="eyebrow">{label}</p>
-      <p className={`font-display text-5xl font-semibold ${tone ?? ''}`} data-testid={tid}>{value}</p>
-    </div>
-  );
-}
+const LABEL: Record<CommandAction['category'], string> = {
+  RESEARCH: 'Research', CALL: 'Call', FOLLOW_UP: 'Follow up', OFFER_APPROVAL: 'Awaiting owner approval', NEGOTIATION: 'Negotiate',
+  CONTRACT: 'Contract', BUYER_MATCH: 'Buyer match', BUYER_VERIFICATION: 'Verify buyer', DEADLINE: 'Deadline', CLOSING: 'Closing', WORKER: 'Worker',
+};
+const TONE: Record<CommandAction['category'], string> = {
+  RESEARCH: 'tone-muted', CALL: 'tone-signal', FOLLOW_UP: 'tone-warn', OFFER_APPROVAL: 'tone-ink', NEGOTIATION: 'tone-go',
+  CONTRACT: 'tone-ink', BUYER_MATCH: 'tone-go', BUYER_VERIFICATION: 'tone-warn', DEADLINE: 'tone-stop', CLOSING: 'tone-signal', WORKER: 'tone-muted',
+};
 
 export default function Dashboard() {
-  const q = useGetDashboard({ query: { queryKey: getGetDashboardQueryKey(), staleTime: 10_000, refetchInterval: 20_000 } });
+  const q = useGetCommandCenter({ query: { queryKey: getGetCommandCenterQueryKey(), refetchInterval: 15000 } });
   const d = q.data;
-  const steps: { to: string; text: string }[] = [];
-  if (d) {
-    if (d.callReady > 0) steps.push({ to: '/calls', text: `${d.callReady} seller${d.callReady === 1 ? ' is' : 's are'} ready to call. Open the call queue.` });
-    if (d.overdue > 0) steps.push({ to: '/calls', text: `${d.overdue} follow-up${d.overdue === 1 ? ' is' : 's are'} overdue.` });
-    if (d.needsResearch > 0) steps.push({ to: '/leads', text: `${d.needsResearch} lead${d.needsResearch === 1 ? ' needs' : 's need'} research or underwriting before anyone can call.` });
-    if (d.total === 0) steps.push({ to: '/leads', text: 'No leads yet. Add the first real seller lead.' });
-  }
+  const actions = d ? [...d.actions].sort((a, b) => b.priority - a.priority) : [];
+  const contracts = d ? d.operations.filter((o) => o.contract) : [];
+  const deadlines = contracts.filter((o) => o.contract!.status !== 'CLOSED' && o.contract!.status !== 'CANCELLED').sort((a, b) => a.contract!.closingAt.localeCompare(b.contract!.closingAt));
+  const qualified = d ? d.buyers.filter(isQualified) : [];
   return (
     <div>
-      <PageHeader eyebrow="Today" title="The desk" />
+      <PageHeader eyebrow={d ? `Live / updated ${ago(d.generatedAt)}` : 'Live'} title="Command center" />
       {q.isError && <ErrorNotice error={q.error} onRetry={() => q.refetch()} />}
-      {q.isLoading && <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">{Array.from({ length: 4 }).map((_, i) => <Skeleton key={i} className="h-28" />)}</div>}
+      {q.isLoading && <RowsSkeleton rows={5} />}
       {d && (
-        <div className="space-y-6">
-          <section className="ledger border-l-4 border-l-signal p-4" data-testid="panel-next-steps">
-            <p className="eyebrow mb-2">Next steps</p>
-            {steps.length === 0 ? <p className="text-sm text-muted-foreground">Nothing is waiting. Queue is clear.</p> : (
-              <ul className="space-y-1.5">{steps.map((s, i) => (
-                <li key={i}><Link href={s.to} className="group flex items-center justify-between text-base hover:text-signal" data-testid={`link-step-${i}`}>{s.text}<ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" /></Link></li>))}</ul>
+        <div className="space-y-8">
+          <section data-testid="panel-actions">
+            <p className="eyebrow mb-3">Do next ({actions.length})</p>
+            {actions.length === 0 ? (
+              <EmptyState title="Nothing is waiting on you" body="New work appears here as leads are researched, approved and followed up."
+                action={<Link href="/leads" className="text-sm underline" data-testid="link-empty-inventory">Open deal inventory</Link>} />
+            ) : (
+              <ol className="space-y-2">{actions.map((a, i) => (
+                <li key={a.id} className="rise" style={{ animationDelay: `${Math.min(i, 8) * 30}ms` }}>
+                  <Link href={a.href} className={`ledger group flex flex-wrap items-center gap-3 p-3 hover:border-signal ${i === 0 ? 'border-l-4 border-l-signal' : ''}`} data-testid={`action-${a.id}`}>
+                    <span className={`tag ${TONE[a.category]}`}>{LABEL[a.category]}</span>
+                    <div className="min-w-0 flex-1"><p className="font-semibold">{a.title}</p><p className="text-sm text-muted-foreground">{a.reason}</p></div>
+                    {a.dueAt && <span className="font-mono text-xs text-muted-foreground">due {ago(a.dueAt)}</span>}
+                    <span className="flex items-center gap-1 text-sm font-semibold group-hover:text-signal">{a.cta}<ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" /></span>
+                  </Link>
+                </li>))}</ol>
             )}
           </section>
-          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-            <Stat label="Call ready" value={d.callReady} tone="text-signal" tid="stat-call-ready" />
-            <Stat label="Needs research" value={d.needsResearch} tid="stat-needs-research" />
-            <Stat label="Overdue follow-ups" value={d.overdue} tone={d.overdue ? 'text-destructive' : ''} tid="stat-overdue" />
-            <Stat label="Total leads" value={d.total} tid="stat-total" />
-          </div>
-          <div className="grid gap-4 lg:grid-cols-[1fr_1fr]">
-            <section className="ledger p-4" data-testid="panel-stages">
-              <p className="eyebrow mb-3">Underwriting verdicts</p>
-              <div className="mb-4 grid grid-cols-3 gap-2 text-center">
-                <div className="tone-go border p-2"><p className="font-display text-3xl" data-testid="stat-strong">{d.strong}</p><p className="eyebrow !text-inherit">Strong</p></div>
-                <div className="tone-warn border p-2"><p className="font-display text-3xl" data-testid="stat-negotiable">{d.negotiable}</p><p className="eyebrow !text-inherit">Negotiable</p></div>
-                <div className="tone-stop border p-2"><p className="font-display text-3xl" data-testid="stat-pass">{d.pass}</p><p className="eyebrow !text-inherit">Pass</p></div>
-              </div>
-              <p className="eyebrow mb-2">By stage</p>
-              {d.stages.length === 0 ? <p className="text-sm text-muted-foreground">No leads in any stage.</p> : (
-                <ul className="space-y-1.5">{d.stages.map((s) => (
-                  <li key={s.stage} className="flex items-center gap-3"><div className="w-36"><StageBadge stage={s.stage} /></div>
-                    <div className="h-2 flex-1 bg-muted"><div className="h-full bg-primary" style={{ width: `${d.total ? (s.count / d.total) * 100 : 0}%` }} /></div>
-                    <span className="w-6 text-right font-mono text-sm">{s.count}</span></li>))}</ul>
+
+          <div className="grid gap-6 lg:grid-cols-2">
+            <section data-testid="panel-calls">
+              <p className="eyebrow mb-3 flex items-center gap-1.5"><PhoneCall className="h-3.5 w-3.5" />Call-ready sellers ({d.calls.length})</p>
+              {d.calls.length === 0 ? <p className="ledger p-4 text-sm text-muted-foreground">No seller is cleared to call.</p> : (
+                <ul className="space-y-2">{d.calls.map((b) => (
+                  <li key={b.lead.id} className="ledger p-3">
+                    <div className="flex items-start justify-between gap-2">
+                      <div><p className="font-semibold">{b.lead.sellerName}</p><p className="text-xs text-muted-foreground">{b.lead.address}</p></div>
+                      <Link href={`/calls?lead=${b.lead.id}`} className="tag tone-signal" data-testid={`link-call-${b.lead.id}`}>Call</Link>
+                    </div>
+                    <p className="mt-1 text-sm">{b.objective}</p>
+                    <p className="mt-1 font-mono text-xs">{b.authorizedOffer ? `Authorized: ${money(b.authorizedOffer.amount)}` : `Research only. Opening range ${money(b.analysis.openingLow)} to ${money(b.analysis.openingHigh)}, not authorized to quote`}</p>
+                  </li>))}</ul>
               )}
             </section>
-            <section className="ledger p-4" data-testid="panel-activity">
-              <p className="eyebrow mb-3">Recent activity</p>
-              {d.recentActivity.length === 0 ? <p className="text-sm text-muted-foreground">No activity recorded.</p> : (
-                <ul className="divide-y divide-border">{d.recentActivity.map((e) => (
-                  <li key={e.id} className="py-2 text-sm"><p><span className="font-mono text-xs text-signal">{e.action}</span> {e.detail}</p><p className="font-mono text-[11px] text-muted-foreground">{e.actor} / {ago(e.createdAt)}</p></li>))}</ul>
+
+            <section data-testid="panel-deals">
+              <p className="eyebrow mb-3">Live deals ({d.deals.length})</p>
+              {d.deals.length === 0 ? <p className="ledger p-4 text-sm text-muted-foreground">No deals past the first conversation.</p> : (
+                <ul className="space-y-2">{d.deals.map((x) => (
+                  <li key={x.lead.id}><Link href={`/deals/${x.lead.id}`} className="ledger flex items-center justify-between gap-2 p-3 hover:border-signal" data-testid={`link-deal-${x.lead.id}`}>
+                    <div className="min-w-0"><p className="truncate font-semibold">{x.lead.address}</p><p className="truncate text-xs text-muted-foreground">Next: {x.lead.nextAction || 'none recorded'}</p></div>
+                    <StageBadge stage={x.lead.stage} /></Link></li>))}</ul>
               )}
             </section>
           </div>
-          <NextSlices />
+
+          <div className="grid gap-6 lg:grid-cols-2">
+            <section data-testid="panel-contracts">
+              <p className="eyebrow mb-3">Contracts and closing ({contracts.length})</p>
+              {contracts.length === 0 ? <p className="ledger p-4 text-sm text-muted-foreground">No contract has been drafted.</p> : (
+                <ul className="space-y-2">{contracts.map((o) => { const c = o.contract!; const dl = d.deals.find((x) => x.lead.id === o.leadId) ?? d.opportunities.find((x) => x.lead.id === o.leadId);
+                  return (
+                  <li key={c.id}><Link href={`/deals/${o.leadId}?work=transaction`} className="ledger block p-3 hover:border-signal" data-testid={`link-contract-${c.id}`}>
+                    <div className="flex items-center justify-between gap-2"><p className="truncate font-semibold">{dl?.lead.address ?? 'Deal'}</p><span className={`tag ${c.status === 'DRAFT' ? 'tone-warn' : c.status === 'CANCELLED' ? 'tone-stop' : 'tone-go'}`}>{c.status === 'DRAFT' ? 'Draft, not executed' : c.status.replace(/_/g, ' ')}</span></div>
+                    <p className="font-mono text-xs">{money(c.purchasePrice)} / {c.milestones.length} of 4 milestones / {o.matches.filter((m) => m.status === 'COMMITTED').length} committed buyer(s)</p>
+                    <p className="text-xs text-muted-foreground">{o.nextAction}</p></Link></li>); })}</ul>
+              )}
+            </section>
+            <section data-testid="panel-deadlines">
+              <p className="eyebrow mb-3">Closing deadlines ({deadlines.length})</p>
+              {deadlines.length === 0 ? <p className="ledger p-4 text-sm text-muted-foreground">No open contract has a closing date.</p> : (
+                <ul className="space-y-2">{deadlines.map((o) => (
+                  <li key={o.leadId}><Link href={`/deals/${o.leadId}?work=transaction`} className="ledger flex items-center justify-between p-3 hover:border-signal"><span className="text-sm">{fmtDate(o.contract!.closingAt)}</span>
+                    <span className={`font-mono text-xs ${isOverdue(o.contract!.closingAt) ? 'font-semibold text-destructive' : ''}`}>{ago(o.contract!.closingAt)}</span></Link></li>))}</ul>
+              )}
+            </section>
+          </div>
+
+          <div className="grid gap-6 lg:grid-cols-2">
+            <section data-testid="panel-buyers">
+              <div className="mb-3 flex items-center justify-between"><p className="eyebrow">Qualified buyers ({qualified.length} of {d.buyers.length})</p><Link href="/buyers" className="text-xs underline" data-testid="link-buyers">All buyers</Link></div>
+              {d.buyers.length === 0 ? <p className="ledger p-4 text-sm text-muted-foreground">No buyers entered. Qualification is a human review; nothing is sourced automatically.</p> : (
+                <ul className="space-y-2">{d.buyers.slice(0, 8).map((b) => (
+                  <li key={b.id}><Link href={`/buyers/${b.id}`} className="ledger flex items-center justify-between gap-2 p-3 hover:border-signal" data-testid={`link-buyer-${b.id}`}>
+                    <div className="min-w-0"><p className="truncate font-semibold">{b.name}</p><p className="font-mono text-xs text-muted-foreground">{b.criteria.states.join(', ')} / up to {money(b.criteria.maxPurchasePrice)}</p></div>
+                    <span className={`tag ${isQualified(b) ? 'tone-go' : b.verificationStatus === 'STALE' ? 'tone-warn' : 'tone-muted'}`}>{isQualified(b) ? 'Qualified' : b.verificationStatus === 'STALE' ? 'Stale' : b.status === 'PAUSED' ? 'Paused' : 'Unverified'}</span></Link></li>))}</ul>
+              )}
+            </section>
+            <section data-testid="panel-jobs">
+              <div className="mb-3 flex items-center justify-between"><p className="eyebrow">Worker activity ({d.jobs.length})</p><Link href="/workers" className="text-xs underline" data-testid="link-workers">Open workers</Link></div>
+              {d.jobs.length === 0 ? <p className="ledger p-4 text-sm text-muted-foreground">No jobs yet. Matching and deadline review only; no external scraping or AI runs.</p> : (
+                <ul className="space-y-2">{d.jobs.slice(0, 6).map((j) => (
+                  <li key={j.id} className="ledger flex items-center gap-2 p-3 text-sm"><span className={`tag ${j.state === 'FAILED' ? 'tone-stop' : j.state === 'SUCCEEDED' ? 'tone-go' : 'tone-muted'}`}>{j.state}</span><span className="min-w-0 flex-1 truncate">{j.message || j.kind.replace(/_/g, ' ').toLowerCase()}</span><span className="font-mono text-[11px] text-muted-foreground">{ago(j.updatedAt)}</span></li>))}</ul>
+              )}
+            </section>
+          </div>
+
+          <section data-testid="panel-opportunities">
+            <p className="eyebrow mb-3">Opportunities to work up ({d.opportunities.length})</p>
+            {d.opportunities.length === 0 ? <p className="ledger p-4 text-sm text-muted-foreground">No opportunities waiting for research.</p> : (
+              <div className="grid gap-2 md:grid-cols-2">{d.opportunities.map((o) => (
+                <Link key={o.lead.id} href={`/deals/${o.lead.id}?work=uw`} className="ledger p-3 hover:border-signal" data-testid={`link-opp-${o.lead.id}`}>
+                  <div className="flex items-center justify-between gap-2"><p className="truncate font-semibold">{o.lead.address}</p><StageBadge stage={o.lead.stage} /></div>
+                  <p className="text-xs text-muted-foreground">{o.intelligence.length} evidence item{o.intelligence.length === 1 ? '' : 's'} / {o.analysis ? o.analysis.classification : 'not underwritten'}</p>
+                  {o.analysis?.blockers[0] && <p className="mt-1 text-sm">Blocked: {o.analysis.blockers[0]}</p>}
+                </Link>))}</div>
+            )}
+          </section>
         </div>
       )}
-      {q.isLoading && <div className="mt-6"><RowsSkeleton rows={2} /></div>}
     </div>
   );
 }

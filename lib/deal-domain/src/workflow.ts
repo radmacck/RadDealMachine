@@ -13,7 +13,7 @@ export function assertTransitionPermission(role: string, to: Stage): void {
   throw new DomainError("Your role cannot make this stage change. Operators handle seller conversations and negotiation; analysts handle research and call-readiness.",403);
 }
 
-// Downstream states exist as a domain contract, NOT as implemented transaction workflows.
+// Executed transactions advance through evidenced operation commands, never manual stage edges.
 const manualEdges: Partial<Record<Stage, Stage[]>> = {
   DISCOVERED: ["ENRICHING", "DEAD_DEAL"],
   ENRICHING: ["DEAD_DEAL"],

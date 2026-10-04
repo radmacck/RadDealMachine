@@ -3,7 +3,6 @@ import { ArrowRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Logo } from '@/components/logo';
 import { PROVENANCE } from '@/components/provenance-sections';
-import { NextSlices } from '@/components/next-slices';
 
 const STEPS = [
   ['01', 'Lead', 'A real seller and a real address, entered once.'],
@@ -62,9 +61,9 @@ export default function Landing() {
         <section className="grid gap-6 py-8 md:grid-cols-2">
           <div>
             <p className="eyebrow mb-2">Honest about scope</p>
-            <p className="text-sm text-muted-foreground">This release covers research, underwriting, calls, immutable offer drafts, owner authorization, and recording offers a person actually communicated. It never sends messages and does not execute contracts. Contracts and closing are not built.</p>
+            <p className="text-sm text-muted-foreground">This release covers research, underwriting, calls, immutable offer drafts, owner authorization, and recording offers a person actually communicated. It also tracks buyers, contracts, closing evidence and worker activity. It never sends messages, never generates signatures, and does not scrape external sources or run AI research.</p>
           </div>
-          <NextSlices />
+          <div><p className="eyebrow mb-2">Not supported</p><p className="text-sm text-muted-foreground">External source automation and AI research workers are not implemented. Verification is human review, not bank or API checks.</p></div>
         </section>
       </main>
     </div>

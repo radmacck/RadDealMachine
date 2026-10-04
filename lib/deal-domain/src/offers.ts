@@ -9,7 +9,7 @@ import {
 import { callReadyBlockers } from "./workflow";
 
 export const ANALYSIS_LIFETIME_MS = 7 * 86_400_000;
-export const OFFER_STAGES = ["CONVERSATION","OFFER_READY","OFFER_SENT","NEGOTIATING"];
+export const OFFER_STAGES = ["CONVERSATION","OFFER_READY","OFFER_SENT","NEGOTIATING","CONTRACT_PENDING"];
 export interface OfferContext {
   lead: Lead;
   analysis: Analysis | null;

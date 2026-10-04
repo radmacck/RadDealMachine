@@ -33,6 +33,13 @@ export async function lockedLead(tx: Tx, id: string, version?: number) {
   return row;
 }
 export async function move(tx: Tx, row: LeadRow, to: Stage, reason: string, nextAction: string, actor: string, now: Date) {
+  // Refresh research without pretending an already executed transaction ceased to exist.
+  if (["UNDER_CONTRACT","BUYER_MATCHED","BUYER_INTERESTED","BUYER_COMMITTED","CLOSING"].includes(row.stage)
+    && ["ENRICHING","ANALYZED","STRONG","NEGOTIABLE","PASS","CONTACTED","CONVERSATION","NEGOTIATING"].includes(to)) {
+    await audit(tx,actor,"TRANSACTION_RESEARCH_REVIEW",row.id,`${reason}. Executed lifecycle preserved; ${nextAction}`);
+    row.nextAction = nextAction;
+    return;
+  }
   await tx.insert(transitionsTable).values({ leadId: row.id, from: row.stage, to, reason, nextAction, actor, createdAt: now });
   await audit(tx, actor, "DEAL_TRANSITION", row.id, `${row.stage} → ${to}: ${reason}. Next: ${nextAction}`);
   row.stage = to;

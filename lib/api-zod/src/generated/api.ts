@@ -3785,3 +3785,2143 @@ export const ListAuditResponseItem = zod.object({
 export const ListAuditResponse = zod.array(ListAuditResponseItem)
 
 
+export const getCommandCenterResponseOpportunitiesItemLeadOneAddressMin = 3;
+export const getCommandCenterResponseOpportunitiesItemLeadOneAddressMax = 250;
+
+export const getCommandCenterResponseOpportunitiesItemLeadOneCityMax = 100;
+
+export const getCommandCenterResponseOpportunitiesItemLeadOneStateMin = 2;
+export const getCommandCenterResponseOpportunitiesItemLeadOneStateMax = 2;
+
+export const getCommandCenterResponseOpportunitiesItemLeadOneCountyMax = 100;
+
+export const getCommandCenterResponseOpportunitiesItemLeadOneZipRegExp = new RegExp('^\\d{5}(-\\d{4})?$');
+export const getCommandCenterResponseOpportunitiesItemLeadOneSqftMin = 0;
+export const getCommandCenterResponseOpportunitiesItemLeadOneSqftMax = 1000000;
+
+export const getCommandCenterResponseOpportunitiesItemLeadOneBedsMin = 0;
+export const getCommandCenterResponseOpportunitiesItemLeadOneBedsMax = 100;
+
+export const getCommandCenterResponseOpportunitiesItemLeadOneBathsMin = 0;
+export const getCommandCenterResponseOpportunitiesItemLeadOneBathsMax = 100;
+
+export const getCommandCenterResponseOpportunitiesItemLeadOneUnitsMax = 10000;
+
+export const getCommandCenterResponseOpportunitiesItemLeadOneAskingPriceMin = 0;
+export const getCommandCenterResponseOpportunitiesItemLeadOneAskingPriceMax = 1000000000;
+
+export const getCommandCenterResponseOpportunitiesItemLeadOneSellerNameMax = 200;
+
+export const getCommandCenterResponseOpportunitiesItemLeadOneSellerPhoneMax = 50;
+
+export const getCommandCenterResponseOpportunitiesItemLeadOneSellerEmailMax = 200;
+
+export const getCommandCenterResponseOpportunitiesItemLeadOneSellerDescriptionMax = 5000;
+
+export const getCommandCenterResponseOpportunitiesItemLeadOneSellingReasonMax = 2000;
+
+export const getCommandCenterResponseOpportunitiesItemLeadOneSourceMax = 2000;
+
+export const getCommandCenterResponseOpportunitiesItemLeadOneNextActionMax = 1000;
+
+export const getCommandCenterResponseOpportunitiesItemIntelligenceItemOneCategoryMax = 100;
+
+export const getCommandCenterResponseOpportunitiesItemIntelligenceItemOneStatementMax = 5000;
+
+export const getCommandCenterResponseOpportunitiesItemIntelligenceItemOneSourceMax = 2000;
+
+export const getCommandCenterResponseOpportunitiesItemIntelligenceItemOneSourceUrlMax = 2000;
+
+export const getCommandCenterResponseOpportunitiesItemIntelligenceItemOneConfidenceMin = 0;
+export const getCommandCenterResponseOpportunitiesItemIntelligenceItemOneConfidenceMax = 1;
+
+export const getCommandCenterResponseOpportunitiesItemIntelligenceItemOneVerificationNoteMax = 2000;
+
+export const getCommandCenterResponseOpportunitiesItemIntelligenceItemOneQuestionMax = 2000;
+
+export const getCommandCenterResponseOpportunitiesItemIntelligenceItemOneActionMax = 2000;
+
+export const getCommandCenterResponseOpportunitiesItemAnalysisOneAssumptionsArvMultiplierMin = 0.1;
+export const getCommandCenterResponseOpportunitiesItemAnalysisOneAssumptionsArvMultiplierMax = 1;
+
+export const getCommandCenterResponseOpportunitiesItemAnalysisOneAssumptionsSellingCostPctMin = 0;
+export const getCommandCenterResponseOpportunitiesItemAnalysisOneAssumptionsSellingCostPctMax = 0.5;
+
+export const getCommandCenterResponseOpportunitiesItemAnalysisOneAssumptionsAcquisitionCostMin = 0;
+export const getCommandCenterResponseOpportunitiesItemAnalysisOneAssumptionsAcquisitionCostMax = 1000000000;
+
+export const getCommandCenterResponseOpportunitiesItemAnalysisOneAssumptionsHoldingMonthlyMin = 0;
+export const getCommandCenterResponseOpportunitiesItemAnalysisOneAssumptionsHoldingMonthlyMax = 1000000000;
+
+export const getCommandCenterResponseOpportunitiesItemAnalysisOneAssumptionsHoldingMonthsMin = 0;
+export const getCommandCenterResponseOpportunitiesItemAnalysisOneAssumptionsHoldingMonthsMax = 120;
+
+export const getCommandCenterResponseOpportunitiesItemAnalysisOneAssumptionsAssignmentTargetMin = 0;
+export const getCommandCenterResponseOpportunitiesItemAnalysisOneAssumptionsAssignmentTargetMax = 1000000000;
+
+export const getCommandCenterResponseOpportunitiesItemAnalysisOneAssumptionsContingencyPctMin = 0;
+export const getCommandCenterResponseOpportunitiesItemAnalysisOneAssumptionsContingencyPctMax = 1;
+
+export const getCommandCenterResponseOpportunitiesItemAnalysisOneAssumptionsStrongMarginMin = 0;
+export const getCommandCenterResponseOpportunitiesItemAnalysisOneAssumptionsStrongMarginMax = 1000000000;
+
+export const getCommandCenterResponseOpportunitiesItemAnalysisOneAssumptionsOpeningLowPctMin = 0;
+export const getCommandCenterResponseOpportunitiesItemAnalysisOneAssumptionsOpeningLowPctMax = 1;
+
+export const getCommandCenterResponseOpportunitiesItemAnalysisOneAssumptionsOpeningHighPctMin = 0;
+export const getCommandCenterResponseOpportunitiesItemAnalysisOneAssumptionsOpeningHighPctMax = 1;
+
+export const getCommandCenterResponseOpportunitiesItemAnalysisOneAssumptionsMaxCompAgeDaysMax = 1095;
+
+export const getCommandCenterResponseOpportunitiesItemAnalysisOneAssumptionsMaxDistanceMilesExclusiveMin = 0;
+export const getCommandCenterResponseOpportunitiesItemAnalysisOneAssumptionsMaxDistanceMilesMax = 100;
+
+export const getCommandCenterResponseOpportunitiesItemAnalysisOneAssumptionsMaxSqftDifferencePctMin = 0;
+export const getCommandCenterResponseOpportunitiesItemAnalysisOneAssumptionsMaxSqftDifferencePctMax = 1;
+
+export const getCommandCenterResponseOpportunitiesItemAnalysisOneAssumptionsMinCompsMin = 3;
+export const getCommandCenterResponseOpportunitiesItemAnalysisOneAssumptionsMinCompsMax = 20;
+
+export const getCommandCenterResponseOpportunitiesItemAnalysisOneAssumptionsMinConfidenceMin = 0.3;
+export const getCommandCenterResponseOpportunitiesItemAnalysisOneAssumptionsMinConfidenceMax = 1;
+
+export const getCommandCenterResponseOpportunitiesItemOffersItemOneAmountExclusiveMin = 0;
+export const getCommandCenterResponseOpportunitiesItemOffersItemOneAmountMax = 1000000000;
+
+export const getCommandCenterResponseOpportunitiesItemOffersItemOneEarnestMoneyMin = 0;
+export const getCommandCenterResponseOpportunitiesItemOffersItemOneEarnestMoneyMax = 1000000000;
+
+export const getCommandCenterResponseOpportunitiesItemOffersItemOneClosingDaysMax = 180;
+
+export const getCommandCenterResponseOpportunitiesItemOffersItemOneContingenciesMin = 3;
+export const getCommandCenterResponseOpportunitiesItemOffersItemOneContingenciesMax = 5000;
+
+
+
+export const getCommandCenterResponseOpportunitiesItemUnderwritingOneCompsItemAddressMin = 3;
+
+export const getCommandCenterResponseOpportunitiesItemUnderwritingOneCompsItemSalePriceExclusiveMin = 0;
+export const getCommandCenterResponseOpportunitiesItemUnderwritingOneCompsItemSalePriceMax = 1000000000;
+
+export const getCommandCenterResponseOpportunitiesItemUnderwritingOneCompsItemSqftExclusiveMin = 0;
+export const getCommandCenterResponseOpportunitiesItemUnderwritingOneCompsItemSqftMax = 1000000;
+
+export const getCommandCenterResponseOpportunitiesItemUnderwritingOneCompsItemDistanceMilesMin = 0;
+export const getCommandCenterResponseOpportunitiesItemUnderwritingOneCompsItemDistanceMilesMax = 10000;
+
+
+export const getCommandCenterResponseOpportunitiesItemUnderwritingOneCompsMax = 100;
+
+
+export const getCommandCenterResponseOpportunitiesItemUnderwritingOneRepairsItemLowMin = 0;
+export const getCommandCenterResponseOpportunitiesItemUnderwritingOneRepairsItemLowMax = 1000000000;
+
+export const getCommandCenterResponseOpportunitiesItemUnderwritingOneRepairsItemExpectedMin = 0;
+export const getCommandCenterResponseOpportunitiesItemUnderwritingOneRepairsItemExpectedMax = 1000000000;
+
+export const getCommandCenterResponseOpportunitiesItemUnderwritingOneRepairsItemHighMin = 0;
+export const getCommandCenterResponseOpportunitiesItemUnderwritingOneRepairsItemHighMax = 1000000000;
+
+export const getCommandCenterResponseOpportunitiesItemUnderwritingOneRepairsItemConfidenceMin = 0;
+export const getCommandCenterResponseOpportunitiesItemUnderwritingOneRepairsItemConfidenceMax = 1;
+
+
+export const getCommandCenterResponseOpportunitiesItemUnderwritingOneRepairsMax = 50;
+
+
+export const getCommandCenterResponseOpportunitiesItemCallsItemOneNotesMax = 10000;
+
+export const getCommandCenterResponseOpportunitiesItemCallsItemOneNextActionMin = 3;
+export const getCommandCenterResponseOpportunitiesItemCallsItemOneNextActionMax = 1000;
+
+export const getCommandCenterResponseCallsItemLeadOneAddressMin = 3;
+export const getCommandCenterResponseCallsItemLeadOneAddressMax = 250;
+
+export const getCommandCenterResponseCallsItemLeadOneCityMax = 100;
+
+export const getCommandCenterResponseCallsItemLeadOneStateMin = 2;
+export const getCommandCenterResponseCallsItemLeadOneStateMax = 2;
+
+export const getCommandCenterResponseCallsItemLeadOneCountyMax = 100;
+
+export const getCommandCenterResponseCallsItemLeadOneZipRegExp = new RegExp('^\\d{5}(-\\d{4})?$');
+export const getCommandCenterResponseCallsItemLeadOneSqftMin = 0;
+export const getCommandCenterResponseCallsItemLeadOneSqftMax = 1000000;
+
+export const getCommandCenterResponseCallsItemLeadOneBedsMin = 0;
+export const getCommandCenterResponseCallsItemLeadOneBedsMax = 100;
+
+export const getCommandCenterResponseCallsItemLeadOneBathsMin = 0;
+export const getCommandCenterResponseCallsItemLeadOneBathsMax = 100;
+
+export const getCommandCenterResponseCallsItemLeadOneUnitsMax = 10000;
+
+export const getCommandCenterResponseCallsItemLeadOneAskingPriceMin = 0;
+export const getCommandCenterResponseCallsItemLeadOneAskingPriceMax = 1000000000;
+
+export const getCommandCenterResponseCallsItemLeadOneSellerNameMax = 200;
+
+export const getCommandCenterResponseCallsItemLeadOneSellerPhoneMax = 50;
+
+export const getCommandCenterResponseCallsItemLeadOneSellerEmailMax = 200;
+
+export const getCommandCenterResponseCallsItemLeadOneSellerDescriptionMax = 5000;
+
+export const getCommandCenterResponseCallsItemLeadOneSellingReasonMax = 2000;
+
+export const getCommandCenterResponseCallsItemLeadOneSourceMax = 2000;
+
+export const getCommandCenterResponseCallsItemLeadOneNextActionMax = 1000;
+
+export const getCommandCenterResponseCallsItemIntelligenceItemOneCategoryMax = 100;
+
+export const getCommandCenterResponseCallsItemIntelligenceItemOneStatementMax = 5000;
+
+export const getCommandCenterResponseCallsItemIntelligenceItemOneSourceMax = 2000;
+
+export const getCommandCenterResponseCallsItemIntelligenceItemOneSourceUrlMax = 2000;
+
+export const getCommandCenterResponseCallsItemIntelligenceItemOneConfidenceMin = 0;
+export const getCommandCenterResponseCallsItemIntelligenceItemOneConfidenceMax = 1;
+
+export const getCommandCenterResponseCallsItemIntelligenceItemOneVerificationNoteMax = 2000;
+
+export const getCommandCenterResponseCallsItemIntelligenceItemOneQuestionMax = 2000;
+
+export const getCommandCenterResponseCallsItemIntelligenceItemOneActionMax = 2000;
+
+export const getCommandCenterResponseCallsItemAnalysisAssumptionsArvMultiplierMin = 0.1;
+export const getCommandCenterResponseCallsItemAnalysisAssumptionsArvMultiplierMax = 1;
+
+export const getCommandCenterResponseCallsItemAnalysisAssumptionsSellingCostPctMin = 0;
+export const getCommandCenterResponseCallsItemAnalysisAssumptionsSellingCostPctMax = 0.5;
+
+export const getCommandCenterResponseCallsItemAnalysisAssumptionsAcquisitionCostMin = 0;
+export const getCommandCenterResponseCallsItemAnalysisAssumptionsAcquisitionCostMax = 1000000000;
+
+export const getCommandCenterResponseCallsItemAnalysisAssumptionsHoldingMonthlyMin = 0;
+export const getCommandCenterResponseCallsItemAnalysisAssumptionsHoldingMonthlyMax = 1000000000;
+
+export const getCommandCenterResponseCallsItemAnalysisAssumptionsHoldingMonthsMin = 0;
+export const getCommandCenterResponseCallsItemAnalysisAssumptionsHoldingMonthsMax = 120;
+
+export const getCommandCenterResponseCallsItemAnalysisAssumptionsAssignmentTargetMin = 0;
+export const getCommandCenterResponseCallsItemAnalysisAssumptionsAssignmentTargetMax = 1000000000;
+
+export const getCommandCenterResponseCallsItemAnalysisAssumptionsContingencyPctMin = 0;
+export const getCommandCenterResponseCallsItemAnalysisAssumptionsContingencyPctMax = 1;
+
+export const getCommandCenterResponseCallsItemAnalysisAssumptionsStrongMarginMin = 0;
+export const getCommandCenterResponseCallsItemAnalysisAssumptionsStrongMarginMax = 1000000000;
+
+export const getCommandCenterResponseCallsItemAnalysisAssumptionsOpeningLowPctMin = 0;
+export const getCommandCenterResponseCallsItemAnalysisAssumptionsOpeningLowPctMax = 1;
+
+export const getCommandCenterResponseCallsItemAnalysisAssumptionsOpeningHighPctMin = 0;
+export const getCommandCenterResponseCallsItemAnalysisAssumptionsOpeningHighPctMax = 1;
+
+export const getCommandCenterResponseCallsItemAnalysisAssumptionsMaxCompAgeDaysMax = 1095;
+
+export const getCommandCenterResponseCallsItemAnalysisAssumptionsMaxDistanceMilesExclusiveMin = 0;
+export const getCommandCenterResponseCallsItemAnalysisAssumptionsMaxDistanceMilesMax = 100;
+
+export const getCommandCenterResponseCallsItemAnalysisAssumptionsMaxSqftDifferencePctMin = 0;
+export const getCommandCenterResponseCallsItemAnalysisAssumptionsMaxSqftDifferencePctMax = 1;
+
+export const getCommandCenterResponseCallsItemAnalysisAssumptionsMinCompsMin = 3;
+export const getCommandCenterResponseCallsItemAnalysisAssumptionsMinCompsMax = 20;
+
+export const getCommandCenterResponseCallsItemAnalysisAssumptionsMinConfidenceMin = 0.3;
+export const getCommandCenterResponseCallsItemAnalysisAssumptionsMinConfidenceMax = 1;
+
+export const getCommandCenterResponseCallsItemAuthorizedOfferOneOneAmountExclusiveMin = 0;
+export const getCommandCenterResponseCallsItemAuthorizedOfferOneOneAmountMax = 1000000000;
+
+export const getCommandCenterResponseCallsItemAuthorizedOfferOneOneEarnestMoneyMin = 0;
+export const getCommandCenterResponseCallsItemAuthorizedOfferOneOneEarnestMoneyMax = 1000000000;
+
+export const getCommandCenterResponseCallsItemAuthorizedOfferOneOneClosingDaysMax = 180;
+
+export const getCommandCenterResponseCallsItemAuthorizedOfferOneOneContingenciesMin = 3;
+export const getCommandCenterResponseCallsItemAuthorizedOfferOneOneContingenciesMax = 5000;
+
+export const getCommandCenterResponseDealsItemLeadOneAddressMin = 3;
+export const getCommandCenterResponseDealsItemLeadOneAddressMax = 250;
+
+export const getCommandCenterResponseDealsItemLeadOneCityMax = 100;
+
+export const getCommandCenterResponseDealsItemLeadOneStateMin = 2;
+export const getCommandCenterResponseDealsItemLeadOneStateMax = 2;
+
+export const getCommandCenterResponseDealsItemLeadOneCountyMax = 100;
+
+export const getCommandCenterResponseDealsItemLeadOneZipRegExp = new RegExp('^\\d{5}(-\\d{4})?$');
+export const getCommandCenterResponseDealsItemLeadOneSqftMin = 0;
+export const getCommandCenterResponseDealsItemLeadOneSqftMax = 1000000;
+
+export const getCommandCenterResponseDealsItemLeadOneBedsMin = 0;
+export const getCommandCenterResponseDealsItemLeadOneBedsMax = 100;
+
+export const getCommandCenterResponseDealsItemLeadOneBathsMin = 0;
+export const getCommandCenterResponseDealsItemLeadOneBathsMax = 100;
+
+export const getCommandCenterResponseDealsItemLeadOneUnitsMax = 10000;
+
+export const getCommandCenterResponseDealsItemLeadOneAskingPriceMin = 0;
+export const getCommandCenterResponseDealsItemLeadOneAskingPriceMax = 1000000000;
+
+export const getCommandCenterResponseDealsItemLeadOneSellerNameMax = 200;
+
+export const getCommandCenterResponseDealsItemLeadOneSellerPhoneMax = 50;
+
+export const getCommandCenterResponseDealsItemLeadOneSellerEmailMax = 200;
+
+export const getCommandCenterResponseDealsItemLeadOneSellerDescriptionMax = 5000;
+
+export const getCommandCenterResponseDealsItemLeadOneSellingReasonMax = 2000;
+
+export const getCommandCenterResponseDealsItemLeadOneSourceMax = 2000;
+
+export const getCommandCenterResponseDealsItemLeadOneNextActionMax = 1000;
+
+export const getCommandCenterResponseDealsItemIntelligenceItemOneCategoryMax = 100;
+
+export const getCommandCenterResponseDealsItemIntelligenceItemOneStatementMax = 5000;
+
+export const getCommandCenterResponseDealsItemIntelligenceItemOneSourceMax = 2000;
+
+export const getCommandCenterResponseDealsItemIntelligenceItemOneSourceUrlMax = 2000;
+
+export const getCommandCenterResponseDealsItemIntelligenceItemOneConfidenceMin = 0;
+export const getCommandCenterResponseDealsItemIntelligenceItemOneConfidenceMax = 1;
+
+export const getCommandCenterResponseDealsItemIntelligenceItemOneVerificationNoteMax = 2000;
+
+export const getCommandCenterResponseDealsItemIntelligenceItemOneQuestionMax = 2000;
+
+export const getCommandCenterResponseDealsItemIntelligenceItemOneActionMax = 2000;
+
+export const getCommandCenterResponseDealsItemAnalysisOneAssumptionsArvMultiplierMin = 0.1;
+export const getCommandCenterResponseDealsItemAnalysisOneAssumptionsArvMultiplierMax = 1;
+
+export const getCommandCenterResponseDealsItemAnalysisOneAssumptionsSellingCostPctMin = 0;
+export const getCommandCenterResponseDealsItemAnalysisOneAssumptionsSellingCostPctMax = 0.5;
+
+export const getCommandCenterResponseDealsItemAnalysisOneAssumptionsAcquisitionCostMin = 0;
+export const getCommandCenterResponseDealsItemAnalysisOneAssumptionsAcquisitionCostMax = 1000000000;
+
+export const getCommandCenterResponseDealsItemAnalysisOneAssumptionsHoldingMonthlyMin = 0;
+export const getCommandCenterResponseDealsItemAnalysisOneAssumptionsHoldingMonthlyMax = 1000000000;
+
+export const getCommandCenterResponseDealsItemAnalysisOneAssumptionsHoldingMonthsMin = 0;
+export const getCommandCenterResponseDealsItemAnalysisOneAssumptionsHoldingMonthsMax = 120;
+
+export const getCommandCenterResponseDealsItemAnalysisOneAssumptionsAssignmentTargetMin = 0;
+export const getCommandCenterResponseDealsItemAnalysisOneAssumptionsAssignmentTargetMax = 1000000000;
+
+export const getCommandCenterResponseDealsItemAnalysisOneAssumptionsContingencyPctMin = 0;
+export const getCommandCenterResponseDealsItemAnalysisOneAssumptionsContingencyPctMax = 1;
+
+export const getCommandCenterResponseDealsItemAnalysisOneAssumptionsStrongMarginMin = 0;
+export const getCommandCenterResponseDealsItemAnalysisOneAssumptionsStrongMarginMax = 1000000000;
+
+export const getCommandCenterResponseDealsItemAnalysisOneAssumptionsOpeningLowPctMin = 0;
+export const getCommandCenterResponseDealsItemAnalysisOneAssumptionsOpeningLowPctMax = 1;
+
+export const getCommandCenterResponseDealsItemAnalysisOneAssumptionsOpeningHighPctMin = 0;
+export const getCommandCenterResponseDealsItemAnalysisOneAssumptionsOpeningHighPctMax = 1;
+
+export const getCommandCenterResponseDealsItemAnalysisOneAssumptionsMaxCompAgeDaysMax = 1095;
+
+export const getCommandCenterResponseDealsItemAnalysisOneAssumptionsMaxDistanceMilesExclusiveMin = 0;
+export const getCommandCenterResponseDealsItemAnalysisOneAssumptionsMaxDistanceMilesMax = 100;
+
+export const getCommandCenterResponseDealsItemAnalysisOneAssumptionsMaxSqftDifferencePctMin = 0;
+export const getCommandCenterResponseDealsItemAnalysisOneAssumptionsMaxSqftDifferencePctMax = 1;
+
+export const getCommandCenterResponseDealsItemAnalysisOneAssumptionsMinCompsMin = 3;
+export const getCommandCenterResponseDealsItemAnalysisOneAssumptionsMinCompsMax = 20;
+
+export const getCommandCenterResponseDealsItemAnalysisOneAssumptionsMinConfidenceMin = 0.3;
+export const getCommandCenterResponseDealsItemAnalysisOneAssumptionsMinConfidenceMax = 1;
+
+export const getCommandCenterResponseDealsItemOffersItemOneAmountExclusiveMin = 0;
+export const getCommandCenterResponseDealsItemOffersItemOneAmountMax = 1000000000;
+
+export const getCommandCenterResponseDealsItemOffersItemOneEarnestMoneyMin = 0;
+export const getCommandCenterResponseDealsItemOffersItemOneEarnestMoneyMax = 1000000000;
+
+export const getCommandCenterResponseDealsItemOffersItemOneClosingDaysMax = 180;
+
+export const getCommandCenterResponseDealsItemOffersItemOneContingenciesMin = 3;
+export const getCommandCenterResponseDealsItemOffersItemOneContingenciesMax = 5000;
+
+
+
+export const getCommandCenterResponseDealsItemUnderwritingOneCompsItemAddressMin = 3;
+
+export const getCommandCenterResponseDealsItemUnderwritingOneCompsItemSalePriceExclusiveMin = 0;
+export const getCommandCenterResponseDealsItemUnderwritingOneCompsItemSalePriceMax = 1000000000;
+
+export const getCommandCenterResponseDealsItemUnderwritingOneCompsItemSqftExclusiveMin = 0;
+export const getCommandCenterResponseDealsItemUnderwritingOneCompsItemSqftMax = 1000000;
+
+export const getCommandCenterResponseDealsItemUnderwritingOneCompsItemDistanceMilesMin = 0;
+export const getCommandCenterResponseDealsItemUnderwritingOneCompsItemDistanceMilesMax = 10000;
+
+
+export const getCommandCenterResponseDealsItemUnderwritingOneCompsMax = 100;
+
+
+export const getCommandCenterResponseDealsItemUnderwritingOneRepairsItemLowMin = 0;
+export const getCommandCenterResponseDealsItemUnderwritingOneRepairsItemLowMax = 1000000000;
+
+export const getCommandCenterResponseDealsItemUnderwritingOneRepairsItemExpectedMin = 0;
+export const getCommandCenterResponseDealsItemUnderwritingOneRepairsItemExpectedMax = 1000000000;
+
+export const getCommandCenterResponseDealsItemUnderwritingOneRepairsItemHighMin = 0;
+export const getCommandCenterResponseDealsItemUnderwritingOneRepairsItemHighMax = 1000000000;
+
+export const getCommandCenterResponseDealsItemUnderwritingOneRepairsItemConfidenceMin = 0;
+export const getCommandCenterResponseDealsItemUnderwritingOneRepairsItemConfidenceMax = 1;
+
+
+export const getCommandCenterResponseDealsItemUnderwritingOneRepairsMax = 50;
+
+
+export const getCommandCenterResponseDealsItemCallsItemOneNotesMax = 10000;
+
+export const getCommandCenterResponseDealsItemCallsItemOneNextActionMin = 3;
+export const getCommandCenterResponseDealsItemCallsItemOneNextActionMax = 1000;
+
+export const getCommandCenterResponseBuyersItemOneNameMax = 200;
+
+export const getCommandCenterResponseBuyersItemOneEmailMax = 200;
+
+export const getCommandCenterResponseBuyersItemOnePhoneMax = 50;
+
+export const getCommandCenterResponseBuyersItemOneSourceMax = 2000;
+
+export const getCommandCenterResponseBuyersItemOneCriteriaStatesItemMin = 2;
+export const getCommandCenterResponseBuyersItemOneCriteriaStatesItemMax = 2;
+
+
+
+export const getCommandCenterResponseBuyersItemOneCriteriaZipCodesItemRegExp = new RegExp('^\\d{5}$');
+
+export const getCommandCenterResponseBuyersItemOneCriteriaMaxPurchasePriceExclusiveMin = 0;
+export const getCommandCenterResponseBuyersItemOneCriteriaMaxPurchasePriceMax = 1000000000;
+
+export const getCommandCenterResponseBuyersItemOneCriteriaMaxRepairsMin = 0;
+export const getCommandCenterResponseBuyersItemOneCriteriaMaxRepairsMax = 1000000000;
+
+export const getCommandCenterResponseBuyersItemOneCriteriaMinBedsMin = 0;
+export const getCommandCenterResponseBuyersItemOneCriteriaMinBedsMax = 100;
+
+export const getCommandCenterResponseBuyersItemOneCriteriaMinSqftMin = 0;
+export const getCommandCenterResponseBuyersItemOneCriteriaMinSqftMax = 1000000;
+
+export const getCommandCenterResponseBuyersItemOneCriteriaMaxSqftExclusiveMin = 0;
+export const getCommandCenterResponseBuyersItemOneCriteriaMaxSqftMax = 1000000;
+
+export const getCommandCenterResponseBuyersItemOneCriteriaClosingDaysMax = 365;
+
+
+
+export const GetCommandCenterResponse = zod.object({
+  "generatedAt": zod.string(),
+  "actions": zod.array(zod.object({
+  "id": zod.string(),
+  "category": zod.enum(['RESEARCH', 'CALL', 'FOLLOW_UP', 'OFFER_APPROVAL', 'NEGOTIATION', 'CONTRACT', 'BUYER_MATCH', 'BUYER_VERIFICATION', 'DEADLINE', 'CLOSING', 'WORKER']),
+  "priority": zod.number().int(),
+  "title": zod.string(),
+  "reason": zod.string(),
+  "leadId": zod.string().nullable(),
+  "href": zod.string(),
+  "cta": zod.string(),
+  "dueAt": zod.string().nullish()
+})),
+  "opportunities": zod.array(zod.object({
+  "lead": zod.object({
+  "address": zod.string().min(getCommandCenterResponseOpportunitiesItemLeadOneAddressMin).max(getCommandCenterResponseOpportunitiesItemLeadOneAddressMax),
+  "city": zod.string().min(1).max(getCommandCenterResponseOpportunitiesItemLeadOneCityMax),
+  "state": zod.string().min(getCommandCenterResponseOpportunitiesItemLeadOneStateMin).max(getCommandCenterResponseOpportunitiesItemLeadOneStateMax),
+  "county": zod.string().min(1).max(getCommandCenterResponseOpportunitiesItemLeadOneCountyMax),
+  "zip": zod.string().regex(getCommandCenterResponseOpportunitiesItemLeadOneZipRegExp),
+  "propertyType": zod.enum(['SINGLE_FAMILY', 'MULTIFAMILY', 'CONDO', 'TOWNHOUSE', 'LAND', 'OTHER']),
+  "sqft": zod.number().min(getCommandCenterResponseOpportunitiesItemLeadOneSqftMin).max(getCommandCenterResponseOpportunitiesItemLeadOneSqftMax),
+  "beds": zod.number().int().min(getCommandCenterResponseOpportunitiesItemLeadOneBedsMin).max(getCommandCenterResponseOpportunitiesItemLeadOneBedsMax),
+  "baths": zod.number().min(getCommandCenterResponseOpportunitiesItemLeadOneBathsMin).max(getCommandCenterResponseOpportunitiesItemLeadOneBathsMax),
+  "units": zod.number().int().min(1).max(getCommandCenterResponseOpportunitiesItemLeadOneUnitsMax),
+  "askingPrice": zod.number().min(getCommandCenterResponseOpportunitiesItemLeadOneAskingPriceMin).max(getCommandCenterResponseOpportunitiesItemLeadOneAskingPriceMax).nullish(),
+  "sellerName": zod.string().min(1).max(getCommandCenterResponseOpportunitiesItemLeadOneSellerNameMax),
+  "sellerPhone": zod.string().max(getCommandCenterResponseOpportunitiesItemLeadOneSellerPhoneMax).optional(),
+  "sellerEmail": zod.string().max(getCommandCenterResponseOpportunitiesItemLeadOneSellerEmailMax).optional(),
+  "sellerDescription": zod.string().max(getCommandCenterResponseOpportunitiesItemLeadOneSellerDescriptionMax).optional(),
+  "sellingReason": zod.string().max(getCommandCenterResponseOpportunitiesItemLeadOneSellingReasonMax).optional(),
+  "urgency": zod.enum(['UNKNOWN', 'LOW', 'MEDIUM', 'HIGH']).optional(),
+  "source": zod.string().min(1).max(getCommandCenterResponseOpportunitiesItemLeadOneSourceMax),
+  "nextAction": zod.string().max(getCommandCenterResponseOpportunitiesItemLeadOneNextActionMax)
+}).and(zod.object({
+  "id": zod.string(),
+  "stage": zod.enum(['DISCOVERED', 'ENRICHING', 'ANALYZED', 'STRONG', 'NEGOTIABLE', 'PASS', 'CALL_READY', 'CONTACTED', 'CONVERSATION', 'OFFER_READY', 'OFFER_SENT', 'NEGOTIATING', 'CONTRACT_PENDING', 'UNDER_CONTRACT', 'BUYER_MATCHED', 'BUYER_INTERESTED', 'BUYER_COMMITTED', 'CLOSING', 'CLOSED', 'DEAD_DEAL']),
+  "version": zod.number().int(),
+  "nextAction": zod.string(),
+  "followUpAt": zod.string().nullish(),
+  "createdAt": zod.string(),
+  "updatedAt": zod.string()
+})),
+  "intelligence": zod.array(zod.object({
+  "classification": zod.enum(['VERIFIED_FACTS', 'OBSERVED', 'INDICATED', 'AI_HYPOTHESIS']),
+  "category": zod.string().min(1).max(getCommandCenterResponseOpportunitiesItemIntelligenceItemOneCategoryMax),
+  "statement": zod.string().min(1).max(getCommandCenterResponseOpportunitiesItemIntelligenceItemOneStatementMax),
+  "source": zod.string().min(1).max(getCommandCenterResponseOpportunitiesItemIntelligenceItemOneSourceMax),
+  "sourceUrl": zod.string().max(getCommandCenterResponseOpportunitiesItemIntelligenceItemOneSourceUrlMax).optional(),
+  "sourceType": zod.enum(['PUBLIC_RECORD', 'PERMITTED_LISTING', 'SELLER', 'INSPECTION', 'PUBLIC_PAGE', 'ANALYST', 'MODEL']),
+  "confidence": zod.number().min(getCommandCenterResponseOpportunitiesItemIntelligenceItemOneConfidenceMin).max(getCommandCenterResponseOpportunitiesItemIntelligenceItemOneConfidenceMax),
+  "capturedAt": zod.string().datetime({"offset":true}),
+  "verificationNote": zod.string().max(getCommandCenterResponseOpportunitiesItemIntelligenceItemOneVerificationNoteMax).optional(),
+  "question": zod.string().max(getCommandCenterResponseOpportunitiesItemIntelligenceItemOneQuestionMax).optional(),
+  "action": zod.string().max(getCommandCenterResponseOpportunitiesItemIntelligenceItemOneActionMax).optional()
+}).and(zod.object({
+  "id": zod.string(),
+  "leadId": zod.string(),
+  "createdAt": zod.string(),
+  "createdBy": zod.string()
+}))),
+  "analysis": zod.union([zod.object({
+  "engineVersion": zod.string(),
+  "calculatedAt": zod.string(),
+  "classification": zod.enum(['STRONG', 'NEGOTIABLE', 'PASS', 'INCOMPLETE']),
+  "arv": zod.object({
+  "low": zod.number(),
+  "expected": zod.number(),
+  "high": zod.number(),
+  "confidence": zod.number()
+}),
+  "repairs": zod.object({
+  "low": zod.number(),
+  "expected": zod.number(),
+  "high": zod.number(),
+  "confidence": zod.number()
+}),
+  "mao": zod.number(),
+  "openingLow": zod.number(),
+  "openingHigh": zod.number(),
+  "maximumApprovedAcquisitionPrice": zod.number().nullable(),
+  "spreadAtAsking": zod.number().nullable(),
+  "assumptions": zod.object({
+  "arvMultiplier": zod.number().min(getCommandCenterResponseOpportunitiesItemAnalysisOneAssumptionsArvMultiplierMin).max(getCommandCenterResponseOpportunitiesItemAnalysisOneAssumptionsArvMultiplierMax),
+  "sellingCostPct": zod.number().min(getCommandCenterResponseOpportunitiesItemAnalysisOneAssumptionsSellingCostPctMin).max(getCommandCenterResponseOpportunitiesItemAnalysisOneAssumptionsSellingCostPctMax),
+  "acquisitionCost": zod.number().min(getCommandCenterResponseOpportunitiesItemAnalysisOneAssumptionsAcquisitionCostMin).max(getCommandCenterResponseOpportunitiesItemAnalysisOneAssumptionsAcquisitionCostMax),
+  "holdingMonthly": zod.number().min(getCommandCenterResponseOpportunitiesItemAnalysisOneAssumptionsHoldingMonthlyMin).max(getCommandCenterResponseOpportunitiesItemAnalysisOneAssumptionsHoldingMonthlyMax),
+  "holdingMonths": zod.number().min(getCommandCenterResponseOpportunitiesItemAnalysisOneAssumptionsHoldingMonthsMin).max(getCommandCenterResponseOpportunitiesItemAnalysisOneAssumptionsHoldingMonthsMax),
+  "assignmentTarget": zod.number().min(getCommandCenterResponseOpportunitiesItemAnalysisOneAssumptionsAssignmentTargetMin).max(getCommandCenterResponseOpportunitiesItemAnalysisOneAssumptionsAssignmentTargetMax),
+  "contingencyPct": zod.number().min(getCommandCenterResponseOpportunitiesItemAnalysisOneAssumptionsContingencyPctMin).max(getCommandCenterResponseOpportunitiesItemAnalysisOneAssumptionsContingencyPctMax),
+  "strongMargin": zod.number().min(getCommandCenterResponseOpportunitiesItemAnalysisOneAssumptionsStrongMarginMin).max(getCommandCenterResponseOpportunitiesItemAnalysisOneAssumptionsStrongMarginMax),
+  "openingLowPct": zod.number().min(getCommandCenterResponseOpportunitiesItemAnalysisOneAssumptionsOpeningLowPctMin).max(getCommandCenterResponseOpportunitiesItemAnalysisOneAssumptionsOpeningLowPctMax),
+  "openingHighPct": zod.number().min(getCommandCenterResponseOpportunitiesItemAnalysisOneAssumptionsOpeningHighPctMin).max(getCommandCenterResponseOpportunitiesItemAnalysisOneAssumptionsOpeningHighPctMax),
+  "maxCompAgeDays": zod.number().int().min(1).max(getCommandCenterResponseOpportunitiesItemAnalysisOneAssumptionsMaxCompAgeDaysMax),
+  "maxDistanceMiles": zod.number().gt(getCommandCenterResponseOpportunitiesItemAnalysisOneAssumptionsMaxDistanceMilesExclusiveMin).max(getCommandCenterResponseOpportunitiesItemAnalysisOneAssumptionsMaxDistanceMilesMax),
+  "maxSqftDifferencePct": zod.number().min(getCommandCenterResponseOpportunitiesItemAnalysisOneAssumptionsMaxSqftDifferencePctMin).max(getCommandCenterResponseOpportunitiesItemAnalysisOneAssumptionsMaxSqftDifferencePctMax),
+  "minComps": zod.number().int().min(getCommandCenterResponseOpportunitiesItemAnalysisOneAssumptionsMinCompsMin).max(getCommandCenterResponseOpportunitiesItemAnalysisOneAssumptionsMinCompsMax),
+  "minConfidence": zod.number().min(getCommandCenterResponseOpportunitiesItemAnalysisOneAssumptionsMinConfidenceMin).max(getCommandCenterResponseOpportunitiesItemAnalysisOneAssumptionsMinConfidenceMax),
+  "approvalRequired": zod.boolean()
+}),
+  "risks": zod.array(zod.string()),
+  "blockers": zod.array(zod.string()),
+  "compDecisions": zod.array(zod.object({
+  "id": zod.string(),
+  "included": zod.boolean(),
+  "reasons": zod.array(zod.string())
+})),
+  "formula": zod.string()
+}),zod.null()]),
+  "analysisSnapshotId": zod.string().nullable(),
+  "offers": zod.array(zod.object({
+  "amount": zod.number().gt(getCommandCenterResponseOpportunitiesItemOffersItemOneAmountExclusiveMin).max(getCommandCenterResponseOpportunitiesItemOffersItemOneAmountMax),
+  "earnestMoney": zod.number().min(getCommandCenterResponseOpportunitiesItemOffersItemOneEarnestMoneyMin).max(getCommandCenterResponseOpportunitiesItemOffersItemOneEarnestMoneyMax),
+  "closingDays": zod.number().int().min(1).max(getCommandCenterResponseOpportunitiesItemOffersItemOneClosingDaysMax),
+  "contingencies": zod.string().min(getCommandCenterResponseOpportunitiesItemOffersItemOneContingenciesMin).max(getCommandCenterResponseOpportunitiesItemOffersItemOneContingenciesMax),
+  "assignmentIntent": zod.boolean()
+}).and(zod.object({
+  "id": zod.string().uuid(),
+  "leadId": zod.string().uuid(),
+  "analysisSnapshotId": zod.string().uuid(),
+  "status": zod.enum(['DRAFT', 'AUTHORIZED', 'COMMUNICATED', 'REVOKED', 'INVALIDATED', 'EXPIRED']),
+  "effectiveStatus": zod.enum(['DRAFT', 'AUTHORIZED', 'COMMUNICATED', 'REVOKED', 'INVALIDATED', 'EXPIRED']),
+  "blockers": zod.array(zod.string()),
+  "reason": zod.string(),
+  "createdBy": zod.string(),
+  "createdAt": zod.string().datetime({"offset":true}),
+  "updatedAt": zod.string().datetime({"offset":true}),
+  "maximumApprovedAcquisitionPrice": zod.number().nullable(),
+  "authorityEvidenceId": zod.string().nullable(),
+  "approvedBy": zod.string().nullable(),
+  "approvedAt": zod.string().nullable(),
+  "approvalReason": zod.string().nullable(),
+  "expiresAt": zod.string().nullable(),
+  "communicatedBy": zod.string().nullable(),
+  "communicatedAt": zod.string().nullable(),
+  "communicatedAmount": zod.number().nullable(),
+  "channel": zod.string().nullable(),
+  "evidence": zod.string().nullable(),
+  "withdrawalReason": zod.string().nullable()
+}))),
+  "underwriting": zod.union([zod.object({
+  "version": zod.number().int().min(1),
+  "comps": zod.array(zod.object({
+  "id": zod.string().min(1),
+  "address": zod.string().min(getCommandCenterResponseOpportunitiesItemUnderwritingOneCompsItemAddressMin),
+  "salePrice": zod.number().gt(getCommandCenterResponseOpportunitiesItemUnderwritingOneCompsItemSalePriceExclusiveMin).max(getCommandCenterResponseOpportunitiesItemUnderwritingOneCompsItemSalePriceMax),
+  "sqft": zod.number().gt(getCommandCenterResponseOpportunitiesItemUnderwritingOneCompsItemSqftExclusiveMin).max(getCommandCenterResponseOpportunitiesItemUnderwritingOneCompsItemSqftMax),
+  "soldAt": zod.string().date(),
+  "distanceMiles": zod.number().min(getCommandCenterResponseOpportunitiesItemUnderwritingOneCompsItemDistanceMilesMin).max(getCommandCenterResponseOpportunitiesItemUnderwritingOneCompsItemDistanceMilesMax),
+  "propertyType": zod.string(),
+  "condition": zod.enum(['RENOVATED', 'SIMILAR', 'UNKNOWN']),
+  "source": zod.string().min(1),
+  "verified": zod.boolean()
+})).max(getCommandCenterResponseOpportunitiesItemUnderwritingOneCompsMax),
+  "repairs": zod.array(zod.object({
+  "category": zod.string().min(1),
+  "low": zod.number().min(getCommandCenterResponseOpportunitiesItemUnderwritingOneRepairsItemLowMin).max(getCommandCenterResponseOpportunitiesItemUnderwritingOneRepairsItemLowMax),
+  "expected": zod.number().min(getCommandCenterResponseOpportunitiesItemUnderwritingOneRepairsItemExpectedMin).max(getCommandCenterResponseOpportunitiesItemUnderwritingOneRepairsItemExpectedMax),
+  "high": zod.number().min(getCommandCenterResponseOpportunitiesItemUnderwritingOneRepairsItemHighMin).max(getCommandCenterResponseOpportunitiesItemUnderwritingOneRepairsItemHighMax),
+  "confidence": zod.number().min(getCommandCenterResponseOpportunitiesItemUnderwritingOneRepairsItemConfidenceMin).max(getCommandCenterResponseOpportunitiesItemUnderwritingOneRepairsItemConfidenceMax),
+  "source": zod.string().min(1)
+})).max(getCommandCenterResponseOpportunitiesItemUnderwritingOneRepairsMax),
+  "repairsComplete": zod.boolean(),
+  "conditionConfirmed": zod.boolean()
+}),zod.null()]),
+  "transitions": zod.array(zod.object({
+  "id": zod.string(),
+  "from": zod.string(),
+  "to": zod.string(),
+  "reason": zod.string(),
+  "nextAction": zod.string(),
+  "actor": zod.string(),
+  "createdAt": zod.string()
+})),
+  "calls": zod.array(zod.object({
+  "version": zod.number().int().min(1),
+  "outcome": zod.enum(['NO_ANSWER', 'VOICEMAIL', 'CONNECTED', 'NOT_INTERESTED']),
+  "notes": zod.string().min(1).max(getCommandCenterResponseOpportunitiesItemCallsItemOneNotesMax),
+  "nextAction": zod.string().min(getCommandCenterResponseOpportunitiesItemCallsItemOneNextActionMin).max(getCommandCenterResponseOpportunitiesItemCallsItemOneNextActionMax),
+  "followUpAt": zod.string().datetime({"offset":true}).nullable()
+}).and(zod.object({
+  "id": zod.string(),
+  "createdAt": zod.string(),
+  "actor": zod.string()
+}))),
+  "allowedTransitions": zod.array(zod.enum(['DISCOVERED', 'ENRICHING', 'ANALYZED', 'STRONG', 'NEGOTIABLE', 'PASS', 'CALL_READY', 'CONTACTED', 'CONVERSATION', 'OFFER_READY', 'OFFER_SENT', 'NEGOTIATING', 'CONTRACT_PENDING', 'UNDER_CONTRACT', 'BUYER_MATCHED', 'BUYER_INTERESTED', 'BUYER_COMMITTED', 'CLOSING', 'CLOSED', 'DEAD_DEAL']))
+})),
+  "calls": zod.array(zod.object({
+  "lead": zod.object({
+  "address": zod.string().min(getCommandCenterResponseCallsItemLeadOneAddressMin).max(getCommandCenterResponseCallsItemLeadOneAddressMax),
+  "city": zod.string().min(1).max(getCommandCenterResponseCallsItemLeadOneCityMax),
+  "state": zod.string().min(getCommandCenterResponseCallsItemLeadOneStateMin).max(getCommandCenterResponseCallsItemLeadOneStateMax),
+  "county": zod.string().min(1).max(getCommandCenterResponseCallsItemLeadOneCountyMax),
+  "zip": zod.string().regex(getCommandCenterResponseCallsItemLeadOneZipRegExp),
+  "propertyType": zod.enum(['SINGLE_FAMILY', 'MULTIFAMILY', 'CONDO', 'TOWNHOUSE', 'LAND', 'OTHER']),
+  "sqft": zod.number().min(getCommandCenterResponseCallsItemLeadOneSqftMin).max(getCommandCenterResponseCallsItemLeadOneSqftMax),
+  "beds": zod.number().int().min(getCommandCenterResponseCallsItemLeadOneBedsMin).max(getCommandCenterResponseCallsItemLeadOneBedsMax),
+  "baths": zod.number().min(getCommandCenterResponseCallsItemLeadOneBathsMin).max(getCommandCenterResponseCallsItemLeadOneBathsMax),
+  "units": zod.number().int().min(1).max(getCommandCenterResponseCallsItemLeadOneUnitsMax),
+  "askingPrice": zod.number().min(getCommandCenterResponseCallsItemLeadOneAskingPriceMin).max(getCommandCenterResponseCallsItemLeadOneAskingPriceMax).nullish(),
+  "sellerName": zod.string().min(1).max(getCommandCenterResponseCallsItemLeadOneSellerNameMax),
+  "sellerPhone": zod.string().max(getCommandCenterResponseCallsItemLeadOneSellerPhoneMax).optional(),
+  "sellerEmail": zod.string().max(getCommandCenterResponseCallsItemLeadOneSellerEmailMax).optional(),
+  "sellerDescription": zod.string().max(getCommandCenterResponseCallsItemLeadOneSellerDescriptionMax).optional(),
+  "sellingReason": zod.string().max(getCommandCenterResponseCallsItemLeadOneSellingReasonMax).optional(),
+  "urgency": zod.enum(['UNKNOWN', 'LOW', 'MEDIUM', 'HIGH']).optional(),
+  "source": zod.string().min(1).max(getCommandCenterResponseCallsItemLeadOneSourceMax),
+  "nextAction": zod.string().max(getCommandCenterResponseCallsItemLeadOneNextActionMax)
+}).and(zod.object({
+  "id": zod.string(),
+  "stage": zod.enum(['DISCOVERED', 'ENRICHING', 'ANALYZED', 'STRONG', 'NEGOTIABLE', 'PASS', 'CALL_READY', 'CONTACTED', 'CONVERSATION', 'OFFER_READY', 'OFFER_SENT', 'NEGOTIATING', 'CONTRACT_PENDING', 'UNDER_CONTRACT', 'BUYER_MATCHED', 'BUYER_INTERESTED', 'BUYER_COMMITTED', 'CLOSING', 'CLOSED', 'DEAD_DEAL']),
+  "version": zod.number().int(),
+  "nextAction": zod.string(),
+  "followUpAt": zod.string().nullish(),
+  "createdAt": zod.string(),
+  "updatedAt": zod.string()
+})),
+  "objective": zod.string(),
+  "intelligence": zod.array(zod.object({
+  "classification": zod.enum(['VERIFIED_FACTS', 'OBSERVED', 'INDICATED', 'AI_HYPOTHESIS']),
+  "category": zod.string().min(1).max(getCommandCenterResponseCallsItemIntelligenceItemOneCategoryMax),
+  "statement": zod.string().min(1).max(getCommandCenterResponseCallsItemIntelligenceItemOneStatementMax),
+  "source": zod.string().min(1).max(getCommandCenterResponseCallsItemIntelligenceItemOneSourceMax),
+  "sourceUrl": zod.string().max(getCommandCenterResponseCallsItemIntelligenceItemOneSourceUrlMax).optional(),
+  "sourceType": zod.enum(['PUBLIC_RECORD', 'PERMITTED_LISTING', 'SELLER', 'INSPECTION', 'PUBLIC_PAGE', 'ANALYST', 'MODEL']),
+  "confidence": zod.number().min(getCommandCenterResponseCallsItemIntelligenceItemOneConfidenceMin).max(getCommandCenterResponseCallsItemIntelligenceItemOneConfidenceMax),
+  "capturedAt": zod.string().datetime({"offset":true}),
+  "verificationNote": zod.string().max(getCommandCenterResponseCallsItemIntelligenceItemOneVerificationNoteMax).optional(),
+  "question": zod.string().max(getCommandCenterResponseCallsItemIntelligenceItemOneQuestionMax).optional(),
+  "action": zod.string().max(getCommandCenterResponseCallsItemIntelligenceItemOneActionMax).optional()
+}).and(zod.object({
+  "id": zod.string(),
+  "leadId": zod.string(),
+  "createdAt": zod.string(),
+  "createdBy": zod.string()
+}))),
+  "questions": zod.array(zod.string()),
+  "actions": zod.array(zod.string()),
+  "boundaries": zod.string(),
+  "analysis": zod.object({
+  "engineVersion": zod.string(),
+  "calculatedAt": zod.string(),
+  "classification": zod.enum(['STRONG', 'NEGOTIABLE', 'PASS', 'INCOMPLETE']),
+  "arv": zod.object({
+  "low": zod.number(),
+  "expected": zod.number(),
+  "high": zod.number(),
+  "confidence": zod.number()
+}),
+  "repairs": zod.object({
+  "low": zod.number(),
+  "expected": zod.number(),
+  "high": zod.number(),
+  "confidence": zod.number()
+}),
+  "mao": zod.number(),
+  "openingLow": zod.number(),
+  "openingHigh": zod.number(),
+  "maximumApprovedAcquisitionPrice": zod.number().nullable(),
+  "spreadAtAsking": zod.number().nullable(),
+  "assumptions": zod.object({
+  "arvMultiplier": zod.number().min(getCommandCenterResponseCallsItemAnalysisAssumptionsArvMultiplierMin).max(getCommandCenterResponseCallsItemAnalysisAssumptionsArvMultiplierMax),
+  "sellingCostPct": zod.number().min(getCommandCenterResponseCallsItemAnalysisAssumptionsSellingCostPctMin).max(getCommandCenterResponseCallsItemAnalysisAssumptionsSellingCostPctMax),
+  "acquisitionCost": zod.number().min(getCommandCenterResponseCallsItemAnalysisAssumptionsAcquisitionCostMin).max(getCommandCenterResponseCallsItemAnalysisAssumptionsAcquisitionCostMax),
+  "holdingMonthly": zod.number().min(getCommandCenterResponseCallsItemAnalysisAssumptionsHoldingMonthlyMin).max(getCommandCenterResponseCallsItemAnalysisAssumptionsHoldingMonthlyMax),
+  "holdingMonths": zod.number().min(getCommandCenterResponseCallsItemAnalysisAssumptionsHoldingMonthsMin).max(getCommandCenterResponseCallsItemAnalysisAssumptionsHoldingMonthsMax),
+  "assignmentTarget": zod.number().min(getCommandCenterResponseCallsItemAnalysisAssumptionsAssignmentTargetMin).max(getCommandCenterResponseCallsItemAnalysisAssumptionsAssignmentTargetMax),
+  "contingencyPct": zod.number().min(getCommandCenterResponseCallsItemAnalysisAssumptionsContingencyPctMin).max(getCommandCenterResponseCallsItemAnalysisAssumptionsContingencyPctMax),
+  "strongMargin": zod.number().min(getCommandCenterResponseCallsItemAnalysisAssumptionsStrongMarginMin).max(getCommandCenterResponseCallsItemAnalysisAssumptionsStrongMarginMax),
+  "openingLowPct": zod.number().min(getCommandCenterResponseCallsItemAnalysisAssumptionsOpeningLowPctMin).max(getCommandCenterResponseCallsItemAnalysisAssumptionsOpeningLowPctMax),
+  "openingHighPct": zod.number().min(getCommandCenterResponseCallsItemAnalysisAssumptionsOpeningHighPctMin).max(getCommandCenterResponseCallsItemAnalysisAssumptionsOpeningHighPctMax),
+  "maxCompAgeDays": zod.number().int().min(1).max(getCommandCenterResponseCallsItemAnalysisAssumptionsMaxCompAgeDaysMax),
+  "maxDistanceMiles": zod.number().gt(getCommandCenterResponseCallsItemAnalysisAssumptionsMaxDistanceMilesExclusiveMin).max(getCommandCenterResponseCallsItemAnalysisAssumptionsMaxDistanceMilesMax),
+  "maxSqftDifferencePct": zod.number().min(getCommandCenterResponseCallsItemAnalysisAssumptionsMaxSqftDifferencePctMin).max(getCommandCenterResponseCallsItemAnalysisAssumptionsMaxSqftDifferencePctMax),
+  "minComps": zod.number().int().min(getCommandCenterResponseCallsItemAnalysisAssumptionsMinCompsMin).max(getCommandCenterResponseCallsItemAnalysisAssumptionsMinCompsMax),
+  "minConfidence": zod.number().min(getCommandCenterResponseCallsItemAnalysisAssumptionsMinConfidenceMin).max(getCommandCenterResponseCallsItemAnalysisAssumptionsMinConfidenceMax),
+  "approvalRequired": zod.boolean()
+}),
+  "risks": zod.array(zod.string()),
+  "blockers": zod.array(zod.string()),
+  "compDecisions": zod.array(zod.object({
+  "id": zod.string(),
+  "included": zod.boolean(),
+  "reasons": zod.array(zod.string())
+})),
+  "formula": zod.string()
+}),
+  "authorizedOffer": zod.union([zod.object({
+  "amount": zod.number().gt(getCommandCenterResponseCallsItemAuthorizedOfferOneOneAmountExclusiveMin).max(getCommandCenterResponseCallsItemAuthorizedOfferOneOneAmountMax),
+  "earnestMoney": zod.number().min(getCommandCenterResponseCallsItemAuthorizedOfferOneOneEarnestMoneyMin).max(getCommandCenterResponseCallsItemAuthorizedOfferOneOneEarnestMoneyMax),
+  "closingDays": zod.number().int().min(1).max(getCommandCenterResponseCallsItemAuthorizedOfferOneOneClosingDaysMax),
+  "contingencies": zod.string().min(getCommandCenterResponseCallsItemAuthorizedOfferOneOneContingenciesMin).max(getCommandCenterResponseCallsItemAuthorizedOfferOneOneContingenciesMax),
+  "assignmentIntent": zod.boolean()
+}).and(zod.object({
+  "id": zod.string().uuid(),
+  "leadId": zod.string().uuid(),
+  "analysisSnapshotId": zod.string().uuid(),
+  "status": zod.enum(['DRAFT', 'AUTHORIZED', 'COMMUNICATED', 'REVOKED', 'INVALIDATED', 'EXPIRED']),
+  "effectiveStatus": zod.enum(['DRAFT', 'AUTHORIZED', 'COMMUNICATED', 'REVOKED', 'INVALIDATED', 'EXPIRED']),
+  "blockers": zod.array(zod.string()),
+  "reason": zod.string(),
+  "createdBy": zod.string(),
+  "createdAt": zod.string().datetime({"offset":true}),
+  "updatedAt": zod.string().datetime({"offset":true}),
+  "maximumApprovedAcquisitionPrice": zod.number().nullable(),
+  "authorityEvidenceId": zod.string().nullable(),
+  "approvedBy": zod.string().nullable(),
+  "approvedAt": zod.string().nullable(),
+  "approvalReason": zod.string().nullable(),
+  "expiresAt": zod.string().nullable(),
+  "communicatedBy": zod.string().nullable(),
+  "communicatedAt": zod.string().nullable(),
+  "communicatedAmount": zod.number().nullable(),
+  "channel": zod.string().nullable(),
+  "evidence": zod.string().nullable(),
+  "withdrawalReason": zod.string().nullable()
+})),zod.null()])
+})),
+  "deals": zod.array(zod.object({
+  "lead": zod.object({
+  "address": zod.string().min(getCommandCenterResponseDealsItemLeadOneAddressMin).max(getCommandCenterResponseDealsItemLeadOneAddressMax),
+  "city": zod.string().min(1).max(getCommandCenterResponseDealsItemLeadOneCityMax),
+  "state": zod.string().min(getCommandCenterResponseDealsItemLeadOneStateMin).max(getCommandCenterResponseDealsItemLeadOneStateMax),
+  "county": zod.string().min(1).max(getCommandCenterResponseDealsItemLeadOneCountyMax),
+  "zip": zod.string().regex(getCommandCenterResponseDealsItemLeadOneZipRegExp),
+  "propertyType": zod.enum(['SINGLE_FAMILY', 'MULTIFAMILY', 'CONDO', 'TOWNHOUSE', 'LAND', 'OTHER']),
+  "sqft": zod.number().min(getCommandCenterResponseDealsItemLeadOneSqftMin).max(getCommandCenterResponseDealsItemLeadOneSqftMax),
+  "beds": zod.number().int().min(getCommandCenterResponseDealsItemLeadOneBedsMin).max(getCommandCenterResponseDealsItemLeadOneBedsMax),
+  "baths": zod.number().min(getCommandCenterResponseDealsItemLeadOneBathsMin).max(getCommandCenterResponseDealsItemLeadOneBathsMax),
+  "units": zod.number().int().min(1).max(getCommandCenterResponseDealsItemLeadOneUnitsMax),
+  "askingPrice": zod.number().min(getCommandCenterResponseDealsItemLeadOneAskingPriceMin).max(getCommandCenterResponseDealsItemLeadOneAskingPriceMax).nullish(),
+  "sellerName": zod.string().min(1).max(getCommandCenterResponseDealsItemLeadOneSellerNameMax),
+  "sellerPhone": zod.string().max(getCommandCenterResponseDealsItemLeadOneSellerPhoneMax).optional(),
+  "sellerEmail": zod.string().max(getCommandCenterResponseDealsItemLeadOneSellerEmailMax).optional(),
+  "sellerDescription": zod.string().max(getCommandCenterResponseDealsItemLeadOneSellerDescriptionMax).optional(),
+  "sellingReason": zod.string().max(getCommandCenterResponseDealsItemLeadOneSellingReasonMax).optional(),
+  "urgency": zod.enum(['UNKNOWN', 'LOW', 'MEDIUM', 'HIGH']).optional(),
+  "source": zod.string().min(1).max(getCommandCenterResponseDealsItemLeadOneSourceMax),
+  "nextAction": zod.string().max(getCommandCenterResponseDealsItemLeadOneNextActionMax)
+}).and(zod.object({
+  "id": zod.string(),
+  "stage": zod.enum(['DISCOVERED', 'ENRICHING', 'ANALYZED', 'STRONG', 'NEGOTIABLE', 'PASS', 'CALL_READY', 'CONTACTED', 'CONVERSATION', 'OFFER_READY', 'OFFER_SENT', 'NEGOTIATING', 'CONTRACT_PENDING', 'UNDER_CONTRACT', 'BUYER_MATCHED', 'BUYER_INTERESTED', 'BUYER_COMMITTED', 'CLOSING', 'CLOSED', 'DEAD_DEAL']),
+  "version": zod.number().int(),
+  "nextAction": zod.string(),
+  "followUpAt": zod.string().nullish(),
+  "createdAt": zod.string(),
+  "updatedAt": zod.string()
+})),
+  "intelligence": zod.array(zod.object({
+  "classification": zod.enum(['VERIFIED_FACTS', 'OBSERVED', 'INDICATED', 'AI_HYPOTHESIS']),
+  "category": zod.string().min(1).max(getCommandCenterResponseDealsItemIntelligenceItemOneCategoryMax),
+  "statement": zod.string().min(1).max(getCommandCenterResponseDealsItemIntelligenceItemOneStatementMax),
+  "source": zod.string().min(1).max(getCommandCenterResponseDealsItemIntelligenceItemOneSourceMax),
+  "sourceUrl": zod.string().max(getCommandCenterResponseDealsItemIntelligenceItemOneSourceUrlMax).optional(),
+  "sourceType": zod.enum(['PUBLIC_RECORD', 'PERMITTED_LISTING', 'SELLER', 'INSPECTION', 'PUBLIC_PAGE', 'ANALYST', 'MODEL']),
+  "confidence": zod.number().min(getCommandCenterResponseDealsItemIntelligenceItemOneConfidenceMin).max(getCommandCenterResponseDealsItemIntelligenceItemOneConfidenceMax),
+  "capturedAt": zod.string().datetime({"offset":true}),
+  "verificationNote": zod.string().max(getCommandCenterResponseDealsItemIntelligenceItemOneVerificationNoteMax).optional(),
+  "question": zod.string().max(getCommandCenterResponseDealsItemIntelligenceItemOneQuestionMax).optional(),
+  "action": zod.string().max(getCommandCenterResponseDealsItemIntelligenceItemOneActionMax).optional()
+}).and(zod.object({
+  "id": zod.string(),
+  "leadId": zod.string(),
+  "createdAt": zod.string(),
+  "createdBy": zod.string()
+}))),
+  "analysis": zod.union([zod.object({
+  "engineVersion": zod.string(),
+  "calculatedAt": zod.string(),
+  "classification": zod.enum(['STRONG', 'NEGOTIABLE', 'PASS', 'INCOMPLETE']),
+  "arv": zod.object({
+  "low": zod.number(),
+  "expected": zod.number(),
+  "high": zod.number(),
+  "confidence": zod.number()
+}),
+  "repairs": zod.object({
+  "low": zod.number(),
+  "expected": zod.number(),
+  "high": zod.number(),
+  "confidence": zod.number()
+}),
+  "mao": zod.number(),
+  "openingLow": zod.number(),
+  "openingHigh": zod.number(),
+  "maximumApprovedAcquisitionPrice": zod.number().nullable(),
+  "spreadAtAsking": zod.number().nullable(),
+  "assumptions": zod.object({
+  "arvMultiplier": zod.number().min(getCommandCenterResponseDealsItemAnalysisOneAssumptionsArvMultiplierMin).max(getCommandCenterResponseDealsItemAnalysisOneAssumptionsArvMultiplierMax),
+  "sellingCostPct": zod.number().min(getCommandCenterResponseDealsItemAnalysisOneAssumptionsSellingCostPctMin).max(getCommandCenterResponseDealsItemAnalysisOneAssumptionsSellingCostPctMax),
+  "acquisitionCost": zod.number().min(getCommandCenterResponseDealsItemAnalysisOneAssumptionsAcquisitionCostMin).max(getCommandCenterResponseDealsItemAnalysisOneAssumptionsAcquisitionCostMax),
+  "holdingMonthly": zod.number().min(getCommandCenterResponseDealsItemAnalysisOneAssumptionsHoldingMonthlyMin).max(getCommandCenterResponseDealsItemAnalysisOneAssumptionsHoldingMonthlyMax),
+  "holdingMonths": zod.number().min(getCommandCenterResponseDealsItemAnalysisOneAssumptionsHoldingMonthsMin).max(getCommandCenterResponseDealsItemAnalysisOneAssumptionsHoldingMonthsMax),
+  "assignmentTarget": zod.number().min(getCommandCenterResponseDealsItemAnalysisOneAssumptionsAssignmentTargetMin).max(getCommandCenterResponseDealsItemAnalysisOneAssumptionsAssignmentTargetMax),
+  "contingencyPct": zod.number().min(getCommandCenterResponseDealsItemAnalysisOneAssumptionsContingencyPctMin).max(getCommandCenterResponseDealsItemAnalysisOneAssumptionsContingencyPctMax),
+  "strongMargin": zod.number().min(getCommandCenterResponseDealsItemAnalysisOneAssumptionsStrongMarginMin).max(getCommandCenterResponseDealsItemAnalysisOneAssumptionsStrongMarginMax),
+  "openingLowPct": zod.number().min(getCommandCenterResponseDealsItemAnalysisOneAssumptionsOpeningLowPctMin).max(getCommandCenterResponseDealsItemAnalysisOneAssumptionsOpeningLowPctMax),
+  "openingHighPct": zod.number().min(getCommandCenterResponseDealsItemAnalysisOneAssumptionsOpeningHighPctMin).max(getCommandCenterResponseDealsItemAnalysisOneAssumptionsOpeningHighPctMax),
+  "maxCompAgeDays": zod.number().int().min(1).max(getCommandCenterResponseDealsItemAnalysisOneAssumptionsMaxCompAgeDaysMax),
+  "maxDistanceMiles": zod.number().gt(getCommandCenterResponseDealsItemAnalysisOneAssumptionsMaxDistanceMilesExclusiveMin).max(getCommandCenterResponseDealsItemAnalysisOneAssumptionsMaxDistanceMilesMax),
+  "maxSqftDifferencePct": zod.number().min(getCommandCenterResponseDealsItemAnalysisOneAssumptionsMaxSqftDifferencePctMin).max(getCommandCenterResponseDealsItemAnalysisOneAssumptionsMaxSqftDifferencePctMax),
+  "minComps": zod.number().int().min(getCommandCenterResponseDealsItemAnalysisOneAssumptionsMinCompsMin).max(getCommandCenterResponseDealsItemAnalysisOneAssumptionsMinCompsMax),
+  "minConfidence": zod.number().min(getCommandCenterResponseDealsItemAnalysisOneAssumptionsMinConfidenceMin).max(getCommandCenterResponseDealsItemAnalysisOneAssumptionsMinConfidenceMax),
+  "approvalRequired": zod.boolean()
+}),
+  "risks": zod.array(zod.string()),
+  "blockers": zod.array(zod.string()),
+  "compDecisions": zod.array(zod.object({
+  "id": zod.string(),
+  "included": zod.boolean(),
+  "reasons": zod.array(zod.string())
+})),
+  "formula": zod.string()
+}),zod.null()]),
+  "analysisSnapshotId": zod.string().nullable(),
+  "offers": zod.array(zod.object({
+  "amount": zod.number().gt(getCommandCenterResponseDealsItemOffersItemOneAmountExclusiveMin).max(getCommandCenterResponseDealsItemOffersItemOneAmountMax),
+  "earnestMoney": zod.number().min(getCommandCenterResponseDealsItemOffersItemOneEarnestMoneyMin).max(getCommandCenterResponseDealsItemOffersItemOneEarnestMoneyMax),
+  "closingDays": zod.number().int().min(1).max(getCommandCenterResponseDealsItemOffersItemOneClosingDaysMax),
+  "contingencies": zod.string().min(getCommandCenterResponseDealsItemOffersItemOneContingenciesMin).max(getCommandCenterResponseDealsItemOffersItemOneContingenciesMax),
+  "assignmentIntent": zod.boolean()
+}).and(zod.object({
+  "id": zod.string().uuid(),
+  "leadId": zod.string().uuid(),
+  "analysisSnapshotId": zod.string().uuid(),
+  "status": zod.enum(['DRAFT', 'AUTHORIZED', 'COMMUNICATED', 'REVOKED', 'INVALIDATED', 'EXPIRED']),
+  "effectiveStatus": zod.enum(['DRAFT', 'AUTHORIZED', 'COMMUNICATED', 'REVOKED', 'INVALIDATED', 'EXPIRED']),
+  "blockers": zod.array(zod.string()),
+  "reason": zod.string(),
+  "createdBy": zod.string(),
+  "createdAt": zod.string().datetime({"offset":true}),
+  "updatedAt": zod.string().datetime({"offset":true}),
+  "maximumApprovedAcquisitionPrice": zod.number().nullable(),
+  "authorityEvidenceId": zod.string().nullable(),
+  "approvedBy": zod.string().nullable(),
+  "approvedAt": zod.string().nullable(),
+  "approvalReason": zod.string().nullable(),
+  "expiresAt": zod.string().nullable(),
+  "communicatedBy": zod.string().nullable(),
+  "communicatedAt": zod.string().nullable(),
+  "communicatedAmount": zod.number().nullable(),
+  "channel": zod.string().nullable(),
+  "evidence": zod.string().nullable(),
+  "withdrawalReason": zod.string().nullable()
+}))),
+  "underwriting": zod.union([zod.object({
+  "version": zod.number().int().min(1),
+  "comps": zod.array(zod.object({
+  "id": zod.string().min(1),
+  "address": zod.string().min(getCommandCenterResponseDealsItemUnderwritingOneCompsItemAddressMin),
+  "salePrice": zod.number().gt(getCommandCenterResponseDealsItemUnderwritingOneCompsItemSalePriceExclusiveMin).max(getCommandCenterResponseDealsItemUnderwritingOneCompsItemSalePriceMax),
+  "sqft": zod.number().gt(getCommandCenterResponseDealsItemUnderwritingOneCompsItemSqftExclusiveMin).max(getCommandCenterResponseDealsItemUnderwritingOneCompsItemSqftMax),
+  "soldAt": zod.string().date(),
+  "distanceMiles": zod.number().min(getCommandCenterResponseDealsItemUnderwritingOneCompsItemDistanceMilesMin).max(getCommandCenterResponseDealsItemUnderwritingOneCompsItemDistanceMilesMax),
+  "propertyType": zod.string(),
+  "condition": zod.enum(['RENOVATED', 'SIMILAR', 'UNKNOWN']),
+  "source": zod.string().min(1),
+  "verified": zod.boolean()
+})).max(getCommandCenterResponseDealsItemUnderwritingOneCompsMax),
+  "repairs": zod.array(zod.object({
+  "category": zod.string().min(1),
+  "low": zod.number().min(getCommandCenterResponseDealsItemUnderwritingOneRepairsItemLowMin).max(getCommandCenterResponseDealsItemUnderwritingOneRepairsItemLowMax),
+  "expected": zod.number().min(getCommandCenterResponseDealsItemUnderwritingOneRepairsItemExpectedMin).max(getCommandCenterResponseDealsItemUnderwritingOneRepairsItemExpectedMax),
+  "high": zod.number().min(getCommandCenterResponseDealsItemUnderwritingOneRepairsItemHighMin).max(getCommandCenterResponseDealsItemUnderwritingOneRepairsItemHighMax),
+  "confidence": zod.number().min(getCommandCenterResponseDealsItemUnderwritingOneRepairsItemConfidenceMin).max(getCommandCenterResponseDealsItemUnderwritingOneRepairsItemConfidenceMax),
+  "source": zod.string().min(1)
+})).max(getCommandCenterResponseDealsItemUnderwritingOneRepairsMax),
+  "repairsComplete": zod.boolean(),
+  "conditionConfirmed": zod.boolean()
+}),zod.null()]),
+  "transitions": zod.array(zod.object({
+  "id": zod.string(),
+  "from": zod.string(),
+  "to": zod.string(),
+  "reason": zod.string(),
+  "nextAction": zod.string(),
+  "actor": zod.string(),
+  "createdAt": zod.string()
+})),
+  "calls": zod.array(zod.object({
+  "version": zod.number().int().min(1),
+  "outcome": zod.enum(['NO_ANSWER', 'VOICEMAIL', 'CONNECTED', 'NOT_INTERESTED']),
+  "notes": zod.string().min(1).max(getCommandCenterResponseDealsItemCallsItemOneNotesMax),
+  "nextAction": zod.string().min(getCommandCenterResponseDealsItemCallsItemOneNextActionMin).max(getCommandCenterResponseDealsItemCallsItemOneNextActionMax),
+  "followUpAt": zod.string().datetime({"offset":true}).nullable()
+}).and(zod.object({
+  "id": zod.string(),
+  "createdAt": zod.string(),
+  "actor": zod.string()
+}))),
+  "allowedTransitions": zod.array(zod.enum(['DISCOVERED', 'ENRICHING', 'ANALYZED', 'STRONG', 'NEGOTIABLE', 'PASS', 'CALL_READY', 'CONTACTED', 'CONVERSATION', 'OFFER_READY', 'OFFER_SENT', 'NEGOTIATING', 'CONTRACT_PENDING', 'UNDER_CONTRACT', 'BUYER_MATCHED', 'BUYER_INTERESTED', 'BUYER_COMMITTED', 'CLOSING', 'CLOSED', 'DEAD_DEAL']))
+})),
+  "operations": zod.array(zod.object({
+  "leadId": zod.string(),
+  "contract": zod.union([zod.object({
+  "id": zod.string(),
+  "leadId": zod.string(),
+  "offerId": zod.string(),
+  "version": zod.number().int(),
+  "status": zod.enum(['DRAFT', 'UNDER_CONTRACT', 'CLOSING', 'CLOSED', 'CANCELLED']),
+  "purchasePrice": zod.number(),
+  "assignmentTarget": zod.number(),
+  "earnestMoney": zod.number(),
+  "assignmentAllowed": zod.boolean(),
+  "closingAt": zod.string(),
+  "contingencies": zod.string(),
+  "executedDocumentUrl": zod.string().nullish(),
+  "sellerSignedAt": zod.string().nullish(),
+  "acquisitionSignedAt": zod.string().nullish(),
+  "reviewNote": zod.string().nullish(),
+  "committedBuyerId": zod.string().nullish(),
+  "agreedBuyerPrice": zod.number().nullish(),
+  "milestones": zod.array(zod.object({
+  "kind": zod.enum(['TITLE_CLEARED', 'EARNEST_MONEY_CONFIRMED', 'ASSIGNMENT_SIGNED', 'FUNDS_CONFIRMED']),
+  "evidenceUrl": zod.string(),
+  "note": zod.string(),
+  "recordedBy": zod.string(),
+  "recordedAt": zod.string()
+})),
+  "outcomeNote": zod.string().nullish(),
+  "outcomeEvidenceUrl": zod.string().nullish(),
+  "assignmentFeeReceived": zod.number().nullish(),
+  "closingCosts": zod.number().nullish(),
+  "netProceeds": zod.number().nullish(),
+  "closedAt": zod.string().nullish(),
+  "createdAt": zod.string()
+}),zod.null()]),
+  "matches": zod.array(zod.object({
+  "buyerId": zod.string(),
+  "leadId": zod.string(),
+  "buyerName": zod.string(),
+  "eligible": zod.boolean(),
+  "score": zod.number(),
+  "reasons": zod.array(zod.string()),
+  "mismatches": zod.array(zod.string()),
+  "status": zod.enum(['MATCHED', 'INTERESTED', 'COMMITTED', 'DECLINED']),
+  "buyerVersion": zod.number().int(),
+  "agreedPrice": zod.number().nullish(),
+  "evidence": zod.string().nullish(),
+  "updatedAt": zod.string()
+})),
+  "jobs": zod.array(zod.object({
+  "id": zod.string(),
+  "kind": zod.enum(['MATCH_BUYERS', 'REVIEW_DEADLINES']),
+  "state": zod.enum(['QUEUED', 'RUNNING', 'SUCCEEDED', 'FAILED']),
+  "leadId": zod.string().nullable(),
+  "requestedBy": zod.string(),
+  "message": zod.string(),
+  "attempts": zod.number().int(),
+  "createdAt": zod.string(),
+  "updatedAt": zod.string()
+})),
+  "nextAction": zod.string()
+})),
+  "buyers": zod.array(zod.object({
+  "name": zod.string().min(1).max(getCommandCenterResponseBuyersItemOneNameMax),
+  "email": zod.string().max(getCommandCenterResponseBuyersItemOneEmailMax),
+  "phone": zod.string().max(getCommandCenterResponseBuyersItemOnePhoneMax),
+  "source": zod.string().min(1).max(getCommandCenterResponseBuyersItemOneSourceMax),
+  "criteria": zod.object({
+  "states": zod.array(zod.string().min(getCommandCenterResponseBuyersItemOneCriteriaStatesItemMin).max(getCommandCenterResponseBuyersItemOneCriteriaStatesItemMax)).min(1),
+  "cities": zod.array(zod.string().min(1)),
+  "zipCodes": zod.array(zod.string().regex(getCommandCenterResponseBuyersItemOneCriteriaZipCodesItemRegExp)),
+  "propertyTypes": zod.array(zod.enum(['SINGLE_FAMILY', 'MULTIFAMILY', 'CONDO', 'TOWNHOUSE', 'LAND', 'OTHER'])).min(1),
+  "maxPurchasePrice": zod.number().gt(getCommandCenterResponseBuyersItemOneCriteriaMaxPurchasePriceExclusiveMin).max(getCommandCenterResponseBuyersItemOneCriteriaMaxPurchasePriceMax),
+  "maxRepairs": zod.number().min(getCommandCenterResponseBuyersItemOneCriteriaMaxRepairsMin).max(getCommandCenterResponseBuyersItemOneCriteriaMaxRepairsMax),
+  "minBeds": zod.number().int().min(getCommandCenterResponseBuyersItemOneCriteriaMinBedsMin).max(getCommandCenterResponseBuyersItemOneCriteriaMinBedsMax),
+  "minSqft": zod.number().min(getCommandCenterResponseBuyersItemOneCriteriaMinSqftMin).max(getCommandCenterResponseBuyersItemOneCriteriaMinSqftMax),
+  "maxSqft": zod.number().gt(getCommandCenterResponseBuyersItemOneCriteriaMaxSqftExclusiveMin).max(getCommandCenterResponseBuyersItemOneCriteriaMaxSqftMax),
+  "closingDays": zod.number().int().min(1).max(getCommandCenterResponseBuyersItemOneCriteriaClosingDaysMax)
+}),
+  "status": zod.enum(['ACTIVE', 'PAUSED'])
+}).and(zod.object({
+  "id": zod.string(),
+  "version": zod.number().int(),
+  "verificationStatus": zod.enum(['UNVERIFIED', 'VERIFIED', 'STALE']),
+  "identityEvidenceUrl": zod.string().nullish(),
+  "fundingEvidenceUrl": zod.string().nullish(),
+  "verificationNote": zod.string().nullish(),
+  "availableFunds": zod.number().nullish(),
+  "evidenceAt": zod.string().nullish(),
+  "validUntil": zod.string().nullish(),
+  "verifiedBy": zod.string().nullish(),
+  "verifiedAt": zod.string().nullish(),
+  "createdAt": zod.string(),
+  "updatedAt": zod.string()
+}))),
+  "jobs": zod.array(zod.object({
+  "id": zod.string(),
+  "kind": zod.enum(['MATCH_BUYERS', 'REVIEW_DEADLINES']),
+  "state": zod.enum(['QUEUED', 'RUNNING', 'SUCCEEDED', 'FAILED']),
+  "leadId": zod.string().nullable(),
+  "requestedBy": zod.string(),
+  "message": zod.string(),
+  "attempts": zod.number().int(),
+  "createdAt": zod.string(),
+  "updatedAt": zod.string()
+}))
+})
+
+
+export const listBuyersResponseOneNameMax = 200;
+
+export const listBuyersResponseOneEmailMax = 200;
+
+export const listBuyersResponseOnePhoneMax = 50;
+
+export const listBuyersResponseOneSourceMax = 2000;
+
+export const listBuyersResponseOneCriteriaStatesItemMin = 2;
+export const listBuyersResponseOneCriteriaStatesItemMax = 2;
+
+
+
+export const listBuyersResponseOneCriteriaZipCodesItemRegExp = new RegExp('^\\d{5}$');
+
+export const listBuyersResponseOneCriteriaMaxPurchasePriceExclusiveMin = 0;
+export const listBuyersResponseOneCriteriaMaxPurchasePriceMax = 1000000000;
+
+export const listBuyersResponseOneCriteriaMaxRepairsMin = 0;
+export const listBuyersResponseOneCriteriaMaxRepairsMax = 1000000000;
+
+export const listBuyersResponseOneCriteriaMinBedsMin = 0;
+export const listBuyersResponseOneCriteriaMinBedsMax = 100;
+
+export const listBuyersResponseOneCriteriaMinSqftMin = 0;
+export const listBuyersResponseOneCriteriaMinSqftMax = 1000000;
+
+export const listBuyersResponseOneCriteriaMaxSqftExclusiveMin = 0;
+export const listBuyersResponseOneCriteriaMaxSqftMax = 1000000;
+
+export const listBuyersResponseOneCriteriaClosingDaysMax = 365;
+
+
+
+export const ListBuyersResponseItem = zod.object({
+  "name": zod.string().min(1).max(listBuyersResponseOneNameMax),
+  "email": zod.string().max(listBuyersResponseOneEmailMax),
+  "phone": zod.string().max(listBuyersResponseOnePhoneMax),
+  "source": zod.string().min(1).max(listBuyersResponseOneSourceMax),
+  "criteria": zod.object({
+  "states": zod.array(zod.string().min(listBuyersResponseOneCriteriaStatesItemMin).max(listBuyersResponseOneCriteriaStatesItemMax)).min(1),
+  "cities": zod.array(zod.string().min(1)),
+  "zipCodes": zod.array(zod.string().regex(listBuyersResponseOneCriteriaZipCodesItemRegExp)),
+  "propertyTypes": zod.array(zod.enum(['SINGLE_FAMILY', 'MULTIFAMILY', 'CONDO', 'TOWNHOUSE', 'LAND', 'OTHER'])).min(1),
+  "maxPurchasePrice": zod.number().gt(listBuyersResponseOneCriteriaMaxPurchasePriceExclusiveMin).max(listBuyersResponseOneCriteriaMaxPurchasePriceMax),
+  "maxRepairs": zod.number().min(listBuyersResponseOneCriteriaMaxRepairsMin).max(listBuyersResponseOneCriteriaMaxRepairsMax),
+  "minBeds": zod.number().int().min(listBuyersResponseOneCriteriaMinBedsMin).max(listBuyersResponseOneCriteriaMinBedsMax),
+  "minSqft": zod.number().min(listBuyersResponseOneCriteriaMinSqftMin).max(listBuyersResponseOneCriteriaMinSqftMax),
+  "maxSqft": zod.number().gt(listBuyersResponseOneCriteriaMaxSqftExclusiveMin).max(listBuyersResponseOneCriteriaMaxSqftMax),
+  "closingDays": zod.number().int().min(1).max(listBuyersResponseOneCriteriaClosingDaysMax)
+}),
+  "status": zod.enum(['ACTIVE', 'PAUSED'])
+}).and(zod.object({
+  "id": zod.string(),
+  "version": zod.number().int(),
+  "verificationStatus": zod.enum(['UNVERIFIED', 'VERIFIED', 'STALE']),
+  "identityEvidenceUrl": zod.string().nullish(),
+  "fundingEvidenceUrl": zod.string().nullish(),
+  "verificationNote": zod.string().nullish(),
+  "availableFunds": zod.number().nullish(),
+  "evidenceAt": zod.string().nullish(),
+  "validUntil": zod.string().nullish(),
+  "verifiedBy": zod.string().nullish(),
+  "verifiedAt": zod.string().nullish(),
+  "createdAt": zod.string(),
+  "updatedAt": zod.string()
+}))
+export const ListBuyersResponse = zod.array(ListBuyersResponseItem)
+
+
+export const createBuyerBodyNameMax = 200;
+
+export const createBuyerBodyEmailMax = 200;
+
+export const createBuyerBodyPhoneMax = 50;
+
+export const createBuyerBodySourceMax = 2000;
+
+export const createBuyerBodyCriteriaStatesItemMin = 2;
+export const createBuyerBodyCriteriaStatesItemMax = 2;
+
+
+
+export const createBuyerBodyCriteriaZipCodesItemRegExp = new RegExp('^\\d{5}$');
+
+export const createBuyerBodyCriteriaMaxPurchasePriceExclusiveMin = 0;
+export const createBuyerBodyCriteriaMaxPurchasePriceMax = 1000000000;
+
+export const createBuyerBodyCriteriaMaxRepairsMin = 0;
+export const createBuyerBodyCriteriaMaxRepairsMax = 1000000000;
+
+export const createBuyerBodyCriteriaMinBedsMin = 0;
+export const createBuyerBodyCriteriaMinBedsMax = 100;
+
+export const createBuyerBodyCriteriaMinSqftMin = 0;
+export const createBuyerBodyCriteriaMinSqftMax = 1000000;
+
+export const createBuyerBodyCriteriaMaxSqftExclusiveMin = 0;
+export const createBuyerBodyCriteriaMaxSqftMax = 1000000;
+
+export const createBuyerBodyCriteriaClosingDaysMax = 365;
+
+
+
+export const CreateBuyerBody = zod.object({
+  "name": zod.string().min(1).max(createBuyerBodyNameMax),
+  "email": zod.string().max(createBuyerBodyEmailMax),
+  "phone": zod.string().max(createBuyerBodyPhoneMax),
+  "source": zod.string().min(1).max(createBuyerBodySourceMax),
+  "criteria": zod.object({
+  "states": zod.array(zod.string().min(createBuyerBodyCriteriaStatesItemMin).max(createBuyerBodyCriteriaStatesItemMax)).min(1),
+  "cities": zod.array(zod.string().min(1)),
+  "zipCodes": zod.array(zod.string().regex(createBuyerBodyCriteriaZipCodesItemRegExp)),
+  "propertyTypes": zod.array(zod.enum(['SINGLE_FAMILY', 'MULTIFAMILY', 'CONDO', 'TOWNHOUSE', 'LAND', 'OTHER'])).min(1),
+  "maxPurchasePrice": zod.number().gt(createBuyerBodyCriteriaMaxPurchasePriceExclusiveMin).max(createBuyerBodyCriteriaMaxPurchasePriceMax),
+  "maxRepairs": zod.number().min(createBuyerBodyCriteriaMaxRepairsMin).max(createBuyerBodyCriteriaMaxRepairsMax),
+  "minBeds": zod.number().int().min(createBuyerBodyCriteriaMinBedsMin).max(createBuyerBodyCriteriaMinBedsMax),
+  "minSqft": zod.number().min(createBuyerBodyCriteriaMinSqftMin).max(createBuyerBodyCriteriaMinSqftMax),
+  "maxSqft": zod.number().gt(createBuyerBodyCriteriaMaxSqftExclusiveMin).max(createBuyerBodyCriteriaMaxSqftMax),
+  "closingDays": zod.number().int().min(1).max(createBuyerBodyCriteriaClosingDaysMax)
+}),
+  "status": zod.enum(['ACTIVE', 'PAUSED'])
+})
+
+export const createBuyerResponseOneNameMax = 200;
+
+export const createBuyerResponseOneEmailMax = 200;
+
+export const createBuyerResponseOnePhoneMax = 50;
+
+export const createBuyerResponseOneSourceMax = 2000;
+
+export const createBuyerResponseOneCriteriaStatesItemMin = 2;
+export const createBuyerResponseOneCriteriaStatesItemMax = 2;
+
+
+
+export const createBuyerResponseOneCriteriaZipCodesItemRegExp = new RegExp('^\\d{5}$');
+
+export const createBuyerResponseOneCriteriaMaxPurchasePriceExclusiveMin = 0;
+export const createBuyerResponseOneCriteriaMaxPurchasePriceMax = 1000000000;
+
+export const createBuyerResponseOneCriteriaMaxRepairsMin = 0;
+export const createBuyerResponseOneCriteriaMaxRepairsMax = 1000000000;
+
+export const createBuyerResponseOneCriteriaMinBedsMin = 0;
+export const createBuyerResponseOneCriteriaMinBedsMax = 100;
+
+export const createBuyerResponseOneCriteriaMinSqftMin = 0;
+export const createBuyerResponseOneCriteriaMinSqftMax = 1000000;
+
+export const createBuyerResponseOneCriteriaMaxSqftExclusiveMin = 0;
+export const createBuyerResponseOneCriteriaMaxSqftMax = 1000000;
+
+export const createBuyerResponseOneCriteriaClosingDaysMax = 365;
+
+
+
+export const CreateBuyerResponse = zod.object({
+  "name": zod.string().min(1).max(createBuyerResponseOneNameMax),
+  "email": zod.string().max(createBuyerResponseOneEmailMax),
+  "phone": zod.string().max(createBuyerResponseOnePhoneMax),
+  "source": zod.string().min(1).max(createBuyerResponseOneSourceMax),
+  "criteria": zod.object({
+  "states": zod.array(zod.string().min(createBuyerResponseOneCriteriaStatesItemMin).max(createBuyerResponseOneCriteriaStatesItemMax)).min(1),
+  "cities": zod.array(zod.string().min(1)),
+  "zipCodes": zod.array(zod.string().regex(createBuyerResponseOneCriteriaZipCodesItemRegExp)),
+  "propertyTypes": zod.array(zod.enum(['SINGLE_FAMILY', 'MULTIFAMILY', 'CONDO', 'TOWNHOUSE', 'LAND', 'OTHER'])).min(1),
+  "maxPurchasePrice": zod.number().gt(createBuyerResponseOneCriteriaMaxPurchasePriceExclusiveMin).max(createBuyerResponseOneCriteriaMaxPurchasePriceMax),
+  "maxRepairs": zod.number().min(createBuyerResponseOneCriteriaMaxRepairsMin).max(createBuyerResponseOneCriteriaMaxRepairsMax),
+  "minBeds": zod.number().int().min(createBuyerResponseOneCriteriaMinBedsMin).max(createBuyerResponseOneCriteriaMinBedsMax),
+  "minSqft": zod.number().min(createBuyerResponseOneCriteriaMinSqftMin).max(createBuyerResponseOneCriteriaMinSqftMax),
+  "maxSqft": zod.number().gt(createBuyerResponseOneCriteriaMaxSqftExclusiveMin).max(createBuyerResponseOneCriteriaMaxSqftMax),
+  "closingDays": zod.number().int().min(1).max(createBuyerResponseOneCriteriaClosingDaysMax)
+}),
+  "status": zod.enum(['ACTIVE', 'PAUSED'])
+}).and(zod.object({
+  "id": zod.string(),
+  "version": zod.number().int(),
+  "verificationStatus": zod.enum(['UNVERIFIED', 'VERIFIED', 'STALE']),
+  "identityEvidenceUrl": zod.string().nullish(),
+  "fundingEvidenceUrl": zod.string().nullish(),
+  "verificationNote": zod.string().nullish(),
+  "availableFunds": zod.number().nullish(),
+  "evidenceAt": zod.string().nullish(),
+  "validUntil": zod.string().nullish(),
+  "verifiedBy": zod.string().nullish(),
+  "verifiedAt": zod.string().nullish(),
+  "createdAt": zod.string(),
+  "updatedAt": zod.string()
+}))
+
+
+export const GetBuyerParams = zod.object({
+  "id": zod.coerce.string()
+})
+
+export const getBuyerResponseOneNameMax = 200;
+
+export const getBuyerResponseOneEmailMax = 200;
+
+export const getBuyerResponseOnePhoneMax = 50;
+
+export const getBuyerResponseOneSourceMax = 2000;
+
+export const getBuyerResponseOneCriteriaStatesItemMin = 2;
+export const getBuyerResponseOneCriteriaStatesItemMax = 2;
+
+
+
+export const getBuyerResponseOneCriteriaZipCodesItemRegExp = new RegExp('^\\d{5}$');
+
+export const getBuyerResponseOneCriteriaMaxPurchasePriceExclusiveMin = 0;
+export const getBuyerResponseOneCriteriaMaxPurchasePriceMax = 1000000000;
+
+export const getBuyerResponseOneCriteriaMaxRepairsMin = 0;
+export const getBuyerResponseOneCriteriaMaxRepairsMax = 1000000000;
+
+export const getBuyerResponseOneCriteriaMinBedsMin = 0;
+export const getBuyerResponseOneCriteriaMinBedsMax = 100;
+
+export const getBuyerResponseOneCriteriaMinSqftMin = 0;
+export const getBuyerResponseOneCriteriaMinSqftMax = 1000000;
+
+export const getBuyerResponseOneCriteriaMaxSqftExclusiveMin = 0;
+export const getBuyerResponseOneCriteriaMaxSqftMax = 1000000;
+
+export const getBuyerResponseOneCriteriaClosingDaysMax = 365;
+
+
+
+export const GetBuyerResponse = zod.object({
+  "name": zod.string().min(1).max(getBuyerResponseOneNameMax),
+  "email": zod.string().max(getBuyerResponseOneEmailMax),
+  "phone": zod.string().max(getBuyerResponseOnePhoneMax),
+  "source": zod.string().min(1).max(getBuyerResponseOneSourceMax),
+  "criteria": zod.object({
+  "states": zod.array(zod.string().min(getBuyerResponseOneCriteriaStatesItemMin).max(getBuyerResponseOneCriteriaStatesItemMax)).min(1),
+  "cities": zod.array(zod.string().min(1)),
+  "zipCodes": zod.array(zod.string().regex(getBuyerResponseOneCriteriaZipCodesItemRegExp)),
+  "propertyTypes": zod.array(zod.enum(['SINGLE_FAMILY', 'MULTIFAMILY', 'CONDO', 'TOWNHOUSE', 'LAND', 'OTHER'])).min(1),
+  "maxPurchasePrice": zod.number().gt(getBuyerResponseOneCriteriaMaxPurchasePriceExclusiveMin).max(getBuyerResponseOneCriteriaMaxPurchasePriceMax),
+  "maxRepairs": zod.number().min(getBuyerResponseOneCriteriaMaxRepairsMin).max(getBuyerResponseOneCriteriaMaxRepairsMax),
+  "minBeds": zod.number().int().min(getBuyerResponseOneCriteriaMinBedsMin).max(getBuyerResponseOneCriteriaMinBedsMax),
+  "minSqft": zod.number().min(getBuyerResponseOneCriteriaMinSqftMin).max(getBuyerResponseOneCriteriaMinSqftMax),
+  "maxSqft": zod.number().gt(getBuyerResponseOneCriteriaMaxSqftExclusiveMin).max(getBuyerResponseOneCriteriaMaxSqftMax),
+  "closingDays": zod.number().int().min(1).max(getBuyerResponseOneCriteriaClosingDaysMax)
+}),
+  "status": zod.enum(['ACTIVE', 'PAUSED'])
+}).and(zod.object({
+  "id": zod.string(),
+  "version": zod.number().int(),
+  "verificationStatus": zod.enum(['UNVERIFIED', 'VERIFIED', 'STALE']),
+  "identityEvidenceUrl": zod.string().nullish(),
+  "fundingEvidenceUrl": zod.string().nullish(),
+  "verificationNote": zod.string().nullish(),
+  "availableFunds": zod.number().nullish(),
+  "evidenceAt": zod.string().nullish(),
+  "validUntil": zod.string().nullish(),
+  "verifiedBy": zod.string().nullish(),
+  "verifiedAt": zod.string().nullish(),
+  "createdAt": zod.string(),
+  "updatedAt": zod.string()
+}))
+
+
+export const UpdateBuyerParams = zod.object({
+  "id": zod.coerce.string()
+})
+
+export const updateBuyerBodyOneNameMax = 200;
+
+export const updateBuyerBodyOneEmailMax = 200;
+
+export const updateBuyerBodyOnePhoneMax = 50;
+
+export const updateBuyerBodyOneSourceMax = 2000;
+
+export const updateBuyerBodyOneCriteriaStatesItemMin = 2;
+export const updateBuyerBodyOneCriteriaStatesItemMax = 2;
+
+
+
+export const updateBuyerBodyOneCriteriaZipCodesItemRegExp = new RegExp('^\\d{5}$');
+
+export const updateBuyerBodyOneCriteriaMaxPurchasePriceExclusiveMin = 0;
+export const updateBuyerBodyOneCriteriaMaxPurchasePriceMax = 1000000000;
+
+export const updateBuyerBodyOneCriteriaMaxRepairsMin = 0;
+export const updateBuyerBodyOneCriteriaMaxRepairsMax = 1000000000;
+
+export const updateBuyerBodyOneCriteriaMinBedsMin = 0;
+export const updateBuyerBodyOneCriteriaMinBedsMax = 100;
+
+export const updateBuyerBodyOneCriteriaMinSqftMin = 0;
+export const updateBuyerBodyOneCriteriaMinSqftMax = 1000000;
+
+export const updateBuyerBodyOneCriteriaMaxSqftExclusiveMin = 0;
+export const updateBuyerBodyOneCriteriaMaxSqftMax = 1000000;
+
+export const updateBuyerBodyOneCriteriaClosingDaysMax = 365;
+
+
+
+
+export const UpdateBuyerBody = zod.object({
+  "name": zod.string().min(1).max(updateBuyerBodyOneNameMax),
+  "email": zod.string().max(updateBuyerBodyOneEmailMax),
+  "phone": zod.string().max(updateBuyerBodyOnePhoneMax),
+  "source": zod.string().min(1).max(updateBuyerBodyOneSourceMax),
+  "criteria": zod.object({
+  "states": zod.array(zod.string().min(updateBuyerBodyOneCriteriaStatesItemMin).max(updateBuyerBodyOneCriteriaStatesItemMax)).min(1),
+  "cities": zod.array(zod.string().min(1)),
+  "zipCodes": zod.array(zod.string().regex(updateBuyerBodyOneCriteriaZipCodesItemRegExp)),
+  "propertyTypes": zod.array(zod.enum(['SINGLE_FAMILY', 'MULTIFAMILY', 'CONDO', 'TOWNHOUSE', 'LAND', 'OTHER'])).min(1),
+  "maxPurchasePrice": zod.number().gt(updateBuyerBodyOneCriteriaMaxPurchasePriceExclusiveMin).max(updateBuyerBodyOneCriteriaMaxPurchasePriceMax),
+  "maxRepairs": zod.number().min(updateBuyerBodyOneCriteriaMaxRepairsMin).max(updateBuyerBodyOneCriteriaMaxRepairsMax),
+  "minBeds": zod.number().int().min(updateBuyerBodyOneCriteriaMinBedsMin).max(updateBuyerBodyOneCriteriaMinBedsMax),
+  "minSqft": zod.number().min(updateBuyerBodyOneCriteriaMinSqftMin).max(updateBuyerBodyOneCriteriaMinSqftMax),
+  "maxSqft": zod.number().gt(updateBuyerBodyOneCriteriaMaxSqftExclusiveMin).max(updateBuyerBodyOneCriteriaMaxSqftMax),
+  "closingDays": zod.number().int().min(1).max(updateBuyerBodyOneCriteriaClosingDaysMax)
+}),
+  "status": zod.enum(['ACTIVE', 'PAUSED'])
+}).and(zod.object({
+  "version": zod.number().int().min(1)
+}))
+
+export const updateBuyerResponseOneNameMax = 200;
+
+export const updateBuyerResponseOneEmailMax = 200;
+
+export const updateBuyerResponseOnePhoneMax = 50;
+
+export const updateBuyerResponseOneSourceMax = 2000;
+
+export const updateBuyerResponseOneCriteriaStatesItemMin = 2;
+export const updateBuyerResponseOneCriteriaStatesItemMax = 2;
+
+
+
+export const updateBuyerResponseOneCriteriaZipCodesItemRegExp = new RegExp('^\\d{5}$');
+
+export const updateBuyerResponseOneCriteriaMaxPurchasePriceExclusiveMin = 0;
+export const updateBuyerResponseOneCriteriaMaxPurchasePriceMax = 1000000000;
+
+export const updateBuyerResponseOneCriteriaMaxRepairsMin = 0;
+export const updateBuyerResponseOneCriteriaMaxRepairsMax = 1000000000;
+
+export const updateBuyerResponseOneCriteriaMinBedsMin = 0;
+export const updateBuyerResponseOneCriteriaMinBedsMax = 100;
+
+export const updateBuyerResponseOneCriteriaMinSqftMin = 0;
+export const updateBuyerResponseOneCriteriaMinSqftMax = 1000000;
+
+export const updateBuyerResponseOneCriteriaMaxSqftExclusiveMin = 0;
+export const updateBuyerResponseOneCriteriaMaxSqftMax = 1000000;
+
+export const updateBuyerResponseOneCriteriaClosingDaysMax = 365;
+
+
+
+export const UpdateBuyerResponse = zod.object({
+  "name": zod.string().min(1).max(updateBuyerResponseOneNameMax),
+  "email": zod.string().max(updateBuyerResponseOneEmailMax),
+  "phone": zod.string().max(updateBuyerResponseOnePhoneMax),
+  "source": zod.string().min(1).max(updateBuyerResponseOneSourceMax),
+  "criteria": zod.object({
+  "states": zod.array(zod.string().min(updateBuyerResponseOneCriteriaStatesItemMin).max(updateBuyerResponseOneCriteriaStatesItemMax)).min(1),
+  "cities": zod.array(zod.string().min(1)),
+  "zipCodes": zod.array(zod.string().regex(updateBuyerResponseOneCriteriaZipCodesItemRegExp)),
+  "propertyTypes": zod.array(zod.enum(['SINGLE_FAMILY', 'MULTIFAMILY', 'CONDO', 'TOWNHOUSE', 'LAND', 'OTHER'])).min(1),
+  "maxPurchasePrice": zod.number().gt(updateBuyerResponseOneCriteriaMaxPurchasePriceExclusiveMin).max(updateBuyerResponseOneCriteriaMaxPurchasePriceMax),
+  "maxRepairs": zod.number().min(updateBuyerResponseOneCriteriaMaxRepairsMin).max(updateBuyerResponseOneCriteriaMaxRepairsMax),
+  "minBeds": zod.number().int().min(updateBuyerResponseOneCriteriaMinBedsMin).max(updateBuyerResponseOneCriteriaMinBedsMax),
+  "minSqft": zod.number().min(updateBuyerResponseOneCriteriaMinSqftMin).max(updateBuyerResponseOneCriteriaMinSqftMax),
+  "maxSqft": zod.number().gt(updateBuyerResponseOneCriteriaMaxSqftExclusiveMin).max(updateBuyerResponseOneCriteriaMaxSqftMax),
+  "closingDays": zod.number().int().min(1).max(updateBuyerResponseOneCriteriaClosingDaysMax)
+}),
+  "status": zod.enum(['ACTIVE', 'PAUSED'])
+}).and(zod.object({
+  "id": zod.string(),
+  "version": zod.number().int(),
+  "verificationStatus": zod.enum(['UNVERIFIED', 'VERIFIED', 'STALE']),
+  "identityEvidenceUrl": zod.string().nullish(),
+  "fundingEvidenceUrl": zod.string().nullish(),
+  "verificationNote": zod.string().nullish(),
+  "availableFunds": zod.number().nullish(),
+  "evidenceAt": zod.string().nullish(),
+  "validUntil": zod.string().nullish(),
+  "verifiedBy": zod.string().nullish(),
+  "verifiedAt": zod.string().nullish(),
+  "createdAt": zod.string(),
+  "updatedAt": zod.string()
+}))
+
+
+export const VerifyBuyerParams = zod.object({
+  "id": zod.coerce.string()
+})
+
+
+export const verifyBuyerBodyIdentityEvidenceUrlMin = 8;
+export const verifyBuyerBodyIdentityEvidenceUrlMax = 2000;
+
+export const verifyBuyerBodyFundingEvidenceUrlMin = 8;
+export const verifyBuyerBodyFundingEvidenceUrlMax = 2000;
+
+export const verifyBuyerBodyVerificationNoteMin = 10;
+export const verifyBuyerBodyVerificationNoteMax = 3000;
+
+export const verifyBuyerBodyAvailableFundsExclusiveMin = 0;
+export const verifyBuyerBodyAvailableFundsMax = 1000000000;
+
+
+
+export const VerifyBuyerBody = zod.object({
+  "version": zod.number().int().min(1),
+  "identityEvidenceUrl": zod.string().min(verifyBuyerBodyIdentityEvidenceUrlMin).max(verifyBuyerBodyIdentityEvidenceUrlMax),
+  "fundingEvidenceUrl": zod.string().min(verifyBuyerBodyFundingEvidenceUrlMin).max(verifyBuyerBodyFundingEvidenceUrlMax),
+  "verificationNote": zod.string().min(verifyBuyerBodyVerificationNoteMin).max(verifyBuyerBodyVerificationNoteMax),
+  "availableFunds": zod.number().gt(verifyBuyerBodyAvailableFundsExclusiveMin).max(verifyBuyerBodyAvailableFundsMax),
+  "evidenceAt": zod.string(),
+  "validUntil": zod.string()
+})
+
+export const verifyBuyerResponseOneNameMax = 200;
+
+export const verifyBuyerResponseOneEmailMax = 200;
+
+export const verifyBuyerResponseOnePhoneMax = 50;
+
+export const verifyBuyerResponseOneSourceMax = 2000;
+
+export const verifyBuyerResponseOneCriteriaStatesItemMin = 2;
+export const verifyBuyerResponseOneCriteriaStatesItemMax = 2;
+
+
+
+export const verifyBuyerResponseOneCriteriaZipCodesItemRegExp = new RegExp('^\\d{5}$');
+
+export const verifyBuyerResponseOneCriteriaMaxPurchasePriceExclusiveMin = 0;
+export const verifyBuyerResponseOneCriteriaMaxPurchasePriceMax = 1000000000;
+
+export const verifyBuyerResponseOneCriteriaMaxRepairsMin = 0;
+export const verifyBuyerResponseOneCriteriaMaxRepairsMax = 1000000000;
+
+export const verifyBuyerResponseOneCriteriaMinBedsMin = 0;
+export const verifyBuyerResponseOneCriteriaMinBedsMax = 100;
+
+export const verifyBuyerResponseOneCriteriaMinSqftMin = 0;
+export const verifyBuyerResponseOneCriteriaMinSqftMax = 1000000;
+
+export const verifyBuyerResponseOneCriteriaMaxSqftExclusiveMin = 0;
+export const verifyBuyerResponseOneCriteriaMaxSqftMax = 1000000;
+
+export const verifyBuyerResponseOneCriteriaClosingDaysMax = 365;
+
+
+
+export const VerifyBuyerResponse = zod.object({
+  "name": zod.string().min(1).max(verifyBuyerResponseOneNameMax),
+  "email": zod.string().max(verifyBuyerResponseOneEmailMax),
+  "phone": zod.string().max(verifyBuyerResponseOnePhoneMax),
+  "source": zod.string().min(1).max(verifyBuyerResponseOneSourceMax),
+  "criteria": zod.object({
+  "states": zod.array(zod.string().min(verifyBuyerResponseOneCriteriaStatesItemMin).max(verifyBuyerResponseOneCriteriaStatesItemMax)).min(1),
+  "cities": zod.array(zod.string().min(1)),
+  "zipCodes": zod.array(zod.string().regex(verifyBuyerResponseOneCriteriaZipCodesItemRegExp)),
+  "propertyTypes": zod.array(zod.enum(['SINGLE_FAMILY', 'MULTIFAMILY', 'CONDO', 'TOWNHOUSE', 'LAND', 'OTHER'])).min(1),
+  "maxPurchasePrice": zod.number().gt(verifyBuyerResponseOneCriteriaMaxPurchasePriceExclusiveMin).max(verifyBuyerResponseOneCriteriaMaxPurchasePriceMax),
+  "maxRepairs": zod.number().min(verifyBuyerResponseOneCriteriaMaxRepairsMin).max(verifyBuyerResponseOneCriteriaMaxRepairsMax),
+  "minBeds": zod.number().int().min(verifyBuyerResponseOneCriteriaMinBedsMin).max(verifyBuyerResponseOneCriteriaMinBedsMax),
+  "minSqft": zod.number().min(verifyBuyerResponseOneCriteriaMinSqftMin).max(verifyBuyerResponseOneCriteriaMinSqftMax),
+  "maxSqft": zod.number().gt(verifyBuyerResponseOneCriteriaMaxSqftExclusiveMin).max(verifyBuyerResponseOneCriteriaMaxSqftMax),
+  "closingDays": zod.number().int().min(1).max(verifyBuyerResponseOneCriteriaClosingDaysMax)
+}),
+  "status": zod.enum(['ACTIVE', 'PAUSED'])
+}).and(zod.object({
+  "id": zod.string(),
+  "version": zod.number().int(),
+  "verificationStatus": zod.enum(['UNVERIFIED', 'VERIFIED', 'STALE']),
+  "identityEvidenceUrl": zod.string().nullish(),
+  "fundingEvidenceUrl": zod.string().nullish(),
+  "verificationNote": zod.string().nullish(),
+  "availableFunds": zod.number().nullish(),
+  "evidenceAt": zod.string().nullish(),
+  "validUntil": zod.string().nullish(),
+  "verifiedBy": zod.string().nullish(),
+  "verifiedAt": zod.string().nullish(),
+  "createdAt": zod.string(),
+  "updatedAt": zod.string()
+}))
+
+
+export const GetDealOperationsParams = zod.object({
+  "id": zod.coerce.string()
+})
+
+export const GetDealOperationsResponse = zod.object({
+  "leadId": zod.string(),
+  "contract": zod.union([zod.object({
+  "id": zod.string(),
+  "leadId": zod.string(),
+  "offerId": zod.string(),
+  "version": zod.number().int(),
+  "status": zod.enum(['DRAFT', 'UNDER_CONTRACT', 'CLOSING', 'CLOSED', 'CANCELLED']),
+  "purchasePrice": zod.number(),
+  "assignmentTarget": zod.number(),
+  "earnestMoney": zod.number(),
+  "assignmentAllowed": zod.boolean(),
+  "closingAt": zod.string(),
+  "contingencies": zod.string(),
+  "executedDocumentUrl": zod.string().nullish(),
+  "sellerSignedAt": zod.string().nullish(),
+  "acquisitionSignedAt": zod.string().nullish(),
+  "reviewNote": zod.string().nullish(),
+  "committedBuyerId": zod.string().nullish(),
+  "agreedBuyerPrice": zod.number().nullish(),
+  "milestones": zod.array(zod.object({
+  "kind": zod.enum(['TITLE_CLEARED', 'EARNEST_MONEY_CONFIRMED', 'ASSIGNMENT_SIGNED', 'FUNDS_CONFIRMED']),
+  "evidenceUrl": zod.string(),
+  "note": zod.string(),
+  "recordedBy": zod.string(),
+  "recordedAt": zod.string()
+})),
+  "outcomeNote": zod.string().nullish(),
+  "outcomeEvidenceUrl": zod.string().nullish(),
+  "assignmentFeeReceived": zod.number().nullish(),
+  "closingCosts": zod.number().nullish(),
+  "netProceeds": zod.number().nullish(),
+  "closedAt": zod.string().nullish(),
+  "createdAt": zod.string()
+}),zod.null()]),
+  "matches": zod.array(zod.object({
+  "buyerId": zod.string(),
+  "leadId": zod.string(),
+  "buyerName": zod.string(),
+  "eligible": zod.boolean(),
+  "score": zod.number(),
+  "reasons": zod.array(zod.string()),
+  "mismatches": zod.array(zod.string()),
+  "status": zod.enum(['MATCHED', 'INTERESTED', 'COMMITTED', 'DECLINED']),
+  "buyerVersion": zod.number().int(),
+  "agreedPrice": zod.number().nullish(),
+  "evidence": zod.string().nullish(),
+  "updatedAt": zod.string()
+})),
+  "jobs": zod.array(zod.object({
+  "id": zod.string(),
+  "kind": zod.enum(['MATCH_BUYERS', 'REVIEW_DEADLINES']),
+  "state": zod.enum(['QUEUED', 'RUNNING', 'SUCCEEDED', 'FAILED']),
+  "leadId": zod.string().nullable(),
+  "requestedBy": zod.string(),
+  "message": zod.string(),
+  "attempts": zod.number().int(),
+  "createdAt": zod.string(),
+  "updatedAt": zod.string()
+})),
+  "nextAction": zod.string()
+})
+
+
+export const RefreshMatchesParams = zod.object({
+  "id": zod.coerce.string()
+})
+
+export const RefreshMatchesResponse = zod.object({
+  "leadId": zod.string(),
+  "contract": zod.union([zod.object({
+  "id": zod.string(),
+  "leadId": zod.string(),
+  "offerId": zod.string(),
+  "version": zod.number().int(),
+  "status": zod.enum(['DRAFT', 'UNDER_CONTRACT', 'CLOSING', 'CLOSED', 'CANCELLED']),
+  "purchasePrice": zod.number(),
+  "assignmentTarget": zod.number(),
+  "earnestMoney": zod.number(),
+  "assignmentAllowed": zod.boolean(),
+  "closingAt": zod.string(),
+  "contingencies": zod.string(),
+  "executedDocumentUrl": zod.string().nullish(),
+  "sellerSignedAt": zod.string().nullish(),
+  "acquisitionSignedAt": zod.string().nullish(),
+  "reviewNote": zod.string().nullish(),
+  "committedBuyerId": zod.string().nullish(),
+  "agreedBuyerPrice": zod.number().nullish(),
+  "milestones": zod.array(zod.object({
+  "kind": zod.enum(['TITLE_CLEARED', 'EARNEST_MONEY_CONFIRMED', 'ASSIGNMENT_SIGNED', 'FUNDS_CONFIRMED']),
+  "evidenceUrl": zod.string(),
+  "note": zod.string(),
+  "recordedBy": zod.string(),
+  "recordedAt": zod.string()
+})),
+  "outcomeNote": zod.string().nullish(),
+  "outcomeEvidenceUrl": zod.string().nullish(),
+  "assignmentFeeReceived": zod.number().nullish(),
+  "closingCosts": zod.number().nullish(),
+  "netProceeds": zod.number().nullish(),
+  "closedAt": zod.string().nullish(),
+  "createdAt": zod.string()
+}),zod.null()]),
+  "matches": zod.array(zod.object({
+  "buyerId": zod.string(),
+  "leadId": zod.string(),
+  "buyerName": zod.string(),
+  "eligible": zod.boolean(),
+  "score": zod.number(),
+  "reasons": zod.array(zod.string()),
+  "mismatches": zod.array(zod.string()),
+  "status": zod.enum(['MATCHED', 'INTERESTED', 'COMMITTED', 'DECLINED']),
+  "buyerVersion": zod.number().int(),
+  "agreedPrice": zod.number().nullish(),
+  "evidence": zod.string().nullish(),
+  "updatedAt": zod.string()
+})),
+  "jobs": zod.array(zod.object({
+  "id": zod.string(),
+  "kind": zod.enum(['MATCH_BUYERS', 'REVIEW_DEADLINES']),
+  "state": zod.enum(['QUEUED', 'RUNNING', 'SUCCEEDED', 'FAILED']),
+  "leadId": zod.string().nullable(),
+  "requestedBy": zod.string(),
+  "message": zod.string(),
+  "attempts": zod.number().int(),
+  "createdAt": zod.string(),
+  "updatedAt": zod.string()
+})),
+  "nextAction": zod.string()
+})
+
+
+export const RecordBuyerResponseParams = zod.object({
+  "id": zod.coerce.string(),
+  "buyerId": zod.coerce.string()
+})
+
+
+
+export const recordBuyerResponseBodyEvidenceMin = 10;
+export const recordBuyerResponseBodyEvidenceMax = 3000;
+
+export const recordBuyerResponseBodyCommitmentEvidenceUrlMax = 2000;
+
+export const recordBuyerResponseBodyAgreedPriceExclusiveMin = 0;
+export const recordBuyerResponseBodyAgreedPriceMax = 1000000000;
+
+
+
+export const RecordBuyerResponseBody = zod.object({
+  "version": zod.number().int().min(1),
+  "buyerVersion": zod.number().int().min(1),
+  "status": zod.enum(['INTERESTED', 'COMMITTED', 'DECLINED']),
+  "evidence": zod.string().min(recordBuyerResponseBodyEvidenceMin).max(recordBuyerResponseBodyEvidenceMax),
+  "commitmentEvidenceUrl": zod.string().max(recordBuyerResponseBodyCommitmentEvidenceUrlMax).optional(),
+  "agreedPrice": zod.number().gt(recordBuyerResponseBodyAgreedPriceExclusiveMin).max(recordBuyerResponseBodyAgreedPriceMax).optional()
+})
+
+export const RecordBuyerResponseResponse = zod.object({
+  "leadId": zod.string(),
+  "contract": zod.union([zod.object({
+  "id": zod.string(),
+  "leadId": zod.string(),
+  "offerId": zod.string(),
+  "version": zod.number().int(),
+  "status": zod.enum(['DRAFT', 'UNDER_CONTRACT', 'CLOSING', 'CLOSED', 'CANCELLED']),
+  "purchasePrice": zod.number(),
+  "assignmentTarget": zod.number(),
+  "earnestMoney": zod.number(),
+  "assignmentAllowed": zod.boolean(),
+  "closingAt": zod.string(),
+  "contingencies": zod.string(),
+  "executedDocumentUrl": zod.string().nullish(),
+  "sellerSignedAt": zod.string().nullish(),
+  "acquisitionSignedAt": zod.string().nullish(),
+  "reviewNote": zod.string().nullish(),
+  "committedBuyerId": zod.string().nullish(),
+  "agreedBuyerPrice": zod.number().nullish(),
+  "milestones": zod.array(zod.object({
+  "kind": zod.enum(['TITLE_CLEARED', 'EARNEST_MONEY_CONFIRMED', 'ASSIGNMENT_SIGNED', 'FUNDS_CONFIRMED']),
+  "evidenceUrl": zod.string(),
+  "note": zod.string(),
+  "recordedBy": zod.string(),
+  "recordedAt": zod.string()
+})),
+  "outcomeNote": zod.string().nullish(),
+  "outcomeEvidenceUrl": zod.string().nullish(),
+  "assignmentFeeReceived": zod.number().nullish(),
+  "closingCosts": zod.number().nullish(),
+  "netProceeds": zod.number().nullish(),
+  "closedAt": zod.string().nullish(),
+  "createdAt": zod.string()
+}),zod.null()]),
+  "matches": zod.array(zod.object({
+  "buyerId": zod.string(),
+  "leadId": zod.string(),
+  "buyerName": zod.string(),
+  "eligible": zod.boolean(),
+  "score": zod.number(),
+  "reasons": zod.array(zod.string()),
+  "mismatches": zod.array(zod.string()),
+  "status": zod.enum(['MATCHED', 'INTERESTED', 'COMMITTED', 'DECLINED']),
+  "buyerVersion": zod.number().int(),
+  "agreedPrice": zod.number().nullish(),
+  "evidence": zod.string().nullish(),
+  "updatedAt": zod.string()
+})),
+  "jobs": zod.array(zod.object({
+  "id": zod.string(),
+  "kind": zod.enum(['MATCH_BUYERS', 'REVIEW_DEADLINES']),
+  "state": zod.enum(['QUEUED', 'RUNNING', 'SUCCEEDED', 'FAILED']),
+  "leadId": zod.string().nullable(),
+  "requestedBy": zod.string(),
+  "message": zod.string(),
+  "attempts": zod.number().int(),
+  "createdAt": zod.string(),
+  "updatedAt": zod.string()
+})),
+  "nextAction": zod.string()
+})
+
+
+export const CreateContractParams = zod.object({
+  "id": zod.coerce.string()
+})
+
+
+
+
+export const CreateContractBody = zod.object({
+  "version": zod.number().int().min(1),
+  "offerId": zod.string(),
+  "closingAt": zod.string()
+})
+
+export const CreateContractResponse = zod.object({
+  "leadId": zod.string(),
+  "contract": zod.union([zod.object({
+  "id": zod.string(),
+  "leadId": zod.string(),
+  "offerId": zod.string(),
+  "version": zod.number().int(),
+  "status": zod.enum(['DRAFT', 'UNDER_CONTRACT', 'CLOSING', 'CLOSED', 'CANCELLED']),
+  "purchasePrice": zod.number(),
+  "assignmentTarget": zod.number(),
+  "earnestMoney": zod.number(),
+  "assignmentAllowed": zod.boolean(),
+  "closingAt": zod.string(),
+  "contingencies": zod.string(),
+  "executedDocumentUrl": zod.string().nullish(),
+  "sellerSignedAt": zod.string().nullish(),
+  "acquisitionSignedAt": zod.string().nullish(),
+  "reviewNote": zod.string().nullish(),
+  "committedBuyerId": zod.string().nullish(),
+  "agreedBuyerPrice": zod.number().nullish(),
+  "milestones": zod.array(zod.object({
+  "kind": zod.enum(['TITLE_CLEARED', 'EARNEST_MONEY_CONFIRMED', 'ASSIGNMENT_SIGNED', 'FUNDS_CONFIRMED']),
+  "evidenceUrl": zod.string(),
+  "note": zod.string(),
+  "recordedBy": zod.string(),
+  "recordedAt": zod.string()
+})),
+  "outcomeNote": zod.string().nullish(),
+  "outcomeEvidenceUrl": zod.string().nullish(),
+  "assignmentFeeReceived": zod.number().nullish(),
+  "closingCosts": zod.number().nullish(),
+  "netProceeds": zod.number().nullish(),
+  "closedAt": zod.string().nullish(),
+  "createdAt": zod.string()
+}),zod.null()]),
+  "matches": zod.array(zod.object({
+  "buyerId": zod.string(),
+  "leadId": zod.string(),
+  "buyerName": zod.string(),
+  "eligible": zod.boolean(),
+  "score": zod.number(),
+  "reasons": zod.array(zod.string()),
+  "mismatches": zod.array(zod.string()),
+  "status": zod.enum(['MATCHED', 'INTERESTED', 'COMMITTED', 'DECLINED']),
+  "buyerVersion": zod.number().int(),
+  "agreedPrice": zod.number().nullish(),
+  "evidence": zod.string().nullish(),
+  "updatedAt": zod.string()
+})),
+  "jobs": zod.array(zod.object({
+  "id": zod.string(),
+  "kind": zod.enum(['MATCH_BUYERS', 'REVIEW_DEADLINES']),
+  "state": zod.enum(['QUEUED', 'RUNNING', 'SUCCEEDED', 'FAILED']),
+  "leadId": zod.string().nullable(),
+  "requestedBy": zod.string(),
+  "message": zod.string(),
+  "attempts": zod.number().int(),
+  "createdAt": zod.string(),
+  "updatedAt": zod.string()
+})),
+  "nextAction": zod.string()
+})
+
+
+export const ExecuteContractParams = zod.object({
+  "id": zod.coerce.string()
+})
+
+
+export const executeContractBodyExecutedDocumentUrlMin = 8;
+export const executeContractBodyExecutedDocumentUrlMax = 2000;
+
+export const executeContractBodyReviewNoteMin = 10;
+export const executeContractBodyReviewNoteMax = 3000;
+
+
+
+export const ExecuteContractBody = zod.object({
+  "version": zod.number().int().min(1),
+  "executedDocumentUrl": zod.string().min(executeContractBodyExecutedDocumentUrlMin).max(executeContractBodyExecutedDocumentUrlMax),
+  "sellerSignedAt": zod.string(),
+  "acquisitionSignedAt": zod.string(),
+  "reviewNote": zod.string().min(executeContractBodyReviewNoteMin).max(executeContractBodyReviewNoteMax)
+})
+
+export const ExecuteContractResponse = zod.object({
+  "leadId": zod.string(),
+  "contract": zod.union([zod.object({
+  "id": zod.string(),
+  "leadId": zod.string(),
+  "offerId": zod.string(),
+  "version": zod.number().int(),
+  "status": zod.enum(['DRAFT', 'UNDER_CONTRACT', 'CLOSING', 'CLOSED', 'CANCELLED']),
+  "purchasePrice": zod.number(),
+  "assignmentTarget": zod.number(),
+  "earnestMoney": zod.number(),
+  "assignmentAllowed": zod.boolean(),
+  "closingAt": zod.string(),
+  "contingencies": zod.string(),
+  "executedDocumentUrl": zod.string().nullish(),
+  "sellerSignedAt": zod.string().nullish(),
+  "acquisitionSignedAt": zod.string().nullish(),
+  "reviewNote": zod.string().nullish(),
+  "committedBuyerId": zod.string().nullish(),
+  "agreedBuyerPrice": zod.number().nullish(),
+  "milestones": zod.array(zod.object({
+  "kind": zod.enum(['TITLE_CLEARED', 'EARNEST_MONEY_CONFIRMED', 'ASSIGNMENT_SIGNED', 'FUNDS_CONFIRMED']),
+  "evidenceUrl": zod.string(),
+  "note": zod.string(),
+  "recordedBy": zod.string(),
+  "recordedAt": zod.string()
+})),
+  "outcomeNote": zod.string().nullish(),
+  "outcomeEvidenceUrl": zod.string().nullish(),
+  "assignmentFeeReceived": zod.number().nullish(),
+  "closingCosts": zod.number().nullish(),
+  "netProceeds": zod.number().nullish(),
+  "closedAt": zod.string().nullish(),
+  "createdAt": zod.string()
+}),zod.null()]),
+  "matches": zod.array(zod.object({
+  "buyerId": zod.string(),
+  "leadId": zod.string(),
+  "buyerName": zod.string(),
+  "eligible": zod.boolean(),
+  "score": zod.number(),
+  "reasons": zod.array(zod.string()),
+  "mismatches": zod.array(zod.string()),
+  "status": zod.enum(['MATCHED', 'INTERESTED', 'COMMITTED', 'DECLINED']),
+  "buyerVersion": zod.number().int(),
+  "agreedPrice": zod.number().nullish(),
+  "evidence": zod.string().nullish(),
+  "updatedAt": zod.string()
+})),
+  "jobs": zod.array(zod.object({
+  "id": zod.string(),
+  "kind": zod.enum(['MATCH_BUYERS', 'REVIEW_DEADLINES']),
+  "state": zod.enum(['QUEUED', 'RUNNING', 'SUCCEEDED', 'FAILED']),
+  "leadId": zod.string().nullable(),
+  "requestedBy": zod.string(),
+  "message": zod.string(),
+  "attempts": zod.number().int(),
+  "createdAt": zod.string(),
+  "updatedAt": zod.string()
+})),
+  "nextAction": zod.string()
+})
+
+
+export const RecordClosingMilestoneParams = zod.object({
+  "id": zod.coerce.string()
+})
+
+
+export const recordClosingMilestoneBodyEvidenceUrlMin = 8;
+export const recordClosingMilestoneBodyEvidenceUrlMax = 2000;
+
+export const recordClosingMilestoneBodyNoteMin = 10;
+export const recordClosingMilestoneBodyNoteMax = 3000;
+
+
+
+export const RecordClosingMilestoneBody = zod.object({
+  "version": zod.number().int().min(1),
+  "kind": zod.enum(['TITLE_CLEARED', 'EARNEST_MONEY_CONFIRMED', 'ASSIGNMENT_SIGNED', 'FUNDS_CONFIRMED']),
+  "evidenceUrl": zod.string().min(recordClosingMilestoneBodyEvidenceUrlMin).max(recordClosingMilestoneBodyEvidenceUrlMax),
+  "note": zod.string().min(recordClosingMilestoneBodyNoteMin).max(recordClosingMilestoneBodyNoteMax)
+})
+
+export const RecordClosingMilestoneResponse = zod.object({
+  "leadId": zod.string(),
+  "contract": zod.union([zod.object({
+  "id": zod.string(),
+  "leadId": zod.string(),
+  "offerId": zod.string(),
+  "version": zod.number().int(),
+  "status": zod.enum(['DRAFT', 'UNDER_CONTRACT', 'CLOSING', 'CLOSED', 'CANCELLED']),
+  "purchasePrice": zod.number(),
+  "assignmentTarget": zod.number(),
+  "earnestMoney": zod.number(),
+  "assignmentAllowed": zod.boolean(),
+  "closingAt": zod.string(),
+  "contingencies": zod.string(),
+  "executedDocumentUrl": zod.string().nullish(),
+  "sellerSignedAt": zod.string().nullish(),
+  "acquisitionSignedAt": zod.string().nullish(),
+  "reviewNote": zod.string().nullish(),
+  "committedBuyerId": zod.string().nullish(),
+  "agreedBuyerPrice": zod.number().nullish(),
+  "milestones": zod.array(zod.object({
+  "kind": zod.enum(['TITLE_CLEARED', 'EARNEST_MONEY_CONFIRMED', 'ASSIGNMENT_SIGNED', 'FUNDS_CONFIRMED']),
+  "evidenceUrl": zod.string(),
+  "note": zod.string(),
+  "recordedBy": zod.string(),
+  "recordedAt": zod.string()
+})),
+  "outcomeNote": zod.string().nullish(),
+  "outcomeEvidenceUrl": zod.string().nullish(),
+  "assignmentFeeReceived": zod.number().nullish(),
+  "closingCosts": zod.number().nullish(),
+  "netProceeds": zod.number().nullish(),
+  "closedAt": zod.string().nullish(),
+  "createdAt": zod.string()
+}),zod.null()]),
+  "matches": zod.array(zod.object({
+  "buyerId": zod.string(),
+  "leadId": zod.string(),
+  "buyerName": zod.string(),
+  "eligible": zod.boolean(),
+  "score": zod.number(),
+  "reasons": zod.array(zod.string()),
+  "mismatches": zod.array(zod.string()),
+  "status": zod.enum(['MATCHED', 'INTERESTED', 'COMMITTED', 'DECLINED']),
+  "buyerVersion": zod.number().int(),
+  "agreedPrice": zod.number().nullish(),
+  "evidence": zod.string().nullish(),
+  "updatedAt": zod.string()
+})),
+  "jobs": zod.array(zod.object({
+  "id": zod.string(),
+  "kind": zod.enum(['MATCH_BUYERS', 'REVIEW_DEADLINES']),
+  "state": zod.enum(['QUEUED', 'RUNNING', 'SUCCEEDED', 'FAILED']),
+  "leadId": zod.string().nullable(),
+  "requestedBy": zod.string(),
+  "message": zod.string(),
+  "attempts": zod.number().int(),
+  "createdAt": zod.string(),
+  "updatedAt": zod.string()
+})),
+  "nextAction": zod.string()
+})
+
+
+export const RecordDealOutcomeParams = zod.object({
+  "id": zod.coerce.string()
+})
+
+
+export const recordDealOutcomeBodyEvidenceUrlMin = 8;
+export const recordDealOutcomeBodyEvidenceUrlMax = 2000;
+
+export const recordDealOutcomeBodyNoteMin = 10;
+export const recordDealOutcomeBodyNoteMax = 3000;
+
+export const recordDealOutcomeBodyAssignmentFeeReceivedMin = 0;
+export const recordDealOutcomeBodyAssignmentFeeReceivedMax = 1000000000;
+
+export const recordDealOutcomeBodyClosingCostsMin = 0;
+export const recordDealOutcomeBodyClosingCostsMax = 1000000000;
+
+
+
+export const RecordDealOutcomeBody = zod.object({
+  "version": zod.number().int().min(1),
+  "outcome": zod.enum(['CLOSED', 'CANCELLED']),
+  "evidenceUrl": zod.string().min(recordDealOutcomeBodyEvidenceUrlMin).max(recordDealOutcomeBodyEvidenceUrlMax),
+  "note": zod.string().min(recordDealOutcomeBodyNoteMin).max(recordDealOutcomeBodyNoteMax),
+  "assignmentFeeReceived": zod.number().min(recordDealOutcomeBodyAssignmentFeeReceivedMin).max(recordDealOutcomeBodyAssignmentFeeReceivedMax).optional(),
+  "closingCosts": zod.number().min(recordDealOutcomeBodyClosingCostsMin).max(recordDealOutcomeBodyClosingCostsMax).optional()
+})
+
+export const RecordDealOutcomeResponse = zod.object({
+  "leadId": zod.string(),
+  "contract": zod.union([zod.object({
+  "id": zod.string(),
+  "leadId": zod.string(),
+  "offerId": zod.string(),
+  "version": zod.number().int(),
+  "status": zod.enum(['DRAFT', 'UNDER_CONTRACT', 'CLOSING', 'CLOSED', 'CANCELLED']),
+  "purchasePrice": zod.number(),
+  "assignmentTarget": zod.number(),
+  "earnestMoney": zod.number(),
+  "assignmentAllowed": zod.boolean(),
+  "closingAt": zod.string(),
+  "contingencies": zod.string(),
+  "executedDocumentUrl": zod.string().nullish(),
+  "sellerSignedAt": zod.string().nullish(),
+  "acquisitionSignedAt": zod.string().nullish(),
+  "reviewNote": zod.string().nullish(),
+  "committedBuyerId": zod.string().nullish(),
+  "agreedBuyerPrice": zod.number().nullish(),
+  "milestones": zod.array(zod.object({
+  "kind": zod.enum(['TITLE_CLEARED', 'EARNEST_MONEY_CONFIRMED', 'ASSIGNMENT_SIGNED', 'FUNDS_CONFIRMED']),
+  "evidenceUrl": zod.string(),
+  "note": zod.string(),
+  "recordedBy": zod.string(),
+  "recordedAt": zod.string()
+})),
+  "outcomeNote": zod.string().nullish(),
+  "outcomeEvidenceUrl": zod.string().nullish(),
+  "assignmentFeeReceived": zod.number().nullish(),
+  "closingCosts": zod.number().nullish(),
+  "netProceeds": zod.number().nullish(),
+  "closedAt": zod.string().nullish(),
+  "createdAt": zod.string()
+}),zod.null()]),
+  "matches": zod.array(zod.object({
+  "buyerId": zod.string(),
+  "leadId": zod.string(),
+  "buyerName": zod.string(),
+  "eligible": zod.boolean(),
+  "score": zod.number(),
+  "reasons": zod.array(zod.string()),
+  "mismatches": zod.array(zod.string()),
+  "status": zod.enum(['MATCHED', 'INTERESTED', 'COMMITTED', 'DECLINED']),
+  "buyerVersion": zod.number().int(),
+  "agreedPrice": zod.number().nullish(),
+  "evidence": zod.string().nullish(),
+  "updatedAt": zod.string()
+})),
+  "jobs": zod.array(zod.object({
+  "id": zod.string(),
+  "kind": zod.enum(['MATCH_BUYERS', 'REVIEW_DEADLINES']),
+  "state": zod.enum(['QUEUED', 'RUNNING', 'SUCCEEDED', 'FAILED']),
+  "leadId": zod.string().nullable(),
+  "requestedBy": zod.string(),
+  "message": zod.string(),
+  "attempts": zod.number().int(),
+  "createdAt": zod.string(),
+  "updatedAt": zod.string()
+})),
+  "nextAction": zod.string()
+})
+
+
+export const ListWorkerJobsResponseItem = zod.object({
+  "id": zod.string(),
+  "kind": zod.enum(['MATCH_BUYERS', 'REVIEW_DEADLINES']),
+  "state": zod.enum(['QUEUED', 'RUNNING', 'SUCCEEDED', 'FAILED']),
+  "leadId": zod.string().nullable(),
+  "requestedBy": zod.string(),
+  "message": zod.string(),
+  "attempts": zod.number().int(),
+  "createdAt": zod.string(),
+  "updatedAt": zod.string()
+})
+export const ListWorkerJobsResponse = zod.array(ListWorkerJobsResponseItem)
+
+
+export const submitWorkerJobBodyIdempotencyKeyMin = 8;
+export const submitWorkerJobBodyIdempotencyKeyMax = 200;
+
+
+
+export const SubmitWorkerJobBody = zod.object({
+  "kind": zod.enum(['MATCH_BUYERS', 'REVIEW_DEADLINES']),
+  "leadId": zod.string().optional(),
+  "idempotencyKey": zod.string().min(submitWorkerJobBodyIdempotencyKeyMin).max(submitWorkerJobBodyIdempotencyKeyMax)
+})
+
+export const SubmitWorkerJobResponse = zod.object({
+  "id": zod.string(),
+  "kind": zod.enum(['MATCH_BUYERS', 'REVIEW_DEADLINES']),
+  "state": zod.enum(['QUEUED', 'RUNNING', 'SUCCEEDED', 'FAILED']),
+  "leadId": zod.string().nullable(),
+  "requestedBy": zod.string(),
+  "message": zod.string(),
+  "attempts": zod.number().int(),
+  "createdAt": zod.string(),
+  "updatedAt": zod.string()
+})
+
+

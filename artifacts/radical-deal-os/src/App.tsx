@@ -17,6 +17,9 @@ import LeadDetailPage from '@/pages/lead-detail';
 import Calls from '@/pages/calls';
 import Settings from '@/pages/settings';
 import Audit from '@/pages/audit';
+import Buyers from '@/pages/buyers';
+import BuyerDetail from '@/pages/buyer-detail';
+import Workers from '@/pages/workers';
 
 const clerkPubKey = publishableKeyFromHost(window.location.hostname, import.meta.env.VITE_CLERK_PUBLISHABLE_KEY);
 const clerkProxyUrl = import.meta.env.VITE_CLERK_PROXY_URL;
@@ -142,6 +145,9 @@ const LeadRoute = page(LeadDetailPage);
 const CallsRoute = page(Calls);
 const SettingsRoute = page(Settings);
 const AuditRoute = page(Audit);
+const BuyersRoute = page(Buyers);
+const BuyerDetailRoute = page(BuyerDetail);
+const WorkersRoute = page(Workers);
 
 function ClerkProviderWithRoutes() {
   const [, setLocation] = useLocation();
@@ -172,6 +178,10 @@ function ClerkProviderWithRoutes() {
               <Route path="/dashboard" component={DashboardRoute} />
               <Route path="/leads" component={LeadsRoute} />
               <Route path="/leads/:id" component={LeadRoute} />
+              <Route path="/deals/:id" component={LeadRoute} />
+              <Route path="/buyers" component={BuyersRoute} />
+              <Route path="/buyers/:id" component={BuyerDetailRoute} />
+              <Route path="/workers" component={WorkersRoute} />
               <Route path="/calls" component={CallsRoute} />
               <Route path="/settings" component={SettingsRoute} />
               <Route path="/audit" component={AuditRoute} />

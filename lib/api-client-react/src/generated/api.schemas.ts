@@ -5,72 +5,451 @@
  * Radical Deal OS seller intake, underwriting, conversations and approved offers
  * OpenAPI spec version: 1.0.0
  */
-export interface HealthStatus {
-  status: string;
-}
-
-export type Role = typeof Role[keyof typeof Role];
+export type BuyerCriteriaPropertyTypesItem = typeof BuyerCriteriaPropertyTypesItem[keyof typeof BuyerCriteriaPropertyTypesItem];
 
 
-export const Role = {
-  OWNER: 'OWNER',
-  OPERATOR: 'OPERATOR',
-  ANALYST: 'ANALYST',
-  VIEWER: 'VIEWER',
-  PENDING: 'PENDING',
+export const BuyerCriteriaPropertyTypesItem = {
+  SINGLE_FAMILY: 'SINGLE_FAMILY',
+  MULTIFAMILY: 'MULTIFAMILY',
+  CONDO: 'CONDO',
+  TOWNHOUSE: 'TOWNHOUSE',
+  LAND: 'LAND',
+  OTHER: 'OTHER',
 } as const;
 
-export interface Access {
-  userId: string;
-  role: Role;
-  unclaimed: boolean;
+export interface BuyerCriteria {
+  /**
+     * @minItems 1
+     * @items.minLength 2
+     * @items.maxLength 2
+     */
+  states: string[];
+  /** @items.minLength 1 */
+  cities: string[];
+  /** @items.pattern ^\d{5}$ */
+  zipCodes: string[];
+  /** @minItems 1 */
+  propertyTypes: BuyerCriteriaPropertyTypesItem[];
+  /**
+     * @maximum 1000000000
+     * @exclusiveMinimum 0
+     */
+  maxPurchasePrice: number;
+  /**
+     * @minimum 0
+     * @maximum 1000000000
+     */
+  maxRepairs: number;
+  /**
+     * @minimum 0
+     * @maximum 100
+     */
+  minBeds: number;
+  /**
+     * @minimum 0
+     * @maximum 1000000
+     */
+  minSqft: number;
+  /**
+     * @maximum 1000000
+     * @exclusiveMinimum 0
+     */
+  maxSqft: number;
+  /**
+     * @minimum 1
+     * @maximum 365
+     */
+  closingDays: number;
 }
 
-export interface Member {
+export type BuyerInputStatus = typeof BuyerInputStatus[keyof typeof BuyerInputStatus];
+
+
+export const BuyerInputStatus = {
+  ACTIVE: 'ACTIVE',
+  PAUSED: 'PAUSED',
+} as const;
+
+export interface BuyerInput {
+  /**
+     * @minLength 1
+     * @maxLength 200
+     */
+  name: string;
+  /** @maxLength 200 */
+  email: string;
+  /** @maxLength 50 */
+  phone: string;
+  /**
+     * @minLength 1
+     * @maxLength 2000
+     */
+  source: string;
+  criteria: BuyerCriteria;
+  status: BuyerInputStatus;
+}
+
+export type BuyerUpdate = BuyerInput & {
+  /** @minimum 1 */
+  version: number;
+};
+
+export interface BuyerVerificationInput {
+  /** @minimum 1 */
+  version: number;
+  /**
+     * @minLength 8
+     * @maxLength 2000
+     */
+  identityEvidenceUrl: string;
+  /**
+     * @minLength 8
+     * @maxLength 2000
+     */
+  fundingEvidenceUrl: string;
+  /**
+     * @minLength 10
+     * @maxLength 3000
+     */
+  verificationNote: string;
+  /**
+     * @maximum 1000000000
+     * @exclusiveMinimum 0
+     */
+  availableFunds: number;
+  evidenceAt: string;
+  validUntil: string;
+}
+
+export type BuyerVerificationStatus = typeof BuyerVerificationStatus[keyof typeof BuyerVerificationStatus];
+
+
+export const BuyerVerificationStatus = {
+  UNVERIFIED: 'UNVERIFIED',
+  VERIFIED: 'VERIFIED',
+  STALE: 'STALE',
+} as const;
+
+export type Buyer = BuyerInput & ({
   id: string;
-  role: Role;
+  version: number;
+  verificationStatus: BuyerVerificationStatus;
+  /** @nullable */
+  identityEvidenceUrl?: string | null;
+  /** @nullable */
+  fundingEvidenceUrl?: string | null;
+  /** @nullable */
+  verificationNote?: string | null;
+  /** @nullable */
+  availableFunds?: number | null;
+  /** @nullable */
+  evidenceAt?: string | null;
+  /** @nullable */
+  validUntil?: string | null;
+  /** @nullable */
+  verifiedBy?: string | null;
+  /** @nullable */
+  verifiedAt?: string | null;
+  createdAt: string;
+  updatedAt: string;
+});
+
+export type BuyerMatchStatus = typeof BuyerMatchStatus[keyof typeof BuyerMatchStatus];
+
+
+export const BuyerMatchStatus = {
+  MATCHED: 'MATCHED',
+  INTERESTED: 'INTERESTED',
+  COMMITTED: 'COMMITTED',
+  DECLINED: 'DECLINED',
+} as const;
+
+export interface BuyerMatch {
+  buyerId: string;
+  leadId: string;
+  buyerName: string;
+  eligible: boolean;
+  score: number;
+  reasons: string[];
+  mismatches: string[];
+  status: BuyerMatchStatus;
+  buyerVersion: number;
+  /** @nullable */
+  agreedPrice?: number | null;
+  /** @nullable */
+  evidence?: string | null;
+  updatedAt: string;
+}
+
+export type BuyerResponseInputStatus = typeof BuyerResponseInputStatus[keyof typeof BuyerResponseInputStatus];
+
+
+export const BuyerResponseInputStatus = {
+  INTERESTED: 'INTERESTED',
+  COMMITTED: 'COMMITTED',
+  DECLINED: 'DECLINED',
+} as const;
+
+export interface BuyerResponseInput {
+  /** @minimum 1 */
+  version: number;
+  /** @minimum 1 */
+  buyerVersion: number;
+  status: BuyerResponseInputStatus;
+  /**
+     * @minLength 10
+     * @maxLength 3000
+     */
+  evidence: string;
+  /** @maxLength 2000 */
+  commitmentEvidenceUrl?: string;
+  /**
+     * @maximum 1000000000
+     * @exclusiveMinimum 0
+     */
+  agreedPrice?: number;
+}
+
+export interface ContractInput {
+  /** @minimum 1 */
+  version: number;
+  offerId: string;
+  closingAt: string;
+}
+
+export interface ContractExecutionInput {
+  /** @minimum 1 */
+  version: number;
+  /**
+     * @minLength 8
+     * @maxLength 2000
+     */
+  executedDocumentUrl: string;
+  sellerSignedAt: string;
+  acquisitionSignedAt: string;
+  /**
+     * @minLength 10
+     * @maxLength 3000
+     */
+  reviewNote: string;
+}
+
+export type ClosingMilestoneKind = typeof ClosingMilestoneKind[keyof typeof ClosingMilestoneKind];
+
+
+export const ClosingMilestoneKind = {
+  TITLE_CLEARED: 'TITLE_CLEARED',
+  EARNEST_MONEY_CONFIRMED: 'EARNEST_MONEY_CONFIRMED',
+  ASSIGNMENT_SIGNED: 'ASSIGNMENT_SIGNED',
+  FUNDS_CONFIRMED: 'FUNDS_CONFIRMED',
+} as const;
+
+export interface ClosingMilestone {
+  kind: ClosingMilestoneKind;
+  evidenceUrl: string;
+  note: string;
+  recordedBy: string;
+  recordedAt: string;
+}
+
+export type ClosingMilestoneInputKind = typeof ClosingMilestoneInputKind[keyof typeof ClosingMilestoneInputKind];
+
+
+export const ClosingMilestoneInputKind = {
+  TITLE_CLEARED: 'TITLE_CLEARED',
+  EARNEST_MONEY_CONFIRMED: 'EARNEST_MONEY_CONFIRMED',
+  ASSIGNMENT_SIGNED: 'ASSIGNMENT_SIGNED',
+  FUNDS_CONFIRMED: 'FUNDS_CONFIRMED',
+} as const;
+
+export interface ClosingMilestoneInput {
+  /** @minimum 1 */
+  version: number;
+  kind: ClosingMilestoneInputKind;
+  /**
+     * @minLength 8
+     * @maxLength 2000
+     */
+  evidenceUrl: string;
+  /**
+     * @minLength 10
+     * @maxLength 3000
+     */
+  note: string;
+}
+
+export type DealOutcomeInputOutcome = typeof DealOutcomeInputOutcome[keyof typeof DealOutcomeInputOutcome];
+
+
+export const DealOutcomeInputOutcome = {
+  CLOSED: 'CLOSED',
+  CANCELLED: 'CANCELLED',
+} as const;
+
+export interface DealOutcomeInput {
+  /** @minimum 1 */
+  version: number;
+  outcome: DealOutcomeInputOutcome;
+  /**
+     * @minLength 8
+     * @maxLength 2000
+     */
+  evidenceUrl: string;
+  /**
+     * @minLength 10
+     * @maxLength 3000
+     */
+  note: string;
+  /**
+     * @minimum 0
+     * @maximum 1000000000
+     */
+  assignmentFeeReceived?: number;
+  /**
+     * @minimum 0
+     * @maximum 1000000000
+     */
+  closingCosts?: number;
+}
+
+export type DealContractStatus = typeof DealContractStatus[keyof typeof DealContractStatus];
+
+
+export const DealContractStatus = {
+  DRAFT: 'DRAFT',
+  UNDER_CONTRACT: 'UNDER_CONTRACT',
+  CLOSING: 'CLOSING',
+  CLOSED: 'CLOSED',
+  CANCELLED: 'CANCELLED',
+} as const;
+
+export interface DealContract {
+  id: string;
+  leadId: string;
+  offerId: string;
+  version: number;
+  status: DealContractStatus;
+  purchasePrice: number;
+  assignmentTarget: number;
+  earnestMoney: number;
+  assignmentAllowed: boolean;
+  closingAt: string;
+  contingencies: string;
+  /** @nullable */
+  executedDocumentUrl?: string | null;
+  /** @nullable */
+  sellerSignedAt?: string | null;
+  /** @nullable */
+  acquisitionSignedAt?: string | null;
+  /** @nullable */
+  reviewNote?: string | null;
+  /** @nullable */
+  committedBuyerId?: string | null;
+  /** @nullable */
+  agreedBuyerPrice?: number | null;
+  milestones: ClosingMilestone[];
+  /** @nullable */
+  outcomeNote?: string | null;
+  /** @nullable */
+  outcomeEvidenceUrl?: string | null;
+  /** @nullable */
+  assignmentFeeReceived?: number | null;
+  /** @nullable */
+  closingCosts?: number | null;
+  /** @nullable */
+  netProceeds?: number | null;
+  /** @nullable */
+  closedAt?: string | null;
   createdAt: string;
 }
 
-export type MemberUpdateRole = typeof MemberUpdateRole[keyof typeof MemberUpdateRole];
+export type WorkerJobInputKind = typeof WorkerJobInputKind[keyof typeof WorkerJobInputKind];
 
 
-export const MemberUpdateRole = {
-  OPERATOR: 'OPERATOR',
-  ANALYST: 'ANALYST',
-  VIEWER: 'VIEWER',
-  PENDING: 'PENDING',
+export const WorkerJobInputKind = {
+  MATCH_BUYERS: 'MATCH_BUYERS',
+  REVIEW_DEADLINES: 'REVIEW_DEADLINES',
 } as const;
 
-export interface MemberUpdate {
-  role: MemberUpdateRole;
+export interface WorkerJobInput {
+  kind: WorkerJobInputKind;
+  leadId?: string;
+  /**
+     * @minLength 8
+     * @maxLength 200
+     */
+  idempotencyKey: string;
 }
 
-export type DealStage = typeof DealStage[keyof typeof DealStage];
+export type WorkerJobKind = typeof WorkerJobKind[keyof typeof WorkerJobKind];
 
 
-export const DealStage = {
-  DISCOVERED: 'DISCOVERED',
-  ENRICHING: 'ENRICHING',
-  ANALYZED: 'ANALYZED',
-  STRONG: 'STRONG',
-  NEGOTIABLE: 'NEGOTIABLE',
-  PASS: 'PASS',
-  CALL_READY: 'CALL_READY',
-  CONTACTED: 'CONTACTED',
-  CONVERSATION: 'CONVERSATION',
-  OFFER_READY: 'OFFER_READY',
-  OFFER_SENT: 'OFFER_SENT',
-  NEGOTIATING: 'NEGOTIATING',
-  CONTRACT_PENDING: 'CONTRACT_PENDING',
-  UNDER_CONTRACT: 'UNDER_CONTRACT',
-  BUYER_MATCHED: 'BUYER_MATCHED',
-  BUYER_INTERESTED: 'BUYER_INTERESTED',
-  BUYER_COMMITTED: 'BUYER_COMMITTED',
-  CLOSING: 'CLOSING',
-  CLOSED: 'CLOSED',
-  DEAD_DEAL: 'DEAD_DEAL',
+export const WorkerJobKind = {
+  MATCH_BUYERS: 'MATCH_BUYERS',
+  REVIEW_DEADLINES: 'REVIEW_DEADLINES',
 } as const;
+
+export type WorkerJobState = typeof WorkerJobState[keyof typeof WorkerJobState];
+
+
+export const WorkerJobState = {
+  QUEUED: 'QUEUED',
+  RUNNING: 'RUNNING',
+  SUCCEEDED: 'SUCCEEDED',
+  FAILED: 'FAILED',
+} as const;
+
+export interface WorkerJob {
+  id: string;
+  kind: WorkerJobKind;
+  state: WorkerJobState;
+  /** @nullable */
+  leadId: string | null;
+  requestedBy: string;
+  message: string;
+  attempts: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface DealOperations {
+  leadId: string;
+  contract: DealContract | null;
+  matches: BuyerMatch[];
+  jobs: WorkerJob[];
+  nextAction: string;
+}
+
+export type CommandActionCategory = typeof CommandActionCategory[keyof typeof CommandActionCategory];
+
+
+export const CommandActionCategory = {
+  RESEARCH: 'RESEARCH',
+  CALL: 'CALL',
+  FOLLOW_UP: 'FOLLOW_UP',
+  OFFER_APPROVAL: 'OFFER_APPROVAL',
+  NEGOTIATION: 'NEGOTIATION',
+  CONTRACT: 'CONTRACT',
+  BUYER_MATCH: 'BUYER_MATCH',
+  BUYER_VERIFICATION: 'BUYER_VERIFICATION',
+  DEADLINE: 'DEADLINE',
+  CLOSING: 'CLOSING',
+  WORKER: 'WORKER',
+} as const;
+
+export interface CommandAction {
+  id: string;
+  category: CommandActionCategory;
+  priority: number;
+  title: string;
+  reason: string;
+  /** @nullable */
+  leadId: string | null;
+  href: string;
+  cta: string;
+  /** @nullable */
+  dueAt?: string | null;
+}
 
 export type LeadInputPropertyType = typeof LeadInputPropertyType[keyof typeof LeadInputPropertyType];
 
@@ -167,6 +546,32 @@ export interface LeadInput {
   nextAction?: string;
 }
 
+export type DealStage = typeof DealStage[keyof typeof DealStage];
+
+
+export const DealStage = {
+  DISCOVERED: 'DISCOVERED',
+  ENRICHING: 'ENRICHING',
+  ANALYZED: 'ANALYZED',
+  STRONG: 'STRONG',
+  NEGOTIABLE: 'NEGOTIABLE',
+  PASS: 'PASS',
+  CALL_READY: 'CALL_READY',
+  CONTACTED: 'CONTACTED',
+  CONVERSATION: 'CONVERSATION',
+  OFFER_READY: 'OFFER_READY',
+  OFFER_SENT: 'OFFER_SENT',
+  NEGOTIATING: 'NEGOTIATING',
+  CONTRACT_PENDING: 'CONTRACT_PENDING',
+  UNDER_CONTRACT: 'UNDER_CONTRACT',
+  BUYER_MATCHED: 'BUYER_MATCHED',
+  BUYER_INTERESTED: 'BUYER_INTERESTED',
+  BUYER_COMMITTED: 'BUYER_COMMITTED',
+  CLOSING: 'CLOSING',
+  CLOSED: 'CLOSED',
+  DEAD_DEAL: 'DEAD_DEAL',
+} as const;
+
 export type Lead = LeadInput & ({
   id: string;
   stage: DealStage;
@@ -177,11 +582,6 @@ export type Lead = LeadInput & ({
   createdAt: string;
   updatedAt: string;
 });
-
-export type LeadUpdate = LeadInput & {
-  /** @minimum 1 */
-  version: number;
-};
 
 export type ProvenanceClass = typeof ProvenanceClass[keyof typeof ProvenanceClass];
 
@@ -247,68 +647,21 @@ export type Intelligence = IntelligenceInput & {
   createdBy: string;
 };
 
-export type CompCondition = typeof CompCondition[keyof typeof CompCondition];
+export type AnalysisClassification = typeof AnalysisClassification[keyof typeof AnalysisClassification];
 
 
-export const CompCondition = {
-  RENOVATED: 'RENOVATED',
-  SIMILAR: 'SIMILAR',
-  UNKNOWN: 'UNKNOWN',
+export const AnalysisClassification = {
+  STRONG: 'STRONG',
+  NEGOTIABLE: 'NEGOTIABLE',
+  PASS: 'PASS',
+  INCOMPLETE: 'INCOMPLETE',
 } as const;
 
-export interface Comp {
-  /** @minLength 1 */
-  id: string;
-  /** @minLength 3 */
-  address: string;
-  /**
-     * @maximum 1000000000
-     * @exclusiveMinimum 0
-     */
-  salePrice: number;
-  /**
-     * @maximum 1000000
-     * @exclusiveMinimum 0
-     */
-  sqft: number;
-  soldAt: string;
-  /**
-     * @minimum 0
-     * @maximum 10000
-     */
-  distanceMiles: number;
-  propertyType: string;
-  condition: CompCondition;
-  /** @minLength 1 */
-  source: string;
-  verified: boolean;
-}
-
-export interface Repair {
-  /** @minLength 1 */
-  category: string;
-  /**
-     * @minimum 0
-     * @maximum 1000000000
-     */
+export interface Range {
   low: number;
-  /**
-     * @minimum 0
-     * @maximum 1000000000
-     */
   expected: number;
-  /**
-     * @minimum 0
-     * @maximum 1000000000
-     */
   high: number;
-  /**
-     * @minimum 0
-     * @maximum 1
-     */
   confidence: number;
-  /** @minLength 1 */
-  source: string;
 }
 
 export interface Assumptions {
@@ -390,39 +743,11 @@ export interface Assumptions {
   approvalRequired: boolean;
 }
 
-export interface UnderwritingInput {
-  /** @minimum 1 */
-  version: number;
-  /** @maxItems 100 */
-  comps: Comp[];
-  /** @maxItems 50 */
-  repairs: Repair[];
-  repairsComplete: boolean;
-  conditionConfirmed: boolean;
-}
-
-export interface Range {
-  low: number;
-  expected: number;
-  high: number;
-  confidence: number;
-}
-
 export interface CompDecision {
   id: string;
   included: boolean;
   reasons: string[];
 }
-
-export type AnalysisClassification = typeof AnalysisClassification[keyof typeof AnalysisClassification];
-
-
-export const AnalysisClassification = {
-  STRONG: 'STRONG',
-  NEGOTIABLE: 'NEGOTIABLE',
-  PASS: 'PASS',
-  INCOMPLETE: 'INCOMPLETE',
-} as const;
 
 export interface Analysis {
   engineVersion: string;
@@ -443,68 +768,6 @@ export interface Analysis {
   compDecisions: CompDecision[];
   formula: string;
 }
-
-export interface TransitionInput {
-  /** @minimum 1 */
-  version: number;
-  to: DealStage;
-  /**
-     * @minLength 3
-     * @maxLength 2000
-     */
-  reason: string;
-  /**
-     * @minLength 3
-     * @maxLength 1000
-     */
-  nextAction: string;
-  /** @nullable */
-  followUpAt?: string | null;
-}
-
-export interface Transition {
-  id: string;
-  from: string;
-  to: string;
-  reason: string;
-  nextAction: string;
-  actor: string;
-  createdAt: string;
-}
-
-export type CallInputOutcome = typeof CallInputOutcome[keyof typeof CallInputOutcome];
-
-
-export const CallInputOutcome = {
-  NO_ANSWER: 'NO_ANSWER',
-  VOICEMAIL: 'VOICEMAIL',
-  CONNECTED: 'CONNECTED',
-  NOT_INTERESTED: 'NOT_INTERESTED',
-} as const;
-
-export interface CallInput {
-  /** @minimum 1 */
-  version: number;
-  outcome: CallInputOutcome;
-  /**
-     * @minLength 1
-     * @maxLength 10000
-     */
-  notes: string;
-  /**
-     * @minLength 3
-     * @maxLength 1000
-     */
-  nextAction: string;
-  /** @nullable */
-  followUpAt: string | null;
-}
-
-export type Call = CallInput & {
-  id: string;
-  createdAt: string;
-  actor: string;
-};
 
 export interface OfferTerms {
   /**
@@ -579,6 +842,125 @@ export type Offer = OfferTerms & ({
   withdrawalReason: string | null;
 });
 
+export type CompCondition = typeof CompCondition[keyof typeof CompCondition];
+
+
+export const CompCondition = {
+  RENOVATED: 'RENOVATED',
+  SIMILAR: 'SIMILAR',
+  UNKNOWN: 'UNKNOWN',
+} as const;
+
+export interface Comp {
+  /** @minLength 1 */
+  id: string;
+  /** @minLength 3 */
+  address: string;
+  /**
+     * @maximum 1000000000
+     * @exclusiveMinimum 0
+     */
+  salePrice: number;
+  /**
+     * @maximum 1000000
+     * @exclusiveMinimum 0
+     */
+  sqft: number;
+  soldAt: string;
+  /**
+     * @minimum 0
+     * @maximum 10000
+     */
+  distanceMiles: number;
+  propertyType: string;
+  condition: CompCondition;
+  /** @minLength 1 */
+  source: string;
+  verified: boolean;
+}
+
+export interface Repair {
+  /** @minLength 1 */
+  category: string;
+  /**
+     * @minimum 0
+     * @maximum 1000000000
+     */
+  low: number;
+  /**
+     * @minimum 0
+     * @maximum 1000000000
+     */
+  expected: number;
+  /**
+     * @minimum 0
+     * @maximum 1000000000
+     */
+  high: number;
+  /**
+     * @minimum 0
+     * @maximum 1
+     */
+  confidence: number;
+  /** @minLength 1 */
+  source: string;
+}
+
+export interface UnderwritingInput {
+  /** @minimum 1 */
+  version: number;
+  /** @maxItems 100 */
+  comps: Comp[];
+  /** @maxItems 50 */
+  repairs: Repair[];
+  repairsComplete: boolean;
+  conditionConfirmed: boolean;
+}
+
+export interface Transition {
+  id: string;
+  from: string;
+  to: string;
+  reason: string;
+  nextAction: string;
+  actor: string;
+  createdAt: string;
+}
+
+export type CallInputOutcome = typeof CallInputOutcome[keyof typeof CallInputOutcome];
+
+
+export const CallInputOutcome = {
+  NO_ANSWER: 'NO_ANSWER',
+  VOICEMAIL: 'VOICEMAIL',
+  CONNECTED: 'CONNECTED',
+  NOT_INTERESTED: 'NOT_INTERESTED',
+} as const;
+
+export interface CallInput {
+  /** @minimum 1 */
+  version: number;
+  outcome: CallInputOutcome;
+  /**
+     * @minLength 1
+     * @maxLength 10000
+     */
+  notes: string;
+  /**
+     * @minLength 3
+     * @maxLength 1000
+     */
+  nextAction: string;
+  /** @nullable */
+  followUpAt: string | null;
+}
+
+export type Call = CallInput & {
+  id: string;
+  createdAt: string;
+  actor: string;
+};
+
 export interface LeadDetail {
   lead: Lead;
   intelligence: Intelligence[];
@@ -601,6 +983,81 @@ export interface CallBrief {
   boundaries: string;
   analysis: Analysis;
   authorizedOffer: Offer | null;
+}
+
+export interface CommandCenter {
+  generatedAt: string;
+  actions: CommandAction[];
+  opportunities: LeadDetail[];
+  calls: CallBrief[];
+  deals: LeadDetail[];
+  operations: DealOperations[];
+  buyers: Buyer[];
+  jobs: WorkerJob[];
+}
+
+export interface HealthStatus {
+  status: string;
+}
+
+export type Role = typeof Role[keyof typeof Role];
+
+
+export const Role = {
+  OWNER: 'OWNER',
+  OPERATOR: 'OPERATOR',
+  ANALYST: 'ANALYST',
+  VIEWER: 'VIEWER',
+  PENDING: 'PENDING',
+} as const;
+
+export interface Access {
+  userId: string;
+  role: Role;
+  unclaimed: boolean;
+}
+
+export interface Member {
+  id: string;
+  role: Role;
+  createdAt: string;
+}
+
+export type MemberUpdateRole = typeof MemberUpdateRole[keyof typeof MemberUpdateRole];
+
+
+export const MemberUpdateRole = {
+  OPERATOR: 'OPERATOR',
+  ANALYST: 'ANALYST',
+  VIEWER: 'VIEWER',
+  PENDING: 'PENDING',
+} as const;
+
+export interface MemberUpdate {
+  role: MemberUpdateRole;
+}
+
+export type LeadUpdate = LeadInput & {
+  /** @minimum 1 */
+  version: number;
+};
+
+export interface TransitionInput {
+  /** @minimum 1 */
+  version: number;
+  to: DealStage;
+  /**
+     * @minLength 3
+     * @maxLength 2000
+     */
+  reason: string;
+  /**
+     * @minLength 3
+     * @maxLength 1000
+     */
+  nextAction: string;
+  /** @nullable */
+  followUpAt?: string | null;
 }
 
 export type OfferDraftInput = OfferTerms & {

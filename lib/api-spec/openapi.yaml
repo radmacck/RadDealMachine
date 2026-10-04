@@ -283,8 +283,419 @@ paths:
           content:
             application/json:
               schema: { type: array, items: { $ref: "#/components/schemas/AuditEvent" } }
+  /command-center:
+    get:
+      operationId: getCommandCenter
+      responses:
+        "200":
+          description: Action-oriented workspace derived from real deals and current permissions
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/CommandCenter" }
+  /buyers:
+    get:
+      operationId: listBuyers
+      responses:
+        "200":
+          description: Buyer criteria and current verification
+          content:
+            application/json:
+              schema: { type: array, items: { $ref: "#/components/schemas/Buyer" } }
+    post:
+      operationId: createBuyer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/BuyerInput" }
+      responses:
+        "201":
+          description: Buyer recorded without automatic verification
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Buyer" }
+  /buyers/{id}:
+    parameters:
+      - { name: id, in: path, required: true, schema: { type: string } }
+    get:
+      operationId: getBuyer
+      responses:
+        "200":
+          description: Buyer profile
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Buyer" }
+    patch:
+      operationId: updateBuyer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/BuyerUpdate" }
+      responses:
+        "200":
+          description: Updated buyer; revised identity invalidates verification
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Buyer" }
+  /buyers/{id}/verification:
+    parameters:
+      - { name: id, in: path, required: true, schema: { type: string } }
+    post:
+      operationId: verifyBuyer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/BuyerVerificationInput" }
+      responses:
+        "200":
+          description: Owner-reviewed dated identity and funding evidence
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Buyer" }
+  /deals/{id}/operations:
+    parameters:
+      - { name: id, in: path, required: true, schema: { type: string } }
+    get:
+      operationId: getDealOperations
+      responses:
+        "200":
+          description: Contract, current matching explanations and operational jobs
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/DealOperations" }
+  /deals/{id}/matches:
+    parameters:
+      - { name: id, in: path, required: true, schema: { type: string } }
+    post:
+      operationId: refreshMatches
+      responses:
+        "200":
+          description: Real buyer matching against persisted evidence and criteria
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/DealOperations" }
+  /deals/{id}/matches/{buyerId}:
+    parameters:
+      - { name: id, in: path, required: true, schema: { type: string } }
+      - { name: buyerId, in: path, required: true, schema: { type: string } }
+    patch:
+      operationId: recordBuyerResponse
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/BuyerResponseInput" }
+      responses:
+        "200":
+          description: Evidence-backed interest or owner-reviewed commitment
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/DealOperations" }
+  /deals/{id}/contract:
+    parameters:
+      - { name: id, in: path, required: true, schema: { type: string } }
+    post:
+      operationId: createContract
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/ContractInput" }
+      responses:
+        "201":
+          description: Contract terms copied from the exact approved communicated offer
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/DealOperations" }
+  /deals/{id}/contract/execution:
+    parameters:
+      - { name: id, in: path, required: true, schema: { type: string } }
+    post:
+      operationId: executeContract
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/ContractExecutionInput" }
+      responses:
+        "200":
+          description: Recorded external signatures; system does not sign documents
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/DealOperations" }
+  /deals/{id}/contract/milestones:
+    parameters:
+      - { name: id, in: path, required: true, schema: { type: string } }
+    post:
+      operationId: recordClosingMilestone
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/ClosingMilestoneInput" }
+      responses:
+        "200":
+          description: Recorded verified closing evidence
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/DealOperations" }
+  /deals/{id}/contract/outcome:
+    parameters:
+      - { name: id, in: path, required: true, schema: { type: string } }
+    post:
+      operationId: recordDealOutcome
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/DealOutcomeInput" }
+      responses:
+        "200":
+          description: Settlement or externally evidenced cancellation, preserving history
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/DealOperations" }
+  /workers:
+    get:
+      operationId: listWorkerJobs
+      responses:
+        "200":
+          description: Durable matching and deadline worker executions
+          content:
+            application/json:
+              schema: { type: array, items: { $ref: "#/components/schemas/WorkerJob" } }
+    post:
+      operationId: submitWorkerJob
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/WorkerJobInput" }
+      responses:
+        "201":
+          description: Queued work
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/WorkerJob" }
 components:
   schemas:
+    BuyerCriteria:
+      type: object
+      required: [states, cities, zipCodes, propertyTypes, maxPurchasePrice, maxRepairs, minBeds, minSqft, maxSqft, closingDays]
+      properties:
+        states: { type: array, minItems: 1, items: { type: string, minLength: 2, maxLength: 2 } }
+        cities: { type: array, items: { type: string, minLength: 1 } }
+        zipCodes: { type: array, items: { type: string, pattern: '^\d{5}$' } }
+        propertyTypes: { type: array, minItems: 1, items: { type: string, enum: [SINGLE_FAMILY, MULTIFAMILY, CONDO, TOWNHOUSE, LAND, OTHER] } }
+        maxPurchasePrice: { type: number, exclusiveMinimum: 0, maximum: 1000000000 }
+        maxRepairs: { type: number, minimum: 0, maximum: 1000000000 }
+        minBeds: { type: integer, minimum: 0, maximum: 100 }
+        minSqft: { type: number, minimum: 0, maximum: 1000000 }
+        maxSqft: { type: number, exclusiveMinimum: 0, maximum: 1000000 }
+        closingDays: { type: integer, minimum: 1, maximum: 365 }
+    BuyerInput:
+      type: object
+      required: [name, email, phone, source, criteria, status]
+      properties:
+        name: { type: string, minLength: 1, maxLength: 200 }
+        email: { type: string, maxLength: 200 }
+        phone: { type: string, maxLength: 50 }
+        source: { type: string, minLength: 1, maxLength: 2000 }
+        criteria: { $ref: "#/components/schemas/BuyerCriteria" }
+        status: { type: string, enum: [ACTIVE, PAUSED] }
+    BuyerUpdate:
+      allOf:
+        - { $ref: "#/components/schemas/BuyerInput" }
+        - type: object
+          required: [version]
+          properties: { version: { type: integer, minimum: 1 } }
+    BuyerVerificationInput:
+      type: object
+      required: [version, identityEvidenceUrl, fundingEvidenceUrl, verificationNote, availableFunds, evidenceAt, validUntil]
+      properties:
+        version: { type: integer, minimum: 1 }
+        identityEvidenceUrl: { type: string, minLength: 8, maxLength: 2000 }
+        fundingEvidenceUrl: { type: string, minLength: 8, maxLength: 2000 }
+        verificationNote: { type: string, minLength: 10, maxLength: 3000 }
+        availableFunds: { type: number, exclusiveMinimum: 0, maximum: 1000000000 }
+        evidenceAt: { type: string }
+        validUntil: { type: string }
+    Buyer:
+      allOf:
+        - { $ref: "#/components/schemas/BuyerInput" }
+        - type: object
+          required: [id, version, verificationStatus, createdAt, updatedAt]
+          properties:
+            id: { type: string }
+            version: { type: integer }
+            verificationStatus: { type: string, enum: [UNVERIFIED, VERIFIED, STALE] }
+            identityEvidenceUrl: { type: [string, "null"] }
+            fundingEvidenceUrl: { type: [string, "null"] }
+            verificationNote: { type: [string, "null"] }
+            availableFunds: { type: [number, "null"] }
+            evidenceAt: { type: [string, "null"] }
+            validUntil: { type: [string, "null"] }
+            verifiedBy: { type: [string, "null"] }
+            verifiedAt: { type: [string, "null"] }
+            createdAt: { type: string }
+            updatedAt: { type: string }
+    BuyerMatch:
+      type: object
+      required: [buyerId, leadId, buyerName, eligible, score, reasons, mismatches, status, buyerVersion, updatedAt]
+      properties:
+        buyerId: { type: string }
+        leadId: { type: string }
+        buyerName: { type: string }
+        eligible: { type: boolean }
+        score: { type: number }
+        reasons: { type: array, items: { type: string } }
+        mismatches: { type: array, items: { type: string } }
+        status: { type: string, enum: [MATCHED, INTERESTED, COMMITTED, DECLINED] }
+        buyerVersion: { type: integer }
+        agreedPrice: { type: [number, "null"] }
+        evidence: { type: [string, "null"] }
+        updatedAt: { type: string }
+    BuyerResponseInput:
+      type: object
+      required: [version, buyerVersion, status, evidence]
+      properties:
+        version: { type: integer, minimum: 1 }
+        buyerVersion: { type: integer, minimum: 1 }
+        status: { type: string, enum: [INTERESTED, COMMITTED, DECLINED] }
+        evidence: { type: string, minLength: 10, maxLength: 3000 }
+        commitmentEvidenceUrl: { type: string, maxLength: 2000 }
+        agreedPrice: { type: number, exclusiveMinimum: 0, maximum: 1000000000 }
+    ContractInput:
+      type: object
+      required: [version, offerId, closingAt]
+      properties:
+        version: { type: integer, minimum: 1 }
+        offerId: { type: string }
+        closingAt: { type: string }
+    ContractExecutionInput:
+      type: object
+      required: [version, executedDocumentUrl, sellerSignedAt, acquisitionSignedAt, reviewNote]
+      properties:
+        version: { type: integer, minimum: 1 }
+        executedDocumentUrl: { type: string, minLength: 8, maxLength: 2000 }
+        sellerSignedAt: { type: string }
+        acquisitionSignedAt: { type: string }
+        reviewNote: { type: string, minLength: 10, maxLength: 3000 }
+    ClosingMilestone:
+      type: object
+      required: [kind, evidenceUrl, note, recordedBy, recordedAt]
+      properties:
+        kind: { type: string, enum: [TITLE_CLEARED, EARNEST_MONEY_CONFIRMED, ASSIGNMENT_SIGNED, FUNDS_CONFIRMED] }
+        evidenceUrl: { type: string }
+        note: { type: string }
+        recordedBy: { type: string }
+        recordedAt: { type: string }
+    ClosingMilestoneInput:
+      type: object
+      required: [version, kind, evidenceUrl, note]
+      properties:
+        version: { type: integer, minimum: 1 }
+        kind: { type: string, enum: [TITLE_CLEARED, EARNEST_MONEY_CONFIRMED, ASSIGNMENT_SIGNED, FUNDS_CONFIRMED] }
+        evidenceUrl: { type: string, minLength: 8, maxLength: 2000 }
+        note: { type: string, minLength: 10, maxLength: 3000 }
+    DealOutcomeInput:
+      type: object
+      required: [version, outcome, evidenceUrl, note]
+      properties:
+        version: { type: integer, minimum: 1 }
+        outcome: { type: string, enum: [CLOSED, CANCELLED] }
+        evidenceUrl: { type: string, minLength: 8, maxLength: 2000 }
+        note: { type: string, minLength: 10, maxLength: 3000 }
+        assignmentFeeReceived: { type: number, minimum: 0, maximum: 1000000000 }
+        closingCosts: { type: number, minimum: 0, maximum: 1000000000 }
+    DealContract:
+      type: object
+      required: [id, leadId, offerId, version, status, purchasePrice, assignmentTarget, earnestMoney, assignmentAllowed, closingAt, contingencies, milestones, createdAt]
+      properties:
+        id: { type: string }
+        leadId: { type: string }
+        offerId: { type: string }
+        version: { type: integer }
+        status: { type: string, enum: [DRAFT, UNDER_CONTRACT, CLOSING, CLOSED, CANCELLED] }
+        purchasePrice: { type: number }
+        assignmentTarget: { type: number }
+        earnestMoney: { type: number }
+        assignmentAllowed: { type: boolean }
+        closingAt: { type: string }
+        contingencies: { type: string }
+        executedDocumentUrl: { type: [string, "null"] }
+        sellerSignedAt: { type: [string, "null"] }
+        acquisitionSignedAt: { type: [string, "null"] }
+        reviewNote: { type: [string, "null"] }
+        committedBuyerId: { type: [string, "null"] }
+        agreedBuyerPrice: { type: [number, "null"] }
+        milestones: { type: array, items: { $ref: "#/components/schemas/ClosingMilestone" } }
+        outcomeNote: { type: [string, "null"] }
+        outcomeEvidenceUrl: { type: [string, "null"] }
+        assignmentFeeReceived: { type: [number, "null"] }
+        closingCosts: { type: [number, "null"] }
+        netProceeds: { type: [number, "null"] }
+        closedAt: { type: [string, "null"] }
+        createdAt: { type: string }
+    WorkerJobInput:
+      type: object
+      required: [kind, idempotencyKey]
+      properties:
+        kind: { type: string, enum: [MATCH_BUYERS, REVIEW_DEADLINES] }
+        leadId: { type: string }
+        idempotencyKey: { type: string, minLength: 8, maxLength: 200 }
+    WorkerJob:
+      type: object
+      required: [id, kind, state, leadId, requestedBy, message, attempts, createdAt, updatedAt]
+      properties:
+        id: { type: string }
+        kind: { type: string, enum: [MATCH_BUYERS, REVIEW_DEADLINES] }
+        state: { type: string, enum: [QUEUED, RUNNING, SUCCEEDED, FAILED] }
+        leadId: { type: [string, "null"] }
+        requestedBy: { type: string }
+        message: { type: string }
+        attempts: { type: integer }
+        createdAt: { type: string }
+        updatedAt: { type: string }
+    DealOperations:
+      type: object
+      required: [leadId, contract, matches, jobs, nextAction]
+      properties:
+        leadId: { type: string }
+        contract:
+          anyOf:
+            - { $ref: "#/components/schemas/DealContract" }
+            - { type: "null" }
+        matches: { type: array, items: { $ref: "#/components/schemas/BuyerMatch" } }
+        jobs: { type: array, items: { $ref: "#/components/schemas/WorkerJob" } }
+        nextAction: { type: string }
+    CommandAction:
+      type: object
+      required: [id, category, priority, title, reason, leadId, href, cta]
+      properties:
+        id: { type: string }
+        category: { type: string, enum: [RESEARCH, CALL, FOLLOW_UP, OFFER_APPROVAL, NEGOTIATION, CONTRACT, BUYER_MATCH, BUYER_VERIFICATION, DEADLINE, CLOSING, WORKER] }
+        priority: { type: integer }
+        title: { type: string }
+        reason: { type: string }
+        leadId: { type: [string, "null"] }
+        href: { type: string }
+        cta: { type: string }
+        dueAt: { type: [string, "null"] }
+    CommandCenter:
+      type: object
+      required: [generatedAt, actions, opportunities, calls, deals, operations, buyers, jobs]
+      properties:
+        generatedAt: { type: string }
+        actions: { type: array, items: { $ref: "#/components/schemas/CommandAction" } }
+        opportunities: { type: array, items: { $ref: "#/components/schemas/LeadDetail" } }
+        calls: { type: array, items: { $ref: "#/components/schemas/CallBrief" } }
+        deals: { type: array, items: { $ref: "#/components/schemas/LeadDetail" } }
+        operations: { type: array, items: { $ref: "#/components/schemas/DealOperations" } }
+        buyers: { type: array, items: { $ref: "#/components/schemas/Buyer" } }
+        jobs: { type: array, items: { $ref: "#/components/schemas/WorkerJob" } }
     HealthStatus:
       type: object
       required: [status]
