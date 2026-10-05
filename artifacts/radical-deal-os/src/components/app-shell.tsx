@@ -1,11 +1,10 @@
 import type { ReactNode } from 'react';
 import { Link, useLocation } from 'wouter';
 import { useClerk, useUser } from '@clerk/react';
-import { ClipboardList, Cog, Gauge, History, LogOut, Radar, PhoneCall, Settings, Users } from 'lucide-react';
-import { getGetDashboardQueryKey, useGetDashboard } from '@workspace/api-client-react';
-import { Logo } from '@/components/logo';
-import { Button } from '@/components/ui/button';
+import { Bell, ClipboardList, Cog, Gauge, History, House, LogOut, PhoneCall, Radar, Search, Settings, Users } from 'lucide-react';
+import { getGetCommandCenterQueryKey, useGetCommandCenter } from '@workspace/api-client-react';
 import { useAccess } from '@/hooks/use-access';
+import '@/field-desk.css';
 
 const NAV = [
   { href: '/dashboard', label: 'Command center', icon: Gauge },
@@ -23,46 +22,79 @@ export function AppShell({ children }: { children: ReactNode }) {
   const { signOut } = useClerk();
   const { user } = useUser();
   const { access } = useAccess();
-  const dash = useGetDashboard({ query: { queryKey: getGetDashboardQueryKey(), staleTime: 20_000, refetchInterval: 30_000 } });
-  const ready = dash.data?.callReady ?? 0;
+  const dash = useGetCommandCenter({ query: { queryKey: getGetCommandCenterQueryKey(), staleTime: 20_000, refetchInterval: 30_000 } });
+  const ready = dash.data?.calls.length ?? 0;
+  const failedJobs = dash.data?.jobs.filter((job) => job.state === 'FAILED').length ?? 0;
   const base = import.meta.env.BASE_URL.replace(/\/$/, '');
+  const mainNav = NAV.filter((item) => item.href !== '/settings');
+  const settingsNav = NAV.find((item) => item.href === '/settings')!;
+  const currentPage = NAV.find((item) => loc === item.href || loc.startsWith(`${item.href}/`));
+  const pageLabel = loc.startsWith('/deals/') ? 'Deal detail' : currentPage?.label ?? 'Workspace';
+  const displayName = user?.fullName || user?.primaryEmailAddress?.emailAddress || 'Workspace account';
+  const initials = displayName.split(/[\s@._-]+/).filter(Boolean).slice(0, 2).map((part) => part[0]?.toUpperCase()).join('') || 'RD';
+  const role = access.role.replace(/_/g, ' ').toLowerCase();
+  const status = dash.isError ? 'Connection issue' : dash.isLoading ? 'Loading workspace' : 'Workspace live';
 
   return (
-    <div className="min-h-[100dvh] md:pl-60">
-      <aside className="fixed inset-y-0 left-0 z-30 hidden w-60 flex-col bg-sidebar p-4 text-sidebar-foreground md:flex">
-        <Link href="/dashboard" data-testid="link-home"><Logo light /></Link>
-        <nav className="mt-8 space-y-1">
-          {NAV.map((n) => {
-            const active = loc === n.href || loc.startsWith(`${n.href}/`) || (n.href === '/dashboard' && loc.startsWith('/deals/'));
-            return (
-              <Link key={n.href} href={n.href} data-testid={`nav-${n.label.toLowerCase().replace(/ /g, '-')}`}
-                className={`flex items-center gap-3 border-l-2 px-3 py-2 text-sm transition-colors ${active ? 'border-sidebar-primary bg-sidebar-accent text-sidebar-accent-foreground' : 'border-transparent hover:bg-sidebar-accent/60'}`}>
-                <n.icon className="h-4 w-4" />
-                <span className="flex-1">{n.label}</span>
-                {n.href === '/calls' && ready > 0 && <span className="bg-sidebar-primary px-1.5 font-mono text-xs font-semibold text-sidebar-primary-foreground" data-testid="badge-call-ready">{ready}</span>}
-              </Link>
-            );
-          })}
-        </nav>
-        <div className="mt-auto space-y-4">
-          <div className="border-t border-sidebar-border pt-3 text-xs">
-            <p className="truncate" data-testid="text-user-email">{user?.primaryEmailAddress?.emailAddress ?? access.userId}</p>
-            <p className="font-mono text-[10px] uppercase tracking-wider text-sidebar-primary" data-testid="text-user-role">{access.role}</p>
-            <Button variant="ghost" size="sm" className="-ml-2 mt-1 text-sidebar-foreground hover:text-sidebar-accent-foreground" onClick={() => signOut({ redirectUrl: base || '/' })} data-testid="button-sign-out"><LogOut className="mr-1.5 h-3.5 w-3.5" />Sign out</Button>
+    <div className="field-desk">
+      <div className="fd-shell">
+        <aside className="fd-sidebar">
+          <Link href="/dashboard" className="fd-brand" data-testid="link-home">
+            <span className="fd-mark"><House size={18} strokeWidth={2.5} /></span>
+            <span><div className="fd-brand-title">radical</div><div className="fd-brand-sub">deal operations</div></span>
+          </Link>
+          <div className="fd-workspace">
+            <span className="fd-workspace-mark">RD</span>
+            <span><div className="fd-workspace-name">Deal workspace</div><div className="fd-workspace-loc">Owner-controlled operations</div></span>
           </div>
+          <div className="fd-nav-label">Workspace</div>
+          <nav className="fd-nav" aria-label="Main navigation">
+            {mainNav.map((item) => {
+              const active = loc === item.href || loc.startsWith(`${item.href}/`) || (item.href === '/dashboard' && loc.startsWith('/deals/'));
+              return (
+                <Link key={item.href} href={item.href} data-testid={`nav-${item.label.toLowerCase().replace(/ /g, '-')}`}
+                  className={active ? 'active' : ''} aria-current={active ? 'page' : undefined}>
+                  <item.icon size={15} strokeWidth={1.9} />
+                  <span>{item.label}</span>
+                  {item.href === '/calls' && ready > 0 && <span className="fd-nav-count" data-testid="badge-call-ready">{ready}</span>}
+                </Link>
+              );
+            })}
+          </nav>
+          <div className="fd-sidebar-bottom">
+            <div className="fd-nav-label">Workspace</div>
+            <nav className="fd-nav" aria-label="Workspace settings">
+              <Link href={settingsNav.href} data-testid="nav-settings" className={loc === settingsNav.href ? 'active' : ''}>
+                <settingsNav.icon size={15} strokeWidth={1.9} /><span>{settingsNav.label}</span>
+              </Link>
+            </nav>
+            <div className="fd-sidebar-note">
+              <div className="fd-note-top"><House size={13} /> Owner-reviewed operations</div>
+              <div className="fd-note-copy">{ready > 0 ? `${ready} seller${ready === 1 ? '' : 's'} currently clear for outreach.` : 'Call permission and commercial approvals remain owner-reviewed.'} Your approvals stay yours.</div>
+            </div>
+            <button className="fd-profile fd-profile-button" type="button" onClick={() => signOut({ redirectUrl: base || '/' })} data-testid="button-sign-out" aria-label={`Sign out ${displayName}`}>
+              <span className="fd-avatar">{initials}</span>
+              <span className="min-w-0 flex-1"><div className="fd-profile-name truncate" data-testid="text-user-email">{displayName}</div><div className="fd-profile-role" data-testid="text-user-role">{role}</div></span>
+              <LogOut size={14} aria-hidden="true" />
+            </button>
+          </div>
+        </aside>
+        <div className="fd-main">
+          <header className="fd-topbar">
+            <div className="fd-breadcrumb">Radical Deal OS <span style={{ padding: '0 7px', color: '#bac8be' }}>/</span><strong>{pageLabel}</strong></div>
+            <div className="fd-top-actions">
+              <div className={`fd-status ${dash.isError ? 'fd-status-issue' : ''}`} role="status"><span className="fd-status-dot" />{status}</div>
+              <span className="fd-date">{new Date().toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' }).toUpperCase()}</span>
+              <Link className="fd-icon-button" href="/leads" aria-label="Open deal inventory" title="Open deal inventory"><Search size={15} /></Link>
+              <Link className="fd-icon-button" href="/audit" aria-label={failedJobs ? `Open audit trail, ${failedJobs} failed worker jobs` : 'Open audit trail'} title="Open audit trail">
+                <Bell size={15} />{failedJobs > 0 && <i className="fd-notice-dot" />}
+              </Link>
+              <button className="fd-icon-button fd-mobile-logout" type="button" onClick={() => signOut({ redirectUrl: base || '/' })} data-testid="button-sign-out-mobile" aria-label="Sign out"><LogOut size={15} /></button>
+            </div>
+          </header>
+          <main className="fd-content">{children}</main>
         </div>
-      </aside>
-      <div className="sticky top-0 z-30 bg-sidebar px-3 py-2 text-sidebar-foreground md:hidden">
-        <div className="flex items-center justify-between"><Logo light />
-          <Button variant="ghost" size="sm" className="text-sidebar-foreground" onClick={() => signOut({ redirectUrl: base || '/' })} data-testid="button-sign-out-mobile"><LogOut className="h-4 w-4" /></Button></div>
-        <nav className="mt-2 flex gap-1 overflow-x-auto">
-          {NAV.map((n) => {
-            const active = loc === n.href || loc.startsWith(`${n.href}/`) || (n.href === '/dashboard' && loc.startsWith('/deals/'));
-            return <Link key={n.href} href={n.href} data-testid={`nav-m-${n.label.toLowerCase().replace(/ /g, '-')}`} className={`whitespace-nowrap px-3 py-1.5 text-xs ${active ? 'bg-sidebar-primary text-sidebar-primary-foreground' : 'bg-sidebar-accent'}`}>{n.label}</Link>;
-          })}
-        </nav>
       </div>
-      <main className="mx-auto max-w-7xl px-4 py-6 md:px-8 md:py-8">{children}</main>
     </div>
   );
 }
