@@ -26,6 +26,7 @@ import type {
   Buyer,
   BuyerInput,
   BuyerProspectInput,
+  BuyerQualificationRequest,
   BuyerResponseInput,
   BuyerUpdate,
   BuyerVerificationInput,
@@ -40,7 +41,9 @@ import type {
   DealOutcomeInput,
   GetSourceResearch200,
   GetWorkerCapabilities200Item,
+  HandoffEventInput,
   HealthStatus,
+  HumanHandoff,
   Intelligence,
   IntelligenceInput,
   Lead,
@@ -2984,6 +2987,243 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
         TContext
       > => {
       return useMutation(getRecordDealOutcomeMutationOptions(options));
+    }
+
+export const getRequestBuyerQualificationUrl = (id: string,) => {
+
+
+
+
+  return `/api/buyers/${id}/qualification`
+}
+
+export const requestBuyerQualification = async (id: string,
+    buyerQualificationRequest: BuyerQualificationRequest, options?: Parameters<typeof customFetch>[1]): Promise<Buyer> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return customFetch<Buyer>(getRequestBuyerQualificationUrl(id),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(buyerQualificationRequest)
+  }
+);}
+
+
+
+
+
+export const getRequestBuyerQualificationMutationKey = () => ['requestBuyerQualification'] as const;
+
+export const getRequestBuyerQualificationMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof requestBuyerQualification>>, TError,RequestBuyerQualificationMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof requestBuyerQualification>>, TError,RequestBuyerQualificationMutationVariables, TContext> => {
+
+const mutationKey = getRequestBuyerQualificationMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof requestBuyerQualification>>, RequestBuyerQualificationMutationVariables> = (props) => {
+          const {id,data} = props ?? {};
+
+          return  requestBuyerQualification(id,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type RequestBuyerQualificationMutationResult = NonNullable<Awaited<ReturnType<typeof requestBuyerQualification>>>
+    export type RequestBuyerQualificationMutationBody = BodyType<BuyerQualificationRequest>
+    export type RequestBuyerQualificationMutationError = ErrorType<unknown>
+    export type RequestBuyerQualificationMutationVariables = {id: string;data: BodyType<BuyerQualificationRequest>}
+
+    export const useRequestBuyerQualification = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof requestBuyerQualification>>, TError,RequestBuyerQualificationMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof requestBuyerQualification>>,
+        TError,
+        RequestBuyerQualificationMutationVariables,
+        TContext
+      > => {
+      return useMutation(getRequestBuyerQualificationMutationOptions(options));
+    }
+
+export const getListHandoffsUrl = () => {
+
+
+
+
+  return `/api/handoffs`
+}
+
+export const listHandoffs = async ( options?: Parameters<typeof customFetch>[1]): Promise<HumanHandoff[]> => {
+
+  return customFetch<HumanHandoff[]>(getListHandoffsUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getListHandoffsQueryKey = () => {
+    return [
+    `/api/handoffs`
+    ] as const;
+    }
+
+
+export const getListHandoffsQueryOptions = <TData = Awaited<ReturnType<typeof listHandoffs>>, TError = ErrorType<unknown>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listHandoffs>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getListHandoffsQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listHandoffs>>> = ({ signal }) => listHandoffs({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listHandoffs>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type ListHandoffsQueryResult = NonNullable<Awaited<ReturnType<typeof listHandoffs>>>
+export type ListHandoffsQueryError = ErrorType<unknown>
+
+
+
+export function useListHandoffs<TData = Awaited<ReturnType<typeof listHandoffs>>, TError = ErrorType<unknown>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listHandoffs>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getListHandoffsQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getRecordHandoffEventUrl = (id: string,) => {
+
+
+
+
+  return `/api/handoffs/${id}/events`
+}
+
+export const recordHandoffEvent = async (id: string,
+    handoffEventInput: HandoffEventInput, options?: Parameters<typeof customFetch>[1]): Promise<HumanHandoff> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return customFetch<HumanHandoff>(getRecordHandoffEventUrl(id),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(handoffEventInput)
+  }
+);}
+
+
+
+
+
+export const getRecordHandoffEventMutationKey = () => ['recordHandoffEvent'] as const;
+
+export const getRecordHandoffEventMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof recordHandoffEvent>>, TError,RecordHandoffEventMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof recordHandoffEvent>>, TError,RecordHandoffEventMutationVariables, TContext> => {
+
+const mutationKey = getRecordHandoffEventMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof recordHandoffEvent>>, RecordHandoffEventMutationVariables> = (props) => {
+          const {id,data} = props ?? {};
+
+          return  recordHandoffEvent(id,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type RecordHandoffEventMutationResult = NonNullable<Awaited<ReturnType<typeof recordHandoffEvent>>>
+    export type RecordHandoffEventMutationBody = BodyType<HandoffEventInput>
+    export type RecordHandoffEventMutationError = ErrorType<unknown>
+    export type RecordHandoffEventMutationVariables = {id: string;data: BodyType<HandoffEventInput>}
+
+    export const useRecordHandoffEvent = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof recordHandoffEvent>>, TError,RecordHandoffEventMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof recordHandoffEvent>>,
+        TError,
+        RecordHandoffEventMutationVariables,
+        TContext
+      > => {
+      return useMutation(getRecordHandoffEventMutationOptions(options));
     }
 
 export const getListWorkerJobsUrl = () => {

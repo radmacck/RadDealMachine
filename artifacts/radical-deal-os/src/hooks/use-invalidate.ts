@@ -14,7 +14,7 @@ export function useInvalidateWork() {
       qc.invalidateQueries({ queryKey: getGetCallQueueQueryKey() });
       qc.invalidateQueries({ queryKey: getGetCommandCenterQueryKey() });
       qc.invalidateQueries({ queryKey: getListAuditQueryKey() });
-      const prefixes = ['/api/buyers', '/api/deals', '/api/workers'];
+      const prefixes = ['/api/buyers', '/api/deals', '/api/workers', '/api/handoffs'];
       qc.invalidateQueries({ predicate: (q) => typeof q.queryKey[0] === 'string' && prefixes.some((p) => (q.queryKey[0] as string).startsWith(p)) });
       if (leadId) qc.invalidateQueries({ queryKey: getGetLeadQueryKey(leadId) });
     },

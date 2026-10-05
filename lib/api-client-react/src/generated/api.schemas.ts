@@ -203,6 +203,7 @@ export type BuyerQualificationTaskState = typeof BuyerQualificationTaskState[key
 export const BuyerQualificationTaskState = {
   PENDING_EXECUTION: 'PENDING_EXECUTION',
   WAITING_EXTERNAL: 'WAITING_EXTERNAL',
+  WAITING_REVIEW: 'WAITING_REVIEW',
   COMPLETED: 'COMPLETED',
 } as const;
 
@@ -214,6 +215,16 @@ export interface BuyerQualificationTask {
   preparedMessage: string;
   dueAt: string;
   updatedAt: string;
+}
+
+export interface BuyerQualificationRequest {
+  /** @minimum 1 */
+  version: number;
+  /**
+     * @minLength 3
+     * @maxLength 2000
+     */
+  note: string;
 }
 
 export type BuyerDiscoveryEvidenceClassification = typeof BuyerDiscoveryEvidenceClassification[keyof typeof BuyerDiscoveryEvidenceClassification];
@@ -658,6 +669,8 @@ export type Buyer = BuyerInput & ({
   discoveryEvidence?: BuyerDiscoveryEvidence;
   verificationHistory?: BuyerVerificationHistory[];
   qualificationTask?: BuyerQualificationTask | null;
+  lastOutreachReplyAt?: string;
+  lastOutreachReplyEvidenceUrl?: string;
   createdAt: string;
   updatedAt: string;
 });
@@ -1453,6 +1466,100 @@ export interface DealContract {
   createdAt: string;
 }
 
+export type HandoffEventInputKind = typeof HandoffEventInputKind[keyof typeof HandoffEventInputKind];
+
+
+export const HandoffEventInputKind = {
+  CONTACTED: 'CONTACTED',
+  REPLIED: 'REPLIED',
+  NO_RESPONSE: 'NO_RESPONSE',
+  FAILED: 'FAILED',
+  CANCELLED: 'CANCELLED',
+} as const;
+
+export type HandoffEventInputChannel = typeof HandoffEventInputChannel[keyof typeof HandoffEventInputChannel];
+
+
+export const HandoffEventInputChannel = {
+  PHONE: 'PHONE',
+  EMAIL: 'EMAIL',
+  OTHER: 'OTHER',
+} as const;
+
+export interface HandoffEventInput {
+  /** @minimum 1 */
+  version: number;
+  /**
+     * @minLength 8
+     * @maxLength 200
+     */
+  eventKey: string;
+  kind: HandoffEventInputKind;
+  occurredAt: string;
+  /**
+     * @minLength 8
+     * @maxLength 2000
+     */
+  evidenceUrl: string;
+  /**
+     * @minLength 3
+     * @maxLength 5000
+     */
+  note: string;
+  channel?: HandoffEventInputChannel;
+  /**
+     * @minLength 1
+     * @maxLength 500
+     */
+  routeValue?: string;
+  /**
+     * @minLength 8
+     * @maxLength 2000
+     */
+  permissionEvidenceUrl?: string;
+  followUpAt?: string;
+}
+
+export type HandoffEvent = HandoffEventInput & {
+  recordedAt: string;
+  recordedBy: string;
+};
+
+export type HumanHandoffSubjectType = typeof HumanHandoffSubjectType[keyof typeof HumanHandoffSubjectType];
+
+
+export const HumanHandoffSubjectType = {
+  BUYER: 'BUYER',
+  SELLER: 'SELLER',
+} as const;
+
+export type HumanHandoffState = typeof HumanHandoffState[keyof typeof HumanHandoffState];
+
+
+export const HumanHandoffState = {
+  WAITING_CONTACT: 'WAITING_CONTACT',
+  WAITING_REPLY: 'WAITING_REPLY',
+  REPLIED: 'REPLIED',
+  CANCELLED: 'CANCELLED',
+} as const;
+
+export interface HumanHandoff {
+  id: string;
+  version: number;
+  subjectType: HumanHandoffSubjectType;
+  subjectId: string;
+  subjectVersion: number;
+  contextKey: string;
+  recipient: string;
+  preparedMessage: string;
+  state: HumanHandoffState;
+  dueAt: string;
+  createdAt: string;
+  updatedAt: string;
+  nextAction: string;
+  events: HandoffEvent[];
+}
+
 export type WorkerJobInputKind = typeof WorkerJobInputKind[keyof typeof WorkerJobInputKind];
 
 
@@ -1463,6 +1570,7 @@ export const WorkerJobInputKind = {
   PREPARE_BRIEF: 'PREPARE_BRIEF',
   BUYER_DISCOVERY: 'BUYER_DISCOVERY',
   REVIEW_BUYER_POOL: 'REVIEW_BUYER_POOL',
+  REVIEW_HANDOFFS: 'REVIEW_HANDOFFS',
 } as const;
 
 export interface WorkerJobInput {
@@ -1487,6 +1595,8 @@ export const WorkerJobKind = {
   PREPARE_BRIEF: 'PREPARE_BRIEF',
   BUYER_DISCOVERY: 'BUYER_DISCOVERY',
   REVIEW_BUYER_POOL: 'REVIEW_BUYER_POOL',
+  REVIEW_HANDOFFS: 'REVIEW_HANDOFFS',
+  HUMAN_HANDOFF: 'HUMAN_HANDOFF',
 } as const;
 
 export type WorkerJobState = typeof WorkerJobState[keyof typeof WorkerJobState];

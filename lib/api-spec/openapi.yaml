@@ -489,6 +489,47 @@ paths:
           content:
             application/json:
               schema: { $ref: "#/components/schemas/DealOperations" }
+  /buyers/{id}/qualification:
+    parameters:
+      - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
+    post:
+      operationId: requestBuyerQualification
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/BuyerQualificationRequest" }
+      responses:
+        "200":
+          description: Explicit additional-evidence request, queued native handoff; not buyer approval
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Buyer" }
+  /handoffs:
+    get:
+      operationId: listHandoffs
+      responses:
+        "200":
+          description: Durable prepared outreach and actual human-reported events, never automatic sent claims
+          content:
+            application/json:
+              schema: { type: array, items: { $ref: "#/components/schemas/HumanHandoff" } }
+  /handoffs/{id}/events:
+    parameters:
+      - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
+    post:
+      operationId: recordHandoffEvent
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/HandoffEventInput" }
+      responses:
+        "200":
+          description: Actual contact or reply recorded; no qualification or commercial approval implied
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/HumanHandoff" }
   /workers:
     get:
       operationId: listWorkerJobs
@@ -732,11 +773,17 @@ components:
       properties:
         id: { type: string }
         kind: { type: string, enum: [QUALIFY, REVERIFY] }
-        state: { type: string, enum: [PENDING_EXECUTION, WAITING_EXTERNAL, COMPLETED] }
+        state: { type: string, enum: [PENDING_EXECUTION, WAITING_EXTERNAL, WAITING_REVIEW, COMPLETED] }
         reason: { type: string }
         preparedMessage: { type: string }
         dueAt: { type: string }
         updatedAt: { type: string }
+    BuyerQualificationRequest:
+      type: object
+      required: [version, note]
+      properties:
+        version: { type: integer, minimum: 1 }
+        note: { type: string, minLength: 3, maxLength: 2000 }
     BuyerDiscoveryEvidence:
       type: object
       required: [classification, source, sourceUrl, capturedAt, confidence]
@@ -866,6 +913,8 @@ components:
             discoveryEvidence: { $ref: "#/components/schemas/BuyerDiscoveryEvidence" }
             verificationHistory: { type: array, items: { $ref: "#/components/schemas/BuyerVerificationHistory" } }
             qualificationTask: { oneOf: [{ $ref: "#/components/schemas/BuyerQualificationTask" }, { type: "null" }] }
+            lastOutreachReplyAt: { type: string }
+            lastOutreachReplyEvidenceUrl: { type: string }
             createdAt: { type: string }
             updatedAt: { type: string }
     BuyerMatch:
@@ -1007,11 +1056,51 @@ components:
         netProceeds: { type: [number, "null"] }
         closedAt: { type: [string, "null"] }
         createdAt: { type: string }
+    HandoffEventInput:
+      type: object
+      required: [version, eventKey, kind, occurredAt, evidenceUrl, note]
+      properties:
+        version: { type: integer, minimum: 1 }
+        eventKey: { type: string, minLength: 8, maxLength: 200 }
+        kind: { type: string, enum: [CONTACTED, REPLIED, NO_RESPONSE, FAILED, CANCELLED] }
+        occurredAt: { type: string }
+        evidenceUrl: { type: string, minLength: 8, maxLength: 2000 }
+        note: { type: string, minLength: 3, maxLength: 5000 }
+        channel: { type: string, enum: [PHONE, EMAIL, OTHER] }
+        routeValue: { type: string, minLength: 1, maxLength: 500 }
+        permissionEvidenceUrl: { type: string, minLength: 8, maxLength: 2000 }
+        followUpAt: { type: string }
+    HandoffEvent:
+      allOf:
+        - { $ref: "#/components/schemas/HandoffEventInput" }
+        - type: object
+          required: [recordedAt, recordedBy]
+          properties:
+            recordedAt: { type: string }
+            recordedBy: { type: string }
+    HumanHandoff:
+      type: object
+      required: [id, version, subjectType, subjectId, subjectVersion, contextKey, recipient, preparedMessage, state, dueAt, createdAt, updatedAt, nextAction, events]
+      properties:
+        id: { type: string }
+        version: { type: integer }
+        subjectType: { type: string, enum: [BUYER, SELLER] }
+        subjectId: { type: string }
+        subjectVersion: { type: integer }
+        contextKey: { type: string }
+        recipient: { type: string }
+        preparedMessage: { type: string }
+        state: { type: string, enum: [WAITING_CONTACT, WAITING_REPLY, REPLIED, CANCELLED] }
+        dueAt: { type: string }
+        createdAt: { type: string }
+        updatedAt: { type: string }
+        nextAction: { type: string }
+        events: { type: array, items: { $ref: "#/components/schemas/HandoffEvent" } }
     WorkerJobInput:
       type: object
       required: [kind, idempotencyKey]
       properties:
-        kind: { type: string, enum: [MATCH_BUYERS, REVIEW_DEADLINES, ENRICH_PROPERTY, PREPARE_BRIEF, BUYER_DISCOVERY, REVIEW_BUYER_POOL] }
+        kind: { type: string, enum: [MATCH_BUYERS, REVIEW_DEADLINES, ENRICH_PROPERTY, PREPARE_BRIEF, BUYER_DISCOVERY, REVIEW_BUYER_POOL, REVIEW_HANDOFFS] }
         leadId: { type: string }
         termsReviewed: { type: boolean }
         recurringDiscovery: { type: boolean }
@@ -1021,7 +1110,7 @@ components:
       required: [id, kind, state, leadId, requestedBy, message, attempts, createdAt, updatedAt]
       properties:
         id: { type: string }
-        kind: { type: string, enum: [MATCH_BUYERS, REVIEW_DEADLINES, ENRICH_PROPERTY, PREPARE_BRIEF, BUYER_DISCOVERY, REVIEW_BUYER_POOL] }
+        kind: { type: string, enum: [MATCH_BUYERS, REVIEW_DEADLINES, ENRICH_PROPERTY, PREPARE_BRIEF, BUYER_DISCOVERY, REVIEW_BUYER_POOL, REVIEW_HANDOFFS, HUMAN_HANDOFF] }
         recurringDiscovery: { type: boolean }
         state: { type: string, enum: [QUEUED, RUNNING, SUCCEEDED, FAILED] }
         leadId: { type: [string, "null"] }

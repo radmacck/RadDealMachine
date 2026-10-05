@@ -12,5 +12,6 @@ export type BuyerQualificationTaskState = typeof BuyerQualificationTaskState[key
 export const BuyerQualificationTaskState = {
   PENDING_EXECUTION: 'PENDING_EXECUTION',
   WAITING_EXTERNAL: 'WAITING_EXTERNAL',
+  WAITING_REVIEW: 'WAITING_REVIEW',
   COMPLETED: 'COMPLETED',
 } as const;

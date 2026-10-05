@@ -10,6 +10,7 @@ import { dealOperations, refreshMatches } from "../services/matching-store";
 import * as transactions from "../services/transaction-store";
 import { recordTransactionException } from "../services/transaction-exceptions";
 import * as workers from "../services/workers";
+import { listHandoffs, recordHandoffEvent } from "../services/handoffs";
 
 const router: IRouter = Router();
 router.use(authenticated,membership);
@@ -40,6 +41,11 @@ router.patch("/buyers/:id",roles("OWNER","ANALYST"),async(req,res)=>{
 router.post("/buyers/:id/verification",roles("OWNER"),async(req,res)=>{
   const {id} = parse(schemas.VerifyBuyerParams,req.params);
   res.json(schemas.VerifyBuyerResponse.parse(await buyers.verifyBuyer(id,parse(schemas.VerifyBuyerBody,req.body),actor(res))));
+});
+router.post("/buyers/:id/qualification",roles("OWNER","ANALYST"),async(req,res)=>{
+  const {id} = parse(schemas.RequestBuyerQualificationParams,req.params);
+  res.json(schemas.RequestBuyerQualificationResponse.parse(await poolOperations.requestBuyerQualification(id,
+    parse(schemas.RequestBuyerQualificationBody,req.body),actor(res))));
 });
 router.get("/deals/:id/operations",async(req,res)=>{
   const {id} = parse(schemas.GetDealOperationsParams,req.params);
@@ -74,6 +80,11 @@ router.post("/deals/:id/contract/outcome",roles("OWNER"),async(req,res)=>{
   res.json(schemas.RecordDealOutcomeResponse.parse(await transactions.recordDealOutcome(id,parse(schemas.RecordDealOutcomeBody,req.body),actor(res))));
 });
 router.get("/workers",async(_req,res)=>{res.json(schemas.ListWorkerJobsResponse.parse(await workers.listWorkerJobs()));});
+router.get("/handoffs",async(_req,res)=>res.json(schemas.ListHandoffsResponse.parse(await listHandoffs())));
+router.post("/handoffs/:id/events",roles("OWNER","ANALYST","OPERATOR"),async(req,res)=>{
+  const {id} = parse(schemas.RecordHandoffEventParams,req.params);
+  res.json(schemas.RecordHandoffEventResponse.parse(await recordHandoffEvent(id,parse(schemas.RecordHandoffEventBody,req.body),actor(res))));
+});
 router.post("/workers",roles("OWNER","ANALYST"),async(req,res)=>{
   res.status(201).json(schemas.SubmitWorkerJobResponse.parse(await workers.submitWorkerJob(parse(schemas.SubmitWorkerJobBody,req.body),actor(res))));
 });

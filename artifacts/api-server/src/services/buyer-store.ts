@@ -58,6 +58,8 @@ export async function verifyBuyer(id: string, input: z.infer<typeof VerifyBuyerB
     if (!row) throw new DomainError("Buyer not found.",404);
     if (row.version!==parsed.version) throw new DomainError("Buyer changed. Reload before verifying.",409);
     const buyer = buyerRecord(row,now);
+    if (buyingAt<Date.parse(buyer.lastOutreachReplyAt??"1970-01-01"))
+      throw new DomainError("Current buying evidence must account for the newer actual outreach reply; earlier evidence cannot clear this review.");
     if (parsed.currentBuyingStatus==="BUYING") {
       if (!buyer.email.trim()&&!buyer.phone.trim()) throw new DomainError("Record a permitted email/phone contact route before approving a current buyer/destination.");
       const missing = criteriaBlockers(buyer.criteria);

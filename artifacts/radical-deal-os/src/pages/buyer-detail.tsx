@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { Copy } from 'lucide-react';
 import { Link, useParams } from 'wouter';
 import { ArrowLeft } from 'lucide-react';
-import { getGetBuyerQueryKey, useGetBuyer, useUpdateBuyer, useVerifyBuyer, type Buyer } from '@workspace/api-client-react';
+import { getGetBuyerQueryKey, useGetBuyer, useUpdateBuyer, useVerifyBuyer, useRequestBuyerQualification, type Buyer } from '@workspace/api-client-react';
 import { ErrorNotice, RowsSkeleton } from '@/components/state-views';
 import { BuyerForm } from '@/components/buyer-form';
 import { BuyerVerificationForm } from '@/components/buyer-verification-form';
@@ -23,6 +23,8 @@ export default function BuyerDetail() {
   const q = useGetBuyer(id, { query: { queryKey: getGetBuyerQueryKey(id), enabled: !!id, staleTime: 5_000, refetchInterval: 20_000 } });
   const update = useUpdateBuyer();
   const verify = useVerifyBuyer();
+  const requestEvidence = useRequestBuyerQualification();
+  const [requestNote, setRequestNote] = useState('');
   const [formBuyer,setFormBuyer] = useState<Buyer|null>(null);
   useEffect(()=>{if(q.data && formBuyer?.id!==q.data.id) setFormBuyer(q.data);},[q.data,formBuyer?.id]);
 
@@ -51,10 +53,22 @@ export default function BuyerDetail() {
           <p className="mt-1 font-mono text-[11px] text-muted-foreground">Due {fmtDate(b.qualificationTask.dueAt)} / updated {fmtDate(b.qualificationTask.updatedAt)}</p>
           <p className="eyebrow mt-3 mb-1">Prepared outreach (draft)</p>
           <p className="whitespace-pre-wrap border border-dashed border-border p-2 text-sm" data-testid="text-prepared-message">{b.qualificationTask.preparedMessage}</p>
-          <p className="mt-2 text-xs text-muted-foreground" data-testid="text-no-provider">Not sent. No messaging provider is connected; copy this text and contact the prospect yourself, then record what you learn below.</p>
+          <p className="mt-2 text-xs text-muted-foreground" data-testid="text-no-provider">The system has not sent this message. <Link href="/workers" className="underline">Review the pending handoff and record actual contact/reply evidence</Link>; owner-reviewed qualification remains separate.</p>
           <Button size="sm" variant="outline" className="mt-2" onClick={() => { void navigator.clipboard?.writeText(b.qualificationTask!.preparedMessage).then(() => toast({ title: 'Message copied' }), () => toast({ title: 'Copy failed', variant: 'destructive' })); }} data-testid="button-copy-message"><Copy className="mr-1.5 h-3.5 w-3.5" />Copy text</Button>
+          {b.qualificationTask.state === 'WAITING_REVIEW' && (isOwner || canResearch) && <div className="mt-3 space-y-2">
+            <p className="text-xs text-muted-foreground">Review the reply through owner verification. If it lacks needed evidence, explicitly request another qualification handoff; no automatic resend occurs.</p>
+            <input className="w-full rounded border border-input bg-background px-2 py-1.5 text-sm" aria-label="Reason for additional evidence" placeholder="What evidence is still missing?" value={requestNote} onChange={e => setRequestNote(e.target.value)} />
+            <Button size="sm" variant="outline" disabled={requestEvidence.isPending || requestNote.trim().length < 3} onClick={() => requestEvidence.mutate({ id, data: { version: b.version, note: requestNote.trim() } }, {
+              onSuccess: (saved) => { setFormBuyer(saved); setEpoch(e => e + 1); invalidate(); setRequestNote(''); toast({ title: 'Additional evidence requested', description: 'A pending handoff was queued. Nothing was sent or approved.' }); },
+            })}>Request additional evidence</Button>
+            {requestEvidence.isError && <ErrorNotice error={requestEvidence.error} />}
+          </div>}
         </div>}
       </section>
+      {b.lastOutreachReplyAt && <section className="border border-border p-3 text-sm" data-testid="panel-latest-outreach-reply">
+        Latest actual outreach reply: {fmtDate(b.lastOutreachReplyAt)}. A reply is not buyer approval; current buying evidence must account for this date.
+        {b.lastOutreachReplyEvidenceUrl && <a className="ml-2 underline" href={b.lastOutreachReplyEvidenceUrl} target="_blank" rel="noopener noreferrer">Review reply evidence</a>}
+      </section>}
 
       {b.discoveryEvidence && <section className="ledger p-4 text-sm" data-testid="panel-discovery-evidence">
         <p className="eyebrow mb-2">Observed discovery evidence — not buying approval</p>

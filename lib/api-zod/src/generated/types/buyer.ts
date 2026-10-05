@@ -53,6 +53,8 @@ export type Buyer = BuyerInput & ({
   discoveryEvidence?: BuyerDiscoveryEvidence;
   verificationHistory?: BuyerVerificationHistory[];
   qualificationTask?: BuyerQualificationTask | null;
+  lastOutreachReplyAt?: string;
+  lastOutreachReplyEvidenceUrl?: string;
   createdAt: string;
   updatedAt: string;
 });

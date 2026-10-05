@@ -9,6 +9,7 @@ import { refreshMatches, refreshAllMatches } from "./matching-store";
 import { listLeads, leadDetail } from "./deal-store";
 import { logger } from "../lib/logger";
 import { discoverPublicBuyers, reviewBuyerPool } from "./buyer-pool";
+import { reviewHandoffs } from "./handoffs";
 
 export async function listWorkerJobs() {
   return (await db.select().from(jobsTable).orderBy(desc(jobsTable.createdAt)).limit(100)).map(jobRecord);
@@ -41,6 +42,7 @@ export async function runWorkerOnce(now = new Date(), schedule = false, onlyJobI
     await queueJob(db,"REVIEW_DEADLINES",null,`scheduled:deadlines:${bucket}`,"system:scheduler");
     await queueJob(db,"MATCH_BUYERS",null,`scheduled:matches:${bucket}`,"system:scheduler");
     await queueJob(db,"REVIEW_BUYER_POOL",null,`scheduled:buyer-pool:${bucket}`,"system:scheduler");
+    await queueJob(db,"REVIEW_HANDOFFS",null,`scheduled:handoffs:${bucket}`,"system:scheduler");
     const [policy] = await db.select().from(jobsTable).where(and(eq(jobsTable.kind,"BUYER_DISCOVERY"),
       sql`${jobsTable.idempotencyKey} like 'manual:%'`)).orderBy(desc(jobsTable.createdAt)).limit(1);
     if (policy?.payload.termsReviewed===true && policy.payload.recurringDiscovery===true) {
@@ -91,6 +93,7 @@ export async function runWorkerOnce(now = new Date(), schedule = false, onlyJobI
       } else message = `Recomputed criteria, funding, verification and deadlines for ${await refreshAllMatches(now)} active signed transactions.`;
     } else if (row.kind==="REVIEW_DEADLINES") message = await reviewDeadlines(now);
     else if (row.kind==="REVIEW_BUYER_POOL") message = await reviewBuyerPool(now);
+    else if (row.kind==="REVIEW_HANDOFFS") message = await reviewHandoffs(now);
     else if (row.kind==="BUYER_DISCOVERY"&&row.payload.termsReviewed===true) message = await discoverPublicBuyers(now);
     else if (row.kind==="ENRICH_PROPERTY"&&row.leadId) message = await enrichProperty(row.leadId,row.id,now);
     else if (row.kind==="PREPARE_BRIEF"&&row.leadId) message = await prepareSellerBrief(row.leadId,row.id,now);

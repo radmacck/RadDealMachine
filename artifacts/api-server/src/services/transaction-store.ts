@@ -198,6 +198,9 @@ export async function recordDealOutcome(id: string,input: z.infer<typeof RecordD
       const [recorded] = contract.committedBuyerId?await tx.select().from(matchesTable).where(and(eq(matchesTable.leadId,id),eq(matchesTable.buyerId,contract.committedBuyerId))):[];
       const reservations = buyerReservations((await tx.select().from(contractsTable)).map(contractRecord),contract.committedBuyerId??"",contract.id);
       if (late) {
+        const replyAt = Date.parse(String(buyerRow?.payload.lastOutreachReplyAt??""));
+        if (Number.isFinite(replyAt)&&replyAt<=eventAt&&replyAt>Date.parse(historical!.buyer.buyingEvidenceAt??"1970-01-01"))
+          throw new DomainError("An actual buyer reply predating settlement lacks a retained current-buying review. Late recording cannot hide earlier response evidence.",409);
         const reviewedAt = new Date(historical!.recordedAt??contract.buyerCommittedAt!);
         const [latest] = await tx.select().from(analysesTable).where(and(eq(analysesTable.leadId,id),lte(analysesTable.createdAt,eventTime)))
           .orderBy(desc(analysesTable.createdAt),sql`(snapshot->'input'->>'version')::integer DESC`).limit(1);

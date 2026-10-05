@@ -26,3 +26,9 @@ Do not treat a stable deal workspace or transaction row ID alone as the identity
 **Why:** Cancellation/restart must preserve the existing operating history while a new agreement has separately approved terms and evidence.
 
 **How to apply:** Preserve distinguishable attempts and document references; future provider adapters must not mistake a restarted workspace for the original signed agreement.
+
+Retiring outreach must not erase an actual inbound reply or imply that it reopens a transaction. A newer buyer reply requires dated owner evidence review before that buyer can remain eligible.
+
+**Why:** A buyer can reply after outreach stops or after prior verification. The software must preserve the external event without promoting an unreviewed response into buying intent, funding or acceptance.
+
+**How to apply:** Retain actual and recorded reply times. Check actual pre-settlement replies against retained reviews even when the replies were recorded after settlement; software recording time alone cannot establish historical eligibility.

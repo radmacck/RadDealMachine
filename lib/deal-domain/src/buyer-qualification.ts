@@ -30,6 +30,11 @@ export function criteriaSignature(c: Buyer["criteria"]): string {
 }
 export function buyerQualification(b: Buyer, now: Date) {
   const blockers = criteriaBlockers(b.criteria);
+  const replyAt = Date.parse(b.lastOutreachReplyAt??"");
+  if (Number.isFinite(replyAt)&&replyAt>Date.parse(b.buyingEvidenceAt??"1970-01-01"))
+    blockers.push("A newer actual outreach reply requires owner review of current buying/criteria evidence before matching or closing.");
+  if (b.verifiedBy&&b.qualificationTask&&b.qualificationTask.state!=="COMPLETED")
+    blockers.push("Requested qualification follow-up remains pending owner evidence review.");
   const status = verificationStatus(b,now);
   if (b.status!=="ACTIVE") blockers.push("Buyer/destination is paused.");
   if (!b.email.trim()&&!b.phone.trim()) blockers.push("A permitted contact route has not been recorded.");

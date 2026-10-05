@@ -490,12 +490,14 @@ export const RecordTransactionExceptionResponse = zod.object({
   "qualificationTask": zod.union([zod.object({
   "id": zod.string(),
   "kind": zod.enum(['QUALIFY', 'REVERIFY']),
-  "state": zod.enum(['PENDING_EXECUTION', 'WAITING_EXTERNAL', 'COMPLETED']),
+  "state": zod.enum(['PENDING_EXECUTION', 'WAITING_EXTERNAL', 'WAITING_REVIEW', 'COMPLETED']),
   "reason": zod.string(),
   "preparedMessage": zod.string(),
   "dueAt": zod.string(),
   "updatedAt": zod.string()
 }),zod.null()]).optional(),
+  "lastOutreachReplyAt": zod.string().optional(),
+  "lastOutreachReplyEvidenceUrl": zod.string().optional(),
   "createdAt": zod.string(),
   "updatedAt": zod.string()
 })),
@@ -723,7 +725,7 @@ export const RecordTransactionExceptionResponse = zod.object({
 })),
   "jobs": zod.array(zod.object({
   "id": zod.string(),
-  "kind": zod.enum(['MATCH_BUYERS', 'REVIEW_DEADLINES', 'ENRICH_PROPERTY', 'PREPARE_BRIEF', 'BUYER_DISCOVERY', 'REVIEW_BUYER_POOL']),
+  "kind": zod.enum(['MATCH_BUYERS', 'REVIEW_DEADLINES', 'ENRICH_PROPERTY', 'PREPARE_BRIEF', 'BUYER_DISCOVERY', 'REVIEW_BUYER_POOL', 'REVIEW_HANDOFFS', 'HUMAN_HANDOFF']),
   "recurringDiscovery": zod.boolean().optional(),
   "state": zod.enum(['QUEUED', 'RUNNING', 'SUCCEEDED', 'FAILED']),
   "leadId": zod.string().nullable(),
@@ -6741,12 +6743,14 @@ export const GetCommandCenterResponse = zod.object({
   "qualificationTask": zod.union([zod.object({
   "id": zod.string(),
   "kind": zod.enum(['QUALIFY', 'REVERIFY']),
-  "state": zod.enum(['PENDING_EXECUTION', 'WAITING_EXTERNAL', 'COMPLETED']),
+  "state": zod.enum(['PENDING_EXECUTION', 'WAITING_EXTERNAL', 'WAITING_REVIEW', 'COMPLETED']),
   "reason": zod.string(),
   "preparedMessage": zod.string(),
   "dueAt": zod.string(),
   "updatedAt": zod.string()
 }),zod.null()]).optional(),
+  "lastOutreachReplyAt": zod.string().optional(),
+  "lastOutreachReplyEvidenceUrl": zod.string().optional(),
   "createdAt": zod.string(),
   "updatedAt": zod.string()
 })),
@@ -6974,7 +6978,7 @@ export const GetCommandCenterResponse = zod.object({
 })),
   "jobs": zod.array(zod.object({
   "id": zod.string(),
-  "kind": zod.enum(['MATCH_BUYERS', 'REVIEW_DEADLINES', 'ENRICH_PROPERTY', 'PREPARE_BRIEF', 'BUYER_DISCOVERY', 'REVIEW_BUYER_POOL']),
+  "kind": zod.enum(['MATCH_BUYERS', 'REVIEW_DEADLINES', 'ENRICH_PROPERTY', 'PREPARE_BRIEF', 'BUYER_DISCOVERY', 'REVIEW_BUYER_POOL', 'REVIEW_HANDOFFS', 'HUMAN_HANDOFF']),
   "recurringDiscovery": zod.boolean().optional(),
   "state": zod.enum(['QUEUED', 'RUNNING', 'SUCCEEDED', 'FAILED']),
   "leadId": zod.string().nullable(),
@@ -7105,18 +7109,20 @@ export const GetCommandCenterResponse = zod.object({
   "qualificationTask": zod.union([zod.object({
   "id": zod.string(),
   "kind": zod.enum(['QUALIFY', 'REVERIFY']),
-  "state": zod.enum(['PENDING_EXECUTION', 'WAITING_EXTERNAL', 'COMPLETED']),
+  "state": zod.enum(['PENDING_EXECUTION', 'WAITING_EXTERNAL', 'WAITING_REVIEW', 'COMPLETED']),
   "reason": zod.string(),
   "preparedMessage": zod.string(),
   "dueAt": zod.string(),
   "updatedAt": zod.string()
 }),zod.null()]).optional(),
+  "lastOutreachReplyAt": zod.string().optional(),
+  "lastOutreachReplyEvidenceUrl": zod.string().optional(),
   "createdAt": zod.string(),
   "updatedAt": zod.string()
 }))),
   "jobs": zod.array(zod.object({
   "id": zod.string(),
-  "kind": zod.enum(['MATCH_BUYERS', 'REVIEW_DEADLINES', 'ENRICH_PROPERTY', 'PREPARE_BRIEF', 'BUYER_DISCOVERY', 'REVIEW_BUYER_POOL']),
+  "kind": zod.enum(['MATCH_BUYERS', 'REVIEW_DEADLINES', 'ENRICH_PROPERTY', 'PREPARE_BRIEF', 'BUYER_DISCOVERY', 'REVIEW_BUYER_POOL', 'REVIEW_HANDOFFS', 'HUMAN_HANDOFF']),
   "recurringDiscovery": zod.boolean().optional(),
   "state": zod.enum(['QUEUED', 'RUNNING', 'SUCCEEDED', 'FAILED']),
   "leadId": zod.string().nullable(),
@@ -7396,12 +7402,14 @@ export const ListBuyersResponseItem = zod.object({
   "qualificationTask": zod.union([zod.object({
   "id": zod.string(),
   "kind": zod.enum(['QUALIFY', 'REVERIFY']),
-  "state": zod.enum(['PENDING_EXECUTION', 'WAITING_EXTERNAL', 'COMPLETED']),
+  "state": zod.enum(['PENDING_EXECUTION', 'WAITING_EXTERNAL', 'WAITING_REVIEW', 'COMPLETED']),
   "reason": zod.string(),
   "preparedMessage": zod.string(),
   "dueAt": zod.string(),
   "updatedAt": zod.string()
 }),zod.null()]).optional(),
+  "lastOutreachReplyAt": zod.string().optional(),
+  "lastOutreachReplyEvidenceUrl": zod.string().optional(),
   "createdAt": zod.string(),
   "updatedAt": zod.string()
 }))
@@ -7796,12 +7804,14 @@ export const CreateBuyerResponse = zod.object({
   "qualificationTask": zod.union([zod.object({
   "id": zod.string(),
   "kind": zod.enum(['QUALIFY', 'REVERIFY']),
-  "state": zod.enum(['PENDING_EXECUTION', 'WAITING_EXTERNAL', 'COMPLETED']),
+  "state": zod.enum(['PENDING_EXECUTION', 'WAITING_EXTERNAL', 'WAITING_REVIEW', 'COMPLETED']),
   "reason": zod.string(),
   "preparedMessage": zod.string(),
   "dueAt": zod.string(),
   "updatedAt": zod.string()
 }),zod.null()]).optional(),
+  "lastOutreachReplyAt": zod.string().optional(),
+  "lastOutreachReplyEvidenceUrl": zod.string().optional(),
   "createdAt": zod.string(),
   "updatedAt": zod.string()
 }))
@@ -8078,12 +8088,14 @@ export const GetBuyerResponse = zod.object({
   "qualificationTask": zod.union([zod.object({
   "id": zod.string(),
   "kind": zod.enum(['QUALIFY', 'REVERIFY']),
-  "state": zod.enum(['PENDING_EXECUTION', 'WAITING_EXTERNAL', 'COMPLETED']),
+  "state": zod.enum(['PENDING_EXECUTION', 'WAITING_EXTERNAL', 'WAITING_REVIEW', 'COMPLETED']),
   "reason": zod.string(),
   "preparedMessage": zod.string(),
   "dueAt": zod.string(),
   "updatedAt": zod.string()
 }),zod.null()]).optional(),
+  "lastOutreachReplyAt": zod.string().optional(),
+  "lastOutreachReplyEvidenceUrl": zod.string().optional(),
   "createdAt": zod.string(),
   "updatedAt": zod.string()
 }))
@@ -8484,12 +8496,14 @@ export const UpdateBuyerResponse = zod.object({
   "qualificationTask": zod.union([zod.object({
   "id": zod.string(),
   "kind": zod.enum(['QUALIFY', 'REVERIFY']),
-  "state": zod.enum(['PENDING_EXECUTION', 'WAITING_EXTERNAL', 'COMPLETED']),
+  "state": zod.enum(['PENDING_EXECUTION', 'WAITING_EXTERNAL', 'WAITING_REVIEW', 'COMPLETED']),
   "reason": zod.string(),
   "preparedMessage": zod.string(),
   "dueAt": zod.string(),
   "updatedAt": zod.string()
 }),zod.null()]).optional(),
+  "lastOutreachReplyAt": zod.string().optional(),
+  "lastOutreachReplyEvidenceUrl": zod.string().optional(),
   "createdAt": zod.string(),
   "updatedAt": zod.string()
 }))
@@ -8811,12 +8825,14 @@ export const VerifyBuyerResponse = zod.object({
   "qualificationTask": zod.union([zod.object({
   "id": zod.string(),
   "kind": zod.enum(['QUALIFY', 'REVERIFY']),
-  "state": zod.enum(['PENDING_EXECUTION', 'WAITING_EXTERNAL', 'COMPLETED']),
+  "state": zod.enum(['PENDING_EXECUTION', 'WAITING_EXTERNAL', 'WAITING_REVIEW', 'COMPLETED']),
   "reason": zod.string(),
   "preparedMessage": zod.string(),
   "dueAt": zod.string(),
   "updatedAt": zod.string()
 }),zod.null()]).optional(),
+  "lastOutreachReplyAt": zod.string().optional(),
+  "lastOutreachReplyEvidenceUrl": zod.string().optional(),
   "createdAt": zod.string(),
   "updatedAt": zod.string()
 }))
@@ -9281,12 +9297,14 @@ export const GetDealOperationsResponse = zod.object({
   "qualificationTask": zod.union([zod.object({
   "id": zod.string(),
   "kind": zod.enum(['QUALIFY', 'REVERIFY']),
-  "state": zod.enum(['PENDING_EXECUTION', 'WAITING_EXTERNAL', 'COMPLETED']),
+  "state": zod.enum(['PENDING_EXECUTION', 'WAITING_EXTERNAL', 'WAITING_REVIEW', 'COMPLETED']),
   "reason": zod.string(),
   "preparedMessage": zod.string(),
   "dueAt": zod.string(),
   "updatedAt": zod.string()
 }),zod.null()]).optional(),
+  "lastOutreachReplyAt": zod.string().optional(),
+  "lastOutreachReplyEvidenceUrl": zod.string().optional(),
   "createdAt": zod.string(),
   "updatedAt": zod.string()
 })),
@@ -9514,7 +9532,7 @@ export const GetDealOperationsResponse = zod.object({
 })),
   "jobs": zod.array(zod.object({
   "id": zod.string(),
-  "kind": zod.enum(['MATCH_BUYERS', 'REVIEW_DEADLINES', 'ENRICH_PROPERTY', 'PREPARE_BRIEF', 'BUYER_DISCOVERY', 'REVIEW_BUYER_POOL']),
+  "kind": zod.enum(['MATCH_BUYERS', 'REVIEW_DEADLINES', 'ENRICH_PROPERTY', 'PREPARE_BRIEF', 'BUYER_DISCOVERY', 'REVIEW_BUYER_POOL', 'REVIEW_HANDOFFS', 'HUMAN_HANDOFF']),
   "recurringDiscovery": zod.boolean().optional(),
   "state": zod.enum(['QUEUED', 'RUNNING', 'SUCCEEDED', 'FAILED']),
   "leadId": zod.string().nullable(),
@@ -9987,12 +10005,14 @@ export const RefreshMatchesResponse = zod.object({
   "qualificationTask": zod.union([zod.object({
   "id": zod.string(),
   "kind": zod.enum(['QUALIFY', 'REVERIFY']),
-  "state": zod.enum(['PENDING_EXECUTION', 'WAITING_EXTERNAL', 'COMPLETED']),
+  "state": zod.enum(['PENDING_EXECUTION', 'WAITING_EXTERNAL', 'WAITING_REVIEW', 'COMPLETED']),
   "reason": zod.string(),
   "preparedMessage": zod.string(),
   "dueAt": zod.string(),
   "updatedAt": zod.string()
 }),zod.null()]).optional(),
+  "lastOutreachReplyAt": zod.string().optional(),
+  "lastOutreachReplyEvidenceUrl": zod.string().optional(),
   "createdAt": zod.string(),
   "updatedAt": zod.string()
 })),
@@ -10220,7 +10240,7 @@ export const RefreshMatchesResponse = zod.object({
 })),
   "jobs": zod.array(zod.object({
   "id": zod.string(),
-  "kind": zod.enum(['MATCH_BUYERS', 'REVIEW_DEADLINES', 'ENRICH_PROPERTY', 'PREPARE_BRIEF', 'BUYER_DISCOVERY', 'REVIEW_BUYER_POOL']),
+  "kind": zod.enum(['MATCH_BUYERS', 'REVIEW_DEADLINES', 'ENRICH_PROPERTY', 'PREPARE_BRIEF', 'BUYER_DISCOVERY', 'REVIEW_BUYER_POOL', 'REVIEW_HANDOFFS', 'HUMAN_HANDOFF']),
   "recurringDiscovery": zod.boolean().optional(),
   "state": zod.enum(['QUEUED', 'RUNNING', 'SUCCEEDED', 'FAILED']),
   "leadId": zod.string().nullable(),
@@ -10715,12 +10735,14 @@ export const RecordBuyerResponseResponse = zod.object({
   "qualificationTask": zod.union([zod.object({
   "id": zod.string(),
   "kind": zod.enum(['QUALIFY', 'REVERIFY']),
-  "state": zod.enum(['PENDING_EXECUTION', 'WAITING_EXTERNAL', 'COMPLETED']),
+  "state": zod.enum(['PENDING_EXECUTION', 'WAITING_EXTERNAL', 'WAITING_REVIEW', 'COMPLETED']),
   "reason": zod.string(),
   "preparedMessage": zod.string(),
   "dueAt": zod.string(),
   "updatedAt": zod.string()
 }),zod.null()]).optional(),
+  "lastOutreachReplyAt": zod.string().optional(),
+  "lastOutreachReplyEvidenceUrl": zod.string().optional(),
   "createdAt": zod.string(),
   "updatedAt": zod.string()
 })),
@@ -10948,7 +10970,7 @@ export const RecordBuyerResponseResponse = zod.object({
 })),
   "jobs": zod.array(zod.object({
   "id": zod.string(),
-  "kind": zod.enum(['MATCH_BUYERS', 'REVIEW_DEADLINES', 'ENRICH_PROPERTY', 'PREPARE_BRIEF', 'BUYER_DISCOVERY', 'REVIEW_BUYER_POOL']),
+  "kind": zod.enum(['MATCH_BUYERS', 'REVIEW_DEADLINES', 'ENRICH_PROPERTY', 'PREPARE_BRIEF', 'BUYER_DISCOVERY', 'REVIEW_BUYER_POOL', 'REVIEW_HANDOFFS', 'HUMAN_HANDOFF']),
   "recurringDiscovery": zod.boolean().optional(),
   "state": zod.enum(['QUEUED', 'RUNNING', 'SUCCEEDED', 'FAILED']),
   "leadId": zod.string().nullable(),
@@ -11430,12 +11452,14 @@ export const CreateContractResponse = zod.object({
   "qualificationTask": zod.union([zod.object({
   "id": zod.string(),
   "kind": zod.enum(['QUALIFY', 'REVERIFY']),
-  "state": zod.enum(['PENDING_EXECUTION', 'WAITING_EXTERNAL', 'COMPLETED']),
+  "state": zod.enum(['PENDING_EXECUTION', 'WAITING_EXTERNAL', 'WAITING_REVIEW', 'COMPLETED']),
   "reason": zod.string(),
   "preparedMessage": zod.string(),
   "dueAt": zod.string(),
   "updatedAt": zod.string()
 }),zod.null()]).optional(),
+  "lastOutreachReplyAt": zod.string().optional(),
+  "lastOutreachReplyEvidenceUrl": zod.string().optional(),
   "createdAt": zod.string(),
   "updatedAt": zod.string()
 })),
@@ -11663,7 +11687,7 @@ export const CreateContractResponse = zod.object({
 })),
   "jobs": zod.array(zod.object({
   "id": zod.string(),
-  "kind": zod.enum(['MATCH_BUYERS', 'REVIEW_DEADLINES', 'ENRICH_PROPERTY', 'PREPARE_BRIEF', 'BUYER_DISCOVERY', 'REVIEW_BUYER_POOL']),
+  "kind": zod.enum(['MATCH_BUYERS', 'REVIEW_DEADLINES', 'ENRICH_PROPERTY', 'PREPARE_BRIEF', 'BUYER_DISCOVERY', 'REVIEW_BUYER_POOL', 'REVIEW_HANDOFFS', 'HUMAN_HANDOFF']),
   "recurringDiscovery": zod.boolean().optional(),
   "state": zod.enum(['QUEUED', 'RUNNING', 'SUCCEEDED', 'FAILED']),
   "leadId": zod.string().nullable(),
@@ -12153,12 +12177,14 @@ export const ExecuteContractResponse = zod.object({
   "qualificationTask": zod.union([zod.object({
   "id": zod.string(),
   "kind": zod.enum(['QUALIFY', 'REVERIFY']),
-  "state": zod.enum(['PENDING_EXECUTION', 'WAITING_EXTERNAL', 'COMPLETED']),
+  "state": zod.enum(['PENDING_EXECUTION', 'WAITING_EXTERNAL', 'WAITING_REVIEW', 'COMPLETED']),
   "reason": zod.string(),
   "preparedMessage": zod.string(),
   "dueAt": zod.string(),
   "updatedAt": zod.string()
 }),zod.null()]).optional(),
+  "lastOutreachReplyAt": zod.string().optional(),
+  "lastOutreachReplyEvidenceUrl": zod.string().optional(),
   "createdAt": zod.string(),
   "updatedAt": zod.string()
 })),
@@ -12386,7 +12412,7 @@ export const ExecuteContractResponse = zod.object({
 })),
   "jobs": zod.array(zod.object({
   "id": zod.string(),
-  "kind": zod.enum(['MATCH_BUYERS', 'REVIEW_DEADLINES', 'ENRICH_PROPERTY', 'PREPARE_BRIEF', 'BUYER_DISCOVERY', 'REVIEW_BUYER_POOL']),
+  "kind": zod.enum(['MATCH_BUYERS', 'REVIEW_DEADLINES', 'ENRICH_PROPERTY', 'PREPARE_BRIEF', 'BUYER_DISCOVERY', 'REVIEW_BUYER_POOL', 'REVIEW_HANDOFFS', 'HUMAN_HANDOFF']),
   "recurringDiscovery": zod.boolean().optional(),
   "state": zod.enum(['QUEUED', 'RUNNING', 'SUCCEEDED', 'FAILED']),
   "leadId": zod.string().nullable(),
@@ -12875,12 +12901,14 @@ export const RecordClosingMilestoneResponse = zod.object({
   "qualificationTask": zod.union([zod.object({
   "id": zod.string(),
   "kind": zod.enum(['QUALIFY', 'REVERIFY']),
-  "state": zod.enum(['PENDING_EXECUTION', 'WAITING_EXTERNAL', 'COMPLETED']),
+  "state": zod.enum(['PENDING_EXECUTION', 'WAITING_EXTERNAL', 'WAITING_REVIEW', 'COMPLETED']),
   "reason": zod.string(),
   "preparedMessage": zod.string(),
   "dueAt": zod.string(),
   "updatedAt": zod.string()
 }),zod.null()]).optional(),
+  "lastOutreachReplyAt": zod.string().optional(),
+  "lastOutreachReplyEvidenceUrl": zod.string().optional(),
   "createdAt": zod.string(),
   "updatedAt": zod.string()
 })),
@@ -13108,7 +13136,7 @@ export const RecordClosingMilestoneResponse = zod.object({
 })),
   "jobs": zod.array(zod.object({
   "id": zod.string(),
-  "kind": zod.enum(['MATCH_BUYERS', 'REVIEW_DEADLINES', 'ENRICH_PROPERTY', 'PREPARE_BRIEF', 'BUYER_DISCOVERY', 'REVIEW_BUYER_POOL']),
+  "kind": zod.enum(['MATCH_BUYERS', 'REVIEW_DEADLINES', 'ENRICH_PROPERTY', 'PREPARE_BRIEF', 'BUYER_DISCOVERY', 'REVIEW_BUYER_POOL', 'REVIEW_HANDOFFS', 'HUMAN_HANDOFF']),
   "recurringDiscovery": zod.boolean().optional(),
   "state": zod.enum(['QUEUED', 'RUNNING', 'SUCCEEDED', 'FAILED']),
   "leadId": zod.string().nullable(),
@@ -13610,12 +13638,14 @@ export const RecordDealOutcomeResponse = zod.object({
   "qualificationTask": zod.union([zod.object({
   "id": zod.string(),
   "kind": zod.enum(['QUALIFY', 'REVERIFY']),
-  "state": zod.enum(['PENDING_EXECUTION', 'WAITING_EXTERNAL', 'COMPLETED']),
+  "state": zod.enum(['PENDING_EXECUTION', 'WAITING_EXTERNAL', 'WAITING_REVIEW', 'COMPLETED']),
   "reason": zod.string(),
   "preparedMessage": zod.string(),
   "dueAt": zod.string(),
   "updatedAt": zod.string()
 }),zod.null()]).optional(),
+  "lastOutreachReplyAt": zod.string().optional(),
+  "lastOutreachReplyEvidenceUrl": zod.string().optional(),
   "createdAt": zod.string(),
   "updatedAt": zod.string()
 })),
@@ -13843,7 +13873,7 @@ export const RecordDealOutcomeResponse = zod.object({
 })),
   "jobs": zod.array(zod.object({
   "id": zod.string(),
-  "kind": zod.enum(['MATCH_BUYERS', 'REVIEW_DEADLINES', 'ENRICH_PROPERTY', 'PREPARE_BRIEF', 'BUYER_DISCOVERY', 'REVIEW_BUYER_POOL']),
+  "kind": zod.enum(['MATCH_BUYERS', 'REVIEW_DEADLINES', 'ENRICH_PROPERTY', 'PREPARE_BRIEF', 'BUYER_DISCOVERY', 'REVIEW_BUYER_POOL', 'REVIEW_HANDOFFS', 'HUMAN_HANDOFF']),
   "recurringDiscovery": zod.boolean().optional(),
   "state": zod.enum(['QUEUED', 'RUNNING', 'SUCCEEDED', 'FAILED']),
   "leadId": zod.string().nullable(),
@@ -13857,9 +13887,437 @@ export const RecordDealOutcomeResponse = zod.object({
 })
 
 
+export const RequestBuyerQualificationParams = zod.object({
+  "id": zod.coerce.string().uuid()
+})
+
+
+export const requestBuyerQualificationBodyNoteMin = 3;
+export const requestBuyerQualificationBodyNoteMax = 2000;
+
+
+
+export const RequestBuyerQualificationBody = zod.object({
+  "version": zod.number().int().min(1),
+  "note": zod.string().min(requestBuyerQualificationBodyNoteMin).max(requestBuyerQualificationBodyNoteMax)
+})
+
+export const requestBuyerQualificationResponseOneNameMax = 200;
+
+export const requestBuyerQualificationResponseOneEmailMax = 200;
+
+export const requestBuyerQualificationResponseOnePhoneMax = 50;
+
+export const requestBuyerQualificationResponseOneSourceMax = 2000;
+
+export const requestBuyerQualificationResponseOneCriteriaOneStatesItemMin = 2;
+export const requestBuyerQualificationResponseOneCriteriaOneStatesItemMax = 2;
+
+
+
+export const requestBuyerQualificationResponseOneCriteriaOneZipCodesItemRegExp = new RegExp('^\\d{5}$');
+
+export const requestBuyerQualificationResponseOneCriteriaOneMaxPurchasePriceExclusiveMin = 0;
+export const requestBuyerQualificationResponseOneCriteriaOneMaxPurchasePriceMax = 1000000000;
+
+export const requestBuyerQualificationResponseOneCriteriaOneMaxRepairsMin = 0;
+export const requestBuyerQualificationResponseOneCriteriaOneMaxRepairsMax = 1000000000;
+
+export const requestBuyerQualificationResponseOneCriteriaOneMinBedsMin = 0;
+export const requestBuyerQualificationResponseOneCriteriaOneMinBedsMax = 100;
+
+export const requestBuyerQualificationResponseOneCriteriaOneMinSqftMin = 0;
+export const requestBuyerQualificationResponseOneCriteriaOneMinSqftMax = 1000000;
+
+export const requestBuyerQualificationResponseOneCriteriaOneMaxSqftExclusiveMin = 0;
+export const requestBuyerQualificationResponseOneCriteriaOneMaxSqftMax = 1000000;
+
+export const requestBuyerQualificationResponseOneCriteriaOneClosingDaysMax = 365;
+
+export const requestBuyerQualificationResponseOneCriteriaOneCountiesItemMax = 200;
+
+export const requestBuyerQualificationResponseOneCriteriaOneExcludedCountiesItemMax = 200;
+
+export const requestBuyerQualificationResponseOneCriteriaOneExcludedCitiesItemMax = 200;
+
+export const requestBuyerQualificationResponseOneCriteriaOneExcludedZipCodesItemRegExp = new RegExp('^\\d{5}$');
+export const requestBuyerQualificationResponseOneCriteriaOneMinPurchasePriceMin = 0;
+export const requestBuyerQualificationResponseOneCriteriaOneMinPurchasePriceMax = 1000000000;
+
+export const requestBuyerQualificationResponseOneCriteriaOneMinArvMin = 0;
+export const requestBuyerQualificationResponseOneCriteriaOneMinArvMax = 1000000000;
+
+export const requestBuyerQualificationResponseOneCriteriaOneMaxArvMin = 0;
+export const requestBuyerQualificationResponseOneCriteriaOneMaxArvMax = 1000000000;
+
+export const requestBuyerQualificationResponseOneCriteriaOneMinUnitsMin = 0;
+export const requestBuyerQualificationResponseOneCriteriaOneMinUnitsMax = 10000;
+
+export const requestBuyerQualificationResponseOneCriteriaOneMaxUnitsMin = 0;
+export const requestBuyerQualificationResponseOneCriteriaOneMaxUnitsMax = 10000;
+
+export const requestBuyerQualificationResponseOneCriteriaOneMinBathsMin = 0;
+export const requestBuyerQualificationResponseOneCriteriaOneMinBathsMax = 100;
+
+export const requestBuyerQualificationResponseOneCriteriaOneMaxBedsMin = 0;
+export const requestBuyerQualificationResponseOneCriteriaOneMaxBedsMax = 100;
+
+export const requestBuyerQualificationResponseOneCriteriaOneMaxBathsMin = 0;
+export const requestBuyerQualificationResponseOneCriteriaOneMaxBathsMax = 100;
+
+
+
+export const requestBuyerQualificationResponseOneCriteriaOneMaxConcurrentDealsMax = 1000;
+
+export const requestBuyerQualificationResponseOneCriteriaOneMinSpreadMin = 0;
+export const requestBuyerQualificationResponseOneCriteriaOneMinSpreadMax = 1000000000;
+
+export const requestBuyerQualificationResponseOneCriteriaOneMinCapRateMin = 0;
+export const requestBuyerQualificationResponseOneCriteriaOneMinCapRateMax = 1;
+
+export const requestBuyerQualificationResponseOneQualifiedDealFeeMin = 0;
+export const requestBuyerQualificationResponseOneQualifiedDealFeeMax = 1000000000;
+
+export const requestBuyerQualificationResponseOneFeeTermsSourceMax = 2000;
+
+export const requestBuyerQualificationResponseTwoDiscoveryEvidenceConfidenceMin = 0;
+export const requestBuyerQualificationResponseTwoDiscoveryEvidenceConfidenceMax = 1;
+
+export const requestBuyerQualificationResponseTwoVerificationHistoryItemCriteriaOneStatesItemMin = 2;
+export const requestBuyerQualificationResponseTwoVerificationHistoryItemCriteriaOneStatesItemMax = 2;
+
+
+
+export const requestBuyerQualificationResponseTwoVerificationHistoryItemCriteriaOneZipCodesItemRegExp = new RegExp('^\\d{5}$');
+
+export const requestBuyerQualificationResponseTwoVerificationHistoryItemCriteriaOneMaxPurchasePriceExclusiveMin = 0;
+export const requestBuyerQualificationResponseTwoVerificationHistoryItemCriteriaOneMaxPurchasePriceMax = 1000000000;
+
+export const requestBuyerQualificationResponseTwoVerificationHistoryItemCriteriaOneMaxRepairsMin = 0;
+export const requestBuyerQualificationResponseTwoVerificationHistoryItemCriteriaOneMaxRepairsMax = 1000000000;
+
+export const requestBuyerQualificationResponseTwoVerificationHistoryItemCriteriaOneMinBedsMin = 0;
+export const requestBuyerQualificationResponseTwoVerificationHistoryItemCriteriaOneMinBedsMax = 100;
+
+export const requestBuyerQualificationResponseTwoVerificationHistoryItemCriteriaOneMinSqftMin = 0;
+export const requestBuyerQualificationResponseTwoVerificationHistoryItemCriteriaOneMinSqftMax = 1000000;
+
+export const requestBuyerQualificationResponseTwoVerificationHistoryItemCriteriaOneMaxSqftExclusiveMin = 0;
+export const requestBuyerQualificationResponseTwoVerificationHistoryItemCriteriaOneMaxSqftMax = 1000000;
+
+export const requestBuyerQualificationResponseTwoVerificationHistoryItemCriteriaOneClosingDaysMax = 365;
+
+export const requestBuyerQualificationResponseTwoVerificationHistoryItemCriteriaOneCountiesItemMax = 200;
+
+export const requestBuyerQualificationResponseTwoVerificationHistoryItemCriteriaOneExcludedCountiesItemMax = 200;
+
+export const requestBuyerQualificationResponseTwoVerificationHistoryItemCriteriaOneExcludedCitiesItemMax = 200;
+
+export const requestBuyerQualificationResponseTwoVerificationHistoryItemCriteriaOneExcludedZipCodesItemRegExp = new RegExp('^\\d{5}$');
+export const requestBuyerQualificationResponseTwoVerificationHistoryItemCriteriaOneMinPurchasePriceMin = 0;
+export const requestBuyerQualificationResponseTwoVerificationHistoryItemCriteriaOneMinPurchasePriceMax = 1000000000;
+
+export const requestBuyerQualificationResponseTwoVerificationHistoryItemCriteriaOneMinArvMin = 0;
+export const requestBuyerQualificationResponseTwoVerificationHistoryItemCriteriaOneMinArvMax = 1000000000;
+
+export const requestBuyerQualificationResponseTwoVerificationHistoryItemCriteriaOneMaxArvMin = 0;
+export const requestBuyerQualificationResponseTwoVerificationHistoryItemCriteriaOneMaxArvMax = 1000000000;
+
+export const requestBuyerQualificationResponseTwoVerificationHistoryItemCriteriaOneMinUnitsMin = 0;
+export const requestBuyerQualificationResponseTwoVerificationHistoryItemCriteriaOneMinUnitsMax = 10000;
+
+export const requestBuyerQualificationResponseTwoVerificationHistoryItemCriteriaOneMaxUnitsMin = 0;
+export const requestBuyerQualificationResponseTwoVerificationHistoryItemCriteriaOneMaxUnitsMax = 10000;
+
+export const requestBuyerQualificationResponseTwoVerificationHistoryItemCriteriaOneMinBathsMin = 0;
+export const requestBuyerQualificationResponseTwoVerificationHistoryItemCriteriaOneMinBathsMax = 100;
+
+export const requestBuyerQualificationResponseTwoVerificationHistoryItemCriteriaOneMaxBedsMin = 0;
+export const requestBuyerQualificationResponseTwoVerificationHistoryItemCriteriaOneMaxBedsMax = 100;
+
+export const requestBuyerQualificationResponseTwoVerificationHistoryItemCriteriaOneMaxBathsMin = 0;
+export const requestBuyerQualificationResponseTwoVerificationHistoryItemCriteriaOneMaxBathsMax = 100;
+
+
+
+export const requestBuyerQualificationResponseTwoVerificationHistoryItemCriteriaOneMaxConcurrentDealsMax = 1000;
+
+export const requestBuyerQualificationResponseTwoVerificationHistoryItemCriteriaOneMinSpreadMin = 0;
+export const requestBuyerQualificationResponseTwoVerificationHistoryItemCriteriaOneMinSpreadMax = 1000000000;
+
+export const requestBuyerQualificationResponseTwoVerificationHistoryItemCriteriaOneMinCapRateMin = 0;
+export const requestBuyerQualificationResponseTwoVerificationHistoryItemCriteriaOneMinCapRateMax = 1;
+
+
+
+export const RequestBuyerQualificationResponse = zod.object({
+  "name": zod.string().min(1).max(requestBuyerQualificationResponseOneNameMax),
+  "email": zod.string().max(requestBuyerQualificationResponseOneEmailMax),
+  "phone": zod.string().max(requestBuyerQualificationResponseOnePhoneMax),
+  "source": zod.string().min(1).max(requestBuyerQualificationResponseOneSourceMax),
+  "criteria": zod.union([zod.object({
+  "states": zod.array(zod.string().min(requestBuyerQualificationResponseOneCriteriaOneStatesItemMin).max(requestBuyerQualificationResponseOneCriteriaOneStatesItemMax)).min(1),
+  "cities": zod.array(zod.string().min(1)),
+  "zipCodes": zod.array(zod.string().regex(requestBuyerQualificationResponseOneCriteriaOneZipCodesItemRegExp)),
+  "propertyTypes": zod.array(zod.enum(['SINGLE_FAMILY', 'MULTIFAMILY', 'CONDO', 'TOWNHOUSE', 'LAND', 'OTHER'])).min(1),
+  "maxPurchasePrice": zod.number().gt(requestBuyerQualificationResponseOneCriteriaOneMaxPurchasePriceExclusiveMin).max(requestBuyerQualificationResponseOneCriteriaOneMaxPurchasePriceMax),
+  "maxRepairs": zod.number().min(requestBuyerQualificationResponseOneCriteriaOneMaxRepairsMin).max(requestBuyerQualificationResponseOneCriteriaOneMaxRepairsMax),
+  "minBeds": zod.number().int().min(requestBuyerQualificationResponseOneCriteriaOneMinBedsMin).max(requestBuyerQualificationResponseOneCriteriaOneMinBedsMax),
+  "minSqft": zod.number().min(requestBuyerQualificationResponseOneCriteriaOneMinSqftMin).max(requestBuyerQualificationResponseOneCriteriaOneMinSqftMax),
+  "maxSqft": zod.number().gt(requestBuyerQualificationResponseOneCriteriaOneMaxSqftExclusiveMin).max(requestBuyerQualificationResponseOneCriteriaOneMaxSqftMax),
+  "closingDays": zod.number().int().min(1).max(requestBuyerQualificationResponseOneCriteriaOneClosingDaysMax),
+  "counties": zod.array(zod.string().min(1).max(requestBuyerQualificationResponseOneCriteriaOneCountiesItemMax)).optional(),
+  "excludedCounties": zod.array(zod.string().min(1).max(requestBuyerQualificationResponseOneCriteriaOneExcludedCountiesItemMax)).optional(),
+  "excludedCities": zod.array(zod.string().min(1).max(requestBuyerQualificationResponseOneCriteriaOneExcludedCitiesItemMax)).optional(),
+  "excludedZipCodes": zod.array(zod.string().regex(requestBuyerQualificationResponseOneCriteriaOneExcludedZipCodesItemRegExp)).optional(),
+  "minPurchasePrice": zod.number().min(requestBuyerQualificationResponseOneCriteriaOneMinPurchasePriceMin).max(requestBuyerQualificationResponseOneCriteriaOneMinPurchasePriceMax).optional(),
+  "minArv": zod.number().min(requestBuyerQualificationResponseOneCriteriaOneMinArvMin).max(requestBuyerQualificationResponseOneCriteriaOneMinArvMax).nullish(),
+  "maxArv": zod.number().min(requestBuyerQualificationResponseOneCriteriaOneMaxArvMin).max(requestBuyerQualificationResponseOneCriteriaOneMaxArvMax).nullish(),
+  "minUnits": zod.number().int().min(requestBuyerQualificationResponseOneCriteriaOneMinUnitsMin).max(requestBuyerQualificationResponseOneCriteriaOneMinUnitsMax).optional(),
+  "maxUnits": zod.number().int().min(requestBuyerQualificationResponseOneCriteriaOneMaxUnitsMin).max(requestBuyerQualificationResponseOneCriteriaOneMaxUnitsMax).optional(),
+  "minBaths": zod.number().min(requestBuyerQualificationResponseOneCriteriaOneMinBathsMin).max(requestBuyerQualificationResponseOneCriteriaOneMinBathsMax).optional(),
+  "maxBeds": zod.number().int().min(requestBuyerQualificationResponseOneCriteriaOneMaxBedsMin).max(requestBuyerQualificationResponseOneCriteriaOneMaxBedsMax).nullish(),
+  "maxBaths": zod.number().min(requestBuyerQualificationResponseOneCriteriaOneMaxBathsMin).max(requestBuyerQualificationResponseOneCriteriaOneMaxBathsMax).nullish(),
+  "rehabTolerance": zod.enum(['NONE', 'LIGHT', 'MODERATE', 'HEAVY', 'ANY']).optional(),
+  "strategies": zod.array(zod.enum(['FLIP', 'RENTAL', 'BRRRR', 'WHOLESALE', 'DEVELOPMENT', 'OTHER'])).min(1).optional(),
+  "fundingTypes": zod.array(zod.enum(['CASH', 'HARD_MONEY', 'PRIVATE_LENDING', 'CONVENTIONAL', 'OTHER'])).min(1).optional(),
+  "maxConcurrentDeals": zod.number().int().min(1).max(requestBuyerQualificationResponseOneCriteriaOneMaxConcurrentDealsMax).optional(),
+  "minSpread": zod.number().min(requestBuyerQualificationResponseOneCriteriaOneMinSpreadMin).max(requestBuyerQualificationResponseOneCriteriaOneMinSpreadMax).nullish(),
+  "minCapRate": zod.number().min(requestBuyerQualificationResponseOneCriteriaOneMinCapRateMin).max(requestBuyerQualificationResponseOneCriteriaOneMinCapRateMax).nullish()
+}),zod.null()]),
+  "status": zod.enum(['ACTIVE', 'PAUSED']),
+  "destinationKind": zod.enum(['BUYER', 'DEAL_FINDER', 'GURU']).optional(),
+  "qualifiedDealFee": zod.number().min(requestBuyerQualificationResponseOneQualifiedDealFeeMin).max(requestBuyerQualificationResponseOneQualifiedDealFeeMax).nullish(),
+  "feeTermsSource": zod.string().max(requestBuyerQualificationResponseOneFeeTermsSourceMax).optional()
+}).and(zod.object({
+  "id": zod.string(),
+  "version": zod.number().int(),
+  "verificationStatus": zod.enum(['UNVERIFIED', 'VERIFIED', 'STALE']),
+  "identityEvidenceUrl": zod.string().nullish(),
+  "fundingEvidenceUrl": zod.string().nullish(),
+  "verificationNote": zod.string().nullish(),
+  "availableFunds": zod.number().nullish(),
+  "verifiedFundingTypes": zod.array(zod.enum(['CASH', 'HARD_MONEY', 'PRIVATE_LENDING', 'CONVENTIONAL', 'OTHER'])).optional(),
+  "evidenceAt": zod.string().nullish(),
+  "validUntil": zod.string().nullish(),
+  "verifiedBy": zod.string().nullish(),
+  "verifiedAt": zod.string().nullish(),
+  "approvalStatus": zod.enum(['DISCOVERED', 'QUALIFICATION_REQUIRED', 'APPROVED', 'REVERIFICATION_REQUIRED']).optional(),
+  "currentBuyingStatus": zod.enum(['UNKNOWN', 'BUYING', 'PAUSED', 'NOT_BUYING']).optional(),
+  "buyingEvidenceUrl": zod.string().nullish(),
+  "buyingEvidenceAt": zod.string().nullish(),
+  "buyingVerifiedAt": zod.string().nullish(),
+  "criteriaEvidenceUrl": zod.string().nullish(),
+  "verificationSource": zod.string().nullish(),
+  "confidence": zod.number().nullish(),
+  "qualificationBlockers": zod.array(zod.string()).optional(),
+  "discoveryEvidence": zod.object({
+  "classification": zod.enum(['OBSERVED']),
+  "source": zod.string(),
+  "sourceUrl": zod.string(),
+  "capturedAt": zod.string(),
+  "confidence": zod.number().min(requestBuyerQualificationResponseTwoDiscoveryEvidenceConfidenceMin).max(requestBuyerQualificationResponseTwoDiscoveryEvidenceConfidenceMax)
+}).optional(),
+  "verificationHistory": zod.array(zod.object({
+  "verifiedFundingTypes": zod.array(zod.enum(['CASH', 'HARD_MONEY', 'PRIVATE_LENDING', 'CONVENTIONAL', 'OTHER'])).optional(),
+  "reviewedBy": zod.string(),
+  "reviewedAt": zod.string(),
+  "currentBuyingStatus": zod.enum(['BUYING', 'PAUSED', 'NOT_BUYING']),
+  "buyingEvidenceUrl": zod.string(),
+  "buyingEvidenceAt": zod.string().optional(),
+  "criteriaEvidenceUrl": zod.string(),
+  "verificationSource": zod.string(),
+  "identityEvidenceUrl": zod.string().optional(),
+  "fundingEvidenceUrl": zod.string().optional(),
+  "availableFunds": zod.number().optional(),
+  "evidenceAt": zod.string().optional(),
+  "validUntil": zod.string().optional(),
+  "confidence": zod.number().optional(),
+  "verificationNote": zod.string().optional(),
+  "destinationKind": zod.enum(['BUYER', 'DEAL_FINDER', 'GURU']).optional(),
+  "criteria": zod.union([zod.object({
+  "states": zod.array(zod.string().min(requestBuyerQualificationResponseTwoVerificationHistoryItemCriteriaOneStatesItemMin).max(requestBuyerQualificationResponseTwoVerificationHistoryItemCriteriaOneStatesItemMax)).min(1),
+  "cities": zod.array(zod.string().min(1)),
+  "zipCodes": zod.array(zod.string().regex(requestBuyerQualificationResponseTwoVerificationHistoryItemCriteriaOneZipCodesItemRegExp)),
+  "propertyTypes": zod.array(zod.enum(['SINGLE_FAMILY', 'MULTIFAMILY', 'CONDO', 'TOWNHOUSE', 'LAND', 'OTHER'])).min(1),
+  "maxPurchasePrice": zod.number().gt(requestBuyerQualificationResponseTwoVerificationHistoryItemCriteriaOneMaxPurchasePriceExclusiveMin).max(requestBuyerQualificationResponseTwoVerificationHistoryItemCriteriaOneMaxPurchasePriceMax),
+  "maxRepairs": zod.number().min(requestBuyerQualificationResponseTwoVerificationHistoryItemCriteriaOneMaxRepairsMin).max(requestBuyerQualificationResponseTwoVerificationHistoryItemCriteriaOneMaxRepairsMax),
+  "minBeds": zod.number().int().min(requestBuyerQualificationResponseTwoVerificationHistoryItemCriteriaOneMinBedsMin).max(requestBuyerQualificationResponseTwoVerificationHistoryItemCriteriaOneMinBedsMax),
+  "minSqft": zod.number().min(requestBuyerQualificationResponseTwoVerificationHistoryItemCriteriaOneMinSqftMin).max(requestBuyerQualificationResponseTwoVerificationHistoryItemCriteriaOneMinSqftMax),
+  "maxSqft": zod.number().gt(requestBuyerQualificationResponseTwoVerificationHistoryItemCriteriaOneMaxSqftExclusiveMin).max(requestBuyerQualificationResponseTwoVerificationHistoryItemCriteriaOneMaxSqftMax),
+  "closingDays": zod.number().int().min(1).max(requestBuyerQualificationResponseTwoVerificationHistoryItemCriteriaOneClosingDaysMax),
+  "counties": zod.array(zod.string().min(1).max(requestBuyerQualificationResponseTwoVerificationHistoryItemCriteriaOneCountiesItemMax)).optional(),
+  "excludedCounties": zod.array(zod.string().min(1).max(requestBuyerQualificationResponseTwoVerificationHistoryItemCriteriaOneExcludedCountiesItemMax)).optional(),
+  "excludedCities": zod.array(zod.string().min(1).max(requestBuyerQualificationResponseTwoVerificationHistoryItemCriteriaOneExcludedCitiesItemMax)).optional(),
+  "excludedZipCodes": zod.array(zod.string().regex(requestBuyerQualificationResponseTwoVerificationHistoryItemCriteriaOneExcludedZipCodesItemRegExp)).optional(),
+  "minPurchasePrice": zod.number().min(requestBuyerQualificationResponseTwoVerificationHistoryItemCriteriaOneMinPurchasePriceMin).max(requestBuyerQualificationResponseTwoVerificationHistoryItemCriteriaOneMinPurchasePriceMax).optional(),
+  "minArv": zod.number().min(requestBuyerQualificationResponseTwoVerificationHistoryItemCriteriaOneMinArvMin).max(requestBuyerQualificationResponseTwoVerificationHistoryItemCriteriaOneMinArvMax).nullish(),
+  "maxArv": zod.number().min(requestBuyerQualificationResponseTwoVerificationHistoryItemCriteriaOneMaxArvMin).max(requestBuyerQualificationResponseTwoVerificationHistoryItemCriteriaOneMaxArvMax).nullish(),
+  "minUnits": zod.number().int().min(requestBuyerQualificationResponseTwoVerificationHistoryItemCriteriaOneMinUnitsMin).max(requestBuyerQualificationResponseTwoVerificationHistoryItemCriteriaOneMinUnitsMax).optional(),
+  "maxUnits": zod.number().int().min(requestBuyerQualificationResponseTwoVerificationHistoryItemCriteriaOneMaxUnitsMin).max(requestBuyerQualificationResponseTwoVerificationHistoryItemCriteriaOneMaxUnitsMax).optional(),
+  "minBaths": zod.number().min(requestBuyerQualificationResponseTwoVerificationHistoryItemCriteriaOneMinBathsMin).max(requestBuyerQualificationResponseTwoVerificationHistoryItemCriteriaOneMinBathsMax).optional(),
+  "maxBeds": zod.number().int().min(requestBuyerQualificationResponseTwoVerificationHistoryItemCriteriaOneMaxBedsMin).max(requestBuyerQualificationResponseTwoVerificationHistoryItemCriteriaOneMaxBedsMax).nullish(),
+  "maxBaths": zod.number().min(requestBuyerQualificationResponseTwoVerificationHistoryItemCriteriaOneMaxBathsMin).max(requestBuyerQualificationResponseTwoVerificationHistoryItemCriteriaOneMaxBathsMax).nullish(),
+  "rehabTolerance": zod.enum(['NONE', 'LIGHT', 'MODERATE', 'HEAVY', 'ANY']).optional(),
+  "strategies": zod.array(zod.enum(['FLIP', 'RENTAL', 'BRRRR', 'WHOLESALE', 'DEVELOPMENT', 'OTHER'])).min(1).optional(),
+  "fundingTypes": zod.array(zod.enum(['CASH', 'HARD_MONEY', 'PRIVATE_LENDING', 'CONVENTIONAL', 'OTHER'])).min(1).optional(),
+  "maxConcurrentDeals": zod.number().int().min(1).max(requestBuyerQualificationResponseTwoVerificationHistoryItemCriteriaOneMaxConcurrentDealsMax).optional(),
+  "minSpread": zod.number().min(requestBuyerQualificationResponseTwoVerificationHistoryItemCriteriaOneMinSpreadMin).max(requestBuyerQualificationResponseTwoVerificationHistoryItemCriteriaOneMinSpreadMax).nullish(),
+  "minCapRate": zod.number().min(requestBuyerQualificationResponseTwoVerificationHistoryItemCriteriaOneMinCapRateMin).max(requestBuyerQualificationResponseTwoVerificationHistoryItemCriteriaOneMinCapRateMax).nullish()
+}),zod.null()]).optional()
+})).optional(),
+  "qualificationTask": zod.union([zod.object({
+  "id": zod.string(),
+  "kind": zod.enum(['QUALIFY', 'REVERIFY']),
+  "state": zod.enum(['PENDING_EXECUTION', 'WAITING_EXTERNAL', 'WAITING_REVIEW', 'COMPLETED']),
+  "reason": zod.string(),
+  "preparedMessage": zod.string(),
+  "dueAt": zod.string(),
+  "updatedAt": zod.string()
+}),zod.null()]).optional(),
+  "lastOutreachReplyAt": zod.string().optional(),
+  "lastOutreachReplyEvidenceUrl": zod.string().optional(),
+  "createdAt": zod.string(),
+  "updatedAt": zod.string()
+}))
+
+
+
+export const listHandoffsResponseEventsItemOneEventKeyMin = 8;
+export const listHandoffsResponseEventsItemOneEventKeyMax = 200;
+
+export const listHandoffsResponseEventsItemOneEvidenceUrlMin = 8;
+export const listHandoffsResponseEventsItemOneEvidenceUrlMax = 2000;
+
+export const listHandoffsResponseEventsItemOneNoteMin = 3;
+export const listHandoffsResponseEventsItemOneNoteMax = 5000;
+
+export const listHandoffsResponseEventsItemOneRouteValueMax = 500;
+
+export const listHandoffsResponseEventsItemOnePermissionEvidenceUrlMin = 8;
+export const listHandoffsResponseEventsItemOnePermissionEvidenceUrlMax = 2000;
+
+
+
+export const ListHandoffsResponseItem = zod.object({
+  "id": zod.string(),
+  "version": zod.number().int(),
+  "subjectType": zod.enum(['BUYER', 'SELLER']),
+  "subjectId": zod.string(),
+  "subjectVersion": zod.number().int(),
+  "contextKey": zod.string(),
+  "recipient": zod.string(),
+  "preparedMessage": zod.string(),
+  "state": zod.enum(['WAITING_CONTACT', 'WAITING_REPLY', 'REPLIED', 'CANCELLED']),
+  "dueAt": zod.string(),
+  "createdAt": zod.string(),
+  "updatedAt": zod.string(),
+  "nextAction": zod.string(),
+  "events": zod.array(zod.object({
+  "version": zod.number().int().min(1),
+  "eventKey": zod.string().min(listHandoffsResponseEventsItemOneEventKeyMin).max(listHandoffsResponseEventsItemOneEventKeyMax),
+  "kind": zod.enum(['CONTACTED', 'REPLIED', 'NO_RESPONSE', 'FAILED', 'CANCELLED']),
+  "occurredAt": zod.string(),
+  "evidenceUrl": zod.string().min(listHandoffsResponseEventsItemOneEvidenceUrlMin).max(listHandoffsResponseEventsItemOneEvidenceUrlMax),
+  "note": zod.string().min(listHandoffsResponseEventsItemOneNoteMin).max(listHandoffsResponseEventsItemOneNoteMax),
+  "channel": zod.enum(['PHONE', 'EMAIL', 'OTHER']).optional(),
+  "routeValue": zod.string().min(1).max(listHandoffsResponseEventsItemOneRouteValueMax).optional(),
+  "permissionEvidenceUrl": zod.string().min(listHandoffsResponseEventsItemOnePermissionEvidenceUrlMin).max(listHandoffsResponseEventsItemOnePermissionEvidenceUrlMax).optional(),
+  "followUpAt": zod.string().optional()
+}).and(zod.object({
+  "recordedAt": zod.string(),
+  "recordedBy": zod.string()
+})))
+})
+export const ListHandoffsResponse = zod.array(ListHandoffsResponseItem)
+
+
+export const RecordHandoffEventParams = zod.object({
+  "id": zod.coerce.string().uuid()
+})
+
+
+export const recordHandoffEventBodyEventKeyMin = 8;
+export const recordHandoffEventBodyEventKeyMax = 200;
+
+export const recordHandoffEventBodyEvidenceUrlMin = 8;
+export const recordHandoffEventBodyEvidenceUrlMax = 2000;
+
+export const recordHandoffEventBodyNoteMin = 3;
+export const recordHandoffEventBodyNoteMax = 5000;
+
+export const recordHandoffEventBodyRouteValueMax = 500;
+
+export const recordHandoffEventBodyPermissionEvidenceUrlMin = 8;
+export const recordHandoffEventBodyPermissionEvidenceUrlMax = 2000;
+
+
+
+export const RecordHandoffEventBody = zod.object({
+  "version": zod.number().int().min(1),
+  "eventKey": zod.string().min(recordHandoffEventBodyEventKeyMin).max(recordHandoffEventBodyEventKeyMax),
+  "kind": zod.enum(['CONTACTED', 'REPLIED', 'NO_RESPONSE', 'FAILED', 'CANCELLED']),
+  "occurredAt": zod.string(),
+  "evidenceUrl": zod.string().min(recordHandoffEventBodyEvidenceUrlMin).max(recordHandoffEventBodyEvidenceUrlMax),
+  "note": zod.string().min(recordHandoffEventBodyNoteMin).max(recordHandoffEventBodyNoteMax),
+  "channel": zod.enum(['PHONE', 'EMAIL', 'OTHER']).optional(),
+  "routeValue": zod.string().min(1).max(recordHandoffEventBodyRouteValueMax).optional(),
+  "permissionEvidenceUrl": zod.string().min(recordHandoffEventBodyPermissionEvidenceUrlMin).max(recordHandoffEventBodyPermissionEvidenceUrlMax).optional(),
+  "followUpAt": zod.string().optional()
+})
+
+
+export const recordHandoffEventResponseEventsItemOneEventKeyMin = 8;
+export const recordHandoffEventResponseEventsItemOneEventKeyMax = 200;
+
+export const recordHandoffEventResponseEventsItemOneEvidenceUrlMin = 8;
+export const recordHandoffEventResponseEventsItemOneEvidenceUrlMax = 2000;
+
+export const recordHandoffEventResponseEventsItemOneNoteMin = 3;
+export const recordHandoffEventResponseEventsItemOneNoteMax = 5000;
+
+export const recordHandoffEventResponseEventsItemOneRouteValueMax = 500;
+
+export const recordHandoffEventResponseEventsItemOnePermissionEvidenceUrlMin = 8;
+export const recordHandoffEventResponseEventsItemOnePermissionEvidenceUrlMax = 2000;
+
+
+
+export const RecordHandoffEventResponse = zod.object({
+  "id": zod.string(),
+  "version": zod.number().int(),
+  "subjectType": zod.enum(['BUYER', 'SELLER']),
+  "subjectId": zod.string(),
+  "subjectVersion": zod.number().int(),
+  "contextKey": zod.string(),
+  "recipient": zod.string(),
+  "preparedMessage": zod.string(),
+  "state": zod.enum(['WAITING_CONTACT', 'WAITING_REPLY', 'REPLIED', 'CANCELLED']),
+  "dueAt": zod.string(),
+  "createdAt": zod.string(),
+  "updatedAt": zod.string(),
+  "nextAction": zod.string(),
+  "events": zod.array(zod.object({
+  "version": zod.number().int().min(1),
+  "eventKey": zod.string().min(recordHandoffEventResponseEventsItemOneEventKeyMin).max(recordHandoffEventResponseEventsItemOneEventKeyMax),
+  "kind": zod.enum(['CONTACTED', 'REPLIED', 'NO_RESPONSE', 'FAILED', 'CANCELLED']),
+  "occurredAt": zod.string(),
+  "evidenceUrl": zod.string().min(recordHandoffEventResponseEventsItemOneEvidenceUrlMin).max(recordHandoffEventResponseEventsItemOneEvidenceUrlMax),
+  "note": zod.string().min(recordHandoffEventResponseEventsItemOneNoteMin).max(recordHandoffEventResponseEventsItemOneNoteMax),
+  "channel": zod.enum(['PHONE', 'EMAIL', 'OTHER']).optional(),
+  "routeValue": zod.string().min(1).max(recordHandoffEventResponseEventsItemOneRouteValueMax).optional(),
+  "permissionEvidenceUrl": zod.string().min(recordHandoffEventResponseEventsItemOnePermissionEvidenceUrlMin).max(recordHandoffEventResponseEventsItemOnePermissionEvidenceUrlMax).optional(),
+  "followUpAt": zod.string().optional()
+}).and(zod.object({
+  "recordedAt": zod.string(),
+  "recordedBy": zod.string()
+})))
+})
+
+
 export const ListWorkerJobsResponseItem = zod.object({
   "id": zod.string(),
-  "kind": zod.enum(['MATCH_BUYERS', 'REVIEW_DEADLINES', 'ENRICH_PROPERTY', 'PREPARE_BRIEF', 'BUYER_DISCOVERY', 'REVIEW_BUYER_POOL']),
+  "kind": zod.enum(['MATCH_BUYERS', 'REVIEW_DEADLINES', 'ENRICH_PROPERTY', 'PREPARE_BRIEF', 'BUYER_DISCOVERY', 'REVIEW_BUYER_POOL', 'REVIEW_HANDOFFS', 'HUMAN_HANDOFF']),
   "recurringDiscovery": zod.boolean().optional(),
   "state": zod.enum(['QUEUED', 'RUNNING', 'SUCCEEDED', 'FAILED']),
   "leadId": zod.string().nullable(),
@@ -13878,7 +14336,7 @@ export const submitWorkerJobBodyIdempotencyKeyMax = 200;
 
 
 export const SubmitWorkerJobBody = zod.object({
-  "kind": zod.enum(['MATCH_BUYERS', 'REVIEW_DEADLINES', 'ENRICH_PROPERTY', 'PREPARE_BRIEF', 'BUYER_DISCOVERY', 'REVIEW_BUYER_POOL']),
+  "kind": zod.enum(['MATCH_BUYERS', 'REVIEW_DEADLINES', 'ENRICH_PROPERTY', 'PREPARE_BRIEF', 'BUYER_DISCOVERY', 'REVIEW_BUYER_POOL', 'REVIEW_HANDOFFS']),
   "leadId": zod.string().optional(),
   "termsReviewed": zod.boolean().optional(),
   "recurringDiscovery": zod.boolean().optional(),
@@ -13887,7 +14345,7 @@ export const SubmitWorkerJobBody = zod.object({
 
 export const SubmitWorkerJobResponse = zod.object({
   "id": zod.string(),
-  "kind": zod.enum(['MATCH_BUYERS', 'REVIEW_DEADLINES', 'ENRICH_PROPERTY', 'PREPARE_BRIEF', 'BUYER_DISCOVERY', 'REVIEW_BUYER_POOL']),
+  "kind": zod.enum(['MATCH_BUYERS', 'REVIEW_DEADLINES', 'ENRICH_PROPERTY', 'PREPARE_BRIEF', 'BUYER_DISCOVERY', 'REVIEW_BUYER_POOL', 'REVIEW_HANDOFFS', 'HUMAN_HANDOFF']),
   "recurringDiscovery": zod.boolean().optional(),
   "state": zod.enum(['QUEUED', 'RUNNING', 'SUCCEEDED', 'FAILED']),
   "leadId": zod.string().nullable(),
@@ -14936,12 +15394,14 @@ export const DiscoverBuyerResponse = zod.object({
   "qualificationTask": zod.union([zod.object({
   "id": zod.string(),
   "kind": zod.enum(['QUALIFY', 'REVERIFY']),
-  "state": zod.enum(['PENDING_EXECUTION', 'WAITING_EXTERNAL', 'COMPLETED']),
+  "state": zod.enum(['PENDING_EXECUTION', 'WAITING_EXTERNAL', 'WAITING_REVIEW', 'COMPLETED']),
   "reason": zod.string(),
   "preparedMessage": zod.string(),
   "dueAt": zod.string(),
   "updatedAt": zod.string()
 }),zod.null()]).optional(),
+  "lastOutreachReplyAt": zod.string().optional(),
+  "lastOutreachReplyEvidenceUrl": zod.string().optional(),
   "createdAt": zod.string(),
   "updatedAt": zod.string()
 }))

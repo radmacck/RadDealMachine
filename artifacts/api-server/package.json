@@ -4,6 +4,7 @@
   "private": true,
   "type": "module",
   "scripts": {
+    "exercise:handoffs": "tsx src/services/isolated-exercise.ts handoff-exercise.ts",
     "exercise:evidence-intake": "tsx src/services/isolated-exercise.ts evidence-intake-exercise.ts",
     "test:auth": "tsx --test src/services/access.test.ts",
     "test:research": "tsx --test src/services/research-worker.test.ts",

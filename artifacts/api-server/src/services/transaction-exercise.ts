@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { randomUUID } from "node:crypto";
-import { db,pool,contractsTable,jobsTable,matchesTable } from "@workspace/db";
+import { db,pool,contractsTable,jobsTable,matchesTable,buyersTable } from "@workspace/db";
 import { eq } from "drizzle-orm";
 import { logger } from "../lib/logger";
 import * as seller from "./deal-store";
@@ -13,6 +13,8 @@ import { submitWorkerJob,runWorkerOnce } from "./workers";
 import { commandCenter } from "./command-center";
 import { CLOSING_MILESTONES } from "@workspace/deal-domain";
 import { recordTransactionException } from "./transaction-exceptions";
+import { reviewHandoffs, listHandoffs, recordHandoffEvent } from "./handoffs";
+import { getBuyerRecord } from "./operations-records";
 const actor = {id:`synthetic-transaction:${randomUUID()}`,role:"OWNER"};
 const operator = {...actor,role:"OPERATOR"};
 const now = new Date();
@@ -74,11 +76,18 @@ try {
       minBaths:1,rehabTolerance:"HEAVY",strategies:["FLIP"],fundingTypes:["CASH"],maxConcurrentDeals:2}},actor);
   op = await refreshMatches(id,now);
   assert.equal(op.matches.find(m=>m.buyerId===buyer.id)?.eligible,false);
-  buyer = await buyers.verifyBuyer(buyer.id,{version:buyer.version,verifiedFundingTypes:["CASH"],identityEvidenceUrl:"https://example.com/synthetic-id",
+   await reviewHandoffs(now);
+   buyer = await getBuyerRecord(buyer.id,db,now);
+   const qualificationHandoff = (await listHandoffs()).find(h=>h.subjectId===buyer.id)!;
+   await recordHandoffEvent(qualificationHandoff.id,{version:qualificationHandoff.version,eventKey:"synthetic-qualification-contact",
+     kind:"CONTACTED",occurredAt:now.toISOString(),evidenceUrl:"https://example.com/synthetic-contact",note:"SYNTHETIC contact fixture, no message sent.",
+     channel:"EMAIL",routeValue:"synthetic@example.com",permissionEvidenceUrl:"https://example.com/synthetic-permission",followUpAt:future(1)},operator,now);
+   const verificationInput = {version:buyer.version,verifiedFundingTypes:["CASH" as const],identityEvidenceUrl:"https://example.com/synthetic-id",
     fundingEvidenceUrl:"https://example.com/synthetic-funds",availableFunds:200000,verificationNote:"Synthetic review, not real bank proof.",
-    evidenceAt:now.toISOString(),validUntil:future(25),currentBuyingStatus:"BUYING",buyingEvidenceAt:now.toISOString(),
+     evidenceAt:now.toISOString(),validUntil:future(25),currentBuyingStatus:"BUYING" as const,buyingEvidenceAt:new Date(now.getTime()-1000).toISOString(),
     buyingEvidenceUrl:"https://example.com/synthetic-buying",criteriaEvidenceUrl:"https://example.com/synthetic-criteria",
-    verificationSource:"Synthetic investor response",confidence:0.9},actor,now);
+     verificationSource:"Synthetic investor response",confidence:0.9};
+   buyer = await buyers.verifyBuyer(buyer.id,verificationInput,actor,now);
   const job = await submitWorkerJob({kind:"MATCH_BUYERS",leadId:id,idempotencyKey:"synthetic-matching-once"},actor);
   assert.equal((await submitWorkerJob({kind:"MATCH_BUYERS",leadId:id,idempotencyKey:"synthetic-matching-once"},actor)).id,job.id);
   const races = await Promise.all([runWorkerOnce(now,false,job.id),runWorkerOnce(now,false,job.id)]);
@@ -88,6 +97,22 @@ try {
   op = await dealOperations(id,now);
   assert.equal(op.matches.find(m=>m.buyerId===buyer.id)?.eligible,true);
   assert.equal((await seller.leadDetail(id)).lead.stage,"BUYER_MATCHED");
+   await reviewHandoffs(now);
+   const stoppedQualification = (await listHandoffs()).find(h=>h.id===qualificationHandoff.id)!;
+   assert.equal(stoppedQualification.state,"CANCELLED");
+   const retainedReply = await recordHandoffEvent(stoppedQualification.id,{version:stoppedQualification.version,eventKey:"synthetic-new-buying-reply",
+     kind:"REPLIED",occurredAt:now.toISOString(),evidenceUrl:"https://example.com/synthetic-new-reply",
+     note:"SYNTHETIC newer actual-response fixture, requires current evidence review."},operator,now);
+   assert.equal(retainedReply.state,"CANCELLED","Late reply must not reactivate stopped outreach.");
+   buyer = await getBuyerRecord(buyer.id,db,now);
+   assert.equal(buyer.approvalStatus,"QUALIFICATION_REQUIRED");
+   op = await refreshMatches(id,now);
+   assert.equal(op.matches.find(m=>m.buyerId===buyer.id)?.eligible,false);
+   assert.equal(op.contract?.purchasePrice,110000);
+   await assert.rejects(buyers.verifyBuyer(buyer.id,{...verificationInput,version:buyer.version},actor,now),/newer actual outreach reply/);
+   buyer = await buyers.verifyBuyer(buyer.id,{...verificationInput,version:buyer.version,buyingEvidenceAt:now.toISOString()},actor,now);
+   op = await refreshMatches(id,now);
+   assert.equal(op.matches.find(m=>m.buyerId===buyer.id)?.eligible,true);
   let destination = await buyers.createBuyer({name:"SYNTHETIC GURU DESTINATION",email:"synthetic-guru@example.com",phone:"",
     source:"Synthetic destination exercise",status:"ACTIVE",destinationKind:"GURU",qualifiedDealFee:500,feeTermsSource:"Synthetic quoted terms, not receipt",
     criteria:buyer.criteria},actor);
@@ -154,6 +179,17 @@ try {
       evidenceUrl:`https://example.com/synthetic-${kind.toLowerCase()}`,note:"Synthetic reviewed evidence, no actual escrow activity."},actor,now);
   }
   await assert.rejects(transactions.recordDealOutcome(id,{...outcome,version:op.contract!.version,assignmentFeeReceived:19999},actor,now),/reconcile/);
+   // An actual response can predate settlement even when entered afterwards.
+   // A recorded-time-only check must not ignore that contradiction.
+   const [beforeLateReply] = await db.select().from(buyersTable).where(eq(buyersTable.id,buyer.id));
+   assert.ok(beforeLateReply);
+   await db.update(buyersTable).set({payload:{...beforeLateReply.payload,lastOutreachReplyAt:future(1),
+     lastOutreachReplyEvidenceUrl:"https://example.com/synthetic-late-entered-reply"},
+     version:beforeLateReply.version+1,updatedAt:new Date(future(5))}).where(eq(buyersTable.id,buyer.id));
+   await assert.rejects(transactions.recordDealOutcome(id,{...outcome,version:op.contract!.version,occurredAt:future(2)},
+     actor,new Date(future(5))),/reply predating settlement/);
+   await db.update(buyersTable).set({payload:beforeLateReply.payload,version:beforeLateReply.version,updatedAt:beforeLateReply.updatedAt})
+     .where(eq(buyersTable.id,buyer.id));
   op = await transactions.recordDealOutcome(id,{...outcome,version:op.contract!.version,occurredAt:future(2)},actor,new Date(now.getTime()+5*86400000));
   assert.equal(op.contract?.status,"CLOSED"); assert.equal(op.contract?.netProceeds,18000);
   assert.equal(op.contract?.closedAt,future(2)); assert.equal(op.contract?.outcomeRecordedAt,future(5));

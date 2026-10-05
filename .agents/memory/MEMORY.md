@@ -4,3 +4,4 @@
 - [Managed workflow port conflicts](workflow-port-conflicts.md) — a failed workflow can coexist with an old listener; verify process ownership before restarting.
 - [Executed transaction boundaries](executed-transactions.md) — supplemental reasoning and ordinary coordination cannot erase financial authority or external commitments.
 - [Isolated persistence exercises](isolated-service-exercises.md) — isolate every pooled connection and preserve relational constraints without mutating real workspace records.
+- [Durable execution identity](execution-identity.md) — semantic retry equality across JSONB; routine matching revisions must not replace unchanged outreach intent.

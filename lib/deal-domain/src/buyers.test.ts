@@ -40,6 +40,13 @@ test("matching explains current qualified fit, not just a magic score",()=>{
   assert.equal(m.eligible,true); assert.equal(m.score,100);
   assert.equal(m.mismatches.length,0); assert.ok(m.reasons.length>10);
 });
+test("newer actual reply blocks otherwise-qualified matching until dated owner review",()=>{
+  const withReply = {...buyer,lastOutreachReplyAt:"2026-10-05T12:00:01Z",lastOutreachReplyEvidenceUrl:"https://example.com/synthetic-new-reply"};
+  const evaluated = matchBuyer(withReply,detail,contract,new Date("2026-10-05T12:00:02Z"));
+  assert.equal(evaluated.eligible,false); assert.match(evaluated.mismatches.join(";"),/newer actual outreach reply/);
+  const reviewed = {...withReply,buyingEvidenceAt:"2026-10-05T12:00:01Z",buyingVerifiedAt:"2026-10-05T12:00:02Z"};
+  assert.equal(matchBuyer(reviewed,detail,contract,new Date("2026-10-05T12:00:02Z")).eligible,true);
+});
 test("funding preferences are not evidenced methods and loan funding does not pass native cash assignment",()=>{
   const missing = matchBuyer({...buyer,verifiedFundingTypes:undefined},detail,contract,now);
   assert.equal(missing.eligible,false);

@@ -1,11 +1,11 @@
 import { createHash, randomUUID } from "node:crypto";
 import { eq, sql } from "drizzle-orm";
 import { db, buyersTable } from "@workspace/db";
-import { DiscoverBuyerBody } from "@workspace/api-zod";
-import { assertOperationsRole, evidenceUrl, pastInstant, buyerQualification, type OfferActor, type Buyer } from "@workspace/deal-domain";
+import { DiscoverBuyerBody, RequestBuyerQualificationBody } from "@workspace/api-zod";
+import { assertOperationsRole, DomainError, evidenceUrl, pastInstant, buyerQualification, type OfferActor, type Buyer } from "@workspace/deal-domain";
 import { searchPublicProperties } from "./property-source-store";
 import { audit } from "./deal-store";
-import { allBuyerRecords, buyerRecord } from "./operations-records";
+import { allBuyerRecords, buyerRecord, queueJob } from "./operations-records";
 type Prospect = ReturnType<typeof DiscoverBuyerBody.parse>;
 export function qualificationTask(b: Pick<Buyer,"name"|"criteria"|"destinationKind">, kind:"QUALIFY"|"REVERIFY", now:Date) {
   const market = b.criteria?.cities.length ? ` in ${b.criteria.cities.join(", ")}` : "";
@@ -63,4 +63,27 @@ export async function reviewBuyerPool(now = new Date()) {
     });
   }
   return `${created} durable qualification/reverification tasks prepared; current approval is computed from dated evidence. No messages sent.`;
+}
+export async function requestBuyerQualification(id:string,input:unknown,actor:OfferActor,now = new Date()) {
+  assertOperationsRole(actor,["OWNER","ANALYST"]);
+  const p = RequestBuyerQualificationBody.parse(input);
+  return db.transaction(async tx=>{
+    const [row] = await tx.select().from(buyersTable).where(eq(buyersTable.id,id)).for("update");
+    if (!row) throw new DomainError("Buyer not found.",404);
+    if (row.version!==p.version) throw new DomainError("Buyer changed. Reload before requesting additional evidence.",409);
+    const b = buyerRecord(row,now);
+    if (b.qualificationTask&&["WAITING_EXTERNAL","PENDING_EXECUTION"].includes(b.qualificationTask.state))
+      throw new DomainError("An outreach/evidence request is already pending. Use its current handoff.",409);
+    const task = qualificationTask(b,b.approvalStatus==="REVERIFICATION_REQUIRED"?"REVERIFY":"QUALIFY",now);
+    task.reason = `Explicit additional-evidence request: ${p.note}. Approval remains subject to owner evidence review.`;
+    const history = Array.isArray(row.payload.qualificationTaskHistory)?row.payload.qualificationTaskHistory:[];
+    const [saved] = await tx.update(buyersTable).set({payload:{...row.payload,qualificationTask:task,
+      qualificationTaskHistory:[...history,...(b.qualificationTask?[b.qualificationTask]:[])]},version:row.version+1,updatedAt:now})
+      .where(eq(buyersTable.id,id)).returning();
+    if (!saved) throw new Error("Qualification request failed.");
+    await queueJob(tx,"REVIEW_HANDOFFS",null,`qualification-request:${id}:${saved.version}`,actor.id);
+    await queueJob(tx,"MATCH_BUYERS",null,`qualification-block:${id}:${saved.version}`,actor.id);
+    await audit(tx,actor.id,"BUYER_MORE_EVIDENCE_REQUESTED",id,`${p.note}; informational qualification request only, no message sent or approval granted.`);
+    return buyerRecord(saved,now);
+  });
 }
