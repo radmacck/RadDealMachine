@@ -425,6 +425,92 @@ paths:
           content:
             application/json:
               schema: { $ref: "#/components/schemas/DealOperations" }
+  /deals/{id}/distribution:
+    parameters:
+      - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
+    get:
+      operationId: getDealDistribution
+      responses:
+        "200":
+          description: Owner-authorized, immutable buyer packet and recipient activity
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/DealDistribution" }
+  /deals/{id}/distribution/authorize:
+    parameters:
+      - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
+    post:
+      operationId: authorizeDealDistribution
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/DistributionAuthorizationInput" }
+      responses:
+        "201":
+          description: Owner locks buyer economics to the executed contract and its underwriting snapshot
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/DealDistribution" }
+  /distribution/{id}/recipients:
+    parameters:
+      - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
+    post:
+      operationId: shareDistributionRecipients
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/DistributionShareInput" }
+      responses:
+        "200":
+          description: Creates or rotates single-use-view capability links for qualified buyers; links are returned once
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/DistributionShareResponse" }
+  /deals/{id}/distribution/release-acceptance:
+    parameters:
+      - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
+    post:
+      operationId: releaseDistributionAcceptance
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/ReleaseDistributionAcceptanceInput" }
+      responses:
+        "200":
+          description: Owner releases a soft buyer acceptance without changing contract commitment
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/DealDistribution" }
+  /portal/deal:
+    get:
+      operationId: getBuyerPortalDeal
+      parameters:
+        - { name: X-Portal-Token, in: header, required: true, schema: { type: string, minLength: 40, maxLength: 50 } }
+      responses:
+        "200":
+          description: Redacted capability-protected buyer deal packet
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/BuyerPortalDeal" }
+  /portal/deal/response:
+    post:
+      operationId: respondToBuyerPortalDeal
+      parameters:
+        - { name: X-Portal-Token, in: header, required: true, schema: { type: string, minLength: 40, maxLength: 50 } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/BuyerPortalIntentInput" }
+      responses:
+        "200":
+          description: Append-only buyer interest, soft acceptance, or decline; not a buyer commitment
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/BuyerPortalDeal" }
   /deals/{id}/destinations/{buyerId}/activity:
     parameters:
       - { name: id, in: path, required: true, schema: { type: string } }
@@ -1117,6 +1203,135 @@ components:
         netProceeds: { type: [number, "null"] }
         closedAt: { type: [string, "null"] }
         createdAt: { type: string }
+    DistributionAuthorizationInput:
+      type: object
+      required: [version, reason]
+      properties:
+        version: { type: integer, minimum: 1 }
+        reason: { type: string, minLength: 3, maxLength: 2000 }
+    DistributionShareInput:
+      type: object
+      required: [version, buyerIds]
+      properties:
+        version: { type: integer, minimum: 1 }
+        buyerIds: { type: array, minItems: 1, maxItems: 50, uniqueItems: true, items: { type: string, format: uuid } }
+    ReleaseDistributionAcceptanceInput:
+      type: object
+      required: [version, reason]
+      properties:
+        version: { type: integer, minimum: 1 }
+        reason: { type: string, minLength: 3, maxLength: 2000 }
+    DistributionPacketSnapshot:
+      type: object
+      required: [location, property, economics, underwriting, closeBy, contingencies, media, mediaNotice, disclosure]
+      properties:
+        location:
+          type: object
+          required: [city, county, state, zip]
+          properties:
+            city: { type: string }
+            county: { type: string }
+            state: { type: string }
+            zip: { type: string }
+        property:
+          type: object
+          required: [propertyType, sqft, beds, baths, units]
+          properties:
+            propertyType: { type: string }
+            sqft: { type: number }
+            beds: { type: number }
+            baths: { type: number }
+            units: { type: integer }
+            askingPrice: { type: ["number", "null"] }
+        economics:
+          type: object
+          required: [acquisitionPrice, authorizedAssignmentFee, buyerPrice]
+          properties:
+            acquisitionPrice: { type: number }
+            authorizedAssignmentFee: { type: number }
+            buyerPrice: { type: number }
+        underwriting:
+          type: object
+          required: [arv, repairs, grossProfitPotential, formula, calculatedAt]
+          properties:
+            arv: { $ref: "#/components/schemas/Range" }
+            repairs: { $ref: "#/components/schemas/Range" }
+            grossProfitPotential:
+              type: object
+              required: [low, expected, caveat]
+              properties:
+                low: { type: number }
+                expected: { type: number }
+                caveat: { type: string }
+            formula: { type: string }
+            calculatedAt: { type: string }
+        closeBy: { type: string }
+        contingencies: { type: string }
+        media: { type: array, items: { type: object, additionalProperties: true } }
+        mediaNotice: { type: string }
+        disclosure: { type: string }
+    DistributionRecipient:
+      type: object
+      required: [buyerId, buyerName, status, events, createdAt, updatedAt]
+      properties:
+        buyerId: { type: string, format: uuid }
+        buyerName: { type: string }
+        status: { type: string, enum: [INVITED, INTERESTED, ACCEPTED, DECLINED] }
+        events: { type: array, items: { $ref: "#/components/schemas/BuyerPortalEvent" } }
+        createdAt: { type: string }
+        updatedAt: { type: string }
+    DealDistribution:
+      type: object
+      required: [packetId, version, status, packet, authorizedBy, authorizedAt, expiresAt, acceptedBuyerId, acceptedAt, recipients]
+      properties:
+        packetId: { type: ["string", "null"] }
+        version: { type: integer }
+        status: { type: ["string", "null"], enum: [ACTIVE, FIRST_ACCEPTED, CLOSED, REVOKED, null] }
+        packet: { oneOf: [{ $ref: "#/components/schemas/DistributionPacketSnapshot" }, { type: "null" }] }
+        authorizedBy: { type: ["string", "null"] }
+        authorizedAt: { type: ["string", "null"] }
+        expiresAt: { type: ["string", "null"] }
+        acceptedBuyerId: { type: ["string", "null"] }
+        acceptedAt: { type: ["string", "null"] }
+        recipients: { type: array, items: { $ref: "#/components/schemas/DistributionRecipient" } }
+    DistributionShareResponse:
+      type: object
+      required: [distribution, links]
+      properties:
+        distribution: { $ref: "#/components/schemas/DealDistribution" }
+        links:
+          type: array
+          items:
+            type: object
+            required: [buyerId, buyerName, token]
+            properties:
+              buyerId: { type: string }
+              buyerName: { type: string }
+              token: { type: string }
+    BuyerPortalIntentInput:
+      type: object
+      required: [eventKey, action]
+      properties:
+        eventKey: { type: string, minLength: 8, maxLength: 120 }
+        action: { type: string, enum: [INTERESTED, ACCEPTED, DECLINED] }
+        note: { type: string, maxLength: 2000 }
+    BuyerPortalEvent:
+      type: object
+      required: [eventKey, action, recordedAt, note]
+      properties:
+        eventKey: { type: string }
+        action: { type: string, enum: [INTERESTED, ACCEPTED, DECLINED] }
+        recordedAt: { type: string }
+        note: { type: string }
+    BuyerPortalDeal:
+      type: object
+      required: [packet, recipientStatus, canAccept, unavailableReason, events]
+      properties:
+        packet: { $ref: "#/components/schemas/DistributionPacketSnapshot" }
+        recipientStatus: { type: string, enum: [INVITED, INTERESTED, ACCEPTED, DECLINED] }
+        canAccept: { type: boolean }
+        unavailableReason: { type: ["string", "null"] }
+        events: { type: array, items: { $ref: "#/components/schemas/BuyerPortalEvent" } }
     HandoffEventInput:
       type: object
       required: [version, eventKey, kind, occurredAt, evidenceUrl, note]
