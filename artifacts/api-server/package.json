@@ -15,6 +15,7 @@
     "exercise:buyer-pool": "tsx src/services/isolated-exercise.ts buyer-pool-exercise.ts",
     "exercise:seller": "tsx src/services/isolated-exercise.ts seller-exercise.ts",
     "exercise:offers": "tsx src/services/isolated-exercise.ts offer-exercise.ts",
+    "exercise:seller-offer-portal": "tsx src/services/isolated-exercise.ts seller-offer-portal-exercise.ts",
     "exercise:transactions": "tsx src/services/isolated-exercise.ts transaction-exercise.ts",
     "dev": "export NODE_ENV=development && pnpm run build && pnpm run start",
     "build": "node ./build.mjs",

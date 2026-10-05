@@ -27,3 +27,4 @@ export * from "./audit";
 export * from "./offers";
 export * from "./operations";
 export * from "./distribution";
+export * from "./seller-offer-portals";

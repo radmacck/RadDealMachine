@@ -3,7 +3,11 @@ name: Canonical build direction
 description: User's standing product scope and delivery rules for the Radical real-estate operating system
 ---
 
-This is a serious, reusable production-oriented internal wholesaling operating system, not a mock dashboard or public marketplace. It must stand alone without unfinished Radical infrastructure and later plug into Naelo/RDS/RDC through clean boundaries.
+This is a serious, reusable production-oriented internal wholesaling operating system, not a mock dashboard or public marketplace. It must stand alone without unfinished Radical infrastructure. Naelo and RDC are future external execution-bridge integrations only; this project does not currently know or implement them.
+
+**Why:** On 2026-10-05, the user clarified that neither Naelo nor RDC exists in this project and explicitly asked that they not be invented, rebuilt, assumed, or treated as a dependency.
+
+**How to apply:** The current platform owns its real-estate workflows, workers, permissions, transaction actions and evidence. Define replaceable external adapter contracts only when useful; label Naelo/RDC as future/external and do not build them as part of this platform.
 
 The scope is the full wholesaling lifecycle and a two-sided deal-flow engine, not a prettier/manual CRM. Seller acquisition runs through closing in parallel with proactive buyer discovery, qualification, current-buying verification and automatic matching. The seller-facing operator should receive the best next action, prepared seller intelligence and explainable qualified buyer matches without repetitive administration.
 

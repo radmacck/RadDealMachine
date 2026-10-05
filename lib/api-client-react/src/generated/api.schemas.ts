@@ -1780,6 +1780,103 @@ export interface BuyerPortalDeal {
   events: BuyerPortalEvent[];
 }
 
+export interface SellerOfferPortalIssueInput {
+  /** @minimum 1 */
+  version: number;
+}
+
+export type SellerOfferPortalStatus = typeof SellerOfferPortalStatus[keyof typeof SellerOfferPortalStatus];
+
+
+export const SellerOfferPortalStatus = {
+  ACTIVE: 'ACTIVE',
+  RESPONDED: 'RESPONDED',
+  REVOKED: 'REVOKED',
+} as const;
+
+export interface SellerOfferPortalSnapshot {
+  leadId: string;
+  offerId: string;
+  sellerName: string;
+  propertyAddress: string;
+  city: string;
+  state: string;
+  county: string;
+  zip: string;
+  terms: OfferTerms;
+  approvedAt: string;
+  expiresAt: string;
+  preparedAt: string;
+}
+
+export type SellerOfferPortalEventAction = typeof SellerOfferPortalEventAction[keyof typeof SellerOfferPortalEventAction];
+
+
+export const SellerOfferPortalEventAction = {
+  ACCEPTED: 'ACCEPTED',
+  REJECTED: 'REJECTED',
+  COUNTERED: 'COUNTERED',
+} as const;
+
+export interface SellerOfferPortalEvent {
+  eventKey: string;
+  action: SellerOfferPortalEventAction;
+  respondentName: string;
+  occurredAt: string;
+  note: string;
+  counterTerms: OfferTerms | null;
+}
+
+export interface SellerOfferPortal {
+  id: string;
+  status: SellerOfferPortalStatus;
+  snapshot: SellerOfferPortalSnapshot;
+  expiresAt: string;
+  canRespond: boolean;
+  /** @nullable */
+  unavailableReason: string | null;
+  events: SellerOfferPortalEvent[];
+}
+
+export interface SellerOfferPortalIssueResponse {
+  portal: SellerOfferPortal;
+  /**
+     * @minLength 40
+     * @maxLength 50
+     */
+  token: string;
+}
+
+export interface SellerOfferPortalControl {
+  current: SellerOfferPortal | null;
+}
+
+export type SellerOfferPortalResponseInputAction = typeof SellerOfferPortalResponseInputAction[keyof typeof SellerOfferPortalResponseInputAction];
+
+
+export const SellerOfferPortalResponseInputAction = {
+  ACCEPTED: 'ACCEPTED',
+  REJECTED: 'REJECTED',
+  COUNTERED: 'COUNTERED',
+} as const;
+
+export interface SellerOfferPortalResponseInput {
+  /**
+     * @minLength 8
+     * @maxLength 120
+     */
+  eventKey: string;
+  action: SellerOfferPortalResponseInputAction;
+  /**
+     * @minLength 1
+     * @maxLength 200
+     */
+  respondentName: string;
+  /** @maxLength 2000 */
+  note?: string;
+  counterTerms?: OfferTerms;
+}
+
 export type HandoffEventInputKind = typeof HandoffEventInputKind[keyof typeof HandoffEventInputKind];
 
 

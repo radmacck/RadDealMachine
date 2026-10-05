@@ -4770,6 +4770,165 @@ export const WithdrawOfferResponse = zod.object({
 })
 
 
+export const GetSellerOfferPortalControlParams = zod.object({
+  "id": zod.coerce.string().uuid(),
+  "offerId": zod.coerce.string().uuid()
+})
+
+export const getSellerOfferPortalControlResponseCurrentOneSnapshotTermsAmountExclusiveMin = 0;
+export const getSellerOfferPortalControlResponseCurrentOneSnapshotTermsAmountMax = 1000000000;
+
+export const getSellerOfferPortalControlResponseCurrentOneSnapshotTermsEarnestMoneyMin = 0;
+export const getSellerOfferPortalControlResponseCurrentOneSnapshotTermsEarnestMoneyMax = 1000000000;
+
+export const getSellerOfferPortalControlResponseCurrentOneSnapshotTermsClosingDaysMax = 180;
+
+export const getSellerOfferPortalControlResponseCurrentOneSnapshotTermsContingenciesMin = 3;
+export const getSellerOfferPortalControlResponseCurrentOneSnapshotTermsContingenciesMax = 5000;
+
+export const getSellerOfferPortalControlResponseCurrentOneEventsItemCounterTermsOneAmountExclusiveMin = 0;
+export const getSellerOfferPortalControlResponseCurrentOneEventsItemCounterTermsOneAmountMax = 1000000000;
+
+export const getSellerOfferPortalControlResponseCurrentOneEventsItemCounterTermsOneEarnestMoneyMin = 0;
+export const getSellerOfferPortalControlResponseCurrentOneEventsItemCounterTermsOneEarnestMoneyMax = 1000000000;
+
+export const getSellerOfferPortalControlResponseCurrentOneEventsItemCounterTermsOneClosingDaysMax = 180;
+
+export const getSellerOfferPortalControlResponseCurrentOneEventsItemCounterTermsOneContingenciesMin = 3;
+export const getSellerOfferPortalControlResponseCurrentOneEventsItemCounterTermsOneContingenciesMax = 5000;
+
+
+
+export const GetSellerOfferPortalControlResponse = zod.object({
+  "current": zod.union([zod.object({
+  "id": zod.string().uuid(),
+  "status": zod.enum(['ACTIVE', 'RESPONDED', 'REVOKED']),
+  "snapshot": zod.object({
+  "leadId": zod.string().uuid(),
+  "offerId": zod.string().uuid(),
+  "sellerName": zod.string(),
+  "propertyAddress": zod.string(),
+  "city": zod.string(),
+  "state": zod.string(),
+  "county": zod.string(),
+  "zip": zod.string(),
+  "terms": zod.object({
+  "amount": zod.number().gt(getSellerOfferPortalControlResponseCurrentOneSnapshotTermsAmountExclusiveMin).max(getSellerOfferPortalControlResponseCurrentOneSnapshotTermsAmountMax),
+  "earnestMoney": zod.number().min(getSellerOfferPortalControlResponseCurrentOneSnapshotTermsEarnestMoneyMin).max(getSellerOfferPortalControlResponseCurrentOneSnapshotTermsEarnestMoneyMax),
+  "closingDays": zod.number().int().min(1).max(getSellerOfferPortalControlResponseCurrentOneSnapshotTermsClosingDaysMax),
+  "contingencies": zod.string().min(getSellerOfferPortalControlResponseCurrentOneSnapshotTermsContingenciesMin).max(getSellerOfferPortalControlResponseCurrentOneSnapshotTermsContingenciesMax),
+  "assignmentIntent": zod.boolean()
+}),
+  "approvedAt": zod.string().datetime({"offset":true}),
+  "expiresAt": zod.string().datetime({"offset":true}),
+  "preparedAt": zod.string().datetime({"offset":true})
+}),
+  "expiresAt": zod.string().datetime({"offset":true}),
+  "canRespond": zod.boolean(),
+  "unavailableReason": zod.string().nullable(),
+  "events": zod.array(zod.object({
+  "eventKey": zod.string(),
+  "action": zod.enum(['ACCEPTED', 'REJECTED', 'COUNTERED']),
+  "respondentName": zod.string(),
+  "occurredAt": zod.string().datetime({"offset":true}),
+  "note": zod.string(),
+  "counterTerms": zod.union([zod.object({
+  "amount": zod.number().gt(getSellerOfferPortalControlResponseCurrentOneEventsItemCounterTermsOneAmountExclusiveMin).max(getSellerOfferPortalControlResponseCurrentOneEventsItemCounterTermsOneAmountMax),
+  "earnestMoney": zod.number().min(getSellerOfferPortalControlResponseCurrentOneEventsItemCounterTermsOneEarnestMoneyMin).max(getSellerOfferPortalControlResponseCurrentOneEventsItemCounterTermsOneEarnestMoneyMax),
+  "closingDays": zod.number().int().min(1).max(getSellerOfferPortalControlResponseCurrentOneEventsItemCounterTermsOneClosingDaysMax),
+  "contingencies": zod.string().min(getSellerOfferPortalControlResponseCurrentOneEventsItemCounterTermsOneContingenciesMin).max(getSellerOfferPortalControlResponseCurrentOneEventsItemCounterTermsOneContingenciesMax),
+  "assignmentIntent": zod.boolean()
+}),zod.null()])
+}))
+}),zod.null()])
+})
+
+
+export const IssueSellerOfferPortalParams = zod.object({
+  "id": zod.coerce.string().uuid(),
+  "offerId": zod.coerce.string().uuid()
+})
+
+
+
+
+export const IssueSellerOfferPortalBody = zod.object({
+  "version": zod.number().int().min(1)
+})
+
+export const issueSellerOfferPortalResponsePortalSnapshotTermsAmountExclusiveMin = 0;
+export const issueSellerOfferPortalResponsePortalSnapshotTermsAmountMax = 1000000000;
+
+export const issueSellerOfferPortalResponsePortalSnapshotTermsEarnestMoneyMin = 0;
+export const issueSellerOfferPortalResponsePortalSnapshotTermsEarnestMoneyMax = 1000000000;
+
+export const issueSellerOfferPortalResponsePortalSnapshotTermsClosingDaysMax = 180;
+
+export const issueSellerOfferPortalResponsePortalSnapshotTermsContingenciesMin = 3;
+export const issueSellerOfferPortalResponsePortalSnapshotTermsContingenciesMax = 5000;
+
+export const issueSellerOfferPortalResponsePortalEventsItemCounterTermsOneAmountExclusiveMin = 0;
+export const issueSellerOfferPortalResponsePortalEventsItemCounterTermsOneAmountMax = 1000000000;
+
+export const issueSellerOfferPortalResponsePortalEventsItemCounterTermsOneEarnestMoneyMin = 0;
+export const issueSellerOfferPortalResponsePortalEventsItemCounterTermsOneEarnestMoneyMax = 1000000000;
+
+export const issueSellerOfferPortalResponsePortalEventsItemCounterTermsOneClosingDaysMax = 180;
+
+export const issueSellerOfferPortalResponsePortalEventsItemCounterTermsOneContingenciesMin = 3;
+export const issueSellerOfferPortalResponsePortalEventsItemCounterTermsOneContingenciesMax = 5000;
+
+export const issueSellerOfferPortalResponseTokenMin = 40;
+export const issueSellerOfferPortalResponseTokenMax = 50;
+
+
+
+export const IssueSellerOfferPortalResponse = zod.object({
+  "portal": zod.object({
+  "id": zod.string().uuid(),
+  "status": zod.enum(['ACTIVE', 'RESPONDED', 'REVOKED']),
+  "snapshot": zod.object({
+  "leadId": zod.string().uuid(),
+  "offerId": zod.string().uuid(),
+  "sellerName": zod.string(),
+  "propertyAddress": zod.string(),
+  "city": zod.string(),
+  "state": zod.string(),
+  "county": zod.string(),
+  "zip": zod.string(),
+  "terms": zod.object({
+  "amount": zod.number().gt(issueSellerOfferPortalResponsePortalSnapshotTermsAmountExclusiveMin).max(issueSellerOfferPortalResponsePortalSnapshotTermsAmountMax),
+  "earnestMoney": zod.number().min(issueSellerOfferPortalResponsePortalSnapshotTermsEarnestMoneyMin).max(issueSellerOfferPortalResponsePortalSnapshotTermsEarnestMoneyMax),
+  "closingDays": zod.number().int().min(1).max(issueSellerOfferPortalResponsePortalSnapshotTermsClosingDaysMax),
+  "contingencies": zod.string().min(issueSellerOfferPortalResponsePortalSnapshotTermsContingenciesMin).max(issueSellerOfferPortalResponsePortalSnapshotTermsContingenciesMax),
+  "assignmentIntent": zod.boolean()
+}),
+  "approvedAt": zod.string().datetime({"offset":true}),
+  "expiresAt": zod.string().datetime({"offset":true}),
+  "preparedAt": zod.string().datetime({"offset":true})
+}),
+  "expiresAt": zod.string().datetime({"offset":true}),
+  "canRespond": zod.boolean(),
+  "unavailableReason": zod.string().nullable(),
+  "events": zod.array(zod.object({
+  "eventKey": zod.string(),
+  "action": zod.enum(['ACCEPTED', 'REJECTED', 'COUNTERED']),
+  "respondentName": zod.string(),
+  "occurredAt": zod.string().datetime({"offset":true}),
+  "note": zod.string(),
+  "counterTerms": zod.union([zod.object({
+  "amount": zod.number().gt(issueSellerOfferPortalResponsePortalEventsItemCounterTermsOneAmountExclusiveMin).max(issueSellerOfferPortalResponsePortalEventsItemCounterTermsOneAmountMax),
+  "earnestMoney": zod.number().min(issueSellerOfferPortalResponsePortalEventsItemCounterTermsOneEarnestMoneyMin).max(issueSellerOfferPortalResponsePortalEventsItemCounterTermsOneEarnestMoneyMax),
+  "closingDays": zod.number().int().min(1).max(issueSellerOfferPortalResponsePortalEventsItemCounterTermsOneClosingDaysMax),
+  "contingencies": zod.string().min(issueSellerOfferPortalResponsePortalEventsItemCounterTermsOneContingenciesMin).max(issueSellerOfferPortalResponsePortalEventsItemCounterTermsOneContingenciesMax),
+  "assignmentIntent": zod.boolean()
+}),zod.null()])
+}))
+}),
+  "token": zod.string().min(issueSellerOfferPortalResponseTokenMin).max(issueSellerOfferPortalResponseTokenMax)
+})
+
+
 export const getCallQueueResponseLeadOneAddressMin = 3;
 export const getCallQueueResponseLeadOneAddressMax = 250;
 
@@ -11574,6 +11733,192 @@ export const RespondToBuyerPortalDealResponse = zod.object({
   "action": zod.enum(['INTERESTED', 'ACCEPTED', 'DECLINED']),
   "recordedAt": zod.string(),
   "note": zod.string()
+}))
+})
+
+
+export const getSellerOfferPortalHeaderXSellerOfferTokenMin = 40;
+export const getSellerOfferPortalHeaderXSellerOfferTokenMax = 50;
+
+
+
+export const GetSellerOfferPortalHeader = zod.object({
+  "X-Seller-Offer-Token": zod.string().min(getSellerOfferPortalHeaderXSellerOfferTokenMin).max(getSellerOfferPortalHeaderXSellerOfferTokenMax)
+})
+
+export const getSellerOfferPortalResponseSnapshotTermsAmountExclusiveMin = 0;
+export const getSellerOfferPortalResponseSnapshotTermsAmountMax = 1000000000;
+
+export const getSellerOfferPortalResponseSnapshotTermsEarnestMoneyMin = 0;
+export const getSellerOfferPortalResponseSnapshotTermsEarnestMoneyMax = 1000000000;
+
+export const getSellerOfferPortalResponseSnapshotTermsClosingDaysMax = 180;
+
+export const getSellerOfferPortalResponseSnapshotTermsContingenciesMin = 3;
+export const getSellerOfferPortalResponseSnapshotTermsContingenciesMax = 5000;
+
+export const getSellerOfferPortalResponseEventsItemCounterTermsOneAmountExclusiveMin = 0;
+export const getSellerOfferPortalResponseEventsItemCounterTermsOneAmountMax = 1000000000;
+
+export const getSellerOfferPortalResponseEventsItemCounterTermsOneEarnestMoneyMin = 0;
+export const getSellerOfferPortalResponseEventsItemCounterTermsOneEarnestMoneyMax = 1000000000;
+
+export const getSellerOfferPortalResponseEventsItemCounterTermsOneClosingDaysMax = 180;
+
+export const getSellerOfferPortalResponseEventsItemCounterTermsOneContingenciesMin = 3;
+export const getSellerOfferPortalResponseEventsItemCounterTermsOneContingenciesMax = 5000;
+
+
+
+export const GetSellerOfferPortalResponse = zod.object({
+  "id": zod.string().uuid(),
+  "status": zod.enum(['ACTIVE', 'RESPONDED', 'REVOKED']),
+  "snapshot": zod.object({
+  "leadId": zod.string().uuid(),
+  "offerId": zod.string().uuid(),
+  "sellerName": zod.string(),
+  "propertyAddress": zod.string(),
+  "city": zod.string(),
+  "state": zod.string(),
+  "county": zod.string(),
+  "zip": zod.string(),
+  "terms": zod.object({
+  "amount": zod.number().gt(getSellerOfferPortalResponseSnapshotTermsAmountExclusiveMin).max(getSellerOfferPortalResponseSnapshotTermsAmountMax),
+  "earnestMoney": zod.number().min(getSellerOfferPortalResponseSnapshotTermsEarnestMoneyMin).max(getSellerOfferPortalResponseSnapshotTermsEarnestMoneyMax),
+  "closingDays": zod.number().int().min(1).max(getSellerOfferPortalResponseSnapshotTermsClosingDaysMax),
+  "contingencies": zod.string().min(getSellerOfferPortalResponseSnapshotTermsContingenciesMin).max(getSellerOfferPortalResponseSnapshotTermsContingenciesMax),
+  "assignmentIntent": zod.boolean()
+}),
+  "approvedAt": zod.string().datetime({"offset":true}),
+  "expiresAt": zod.string().datetime({"offset":true}),
+  "preparedAt": zod.string().datetime({"offset":true})
+}),
+  "expiresAt": zod.string().datetime({"offset":true}),
+  "canRespond": zod.boolean(),
+  "unavailableReason": zod.string().nullable(),
+  "events": zod.array(zod.object({
+  "eventKey": zod.string(),
+  "action": zod.enum(['ACCEPTED', 'REJECTED', 'COUNTERED']),
+  "respondentName": zod.string(),
+  "occurredAt": zod.string().datetime({"offset":true}),
+  "note": zod.string(),
+  "counterTerms": zod.union([zod.object({
+  "amount": zod.number().gt(getSellerOfferPortalResponseEventsItemCounterTermsOneAmountExclusiveMin).max(getSellerOfferPortalResponseEventsItemCounterTermsOneAmountMax),
+  "earnestMoney": zod.number().min(getSellerOfferPortalResponseEventsItemCounterTermsOneEarnestMoneyMin).max(getSellerOfferPortalResponseEventsItemCounterTermsOneEarnestMoneyMax),
+  "closingDays": zod.number().int().min(1).max(getSellerOfferPortalResponseEventsItemCounterTermsOneClosingDaysMax),
+  "contingencies": zod.string().min(getSellerOfferPortalResponseEventsItemCounterTermsOneContingenciesMin).max(getSellerOfferPortalResponseEventsItemCounterTermsOneContingenciesMax),
+  "assignmentIntent": zod.boolean()
+}),zod.null()])
+}))
+})
+
+
+export const respondToSellerOfferPortalHeaderXSellerOfferTokenMin = 40;
+export const respondToSellerOfferPortalHeaderXSellerOfferTokenMax = 50;
+
+
+
+export const RespondToSellerOfferPortalHeader = zod.object({
+  "X-Seller-Offer-Token": zod.string().min(respondToSellerOfferPortalHeaderXSellerOfferTokenMin).max(respondToSellerOfferPortalHeaderXSellerOfferTokenMax)
+})
+
+export const respondToSellerOfferPortalBodyEventKeyMin = 8;
+export const respondToSellerOfferPortalBodyEventKeyMax = 120;
+
+export const respondToSellerOfferPortalBodyRespondentNameMax = 200;
+
+export const respondToSellerOfferPortalBodyNoteMax = 2000;
+
+export const respondToSellerOfferPortalBodyCounterTermsAmountExclusiveMin = 0;
+export const respondToSellerOfferPortalBodyCounterTermsAmountMax = 1000000000;
+
+export const respondToSellerOfferPortalBodyCounterTermsEarnestMoneyMin = 0;
+export const respondToSellerOfferPortalBodyCounterTermsEarnestMoneyMax = 1000000000;
+
+export const respondToSellerOfferPortalBodyCounterTermsClosingDaysMax = 180;
+
+export const respondToSellerOfferPortalBodyCounterTermsContingenciesMin = 3;
+export const respondToSellerOfferPortalBodyCounterTermsContingenciesMax = 5000;
+
+
+
+export const RespondToSellerOfferPortalBody = zod.object({
+  "eventKey": zod.string().min(respondToSellerOfferPortalBodyEventKeyMin).max(respondToSellerOfferPortalBodyEventKeyMax),
+  "action": zod.enum(['ACCEPTED', 'REJECTED', 'COUNTERED']),
+  "respondentName": zod.string().min(1).max(respondToSellerOfferPortalBodyRespondentNameMax),
+  "note": zod.string().max(respondToSellerOfferPortalBodyNoteMax).optional(),
+  "counterTerms": zod.object({
+  "amount": zod.number().gt(respondToSellerOfferPortalBodyCounterTermsAmountExclusiveMin).max(respondToSellerOfferPortalBodyCounterTermsAmountMax),
+  "earnestMoney": zod.number().min(respondToSellerOfferPortalBodyCounterTermsEarnestMoneyMin).max(respondToSellerOfferPortalBodyCounterTermsEarnestMoneyMax),
+  "closingDays": zod.number().int().min(1).max(respondToSellerOfferPortalBodyCounterTermsClosingDaysMax),
+  "contingencies": zod.string().min(respondToSellerOfferPortalBodyCounterTermsContingenciesMin).max(respondToSellerOfferPortalBodyCounterTermsContingenciesMax),
+  "assignmentIntent": zod.boolean()
+}).optional()
+})
+
+export const respondToSellerOfferPortalResponseSnapshotTermsAmountExclusiveMin = 0;
+export const respondToSellerOfferPortalResponseSnapshotTermsAmountMax = 1000000000;
+
+export const respondToSellerOfferPortalResponseSnapshotTermsEarnestMoneyMin = 0;
+export const respondToSellerOfferPortalResponseSnapshotTermsEarnestMoneyMax = 1000000000;
+
+export const respondToSellerOfferPortalResponseSnapshotTermsClosingDaysMax = 180;
+
+export const respondToSellerOfferPortalResponseSnapshotTermsContingenciesMin = 3;
+export const respondToSellerOfferPortalResponseSnapshotTermsContingenciesMax = 5000;
+
+export const respondToSellerOfferPortalResponseEventsItemCounterTermsOneAmountExclusiveMin = 0;
+export const respondToSellerOfferPortalResponseEventsItemCounterTermsOneAmountMax = 1000000000;
+
+export const respondToSellerOfferPortalResponseEventsItemCounterTermsOneEarnestMoneyMin = 0;
+export const respondToSellerOfferPortalResponseEventsItemCounterTermsOneEarnestMoneyMax = 1000000000;
+
+export const respondToSellerOfferPortalResponseEventsItemCounterTermsOneClosingDaysMax = 180;
+
+export const respondToSellerOfferPortalResponseEventsItemCounterTermsOneContingenciesMin = 3;
+export const respondToSellerOfferPortalResponseEventsItemCounterTermsOneContingenciesMax = 5000;
+
+
+
+export const RespondToSellerOfferPortalResponse = zod.object({
+  "id": zod.string().uuid(),
+  "status": zod.enum(['ACTIVE', 'RESPONDED', 'REVOKED']),
+  "snapshot": zod.object({
+  "leadId": zod.string().uuid(),
+  "offerId": zod.string().uuid(),
+  "sellerName": zod.string(),
+  "propertyAddress": zod.string(),
+  "city": zod.string(),
+  "state": zod.string(),
+  "county": zod.string(),
+  "zip": zod.string(),
+  "terms": zod.object({
+  "amount": zod.number().gt(respondToSellerOfferPortalResponseSnapshotTermsAmountExclusiveMin).max(respondToSellerOfferPortalResponseSnapshotTermsAmountMax),
+  "earnestMoney": zod.number().min(respondToSellerOfferPortalResponseSnapshotTermsEarnestMoneyMin).max(respondToSellerOfferPortalResponseSnapshotTermsEarnestMoneyMax),
+  "closingDays": zod.number().int().min(1).max(respondToSellerOfferPortalResponseSnapshotTermsClosingDaysMax),
+  "contingencies": zod.string().min(respondToSellerOfferPortalResponseSnapshotTermsContingenciesMin).max(respondToSellerOfferPortalResponseSnapshotTermsContingenciesMax),
+  "assignmentIntent": zod.boolean()
+}),
+  "approvedAt": zod.string().datetime({"offset":true}),
+  "expiresAt": zod.string().datetime({"offset":true}),
+  "preparedAt": zod.string().datetime({"offset":true})
+}),
+  "expiresAt": zod.string().datetime({"offset":true}),
+  "canRespond": zod.boolean(),
+  "unavailableReason": zod.string().nullable(),
+  "events": zod.array(zod.object({
+  "eventKey": zod.string(),
+  "action": zod.enum(['ACCEPTED', 'REJECTED', 'COUNTERED']),
+  "respondentName": zod.string(),
+  "occurredAt": zod.string().datetime({"offset":true}),
+  "note": zod.string(),
+  "counterTerms": zod.union([zod.object({
+  "amount": zod.number().gt(respondToSellerOfferPortalResponseEventsItemCounterTermsOneAmountExclusiveMin).max(respondToSellerOfferPortalResponseEventsItemCounterTermsOneAmountMax),
+  "earnestMoney": zod.number().min(respondToSellerOfferPortalResponseEventsItemCounterTermsOneEarnestMoneyMin).max(respondToSellerOfferPortalResponseEventsItemCounterTermsOneEarnestMoneyMax),
+  "closingDays": zod.number().int().min(1).max(respondToSellerOfferPortalResponseEventsItemCounterTermsOneClosingDaysMax),
+  "contingencies": zod.string().min(respondToSellerOfferPortalResponseEventsItemCounterTermsOneContingenciesMin).max(respondToSellerOfferPortalResponseEventsItemCounterTermsOneContingenciesMax),
+  "assignmentIntent": zod.boolean()
+}),zod.null()])
 }))
 })
 

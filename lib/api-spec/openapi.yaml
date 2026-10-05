@@ -275,6 +275,31 @@ paths:
           content:
             application/json:
               schema: { $ref: "#/components/schemas/LeadDetail" }
+  /leads/{id}/offers/{offerId}/seller-portal:
+    parameters:
+      - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
+      - { name: offerId, in: path, required: true, schema: { type: string, format: uuid } }
+    get:
+      operationId: getSellerOfferPortalControl
+      responses:
+        "200":
+          description: Current seller offer link and append-only seller response history; no capability secret is returned
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/SellerOfferPortalControl" }
+    post:
+      operationId: issueSellerOfferPortal
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/SellerOfferPortalIssueInput" }
+      responses:
+        "201":
+          description: Owner-issued one-time capability link for the exact communicated offer; earlier links are revoked
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/SellerOfferPortalIssueResponse" }
   /call-next:
     get:
       operationId: getCallQueue
@@ -511,6 +536,33 @@ paths:
           content:
             application/json:
               schema: { $ref: "#/components/schemas/BuyerPortalDeal" }
+  /portal/seller-offer:
+    get:
+      operationId: getSellerOfferPortal
+      parameters:
+        - { name: X-Seller-Offer-Token, in: header, required: true, schema: { type: string, minLength: 40, maxLength: 50 } }
+      responses:
+        "200":
+          description: Exact seller-facing offer snapshot with response eligibility and history
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/SellerOfferPortal" }
+  /portal/seller-offer/response:
+    post:
+      operationId: respondToSellerOfferPortal
+      parameters:
+        - { name: X-Seller-Offer-Token, in: header, required: true, schema: { type: string, minLength: 40, maxLength: 50 } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/SellerOfferPortalResponseInput" }
+      responses:
+        "200":
+          description: Append-only seller acceptance, rejection or counter proposal; never executes a contract or authorizes counter terms
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/SellerOfferPortal" }
   /deals/{id}/destinations/{buyerId}/activity:
     parameters:
       - { name: id, in: path, required: true, schema: { type: string } }
@@ -1332,6 +1384,74 @@ components:
         canAccept: { type: boolean }
         unavailableReason: { type: ["string", "null"] }
         events: { type: array, items: { $ref: "#/components/schemas/BuyerPortalEvent" } }
+    SellerOfferPortalIssueInput:
+      type: object
+      required: [version]
+      properties:
+        version: { type: integer, minimum: 1 }
+    SellerOfferPortalIssueResponse:
+      type: object
+      required: [portal, token]
+      properties:
+        portal: { $ref: "#/components/schemas/SellerOfferPortal" }
+        token: { type: string, minLength: 40, maxLength: 50 }
+    SellerOfferPortalControl:
+      type: object
+      required: [current]
+      properties:
+        current:
+          oneOf:
+            - { $ref: "#/components/schemas/SellerOfferPortal" }
+            - { type: "null" }
+    SellerOfferPortalSnapshot:
+      type: object
+      required: [leadId, offerId, sellerName, propertyAddress, city, state, county, zip, terms, approvedAt, expiresAt, preparedAt]
+      properties:
+        leadId: { type: string, format: uuid }
+        offerId: { type: string, format: uuid }
+        sellerName: { type: string }
+        propertyAddress: { type: string }
+        city: { type: string }
+        state: { type: string }
+        county: { type: string }
+        zip: { type: string }
+        terms: { $ref: "#/components/schemas/OfferTerms" }
+        approvedAt: { type: string, format: date-time }
+        expiresAt: { type: string, format: date-time }
+        preparedAt: { type: string, format: date-time }
+    SellerOfferPortalResponseInput:
+      type: object
+      required: [eventKey, action, respondentName]
+      properties:
+        eventKey: { type: string, minLength: 8, maxLength: 120 }
+        action: { type: string, enum: [ACCEPTED, REJECTED, COUNTERED] }
+        respondentName: { type: string, minLength: 1, maxLength: 200 }
+        note: { type: string, maxLength: 2000 }
+        counterTerms: { $ref: "#/components/schemas/OfferTerms" }
+    SellerOfferPortalEvent:
+      type: object
+      required: [eventKey, action, respondentName, occurredAt, note, counterTerms]
+      properties:
+        eventKey: { type: string }
+        action: { type: string, enum: [ACCEPTED, REJECTED, COUNTERED] }
+        respondentName: { type: string }
+        occurredAt: { type: string, format: date-time }
+        note: { type: string }
+        counterTerms:
+          oneOf:
+            - { $ref: "#/components/schemas/OfferTerms" }
+            - { type: "null" }
+    SellerOfferPortal:
+      type: object
+      required: [id, status, snapshot, expiresAt, canRespond, unavailableReason, events]
+      properties:
+        id: { type: string, format: uuid }
+        status: { type: string, enum: [ACTIVE, RESPONDED, REVOKED] }
+        snapshot: { $ref: "#/components/schemas/SellerOfferPortalSnapshot" }
+        expiresAt: { type: string, format: date-time }
+        canRespond: { type: boolean }
+        unavailableReason: { type: ["string", "null"] }
+        events: { type: array, items: { $ref: "#/components/schemas/SellerOfferPortalEvent" } }
     HandoffEventInput:
       type: object
       required: [version, eventKey, kind, occurredAt, evidenceUrl, note]

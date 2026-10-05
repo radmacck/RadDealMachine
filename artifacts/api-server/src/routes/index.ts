@@ -4,14 +4,17 @@ import dealsRouter from "./deals";
 import operationsRouter from "./operations";
 import propertySourcesRouter from "./property-sources";
 import { internalDistributionRouter, publicBuyerPortalRouter } from "./distribution";
+import { internalSellerOfferPortalRouter, publicSellerOfferPortalRouter } from "./seller-offer-portals";
 
 const router: IRouter = Router();
 
 router.use(healthRouter);
-router.use(dealsRouter);
 router.use(publicBuyerPortalRouter);
+router.use(publicSellerOfferPortalRouter);
+router.use(dealsRouter);
 router.use(operationsRouter);
 router.use(internalDistributionRouter);
+router.use(internalSellerOfferPortalRouter);
 router.use(propertySourcesRouter);
 
 export default router;

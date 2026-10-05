@@ -69,6 +69,11 @@ import type {
   PublicPropertySearch,
   ReleaseDistributionAcceptanceInput,
   SearchPublicPropertiesParams,
+  SellerOfferPortal,
+  SellerOfferPortalControl,
+  SellerOfferPortalIssueInput,
+  SellerOfferPortalIssueResponse,
+  SellerOfferPortalResponseInput,
   SourceCompsInput,
   SourceRefreshInput,
   SourceResearch,
@@ -1685,6 +1690,167 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
       return useMutation(getWithdrawOfferMutationOptions(options));
     }
 
+export const getGetSellerOfferPortalControlUrl = (id: string,
+    offerId: string,) => {
+
+
+
+
+  return `/api/leads/${id}/offers/${offerId}/seller-portal`
+}
+
+export const getSellerOfferPortalControl = async (id: string,
+    offerId: string, options?: Parameters<typeof customFetch>[1]): Promise<SellerOfferPortalControl> => {
+
+  return customFetch<SellerOfferPortalControl>(getGetSellerOfferPortalControlUrl(id,offerId),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetSellerOfferPortalControlQueryKey = (id: string,
+    offerId: string,) => {
+    return [
+    `/api/leads/${id}/offers/${offerId}/seller-portal`
+    ] as const;
+    }
+
+
+export const getGetSellerOfferPortalControlQueryOptions = <TData = Awaited<ReturnType<typeof getSellerOfferPortalControl>>, TError = ErrorType<unknown>>(id: string,
+    offerId: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getSellerOfferPortalControl>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetSellerOfferPortalControlQueryKey(id,offerId);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getSellerOfferPortalControl>>> = ({ signal }) => getSellerOfferPortalControl(id,offerId, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: id !== null && id !== undefined && offerId !== null && offerId !== undefined, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getSellerOfferPortalControl>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetSellerOfferPortalControlQueryResult = NonNullable<Awaited<ReturnType<typeof getSellerOfferPortalControl>>>
+export type GetSellerOfferPortalControlQueryError = ErrorType<unknown>
+
+
+
+export function useGetSellerOfferPortalControl<TData = Awaited<ReturnType<typeof getSellerOfferPortalControl>>, TError = ErrorType<unknown>>(
+ id: string,
+    offerId: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getSellerOfferPortalControl>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetSellerOfferPortalControlQueryOptions(id,offerId,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getIssueSellerOfferPortalUrl = (id: string,
+    offerId: string,) => {
+
+
+
+
+  return `/api/leads/${id}/offers/${offerId}/seller-portal`
+}
+
+export const issueSellerOfferPortal = async (id: string,
+    offerId: string,
+    sellerOfferPortalIssueInput: SellerOfferPortalIssueInput, options?: Parameters<typeof customFetch>[1]): Promise<SellerOfferPortalIssueResponse> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return customFetch<SellerOfferPortalIssueResponse>(getIssueSellerOfferPortalUrl(id,offerId),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(sellerOfferPortalIssueInput)
+  }
+);}
+
+
+
+
+
+export const getIssueSellerOfferPortalMutationKey = () => ['issueSellerOfferPortal'] as const;
+
+export const getIssueSellerOfferPortalMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof issueSellerOfferPortal>>, TError,IssueSellerOfferPortalMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof issueSellerOfferPortal>>, TError,IssueSellerOfferPortalMutationVariables, TContext> => {
+
+const mutationKey = getIssueSellerOfferPortalMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof issueSellerOfferPortal>>, IssueSellerOfferPortalMutationVariables> = (props) => {
+          const {id,offerId,data} = props ?? {};
+
+          return  issueSellerOfferPortal(id,offerId,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type IssueSellerOfferPortalMutationResult = NonNullable<Awaited<ReturnType<typeof issueSellerOfferPortal>>>
+    export type IssueSellerOfferPortalMutationBody = BodyType<SellerOfferPortalIssueInput>
+    export type IssueSellerOfferPortalMutationError = ErrorType<unknown>
+    export type IssueSellerOfferPortalMutationVariables = {id: string;offerId: string;data: BodyType<SellerOfferPortalIssueInput>}
+
+    export const useIssueSellerOfferPortal = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof issueSellerOfferPortal>>, TError,IssueSellerOfferPortalMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof issueSellerOfferPortal>>,
+        TError,
+        IssueSellerOfferPortalMutationVariables,
+        TContext
+      > => {
+      return useMutation(getIssueSellerOfferPortalMutationOptions(options));
+    }
+
 export const getGetCallQueueUrl = () => {
 
 
@@ -3136,6 +3302,159 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
         TContext
       > => {
       return useMutation(getRespondToBuyerPortalDealMutationOptions(options));
+    }
+
+export const getGetSellerOfferPortalUrl = () => {
+
+
+
+
+  return `/api/portal/seller-offer`
+}
+
+export const getSellerOfferPortal = async ( options?: Parameters<typeof customFetch>[1]): Promise<SellerOfferPortal> => {
+
+  return customFetch<SellerOfferPortal>(getGetSellerOfferPortalUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetSellerOfferPortalQueryKey = () => {
+    return [
+    `/api/portal/seller-offer`
+    ] as const;
+    }
+
+
+export const getGetSellerOfferPortalQueryOptions = <TData = Awaited<ReturnType<typeof getSellerOfferPortal>>, TError = ErrorType<unknown>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getSellerOfferPortal>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetSellerOfferPortalQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getSellerOfferPortal>>> = ({ signal }) => getSellerOfferPortal({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getSellerOfferPortal>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetSellerOfferPortalQueryResult = NonNullable<Awaited<ReturnType<typeof getSellerOfferPortal>>>
+export type GetSellerOfferPortalQueryError = ErrorType<unknown>
+
+
+
+export function useGetSellerOfferPortal<TData = Awaited<ReturnType<typeof getSellerOfferPortal>>, TError = ErrorType<unknown>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getSellerOfferPortal>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetSellerOfferPortalQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getRespondToSellerOfferPortalUrl = () => {
+
+
+
+
+  return `/api/portal/seller-offer/response`
+}
+
+export const respondToSellerOfferPortal = async (sellerOfferPortalResponseInput: SellerOfferPortalResponseInput, options?: Parameters<typeof customFetch>[1]): Promise<SellerOfferPortal> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return customFetch<SellerOfferPortal>(getRespondToSellerOfferPortalUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(sellerOfferPortalResponseInput)
+  }
+);}
+
+
+
+
+
+export const getRespondToSellerOfferPortalMutationKey = () => ['respondToSellerOfferPortal'] as const;
+
+export const getRespondToSellerOfferPortalMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof respondToSellerOfferPortal>>, TError,RespondToSellerOfferPortalMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof respondToSellerOfferPortal>>, TError,RespondToSellerOfferPortalMutationVariables, TContext> => {
+
+const mutationKey = getRespondToSellerOfferPortalMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof respondToSellerOfferPortal>>, RespondToSellerOfferPortalMutationVariables> = (props) => {
+          const {data} = props ?? {};
+
+          return  respondToSellerOfferPortal(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type RespondToSellerOfferPortalMutationResult = NonNullable<Awaited<ReturnType<typeof respondToSellerOfferPortal>>>
+    export type RespondToSellerOfferPortalMutationBody = BodyType<SellerOfferPortalResponseInput>
+    export type RespondToSellerOfferPortalMutationError = ErrorType<unknown>
+    export type RespondToSellerOfferPortalMutationVariables = {data: BodyType<SellerOfferPortalResponseInput>}
+
+    export const useRespondToSellerOfferPortal = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof respondToSellerOfferPortal>>, TError,RespondToSellerOfferPortalMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof respondToSellerOfferPortal>>,
+        TError,
+        RespondToSellerOfferPortalMutationVariables,
+        TContext
+      > => {
+      return useMutation(getRespondToSellerOfferPortalMutationOptions(options));
     }
 
 export const getRecordDestinationActivityUrl = (id: string,
