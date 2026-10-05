@@ -140,6 +140,12 @@
 .fd-action[data-category="CONTRACT"] .fd-action-tag, .fd-action[data-category="CLOSING"] .fd-action-tag { background:#e8efeb;color:#31584d; }
 .fd-action-title { overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:700;font-size:11px; }
 .fd-action-reason { display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;overflow:hidden;margin-top:3px;color:#87948d;font-size:10px; }
+.fd-work-guidance { display:grid;gap:5px;margin-top:7px;color:#58675f;font-size:10px;line-height:1.45; }
+.fd-work-guidance-state { display:flex;flex-wrap:wrap;gap:4px 12px; }
+.fd-work-guidance-state b,.fd-work-guidance b { color:#354b40; }
+.fd-work-guidance-missing { color:#a95743; }
+.fd-work-guidance-detail summary { width:fit-content;color:#52735e;font-weight:700;cursor:pointer; }
+.fd-work-guidance-detail p { margin-top:5px; }
 .fd-due { color:#8b978f;font:9px 'Space Mono',monospace;white-space:nowrap; }
 .fd-action-link { display:flex;align-items:center;gap:6px;border:0;background:none;color:#52735e;font:700 10px 'DM Sans',sans-serif;text-decoration:none;white-space:nowrap;cursor:pointer; }
 .fd-action-link:hover { color:#274a3d; }

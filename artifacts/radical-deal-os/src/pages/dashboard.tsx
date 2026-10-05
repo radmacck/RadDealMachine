@@ -107,8 +107,30 @@ export default function Dashboard() {
                   <article key={action.id} className="fd-action" data-category={action.category} data-testid={`action-${action.id}`}>
                     <span className="fd-action-stripe" />
                     <span className={`fd-action-tag ${TONE[action.category]}`}>{LABEL[action.category]}</span>
-                    <div><div className="fd-action-title">{action.title}</div><div className="fd-action-reason">{action.reason}</div></div>
-                    {action.dueAt && <span className="fd-due">{ago(action.dueAt)}</span>}
+                    <div>
+                      <div className="fd-action-title">{action.title}</div>
+                      <div className="fd-action-reason">{action.reason}</div>
+                      {action.workGuidance && (
+                        <div className="fd-work-guidance" data-testid={`work-guidance-${action.id}`}>
+                          <div className="fd-work-guidance-state">
+                            <span><b>State</b> {action.workGuidance.currentState}</span>
+                            <span><b>Responsible</b> {action.workGuidance.responsibleRole}</span>
+                            <span><b>{action.workGuidance.dueLabel}</b>{action.workGuidance.dueAt ? ` · ${fmtDate(action.workGuidance.dueAt)}` : ''}</span>
+                          </div>
+                          {action.workGuidance.knownFacts.length > 0 && <p><b>Known:</b> {action.workGuidance.knownFacts.join(' · ')}</p>}
+                          {action.workGuidance.missingFacts.length > 0 && <p className="fd-work-guidance-missing"><b>Missing / blocked:</b> {action.workGuidance.missingFacts.join(' · ')}</p>}
+                          <details className="fd-work-guidance-detail">
+                            <summary>What the system can do, what you must do, and how it is recorded</summary>
+                            <p><b>Why this matters:</b> {action.workGuidance.why}</p>
+                            <p><b>System:</b> {action.workGuidance.systemCanDo}</p>
+                            <p><b>You:</b> {action.workGuidance.humanMustDo}</p>
+                            <p><b>Evidence to record:</b> {action.workGuidance.requiredEvidence.join(' · ')}</p>
+                            <p><b>Completion record:</b> {action.workGuidance.completionRecord}</p>
+                          </details>
+                        </div>
+                      )}
+                    </div>
+                    {action.dueAt && <span className="fd-due">{action.workGuidance?.dueLabel ?? 'Due'} · {ago(action.dueAt)}</span>}
                     <Link href={action.href} className="fd-action-link" aria-label={`${action.cta}: ${action.title}`}>
                       {action.cta}<ArrowRight size={13} />
                     </Link>

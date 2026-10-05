@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Link, useParams } from 'wouter';
 import { useQueryClient } from '@tanstack/react-query';
-import { ArrowLeft, PhoneCall } from 'lucide-react';
+import { ArrowLeft, ArrowRight, PhoneCall } from 'lucide-react';
 import {
   getGetLeadQueryKey, useAddIntelligence, useIntakePropertyEvidence, useGetLead, useSaveUnderwriting, useTransitionLead, useUpdateLead, useRecordCall,
   type LeadDetail, type ProvenanceClass,
@@ -36,7 +36,7 @@ export default function LeadDetailPage() {
   const invalidate = useInvalidateWork();
   const [addClass, setAddClass] = useState<ProvenanceClass | null>(null);
   const work = new URLSearchParams(window.location.search).get('work');
-  const [tab, setTab] = useState(work === 'uw' ? 'uw' : work === 'stage' ? 'stage' : work === 'offers' ? 'offers' : work === 'call' ? 'calls' : work === 'transaction' ? 'tx' : 'intel');
+  const [tab, setTab] = useState(work === 'source' ? 'source' : work === 'record' ? 'record' : work === 'uw' ? 'uw' : work === 'stage' ? 'stage' : work === 'offers' ? 'offers' : work === 'call' ? 'calls' : work === 'transaction' ? 'tx' : 'intel');
   const [leadEpoch, setLeadEpoch] = useState(0);
   const [uwEpoch, setUwEpoch] = useState(0);
 
@@ -51,7 +51,7 @@ export default function LeadDetailPage() {
   const loaded = !!q.data;
   useEffect(() => {
     if (!loaded || !work) return;
-    setTab(work === 'uw' ? 'uw' : work === 'stage' ? 'stage' : work === 'offers' ? 'offers' : work === 'call' ? 'calls' : work === 'transaction' ? 'tx' : 'intel');
+    setTab(work === 'source' ? 'source' : work === 'record' ? 'record' : work === 'uw' ? 'uw' : work === 'stage' ? 'stage' : work === 'offers' ? 'offers' : work === 'call' ? 'calls' : work === 'transaction' ? 'tx' : 'intel');
     document.getElementById('workflow')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
   }, [loaded, work]);
 
@@ -81,7 +81,46 @@ export default function LeadDetailPage() {
           <p className={`text-xs ${isOverdue(lead.followUpAt) ? 'font-semibold text-destructive' : 'text-muted-foreground'}`}>Follow up: {lead.followUpAt ? `${fmtDate(lead.followUpAt)} (${ago(lead.followUpAt)})` : 'none set'}</p>
         </div>
       </header>
-      <p className="ledger border-l-4 border-l-signal p-3 text-sm" data-testid="text-next-action"><b>Next action:</b> {lead.nextAction || 'none recorded'}</p>
+      {d.workGuidance ? (
+        <section className="ledger space-y-3 border-l-4 border-l-signal p-4" data-testid="panel-current-work">
+          <div className="flex flex-wrap items-start justify-between gap-3">
+            <div>
+              <p className="eyebrow mb-1">Current next action · {d.workGuidance.responsibleRole}</p>
+              <h2 className="text-lg font-semibold" data-testid="text-next-action">{d.workGuidance.title}</h2>
+              <p className="mt-1 text-sm text-muted-foreground">{d.workGuidance.currentState}</p>
+            </div>
+            <Link href={d.workGuidance.href} className="inline-flex items-center gap-2 border border-signal px-3 py-2 text-sm font-semibold hover:bg-card" data-testid="link-current-work">
+              {d.workGuidance.cta}<ArrowRight className="h-4 w-4" />
+            </Link>
+          </div>
+          <p className="text-sm"><b>Why this matters:</b> {d.workGuidance.why}</p>
+          <div className="grid gap-3 md:grid-cols-2">
+            <div className="rounded border border-border p-3">
+              <p className="eyebrow mb-1">Known</p>
+              <ul className="list-disc space-y-1 pl-4 text-sm">{d.workGuidance.knownFacts.map((fact, index) => <li key={index}>{fact}</li>)}</ul>
+            </div>
+            <div className="rounded border border-border p-3">
+              <p className="eyebrow mb-1">Missing / blocked</p>
+              {d.workGuidance.missingFacts.length
+                ? <ul className="list-disc space-y-1 pl-4 text-sm">{d.workGuidance.missingFacts.map((fact, index) => <li key={index}>{fact}</li>)}</ul>
+                : <p className="text-sm">No missing prerequisite is currently recorded.</p>}
+            </div>
+          </div>
+          <div className="grid gap-3 text-sm md:grid-cols-2">
+            <p><b>System can do:</b> {d.workGuidance.systemCanDo}</p>
+            <p><b>You must do:</b> {d.workGuidance.humanMustDo}</p>
+          </div>
+          <p className="text-sm"><b>Evidence to record:</b> {d.workGuidance.requiredEvidence.join(' · ')}</p>
+          <p className="border-t border-border pt-2 text-xs text-muted-foreground">
+            <b>Due:</b> {d.workGuidance.dueAt ? `${d.workGuidance.dueLabel} · ${fmtDate(d.workGuidance.dueAt)}` : d.workGuidance.dueLabel}
+            {' · '}<b>Completion is recorded in:</b> {d.workGuidance.completionRecord}
+          </p>
+        </section>
+      ) : (
+        <p className="ledger border-l-4 border-l-signal p-3 text-sm" data-testid="text-next-action">
+          <b>Next action:</b> {lead.nextAction || 'No current action. This deal is closed.'}
+        </p>
+      )}
       <section className="grid gap-3 md:grid-cols-3" data-testid="panel-deal-status">
         <div className="ledger p-3"><p className="eyebrow mb-1">Blocked</p>
           {blockers.length === 0 ? <p className="text-sm">Nothing blocking the numbers.</p> : <ul className="list-disc space-y-0.5 pl-4 text-sm">{blockers.slice(0, 5).map((b, i) => <li key={i}>{b}</li>)}</ul>}</div>

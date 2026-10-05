@@ -9,7 +9,7 @@ import {
   validateTransition, validateAssumptions, assertTransitionPermission, DEFAULT_ASSUMPTIONS, DomainError,
   type Lead, type LeadInput, type LeadDetail, type Intelligence, type IntelligenceInput,
   type UnderwritingInput, type Assumptions, type TransitionInput, type CallInput, type Analysis, type Stage, type OfferActor,
-  evidenceReviewedAnalysis,
+  evidenceReviewedAnalysis, buildDealWorkGuidance,
 } from "@workspace/deal-domain";
 import { CreateLeadResponse, GetLeadResponse, AddIntelligenceResponse, GetAssumptionsResponse } from "@workspace/api-zod";
 import { offersForLead, invalidateOffers, invalidateOffersForPolicyChange } from "./offer-records";
@@ -71,12 +71,13 @@ export async function leadDetail(id: string, database: typeof db | Tx = db, now 
     lead,intelligence,analysis,analysisSnapshotId:row.analysisSnapshotId,
     currentPolicy:await getAssumptions(database),conversationLogged:calls.some(c => c.payload.outcome === "CONNECTED"),now,
   });
-  return GetLeadResponse.parse({
-    lead, intelligence, analysis, analysisSnapshotId:row.analysisSnapshotId, underwriting:row.underwriting, offers,
+  const detail = {
+    lead, intelligence, analysis, analysisSnapshotId:row.analysisSnapshotId, underwriting:row.underwriting as UnderwritingInput|null, offers,
     transitions:transitions.map(e => ({...e, createdAt:iso(e.createdAt)})),
-    calls:calls.map(e => ({...e.payload,id:e.id,actor:e.actor,createdAt:iso(e.createdAt)})),
+    calls:calls.map(e => ({...e.payload as CallInput,id:e.id,actor:e.actor,createdAt:iso(e.createdAt)})),
     allowedTransitions:allowedTransitions(lead,analysis,now),
-  });
+  };
+  return GetLeadResponse.parse({...detail,workGuidance:buildDealWorkGuidance(detail,now)});
 }
 
 export async function getAssumptions(database: typeof db | Tx = db): Promise<Assumptions> {

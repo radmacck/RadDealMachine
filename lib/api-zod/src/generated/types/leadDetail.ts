@@ -8,6 +8,7 @@
 import type { Analysis } from './analysis';
 import type { Call } from './call';
 import type { DealStage } from './dealStage';
+import type { DealWorkGuidance } from './dealWorkGuidance';
 import type { Intelligence } from './intelligence';
 import type { Lead } from './lead';
 import type { Offer } from './offer';
@@ -25,4 +26,5 @@ export interface LeadDetail {
   transitions: Transition[];
   calls: Call[];
   allowedTransitions: DealStage[];
+  workGuidance: DealWorkGuidance | null;
 }

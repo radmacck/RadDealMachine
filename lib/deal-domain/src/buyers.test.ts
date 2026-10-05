@@ -35,7 +35,7 @@ const underwriting: NonNullable<LeadDetail["underwriting"]> = {
   repairs:[{category:"Synthetic repairs",low:10000,expected:20000,high:30000,confidence:0.8,source:"Synthetic evidence"}],
 };
 const analysis = analyzeDeal(lead,underwriting,DEFAULT_ASSUMPTIONS,now);
-const detail: LeadDetail = {lead,analysis,analysisSnapshotId:"synthetic-snapshot",underwriting,intelligence:[],offers:[],calls:[],transitions:[],allowedTransitions:[]};
+const detail: LeadDetail = {lead,analysis,analysisSnapshotId:"synthetic-snapshot",underwriting,intelligence:[],offers:[],calls:[],transitions:[],allowedTransitions:[],workGuidance:null};
 test("matching explains current qualified fit, not just a magic score",()=>{
   const m = matchBuyer(buyer,detail,contract,now);
   assert.equal(m.eligible,true); assert.equal(m.score,100);

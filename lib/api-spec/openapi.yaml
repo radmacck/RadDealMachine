@@ -1540,6 +1540,30 @@ components:
         href: { type: string }
         cta: { type: string }
         dueAt: { type: [string, "null"] }
+        workGuidance:
+          oneOf:
+            - { $ref: "#/components/schemas/DealWorkGuidance" }
+            - { type: "null" }
+    DealWorkGuidance:
+      type: object
+      required: [category, priority, title, href, cta, currentState, responsibleRole, dueAt, dueLabel, knownFacts, missingFacts, why, systemCanDo, humanMustDo, requiredEvidence, completionRecord]
+      properties:
+        category: { type: string, enum: [RESEARCH, CALL, FOLLOW_UP, OFFER_APPROVAL, NEGOTIATION, CONTRACT, BUYER_MATCH, DEADLINE, CLOSING] }
+        priority: { type: integer }
+        title: { type: string }
+        href: { type: string }
+        cta: { type: string }
+        currentState: { type: string }
+        responsibleRole: { type: string, enum: [OWNER, OPERATOR, ANALYST] }
+        dueAt: { type: [string, "null"] }
+        dueLabel: { type: string }
+        knownFacts: { type: array, items: { type: string } }
+        missingFacts: { type: array, items: { type: string } }
+        why: { type: string }
+        systemCanDo: { type: string }
+        humanMustDo: { type: string }
+        requiredEvidence: { type: array, items: { type: string } }
+        completionRecord: { type: string }
     CommandCenter:
       type: object
       required: [generatedAt, actions, opportunities, calls, deals, operations, buyers, jobs]
@@ -1802,7 +1826,7 @@ components:
             actor: { type: string }
     LeadDetail:
       type: object
-      required: [lead, intelligence, analysis, analysisSnapshotId, underwriting, transitions, calls, offers, allowedTransitions]
+      required: [lead, intelligence, analysis, analysisSnapshotId, underwriting, transitions, calls, offers, allowedTransitions, workGuidance]
       properties:
         lead: { $ref: "#/components/schemas/Lead" }
         intelligence: { type: array, items: { $ref: "#/components/schemas/Intelligence" } }
@@ -1815,6 +1839,10 @@ components:
         transitions: { type: array, items: { $ref: "#/components/schemas/Transition" } }
         calls: { type: array, items: { $ref: "#/components/schemas/Call" } }
         allowedTransitions: { type: array, items: { $ref: "#/components/schemas/DealStage" } }
+        workGuidance:
+          oneOf:
+            - { $ref: "#/components/schemas/DealWorkGuidance" }
+            - { type: "null" }
     CallBrief:
       type: object
       required: [lead, objective, intelligence, questions, actions, boundaries, analysis, authorizedOffer]

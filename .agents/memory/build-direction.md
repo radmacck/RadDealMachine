@@ -25,6 +25,12 @@ The primary seller-facing operator is responsible for rapport, negotiation and c
 
 **How to apply:** Keep research and administration with analyst/owner capabilities. Preserve all four intelligence sections: VERIFIED FACTS, OBSERVED, INDICATED, AI HYPOTHESIS. Hypotheses require confidence and questions/actions, never silent promotion. Calculations must be deterministic, sourced and configurable.
 
+Each active deal has one principal next action derived from its persisted stage and existing workflow records. Make the current state, responsible role, timing, known and missing facts, rationale, system/human responsibilities, evidence, and completion record explicit; do not add a parallel task source.
+
+**Why:** The user requires a simple, cohesive system with no guesswork and one authoritative next action per deal.
+
+**How to apply:** Prefer saved `nextAction`/follow-up and existing offer or transaction authority. Supporting alerts must not create a second principal action for the same deal.
+
 When the user approves a canvas design for the app, preserve its actual information hierarchy, section order, content grouping, visible row density, and interaction placement. Replace sample data and no-op actions with live records and real routes without changing the approved flow.
 
 **Why:** On 2026-10-05, the user corrected that a palette-level adaptation changed the approved Command Center's content and placements, making the app feel like a generic CRM instead of preserving the canvas's clearer flow.

@@ -1444,6 +1444,50 @@ export type Call = CallInput & {
   actor: string;
 };
 
+export type DealWorkGuidanceCategory = typeof DealWorkGuidanceCategory[keyof typeof DealWorkGuidanceCategory];
+
+
+export const DealWorkGuidanceCategory = {
+  RESEARCH: 'RESEARCH',
+  CALL: 'CALL',
+  FOLLOW_UP: 'FOLLOW_UP',
+  OFFER_APPROVAL: 'OFFER_APPROVAL',
+  NEGOTIATION: 'NEGOTIATION',
+  CONTRACT: 'CONTRACT',
+  BUYER_MATCH: 'BUYER_MATCH',
+  DEADLINE: 'DEADLINE',
+  CLOSING: 'CLOSING',
+} as const;
+
+export type DealWorkGuidanceResponsibleRole = typeof DealWorkGuidanceResponsibleRole[keyof typeof DealWorkGuidanceResponsibleRole];
+
+
+export const DealWorkGuidanceResponsibleRole = {
+  OWNER: 'OWNER',
+  OPERATOR: 'OPERATOR',
+  ANALYST: 'ANALYST',
+} as const;
+
+export interface DealWorkGuidance {
+  category: DealWorkGuidanceCategory;
+  priority: number;
+  title: string;
+  href: string;
+  cta: string;
+  currentState: string;
+  responsibleRole: DealWorkGuidanceResponsibleRole;
+  /** @nullable */
+  dueAt: string | null;
+  dueLabel: string;
+  knownFacts: string[];
+  missingFacts: string[];
+  why: string;
+  systemCanDo: string;
+  humanMustDo: string;
+  requiredEvidence: string[];
+  completionRecord: string;
+}
+
 export interface LeadDetail {
   lead: Lead;
   intelligence: Intelligence[];
@@ -1455,6 +1499,7 @@ export interface LeadDetail {
   transitions: Transition[];
   calls: Call[];
   allowedTransitions: DealStage[];
+  workGuidance: DealWorkGuidance | null;
 }
 
 export interface CommitmentSnapshot {
@@ -2072,6 +2117,7 @@ export interface CommandAction {
   cta: string;
   /** @nullable */
   dueAt?: string | null;
+  workGuidance?: DealWorkGuidance | null;
 }
 
 export interface CallBrief {

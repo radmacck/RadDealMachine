@@ -6,6 +6,7 @@
  * OpenAPI spec version: 1.0.0
  */
 import type { CommandActionCategory } from './commandActionCategory';
+import type { DealWorkGuidance } from './dealWorkGuidance';
 
 export interface CommandAction {
   id: string;
@@ -19,4 +20,5 @@ export interface CommandAction {
   cta: string;
   /** @nullable */
   dueAt?: string | null;
+  workGuidance?: DealWorkGuidance | null;
 }
