@@ -1,27 +1,30 @@
-import type { ReactNode } from 'react';
+import { useState, type ReactNode } from 'react';
 import { Link, useLocation } from 'wouter';
 import { useClerk, useUser } from '@clerk/react';
-import { Bell, ClipboardList, Cog, Gauge, History, House, LogOut, PhoneCall, Radar, Search, Settings, Users } from 'lucide-react';
+import { Bell, ClipboardCheck, Gauge, Headphones, House, ListChecks, LogOut, Radar, Search, Settings2, Sparkles, UsersRound } from 'lucide-react';
 import { getGetCommandCenterQueryKey, useGetCommandCenter } from '@workspace/api-client-react';
 import { useAccess } from '@/hooks/use-access';
+import { WorkspaceSearchContext } from '@/components/workspace-search';
 import '@/field-desk.css';
 
 const NAV = [
   { href: '/dashboard', label: 'Command center', icon: Gauge },
-  { href: '/calls', label: 'Call next', icon: PhoneCall },
-  { href: '/leads', label: 'Deal inventory', icon: ClipboardList },
+  { href: '/calls', label: 'Call next', icon: Headphones },
+  { href: '/leads', label: 'Deal inventory', icon: ClipboardCheck },
   { href: '/sources', label: 'Sources', icon: Radar },
-  { href: '/buyers', label: 'Buyers', icon: Users },
-  { href: '/workers', label: 'Workers', icon: Cog },
-  { href: '/audit', label: 'Audit', icon: History },
-  { href: '/settings', label: 'Settings', icon: Settings },
+  { href: '/buyers', label: 'Buyers', icon: UsersRound },
+  { href: '/workers', label: 'Workers', icon: Settings2 },
+  { href: '/audit', label: 'Audit trail', icon: ListChecks },
+  { href: '/settings', label: 'Settings', icon: Settings2 },
 ];
 
 export function AppShell({ children }: { children: ReactNode }) {
-  const [loc] = useLocation();
+  const [loc, setLocation] = useLocation();
   const { signOut } = useClerk();
   const { user } = useUser();
   const { access } = useAccess();
+  const [searchOpen, setSearchOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
   const dash = useGetCommandCenter({ query: { queryKey: getGetCommandCenterQueryKey(), staleTime: 20_000, refetchInterval: 30_000 } });
   const ready = dash.data?.calls.length ?? 0;
   const failedJobs = dash.data?.jobs.filter((job) => job.state === 'FAILED').length ?? 0;
@@ -34,6 +37,15 @@ export function AppShell({ children }: { children: ReactNode }) {
   const initials = displayName.split(/[\s@._-]+/).filter(Boolean).slice(0, 2).map((part) => part[0]?.toUpperCase()).join('') || 'RD';
   const role = access.role.replace(/_/g, ' ').toLowerCase();
   const status = dash.isError ? 'Connection issue' : dash.isLoading ? 'Loading workspace' : 'Workspace live';
+  const toggleWorkspaceSearch = () => {
+    if (loc !== '/dashboard') {
+      setLocation('/dashboard');
+      setSearchOpen(true);
+      return;
+    }
+    if (searchOpen) setSearchQuery('');
+    setSearchOpen(!searchOpen);
+  };
 
   return (
     <div className="field-desk">
@@ -52,7 +64,7 @@ export function AppShell({ children }: { children: ReactNode }) {
             {mainNav.map((item) => {
               const active = loc === item.href || loc.startsWith(`${item.href}/`) || (item.href === '/dashboard' && loc.startsWith('/deals/'));
               return (
-                <Link key={item.href} href={item.href} data-testid={`nav-${item.label.toLowerCase().replace(/ /g, '-')}`}
+                <Link key={item.href} href={item.href} data-testid={`nav-${item.href === '/audit' ? 'audit' : item.label.toLowerCase().replace(/ /g, '-')}`}
                   className={active ? 'active' : ''} aria-current={active ? 'page' : undefined}>
                   <item.icon size={15} strokeWidth={1.9} />
                   <span>{item.label}</span>
@@ -69,7 +81,7 @@ export function AppShell({ children }: { children: ReactNode }) {
               </Link>
             </nav>
             <div className="fd-sidebar-note">
-              <div className="fd-note-top"><House size={13} /> Owner-reviewed operations</div>
+              <div className="fd-note-top"><Sparkles size={13} /> Owner-reviewed operations</div>
               <div className="fd-note-copy">{ready > 0 ? `${ready} seller${ready === 1 ? '' : 's'} currently clear for outreach.` : 'Call permission and commercial approvals remain owner-reviewed.'} Your approvals stay yours.</div>
             </div>
             <button className="fd-profile fd-profile-button" type="button" onClick={() => signOut({ redirectUrl: base || '/' })} data-testid="button-sign-out" aria-label={`Sign out ${displayName}`}>
@@ -85,14 +97,18 @@ export function AppShell({ children }: { children: ReactNode }) {
             <div className="fd-top-actions">
               <div className={`fd-status ${dash.isError ? 'fd-status-issue' : ''}`} role="status"><span className="fd-status-dot" />{status}</div>
               <span className="fd-date">{new Date().toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' }).toUpperCase()}</span>
-              <Link className="fd-icon-button" href="/leads" aria-label="Open deal inventory" title="Open deal inventory"><Search size={15} /></Link>
+              <button className="fd-icon-button" type="button" onClick={toggleWorkspaceSearch} aria-label={searchOpen ? 'Close workspace search' : 'Search workspace'} aria-expanded={searchOpen} title="Search workspace"><Search size={15} /></button>
               <Link className="fd-icon-button" href="/audit" aria-label={failedJobs ? `Open audit trail, ${failedJobs} failed worker jobs` : 'Open audit trail'} title="Open audit trail">
                 <Bell size={15} />{failedJobs > 0 && <i className="fd-notice-dot" />}
               </Link>
               <button className="fd-icon-button fd-mobile-logout" type="button" onClick={() => signOut({ redirectUrl: base || '/' })} data-testid="button-sign-out-mobile" aria-label="Sign out"><LogOut size={15} /></button>
             </div>
           </header>
-          <main className="fd-content">{children}</main>
+          <main className="fd-content">
+            <WorkspaceSearchContext.Provider value={{ open: searchOpen, query: searchQuery, setQuery: setSearchQuery }}>
+              {children}
+            </WorkspaceSearchContext.Provider>
+          </main>
         </div>
       </div>
     </div>

@@ -21,6 +21,12 @@ The primary seller-facing operator is responsible for rapport, negotiation and c
 
 **How to apply:** Keep research and administration with analyst/owner capabilities. Preserve all four intelligence sections: VERIFIED FACTS, OBSERVED, INDICATED, AI HYPOTHESIS. Hypotheses require confidence and questions/actions, never silent promotion. Calculations must be deterministic, sourced and configurable.
 
+When the user approves a canvas design for the app, preserve its actual information hierarchy, section order, content grouping, visible row density, and interaction placement. Replace sample data and no-op actions with live records and real routes without changing the approved flow.
+
+**Why:** On 2026-10-05, the user corrected that a palette-level adaptation changed the approved Command Center's content and placements, making the app feel like a generic CRM instead of preserving the canvas's clearer flow.
+
+**How to apply:** Treat the selected mockup source as the production layout contract. Match its preview limits and ordering, show that more records exist where appropriate, and route users to existing pages for full lists.
+
 The old Google Form is historical reference only, NOT the product specification or ceiling. The buyer model may improve beyond it; reuse supplied response data through an adapter when available. Buyer discovery is distinct from current-buying approval; structured criteria, dated source/evidence/confidence and stale-buyer re-verification are core, not optional extensions. Approved deal-finder/guru destinations are distinct from actual acquisition buyers.
 
 **Why:** The user's latest canonical direction explicitly superseded the earlier form-as-design-constraint instruction.

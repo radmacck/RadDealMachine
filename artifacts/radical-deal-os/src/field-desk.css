@@ -89,6 +89,11 @@
 .fd-notice-dot { position:absolute;top:7px;right:7px;width:6px;height:6px;border-radius:50%;background:var(--fd-coral); }
 .fd-date { color:var(--fd-muted);font:10px 'Space Mono',monospace; }
 .fd-content { max-width:1360px;margin:0 auto; }
+.fd-search-wrap { margin:0 0 15px; }
+.fd-search-label { display:block;margin-bottom:7px;color:#718b72;font:10px 'Space Mono',monospace;letter-spacing:.1em;text-transform:uppercase; }
+.fd-search-input { width:100%;padding:11px 13px;border:1px solid var(--fd-line);border-radius:11px;background:var(--fd-card);color:var(--fd-ink);outline-color:#a3b98a;font:12px 'DM Sans',sans-serif; }
+.fd-search-input::placeholder { color:#99a69e; }
+.fd-icon-button[aria-expanded="true"] { background:#e9f1e6;border-color:#c5d6c7; }
 .fd-page-head { padding:27px 0 22px; display:flex;align-items:flex-end;justify-content:space-between;gap:20px; }
 .fd-eyebrow { display:flex;align-items:center;gap:7px;color:#718b72;font:10px 'Space Mono',monospace;letter-spacing:.1em;text-transform:uppercase; }
 .fd-eyebrow-mark { width:7px;height:7px;border-radius:50%;background:#94b861; }
@@ -122,8 +127,17 @@
 .fd-action-tag { padding:5px 8px;border-radius:7px;background:#fff3d6;color:#8b6822;font:700 9px 'Space Mono',monospace;text-transform:uppercase;white-space:nowrap; }
 .fd-action:nth-child(2) .fd-action-tag { background:#ffe9e1;color:#a95743; }
 .fd-action:nth-child(3) .fd-action-tag { background:#eaf3df;color:#547044; }
-.fd-action-title { font-weight:700;font-size:11px; }
-.fd-action-reason { margin-top:3px;color:#87948d;font-size:10px; }
+.fd-action[data-category="FOLLOW_UP"] .fd-action-stripe, .fd-action[data-category="OFFER_APPROVAL"] .fd-action-stripe { background:#e9c46c; }
+.fd-action[data-category="CALL"] .fd-action-stripe, .fd-action[data-category="BUYER_VERIFICATION"] .fd-action-stripe, .fd-action[data-category="DEADLINE"] .fd-action-stripe { background:#ef7961; }
+.fd-action[data-category="RESEARCH"] .fd-action-stripe, .fd-action[data-category="NEGOTIATION"] .fd-action-stripe, .fd-action[data-category="BUYER_MATCH"] .fd-action-stripe, .fd-action[data-category="WORKER"] .fd-action-stripe { background:#9bbd76; }
+.fd-action[data-category="CONTRACT"] .fd-action-stripe { background:#6f9b89; }
+.fd-action[data-category="CLOSING"] .fd-action-stripe { background:#6ca5a0; }
+.fd-action[data-category="FOLLOW_UP"] .fd-action-tag, .fd-action[data-category="OFFER_APPROVAL"] .fd-action-tag { background:#fff3d6;color:#8b6822; }
+.fd-action[data-category="CALL"] .fd-action-tag, .fd-action[data-category="BUYER_VERIFICATION"] .fd-action-tag, .fd-action[data-category="DEADLINE"] .fd-action-tag { background:#ffe9e1;color:#a95743; }
+.fd-action[data-category="RESEARCH"] .fd-action-tag, .fd-action[data-category="NEGOTIATION"] .fd-action-tag, .fd-action[data-category="BUYER_MATCH"] .fd-action-tag, .fd-action[data-category="WORKER"] .fd-action-tag { background:#eaf3df;color:#547044; }
+.fd-action[data-category="CONTRACT"] .fd-action-tag, .fd-action[data-category="CLOSING"] .fd-action-tag { background:#e8efeb;color:#31584d; }
+.fd-action-title { overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:700;font-size:11px; }
+.fd-action-reason { display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;overflow:hidden;margin-top:3px;color:#87948d;font-size:10px; }
 .fd-due { color:#8b978f;font:9px 'Space Mono',monospace;white-space:nowrap; }
 .fd-action-link { display:flex;align-items:center;gap:6px;border:0;background:none;color:#52735e;font:700 10px 'DM Sans',sans-serif;text-decoration:none;white-space:nowrap;cursor:pointer; }
 .fd-action-link:hover { color:#274a3d; }
@@ -145,6 +159,7 @@
 .fd-contract-meta { display:flex;align-items:center;gap:12px;margin-top:7px;color:#6e8177;font:9px 'Space Mono',monospace; }
 .fd-deadline { display:flex;align-items:center;justify-content:space-between;padding:12px 13px;border:1px solid #e2ebe2;border-radius:13px;background:#fffefa;font-size:10px;text-decoration:none;color:inherit; }
 .fd-deadline:hover { border-color:#c5d6c7; }
+.fd-deadline-note { padding:12px; }
 .fd-deadline-date { color:#526a5f;font-weight:600; }
 .fd-deadline-count { color:#7b8981;font:9px 'Space Mono',monospace; }
 .fd-worker-row { display:flex;align-items:center;gap:9px;padding:11px 13px;border:1px solid #e2ebe2;border-radius:13px;background:#fffefa;font-size:10px; }
