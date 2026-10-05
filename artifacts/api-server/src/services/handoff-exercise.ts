@@ -89,6 +89,8 @@ try {
     sourceUrl:"https://example.com/synthetic-second",capturedAt:now.toISOString(),confidence:0.8},actor,now);
   await native.execute({...command,id:`synthetic:${second.id}`,subjectId:second.id});
   let pending = (await listHandoffs()).find(h=>h.subjectId===second.id)!;
+  pending = await recordHandoffEvent(pending.id,{...input,version:pending.version,eventKey:"synthetic-rollback-route-review",
+    kind:"ROUTE_REVIEWED",occurredAt:now.toISOString()},actor,now);
   const beforeAudit = await db.select().from(auditTable);
   await db.execute(sql`CREATE FUNCTION exercise_handoff_fault() RETURNS trigger LANGUAGE plpgsql AS $$ BEGIN RAISE EXCEPTION 'Synthetic handoff audit fault'; END; $$`);
   await db.execute(sql`CREATE TRIGGER exercise_handoff_fault BEFORE INSERT ON ${auditTable} FOR EACH ROW EXECUTE FUNCTION exercise_handoff_fault()`);
@@ -143,39 +145,41 @@ try {
   await reviewHandoffs(later(125));
   assert.equal((await listHandoffs()).filter(x=>x.subjectId===l.id).length,1,"Routine revision must not replace unchanged seller intent.");
   assert.equal((await listHandoffs()).find(x=>x.id===sellerHandoff.id)?.state,"WAITING_CONTACT");
-  const sellerContact = await recordHandoffEvent(sellerHandoff.id,{...input,version:sellerHandoff.version,
-    eventKey:"synthetic-seller-contact",occurredAt:later(125).toISOString(),followUpAt:later(240).toISOString()},actor,later(126));
-  const sellerReply = {...reply,version:sellerContact.version,eventKey:"synthetic-seller-reply",occurredAt:later(127).toISOString()};
-  const beforeSellerReply = await leadDetail(l.id,db,later(127));
+  const sellerRoute = await recordHandoffEvent(sellerHandoff.id,{...input,version:sellerHandoff.version,
+    eventKey:"synthetic-seller-route-review",kind:"ROUTE_REVIEWED",occurredAt:later(125).toISOString()},actor,later(125));
+  const sellerContact = await recordHandoffEvent(sellerHandoff.id,{...input,version:sellerRoute.version,
+    eventKey:"synthetic-seller-contact",occurredAt:later(126).toISOString(),followUpAt:later(240).toISOString()},actor,later(127));
+  const sellerReply = {...reply,version:sellerContact.version,eventKey:"synthetic-seller-reply",occurredAt:later(128).toISOString()};
+  const beforeSellerReply = await leadDetail(l.id,db,later(128));
   const beforeSellerJobs = (await db.select().from(jobsTable)).length;
   const beforeSellerIntel = (await db.select().from(intelligenceTable)).length;
   await db.execute(sql`CREATE FUNCTION exercise_seller_reply_fault() RETURNS trigger LANGUAGE plpgsql AS $$ BEGIN RAISE EXCEPTION 'Synthetic seller reply effect fault'; END; $$`);
   await db.execute(sql`CREATE TRIGGER exercise_seller_reply_fault BEFORE INSERT ON ${auditTable} FOR EACH ROW EXECUTE FUNCTION exercise_seller_reply_fault()`);
   try {
-    await assert.rejects(recordHandoffEvent(sellerContact.id,sellerReply,actor,later(128)),
+    await assert.rejects(recordHandoffEvent(sellerContact.id,sellerReply,actor,later(129)),
       e=>(e as {cause?:Error}).cause?.message.includes("Synthetic seller reply effect fault")??false);
     assert.deepEqual((await listHandoffs()).find(x=>x.id===sellerContact.id),sellerContact);
     assert.equal((await db.select().from(intelligenceTable)).length,beforeSellerIntel);
     assert.equal((await db.select().from(jobsTable)).length,beforeSellerJobs);
-    assert.deepEqual(await leadDetail(l.id,db,later(127)),beforeSellerReply);
+    assert.deepEqual(await leadDetail(l.id,db,later(128)),beforeSellerReply);
   } finally {
     await db.execute(sql`DROP TRIGGER exercise_seller_reply_fault ON ${auditTable}`);
     await db.execute(sql`DROP FUNCTION exercise_seller_reply_fault()`);
   }
-  const sellerReplies = await Promise.all([recordHandoffEvent(sellerContact.id,sellerReply,actor,later(128)),
-    recordHandoffEvent(sellerContact.id,sellerReply,actor,later(128))]);
-  assert.ok(sellerReplies.every(h=>h.state==="REPLIED"&&h.version===3));
-  const withSellerReply = await leadDetail(l.id,db,later(128));
+  const sellerReplies = await Promise.all([recordHandoffEvent(sellerContact.id,sellerReply,actor,later(129)),
+    recordHandoffEvent(sellerContact.id,sellerReply,actor,later(129))]);
+  assert.ok(sellerReplies.every(h=>h.state==="REPLIED"&&h.version===4));
+  const withSellerReply = await leadDetail(l.id,db,later(129));
   assert.deepEqual(withSellerReply.lead,beforeSellerReply.lead);
   const indicated = withSellerReply.intelligence.filter(e=>e.category==="seller_outreach_reply");
   assert.equal(indicated.length,1); assert.equal(indicated[0]?.classification,"INDICATED");
   assert.equal(indicated[0]?.capturedAt,sellerReply.occurredAt); assert.equal(indicated[0]?.sourceUrl,sellerReply.evidenceUrl);
   const [matchReview] = await db.select().from(jobsTable).where(eq(jobsTable.idempotencyKey,`seller-reply:matching:${sellerContact.id}:${sellerReply.eventKey}`));
-  assert.ok(matchReview); assert.equal((await runWorkerOnce(later(128),false,matchReview.id))?.state,"SUCCEEDED");
+  assert.ok(matchReview); assert.equal((await runWorkerOnce(later(130),false,matchReview.id))?.state,"SUCCEEDED");
   const [deadlineReview] = await db.select().from(jobsTable).where(eq(jobsTable.idempotencyKey,`seller-reply:deadlines:${sellerContact.id}:${sellerReply.eventKey}`));
-  assert.ok(deadlineReview); assert.equal((await runWorkerOnce(later(128),false,deadlineReview.id))?.state,"SUCCEEDED");
+  assert.ok(deadlineReview); assert.equal((await runWorkerOnce(later(130),false,deadlineReview.id))?.state,"SUCCEEDED");
   await db.update(leadsTable).set({stage:"CLOSED",version:l.version+1}).where(eq(leadsTable.id,l.id));
-  await reviewHandoffs(later(126));
+  await reviewHandoffs(later(131));
   assert.equal((await listHandoffs()).find(x=>x.id===sellerHandoff.id)?.state,"REPLIED","Recorded reply history remains terminal.");
 
   const job = await submitWorkerJob({kind:"REVIEW_HANDOFFS",idempotencyKey:"synthetic-recurring-recovery"},actor);
