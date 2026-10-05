@@ -108,11 +108,11 @@ export default function BuyerPacketPage() {
         } catch {
           if (!cancelled) {
             setSessionStorageReady(false);
-            setRetryStorageError('This browser cannot safely preserve a response for retry. Your response buttons are disabled until tab storage is available.');
+            setRetryStorageError('This browser cannot safely save and resume responses. Your response buttons are disabled in this tab. Open the original buyer link in a browser with tab storage enabled.');
           }
         }
       } else if (!cancelled) {
-        setRetryStorageError('This browser cannot safely preserve a response for retry. Your response buttons are disabled until tab storage is available.');
+        setRetryStorageError('This browser cannot safely save and resume responses. Your response buttons are disabled in this tab. Open the original buyer link in a browser with tab storage enabled.');
       }
 
       try {
@@ -157,7 +157,7 @@ export default function BuyerPacketPage() {
         window.sessionStorage.setItem(pendingStorageKey, JSON.stringify(intent));
       } catch {
         setSessionStorageReady(false);
-        setRetryStorageError('This browser could not save the response for a safe retry, so nothing was sent. Enable tab storage and try again.');
+        setRetryStorageError('This browser could not save the response for a safe retry, so nothing was sent. Enable tab storage and reopen the original buyer link.');
         return;
       }
       setPendingResponse(intent);
