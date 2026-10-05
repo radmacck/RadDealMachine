@@ -8,6 +8,7 @@
 import type { ClosingMilestone } from './closingMilestone';
 import type { CommitmentSnapshot } from './commitmentSnapshot';
 import type { DealContractStatus } from './dealContractStatus';
+import type { DestinationActivityEvent } from './destinationActivityEvent';
 import type { TransactionHistoryEntry } from './transactionHistoryEntry';
 
 export interface DealContract {
@@ -24,6 +25,7 @@ export interface DealContract {
   /** @minimum 1 */
   attemptNumber?: number;
   history?: TransactionHistoryEntry[];
+  destinationActivityHistory?: DestinationActivityEvent[];
   /** @nullable */
   buyerCommittedAt?: string | null;
   commitmentSnapshot?: CommitmentSnapshot | null;

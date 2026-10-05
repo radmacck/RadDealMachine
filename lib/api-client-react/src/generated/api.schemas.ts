@@ -741,6 +741,104 @@ export interface BuyerResponseInput {
   agreedPrice?: number;
 }
 
+export type DestinationActivityInputKind = typeof DestinationActivityInputKind[keyof typeof DestinationActivityInputKind];
+
+
+export const DestinationActivityInputKind = {
+  SUBMITTED: 'SUBMITTED',
+  ACKNOWLEDGED: 'ACKNOWLEDGED',
+  DECLINED: 'DECLINED',
+  TERMS_REVIEWED: 'TERMS_REVIEWED',
+  TERMS_ACCEPTED: 'TERMS_ACCEPTED',
+  FEE_RECEIVED: 'FEE_RECEIVED',
+  FEE_DISPUTED: 'FEE_DISPUTED',
+  FEE_WAIVED: 'FEE_WAIVED',
+} as const;
+
+export interface DestinationActivityInput {
+  /** @minimum 1 */
+  version: number;
+  /** @minimum 1 */
+  buyerVersion: number;
+  /**
+     * @minLength 8
+     * @maxLength 200
+     */
+  eventKey: string;
+  kind: DestinationActivityInputKind;
+  occurredAt: string;
+  /**
+     * @minLength 8
+     * @maxLength 2000
+     */
+  evidenceUrl: string;
+  /**
+     * @minLength 10
+     * @maxLength 3000
+     */
+  note: string;
+  /**
+     * @minLength 10
+     * @maxLength 5000
+     */
+  exactTerms?: string;
+  /**
+     * @maximum 1000000000
+     * @exclusiveMinimum 0
+     */
+  feeAmount?: number;
+  /** @pattern ^[A-Z]{3}$ */
+  currency?: string;
+  /**
+     * @minLength 8
+     * @maxLength 200
+     */
+  relatedEventKey?: string;
+}
+
+export type DestinationActivityEventDestinationKind = typeof DestinationActivityEventDestinationKind[keyof typeof DestinationActivityEventDestinationKind];
+
+
+export const DestinationActivityEventDestinationKind = {
+  DEAL_FINDER: 'DEAL_FINDER',
+  GURU: 'GURU',
+} as const;
+
+export type DestinationActivityEventKind = typeof DestinationActivityEventKind[keyof typeof DestinationActivityEventKind];
+
+
+export const DestinationActivityEventKind = {
+  SUBMITTED: 'SUBMITTED',
+  ACKNOWLEDGED: 'ACKNOWLEDGED',
+  DECLINED: 'DECLINED',
+  TERMS_REVIEWED: 'TERMS_REVIEWED',
+  TERMS_ACCEPTED: 'TERMS_ACCEPTED',
+  FEE_RECEIVED: 'FEE_RECEIVED',
+  FEE_DISPUTED: 'FEE_DISPUTED',
+  FEE_WAIVED: 'FEE_WAIVED',
+} as const;
+
+export interface DestinationActivityEvent {
+  eventKey: string;
+  destinationId: string;
+  destinationName: string;
+  destinationKind: DestinationActivityEventDestinationKind;
+  kind: DestinationActivityEventKind;
+  occurredAt: string;
+  recordedAt: string;
+  recordedBy: string;
+  evidenceUrl: string;
+  note: string;
+  /** @nullable */
+  exactTerms?: string | null;
+  /** @nullable */
+  feeAmount?: number | null;
+  /** @nullable */
+  currency?: string | null;
+  /** @nullable */
+  relatedEventKey?: string | null;
+}
+
 export interface ContractInput {
   /** @minimum 1 */
   version: number;
@@ -1432,6 +1530,7 @@ export interface DealContract {
   /** @minimum 1 */
   attemptNumber?: number;
   history?: TransactionHistoryEntry[];
+  destinationActivityHistory?: DestinationActivityEvent[];
   /** @nullable */
   buyerCommittedAt?: string | null;
   commitmentSnapshot?: CommitmentSnapshot | null;

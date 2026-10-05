@@ -425,6 +425,23 @@ paths:
           content:
             application/json:
               schema: { $ref: "#/components/schemas/DealOperations" }
+  /deals/{id}/destinations/{buyerId}/activity:
+    parameters:
+      - { name: id, in: path, required: true, schema: { type: string } }
+      - { name: buyerId, in: path, required: true, schema: { type: string } }
+    post:
+      operationId: recordDestinationActivity
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/DestinationActivityInput" }
+      responses:
+        "200":
+          description: Append-only destination submission, reply, terms review, or fee evidence
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/DealOperations" }
   /deals/{id}/contract:
     parameters:
       - { name: id, in: path, required: true, schema: { type: string } }
@@ -944,6 +961,39 @@ components:
         evidence: { type: string, minLength: 10, maxLength: 3000 }
         commitmentEvidenceUrl: { type: string, maxLength: 2000 }
         agreedPrice: { type: number, exclusiveMinimum: 0, maximum: 1000000000 }
+    DestinationActivityInput:
+      type: object
+      required: [version, buyerVersion, eventKey, kind, occurredAt, evidenceUrl, note]
+      properties:
+        version: { type: integer, minimum: 1 }
+        buyerVersion: { type: integer, minimum: 1 }
+        eventKey: { type: string, minLength: 8, maxLength: 200 }
+        kind: { type: string, enum: [SUBMITTED, ACKNOWLEDGED, DECLINED, TERMS_REVIEWED, TERMS_ACCEPTED, FEE_RECEIVED, FEE_DISPUTED, FEE_WAIVED] }
+        occurredAt: { type: string }
+        evidenceUrl: { type: string, minLength: 8, maxLength: 2000 }
+        note: { type: string, minLength: 10, maxLength: 3000 }
+        exactTerms: { type: string, minLength: 10, maxLength: 5000 }
+        feeAmount: { type: number, exclusiveMinimum: 0, maximum: 1000000000 }
+        currency: { type: string, pattern: "^[A-Z]{3}$" }
+        relatedEventKey: { type: string, minLength: 8, maxLength: 200 }
+    DestinationActivityEvent:
+      type: object
+      required: [eventKey, destinationId, destinationName, destinationKind, kind, occurredAt, recordedAt, recordedBy, evidenceUrl, note]
+      properties:
+        eventKey: { type: string }
+        destinationId: { type: string }
+        destinationName: { type: string }
+        destinationKind: { type: string, enum: [DEAL_FINDER, GURU] }
+        kind: { type: string, enum: [SUBMITTED, ACKNOWLEDGED, DECLINED, TERMS_REVIEWED, TERMS_ACCEPTED, FEE_RECEIVED, FEE_DISPUTED, FEE_WAIVED] }
+        occurredAt: { type: string }
+        recordedAt: { type: string }
+        recordedBy: { type: string }
+        evidenceUrl: { type: string }
+        note: { type: string }
+        exactTerms: { type: [string, "null"] }
+        feeAmount: { type: [number, "null"] }
+        currency: { type: [string, "null"] }
+        relatedEventKey: { type: [string, "null"] }
     ContractInput:
       type: object
       required: [version, offerId, closingAt]
@@ -1037,6 +1087,7 @@ components:
         closingAt: { type: string }
         attemptNumber: { type: integer, minimum: 1 }
         history: { type: array, items: { $ref: "#/components/schemas/TransactionHistoryEntry" } }
+        destinationActivityHistory: { type: array, items: { $ref: "#/components/schemas/DestinationActivityEvent" } }
         buyerCommittedAt: { type: [string, "null"] }
         commitmentSnapshot: { oneOf: [{ $ref: "#/components/schemas/CommitmentSnapshot" }, { type: "null" }] }
         cancelledAt: { type: string }
