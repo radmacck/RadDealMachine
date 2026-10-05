@@ -57,15 +57,23 @@ import type {
   LeadDetail,
   LeadInput,
   LeadUpdate,
+  ListPropertyDiscoveriesParams,
   Member,
   MemberUpdate,
   OfferApprovalInput,
   OfferCommunicationInput,
   OfferDraftInput,
   OfferWithdrawalInput,
+  PropertyDiscovery,
+  PropertyDiscoveryDispositionInput,
+  PropertyDiscoveryList,
+  PropertyDiscoveryPromotionInput,
+  PropertyDiscoveryPromotionResponse,
   PropertyEvidencePacket,
+  PropertyQualificationCriteria,
+  PropertyQualificationCriteriaInput,
+  PropertyRelevanceSignalInput,
   PropertySource,
-  PublicPropertyImport,
   PublicPropertySearch,
   ReleaseDistributionAcceptanceInput,
   SearchPublicPropertiesParams,
@@ -4421,8 +4429,11 @@ export const getImportPublicPropertyUrl = (recordId: string,) => {
   return `/api/property-sources/phila-opa/records/${recordId}/import`
 }
 
+/**
+ * @deprecated
+ */
 export const importPublicProperty = async (recordId: string,
-    sourceReviewInput: SourceReviewInput, options?: Parameters<typeof customFetch>[1]): Promise<PublicPropertyImport> => {
+    sourceReviewInput: SourceReviewInput, options?: Parameters<typeof customFetch>[1]): Promise<unknown> => {
 
     const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
     if (!h) return {};
@@ -4438,7 +4449,7 @@ export const importPublicProperty = async (recordId: string,
     }
     return headers;
   };
-return customFetch<PublicPropertyImport>(getImportPublicPropertyUrl(recordId),
+return customFetch<unknown>(getImportPublicPropertyUrl(recordId),
   {
     ...options,
     method: 'POST',
@@ -4453,7 +4464,7 @@ return customFetch<PublicPropertyImport>(getImportPublicPropertyUrl(recordId),
 
 export const getImportPublicPropertyMutationKey = () => ['importPublicProperty'] as const;
 
-export const getImportPublicPropertyMutationOptions = <TError = ErrorType<unknown>,
+export const getImportPublicPropertyMutationOptions = <TError = ErrorType<void>,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof importPublicProperty>>, TError,ImportPublicPropertyMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
 ): UseMutationOptions<Awaited<ReturnType<typeof importPublicProperty>>, TError,ImportPublicPropertyMutationVariables, TContext> => {
 
@@ -4482,10 +4493,13 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
 
     export type ImportPublicPropertyMutationResult = NonNullable<Awaited<ReturnType<typeof importPublicProperty>>>
     export type ImportPublicPropertyMutationBody = BodyType<SourceReviewInput>
-    export type ImportPublicPropertyMutationError = ErrorType<unknown>
+    export type ImportPublicPropertyMutationError = ErrorType<void>
     export type ImportPublicPropertyMutationVariables = {recordId: string;data: BodyType<SourceReviewInput>}
 
-    export const useImportPublicProperty = <TError = ErrorType<unknown>,
+    /**
+ * @deprecated
+ */
+export const useImportPublicProperty = <TError = ErrorType<void>,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof importPublicProperty>>, TError,ImportPublicPropertyMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
  ): UseMutationResult<
         Awaited<ReturnType<typeof importPublicProperty>>,
@@ -4494,6 +4508,570 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
         TContext
       > => {
       return useMutation(getImportPublicPropertyMutationOptions(options));
+    }
+
+export const getListPropertyDiscoveriesUrl = (params?: ListPropertyDiscoveriesParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/api/property-discoveries?${stringifiedParams}` : `/api/property-discoveries`
+}
+
+export const listPropertyDiscoveries = async (params?: ListPropertyDiscoveriesParams, options?: Parameters<typeof customFetch>[1]): Promise<PropertyDiscoveryList> => {
+
+  return customFetch<PropertyDiscoveryList>(getListPropertyDiscoveriesUrl(params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getListPropertyDiscoveriesQueryKey = (params?: ListPropertyDiscoveriesParams,) => {
+    return [
+    `/api/property-discoveries`, ...(params ? [params] : [])
+    ] as const;
+    }
+
+
+export const getListPropertyDiscoveriesQueryOptions = <TData = Awaited<ReturnType<typeof listPropertyDiscoveries>>, TError = ErrorType<unknown>>(params?: ListPropertyDiscoveriesParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listPropertyDiscoveries>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getListPropertyDiscoveriesQueryKey(params);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listPropertyDiscoveries>>> = ({ signal }) => listPropertyDiscoveries(params, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listPropertyDiscoveries>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type ListPropertyDiscoveriesQueryResult = NonNullable<Awaited<ReturnType<typeof listPropertyDiscoveries>>>
+export type ListPropertyDiscoveriesQueryError = ErrorType<unknown>
+
+
+
+export function useListPropertyDiscoveries<TData = Awaited<ReturnType<typeof listPropertyDiscoveries>>, TError = ErrorType<unknown>>(
+ params?: ListPropertyDiscoveriesParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listPropertyDiscoveries>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getListPropertyDiscoveriesQueryOptions(params,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getRecordPublicPropertyDiscoveryUrl = (recordId: string,) => {
+
+
+
+
+  return `/api/property-discoveries/phila-opa/${recordId}`
+}
+
+export const recordPublicPropertyDiscovery = async (recordId: string,
+    sourceReviewInput: SourceReviewInput, options?: Parameters<typeof customFetch>[1]): Promise<PropertyDiscovery> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return customFetch<PropertyDiscovery>(getRecordPublicPropertyDiscoveryUrl(recordId),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(sourceReviewInput)
+  }
+);}
+
+
+
+
+
+export const getRecordPublicPropertyDiscoveryMutationKey = () => ['recordPublicPropertyDiscovery'] as const;
+
+export const getRecordPublicPropertyDiscoveryMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof recordPublicPropertyDiscovery>>, TError,RecordPublicPropertyDiscoveryMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof recordPublicPropertyDiscovery>>, TError,RecordPublicPropertyDiscoveryMutationVariables, TContext> => {
+
+const mutationKey = getRecordPublicPropertyDiscoveryMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof recordPublicPropertyDiscovery>>, RecordPublicPropertyDiscoveryMutationVariables> = (props) => {
+          const {recordId,data} = props ?? {};
+
+          return  recordPublicPropertyDiscovery(recordId,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type RecordPublicPropertyDiscoveryMutationResult = NonNullable<Awaited<ReturnType<typeof recordPublicPropertyDiscovery>>>
+    export type RecordPublicPropertyDiscoveryMutationBody = BodyType<SourceReviewInput>
+    export type RecordPublicPropertyDiscoveryMutationError = ErrorType<unknown>
+    export type RecordPublicPropertyDiscoveryMutationVariables = {recordId: string;data: BodyType<SourceReviewInput>}
+
+    export const useRecordPublicPropertyDiscovery = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof recordPublicPropertyDiscovery>>, TError,RecordPublicPropertyDiscoveryMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof recordPublicPropertyDiscovery>>,
+        TError,
+        RecordPublicPropertyDiscoveryMutationVariables,
+        TContext
+      > => {
+      return useMutation(getRecordPublicPropertyDiscoveryMutationOptions(options));
+    }
+
+export const getGetPropertyDiscoveryCriteriaUrl = (marketKey: string,) => {
+
+
+
+
+  return `/api/property-discovery-criteria/${marketKey}`
+}
+
+export const getPropertyDiscoveryCriteria = async (marketKey: string, options?: Parameters<typeof customFetch>[1]): Promise<PropertyQualificationCriteria> => {
+
+  return customFetch<PropertyQualificationCriteria>(getGetPropertyDiscoveryCriteriaUrl(marketKey),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetPropertyDiscoveryCriteriaQueryKey = (marketKey: string,) => {
+    return [
+    `/api/property-discovery-criteria/${marketKey}`
+    ] as const;
+    }
+
+
+export const getGetPropertyDiscoveryCriteriaQueryOptions = <TData = Awaited<ReturnType<typeof getPropertyDiscoveryCriteria>>, TError = ErrorType<unknown>>(marketKey: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getPropertyDiscoveryCriteria>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetPropertyDiscoveryCriteriaQueryKey(marketKey);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getPropertyDiscoveryCriteria>>> = ({ signal }) => getPropertyDiscoveryCriteria(marketKey, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: marketKey !== null && marketKey !== undefined, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getPropertyDiscoveryCriteria>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetPropertyDiscoveryCriteriaQueryResult = NonNullable<Awaited<ReturnType<typeof getPropertyDiscoveryCriteria>>>
+export type GetPropertyDiscoveryCriteriaQueryError = ErrorType<unknown>
+
+
+
+export function useGetPropertyDiscoveryCriteria<TData = Awaited<ReturnType<typeof getPropertyDiscoveryCriteria>>, TError = ErrorType<unknown>>(
+ marketKey: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getPropertyDiscoveryCriteria>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetPropertyDiscoveryCriteriaQueryOptions(marketKey,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getSavePropertyDiscoveryCriteriaUrl = (marketKey: string,) => {
+
+
+
+
+  return `/api/property-discovery-criteria/${marketKey}`
+}
+
+export const savePropertyDiscoveryCriteria = async (marketKey: string,
+    propertyQualificationCriteriaInput: PropertyQualificationCriteriaInput, options?: Parameters<typeof customFetch>[1]): Promise<PropertyQualificationCriteria> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return customFetch<PropertyQualificationCriteria>(getSavePropertyDiscoveryCriteriaUrl(marketKey),
+  {
+    ...options,
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(propertyQualificationCriteriaInput)
+  }
+);}
+
+
+
+
+
+export const getSavePropertyDiscoveryCriteriaMutationKey = () => ['savePropertyDiscoveryCriteria'] as const;
+
+export const getSavePropertyDiscoveryCriteriaMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof savePropertyDiscoveryCriteria>>, TError,SavePropertyDiscoveryCriteriaMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof savePropertyDiscoveryCriteria>>, TError,SavePropertyDiscoveryCriteriaMutationVariables, TContext> => {
+
+const mutationKey = getSavePropertyDiscoveryCriteriaMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof savePropertyDiscoveryCriteria>>, SavePropertyDiscoveryCriteriaMutationVariables> = (props) => {
+          const {marketKey,data} = props ?? {};
+
+          return  savePropertyDiscoveryCriteria(marketKey,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type SavePropertyDiscoveryCriteriaMutationResult = NonNullable<Awaited<ReturnType<typeof savePropertyDiscoveryCriteria>>>
+    export type SavePropertyDiscoveryCriteriaMutationBody = BodyType<PropertyQualificationCriteriaInput>
+    export type SavePropertyDiscoveryCriteriaMutationError = ErrorType<unknown>
+    export type SavePropertyDiscoveryCriteriaMutationVariables = {marketKey: string;data: BodyType<PropertyQualificationCriteriaInput>}
+
+    export const useSavePropertyDiscoveryCriteria = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof savePropertyDiscoveryCriteria>>, TError,SavePropertyDiscoveryCriteriaMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof savePropertyDiscoveryCriteria>>,
+        TError,
+        SavePropertyDiscoveryCriteriaMutationVariables,
+        TContext
+      > => {
+      return useMutation(getSavePropertyDiscoveryCriteriaMutationOptions(options));
+    }
+
+export const getAddPropertyRelevanceSignalUrl = (id: string,) => {
+
+
+
+
+  return `/api/property-discoveries/${id}/signals`
+}
+
+export const addPropertyRelevanceSignal = async (id: string,
+    propertyRelevanceSignalInput: PropertyRelevanceSignalInput, options?: Parameters<typeof customFetch>[1]): Promise<PropertyDiscovery> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return customFetch<PropertyDiscovery>(getAddPropertyRelevanceSignalUrl(id),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(propertyRelevanceSignalInput)
+  }
+);}
+
+
+
+
+
+export const getAddPropertyRelevanceSignalMutationKey = () => ['addPropertyRelevanceSignal'] as const;
+
+export const getAddPropertyRelevanceSignalMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof addPropertyRelevanceSignal>>, TError,AddPropertyRelevanceSignalMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof addPropertyRelevanceSignal>>, TError,AddPropertyRelevanceSignalMutationVariables, TContext> => {
+
+const mutationKey = getAddPropertyRelevanceSignalMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof addPropertyRelevanceSignal>>, AddPropertyRelevanceSignalMutationVariables> = (props) => {
+          const {id,data} = props ?? {};
+
+          return  addPropertyRelevanceSignal(id,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type AddPropertyRelevanceSignalMutationResult = NonNullable<Awaited<ReturnType<typeof addPropertyRelevanceSignal>>>
+    export type AddPropertyRelevanceSignalMutationBody = BodyType<PropertyRelevanceSignalInput>
+    export type AddPropertyRelevanceSignalMutationError = ErrorType<unknown>
+    export type AddPropertyRelevanceSignalMutationVariables = {id: string;data: BodyType<PropertyRelevanceSignalInput>}
+
+    export const useAddPropertyRelevanceSignal = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof addPropertyRelevanceSignal>>, TError,AddPropertyRelevanceSignalMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof addPropertyRelevanceSignal>>,
+        TError,
+        AddPropertyRelevanceSignalMutationVariables,
+        TContext
+      > => {
+      return useMutation(getAddPropertyRelevanceSignalMutationOptions(options));
+    }
+
+export const getPromotePropertyDiscoveryUrl = (id: string,) => {
+
+
+
+
+  return `/api/property-discoveries/${id}/promote`
+}
+
+export const promotePropertyDiscovery = async (id: string,
+    propertyDiscoveryPromotionInput: PropertyDiscoveryPromotionInput, options?: Parameters<typeof customFetch>[1]): Promise<PropertyDiscoveryPromotionResponse> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return customFetch<PropertyDiscoveryPromotionResponse>(getPromotePropertyDiscoveryUrl(id),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(propertyDiscoveryPromotionInput)
+  }
+);}
+
+
+
+
+
+export const getPromotePropertyDiscoveryMutationKey = () => ['promotePropertyDiscovery'] as const;
+
+export const getPromotePropertyDiscoveryMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof promotePropertyDiscovery>>, TError,PromotePropertyDiscoveryMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof promotePropertyDiscovery>>, TError,PromotePropertyDiscoveryMutationVariables, TContext> => {
+
+const mutationKey = getPromotePropertyDiscoveryMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof promotePropertyDiscovery>>, PromotePropertyDiscoveryMutationVariables> = (props) => {
+          const {id,data} = props ?? {};
+
+          return  promotePropertyDiscovery(id,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type PromotePropertyDiscoveryMutationResult = NonNullable<Awaited<ReturnType<typeof promotePropertyDiscovery>>>
+    export type PromotePropertyDiscoveryMutationBody = BodyType<PropertyDiscoveryPromotionInput>
+    export type PromotePropertyDiscoveryMutationError = ErrorType<unknown>
+    export type PromotePropertyDiscoveryMutationVariables = {id: string;data: BodyType<PropertyDiscoveryPromotionInput>}
+
+    export const usePromotePropertyDiscovery = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof promotePropertyDiscovery>>, TError,PromotePropertyDiscoveryMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof promotePropertyDiscovery>>,
+        TError,
+        PromotePropertyDiscoveryMutationVariables,
+        TContext
+      > => {
+      return useMutation(getPromotePropertyDiscoveryMutationOptions(options));
+    }
+
+export const getDisqualifyPropertyDiscoveryUrl = (id: string,) => {
+
+
+
+
+  return `/api/property-discoveries/${id}/disqualify`
+}
+
+export const disqualifyPropertyDiscovery = async (id: string,
+    propertyDiscoveryDispositionInput: PropertyDiscoveryDispositionInput, options?: Parameters<typeof customFetch>[1]): Promise<PropertyDiscovery> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return customFetch<PropertyDiscovery>(getDisqualifyPropertyDiscoveryUrl(id),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(propertyDiscoveryDispositionInput)
+  }
+);}
+
+
+
+
+
+export const getDisqualifyPropertyDiscoveryMutationKey = () => ['disqualifyPropertyDiscovery'] as const;
+
+export const getDisqualifyPropertyDiscoveryMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof disqualifyPropertyDiscovery>>, TError,DisqualifyPropertyDiscoveryMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof disqualifyPropertyDiscovery>>, TError,DisqualifyPropertyDiscoveryMutationVariables, TContext> => {
+
+const mutationKey = getDisqualifyPropertyDiscoveryMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof disqualifyPropertyDiscovery>>, DisqualifyPropertyDiscoveryMutationVariables> = (props) => {
+          const {id,data} = props ?? {};
+
+          return  disqualifyPropertyDiscovery(id,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type DisqualifyPropertyDiscoveryMutationResult = NonNullable<Awaited<ReturnType<typeof disqualifyPropertyDiscovery>>>
+    export type DisqualifyPropertyDiscoveryMutationBody = BodyType<PropertyDiscoveryDispositionInput>
+    export type DisqualifyPropertyDiscoveryMutationError = ErrorType<unknown>
+    export type DisqualifyPropertyDiscoveryMutationVariables = {id: string;data: BodyType<PropertyDiscoveryDispositionInput>}
+
+    export const useDisqualifyPropertyDiscovery = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof disqualifyPropertyDiscovery>>, TError,DisqualifyPropertyDiscoveryMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof disqualifyPropertyDiscovery>>,
+        TError,
+        DisqualifyPropertyDiscoveryMutationVariables,
+        TContext
+      > => {
+      return useMutation(getDisqualifyPropertyDiscoveryMutationOptions(options));
     }
 
 export const getGetSourceResearchUrl = (id: string,) => {

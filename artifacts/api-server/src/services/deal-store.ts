@@ -2,7 +2,7 @@ import { eq, desc, sql } from "drizzle-orm";
 import { queueJob } from "./operations-records";
 import {
   db, leadsTable, intelligenceTable, analysesTable, callsTable, transitionsTable,
-  auditTable, settingsTable, contractsTable, type LeadRow,
+  auditTable, settingsTable, contractsTable, propertyDiscoveriesTable, type LeadRow,
 } from "@workspace/db";
 import {
   analyzeDeal, allowedTransitions, buildCallBrief, prioritizeCallQueue, validateProvenance,
@@ -18,8 +18,18 @@ type Tx = Parameters<Parameters<typeof db.transaction>[0]>[0];
 const jsonRecord = (value: object): Record<string, unknown> => ({ ...value });
 const iso = (d: Date) => d.toISOString();
 export function toLead(row: LeadRow): Lead {
+  const qualification = row.payload.propertyQualification;
+  const responsePayload = qualification && typeof qualification === "object"
+    ? {
+        ...row.payload,
+        propertyQualification: {
+          ...(qualification as Record<string, unknown>),
+          nextAction: row.nextAction,
+        },
+      }
+    : row.payload;
   return CreateLeadResponse.parse({
-    ...row.payload, id: row.id, stage: row.stage, version: row.version,
+    ...responsePayload, id: row.id, stage: row.stage, version: row.version,
     nextAction: row.nextAction, followUpAt: row.followUpAt?.toISOString() ?? null,
     createdAt: iso(row.createdAt), updatedAt: iso(row.updatedAt),
   });
@@ -49,7 +59,17 @@ export async function move(tx: Tx, row: LeadRow, to: Stage, reason: string, next
 }
 
 export async function listLeads() {
-  return (await db.select().from(leadsTable).orderBy(desc(leadsTable.updatedAt))).map(toLead);
+  const rows = await db.select().from(leadsTable).orderBy(desc(leadsTable.updatedAt));
+  return rows
+    .filter((row) => {
+      const sourceKey = row.payload.sourceKey;
+      if (typeof sourceKey !== "string" || !sourceKey.startsWith("phila-opa:")) return true;
+      if (row.payload.propertyQualification) return true;
+      // Older direct imports had no qualification record. Keep progressed seller conversations visible,
+      // but do not continue presenting untouched public-record rows as active acquisition leads.
+      return !["DISCOVERED", "ENRICHING", "ANALYZED", "STRONG", "NEGOTIABLE", "PASS"].includes(row.stage);
+    })
+    .map(toLead);
 }
 
 export async function leadDetail(id: string, database: typeof db | Tx = db, now = new Date()): Promise<LeadDetail> {
@@ -125,7 +145,19 @@ export async function createLead(input: LeadInput, actor: string, now = new Date
 export async function updateLead(id: string, input: LeadInput & {version:number}, actor: string, now = new Date(), transaction?: Tx) {
   const write = async (tx: Tx) => {
     const row = await lockedLead(tx,id,input.version);
-    const {version:_,...payload} = input;
+    const {version:_,...submitted} = input;
+    const identityChanged = ["address","city","state","zip"].some(k=>row.payload[k]!== (submitted as Record<string,unknown>)[k]);
+    if (row.payload.propertyQualification && identityChanged) {
+      throw new DomainError("This lead is tied to a source-backed qualification. Resolve the linked discovery and requalify before changing its property identity.",409);
+    }
+    const qualification = row.payload.propertyQualification;
+    const sourceKey = row.payload.sourceKey;
+    const payload = {
+      ...row.payload,
+      ...submitted,
+      ...(typeof sourceKey === "string" ? {sourceKey} : {}),
+      ...(qualification && typeof qualification === "object" ? {propertyQualification:qualification} : {}),
+    };
     if (["UNDER_CONTRACT","BUYER_MATCHED","BUYER_INTERESTED","BUYER_COMMITTED","CLOSING"].includes(row.stage) &&
       ["address","city","state","zip","propertyType","units"].some(k=>row.payload[k]!== (payload as Record<string,unknown>)[k])) {
       throw new DomainError("Executed agreement subject identity is frozen. Do not attach new property evidence to another signed transaction.",409);
@@ -228,10 +260,41 @@ export async function transitionLead(id: string, input: TransitionInput, actor: 
       throw new DomainError("Active seller conversations and negotiation require a future follow-up.");
     }
     await move(tx,row,input.to,input.reason,input.nextAction,actor,now);
+    const qualification = row.payload.propertyQualification;
+    const qualifiedPayload = qualification && typeof qualification === "object"
+      ? {
+          ...row.payload,
+          propertyQualification: {
+            ...(qualification as Record<string, unknown>),
+            status: input.to === "CALL_READY"
+              ? "CALL_READY"
+              : ["PASS", "DEAD_DEAL"].includes(input.to)
+                ? "DISQUALIFIED"
+                : (qualification as Record<string, unknown>).status,
+            nextAction: row.nextAction,
+          },
+        }
+      : row.payload;
     await tx.update(leadsTable).set({
+      payload: qualifiedPayload,
       stage:row.stage,nextAction:row.nextAction,followUpAt,version:row.version+1,updatedAt:now,
       ...(input.to === "ENRICHING" ? {analysis:null,analysisSnapshotId:null} : {}),
     }).where(eq(leadsTable.id,id));
+    const [discovery] = await tx.select().from(propertyDiscoveriesTable)
+      .where(eq(propertyDiscoveriesTable.leadId,id)).for("update");
+    if (discovery && (input.to === "CALL_READY" || input.to === "PASS" || input.to === "DEAD_DEAL")) {
+      const payload = { ...discovery.payload };
+      const nextStatus = input.to === "CALL_READY" ? "CALL_READY" : "DISQUALIFIED";
+      if (nextStatus === "DISQUALIFIED") {
+        payload.disposition = {
+          actor, at: now.toISOString(),
+          reason: `Linked lead moved to ${input.to}: ${input.reason}`,
+        };
+      }
+      await tx.update(propertyDiscoveriesTable).set({
+        status:nextStatus,payload,version:discovery.version+1,updatedAt:now,
+      }).where(eq(propertyDiscoveriesTable.id,discovery.id));
+    }
     return leadDetail(id,tx,now);
   });
 }

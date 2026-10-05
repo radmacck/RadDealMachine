@@ -7,6 +7,7 @@
  */
 import type { DealStage } from './dealStage';
 import type { LeadInput } from './leadInput';
+import type { LeadPropertyQualification } from './leadPropertyQualification';
 
 export type Lead = LeadInput & ({
   id: string;
@@ -17,4 +18,5 @@ export type Lead = LeadInput & ({
   followUpAt?: string | null;
   createdAt: string;
   updatedAt: string;
+  propertyQualification?: LeadPropertyQualification;
 });

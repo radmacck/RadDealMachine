@@ -3,7 +3,7 @@ import { db, intelligenceTable, leadsTable } from "@workspace/db";
 import { assertOperationsRole, DomainError, validateProvenance, type OfferActor, type IntelligenceInput, type Lead } from "@workspace/deal-domain";
 import { GetSourceResearchResponse, RefreshSourceResearchResponse, ImportPublicPropertyResponse, AddSourceCompsBody } from "@workspace/api-zod";
 import { PHILA_SOURCE, searchProperties, propertyById, propertyByAddress, nearbySales, type PublicProperty } from "@workspace/property-sources";
-import { audit, createLead, getAssumptions, leadDetail, lockedLead, move, saveUnderwriting } from "./deal-store";
+import { audit, getAssumptions, leadDetail, lockedLead, saveUnderwriting } from "./deal-store";
 
 type Tx = Parameters<Parameters<typeof db.transaction>[0]>[0];
 type Research = ReturnType<typeof RefreshSourceResearchResponse.parse>;
@@ -29,7 +29,7 @@ export function listPropertySources() { return [PHILA_SOURCE]; }
 export async function searchPublicProperties(zip?: string, lane = "properties", now = new Date()) {
   return {source:PHILA_SOURCE,records:await sourceRequest(()=>searchProperties(zip,lane,now)),capturedAt:now.toISOString()};
 }
-async function collect(subject: PublicProperty, now: Date): Promise<Research> {
+export async function collectPublicSourceResearch(subject: PublicProperty, now: Date): Promise<Research> {
   const assumptions = await getAssumptions();
   const candidates = await sourceRequest(()=>nearbySales(subject,{
     radius:assumptions.maxDistanceMiles,ageDays:assumptions.maxCompAgeDays,sizeTolerance:assumptions.maxSqftDifferencePct,
@@ -51,7 +51,7 @@ export async function getSourceResearch(id: string) {
   if (research) assertSubject(research,detail.lead);
   return GetSourceResearchResponse.parse({research});
 }
-async function persistResearch(tx: Tx, id: string, research: Research, actor: string, now: Date) {
+export async function persistPublicSourceResearch(tx: Tx, id: string, research: Research, actor: string, now: Date) {
   const s = research.subject;
   const entries: IntelligenceInput[] = [{
     classification:"OBSERVED",category:"source_property_snapshot",sourceType:"PUBLIC_RECORD",
@@ -76,51 +76,9 @@ async function persistResearch(tx: Tx, id: string, research: Research, actor: st
 }
 export async function importPublicProperty(recordId: string, termsReviewed: boolean, actor: OfferActor, now = new Date()) {
   requireReview(actor,termsReviewed);
-  if (!/^\d{9}$/.test(recordId)) throw new DomainError("Invalid official parcel identifier.");
-  const key = `phila-opa:${recordId}`;
-  return db.transaction(async tx => {
-    // Stable source identity and atomic shared intake, including concurrent imports.
-    // Scope the lock to the DB schema so isolated exercises cannot block real intake.
-    await tx.execute(sql`select pg_advisory_xact_lock(hashtextextended(current_schema() || ${key},0))`);
-    const [existing] = await tx.select().from(leadsTable).where(sql`${leadsTable.payload}->>'sourceKey' = ${key}`);
-    if (existing) {
-      const research = await savedResearch(existing.id,tx);
-      if (!research) throw new DomainError("Existing source intake lacks its research record. Review before retrying.",409);
-      assertSubject(research,{address:String(existing.payload.address),city:String(existing.payload.city),
-        state:String(existing.payload.state),zip:String(existing.payload.zip)});
-      return ImportPublicPropertyResponse.parse({leadId:existing.id,created:false,research});
-    }
-    const subject = await sourceRequest(()=>propertyById(recordId,now));
-    const research = await collect(subject,now);
-    const same = await tx.select().from(leadsTable).where(sql`
-      ${leadsTable.payload}->>'state' = 'PA' AND lower(${leadsTable.payload}->>'city') = 'philadelphia'
-      AND regexp_replace(upper(${leadsTable.payload}->>'address'),'[^A-Z0-9]','','g') = ${normalizeAddress(subject.address)}
-      AND left(${leadsTable.payload}->>'zip',5) = ${subject.zip}`);
-    if (same.length>1) throw new DomainError("Multiple existing subject records share this address. Resolve identity before importing.",409);
-    let leadId: string, created = false;
-    if (same.length===1) {
-      const row = await lockedLead(tx,same[0]!.id);
-      if (row.payload.sourceKey && row.payload.sourceKey!==key) throw new DomainError("Existing parcel reference conflicts with this source record.",409);
-      leadId = row.id;
-      // Do not overwrite prior research, asking price, approvals or transaction state.
-      await tx.update(leadsTable).set({payload:{...row.payload,sourceKey:key},version:row.version+1,updatedAt:now}).where(eq(leadsTable.id,row.id));
-    } else {
-      const lead = await createLead({
-        address:subject.address,city:subject.city,state:subject.state,county:"Philadelphia",zip:subject.zip,
-        propertyType:subject.propertyType,sqft:subject.sqft??0,beds:subject.beds??0,baths:subject.baths??0,units:1,
-        sellerName:"Seller not identified",askingPrice:null,urgency:"UNKNOWN",
-        source:`${PHILA_SOURCE.name}; ${subject.sourceUrl}. Research intake only; not a listing or identified seller.`,
-        nextAction:"Review source parcel, establish actual seller/contact permission, verify renovated comps and inspect repair scope. Do not quote an inferred price.",
-      },actor.id,now,tx);
-      leadId = lead.id; created = true;
-      const [row] = await tx.select().from(leadsTable).where(eq(leadsTable.id,leadId));
-      await move(tx,row!,"ENRICHING","Official property record and sale candidates collected; seller, condition and underwriting review remain incomplete.",
-        lead.nextAction,actor.id,now);
-      await tx.update(leadsTable).set({payload:{...row!.payload,sourceKey:key},stage:row!.stage,nextAction:row!.nextAction,version:row!.version+1}).where(eq(leadsTable.id,leadId));
-    }
-    await persistResearch(tx,leadId,research,actor.id,now);
-    return ImportPublicPropertyResponse.parse({leadId,created,research});
-  });
+  void recordId;
+  void now;
+  throw new DomainError("Direct property-to-lead import is disabled. Record the source observation, review relevance evidence, and promote only after the market qualification gate passes.",409);
 }
 export async function refreshSourceResearch(id: string, version: number, termsReviewed: boolean, actor: OfferActor, now = new Date()) {
   requireReview(actor,termsReviewed);
@@ -132,10 +90,10 @@ export async function refreshSourceResearch(id: string, version: number, termsRe
   const key = String(row!.payload.sourceKey??"");
   const subject = await sourceRequest(()=> /^phila-opa:\d{9}$/.test(key) ? propertyById(key.slice(10),now) : propertyByAddress(detail.lead.address,now));
   if (normalizeAddress(subject.address)!==normalizeAddress(detail.lead.address) || subject.zip!==detail.lead.zip.slice(0,5)) throw new DomainError("Source parcel conflicts with the subject address. No facts were attached.",409);
-  const research = await collect(subject,now);
+  const research = await collectPublicSourceResearch(subject,now);
   await db.transaction(async tx=>{
     const lead = await lockedLead(tx,id,version);
-    await persistResearch(tx,id,research,actor.id,now);
+    await persistPublicSourceResearch(tx,id,research,actor.id,now);
     await tx.update(leadsTable).set({payload:{...lead.payload,sourceKey:`phila-opa:${subject.id}`},version:lead.version+1,updatedAt:now}).where(eq(leadsTable.id,id));
   });
   return research;

@@ -14,10 +14,12 @@ import { ago, fmtDate, isOverdue, money } from '@/lib/format';
 const LABEL: Record<CommandAction['category'], string> = {
   RESEARCH: 'Research', CALL: 'Call', FOLLOW_UP: 'Follow up', OFFER_APPROVAL: 'Owner approval', NEGOTIATION: 'Negotiate',
   CONTRACT: 'Contract', BUYER_MATCH: 'Buyer match', BUYER_VERIFICATION: 'Verify buyer', DEADLINE: 'Deadline', CLOSING: 'Closing', WORKER: 'Worker',
+  DISCOVERY_REVIEW: 'Qualify property',
 };
 const TONE: Record<CommandAction['category'], string> = {
   RESEARCH: 'tone-muted', CALL: 'tone-signal', FOLLOW_UP: 'tone-warn', OFFER_APPROVAL: 'tone-ink', NEGOTIATION: 'tone-go',
   CONTRACT: 'tone-ink', BUYER_MATCH: 'tone-go', BUYER_VERIFICATION: 'tone-warn', DEADLINE: 'tone-stop', CLOSING: 'tone-signal', WORKER: 'tone-muted',
+  DISCOVERY_REVIEW: 'tone-warn',
 };
 
 export default function Dashboard() {
@@ -54,6 +56,10 @@ export default function Dashboard() {
   const opportunityRows = d ? d.opportunities.filter((item) => matchesSearch(
     item.lead.address, item.lead.stage, item.analysis?.classification, item.analysis?.blockers.join(' '),
   )) : [];
+  const candidateRows = d ? d.propertyDiscoveries.records.filter((item) =>
+    ['RELEVANT_CANDIDATE', 'QUALIFIED_LEAD'].includes(item.status) && matchesSearch(
+    item.property.address, item.property.recordedOwner, item.reason, item.nextAction,
+  )) : [];
   const qualifiedRows = buyerRows.filter((buyer) => isQualified(buyer) && (buyer.destinationKind ?? 'BUYER') === 'BUYER');
   const now = new Date();
   const activeOpportunityCount = d ? d.deals.filter((item) => !['CLOSED', 'DEAD_DEAL'].includes(item.lead.stage)).length : 0;
@@ -68,7 +74,7 @@ export default function Dashboard() {
         <div>
           <div className="fd-eyebrow"><span className="fd-eyebrow-mark" />{now.toLocaleDateString('en-US', { weekday: 'long' })} field notes · {d ? `live / updated ${ago(d.generatedAt)}` : 'live'}</div>
           <h1 className="fd-title">Command center</h1>
-          <p className="fd-subtitle">A clear view of what moves your deals forward today.</p>
+          <p className="fd-subtitle">Seller acquisition, buyer demand, and the deal that connects them. Start with the next action; the system keeps the workstreams distinct.</p>
         </div>
         <div className="fd-head-buttons">
           <button className="fd-button" type="button" onClick={() => void q.refetch()} disabled={q.isFetching} aria-busy={q.isFetching}>
@@ -87,11 +93,11 @@ export default function Dashboard() {
       {q.isLoading && !d && <div className="fd-empty" role="status">Loading workspace activity…</div>}
       {d && (
         <>
-          <section className="fd-metrics" aria-label="Portfolio snapshot">
-            <div className="fd-metric"><span className="fd-metric-icon"><Building2 size={17} /></span><span><div className="fd-metric-value">{activeOpportunityCount}</div><div className="fd-metric-label">Active opportunities</div></span></div>
-            <div className="fd-metric"><span className="fd-metric-icon"><Headphones size={17} /></span><span><div className="fd-metric-value">{d.calls.length}</div><div className="fd-metric-label">Sellers ready to call</div></span></div>
-            <div className="fd-metric"><span className="fd-metric-icon"><HandCoins size={17} /></span><span><div className="fd-metric-value">{d.deals.length}</div><div className="fd-metric-label">Deals in motion</div></span></div>
-            <div className="fd-metric"><span className="fd-metric-icon"><CalendarClock size={17} /></span><span><div className="fd-metric-value">{closingThisMonth}</div><div className="fd-metric-label">Closing this month</div></span></div>
+          <section className="fd-metrics" aria-label="Operating state">
+            <div className="fd-metric"><span className="fd-metric-icon"><Building2 size={17} /></span><span><div className="fd-metric-value">{activeOpportunityCount}</div><div className="fd-metric-label">Active seller leads</div></span></div>
+            <div className="fd-metric"><span className="fd-metric-icon"><Compass size={17} /></span><span><div className="fd-metric-value">{d.propertyDiscoveries.counts.RELEVANT_CANDIDATE}</div><div className="fd-metric-label">Candidates to review</div></span></div>
+            <div className="fd-metric"><span className="fd-metric-icon"><Headphones size={17} /></span><span><div className="fd-metric-value">{d.calls.length}</div><div className="fd-metric-label">Sellers cleared to call</div></span></div>
+            <div className="fd-metric"><span className="fd-metric-icon"><UsersRound size={17} /></span><span><div className="fd-metric-value">{qualified.length}</div><div className="fd-metric-label">Qualified acquisition buyers</div></span></div>
           </section>
 
           <section className="fd-actions-section" data-testid="panel-actions">
@@ -143,6 +149,29 @@ export default function Dashboard() {
             </div>}
           </section>
 
+          <section className="fd-opps" data-testid="panel-qualified-candidates">
+            <div className="fd-section-head">
+              <div className="fd-section-title"><Compass size={15} />Highest-relevance properties <small>{query ? `${candidateRows.length} / ${d.propertyDiscoveries.records.length}` : d.propertyDiscoveries.records.length}</small></div>
+              <Link className="fd-text-link" href="/sources">Review qualification queue <ArrowRight size={12} style={{ verticalAlign: 'middle', marginLeft: 3 }} /></Link>
+            </div>
+            {candidateRows.length === 0 ? (
+              <div className="fd-empty">{query ? 'No relevant opportunities match that search.' : `No relevant candidates or newly qualified leads are waiting. ${d.propertyDiscoveries.counts.DISCOVERED_PROPERTY} raw source discoveries remain separate from active leads.`}</div>
+            ) : (
+              <div className="fd-opp-grid">{candidateRows.slice(0, 3).map((item) => (
+                <Link key={item.id} href={item.leadId ? `/leads/${item.leadId}` : `/sources?discovery=${item.id}`} className="fd-opp" data-testid={`link-candidate-${item.id}`}>
+                  <div className="fd-row-top"><div className="fd-row-name">{item.property.address}</div><span className="fd-stage">{item.score}/100 · {Math.round(item.confidence * 100)}%</span></div>
+                  <div className="fd-opp-info">{item.status.replaceAll('_', ' ')} · {item.signals.length} sourced signal(s) · {item.sourceObservationCount} observation(s)</div>
+                  <div className="fd-row-copy"><b>Why selected:</b> {item.reason}</div>
+                  <div className="fd-row-copy"><b>Missing:</b> {item.promotionBlockers[0] ?? item.missingInformation[0] ?? 'No qualification blocker; human review remains required.'}</div>
+                  <div className="fd-row-copy"><b>Next:</b> {item.nextAction}</div>
+                </Link>
+              ))}</div>
+            )}
+            <p className="mt-2 text-xs text-muted-foreground">Discovery volume is not deal quality. {d.propertyDiscoveries.counts.DISCOVERED_PROPERTY} raw properties are preserved outside the active lead queue.</p>
+          </section>
+
+          <details className="fd-secondary-work">
+            <summary className="cursor-pointer rounded border px-4 py-3 text-sm font-semibold">Open seller, buyer, contract, and operations workstreams</summary>
           <div className="fd-grid">
             <section className="fd-panel" data-testid="panel-calls">
               <div className="fd-section-head"><div className="fd-section-title"><Headphones size={15} />Call-ready sellers <small>{query ? `${calls.length} / ${d.calls.length}` : d.calls.length}</small></div><Link className="fd-text-link" href="/calls">Call queue</Link></div>
@@ -245,6 +274,7 @@ export default function Dashboard() {
               ))}</div>
             )}
           </section>
+          </details>
         </>
       )}
     </>

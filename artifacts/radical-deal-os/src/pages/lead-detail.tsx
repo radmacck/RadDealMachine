@@ -130,6 +130,45 @@ export default function LeadDetailPage() {
           <p className="text-sm">{lead.sellingReason || lead.sellerDescription || 'No seller statement yet.'}</p>
           <p className="mt-1 text-xs text-muted-foreground">Urgency {lead.urgency ?? 'UNKNOWN'} / {d.calls.length} call{d.calls.length === 1 ? '' : 's'} logged</p></div>
       </section>
+      {lead.propertyQualification && (
+        <section className="ledger space-y-3 border-l-4 border-l-signal p-4" data-testid="panel-property-qualification">
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <div>
+              <p className="eyebrow mb-1">Acquisition qualification · {lead.propertyQualification.status.replaceAll('_', ' ')}</p>
+              <h2 className="text-lg font-semibold">Why this property entered the acquisition queue</h2>
+            </div>
+            <span className="rounded border px-2 py-1 text-sm font-semibold">
+              {lead.propertyQualification.score}/100 · {Math.round(lead.propertyQualification.confidence * 100)}% evidence confidence
+            </span>
+          </div>
+          <p className="text-sm">{lead.propertyQualification.reason}</p>
+          <p className="text-xs text-muted-foreground"><b>Operator review:</b> {lead.propertyQualification.reviewReason} · Criteria v{lead.propertyQualification.criteriaVersion}</p>
+          <div className="grid gap-3 md:grid-cols-2">
+            <div className="rounded border border-border p-3">
+              <p className="eyebrow mb-2">Source-backed signals</p>
+              <ul className="space-y-2">
+                {lead.propertyQualification.signals.map((signal) => (
+                  <li key={signal.id} className="text-sm">
+                    <b>{signal.key.replaceAll('_', ' ')} · {signal.classification.replaceAll('_', ' ')}</b>
+                    <span className="ml-2 text-xs text-muted-foreground">+{signal.scoreContribution} points</span>
+                    <p>{signal.statement}</p>
+                    <p className="text-xs text-muted-foreground">
+                      {signal.sourceType.replaceAll('_', ' ')} · {signal.source}
+                      {signal.evidenceRef ? ` · ${signal.evidenceRef}` : ''}
+                    </p>
+                    {signal.sourceUrl && <a className="text-xs underline" href={signal.sourceUrl} target="_blank" rel="noreferrer">Open source</a>}
+                  </li>
+                ))}
+              </ul>
+            </div>
+            <div className="rounded border border-border p-3">
+              <p className="eyebrow mb-2">Still missing</p>
+              <ul className="list-disc space-y-1 pl-4 text-sm">{lead.propertyQualification.missingInformation.map((item, index) => <li key={index}>{item}</li>)}</ul>
+            </div>
+          </div>
+          <p className="border-t border-border pt-2 text-sm"><b>Next action:</b> {lead.propertyQualification.nextAction}</p>
+        </section>
+      )}
       <div className="flex flex-wrap gap-2 text-sm" id="workflow" data-testid="bar-workflow">
         {([['intel', 'Evidence'], ['uw', 'Underwriting'], ['offers', 'Offers'], ['tx', 'Transaction'], ['stage', 'Lifecycle']] as const).map(([v, l]) => (
           <button key={v} type="button" onClick={() => setTab(v)} className={`border px-3 py-1.5 ${tab === v ? 'border-signal bg-card font-semibold' : 'border-border'}`} data-testid={`button-focus-${v}`}>{l}</button>))}

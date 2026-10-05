@@ -10,6 +10,7 @@ import type { CallBrief } from './callBrief';
 import type { CommandAction } from './commandAction';
 import type { DealOperations } from './dealOperations';
 import type { LeadDetail } from './leadDetail';
+import type { PropertyDiscoveryList } from './propertyDiscoveryList';
 import type { WorkerJob } from './workerJob';
 
 export interface CommandCenter {
@@ -21,4 +22,5 @@ export interface CommandCenter {
   operations: DealOperations[];
   buyers: Buyer[];
   jobs: WorkerJob[];
+  propertyDiscoveries: PropertyDiscoveryList;
 }

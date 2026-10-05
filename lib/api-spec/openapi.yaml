@@ -731,6 +731,7 @@ paths:
               schema: { $ref: "#/components/schemas/PublicPropertySearch" }
   /property-sources/phila-opa/records/{recordId}/import:
     post:
+      deprecated: true
       operationId: importPublicProperty
       parameters:
         - { name: recordId, in: path, required: true, schema: { type: string, pattern: '^\d{9}$' } }
@@ -740,11 +741,111 @@ paths:
           application/json:
             schema: { $ref: "#/components/schemas/SourceReviewInput" }
       responses:
+        "409":
+          description: Direct discovery-to-lead promotion is disabled; use qualification first
+  /property-discoveries:
+    get:
+      operationId: listPropertyDiscoveries
+      parameters:
+        - { name: marketKey, in: query, schema: { type: string, default: PHILADELPHIA_PA } }
+        - { name: status, in: query, schema: { type: string, enum: [DISCOVERED_PROPERTY, RELEVANT_CANDIDATE, QUALIFIED_LEAD, CALL_READY, DISQUALIFIED] } }
+        - { name: limit, in: query, schema: { type: integer, minimum: 1, maximum: 100, default: 50 } }
+      responses:
         "200":
-          description: Idempotent research intake with no inferred seller or offer authority
+          description: Raw source observations and explainable relevance qualification; only promoted records are active leads
           content:
             application/json:
-              schema: { $ref: "#/components/schemas/PublicPropertyImport" }
+              schema: { $ref: "#/components/schemas/PropertyDiscoveryList" }
+  /property-discoveries/phila-opa/{recordId}:
+    post:
+      operationId: recordPublicPropertyDiscovery
+      parameters:
+        - { name: recordId, in: path, required: true, schema: { type: string, pattern: '^\d{9}$' } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/SourceReviewInput" }
+      responses:
+        "200":
+          description: Upserted raw property/source observation and weak, provenance-backed relevance signals; does not create a lead
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/PropertyDiscovery" }
+  /property-discovery-criteria/{marketKey}:
+    get:
+      operationId: getPropertyDiscoveryCriteria
+      parameters:
+        - { name: marketKey, in: path, required: true, schema: { type: string, minLength: 2, maxLength: 80 } }
+      responses:
+        "200":
+          description: Versioned, market-specific qualification thresholds and signal weights
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/PropertyQualificationCriteria" }
+    put:
+      operationId: savePropertyDiscoveryCriteria
+      parameters:
+        - { name: marketKey, in: path, required: true, schema: { type: string, minLength: 2, maxLength: 80 } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/PropertyQualificationCriteriaInput" }
+      responses:
+        "200":
+          description: Saved, versioned market-specific qualification configuration
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/PropertyQualificationCriteria" }
+  /property-discoveries/{id}/signals:
+    post:
+      operationId: addPropertyRelevanceSignal
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/PropertyRelevanceSignalInput" }
+      responses:
+        "200":
+          description: Evidence-backed signal saved and relevance recomputed; AI hypotheses never count toward qualification
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/PropertyDiscovery" }
+  /property-discoveries/{id}/promote:
+    post:
+      operationId: promotePropertyDiscovery
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/PropertyDiscoveryPromotionInput" }
+      responses:
+        "201":
+          description: Qualified discovery linked to an active seller-side lead; no call readiness or contact authority is inferred
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/PropertyDiscoveryPromotionResponse" }
+  /property-discoveries/{id}/disqualify:
+    post:
+      operationId: disqualifyPropertyDiscovery
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/PropertyDiscoveryDispositionInput" }
+      responses:
+        "200":
+          description: Discovery intentionally excluded with an attributed reason; raw source observations are preserved
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/PropertyDiscovery" }
   /leads/{id}/source-research:
     get:
       operationId: getSourceResearch
@@ -836,6 +937,149 @@ components:
         termsUrl: { type: string }
         capabilities: { type: array, items: { type: string } }
         limitations: { type: array, items: { type: string } }
+    PropertySignalKey:
+      type: string
+      enum: [ENTITY_OWNER, LONG_TERM_HOLD, REPORTED_POOR_CONDITION, SELLER_MOTIVATION, TAX_DELINQUENCY, FORECLOSURE, PROBATE, ABSENTEE_OWNER, STALE_LISTING, REPEATED_PRICE_REDUCTION, BELOW_MARKET, VACANCY, EQUITY_OPPORTUNITY, MARKET_FIT]
+    PropertySignalGroup:
+      type: string
+      enum: [OWNERSHIP_CONTEXT, CONDITION, MOTIVATION, DISTRESS, LISTING_PRESSURE, VACANCY, FINANCIAL_OPPORTUNITY, MARKET_FIT]
+    PropertyEvidenceClassification:
+      type: string
+      enum: [VERIFIED, OBSERVED, INDICATED, AI_HYPOTHESIS]
+    PropertyEvidenceSourceType:
+      type: string
+      enum: [PUBLIC_RECORD, PERMITTED_LISTING, SELLER, INSPECTION, PUBLIC_PAGE, ANALYST, MODEL]
+    PropertyDiscoveryStatus:
+      type: string
+      enum: [DISCOVERED_PROPERTY, RELEVANT_CANDIDATE, QUALIFIED_LEAD, CALL_READY, DISQUALIFIED]
+    PropertyRelevanceSignal:
+      type: object
+      required: [id, key, group, classification, sourceType, statement, source, sourceUrl, evidenceRef, capturedAt, confidence, scoreContribution]
+      properties:
+        id: { type: string }
+        key: { $ref: "#/components/schemas/PropertySignalKey" }
+        group: { $ref: "#/components/schemas/PropertySignalGroup" }
+        classification: { $ref: "#/components/schemas/PropertyEvidenceClassification" }
+        sourceType: { $ref: "#/components/schemas/PropertyEvidenceSourceType" }
+        statement: { type: string }
+        source: { type: string }
+        sourceUrl: { type: ["string", "null"] }
+        evidenceRef: { type: ["string", "null"] }
+        capturedAt: { type: string, format: date-time }
+        confidence: { type: number, minimum: 0, maximum: 1 }
+        scoreContribution: { type: integer, minimum: 0, maximum: 100 }
+    LeadPropertyQualification:
+      type: object
+      required: [discoveryId, status, score, confidence, criteriaVersion, reviewReason, qualifiedBy, qualifiedAt, reason, signals, missingInformation, nextAction]
+      properties:
+        discoveryId: { type: string }
+        status: { type: string, enum: [QUALIFIED_LEAD, CALL_READY, DISQUALIFIED] }
+        score: { type: integer, minimum: 0, maximum: 100 }
+        confidence: { type: number, minimum: 0, maximum: 1 }
+        criteriaVersion: { type: integer, minimum: 1 }
+        reviewReason: { type: string }
+        qualifiedBy: { type: string }
+        qualifiedAt: { type: string, format: date-time }
+        reason: { type: string }
+        signals: { type: array, items: { $ref: "#/components/schemas/PropertyRelevanceSignal" } }
+        missingInformation: { type: array, items: { type: string } }
+        nextAction: { type: string }
+    PropertySignalRule:
+      type: object
+      required: [key, points, enabled]
+      properties:
+        key: { $ref: "#/components/schemas/PropertySignalKey" }
+        points: { type: integer, minimum: 0, maximum: 100 }
+        enabled: { type: boolean }
+    PropertyQualificationCriteriaInput:
+      type: object
+      required: [candidateThreshold, qualifiedLeadThreshold, minimumIndependentSignalGroups, requiredLeadGroupAnyOf, longHoldYears, signalRules]
+      properties:
+        candidateThreshold: { type: integer, minimum: 1, maximum: 100 }
+        qualifiedLeadThreshold: { type: integer, minimum: 1, maximum: 100 }
+        minimumIndependentSignalGroups: { type: integer, minimum: 2, maximum: 8 }
+        requiredLeadGroupAnyOf: { type: array, minItems: 1, maxItems: 8, items: { $ref: "#/components/schemas/PropertySignalGroup" } }
+        longHoldYears: { type: integer, minimum: 1, maximum: 100 }
+        signalRules: { type: array, minItems: 1, maxItems: 14, items: { $ref: "#/components/schemas/PropertySignalRule" } }
+    PropertyQualificationCriteria:
+      allOf:
+        - { $ref: "#/components/schemas/PropertyQualificationCriteriaInput" }
+        - type: object
+          required: [marketKey, version]
+          properties:
+            marketKey: { type: string }
+            version: { type: integer, minimum: 1 }
+    PropertyDiscovery:
+      type: object
+      required: [id, marketKey, status, score, confidence, version, property, signals, reason, missingInformation, nextAction, sourceObservationCount, relatedOwnerPropertyCount, leadId, criteriaVersion, canPromote, promotionBlockers, firstObservedAt, lastObservedAt]
+      properties:
+        id: { type: string, format: uuid }
+        marketKey: { type: string }
+        status: { $ref: "#/components/schemas/PropertyDiscoveryStatus" }
+        score: { type: integer, minimum: 0, maximum: 100 }
+        confidence: { type: number, minimum: 0, maximum: 1 }
+        version: { type: integer, minimum: 1 }
+        property: { $ref: "#/components/schemas/PublicProperty" }
+        signals: { type: array, items: { $ref: "#/components/schemas/PropertyRelevanceSignal" } }
+        reason: { type: string }
+        missingInformation: { type: array, items: { type: string } }
+        nextAction: { type: string }
+        sourceObservationCount: { type: integer, minimum: 1 }
+        relatedOwnerPropertyCount: { type: integer, minimum: 1 }
+        leadId: { type: ["string", "null"], format: uuid }
+        criteriaVersion: { type: integer, minimum: 1 }
+        canPromote: { type: boolean }
+        promotionBlockers: { type: array, items: { type: string } }
+        firstObservedAt: { type: string, format: date-time }
+        lastObservedAt: { type: string, format: date-time }
+    PropertyDiscoveryList:
+      type: object
+      required: [records, counts, criteria]
+      properties:
+        records: { type: array, items: { $ref: "#/components/schemas/PropertyDiscovery" } }
+        counts:
+          type: object
+          required: [DISCOVERED_PROPERTY, RELEVANT_CANDIDATE, QUALIFIED_LEAD, CALL_READY, DISQUALIFIED]
+          properties:
+            DISCOVERED_PROPERTY: { type: integer, minimum: 0 }
+            RELEVANT_CANDIDATE: { type: integer, minimum: 0 }
+            QUALIFIED_LEAD: { type: integer, minimum: 0 }
+            CALL_READY: { type: integer, minimum: 0 }
+            DISQUALIFIED: { type: integer, minimum: 0 }
+        criteria: { $ref: "#/components/schemas/PropertyQualificationCriteria" }
+    PropertyRelevanceSignalInput:
+      type: object
+      required: [version, key, group, classification, sourceType, statement, source, sourceUrl, evidenceRef, capturedAt, confidence]
+      properties:
+        version: { type: integer, minimum: 1 }
+        key: { $ref: "#/components/schemas/PropertySignalKey" }
+        group: { $ref: "#/components/schemas/PropertySignalGroup" }
+        classification: { $ref: "#/components/schemas/PropertyEvidenceClassification" }
+        sourceType: { $ref: "#/components/schemas/PropertyEvidenceSourceType" }
+        statement: { type: string, minLength: 8, maxLength: 2000 }
+        source: { type: string, minLength: 3, maxLength: 300 }
+        sourceUrl: { type: ["string", "null"], maxLength: 2000 }
+        evidenceRef: { type: ["string", "null"], maxLength: 300 }
+        capturedAt: { type: string, format: date-time }
+        confidence: { type: number, minimum: 0, maximum: 1 }
+    PropertyDiscoveryPromotionInput:
+      type: object
+      required: [version, reviewReason]
+      properties:
+        version: { type: integer, minimum: 1 }
+        reviewReason: { type: string, minLength: 8, maxLength: 2000 }
+    PropertyDiscoveryDispositionInput:
+      type: object
+      required: [version, reason]
+      properties:
+        version: { type: integer, minimum: 1 }
+        reason: { type: string, minLength: 8, maxLength: 2000 }
+    PropertyDiscoveryPromotionResponse:
+      type: object
+      required: [discovery, leadId]
+      properties:
+        discovery: { $ref: "#/components/schemas/PropertyDiscovery" }
+        leadId: { type: string, format: uuid }
     PublicProperty:
       type: object
       required: [id, provider, classification, address, city, state, zip, propertyType, sqft, beds, baths, recordedOwner, entityCandidate, assessedValue, lastSalePrice, lastSaleAt, interiorCondition, exteriorCondition, lat, lng, sourceUrl, capturedAt]
@@ -1532,7 +1776,7 @@ components:
       required: [id, category, priority, title, reason, leadId, href, cta]
       properties:
         id: { type: string }
-        category: { type: string, enum: [RESEARCH, CALL, FOLLOW_UP, OFFER_APPROVAL, NEGOTIATION, CONTRACT, BUYER_MATCH, BUYER_VERIFICATION, DEADLINE, CLOSING, WORKER] }
+        category: { type: string, enum: [RESEARCH, CALL, FOLLOW_UP, OFFER_APPROVAL, NEGOTIATION, CONTRACT, BUYER_MATCH, BUYER_VERIFICATION, DEADLINE, CLOSING, WORKER, DISCOVERY_REVIEW] }
         priority: { type: integer }
         title: { type: string }
         reason: { type: string }
@@ -1566,7 +1810,7 @@ components:
         completionRecord: { type: string }
     CommandCenter:
       type: object
-      required: [generatedAt, actions, opportunities, calls, deals, operations, buyers, jobs]
+      required: [generatedAt, actions, opportunities, calls, deals, operations, buyers, jobs, propertyDiscoveries]
       properties:
         generatedAt: { type: string }
         actions: { type: array, items: { $ref: "#/components/schemas/CommandAction" } }
@@ -1576,6 +1820,7 @@ components:
         operations: { type: array, items: { $ref: "#/components/schemas/DealOperations" } }
         buyers: { type: array, items: { $ref: "#/components/schemas/Buyer" } }
         jobs: { type: array, items: { $ref: "#/components/schemas/WorkerJob" } }
+        propertyDiscoveries: { $ref: "#/components/schemas/PropertyDiscoveryList" }
     HealthStatus:
       type: object
       required: [status]
@@ -1641,6 +1886,7 @@ components:
             followUpAt: { type: ["string", "null"] }
             createdAt: { type: string }
             updatedAt: { type: string }
+            propertyQualification: { $ref: "#/components/schemas/LeadPropertyQualification" }
     LeadUpdate:
       allOf:
         - { $ref: "#/components/schemas/LeadInput" }

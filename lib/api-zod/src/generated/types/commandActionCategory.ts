@@ -21,4 +21,5 @@ export const CommandActionCategory = {
   DEADLINE: 'DEADLINE',
   CLOSING: 'CLOSING',
   WORKER: 'WORKER',
+  DISCOVERY_REVIEW: 'DISCOVERY_REVIEW',
 } as const;

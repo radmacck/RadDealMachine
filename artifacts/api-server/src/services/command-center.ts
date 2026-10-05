@@ -5,8 +5,19 @@ import { dealOperations } from "./matching-store";
 import { allBuyerRecords, jobRecord } from "./operations-records";
 import { db, jobsTable } from "@workspace/db";
 import { desc } from "drizzle-orm";
+import { listPropertyDiscoveries } from "./property-discovery-store";
 
 export async function commandCenter(role: string, now = new Date()) {
+  const allPropertyDiscoveries = await listPropertyDiscoveries({
+    marketKey: "PHILADELPHIA_PA",
+    limit: 100,
+  });
+  const propertyDiscoveries = {
+    ...allPropertyDiscoveries,
+    records: allPropertyDiscoveries.records
+      .filter((item) => ["RELEVANT_CANDIDATE", "QUALIFIED_LEAD"].includes(item.status))
+      .slice(0, 5),
+  };
   const leads = await listLeads();
   const deals = await Promise.all(leads.map(l => leadDetail(l.id,undefined,now)));
   const calls = await callQueue(now);
@@ -22,6 +33,22 @@ export async function commandCenter(role: string, now = new Date()) {
     return hasActiveContract || hasCommunicatedOffer;
   }).map((operation) => operation.leadId));
   const actions = dealActions(deals,role,now,transactionLeadIds);
+  if (["OWNER","OPERATOR","ANALYST"].includes(role)) {
+    for (const candidate of propertyDiscoveries.records) {
+      if (candidate.status !== "RELEVANT_CANDIDATE") continue;
+      actions.push({
+        id: `DISCOVERY_REVIEW:${candidate.id}`,
+        category: "DISCOVERY_REVIEW",
+        priority: 45 + Math.round(candidate.score / 5),
+        title: `Review ${candidate.property.address}`,
+        reason: `${candidate.score}/100 · ${Math.round(candidate.confidence * 100)}% evidence confidence. ${candidate.reason}`,
+        cta: candidate.canPromote ? "Review promotion" : "Review evidence",
+        leadId: null,
+        href: `/sources?discovery=${candidate.id}`,
+        dueAt: null,
+      });
+    }
+  }
   const operate = ["OWNER","OPERATOR"].includes(role);
   for (const op of operations) {
     const d = dealById.get(op.leadId);
@@ -109,5 +136,6 @@ export async function commandCenter(role: string, now = new Date()) {
     generatedAt:now.toISOString(),deals,calls,operations,buyers,jobs,
     actions:actions.sort((a,b)=>b.priority-a.priority||a.id.localeCompare(b.id)),
     opportunities:strongestOpportunities(deals),
+    propertyDiscoveries,
   });
 }

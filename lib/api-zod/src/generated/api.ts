@@ -221,6 +221,19 @@ export const recordTransactionExceptionResponseContractOneCommitmentSnapshotOneD
 
 export const recordTransactionExceptionResponseContractOneCommitmentSnapshotOneDetailLeadOneNextActionMax = 1000;
 
+export const recordTransactionExceptionResponseContractOneCommitmentSnapshotOneDetailLeadTwoPropertyQualificationScoreMin = 0;
+export const recordTransactionExceptionResponseContractOneCommitmentSnapshotOneDetailLeadTwoPropertyQualificationScoreMax = 100;
+
+export const recordTransactionExceptionResponseContractOneCommitmentSnapshotOneDetailLeadTwoPropertyQualificationConfidenceMin = 0;
+export const recordTransactionExceptionResponseContractOneCommitmentSnapshotOneDetailLeadTwoPropertyQualificationConfidenceMax = 1;
+
+
+export const recordTransactionExceptionResponseContractOneCommitmentSnapshotOneDetailLeadTwoPropertyQualificationSignalsItemConfidenceMin = 0;
+export const recordTransactionExceptionResponseContractOneCommitmentSnapshotOneDetailLeadTwoPropertyQualificationSignalsItemConfidenceMax = 1;
+
+export const recordTransactionExceptionResponseContractOneCommitmentSnapshotOneDetailLeadTwoPropertyQualificationSignalsItemScoreContributionMin = 0;
+export const recordTransactionExceptionResponseContractOneCommitmentSnapshotOneDetailLeadTwoPropertyQualificationSignalsItemScoreContributionMax = 100;
+
 export const recordTransactionExceptionResponseContractOneCommitmentSnapshotOneDetailIntelligenceItemOneCategoryMax = 100;
 
 export const recordTransactionExceptionResponseContractOneCommitmentSnapshotOneDetailIntelligenceItemOneStatementMax = 5000;
@@ -545,7 +558,34 @@ export const RecordTransactionExceptionResponse = zod.object({
   "nextAction": zod.string(),
   "followUpAt": zod.string().nullish(),
   "createdAt": zod.string(),
-  "updatedAt": zod.string()
+  "updatedAt": zod.string(),
+  "propertyQualification": zod.object({
+  "discoveryId": zod.string(),
+  "status": zod.enum(['QUALIFIED_LEAD', 'CALL_READY', 'DISQUALIFIED']),
+  "score": zod.number().int().min(recordTransactionExceptionResponseContractOneCommitmentSnapshotOneDetailLeadTwoPropertyQualificationScoreMin).max(recordTransactionExceptionResponseContractOneCommitmentSnapshotOneDetailLeadTwoPropertyQualificationScoreMax),
+  "confidence": zod.number().min(recordTransactionExceptionResponseContractOneCommitmentSnapshotOneDetailLeadTwoPropertyQualificationConfidenceMin).max(recordTransactionExceptionResponseContractOneCommitmentSnapshotOneDetailLeadTwoPropertyQualificationConfidenceMax),
+  "criteriaVersion": zod.number().int().min(1),
+  "reviewReason": zod.string(),
+  "qualifiedBy": zod.string(),
+  "qualifiedAt": zod.string().datetime({"offset":true}),
+  "reason": zod.string(),
+  "signals": zod.array(zod.object({
+  "id": zod.string(),
+  "key": zod.enum(['ENTITY_OWNER', 'LONG_TERM_HOLD', 'REPORTED_POOR_CONDITION', 'SELLER_MOTIVATION', 'TAX_DELINQUENCY', 'FORECLOSURE', 'PROBATE', 'ABSENTEE_OWNER', 'STALE_LISTING', 'REPEATED_PRICE_REDUCTION', 'BELOW_MARKET', 'VACANCY', 'EQUITY_OPPORTUNITY', 'MARKET_FIT']),
+  "group": zod.enum(['OWNERSHIP_CONTEXT', 'CONDITION', 'MOTIVATION', 'DISTRESS', 'LISTING_PRESSURE', 'VACANCY', 'FINANCIAL_OPPORTUNITY', 'MARKET_FIT']),
+  "classification": zod.enum(['VERIFIED', 'OBSERVED', 'INDICATED', 'AI_HYPOTHESIS']),
+  "sourceType": zod.enum(['PUBLIC_RECORD', 'PERMITTED_LISTING', 'SELLER', 'INSPECTION', 'PUBLIC_PAGE', 'ANALYST', 'MODEL']),
+  "statement": zod.string(),
+  "source": zod.string(),
+  "sourceUrl": zod.string().nullable(),
+  "evidenceRef": zod.string().nullable(),
+  "capturedAt": zod.string().datetime({"offset":true}),
+  "confidence": zod.number().min(recordTransactionExceptionResponseContractOneCommitmentSnapshotOneDetailLeadTwoPropertyQualificationSignalsItemConfidenceMin).max(recordTransactionExceptionResponseContractOneCommitmentSnapshotOneDetailLeadTwoPropertyQualificationSignalsItemConfidenceMax),
+  "scoreContribution": zod.number().int().min(recordTransactionExceptionResponseContractOneCommitmentSnapshotOneDetailLeadTwoPropertyQualificationSignalsItemScoreContributionMin).max(recordTransactionExceptionResponseContractOneCommitmentSnapshotOneDetailLeadTwoPropertyQualificationSignalsItemScoreContributionMax)
+})),
+  "missingInformation": zod.array(zod.string()),
+  "nextAction": zod.string()
+}).optional()
 })),
   "intelligence": zod.array(zod.object({
   "classification": zod.enum(['VERIFIED_FACTS', 'OBSERVED', 'INDICATED', 'AI_HYPOTHESIS']),
@@ -998,6 +1038,19 @@ export const intakePropertyEvidenceResponseLeadOneSourceMax = 2000;
 
 export const intakePropertyEvidenceResponseLeadOneNextActionMax = 1000;
 
+export const intakePropertyEvidenceResponseLeadTwoPropertyQualificationScoreMin = 0;
+export const intakePropertyEvidenceResponseLeadTwoPropertyQualificationScoreMax = 100;
+
+export const intakePropertyEvidenceResponseLeadTwoPropertyQualificationConfidenceMin = 0;
+export const intakePropertyEvidenceResponseLeadTwoPropertyQualificationConfidenceMax = 1;
+
+
+export const intakePropertyEvidenceResponseLeadTwoPropertyQualificationSignalsItemConfidenceMin = 0;
+export const intakePropertyEvidenceResponseLeadTwoPropertyQualificationSignalsItemConfidenceMax = 1;
+
+export const intakePropertyEvidenceResponseLeadTwoPropertyQualificationSignalsItemScoreContributionMin = 0;
+export const intakePropertyEvidenceResponseLeadTwoPropertyQualificationSignalsItemScoreContributionMax = 100;
+
 export const intakePropertyEvidenceResponseIntelligenceItemOneCategoryMax = 100;
 
 export const intakePropertyEvidenceResponseIntelligenceItemOneStatementMax = 5000;
@@ -1150,7 +1203,34 @@ export const IntakePropertyEvidenceResponse = zod.object({
   "nextAction": zod.string(),
   "followUpAt": zod.string().nullish(),
   "createdAt": zod.string(),
-  "updatedAt": zod.string()
+  "updatedAt": zod.string(),
+  "propertyQualification": zod.object({
+  "discoveryId": zod.string(),
+  "status": zod.enum(['QUALIFIED_LEAD', 'CALL_READY', 'DISQUALIFIED']),
+  "score": zod.number().int().min(intakePropertyEvidenceResponseLeadTwoPropertyQualificationScoreMin).max(intakePropertyEvidenceResponseLeadTwoPropertyQualificationScoreMax),
+  "confidence": zod.number().min(intakePropertyEvidenceResponseLeadTwoPropertyQualificationConfidenceMin).max(intakePropertyEvidenceResponseLeadTwoPropertyQualificationConfidenceMax),
+  "criteriaVersion": zod.number().int().min(1),
+  "reviewReason": zod.string(),
+  "qualifiedBy": zod.string(),
+  "qualifiedAt": zod.string().datetime({"offset":true}),
+  "reason": zod.string(),
+  "signals": zod.array(zod.object({
+  "id": zod.string(),
+  "key": zod.enum(['ENTITY_OWNER', 'LONG_TERM_HOLD', 'REPORTED_POOR_CONDITION', 'SELLER_MOTIVATION', 'TAX_DELINQUENCY', 'FORECLOSURE', 'PROBATE', 'ABSENTEE_OWNER', 'STALE_LISTING', 'REPEATED_PRICE_REDUCTION', 'BELOW_MARKET', 'VACANCY', 'EQUITY_OPPORTUNITY', 'MARKET_FIT']),
+  "group": zod.enum(['OWNERSHIP_CONTEXT', 'CONDITION', 'MOTIVATION', 'DISTRESS', 'LISTING_PRESSURE', 'VACANCY', 'FINANCIAL_OPPORTUNITY', 'MARKET_FIT']),
+  "classification": zod.enum(['VERIFIED', 'OBSERVED', 'INDICATED', 'AI_HYPOTHESIS']),
+  "sourceType": zod.enum(['PUBLIC_RECORD', 'PERMITTED_LISTING', 'SELLER', 'INSPECTION', 'PUBLIC_PAGE', 'ANALYST', 'MODEL']),
+  "statement": zod.string(),
+  "source": zod.string(),
+  "sourceUrl": zod.string().nullable(),
+  "evidenceRef": zod.string().nullable(),
+  "capturedAt": zod.string().datetime({"offset":true}),
+  "confidence": zod.number().min(intakePropertyEvidenceResponseLeadTwoPropertyQualificationSignalsItemConfidenceMin).max(intakePropertyEvidenceResponseLeadTwoPropertyQualificationSignalsItemConfidenceMax),
+  "scoreContribution": zod.number().int().min(intakePropertyEvidenceResponseLeadTwoPropertyQualificationSignalsItemScoreContributionMin).max(intakePropertyEvidenceResponseLeadTwoPropertyQualificationSignalsItemScoreContributionMax)
+})),
+  "missingInformation": zod.array(zod.string()),
+  "nextAction": zod.string()
+}).optional()
 })),
   "intelligence": zod.array(zod.object({
   "classification": zod.enum(['VERIFIED_FACTS', 'OBSERVED', 'INDICATED', 'AI_HYPOTHESIS']),
@@ -1426,6 +1506,19 @@ export const listLeadsResponseOneSourceMax = 2000;
 
 export const listLeadsResponseOneNextActionMax = 1000;
 
+export const listLeadsResponseTwoPropertyQualificationScoreMin = 0;
+export const listLeadsResponseTwoPropertyQualificationScoreMax = 100;
+
+export const listLeadsResponseTwoPropertyQualificationConfidenceMin = 0;
+export const listLeadsResponseTwoPropertyQualificationConfidenceMax = 1;
+
+
+export const listLeadsResponseTwoPropertyQualificationSignalsItemConfidenceMin = 0;
+export const listLeadsResponseTwoPropertyQualificationSignalsItemConfidenceMax = 1;
+
+export const listLeadsResponseTwoPropertyQualificationSignalsItemScoreContributionMin = 0;
+export const listLeadsResponseTwoPropertyQualificationSignalsItemScoreContributionMax = 100;
+
 
 
 export const ListLeadsResponseItem = zod.object({
@@ -1455,7 +1548,34 @@ export const ListLeadsResponseItem = zod.object({
   "nextAction": zod.string(),
   "followUpAt": zod.string().nullish(),
   "createdAt": zod.string(),
-  "updatedAt": zod.string()
+  "updatedAt": zod.string(),
+  "propertyQualification": zod.object({
+  "discoveryId": zod.string(),
+  "status": zod.enum(['QUALIFIED_LEAD', 'CALL_READY', 'DISQUALIFIED']),
+  "score": zod.number().int().min(listLeadsResponseTwoPropertyQualificationScoreMin).max(listLeadsResponseTwoPropertyQualificationScoreMax),
+  "confidence": zod.number().min(listLeadsResponseTwoPropertyQualificationConfidenceMin).max(listLeadsResponseTwoPropertyQualificationConfidenceMax),
+  "criteriaVersion": zod.number().int().min(1),
+  "reviewReason": zod.string(),
+  "qualifiedBy": zod.string(),
+  "qualifiedAt": zod.string().datetime({"offset":true}),
+  "reason": zod.string(),
+  "signals": zod.array(zod.object({
+  "id": zod.string(),
+  "key": zod.enum(['ENTITY_OWNER', 'LONG_TERM_HOLD', 'REPORTED_POOR_CONDITION', 'SELLER_MOTIVATION', 'TAX_DELINQUENCY', 'FORECLOSURE', 'PROBATE', 'ABSENTEE_OWNER', 'STALE_LISTING', 'REPEATED_PRICE_REDUCTION', 'BELOW_MARKET', 'VACANCY', 'EQUITY_OPPORTUNITY', 'MARKET_FIT']),
+  "group": zod.enum(['OWNERSHIP_CONTEXT', 'CONDITION', 'MOTIVATION', 'DISTRESS', 'LISTING_PRESSURE', 'VACANCY', 'FINANCIAL_OPPORTUNITY', 'MARKET_FIT']),
+  "classification": zod.enum(['VERIFIED', 'OBSERVED', 'INDICATED', 'AI_HYPOTHESIS']),
+  "sourceType": zod.enum(['PUBLIC_RECORD', 'PERMITTED_LISTING', 'SELLER', 'INSPECTION', 'PUBLIC_PAGE', 'ANALYST', 'MODEL']),
+  "statement": zod.string(),
+  "source": zod.string(),
+  "sourceUrl": zod.string().nullable(),
+  "evidenceRef": zod.string().nullable(),
+  "capturedAt": zod.string().datetime({"offset":true}),
+  "confidence": zod.number().min(listLeadsResponseTwoPropertyQualificationSignalsItemConfidenceMin).max(listLeadsResponseTwoPropertyQualificationSignalsItemConfidenceMax),
+  "scoreContribution": zod.number().int().min(listLeadsResponseTwoPropertyQualificationSignalsItemScoreContributionMin).max(listLeadsResponseTwoPropertyQualificationSignalsItemScoreContributionMax)
+})),
+  "missingInformation": zod.array(zod.string()),
+  "nextAction": zod.string()
+}).optional()
 }))
 export const ListLeadsResponse = zod.array(ListLeadsResponseItem)
 
@@ -1562,6 +1682,19 @@ export const createLeadResponseOneSourceMax = 2000;
 
 export const createLeadResponseOneNextActionMax = 1000;
 
+export const createLeadResponseTwoPropertyQualificationScoreMin = 0;
+export const createLeadResponseTwoPropertyQualificationScoreMax = 100;
+
+export const createLeadResponseTwoPropertyQualificationConfidenceMin = 0;
+export const createLeadResponseTwoPropertyQualificationConfidenceMax = 1;
+
+
+export const createLeadResponseTwoPropertyQualificationSignalsItemConfidenceMin = 0;
+export const createLeadResponseTwoPropertyQualificationSignalsItemConfidenceMax = 1;
+
+export const createLeadResponseTwoPropertyQualificationSignalsItemScoreContributionMin = 0;
+export const createLeadResponseTwoPropertyQualificationSignalsItemScoreContributionMax = 100;
+
 
 
 export const CreateLeadResponse = zod.object({
@@ -1591,7 +1724,34 @@ export const CreateLeadResponse = zod.object({
   "nextAction": zod.string(),
   "followUpAt": zod.string().nullish(),
   "createdAt": zod.string(),
-  "updatedAt": zod.string()
+  "updatedAt": zod.string(),
+  "propertyQualification": zod.object({
+  "discoveryId": zod.string(),
+  "status": zod.enum(['QUALIFIED_LEAD', 'CALL_READY', 'DISQUALIFIED']),
+  "score": zod.number().int().min(createLeadResponseTwoPropertyQualificationScoreMin).max(createLeadResponseTwoPropertyQualificationScoreMax),
+  "confidence": zod.number().min(createLeadResponseTwoPropertyQualificationConfidenceMin).max(createLeadResponseTwoPropertyQualificationConfidenceMax),
+  "criteriaVersion": zod.number().int().min(1),
+  "reviewReason": zod.string(),
+  "qualifiedBy": zod.string(),
+  "qualifiedAt": zod.string().datetime({"offset":true}),
+  "reason": zod.string(),
+  "signals": zod.array(zod.object({
+  "id": zod.string(),
+  "key": zod.enum(['ENTITY_OWNER', 'LONG_TERM_HOLD', 'REPORTED_POOR_CONDITION', 'SELLER_MOTIVATION', 'TAX_DELINQUENCY', 'FORECLOSURE', 'PROBATE', 'ABSENTEE_OWNER', 'STALE_LISTING', 'REPEATED_PRICE_REDUCTION', 'BELOW_MARKET', 'VACANCY', 'EQUITY_OPPORTUNITY', 'MARKET_FIT']),
+  "group": zod.enum(['OWNERSHIP_CONTEXT', 'CONDITION', 'MOTIVATION', 'DISTRESS', 'LISTING_PRESSURE', 'VACANCY', 'FINANCIAL_OPPORTUNITY', 'MARKET_FIT']),
+  "classification": zod.enum(['VERIFIED', 'OBSERVED', 'INDICATED', 'AI_HYPOTHESIS']),
+  "sourceType": zod.enum(['PUBLIC_RECORD', 'PERMITTED_LISTING', 'SELLER', 'INSPECTION', 'PUBLIC_PAGE', 'ANALYST', 'MODEL']),
+  "statement": zod.string(),
+  "source": zod.string(),
+  "sourceUrl": zod.string().nullable(),
+  "evidenceRef": zod.string().nullable(),
+  "capturedAt": zod.string().datetime({"offset":true}),
+  "confidence": zod.number().min(createLeadResponseTwoPropertyQualificationSignalsItemConfidenceMin).max(createLeadResponseTwoPropertyQualificationSignalsItemConfidenceMax),
+  "scoreContribution": zod.number().int().min(createLeadResponseTwoPropertyQualificationSignalsItemScoreContributionMin).max(createLeadResponseTwoPropertyQualificationSignalsItemScoreContributionMax)
+})),
+  "missingInformation": zod.array(zod.string()),
+  "nextAction": zod.string()
+}).optional()
 }))
 
 
@@ -1637,6 +1797,19 @@ export const getLeadResponseLeadOneSellingReasonMax = 2000;
 export const getLeadResponseLeadOneSourceMax = 2000;
 
 export const getLeadResponseLeadOneNextActionMax = 1000;
+
+export const getLeadResponseLeadTwoPropertyQualificationScoreMin = 0;
+export const getLeadResponseLeadTwoPropertyQualificationScoreMax = 100;
+
+export const getLeadResponseLeadTwoPropertyQualificationConfidenceMin = 0;
+export const getLeadResponseLeadTwoPropertyQualificationConfidenceMax = 1;
+
+
+export const getLeadResponseLeadTwoPropertyQualificationSignalsItemConfidenceMin = 0;
+export const getLeadResponseLeadTwoPropertyQualificationSignalsItemConfidenceMax = 1;
+
+export const getLeadResponseLeadTwoPropertyQualificationSignalsItemScoreContributionMin = 0;
+export const getLeadResponseLeadTwoPropertyQualificationSignalsItemScoreContributionMax = 100;
 
 export const getLeadResponseIntelligenceItemOneCategoryMax = 100;
 
@@ -1790,7 +1963,34 @@ export const GetLeadResponse = zod.object({
   "nextAction": zod.string(),
   "followUpAt": zod.string().nullish(),
   "createdAt": zod.string(),
-  "updatedAt": zod.string()
+  "updatedAt": zod.string(),
+  "propertyQualification": zod.object({
+  "discoveryId": zod.string(),
+  "status": zod.enum(['QUALIFIED_LEAD', 'CALL_READY', 'DISQUALIFIED']),
+  "score": zod.number().int().min(getLeadResponseLeadTwoPropertyQualificationScoreMin).max(getLeadResponseLeadTwoPropertyQualificationScoreMax),
+  "confidence": zod.number().min(getLeadResponseLeadTwoPropertyQualificationConfidenceMin).max(getLeadResponseLeadTwoPropertyQualificationConfidenceMax),
+  "criteriaVersion": zod.number().int().min(1),
+  "reviewReason": zod.string(),
+  "qualifiedBy": zod.string(),
+  "qualifiedAt": zod.string().datetime({"offset":true}),
+  "reason": zod.string(),
+  "signals": zod.array(zod.object({
+  "id": zod.string(),
+  "key": zod.enum(['ENTITY_OWNER', 'LONG_TERM_HOLD', 'REPORTED_POOR_CONDITION', 'SELLER_MOTIVATION', 'TAX_DELINQUENCY', 'FORECLOSURE', 'PROBATE', 'ABSENTEE_OWNER', 'STALE_LISTING', 'REPEATED_PRICE_REDUCTION', 'BELOW_MARKET', 'VACANCY', 'EQUITY_OPPORTUNITY', 'MARKET_FIT']),
+  "group": zod.enum(['OWNERSHIP_CONTEXT', 'CONDITION', 'MOTIVATION', 'DISTRESS', 'LISTING_PRESSURE', 'VACANCY', 'FINANCIAL_OPPORTUNITY', 'MARKET_FIT']),
+  "classification": zod.enum(['VERIFIED', 'OBSERVED', 'INDICATED', 'AI_HYPOTHESIS']),
+  "sourceType": zod.enum(['PUBLIC_RECORD', 'PERMITTED_LISTING', 'SELLER', 'INSPECTION', 'PUBLIC_PAGE', 'ANALYST', 'MODEL']),
+  "statement": zod.string(),
+  "source": zod.string(),
+  "sourceUrl": zod.string().nullable(),
+  "evidenceRef": zod.string().nullable(),
+  "capturedAt": zod.string().datetime({"offset":true}),
+  "confidence": zod.number().min(getLeadResponseLeadTwoPropertyQualificationSignalsItemConfidenceMin).max(getLeadResponseLeadTwoPropertyQualificationSignalsItemConfidenceMax),
+  "scoreContribution": zod.number().int().min(getLeadResponseLeadTwoPropertyQualificationSignalsItemScoreContributionMin).max(getLeadResponseLeadTwoPropertyQualificationSignalsItemScoreContributionMax)
+})),
+  "missingInformation": zod.array(zod.string()),
+  "nextAction": zod.string()
+}).optional()
 })),
   "intelligence": zod.array(zod.object({
   "classification": zod.enum(['VERIFIED_FACTS', 'OBSERVED', 'INDICATED', 'AI_HYPOTHESIS']),
@@ -2071,6 +2271,19 @@ export const updateLeadResponseOneSourceMax = 2000;
 
 export const updateLeadResponseOneNextActionMax = 1000;
 
+export const updateLeadResponseTwoPropertyQualificationScoreMin = 0;
+export const updateLeadResponseTwoPropertyQualificationScoreMax = 100;
+
+export const updateLeadResponseTwoPropertyQualificationConfidenceMin = 0;
+export const updateLeadResponseTwoPropertyQualificationConfidenceMax = 1;
+
+
+export const updateLeadResponseTwoPropertyQualificationSignalsItemConfidenceMin = 0;
+export const updateLeadResponseTwoPropertyQualificationSignalsItemConfidenceMax = 1;
+
+export const updateLeadResponseTwoPropertyQualificationSignalsItemScoreContributionMin = 0;
+export const updateLeadResponseTwoPropertyQualificationSignalsItemScoreContributionMax = 100;
+
 
 
 export const UpdateLeadResponse = zod.object({
@@ -2100,7 +2313,34 @@ export const UpdateLeadResponse = zod.object({
   "nextAction": zod.string(),
   "followUpAt": zod.string().nullish(),
   "createdAt": zod.string(),
-  "updatedAt": zod.string()
+  "updatedAt": zod.string(),
+  "propertyQualification": zod.object({
+  "discoveryId": zod.string(),
+  "status": zod.enum(['QUALIFIED_LEAD', 'CALL_READY', 'DISQUALIFIED']),
+  "score": zod.number().int().min(updateLeadResponseTwoPropertyQualificationScoreMin).max(updateLeadResponseTwoPropertyQualificationScoreMax),
+  "confidence": zod.number().min(updateLeadResponseTwoPropertyQualificationConfidenceMin).max(updateLeadResponseTwoPropertyQualificationConfidenceMax),
+  "criteriaVersion": zod.number().int().min(1),
+  "reviewReason": zod.string(),
+  "qualifiedBy": zod.string(),
+  "qualifiedAt": zod.string().datetime({"offset":true}),
+  "reason": zod.string(),
+  "signals": zod.array(zod.object({
+  "id": zod.string(),
+  "key": zod.enum(['ENTITY_OWNER', 'LONG_TERM_HOLD', 'REPORTED_POOR_CONDITION', 'SELLER_MOTIVATION', 'TAX_DELINQUENCY', 'FORECLOSURE', 'PROBATE', 'ABSENTEE_OWNER', 'STALE_LISTING', 'REPEATED_PRICE_REDUCTION', 'BELOW_MARKET', 'VACANCY', 'EQUITY_OPPORTUNITY', 'MARKET_FIT']),
+  "group": zod.enum(['OWNERSHIP_CONTEXT', 'CONDITION', 'MOTIVATION', 'DISTRESS', 'LISTING_PRESSURE', 'VACANCY', 'FINANCIAL_OPPORTUNITY', 'MARKET_FIT']),
+  "classification": zod.enum(['VERIFIED', 'OBSERVED', 'INDICATED', 'AI_HYPOTHESIS']),
+  "sourceType": zod.enum(['PUBLIC_RECORD', 'PERMITTED_LISTING', 'SELLER', 'INSPECTION', 'PUBLIC_PAGE', 'ANALYST', 'MODEL']),
+  "statement": zod.string(),
+  "source": zod.string(),
+  "sourceUrl": zod.string().nullable(),
+  "evidenceRef": zod.string().nullable(),
+  "capturedAt": zod.string().datetime({"offset":true}),
+  "confidence": zod.number().min(updateLeadResponseTwoPropertyQualificationSignalsItemConfidenceMin).max(updateLeadResponseTwoPropertyQualificationSignalsItemConfidenceMax),
+  "scoreContribution": zod.number().int().min(updateLeadResponseTwoPropertyQualificationSignalsItemScoreContributionMin).max(updateLeadResponseTwoPropertyQualificationSignalsItemScoreContributionMax)
+})),
+  "missingInformation": zod.array(zod.string()),
+  "nextAction": zod.string()
+}).optional()
 }))
 
 
@@ -2301,6 +2541,19 @@ export const saveUnderwritingResponseLeadOneSourceMax = 2000;
 
 export const saveUnderwritingResponseLeadOneNextActionMax = 1000;
 
+export const saveUnderwritingResponseLeadTwoPropertyQualificationScoreMin = 0;
+export const saveUnderwritingResponseLeadTwoPropertyQualificationScoreMax = 100;
+
+export const saveUnderwritingResponseLeadTwoPropertyQualificationConfidenceMin = 0;
+export const saveUnderwritingResponseLeadTwoPropertyQualificationConfidenceMax = 1;
+
+
+export const saveUnderwritingResponseLeadTwoPropertyQualificationSignalsItemConfidenceMin = 0;
+export const saveUnderwritingResponseLeadTwoPropertyQualificationSignalsItemConfidenceMax = 1;
+
+export const saveUnderwritingResponseLeadTwoPropertyQualificationSignalsItemScoreContributionMin = 0;
+export const saveUnderwritingResponseLeadTwoPropertyQualificationSignalsItemScoreContributionMax = 100;
+
 export const saveUnderwritingResponseIntelligenceItemOneCategoryMax = 100;
 
 export const saveUnderwritingResponseIntelligenceItemOneStatementMax = 5000;
@@ -2453,7 +2706,34 @@ export const SaveUnderwritingResponse = zod.object({
   "nextAction": zod.string(),
   "followUpAt": zod.string().nullish(),
   "createdAt": zod.string(),
-  "updatedAt": zod.string()
+  "updatedAt": zod.string(),
+  "propertyQualification": zod.object({
+  "discoveryId": zod.string(),
+  "status": zod.enum(['QUALIFIED_LEAD', 'CALL_READY', 'DISQUALIFIED']),
+  "score": zod.number().int().min(saveUnderwritingResponseLeadTwoPropertyQualificationScoreMin).max(saveUnderwritingResponseLeadTwoPropertyQualificationScoreMax),
+  "confidence": zod.number().min(saveUnderwritingResponseLeadTwoPropertyQualificationConfidenceMin).max(saveUnderwritingResponseLeadTwoPropertyQualificationConfidenceMax),
+  "criteriaVersion": zod.number().int().min(1),
+  "reviewReason": zod.string(),
+  "qualifiedBy": zod.string(),
+  "qualifiedAt": zod.string().datetime({"offset":true}),
+  "reason": zod.string(),
+  "signals": zod.array(zod.object({
+  "id": zod.string(),
+  "key": zod.enum(['ENTITY_OWNER', 'LONG_TERM_HOLD', 'REPORTED_POOR_CONDITION', 'SELLER_MOTIVATION', 'TAX_DELINQUENCY', 'FORECLOSURE', 'PROBATE', 'ABSENTEE_OWNER', 'STALE_LISTING', 'REPEATED_PRICE_REDUCTION', 'BELOW_MARKET', 'VACANCY', 'EQUITY_OPPORTUNITY', 'MARKET_FIT']),
+  "group": zod.enum(['OWNERSHIP_CONTEXT', 'CONDITION', 'MOTIVATION', 'DISTRESS', 'LISTING_PRESSURE', 'VACANCY', 'FINANCIAL_OPPORTUNITY', 'MARKET_FIT']),
+  "classification": zod.enum(['VERIFIED', 'OBSERVED', 'INDICATED', 'AI_HYPOTHESIS']),
+  "sourceType": zod.enum(['PUBLIC_RECORD', 'PERMITTED_LISTING', 'SELLER', 'INSPECTION', 'PUBLIC_PAGE', 'ANALYST', 'MODEL']),
+  "statement": zod.string(),
+  "source": zod.string(),
+  "sourceUrl": zod.string().nullable(),
+  "evidenceRef": zod.string().nullable(),
+  "capturedAt": zod.string().datetime({"offset":true}),
+  "confidence": zod.number().min(saveUnderwritingResponseLeadTwoPropertyQualificationSignalsItemConfidenceMin).max(saveUnderwritingResponseLeadTwoPropertyQualificationSignalsItemConfidenceMax),
+  "scoreContribution": zod.number().int().min(saveUnderwritingResponseLeadTwoPropertyQualificationSignalsItemScoreContributionMin).max(saveUnderwritingResponseLeadTwoPropertyQualificationSignalsItemScoreContributionMax)
+})),
+  "missingInformation": zod.array(zod.string()),
+  "nextAction": zod.string()
+}).optional()
 })),
   "intelligence": zod.array(zod.object({
   "classification": zod.enum(['VERIFIED_FACTS', 'OBSERVED', 'INDICATED', 'AI_HYPOTHESIS']),
@@ -2685,6 +2965,19 @@ export const transitionLeadResponseLeadOneSourceMax = 2000;
 
 export const transitionLeadResponseLeadOneNextActionMax = 1000;
 
+export const transitionLeadResponseLeadTwoPropertyQualificationScoreMin = 0;
+export const transitionLeadResponseLeadTwoPropertyQualificationScoreMax = 100;
+
+export const transitionLeadResponseLeadTwoPropertyQualificationConfidenceMin = 0;
+export const transitionLeadResponseLeadTwoPropertyQualificationConfidenceMax = 1;
+
+
+export const transitionLeadResponseLeadTwoPropertyQualificationSignalsItemConfidenceMin = 0;
+export const transitionLeadResponseLeadTwoPropertyQualificationSignalsItemConfidenceMax = 1;
+
+export const transitionLeadResponseLeadTwoPropertyQualificationSignalsItemScoreContributionMin = 0;
+export const transitionLeadResponseLeadTwoPropertyQualificationSignalsItemScoreContributionMax = 100;
+
 export const transitionLeadResponseIntelligenceItemOneCategoryMax = 100;
 
 export const transitionLeadResponseIntelligenceItemOneStatementMax = 5000;
@@ -2837,7 +3130,34 @@ export const TransitionLeadResponse = zod.object({
   "nextAction": zod.string(),
   "followUpAt": zod.string().nullish(),
   "createdAt": zod.string(),
-  "updatedAt": zod.string()
+  "updatedAt": zod.string(),
+  "propertyQualification": zod.object({
+  "discoveryId": zod.string(),
+  "status": zod.enum(['QUALIFIED_LEAD', 'CALL_READY', 'DISQUALIFIED']),
+  "score": zod.number().int().min(transitionLeadResponseLeadTwoPropertyQualificationScoreMin).max(transitionLeadResponseLeadTwoPropertyQualificationScoreMax),
+  "confidence": zod.number().min(transitionLeadResponseLeadTwoPropertyQualificationConfidenceMin).max(transitionLeadResponseLeadTwoPropertyQualificationConfidenceMax),
+  "criteriaVersion": zod.number().int().min(1),
+  "reviewReason": zod.string(),
+  "qualifiedBy": zod.string(),
+  "qualifiedAt": zod.string().datetime({"offset":true}),
+  "reason": zod.string(),
+  "signals": zod.array(zod.object({
+  "id": zod.string(),
+  "key": zod.enum(['ENTITY_OWNER', 'LONG_TERM_HOLD', 'REPORTED_POOR_CONDITION', 'SELLER_MOTIVATION', 'TAX_DELINQUENCY', 'FORECLOSURE', 'PROBATE', 'ABSENTEE_OWNER', 'STALE_LISTING', 'REPEATED_PRICE_REDUCTION', 'BELOW_MARKET', 'VACANCY', 'EQUITY_OPPORTUNITY', 'MARKET_FIT']),
+  "group": zod.enum(['OWNERSHIP_CONTEXT', 'CONDITION', 'MOTIVATION', 'DISTRESS', 'LISTING_PRESSURE', 'VACANCY', 'FINANCIAL_OPPORTUNITY', 'MARKET_FIT']),
+  "classification": zod.enum(['VERIFIED', 'OBSERVED', 'INDICATED', 'AI_HYPOTHESIS']),
+  "sourceType": zod.enum(['PUBLIC_RECORD', 'PERMITTED_LISTING', 'SELLER', 'INSPECTION', 'PUBLIC_PAGE', 'ANALYST', 'MODEL']),
+  "statement": zod.string(),
+  "source": zod.string(),
+  "sourceUrl": zod.string().nullable(),
+  "evidenceRef": zod.string().nullable(),
+  "capturedAt": zod.string().datetime({"offset":true}),
+  "confidence": zod.number().min(transitionLeadResponseLeadTwoPropertyQualificationSignalsItemConfidenceMin).max(transitionLeadResponseLeadTwoPropertyQualificationSignalsItemConfidenceMax),
+  "scoreContribution": zod.number().int().min(transitionLeadResponseLeadTwoPropertyQualificationSignalsItemScoreContributionMin).max(transitionLeadResponseLeadTwoPropertyQualificationSignalsItemScoreContributionMax)
+})),
+  "missingInformation": zod.array(zod.string()),
+  "nextAction": zod.string()
+}).optional()
 })),
   "intelligence": zod.array(zod.object({
   "classification": zod.enum(['VERIFIED_FACTS', 'OBSERVED', 'INDICATED', 'AI_HYPOTHESIS']),
@@ -3068,6 +3388,19 @@ export const recordCallResponseLeadOneSourceMax = 2000;
 
 export const recordCallResponseLeadOneNextActionMax = 1000;
 
+export const recordCallResponseLeadTwoPropertyQualificationScoreMin = 0;
+export const recordCallResponseLeadTwoPropertyQualificationScoreMax = 100;
+
+export const recordCallResponseLeadTwoPropertyQualificationConfidenceMin = 0;
+export const recordCallResponseLeadTwoPropertyQualificationConfidenceMax = 1;
+
+
+export const recordCallResponseLeadTwoPropertyQualificationSignalsItemConfidenceMin = 0;
+export const recordCallResponseLeadTwoPropertyQualificationSignalsItemConfidenceMax = 1;
+
+export const recordCallResponseLeadTwoPropertyQualificationSignalsItemScoreContributionMin = 0;
+export const recordCallResponseLeadTwoPropertyQualificationSignalsItemScoreContributionMax = 100;
+
 export const recordCallResponseIntelligenceItemOneCategoryMax = 100;
 
 export const recordCallResponseIntelligenceItemOneStatementMax = 5000;
@@ -3220,7 +3553,34 @@ export const RecordCallResponse = zod.object({
   "nextAction": zod.string(),
   "followUpAt": zod.string().nullish(),
   "createdAt": zod.string(),
-  "updatedAt": zod.string()
+  "updatedAt": zod.string(),
+  "propertyQualification": zod.object({
+  "discoveryId": zod.string(),
+  "status": zod.enum(['QUALIFIED_LEAD', 'CALL_READY', 'DISQUALIFIED']),
+  "score": zod.number().int().min(recordCallResponseLeadTwoPropertyQualificationScoreMin).max(recordCallResponseLeadTwoPropertyQualificationScoreMax),
+  "confidence": zod.number().min(recordCallResponseLeadTwoPropertyQualificationConfidenceMin).max(recordCallResponseLeadTwoPropertyQualificationConfidenceMax),
+  "criteriaVersion": zod.number().int().min(1),
+  "reviewReason": zod.string(),
+  "qualifiedBy": zod.string(),
+  "qualifiedAt": zod.string().datetime({"offset":true}),
+  "reason": zod.string(),
+  "signals": zod.array(zod.object({
+  "id": zod.string(),
+  "key": zod.enum(['ENTITY_OWNER', 'LONG_TERM_HOLD', 'REPORTED_POOR_CONDITION', 'SELLER_MOTIVATION', 'TAX_DELINQUENCY', 'FORECLOSURE', 'PROBATE', 'ABSENTEE_OWNER', 'STALE_LISTING', 'REPEATED_PRICE_REDUCTION', 'BELOW_MARKET', 'VACANCY', 'EQUITY_OPPORTUNITY', 'MARKET_FIT']),
+  "group": zod.enum(['OWNERSHIP_CONTEXT', 'CONDITION', 'MOTIVATION', 'DISTRESS', 'LISTING_PRESSURE', 'VACANCY', 'FINANCIAL_OPPORTUNITY', 'MARKET_FIT']),
+  "classification": zod.enum(['VERIFIED', 'OBSERVED', 'INDICATED', 'AI_HYPOTHESIS']),
+  "sourceType": zod.enum(['PUBLIC_RECORD', 'PERMITTED_LISTING', 'SELLER', 'INSPECTION', 'PUBLIC_PAGE', 'ANALYST', 'MODEL']),
+  "statement": zod.string(),
+  "source": zod.string(),
+  "sourceUrl": zod.string().nullable(),
+  "evidenceRef": zod.string().nullable(),
+  "capturedAt": zod.string().datetime({"offset":true}),
+  "confidence": zod.number().min(recordCallResponseLeadTwoPropertyQualificationSignalsItemConfidenceMin).max(recordCallResponseLeadTwoPropertyQualificationSignalsItemConfidenceMax),
+  "scoreContribution": zod.number().int().min(recordCallResponseLeadTwoPropertyQualificationSignalsItemScoreContributionMin).max(recordCallResponseLeadTwoPropertyQualificationSignalsItemScoreContributionMax)
+})),
+  "missingInformation": zod.array(zod.string()),
+  "nextAction": zod.string()
+}).optional()
 })),
   "intelligence": zod.array(zod.object({
   "classification": zod.enum(['VERIFIED_FACTS', 'OBSERVED', 'INDICATED', 'AI_HYPOTHESIS']),
@@ -3463,6 +3823,19 @@ export const createOfferDraftResponseLeadOneSourceMax = 2000;
 
 export const createOfferDraftResponseLeadOneNextActionMax = 1000;
 
+export const createOfferDraftResponseLeadTwoPropertyQualificationScoreMin = 0;
+export const createOfferDraftResponseLeadTwoPropertyQualificationScoreMax = 100;
+
+export const createOfferDraftResponseLeadTwoPropertyQualificationConfidenceMin = 0;
+export const createOfferDraftResponseLeadTwoPropertyQualificationConfidenceMax = 1;
+
+
+export const createOfferDraftResponseLeadTwoPropertyQualificationSignalsItemConfidenceMin = 0;
+export const createOfferDraftResponseLeadTwoPropertyQualificationSignalsItemConfidenceMax = 1;
+
+export const createOfferDraftResponseLeadTwoPropertyQualificationSignalsItemScoreContributionMin = 0;
+export const createOfferDraftResponseLeadTwoPropertyQualificationSignalsItemScoreContributionMax = 100;
+
 export const createOfferDraftResponseIntelligenceItemOneCategoryMax = 100;
 
 export const createOfferDraftResponseIntelligenceItemOneStatementMax = 5000;
@@ -3615,7 +3988,34 @@ export const CreateOfferDraftResponse = zod.object({
   "nextAction": zod.string(),
   "followUpAt": zod.string().nullish(),
   "createdAt": zod.string(),
-  "updatedAt": zod.string()
+  "updatedAt": zod.string(),
+  "propertyQualification": zod.object({
+  "discoveryId": zod.string(),
+  "status": zod.enum(['QUALIFIED_LEAD', 'CALL_READY', 'DISQUALIFIED']),
+  "score": zod.number().int().min(createOfferDraftResponseLeadTwoPropertyQualificationScoreMin).max(createOfferDraftResponseLeadTwoPropertyQualificationScoreMax),
+  "confidence": zod.number().min(createOfferDraftResponseLeadTwoPropertyQualificationConfidenceMin).max(createOfferDraftResponseLeadTwoPropertyQualificationConfidenceMax),
+  "criteriaVersion": zod.number().int().min(1),
+  "reviewReason": zod.string(),
+  "qualifiedBy": zod.string(),
+  "qualifiedAt": zod.string().datetime({"offset":true}),
+  "reason": zod.string(),
+  "signals": zod.array(zod.object({
+  "id": zod.string(),
+  "key": zod.enum(['ENTITY_OWNER', 'LONG_TERM_HOLD', 'REPORTED_POOR_CONDITION', 'SELLER_MOTIVATION', 'TAX_DELINQUENCY', 'FORECLOSURE', 'PROBATE', 'ABSENTEE_OWNER', 'STALE_LISTING', 'REPEATED_PRICE_REDUCTION', 'BELOW_MARKET', 'VACANCY', 'EQUITY_OPPORTUNITY', 'MARKET_FIT']),
+  "group": zod.enum(['OWNERSHIP_CONTEXT', 'CONDITION', 'MOTIVATION', 'DISTRESS', 'LISTING_PRESSURE', 'VACANCY', 'FINANCIAL_OPPORTUNITY', 'MARKET_FIT']),
+  "classification": zod.enum(['VERIFIED', 'OBSERVED', 'INDICATED', 'AI_HYPOTHESIS']),
+  "sourceType": zod.enum(['PUBLIC_RECORD', 'PERMITTED_LISTING', 'SELLER', 'INSPECTION', 'PUBLIC_PAGE', 'ANALYST', 'MODEL']),
+  "statement": zod.string(),
+  "source": zod.string(),
+  "sourceUrl": zod.string().nullable(),
+  "evidenceRef": zod.string().nullable(),
+  "capturedAt": zod.string().datetime({"offset":true}),
+  "confidence": zod.number().min(createOfferDraftResponseLeadTwoPropertyQualificationSignalsItemConfidenceMin).max(createOfferDraftResponseLeadTwoPropertyQualificationSignalsItemConfidenceMax),
+  "scoreContribution": zod.number().int().min(createOfferDraftResponseLeadTwoPropertyQualificationSignalsItemScoreContributionMin).max(createOfferDraftResponseLeadTwoPropertyQualificationSignalsItemScoreContributionMax)
+})),
+  "missingInformation": zod.array(zod.string()),
+  "nextAction": zod.string()
+}).optional()
 })),
   "intelligence": zod.array(zod.object({
   "classification": zod.enum(['VERIFIED_FACTS', 'OBSERVED', 'INDICATED', 'AI_HYPOTHESIS']),
@@ -3853,6 +4253,19 @@ export const authorizeOfferResponseLeadOneSourceMax = 2000;
 
 export const authorizeOfferResponseLeadOneNextActionMax = 1000;
 
+export const authorizeOfferResponseLeadTwoPropertyQualificationScoreMin = 0;
+export const authorizeOfferResponseLeadTwoPropertyQualificationScoreMax = 100;
+
+export const authorizeOfferResponseLeadTwoPropertyQualificationConfidenceMin = 0;
+export const authorizeOfferResponseLeadTwoPropertyQualificationConfidenceMax = 1;
+
+
+export const authorizeOfferResponseLeadTwoPropertyQualificationSignalsItemConfidenceMin = 0;
+export const authorizeOfferResponseLeadTwoPropertyQualificationSignalsItemConfidenceMax = 1;
+
+export const authorizeOfferResponseLeadTwoPropertyQualificationSignalsItemScoreContributionMin = 0;
+export const authorizeOfferResponseLeadTwoPropertyQualificationSignalsItemScoreContributionMax = 100;
+
 export const authorizeOfferResponseIntelligenceItemOneCategoryMax = 100;
 
 export const authorizeOfferResponseIntelligenceItemOneStatementMax = 5000;
@@ -4005,7 +4418,34 @@ export const AuthorizeOfferResponse = zod.object({
   "nextAction": zod.string(),
   "followUpAt": zod.string().nullish(),
   "createdAt": zod.string(),
-  "updatedAt": zod.string()
+  "updatedAt": zod.string(),
+  "propertyQualification": zod.object({
+  "discoveryId": zod.string(),
+  "status": zod.enum(['QUALIFIED_LEAD', 'CALL_READY', 'DISQUALIFIED']),
+  "score": zod.number().int().min(authorizeOfferResponseLeadTwoPropertyQualificationScoreMin).max(authorizeOfferResponseLeadTwoPropertyQualificationScoreMax),
+  "confidence": zod.number().min(authorizeOfferResponseLeadTwoPropertyQualificationConfidenceMin).max(authorizeOfferResponseLeadTwoPropertyQualificationConfidenceMax),
+  "criteriaVersion": zod.number().int().min(1),
+  "reviewReason": zod.string(),
+  "qualifiedBy": zod.string(),
+  "qualifiedAt": zod.string().datetime({"offset":true}),
+  "reason": zod.string(),
+  "signals": zod.array(zod.object({
+  "id": zod.string(),
+  "key": zod.enum(['ENTITY_OWNER', 'LONG_TERM_HOLD', 'REPORTED_POOR_CONDITION', 'SELLER_MOTIVATION', 'TAX_DELINQUENCY', 'FORECLOSURE', 'PROBATE', 'ABSENTEE_OWNER', 'STALE_LISTING', 'REPEATED_PRICE_REDUCTION', 'BELOW_MARKET', 'VACANCY', 'EQUITY_OPPORTUNITY', 'MARKET_FIT']),
+  "group": zod.enum(['OWNERSHIP_CONTEXT', 'CONDITION', 'MOTIVATION', 'DISTRESS', 'LISTING_PRESSURE', 'VACANCY', 'FINANCIAL_OPPORTUNITY', 'MARKET_FIT']),
+  "classification": zod.enum(['VERIFIED', 'OBSERVED', 'INDICATED', 'AI_HYPOTHESIS']),
+  "sourceType": zod.enum(['PUBLIC_RECORD', 'PERMITTED_LISTING', 'SELLER', 'INSPECTION', 'PUBLIC_PAGE', 'ANALYST', 'MODEL']),
+  "statement": zod.string(),
+  "source": zod.string(),
+  "sourceUrl": zod.string().nullable(),
+  "evidenceRef": zod.string().nullable(),
+  "capturedAt": zod.string().datetime({"offset":true}),
+  "confidence": zod.number().min(authorizeOfferResponseLeadTwoPropertyQualificationSignalsItemConfidenceMin).max(authorizeOfferResponseLeadTwoPropertyQualificationSignalsItemConfidenceMax),
+  "scoreContribution": zod.number().int().min(authorizeOfferResponseLeadTwoPropertyQualificationSignalsItemScoreContributionMin).max(authorizeOfferResponseLeadTwoPropertyQualificationSignalsItemScoreContributionMax)
+})),
+  "missingInformation": zod.array(zod.string()),
+  "nextAction": zod.string()
+}).optional()
 })),
   "intelligence": zod.array(zod.object({
   "classification": zod.enum(['VERIFIED_FACTS', 'OBSERVED', 'INDICATED', 'AI_HYPOTHESIS']),
@@ -4242,6 +4682,19 @@ export const communicateOfferResponseLeadOneSourceMax = 2000;
 
 export const communicateOfferResponseLeadOneNextActionMax = 1000;
 
+export const communicateOfferResponseLeadTwoPropertyQualificationScoreMin = 0;
+export const communicateOfferResponseLeadTwoPropertyQualificationScoreMax = 100;
+
+export const communicateOfferResponseLeadTwoPropertyQualificationConfidenceMin = 0;
+export const communicateOfferResponseLeadTwoPropertyQualificationConfidenceMax = 1;
+
+
+export const communicateOfferResponseLeadTwoPropertyQualificationSignalsItemConfidenceMin = 0;
+export const communicateOfferResponseLeadTwoPropertyQualificationSignalsItemConfidenceMax = 1;
+
+export const communicateOfferResponseLeadTwoPropertyQualificationSignalsItemScoreContributionMin = 0;
+export const communicateOfferResponseLeadTwoPropertyQualificationSignalsItemScoreContributionMax = 100;
+
 export const communicateOfferResponseIntelligenceItemOneCategoryMax = 100;
 
 export const communicateOfferResponseIntelligenceItemOneStatementMax = 5000;
@@ -4394,7 +4847,34 @@ export const CommunicateOfferResponse = zod.object({
   "nextAction": zod.string(),
   "followUpAt": zod.string().nullish(),
   "createdAt": zod.string(),
-  "updatedAt": zod.string()
+  "updatedAt": zod.string(),
+  "propertyQualification": zod.object({
+  "discoveryId": zod.string(),
+  "status": zod.enum(['QUALIFIED_LEAD', 'CALL_READY', 'DISQUALIFIED']),
+  "score": zod.number().int().min(communicateOfferResponseLeadTwoPropertyQualificationScoreMin).max(communicateOfferResponseLeadTwoPropertyQualificationScoreMax),
+  "confidence": zod.number().min(communicateOfferResponseLeadTwoPropertyQualificationConfidenceMin).max(communicateOfferResponseLeadTwoPropertyQualificationConfidenceMax),
+  "criteriaVersion": zod.number().int().min(1),
+  "reviewReason": zod.string(),
+  "qualifiedBy": zod.string(),
+  "qualifiedAt": zod.string().datetime({"offset":true}),
+  "reason": zod.string(),
+  "signals": zod.array(zod.object({
+  "id": zod.string(),
+  "key": zod.enum(['ENTITY_OWNER', 'LONG_TERM_HOLD', 'REPORTED_POOR_CONDITION', 'SELLER_MOTIVATION', 'TAX_DELINQUENCY', 'FORECLOSURE', 'PROBATE', 'ABSENTEE_OWNER', 'STALE_LISTING', 'REPEATED_PRICE_REDUCTION', 'BELOW_MARKET', 'VACANCY', 'EQUITY_OPPORTUNITY', 'MARKET_FIT']),
+  "group": zod.enum(['OWNERSHIP_CONTEXT', 'CONDITION', 'MOTIVATION', 'DISTRESS', 'LISTING_PRESSURE', 'VACANCY', 'FINANCIAL_OPPORTUNITY', 'MARKET_FIT']),
+  "classification": zod.enum(['VERIFIED', 'OBSERVED', 'INDICATED', 'AI_HYPOTHESIS']),
+  "sourceType": zod.enum(['PUBLIC_RECORD', 'PERMITTED_LISTING', 'SELLER', 'INSPECTION', 'PUBLIC_PAGE', 'ANALYST', 'MODEL']),
+  "statement": zod.string(),
+  "source": zod.string(),
+  "sourceUrl": zod.string().nullable(),
+  "evidenceRef": zod.string().nullable(),
+  "capturedAt": zod.string().datetime({"offset":true}),
+  "confidence": zod.number().min(communicateOfferResponseLeadTwoPropertyQualificationSignalsItemConfidenceMin).max(communicateOfferResponseLeadTwoPropertyQualificationSignalsItemConfidenceMax),
+  "scoreContribution": zod.number().int().min(communicateOfferResponseLeadTwoPropertyQualificationSignalsItemScoreContributionMin).max(communicateOfferResponseLeadTwoPropertyQualificationSignalsItemScoreContributionMax)
+})),
+  "missingInformation": zod.array(zod.string()),
+  "nextAction": zod.string()
+}).optional()
 })),
   "intelligence": zod.array(zod.object({
   "classification": zod.enum(['VERIFIED_FACTS', 'OBSERVED', 'INDICATED', 'AI_HYPOTHESIS']),
@@ -4626,6 +5106,19 @@ export const withdrawOfferResponseLeadOneSourceMax = 2000;
 
 export const withdrawOfferResponseLeadOneNextActionMax = 1000;
 
+export const withdrawOfferResponseLeadTwoPropertyQualificationScoreMin = 0;
+export const withdrawOfferResponseLeadTwoPropertyQualificationScoreMax = 100;
+
+export const withdrawOfferResponseLeadTwoPropertyQualificationConfidenceMin = 0;
+export const withdrawOfferResponseLeadTwoPropertyQualificationConfidenceMax = 1;
+
+
+export const withdrawOfferResponseLeadTwoPropertyQualificationSignalsItemConfidenceMin = 0;
+export const withdrawOfferResponseLeadTwoPropertyQualificationSignalsItemConfidenceMax = 1;
+
+export const withdrawOfferResponseLeadTwoPropertyQualificationSignalsItemScoreContributionMin = 0;
+export const withdrawOfferResponseLeadTwoPropertyQualificationSignalsItemScoreContributionMax = 100;
+
 export const withdrawOfferResponseIntelligenceItemOneCategoryMax = 100;
 
 export const withdrawOfferResponseIntelligenceItemOneStatementMax = 5000;
@@ -4778,7 +5271,34 @@ export const WithdrawOfferResponse = zod.object({
   "nextAction": zod.string(),
   "followUpAt": zod.string().nullish(),
   "createdAt": zod.string(),
-  "updatedAt": zod.string()
+  "updatedAt": zod.string(),
+  "propertyQualification": zod.object({
+  "discoveryId": zod.string(),
+  "status": zod.enum(['QUALIFIED_LEAD', 'CALL_READY', 'DISQUALIFIED']),
+  "score": zod.number().int().min(withdrawOfferResponseLeadTwoPropertyQualificationScoreMin).max(withdrawOfferResponseLeadTwoPropertyQualificationScoreMax),
+  "confidence": zod.number().min(withdrawOfferResponseLeadTwoPropertyQualificationConfidenceMin).max(withdrawOfferResponseLeadTwoPropertyQualificationConfidenceMax),
+  "criteriaVersion": zod.number().int().min(1),
+  "reviewReason": zod.string(),
+  "qualifiedBy": zod.string(),
+  "qualifiedAt": zod.string().datetime({"offset":true}),
+  "reason": zod.string(),
+  "signals": zod.array(zod.object({
+  "id": zod.string(),
+  "key": zod.enum(['ENTITY_OWNER', 'LONG_TERM_HOLD', 'REPORTED_POOR_CONDITION', 'SELLER_MOTIVATION', 'TAX_DELINQUENCY', 'FORECLOSURE', 'PROBATE', 'ABSENTEE_OWNER', 'STALE_LISTING', 'REPEATED_PRICE_REDUCTION', 'BELOW_MARKET', 'VACANCY', 'EQUITY_OPPORTUNITY', 'MARKET_FIT']),
+  "group": zod.enum(['OWNERSHIP_CONTEXT', 'CONDITION', 'MOTIVATION', 'DISTRESS', 'LISTING_PRESSURE', 'VACANCY', 'FINANCIAL_OPPORTUNITY', 'MARKET_FIT']),
+  "classification": zod.enum(['VERIFIED', 'OBSERVED', 'INDICATED', 'AI_HYPOTHESIS']),
+  "sourceType": zod.enum(['PUBLIC_RECORD', 'PERMITTED_LISTING', 'SELLER', 'INSPECTION', 'PUBLIC_PAGE', 'ANALYST', 'MODEL']),
+  "statement": zod.string(),
+  "source": zod.string(),
+  "sourceUrl": zod.string().nullable(),
+  "evidenceRef": zod.string().nullable(),
+  "capturedAt": zod.string().datetime({"offset":true}),
+  "confidence": zod.number().min(withdrawOfferResponseLeadTwoPropertyQualificationSignalsItemConfidenceMin).max(withdrawOfferResponseLeadTwoPropertyQualificationSignalsItemConfidenceMax),
+  "scoreContribution": zod.number().int().min(withdrawOfferResponseLeadTwoPropertyQualificationSignalsItemScoreContributionMin).max(withdrawOfferResponseLeadTwoPropertyQualificationSignalsItemScoreContributionMax)
+})),
+  "missingInformation": zod.array(zod.string()),
+  "nextAction": zod.string()
+}).optional()
 })),
   "intelligence": zod.array(zod.object({
   "classification": zod.enum(['VERIFIED_FACTS', 'OBSERVED', 'INDICATED', 'AI_HYPOTHESIS']),
@@ -5148,6 +5668,19 @@ export const getCallQueueResponseLeadOneSourceMax = 2000;
 
 export const getCallQueueResponseLeadOneNextActionMax = 1000;
 
+export const getCallQueueResponseLeadTwoPropertyQualificationScoreMin = 0;
+export const getCallQueueResponseLeadTwoPropertyQualificationScoreMax = 100;
+
+export const getCallQueueResponseLeadTwoPropertyQualificationConfidenceMin = 0;
+export const getCallQueueResponseLeadTwoPropertyQualificationConfidenceMax = 1;
+
+
+export const getCallQueueResponseLeadTwoPropertyQualificationSignalsItemConfidenceMin = 0;
+export const getCallQueueResponseLeadTwoPropertyQualificationSignalsItemConfidenceMax = 1;
+
+export const getCallQueueResponseLeadTwoPropertyQualificationSignalsItemScoreContributionMin = 0;
+export const getCallQueueResponseLeadTwoPropertyQualificationSignalsItemScoreContributionMax = 100;
+
 export const getCallQueueResponseIntelligenceItemOneCategoryMax = 100;
 
 export const getCallQueueResponseIntelligenceItemOneStatementMax = 5000;
@@ -5250,7 +5783,34 @@ export const GetCallQueueResponseItem = zod.object({
   "nextAction": zod.string(),
   "followUpAt": zod.string().nullish(),
   "createdAt": zod.string(),
-  "updatedAt": zod.string()
+  "updatedAt": zod.string(),
+  "propertyQualification": zod.object({
+  "discoveryId": zod.string(),
+  "status": zod.enum(['QUALIFIED_LEAD', 'CALL_READY', 'DISQUALIFIED']),
+  "score": zod.number().int().min(getCallQueueResponseLeadTwoPropertyQualificationScoreMin).max(getCallQueueResponseLeadTwoPropertyQualificationScoreMax),
+  "confidence": zod.number().min(getCallQueueResponseLeadTwoPropertyQualificationConfidenceMin).max(getCallQueueResponseLeadTwoPropertyQualificationConfidenceMax),
+  "criteriaVersion": zod.number().int().min(1),
+  "reviewReason": zod.string(),
+  "qualifiedBy": zod.string(),
+  "qualifiedAt": zod.string().datetime({"offset":true}),
+  "reason": zod.string(),
+  "signals": zod.array(zod.object({
+  "id": zod.string(),
+  "key": zod.enum(['ENTITY_OWNER', 'LONG_TERM_HOLD', 'REPORTED_POOR_CONDITION', 'SELLER_MOTIVATION', 'TAX_DELINQUENCY', 'FORECLOSURE', 'PROBATE', 'ABSENTEE_OWNER', 'STALE_LISTING', 'REPEATED_PRICE_REDUCTION', 'BELOW_MARKET', 'VACANCY', 'EQUITY_OPPORTUNITY', 'MARKET_FIT']),
+  "group": zod.enum(['OWNERSHIP_CONTEXT', 'CONDITION', 'MOTIVATION', 'DISTRESS', 'LISTING_PRESSURE', 'VACANCY', 'FINANCIAL_OPPORTUNITY', 'MARKET_FIT']),
+  "classification": zod.enum(['VERIFIED', 'OBSERVED', 'INDICATED', 'AI_HYPOTHESIS']),
+  "sourceType": zod.enum(['PUBLIC_RECORD', 'PERMITTED_LISTING', 'SELLER', 'INSPECTION', 'PUBLIC_PAGE', 'ANALYST', 'MODEL']),
+  "statement": zod.string(),
+  "source": zod.string(),
+  "sourceUrl": zod.string().nullable(),
+  "evidenceRef": zod.string().nullable(),
+  "capturedAt": zod.string().datetime({"offset":true}),
+  "confidence": zod.number().min(getCallQueueResponseLeadTwoPropertyQualificationSignalsItemConfidenceMin).max(getCallQueueResponseLeadTwoPropertyQualificationSignalsItemConfidenceMax),
+  "scoreContribution": zod.number().int().min(getCallQueueResponseLeadTwoPropertyQualificationSignalsItemScoreContributionMin).max(getCallQueueResponseLeadTwoPropertyQualificationSignalsItemScoreContributionMax)
+})),
+  "missingInformation": zod.array(zod.string()),
+  "nextAction": zod.string()
+}).optional()
 })),
   "objective": zod.string(),
   "intelligence": zod.array(zod.object({
@@ -5603,6 +6163,19 @@ export const getCommandCenterResponseOpportunitiesItemLeadOneSourceMax = 2000;
 
 export const getCommandCenterResponseOpportunitiesItemLeadOneNextActionMax = 1000;
 
+export const getCommandCenterResponseOpportunitiesItemLeadTwoPropertyQualificationScoreMin = 0;
+export const getCommandCenterResponseOpportunitiesItemLeadTwoPropertyQualificationScoreMax = 100;
+
+export const getCommandCenterResponseOpportunitiesItemLeadTwoPropertyQualificationConfidenceMin = 0;
+export const getCommandCenterResponseOpportunitiesItemLeadTwoPropertyQualificationConfidenceMax = 1;
+
+
+export const getCommandCenterResponseOpportunitiesItemLeadTwoPropertyQualificationSignalsItemConfidenceMin = 0;
+export const getCommandCenterResponseOpportunitiesItemLeadTwoPropertyQualificationSignalsItemConfidenceMax = 1;
+
+export const getCommandCenterResponseOpportunitiesItemLeadTwoPropertyQualificationSignalsItemScoreContributionMin = 0;
+export const getCommandCenterResponseOpportunitiesItemLeadTwoPropertyQualificationSignalsItemScoreContributionMax = 100;
+
 export const getCommandCenterResponseOpportunitiesItemIntelligenceItemOneCategoryMax = 100;
 
 export const getCommandCenterResponseOpportunitiesItemIntelligenceItemOneStatementMax = 5000;
@@ -5764,6 +6337,19 @@ export const getCommandCenterResponseCallsItemLeadOneSourceMax = 2000;
 
 export const getCommandCenterResponseCallsItemLeadOneNextActionMax = 1000;
 
+export const getCommandCenterResponseCallsItemLeadTwoPropertyQualificationScoreMin = 0;
+export const getCommandCenterResponseCallsItemLeadTwoPropertyQualificationScoreMax = 100;
+
+export const getCommandCenterResponseCallsItemLeadTwoPropertyQualificationConfidenceMin = 0;
+export const getCommandCenterResponseCallsItemLeadTwoPropertyQualificationConfidenceMax = 1;
+
+
+export const getCommandCenterResponseCallsItemLeadTwoPropertyQualificationSignalsItemConfidenceMin = 0;
+export const getCommandCenterResponseCallsItemLeadTwoPropertyQualificationSignalsItemConfidenceMax = 1;
+
+export const getCommandCenterResponseCallsItemLeadTwoPropertyQualificationSignalsItemScoreContributionMin = 0;
+export const getCommandCenterResponseCallsItemLeadTwoPropertyQualificationSignalsItemScoreContributionMax = 100;
+
 export const getCommandCenterResponseCallsItemIntelligenceItemOneCategoryMax = 100;
 
 export const getCommandCenterResponseCallsItemIntelligenceItemOneStatementMax = 5000;
@@ -5874,6 +6460,19 @@ export const getCommandCenterResponseDealsItemLeadOneSellingReasonMax = 2000;
 export const getCommandCenterResponseDealsItemLeadOneSourceMax = 2000;
 
 export const getCommandCenterResponseDealsItemLeadOneNextActionMax = 1000;
+
+export const getCommandCenterResponseDealsItemLeadTwoPropertyQualificationScoreMin = 0;
+export const getCommandCenterResponseDealsItemLeadTwoPropertyQualificationScoreMax = 100;
+
+export const getCommandCenterResponseDealsItemLeadTwoPropertyQualificationConfidenceMin = 0;
+export const getCommandCenterResponseDealsItemLeadTwoPropertyQualificationConfidenceMax = 1;
+
+
+export const getCommandCenterResponseDealsItemLeadTwoPropertyQualificationSignalsItemConfidenceMin = 0;
+export const getCommandCenterResponseDealsItemLeadTwoPropertyQualificationSignalsItemConfidenceMax = 1;
+
+export const getCommandCenterResponseDealsItemLeadTwoPropertyQualificationSignalsItemScoreContributionMin = 0;
+export const getCommandCenterResponseDealsItemLeadTwoPropertyQualificationSignalsItemScoreContributionMax = 100;
 
 export const getCommandCenterResponseDealsItemIntelligenceItemOneCategoryMax = 100;
 
@@ -6183,6 +6782,19 @@ export const getCommandCenterResponseOperationsItemContractOneCommitmentSnapshot
 
 export const getCommandCenterResponseOperationsItemContractOneCommitmentSnapshotOneDetailLeadOneNextActionMax = 1000;
 
+export const getCommandCenterResponseOperationsItemContractOneCommitmentSnapshotOneDetailLeadTwoPropertyQualificationScoreMin = 0;
+export const getCommandCenterResponseOperationsItemContractOneCommitmentSnapshotOneDetailLeadTwoPropertyQualificationScoreMax = 100;
+
+export const getCommandCenterResponseOperationsItemContractOneCommitmentSnapshotOneDetailLeadTwoPropertyQualificationConfidenceMin = 0;
+export const getCommandCenterResponseOperationsItemContractOneCommitmentSnapshotOneDetailLeadTwoPropertyQualificationConfidenceMax = 1;
+
+
+export const getCommandCenterResponseOperationsItemContractOneCommitmentSnapshotOneDetailLeadTwoPropertyQualificationSignalsItemConfidenceMin = 0;
+export const getCommandCenterResponseOperationsItemContractOneCommitmentSnapshotOneDetailLeadTwoPropertyQualificationSignalsItemConfidenceMax = 1;
+
+export const getCommandCenterResponseOperationsItemContractOneCommitmentSnapshotOneDetailLeadTwoPropertyQualificationSignalsItemScoreContributionMin = 0;
+export const getCommandCenterResponseOperationsItemContractOneCommitmentSnapshotOneDetailLeadTwoPropertyQualificationSignalsItemScoreContributionMax = 100;
+
 export const getCommandCenterResponseOperationsItemContractOneCommitmentSnapshotOneDetailIntelligenceItemOneCategoryMax = 100;
 
 export const getCommandCenterResponseOperationsItemContractOneCommitmentSnapshotOneDetailIntelligenceItemOneStatementMax = 5000;
@@ -6451,13 +7063,56 @@ export const getCommandCenterResponseBuyersItemTwoVerificationHistoryItemCriteri
 export const getCommandCenterResponseBuyersItemTwoVerificationHistoryItemCriteriaOneMinCapRateMin = 0;
 export const getCommandCenterResponseBuyersItemTwoVerificationHistoryItemCriteriaOneMinCapRateMax = 1;
 
+export const getCommandCenterResponsePropertyDiscoveriesRecordsItemScoreMin = 0;
+export const getCommandCenterResponsePropertyDiscoveriesRecordsItemScoreMax = 100;
+
+export const getCommandCenterResponsePropertyDiscoveriesRecordsItemConfidenceMin = 0;
+export const getCommandCenterResponsePropertyDiscoveriesRecordsItemConfidenceMax = 1;
+
+
+export const getCommandCenterResponsePropertyDiscoveriesRecordsItemSignalsItemConfidenceMin = 0;
+export const getCommandCenterResponsePropertyDiscoveriesRecordsItemSignalsItemConfidenceMax = 1;
+
+export const getCommandCenterResponsePropertyDiscoveriesRecordsItemSignalsItemScoreContributionMin = 0;
+export const getCommandCenterResponsePropertyDiscoveriesRecordsItemSignalsItemScoreContributionMax = 100;
+
+
+
+
+export const getCommandCenterResponsePropertyDiscoveriesCountsDISCOVEREDPROPERTYMin = 0;
+
+export const getCommandCenterResponsePropertyDiscoveriesCountsRELEVANTCANDIDATEMin = 0;
+
+export const getCommandCenterResponsePropertyDiscoveriesCountsQUALIFIEDLEADMin = 0;
+
+export const getCommandCenterResponsePropertyDiscoveriesCountsCALLREADYMin = 0;
+
+export const getCommandCenterResponsePropertyDiscoveriesCountsDISQUALIFIEDMin = 0;
+
+export const getCommandCenterResponsePropertyDiscoveriesCriteriaOneCandidateThresholdMax = 100;
+
+export const getCommandCenterResponsePropertyDiscoveriesCriteriaOneQualifiedLeadThresholdMax = 100;
+
+export const getCommandCenterResponsePropertyDiscoveriesCriteriaOneMinimumIndependentSignalGroupsMin = 2;
+export const getCommandCenterResponsePropertyDiscoveriesCriteriaOneMinimumIndependentSignalGroupsMax = 8;
+
+export const getCommandCenterResponsePropertyDiscoveriesCriteriaOneRequiredLeadGroupAnyOfMax = 8;
+
+export const getCommandCenterResponsePropertyDiscoveriesCriteriaOneLongHoldYearsMax = 100;
+
+export const getCommandCenterResponsePropertyDiscoveriesCriteriaOneSignalRulesItemPointsMin = 0;
+export const getCommandCenterResponsePropertyDiscoveriesCriteriaOneSignalRulesItemPointsMax = 100;
+
+export const getCommandCenterResponsePropertyDiscoveriesCriteriaOneSignalRulesMax = 14;
+
+
 
 
 export const GetCommandCenterResponse = zod.object({
   "generatedAt": zod.string(),
   "actions": zod.array(zod.object({
   "id": zod.string(),
-  "category": zod.enum(['RESEARCH', 'CALL', 'FOLLOW_UP', 'OFFER_APPROVAL', 'NEGOTIATION', 'CONTRACT', 'BUYER_MATCH', 'BUYER_VERIFICATION', 'DEADLINE', 'CLOSING', 'WORKER']),
+  "category": zod.enum(['RESEARCH', 'CALL', 'FOLLOW_UP', 'OFFER_APPROVAL', 'NEGOTIATION', 'CONTRACT', 'BUYER_MATCH', 'BUYER_VERIFICATION', 'DEADLINE', 'CLOSING', 'WORKER', 'DISCOVERY_REVIEW']),
   "priority": zod.number().int(),
   "title": zod.string(),
   "reason": zod.string(),
@@ -6512,7 +7167,34 @@ export const GetCommandCenterResponse = zod.object({
   "nextAction": zod.string(),
   "followUpAt": zod.string().nullish(),
   "createdAt": zod.string(),
-  "updatedAt": zod.string()
+  "updatedAt": zod.string(),
+  "propertyQualification": zod.object({
+  "discoveryId": zod.string(),
+  "status": zod.enum(['QUALIFIED_LEAD', 'CALL_READY', 'DISQUALIFIED']),
+  "score": zod.number().int().min(getCommandCenterResponseOpportunitiesItemLeadTwoPropertyQualificationScoreMin).max(getCommandCenterResponseOpportunitiesItemLeadTwoPropertyQualificationScoreMax),
+  "confidence": zod.number().min(getCommandCenterResponseOpportunitiesItemLeadTwoPropertyQualificationConfidenceMin).max(getCommandCenterResponseOpportunitiesItemLeadTwoPropertyQualificationConfidenceMax),
+  "criteriaVersion": zod.number().int().min(1),
+  "reviewReason": zod.string(),
+  "qualifiedBy": zod.string(),
+  "qualifiedAt": zod.string().datetime({"offset":true}),
+  "reason": zod.string(),
+  "signals": zod.array(zod.object({
+  "id": zod.string(),
+  "key": zod.enum(['ENTITY_OWNER', 'LONG_TERM_HOLD', 'REPORTED_POOR_CONDITION', 'SELLER_MOTIVATION', 'TAX_DELINQUENCY', 'FORECLOSURE', 'PROBATE', 'ABSENTEE_OWNER', 'STALE_LISTING', 'REPEATED_PRICE_REDUCTION', 'BELOW_MARKET', 'VACANCY', 'EQUITY_OPPORTUNITY', 'MARKET_FIT']),
+  "group": zod.enum(['OWNERSHIP_CONTEXT', 'CONDITION', 'MOTIVATION', 'DISTRESS', 'LISTING_PRESSURE', 'VACANCY', 'FINANCIAL_OPPORTUNITY', 'MARKET_FIT']),
+  "classification": zod.enum(['VERIFIED', 'OBSERVED', 'INDICATED', 'AI_HYPOTHESIS']),
+  "sourceType": zod.enum(['PUBLIC_RECORD', 'PERMITTED_LISTING', 'SELLER', 'INSPECTION', 'PUBLIC_PAGE', 'ANALYST', 'MODEL']),
+  "statement": zod.string(),
+  "source": zod.string(),
+  "sourceUrl": zod.string().nullable(),
+  "evidenceRef": zod.string().nullable(),
+  "capturedAt": zod.string().datetime({"offset":true}),
+  "confidence": zod.number().min(getCommandCenterResponseOpportunitiesItemLeadTwoPropertyQualificationSignalsItemConfidenceMin).max(getCommandCenterResponseOpportunitiesItemLeadTwoPropertyQualificationSignalsItemConfidenceMax),
+  "scoreContribution": zod.number().int().min(getCommandCenterResponseOpportunitiesItemLeadTwoPropertyQualificationSignalsItemScoreContributionMin).max(getCommandCenterResponseOpportunitiesItemLeadTwoPropertyQualificationSignalsItemScoreContributionMax)
+})),
+  "missingInformation": zod.array(zod.string()),
+  "nextAction": zod.string()
+}).optional()
 })),
   "intelligence": zod.array(zod.object({
   "classification": zod.enum(['VERIFIED_FACTS', 'OBSERVED', 'INDICATED', 'AI_HYPOTHESIS']),
@@ -6710,7 +7392,34 @@ export const GetCommandCenterResponse = zod.object({
   "nextAction": zod.string(),
   "followUpAt": zod.string().nullish(),
   "createdAt": zod.string(),
-  "updatedAt": zod.string()
+  "updatedAt": zod.string(),
+  "propertyQualification": zod.object({
+  "discoveryId": zod.string(),
+  "status": zod.enum(['QUALIFIED_LEAD', 'CALL_READY', 'DISQUALIFIED']),
+  "score": zod.number().int().min(getCommandCenterResponseCallsItemLeadTwoPropertyQualificationScoreMin).max(getCommandCenterResponseCallsItemLeadTwoPropertyQualificationScoreMax),
+  "confidence": zod.number().min(getCommandCenterResponseCallsItemLeadTwoPropertyQualificationConfidenceMin).max(getCommandCenterResponseCallsItemLeadTwoPropertyQualificationConfidenceMax),
+  "criteriaVersion": zod.number().int().min(1),
+  "reviewReason": zod.string(),
+  "qualifiedBy": zod.string(),
+  "qualifiedAt": zod.string().datetime({"offset":true}),
+  "reason": zod.string(),
+  "signals": zod.array(zod.object({
+  "id": zod.string(),
+  "key": zod.enum(['ENTITY_OWNER', 'LONG_TERM_HOLD', 'REPORTED_POOR_CONDITION', 'SELLER_MOTIVATION', 'TAX_DELINQUENCY', 'FORECLOSURE', 'PROBATE', 'ABSENTEE_OWNER', 'STALE_LISTING', 'REPEATED_PRICE_REDUCTION', 'BELOW_MARKET', 'VACANCY', 'EQUITY_OPPORTUNITY', 'MARKET_FIT']),
+  "group": zod.enum(['OWNERSHIP_CONTEXT', 'CONDITION', 'MOTIVATION', 'DISTRESS', 'LISTING_PRESSURE', 'VACANCY', 'FINANCIAL_OPPORTUNITY', 'MARKET_FIT']),
+  "classification": zod.enum(['VERIFIED', 'OBSERVED', 'INDICATED', 'AI_HYPOTHESIS']),
+  "sourceType": zod.enum(['PUBLIC_RECORD', 'PERMITTED_LISTING', 'SELLER', 'INSPECTION', 'PUBLIC_PAGE', 'ANALYST', 'MODEL']),
+  "statement": zod.string(),
+  "source": zod.string(),
+  "sourceUrl": zod.string().nullable(),
+  "evidenceRef": zod.string().nullable(),
+  "capturedAt": zod.string().datetime({"offset":true}),
+  "confidence": zod.number().min(getCommandCenterResponseCallsItemLeadTwoPropertyQualificationSignalsItemConfidenceMin).max(getCommandCenterResponseCallsItemLeadTwoPropertyQualificationSignalsItemConfidenceMax),
+  "scoreContribution": zod.number().int().min(getCommandCenterResponseCallsItemLeadTwoPropertyQualificationSignalsItemScoreContributionMin).max(getCommandCenterResponseCallsItemLeadTwoPropertyQualificationSignalsItemScoreContributionMax)
+})),
+  "missingInformation": zod.array(zod.string()),
+  "nextAction": zod.string()
+}).optional()
 })),
   "objective": zod.string(),
   "intelligence": zod.array(zod.object({
@@ -6841,7 +7550,34 @@ export const GetCommandCenterResponse = zod.object({
   "nextAction": zod.string(),
   "followUpAt": zod.string().nullish(),
   "createdAt": zod.string(),
-  "updatedAt": zod.string()
+  "updatedAt": zod.string(),
+  "propertyQualification": zod.object({
+  "discoveryId": zod.string(),
+  "status": zod.enum(['QUALIFIED_LEAD', 'CALL_READY', 'DISQUALIFIED']),
+  "score": zod.number().int().min(getCommandCenterResponseDealsItemLeadTwoPropertyQualificationScoreMin).max(getCommandCenterResponseDealsItemLeadTwoPropertyQualificationScoreMax),
+  "confidence": zod.number().min(getCommandCenterResponseDealsItemLeadTwoPropertyQualificationConfidenceMin).max(getCommandCenterResponseDealsItemLeadTwoPropertyQualificationConfidenceMax),
+  "criteriaVersion": zod.number().int().min(1),
+  "reviewReason": zod.string(),
+  "qualifiedBy": zod.string(),
+  "qualifiedAt": zod.string().datetime({"offset":true}),
+  "reason": zod.string(),
+  "signals": zod.array(zod.object({
+  "id": zod.string(),
+  "key": zod.enum(['ENTITY_OWNER', 'LONG_TERM_HOLD', 'REPORTED_POOR_CONDITION', 'SELLER_MOTIVATION', 'TAX_DELINQUENCY', 'FORECLOSURE', 'PROBATE', 'ABSENTEE_OWNER', 'STALE_LISTING', 'REPEATED_PRICE_REDUCTION', 'BELOW_MARKET', 'VACANCY', 'EQUITY_OPPORTUNITY', 'MARKET_FIT']),
+  "group": zod.enum(['OWNERSHIP_CONTEXT', 'CONDITION', 'MOTIVATION', 'DISTRESS', 'LISTING_PRESSURE', 'VACANCY', 'FINANCIAL_OPPORTUNITY', 'MARKET_FIT']),
+  "classification": zod.enum(['VERIFIED', 'OBSERVED', 'INDICATED', 'AI_HYPOTHESIS']),
+  "sourceType": zod.enum(['PUBLIC_RECORD', 'PERMITTED_LISTING', 'SELLER', 'INSPECTION', 'PUBLIC_PAGE', 'ANALYST', 'MODEL']),
+  "statement": zod.string(),
+  "source": zod.string(),
+  "sourceUrl": zod.string().nullable(),
+  "evidenceRef": zod.string().nullable(),
+  "capturedAt": zod.string().datetime({"offset":true}),
+  "confidence": zod.number().min(getCommandCenterResponseDealsItemLeadTwoPropertyQualificationSignalsItemConfidenceMin).max(getCommandCenterResponseDealsItemLeadTwoPropertyQualificationSignalsItemConfidenceMax),
+  "scoreContribution": zod.number().int().min(getCommandCenterResponseDealsItemLeadTwoPropertyQualificationSignalsItemScoreContributionMin).max(getCommandCenterResponseDealsItemLeadTwoPropertyQualificationSignalsItemScoreContributionMax)
+})),
+  "missingInformation": zod.array(zod.string()),
+  "nextAction": zod.string()
+}).optional()
 })),
   "intelligence": zod.array(zod.object({
   "classification": zod.enum(['VERIFIED_FACTS', 'OBSERVED', 'INDICATED', 'AI_HYPOTHESIS']),
@@ -7211,7 +7947,34 @@ export const GetCommandCenterResponse = zod.object({
   "nextAction": zod.string(),
   "followUpAt": zod.string().nullish(),
   "createdAt": zod.string(),
-  "updatedAt": zod.string()
+  "updatedAt": zod.string(),
+  "propertyQualification": zod.object({
+  "discoveryId": zod.string(),
+  "status": zod.enum(['QUALIFIED_LEAD', 'CALL_READY', 'DISQUALIFIED']),
+  "score": zod.number().int().min(getCommandCenterResponseOperationsItemContractOneCommitmentSnapshotOneDetailLeadTwoPropertyQualificationScoreMin).max(getCommandCenterResponseOperationsItemContractOneCommitmentSnapshotOneDetailLeadTwoPropertyQualificationScoreMax),
+  "confidence": zod.number().min(getCommandCenterResponseOperationsItemContractOneCommitmentSnapshotOneDetailLeadTwoPropertyQualificationConfidenceMin).max(getCommandCenterResponseOperationsItemContractOneCommitmentSnapshotOneDetailLeadTwoPropertyQualificationConfidenceMax),
+  "criteriaVersion": zod.number().int().min(1),
+  "reviewReason": zod.string(),
+  "qualifiedBy": zod.string(),
+  "qualifiedAt": zod.string().datetime({"offset":true}),
+  "reason": zod.string(),
+  "signals": zod.array(zod.object({
+  "id": zod.string(),
+  "key": zod.enum(['ENTITY_OWNER', 'LONG_TERM_HOLD', 'REPORTED_POOR_CONDITION', 'SELLER_MOTIVATION', 'TAX_DELINQUENCY', 'FORECLOSURE', 'PROBATE', 'ABSENTEE_OWNER', 'STALE_LISTING', 'REPEATED_PRICE_REDUCTION', 'BELOW_MARKET', 'VACANCY', 'EQUITY_OPPORTUNITY', 'MARKET_FIT']),
+  "group": zod.enum(['OWNERSHIP_CONTEXT', 'CONDITION', 'MOTIVATION', 'DISTRESS', 'LISTING_PRESSURE', 'VACANCY', 'FINANCIAL_OPPORTUNITY', 'MARKET_FIT']),
+  "classification": zod.enum(['VERIFIED', 'OBSERVED', 'INDICATED', 'AI_HYPOTHESIS']),
+  "sourceType": zod.enum(['PUBLIC_RECORD', 'PERMITTED_LISTING', 'SELLER', 'INSPECTION', 'PUBLIC_PAGE', 'ANALYST', 'MODEL']),
+  "statement": zod.string(),
+  "source": zod.string(),
+  "sourceUrl": zod.string().nullable(),
+  "evidenceRef": zod.string().nullable(),
+  "capturedAt": zod.string().datetime({"offset":true}),
+  "confidence": zod.number().min(getCommandCenterResponseOperationsItemContractOneCommitmentSnapshotOneDetailLeadTwoPropertyQualificationSignalsItemConfidenceMin).max(getCommandCenterResponseOperationsItemContractOneCommitmentSnapshotOneDetailLeadTwoPropertyQualificationSignalsItemConfidenceMax),
+  "scoreContribution": zod.number().int().min(getCommandCenterResponseOperationsItemContractOneCommitmentSnapshotOneDetailLeadTwoPropertyQualificationSignalsItemScoreContributionMin).max(getCommandCenterResponseOperationsItemContractOneCommitmentSnapshotOneDetailLeadTwoPropertyQualificationSignalsItemScoreContributionMax)
+})),
+  "missingInformation": zod.array(zod.string()),
+  "nextAction": zod.string()
+}).optional()
 })),
   "intelligence": zod.array(zod.object({
   "classification": zod.enum(['VERIFIED_FACTS', 'OBSERVED', 'INDICATED', 'AI_HYPOTHESIS']),
@@ -7582,7 +8345,88 @@ export const GetCommandCenterResponse = zod.object({
   "attempts": zod.number().int(),
   "createdAt": zod.string(),
   "updatedAt": zod.string()
+})),
+  "propertyDiscoveries": zod.object({
+  "records": zod.array(zod.object({
+  "id": zod.string().uuid(),
+  "marketKey": zod.string(),
+  "status": zod.enum(['DISCOVERED_PROPERTY', 'RELEVANT_CANDIDATE', 'QUALIFIED_LEAD', 'CALL_READY', 'DISQUALIFIED']),
+  "score": zod.number().int().min(getCommandCenterResponsePropertyDiscoveriesRecordsItemScoreMin).max(getCommandCenterResponsePropertyDiscoveriesRecordsItemScoreMax),
+  "confidence": zod.number().min(getCommandCenterResponsePropertyDiscoveriesRecordsItemConfidenceMin).max(getCommandCenterResponsePropertyDiscoveriesRecordsItemConfidenceMax),
+  "version": zod.number().int().min(1),
+  "property": zod.object({
+  "id": zod.string(),
+  "provider": zod.string(),
+  "classification": zod.enum(['OBSERVED']),
+  "address": zod.string(),
+  "city": zod.string(),
+  "state": zod.string(),
+  "zip": zod.string(),
+  "propertyType": zod.enum(['SINGLE_FAMILY', 'TOWNHOUSE']),
+  "sqft": zod.number().nullable(),
+  "beds": zod.number().int().nullable(),
+  "baths": zod.number().nullable(),
+  "recordedOwner": zod.string().nullable(),
+  "entityCandidate": zod.boolean(),
+  "assessedValue": zod.number().nullable(),
+  "lastSalePrice": zod.number().nullable(),
+  "lastSaleAt": zod.string().nullable(),
+  "interiorCondition": zod.string().nullable(),
+  "exteriorCondition": zod.string().nullable(),
+  "lat": zod.number().nullable(),
+  "lng": zod.number().nullable(),
+  "sourceUrl": zod.string(),
+  "capturedAt": zod.string()
+}),
+  "signals": zod.array(zod.object({
+  "id": zod.string(),
+  "key": zod.enum(['ENTITY_OWNER', 'LONG_TERM_HOLD', 'REPORTED_POOR_CONDITION', 'SELLER_MOTIVATION', 'TAX_DELINQUENCY', 'FORECLOSURE', 'PROBATE', 'ABSENTEE_OWNER', 'STALE_LISTING', 'REPEATED_PRICE_REDUCTION', 'BELOW_MARKET', 'VACANCY', 'EQUITY_OPPORTUNITY', 'MARKET_FIT']),
+  "group": zod.enum(['OWNERSHIP_CONTEXT', 'CONDITION', 'MOTIVATION', 'DISTRESS', 'LISTING_PRESSURE', 'VACANCY', 'FINANCIAL_OPPORTUNITY', 'MARKET_FIT']),
+  "classification": zod.enum(['VERIFIED', 'OBSERVED', 'INDICATED', 'AI_HYPOTHESIS']),
+  "sourceType": zod.enum(['PUBLIC_RECORD', 'PERMITTED_LISTING', 'SELLER', 'INSPECTION', 'PUBLIC_PAGE', 'ANALYST', 'MODEL']),
+  "statement": zod.string(),
+  "source": zod.string(),
+  "sourceUrl": zod.string().nullable(),
+  "evidenceRef": zod.string().nullable(),
+  "capturedAt": zod.string().datetime({"offset":true}),
+  "confidence": zod.number().min(getCommandCenterResponsePropertyDiscoveriesRecordsItemSignalsItemConfidenceMin).max(getCommandCenterResponsePropertyDiscoveriesRecordsItemSignalsItemConfidenceMax),
+  "scoreContribution": zod.number().int().min(getCommandCenterResponsePropertyDiscoveriesRecordsItemSignalsItemScoreContributionMin).max(getCommandCenterResponsePropertyDiscoveriesRecordsItemSignalsItemScoreContributionMax)
+})),
+  "reason": zod.string(),
+  "missingInformation": zod.array(zod.string()),
+  "nextAction": zod.string(),
+  "sourceObservationCount": zod.number().int().min(1),
+  "relatedOwnerPropertyCount": zod.number().int().min(1),
+  "leadId": zod.string().uuid().nullable(),
+  "criteriaVersion": zod.number().int().min(1),
+  "canPromote": zod.boolean(),
+  "promotionBlockers": zod.array(zod.string()),
+  "firstObservedAt": zod.string().datetime({"offset":true}),
+  "lastObservedAt": zod.string().datetime({"offset":true})
+})),
+  "counts": zod.object({
+  "DISCOVERED_PROPERTY": zod.number().int().min(getCommandCenterResponsePropertyDiscoveriesCountsDISCOVEREDPROPERTYMin),
+  "RELEVANT_CANDIDATE": zod.number().int().min(getCommandCenterResponsePropertyDiscoveriesCountsRELEVANTCANDIDATEMin),
+  "QUALIFIED_LEAD": zod.number().int().min(getCommandCenterResponsePropertyDiscoveriesCountsQUALIFIEDLEADMin),
+  "CALL_READY": zod.number().int().min(getCommandCenterResponsePropertyDiscoveriesCountsCALLREADYMin),
+  "DISQUALIFIED": zod.number().int().min(getCommandCenterResponsePropertyDiscoveriesCountsDISQUALIFIEDMin)
+}),
+  "criteria": zod.object({
+  "candidateThreshold": zod.number().int().min(1).max(getCommandCenterResponsePropertyDiscoveriesCriteriaOneCandidateThresholdMax),
+  "qualifiedLeadThreshold": zod.number().int().min(1).max(getCommandCenterResponsePropertyDiscoveriesCriteriaOneQualifiedLeadThresholdMax),
+  "minimumIndependentSignalGroups": zod.number().int().min(getCommandCenterResponsePropertyDiscoveriesCriteriaOneMinimumIndependentSignalGroupsMin).max(getCommandCenterResponsePropertyDiscoveriesCriteriaOneMinimumIndependentSignalGroupsMax),
+  "requiredLeadGroupAnyOf": zod.array(zod.enum(['OWNERSHIP_CONTEXT', 'CONDITION', 'MOTIVATION', 'DISTRESS', 'LISTING_PRESSURE', 'VACANCY', 'FINANCIAL_OPPORTUNITY', 'MARKET_FIT'])).min(1).max(getCommandCenterResponsePropertyDiscoveriesCriteriaOneRequiredLeadGroupAnyOfMax),
+  "longHoldYears": zod.number().int().min(1).max(getCommandCenterResponsePropertyDiscoveriesCriteriaOneLongHoldYearsMax),
+  "signalRules": zod.array(zod.object({
+  "key": zod.enum(['ENTITY_OWNER', 'LONG_TERM_HOLD', 'REPORTED_POOR_CONDITION', 'SELLER_MOTIVATION', 'TAX_DELINQUENCY', 'FORECLOSURE', 'PROBATE', 'ABSENTEE_OWNER', 'STALE_LISTING', 'REPEATED_PRICE_REDUCTION', 'BELOW_MARKET', 'VACANCY', 'EQUITY_OPPORTUNITY', 'MARKET_FIT']),
+  "points": zod.number().int().min(getCommandCenterResponsePropertyDiscoveriesCriteriaOneSignalRulesItemPointsMin).max(getCommandCenterResponsePropertyDiscoveriesCriteriaOneSignalRulesItemPointsMax),
+  "enabled": zod.boolean()
+})).min(1).max(getCommandCenterResponsePropertyDiscoveriesCriteriaOneSignalRulesMax)
+}).and(zod.object({
+  "marketKey": zod.string(),
+  "version": zod.number().int().min(1)
 }))
+})
 })
 
 
@@ -9479,6 +10323,19 @@ export const getDealOperationsResponseContractOneCommitmentSnapshotOneDetailLead
 
 export const getDealOperationsResponseContractOneCommitmentSnapshotOneDetailLeadOneNextActionMax = 1000;
 
+export const getDealOperationsResponseContractOneCommitmentSnapshotOneDetailLeadTwoPropertyQualificationScoreMin = 0;
+export const getDealOperationsResponseContractOneCommitmentSnapshotOneDetailLeadTwoPropertyQualificationScoreMax = 100;
+
+export const getDealOperationsResponseContractOneCommitmentSnapshotOneDetailLeadTwoPropertyQualificationConfidenceMin = 0;
+export const getDealOperationsResponseContractOneCommitmentSnapshotOneDetailLeadTwoPropertyQualificationConfidenceMax = 1;
+
+
+export const getDealOperationsResponseContractOneCommitmentSnapshotOneDetailLeadTwoPropertyQualificationSignalsItemConfidenceMin = 0;
+export const getDealOperationsResponseContractOneCommitmentSnapshotOneDetailLeadTwoPropertyQualificationSignalsItemConfidenceMax = 1;
+
+export const getDealOperationsResponseContractOneCommitmentSnapshotOneDetailLeadTwoPropertyQualificationSignalsItemScoreContributionMin = 0;
+export const getDealOperationsResponseContractOneCommitmentSnapshotOneDetailLeadTwoPropertyQualificationSignalsItemScoreContributionMax = 100;
+
 export const getDealOperationsResponseContractOneCommitmentSnapshotOneDetailIntelligenceItemOneCategoryMax = 100;
 
 export const getDealOperationsResponseContractOneCommitmentSnapshotOneDetailIntelligenceItemOneStatementMax = 5000;
@@ -9803,7 +10660,34 @@ export const GetDealOperationsResponse = zod.object({
   "nextAction": zod.string(),
   "followUpAt": zod.string().nullish(),
   "createdAt": zod.string(),
-  "updatedAt": zod.string()
+  "updatedAt": zod.string(),
+  "propertyQualification": zod.object({
+  "discoveryId": zod.string(),
+  "status": zod.enum(['QUALIFIED_LEAD', 'CALL_READY', 'DISQUALIFIED']),
+  "score": zod.number().int().min(getDealOperationsResponseContractOneCommitmentSnapshotOneDetailLeadTwoPropertyQualificationScoreMin).max(getDealOperationsResponseContractOneCommitmentSnapshotOneDetailLeadTwoPropertyQualificationScoreMax),
+  "confidence": zod.number().min(getDealOperationsResponseContractOneCommitmentSnapshotOneDetailLeadTwoPropertyQualificationConfidenceMin).max(getDealOperationsResponseContractOneCommitmentSnapshotOneDetailLeadTwoPropertyQualificationConfidenceMax),
+  "criteriaVersion": zod.number().int().min(1),
+  "reviewReason": zod.string(),
+  "qualifiedBy": zod.string(),
+  "qualifiedAt": zod.string().datetime({"offset":true}),
+  "reason": zod.string(),
+  "signals": zod.array(zod.object({
+  "id": zod.string(),
+  "key": zod.enum(['ENTITY_OWNER', 'LONG_TERM_HOLD', 'REPORTED_POOR_CONDITION', 'SELLER_MOTIVATION', 'TAX_DELINQUENCY', 'FORECLOSURE', 'PROBATE', 'ABSENTEE_OWNER', 'STALE_LISTING', 'REPEATED_PRICE_REDUCTION', 'BELOW_MARKET', 'VACANCY', 'EQUITY_OPPORTUNITY', 'MARKET_FIT']),
+  "group": zod.enum(['OWNERSHIP_CONTEXT', 'CONDITION', 'MOTIVATION', 'DISTRESS', 'LISTING_PRESSURE', 'VACANCY', 'FINANCIAL_OPPORTUNITY', 'MARKET_FIT']),
+  "classification": zod.enum(['VERIFIED', 'OBSERVED', 'INDICATED', 'AI_HYPOTHESIS']),
+  "sourceType": zod.enum(['PUBLIC_RECORD', 'PERMITTED_LISTING', 'SELLER', 'INSPECTION', 'PUBLIC_PAGE', 'ANALYST', 'MODEL']),
+  "statement": zod.string(),
+  "source": zod.string(),
+  "sourceUrl": zod.string().nullable(),
+  "evidenceRef": zod.string().nullable(),
+  "capturedAt": zod.string().datetime({"offset":true}),
+  "confidence": zod.number().min(getDealOperationsResponseContractOneCommitmentSnapshotOneDetailLeadTwoPropertyQualificationSignalsItemConfidenceMin).max(getDealOperationsResponseContractOneCommitmentSnapshotOneDetailLeadTwoPropertyQualificationSignalsItemConfidenceMax),
+  "scoreContribution": zod.number().int().min(getDealOperationsResponseContractOneCommitmentSnapshotOneDetailLeadTwoPropertyQualificationSignalsItemScoreContributionMin).max(getDealOperationsResponseContractOneCommitmentSnapshotOneDetailLeadTwoPropertyQualificationSignalsItemScoreContributionMax)
+})),
+  "missingInformation": zod.array(zod.string()),
+  "nextAction": zod.string()
+}).optional()
 })),
   "intelligence": zod.array(zod.object({
   "classification": zod.enum(['VERIFIED_FACTS', 'OBSERVED', 'INDICATED', 'AI_HYPOTHESIS']),
@@ -10225,6 +11109,19 @@ export const refreshMatchesResponseContractOneCommitmentSnapshotOneDetailLeadOne
 
 export const refreshMatchesResponseContractOneCommitmentSnapshotOneDetailLeadOneNextActionMax = 1000;
 
+export const refreshMatchesResponseContractOneCommitmentSnapshotOneDetailLeadTwoPropertyQualificationScoreMin = 0;
+export const refreshMatchesResponseContractOneCommitmentSnapshotOneDetailLeadTwoPropertyQualificationScoreMax = 100;
+
+export const refreshMatchesResponseContractOneCommitmentSnapshotOneDetailLeadTwoPropertyQualificationConfidenceMin = 0;
+export const refreshMatchesResponseContractOneCommitmentSnapshotOneDetailLeadTwoPropertyQualificationConfidenceMax = 1;
+
+
+export const refreshMatchesResponseContractOneCommitmentSnapshotOneDetailLeadTwoPropertyQualificationSignalsItemConfidenceMin = 0;
+export const refreshMatchesResponseContractOneCommitmentSnapshotOneDetailLeadTwoPropertyQualificationSignalsItemConfidenceMax = 1;
+
+export const refreshMatchesResponseContractOneCommitmentSnapshotOneDetailLeadTwoPropertyQualificationSignalsItemScoreContributionMin = 0;
+export const refreshMatchesResponseContractOneCommitmentSnapshotOneDetailLeadTwoPropertyQualificationSignalsItemScoreContributionMax = 100;
+
 export const refreshMatchesResponseContractOneCommitmentSnapshotOneDetailIntelligenceItemOneCategoryMax = 100;
 
 export const refreshMatchesResponseContractOneCommitmentSnapshotOneDetailIntelligenceItemOneStatementMax = 5000;
@@ -10549,7 +11446,34 @@ export const RefreshMatchesResponse = zod.object({
   "nextAction": zod.string(),
   "followUpAt": zod.string().nullish(),
   "createdAt": zod.string(),
-  "updatedAt": zod.string()
+  "updatedAt": zod.string(),
+  "propertyQualification": zod.object({
+  "discoveryId": zod.string(),
+  "status": zod.enum(['QUALIFIED_LEAD', 'CALL_READY', 'DISQUALIFIED']),
+  "score": zod.number().int().min(refreshMatchesResponseContractOneCommitmentSnapshotOneDetailLeadTwoPropertyQualificationScoreMin).max(refreshMatchesResponseContractOneCommitmentSnapshotOneDetailLeadTwoPropertyQualificationScoreMax),
+  "confidence": zod.number().min(refreshMatchesResponseContractOneCommitmentSnapshotOneDetailLeadTwoPropertyQualificationConfidenceMin).max(refreshMatchesResponseContractOneCommitmentSnapshotOneDetailLeadTwoPropertyQualificationConfidenceMax),
+  "criteriaVersion": zod.number().int().min(1),
+  "reviewReason": zod.string(),
+  "qualifiedBy": zod.string(),
+  "qualifiedAt": zod.string().datetime({"offset":true}),
+  "reason": zod.string(),
+  "signals": zod.array(zod.object({
+  "id": zod.string(),
+  "key": zod.enum(['ENTITY_OWNER', 'LONG_TERM_HOLD', 'REPORTED_POOR_CONDITION', 'SELLER_MOTIVATION', 'TAX_DELINQUENCY', 'FORECLOSURE', 'PROBATE', 'ABSENTEE_OWNER', 'STALE_LISTING', 'REPEATED_PRICE_REDUCTION', 'BELOW_MARKET', 'VACANCY', 'EQUITY_OPPORTUNITY', 'MARKET_FIT']),
+  "group": zod.enum(['OWNERSHIP_CONTEXT', 'CONDITION', 'MOTIVATION', 'DISTRESS', 'LISTING_PRESSURE', 'VACANCY', 'FINANCIAL_OPPORTUNITY', 'MARKET_FIT']),
+  "classification": zod.enum(['VERIFIED', 'OBSERVED', 'INDICATED', 'AI_HYPOTHESIS']),
+  "sourceType": zod.enum(['PUBLIC_RECORD', 'PERMITTED_LISTING', 'SELLER', 'INSPECTION', 'PUBLIC_PAGE', 'ANALYST', 'MODEL']),
+  "statement": zod.string(),
+  "source": zod.string(),
+  "sourceUrl": zod.string().nullable(),
+  "evidenceRef": zod.string().nullable(),
+  "capturedAt": zod.string().datetime({"offset":true}),
+  "confidence": zod.number().min(refreshMatchesResponseContractOneCommitmentSnapshotOneDetailLeadTwoPropertyQualificationSignalsItemConfidenceMin).max(refreshMatchesResponseContractOneCommitmentSnapshotOneDetailLeadTwoPropertyQualificationSignalsItemConfidenceMax),
+  "scoreContribution": zod.number().int().min(refreshMatchesResponseContractOneCommitmentSnapshotOneDetailLeadTwoPropertyQualificationSignalsItemScoreContributionMin).max(refreshMatchesResponseContractOneCommitmentSnapshotOneDetailLeadTwoPropertyQualificationSignalsItemScoreContributionMax)
+})),
+  "missingInformation": zod.array(zod.string()),
+  "nextAction": zod.string()
+}).optional()
 })),
   "intelligence": zod.array(zod.object({
   "classification": zod.enum(['VERIFIED_FACTS', 'OBSERVED', 'INDICATED', 'AI_HYPOTHESIS']),
@@ -10993,6 +11917,19 @@ export const recordBuyerResponseResponseContractOneCommitmentSnapshotOneDetailLe
 
 export const recordBuyerResponseResponseContractOneCommitmentSnapshotOneDetailLeadOneNextActionMax = 1000;
 
+export const recordBuyerResponseResponseContractOneCommitmentSnapshotOneDetailLeadTwoPropertyQualificationScoreMin = 0;
+export const recordBuyerResponseResponseContractOneCommitmentSnapshotOneDetailLeadTwoPropertyQualificationScoreMax = 100;
+
+export const recordBuyerResponseResponseContractOneCommitmentSnapshotOneDetailLeadTwoPropertyQualificationConfidenceMin = 0;
+export const recordBuyerResponseResponseContractOneCommitmentSnapshotOneDetailLeadTwoPropertyQualificationConfidenceMax = 1;
+
+
+export const recordBuyerResponseResponseContractOneCommitmentSnapshotOneDetailLeadTwoPropertyQualificationSignalsItemConfidenceMin = 0;
+export const recordBuyerResponseResponseContractOneCommitmentSnapshotOneDetailLeadTwoPropertyQualificationSignalsItemConfidenceMax = 1;
+
+export const recordBuyerResponseResponseContractOneCommitmentSnapshotOneDetailLeadTwoPropertyQualificationSignalsItemScoreContributionMin = 0;
+export const recordBuyerResponseResponseContractOneCommitmentSnapshotOneDetailLeadTwoPropertyQualificationSignalsItemScoreContributionMax = 100;
+
 export const recordBuyerResponseResponseContractOneCommitmentSnapshotOneDetailIntelligenceItemOneCategoryMax = 100;
 
 export const recordBuyerResponseResponseContractOneCommitmentSnapshotOneDetailIntelligenceItemOneStatementMax = 5000;
@@ -11317,7 +12254,34 @@ export const RecordBuyerResponseResponse = zod.object({
   "nextAction": zod.string(),
   "followUpAt": zod.string().nullish(),
   "createdAt": zod.string(),
-  "updatedAt": zod.string()
+  "updatedAt": zod.string(),
+  "propertyQualification": zod.object({
+  "discoveryId": zod.string(),
+  "status": zod.enum(['QUALIFIED_LEAD', 'CALL_READY', 'DISQUALIFIED']),
+  "score": zod.number().int().min(recordBuyerResponseResponseContractOneCommitmentSnapshotOneDetailLeadTwoPropertyQualificationScoreMin).max(recordBuyerResponseResponseContractOneCommitmentSnapshotOneDetailLeadTwoPropertyQualificationScoreMax),
+  "confidence": zod.number().min(recordBuyerResponseResponseContractOneCommitmentSnapshotOneDetailLeadTwoPropertyQualificationConfidenceMin).max(recordBuyerResponseResponseContractOneCommitmentSnapshotOneDetailLeadTwoPropertyQualificationConfidenceMax),
+  "criteriaVersion": zod.number().int().min(1),
+  "reviewReason": zod.string(),
+  "qualifiedBy": zod.string(),
+  "qualifiedAt": zod.string().datetime({"offset":true}),
+  "reason": zod.string(),
+  "signals": zod.array(zod.object({
+  "id": zod.string(),
+  "key": zod.enum(['ENTITY_OWNER', 'LONG_TERM_HOLD', 'REPORTED_POOR_CONDITION', 'SELLER_MOTIVATION', 'TAX_DELINQUENCY', 'FORECLOSURE', 'PROBATE', 'ABSENTEE_OWNER', 'STALE_LISTING', 'REPEATED_PRICE_REDUCTION', 'BELOW_MARKET', 'VACANCY', 'EQUITY_OPPORTUNITY', 'MARKET_FIT']),
+  "group": zod.enum(['OWNERSHIP_CONTEXT', 'CONDITION', 'MOTIVATION', 'DISTRESS', 'LISTING_PRESSURE', 'VACANCY', 'FINANCIAL_OPPORTUNITY', 'MARKET_FIT']),
+  "classification": zod.enum(['VERIFIED', 'OBSERVED', 'INDICATED', 'AI_HYPOTHESIS']),
+  "sourceType": zod.enum(['PUBLIC_RECORD', 'PERMITTED_LISTING', 'SELLER', 'INSPECTION', 'PUBLIC_PAGE', 'ANALYST', 'MODEL']),
+  "statement": zod.string(),
+  "source": zod.string(),
+  "sourceUrl": zod.string().nullable(),
+  "evidenceRef": zod.string().nullable(),
+  "capturedAt": zod.string().datetime({"offset":true}),
+  "confidence": zod.number().min(recordBuyerResponseResponseContractOneCommitmentSnapshotOneDetailLeadTwoPropertyQualificationSignalsItemConfidenceMin).max(recordBuyerResponseResponseContractOneCommitmentSnapshotOneDetailLeadTwoPropertyQualificationSignalsItemConfidenceMax),
+  "scoreContribution": zod.number().int().min(recordBuyerResponseResponseContractOneCommitmentSnapshotOneDetailLeadTwoPropertyQualificationSignalsItemScoreContributionMin).max(recordBuyerResponseResponseContractOneCommitmentSnapshotOneDetailLeadTwoPropertyQualificationSignalsItemScoreContributionMax)
+})),
+  "missingInformation": zod.array(zod.string()),
+  "nextAction": zod.string()
+}).optional()
 })),
   "intelligence": zod.array(zod.object({
   "classification": zod.enum(['VERIFIED_FACTS', 'OBSERVED', 'INDICATED', 'AI_HYPOTHESIS']),
@@ -12457,6 +13421,19 @@ export const recordDestinationActivityResponseContractOneCommitmentSnapshotOneDe
 
 export const recordDestinationActivityResponseContractOneCommitmentSnapshotOneDetailLeadOneNextActionMax = 1000;
 
+export const recordDestinationActivityResponseContractOneCommitmentSnapshotOneDetailLeadTwoPropertyQualificationScoreMin = 0;
+export const recordDestinationActivityResponseContractOneCommitmentSnapshotOneDetailLeadTwoPropertyQualificationScoreMax = 100;
+
+export const recordDestinationActivityResponseContractOneCommitmentSnapshotOneDetailLeadTwoPropertyQualificationConfidenceMin = 0;
+export const recordDestinationActivityResponseContractOneCommitmentSnapshotOneDetailLeadTwoPropertyQualificationConfidenceMax = 1;
+
+
+export const recordDestinationActivityResponseContractOneCommitmentSnapshotOneDetailLeadTwoPropertyQualificationSignalsItemConfidenceMin = 0;
+export const recordDestinationActivityResponseContractOneCommitmentSnapshotOneDetailLeadTwoPropertyQualificationSignalsItemConfidenceMax = 1;
+
+export const recordDestinationActivityResponseContractOneCommitmentSnapshotOneDetailLeadTwoPropertyQualificationSignalsItemScoreContributionMin = 0;
+export const recordDestinationActivityResponseContractOneCommitmentSnapshotOneDetailLeadTwoPropertyQualificationSignalsItemScoreContributionMax = 100;
+
 export const recordDestinationActivityResponseContractOneCommitmentSnapshotOneDetailIntelligenceItemOneCategoryMax = 100;
 
 export const recordDestinationActivityResponseContractOneCommitmentSnapshotOneDetailIntelligenceItemOneStatementMax = 5000;
@@ -12781,7 +13758,34 @@ export const RecordDestinationActivityResponse = zod.object({
   "nextAction": zod.string(),
   "followUpAt": zod.string().nullish(),
   "createdAt": zod.string(),
-  "updatedAt": zod.string()
+  "updatedAt": zod.string(),
+  "propertyQualification": zod.object({
+  "discoveryId": zod.string(),
+  "status": zod.enum(['QUALIFIED_LEAD', 'CALL_READY', 'DISQUALIFIED']),
+  "score": zod.number().int().min(recordDestinationActivityResponseContractOneCommitmentSnapshotOneDetailLeadTwoPropertyQualificationScoreMin).max(recordDestinationActivityResponseContractOneCommitmentSnapshotOneDetailLeadTwoPropertyQualificationScoreMax),
+  "confidence": zod.number().min(recordDestinationActivityResponseContractOneCommitmentSnapshotOneDetailLeadTwoPropertyQualificationConfidenceMin).max(recordDestinationActivityResponseContractOneCommitmentSnapshotOneDetailLeadTwoPropertyQualificationConfidenceMax),
+  "criteriaVersion": zod.number().int().min(1),
+  "reviewReason": zod.string(),
+  "qualifiedBy": zod.string(),
+  "qualifiedAt": zod.string().datetime({"offset":true}),
+  "reason": zod.string(),
+  "signals": zod.array(zod.object({
+  "id": zod.string(),
+  "key": zod.enum(['ENTITY_OWNER', 'LONG_TERM_HOLD', 'REPORTED_POOR_CONDITION', 'SELLER_MOTIVATION', 'TAX_DELINQUENCY', 'FORECLOSURE', 'PROBATE', 'ABSENTEE_OWNER', 'STALE_LISTING', 'REPEATED_PRICE_REDUCTION', 'BELOW_MARKET', 'VACANCY', 'EQUITY_OPPORTUNITY', 'MARKET_FIT']),
+  "group": zod.enum(['OWNERSHIP_CONTEXT', 'CONDITION', 'MOTIVATION', 'DISTRESS', 'LISTING_PRESSURE', 'VACANCY', 'FINANCIAL_OPPORTUNITY', 'MARKET_FIT']),
+  "classification": zod.enum(['VERIFIED', 'OBSERVED', 'INDICATED', 'AI_HYPOTHESIS']),
+  "sourceType": zod.enum(['PUBLIC_RECORD', 'PERMITTED_LISTING', 'SELLER', 'INSPECTION', 'PUBLIC_PAGE', 'ANALYST', 'MODEL']),
+  "statement": zod.string(),
+  "source": zod.string(),
+  "sourceUrl": zod.string().nullable(),
+  "evidenceRef": zod.string().nullable(),
+  "capturedAt": zod.string().datetime({"offset":true}),
+  "confidence": zod.number().min(recordDestinationActivityResponseContractOneCommitmentSnapshotOneDetailLeadTwoPropertyQualificationSignalsItemConfidenceMin).max(recordDestinationActivityResponseContractOneCommitmentSnapshotOneDetailLeadTwoPropertyQualificationSignalsItemConfidenceMax),
+  "scoreContribution": zod.number().int().min(recordDestinationActivityResponseContractOneCommitmentSnapshotOneDetailLeadTwoPropertyQualificationSignalsItemScoreContributionMin).max(recordDestinationActivityResponseContractOneCommitmentSnapshotOneDetailLeadTwoPropertyQualificationSignalsItemScoreContributionMax)
+})),
+  "missingInformation": zod.array(zod.string()),
+  "nextAction": zod.string()
+}).optional()
 })),
   "intelligence": zod.array(zod.object({
   "classification": zod.enum(['VERIFIED_FACTS', 'OBSERVED', 'INDICATED', 'AI_HYPOTHESIS']),
@@ -13212,6 +14216,19 @@ export const createContractResponseContractOneCommitmentSnapshotOneDetailLeadOne
 
 export const createContractResponseContractOneCommitmentSnapshotOneDetailLeadOneNextActionMax = 1000;
 
+export const createContractResponseContractOneCommitmentSnapshotOneDetailLeadTwoPropertyQualificationScoreMin = 0;
+export const createContractResponseContractOneCommitmentSnapshotOneDetailLeadTwoPropertyQualificationScoreMax = 100;
+
+export const createContractResponseContractOneCommitmentSnapshotOneDetailLeadTwoPropertyQualificationConfidenceMin = 0;
+export const createContractResponseContractOneCommitmentSnapshotOneDetailLeadTwoPropertyQualificationConfidenceMax = 1;
+
+
+export const createContractResponseContractOneCommitmentSnapshotOneDetailLeadTwoPropertyQualificationSignalsItemConfidenceMin = 0;
+export const createContractResponseContractOneCommitmentSnapshotOneDetailLeadTwoPropertyQualificationSignalsItemConfidenceMax = 1;
+
+export const createContractResponseContractOneCommitmentSnapshotOneDetailLeadTwoPropertyQualificationSignalsItemScoreContributionMin = 0;
+export const createContractResponseContractOneCommitmentSnapshotOneDetailLeadTwoPropertyQualificationSignalsItemScoreContributionMax = 100;
+
 export const createContractResponseContractOneCommitmentSnapshotOneDetailIntelligenceItemOneCategoryMax = 100;
 
 export const createContractResponseContractOneCommitmentSnapshotOneDetailIntelligenceItemOneStatementMax = 5000;
@@ -13536,7 +14553,34 @@ export const CreateContractResponse = zod.object({
   "nextAction": zod.string(),
   "followUpAt": zod.string().nullish(),
   "createdAt": zod.string(),
-  "updatedAt": zod.string()
+  "updatedAt": zod.string(),
+  "propertyQualification": zod.object({
+  "discoveryId": zod.string(),
+  "status": zod.enum(['QUALIFIED_LEAD', 'CALL_READY', 'DISQUALIFIED']),
+  "score": zod.number().int().min(createContractResponseContractOneCommitmentSnapshotOneDetailLeadTwoPropertyQualificationScoreMin).max(createContractResponseContractOneCommitmentSnapshotOneDetailLeadTwoPropertyQualificationScoreMax),
+  "confidence": zod.number().min(createContractResponseContractOneCommitmentSnapshotOneDetailLeadTwoPropertyQualificationConfidenceMin).max(createContractResponseContractOneCommitmentSnapshotOneDetailLeadTwoPropertyQualificationConfidenceMax),
+  "criteriaVersion": zod.number().int().min(1),
+  "reviewReason": zod.string(),
+  "qualifiedBy": zod.string(),
+  "qualifiedAt": zod.string().datetime({"offset":true}),
+  "reason": zod.string(),
+  "signals": zod.array(zod.object({
+  "id": zod.string(),
+  "key": zod.enum(['ENTITY_OWNER', 'LONG_TERM_HOLD', 'REPORTED_POOR_CONDITION', 'SELLER_MOTIVATION', 'TAX_DELINQUENCY', 'FORECLOSURE', 'PROBATE', 'ABSENTEE_OWNER', 'STALE_LISTING', 'REPEATED_PRICE_REDUCTION', 'BELOW_MARKET', 'VACANCY', 'EQUITY_OPPORTUNITY', 'MARKET_FIT']),
+  "group": zod.enum(['OWNERSHIP_CONTEXT', 'CONDITION', 'MOTIVATION', 'DISTRESS', 'LISTING_PRESSURE', 'VACANCY', 'FINANCIAL_OPPORTUNITY', 'MARKET_FIT']),
+  "classification": zod.enum(['VERIFIED', 'OBSERVED', 'INDICATED', 'AI_HYPOTHESIS']),
+  "sourceType": zod.enum(['PUBLIC_RECORD', 'PERMITTED_LISTING', 'SELLER', 'INSPECTION', 'PUBLIC_PAGE', 'ANALYST', 'MODEL']),
+  "statement": zod.string(),
+  "source": zod.string(),
+  "sourceUrl": zod.string().nullable(),
+  "evidenceRef": zod.string().nullable(),
+  "capturedAt": zod.string().datetime({"offset":true}),
+  "confidence": zod.number().min(createContractResponseContractOneCommitmentSnapshotOneDetailLeadTwoPropertyQualificationSignalsItemConfidenceMin).max(createContractResponseContractOneCommitmentSnapshotOneDetailLeadTwoPropertyQualificationSignalsItemConfidenceMax),
+  "scoreContribution": zod.number().int().min(createContractResponseContractOneCommitmentSnapshotOneDetailLeadTwoPropertyQualificationSignalsItemScoreContributionMin).max(createContractResponseContractOneCommitmentSnapshotOneDetailLeadTwoPropertyQualificationSignalsItemScoreContributionMax)
+})),
+  "missingInformation": zod.array(zod.string()),
+  "nextAction": zod.string()
+}).optional()
 })),
   "intelligence": zod.array(zod.object({
   "classification": zod.enum(['VERIFIED_FACTS', 'OBSERVED', 'INDICATED', 'AI_HYPOTHESIS']),
@@ -13975,6 +15019,19 @@ export const executeContractResponseContractOneCommitmentSnapshotOneDetailLeadOn
 
 export const executeContractResponseContractOneCommitmentSnapshotOneDetailLeadOneNextActionMax = 1000;
 
+export const executeContractResponseContractOneCommitmentSnapshotOneDetailLeadTwoPropertyQualificationScoreMin = 0;
+export const executeContractResponseContractOneCommitmentSnapshotOneDetailLeadTwoPropertyQualificationScoreMax = 100;
+
+export const executeContractResponseContractOneCommitmentSnapshotOneDetailLeadTwoPropertyQualificationConfidenceMin = 0;
+export const executeContractResponseContractOneCommitmentSnapshotOneDetailLeadTwoPropertyQualificationConfidenceMax = 1;
+
+
+export const executeContractResponseContractOneCommitmentSnapshotOneDetailLeadTwoPropertyQualificationSignalsItemConfidenceMin = 0;
+export const executeContractResponseContractOneCommitmentSnapshotOneDetailLeadTwoPropertyQualificationSignalsItemConfidenceMax = 1;
+
+export const executeContractResponseContractOneCommitmentSnapshotOneDetailLeadTwoPropertyQualificationSignalsItemScoreContributionMin = 0;
+export const executeContractResponseContractOneCommitmentSnapshotOneDetailLeadTwoPropertyQualificationSignalsItemScoreContributionMax = 100;
+
 export const executeContractResponseContractOneCommitmentSnapshotOneDetailIntelligenceItemOneCategoryMax = 100;
 
 export const executeContractResponseContractOneCommitmentSnapshotOneDetailIntelligenceItemOneStatementMax = 5000;
@@ -14299,7 +15356,34 @@ export const ExecuteContractResponse = zod.object({
   "nextAction": zod.string(),
   "followUpAt": zod.string().nullish(),
   "createdAt": zod.string(),
-  "updatedAt": zod.string()
+  "updatedAt": zod.string(),
+  "propertyQualification": zod.object({
+  "discoveryId": zod.string(),
+  "status": zod.enum(['QUALIFIED_LEAD', 'CALL_READY', 'DISQUALIFIED']),
+  "score": zod.number().int().min(executeContractResponseContractOneCommitmentSnapshotOneDetailLeadTwoPropertyQualificationScoreMin).max(executeContractResponseContractOneCommitmentSnapshotOneDetailLeadTwoPropertyQualificationScoreMax),
+  "confidence": zod.number().min(executeContractResponseContractOneCommitmentSnapshotOneDetailLeadTwoPropertyQualificationConfidenceMin).max(executeContractResponseContractOneCommitmentSnapshotOneDetailLeadTwoPropertyQualificationConfidenceMax),
+  "criteriaVersion": zod.number().int().min(1),
+  "reviewReason": zod.string(),
+  "qualifiedBy": zod.string(),
+  "qualifiedAt": zod.string().datetime({"offset":true}),
+  "reason": zod.string(),
+  "signals": zod.array(zod.object({
+  "id": zod.string(),
+  "key": zod.enum(['ENTITY_OWNER', 'LONG_TERM_HOLD', 'REPORTED_POOR_CONDITION', 'SELLER_MOTIVATION', 'TAX_DELINQUENCY', 'FORECLOSURE', 'PROBATE', 'ABSENTEE_OWNER', 'STALE_LISTING', 'REPEATED_PRICE_REDUCTION', 'BELOW_MARKET', 'VACANCY', 'EQUITY_OPPORTUNITY', 'MARKET_FIT']),
+  "group": zod.enum(['OWNERSHIP_CONTEXT', 'CONDITION', 'MOTIVATION', 'DISTRESS', 'LISTING_PRESSURE', 'VACANCY', 'FINANCIAL_OPPORTUNITY', 'MARKET_FIT']),
+  "classification": zod.enum(['VERIFIED', 'OBSERVED', 'INDICATED', 'AI_HYPOTHESIS']),
+  "sourceType": zod.enum(['PUBLIC_RECORD', 'PERMITTED_LISTING', 'SELLER', 'INSPECTION', 'PUBLIC_PAGE', 'ANALYST', 'MODEL']),
+  "statement": zod.string(),
+  "source": zod.string(),
+  "sourceUrl": zod.string().nullable(),
+  "evidenceRef": zod.string().nullable(),
+  "capturedAt": zod.string().datetime({"offset":true}),
+  "confidence": zod.number().min(executeContractResponseContractOneCommitmentSnapshotOneDetailLeadTwoPropertyQualificationSignalsItemConfidenceMin).max(executeContractResponseContractOneCommitmentSnapshotOneDetailLeadTwoPropertyQualificationSignalsItemConfidenceMax),
+  "scoreContribution": zod.number().int().min(executeContractResponseContractOneCommitmentSnapshotOneDetailLeadTwoPropertyQualificationSignalsItemScoreContributionMin).max(executeContractResponseContractOneCommitmentSnapshotOneDetailLeadTwoPropertyQualificationSignalsItemScoreContributionMax)
+})),
+  "missingInformation": zod.array(zod.string()),
+  "nextAction": zod.string()
+}).optional()
 })),
   "intelligence": zod.array(zod.object({
   "classification": zod.enum(['VERIFIED_FACTS', 'OBSERVED', 'INDICATED', 'AI_HYPOTHESIS']),
@@ -14737,6 +15821,19 @@ export const recordClosingMilestoneResponseContractOneCommitmentSnapshotOneDetai
 
 export const recordClosingMilestoneResponseContractOneCommitmentSnapshotOneDetailLeadOneNextActionMax = 1000;
 
+export const recordClosingMilestoneResponseContractOneCommitmentSnapshotOneDetailLeadTwoPropertyQualificationScoreMin = 0;
+export const recordClosingMilestoneResponseContractOneCommitmentSnapshotOneDetailLeadTwoPropertyQualificationScoreMax = 100;
+
+export const recordClosingMilestoneResponseContractOneCommitmentSnapshotOneDetailLeadTwoPropertyQualificationConfidenceMin = 0;
+export const recordClosingMilestoneResponseContractOneCommitmentSnapshotOneDetailLeadTwoPropertyQualificationConfidenceMax = 1;
+
+
+export const recordClosingMilestoneResponseContractOneCommitmentSnapshotOneDetailLeadTwoPropertyQualificationSignalsItemConfidenceMin = 0;
+export const recordClosingMilestoneResponseContractOneCommitmentSnapshotOneDetailLeadTwoPropertyQualificationSignalsItemConfidenceMax = 1;
+
+export const recordClosingMilestoneResponseContractOneCommitmentSnapshotOneDetailLeadTwoPropertyQualificationSignalsItemScoreContributionMin = 0;
+export const recordClosingMilestoneResponseContractOneCommitmentSnapshotOneDetailLeadTwoPropertyQualificationSignalsItemScoreContributionMax = 100;
+
 export const recordClosingMilestoneResponseContractOneCommitmentSnapshotOneDetailIntelligenceItemOneCategoryMax = 100;
 
 export const recordClosingMilestoneResponseContractOneCommitmentSnapshotOneDetailIntelligenceItemOneStatementMax = 5000;
@@ -15061,7 +16158,34 @@ export const RecordClosingMilestoneResponse = zod.object({
   "nextAction": zod.string(),
   "followUpAt": zod.string().nullish(),
   "createdAt": zod.string(),
-  "updatedAt": zod.string()
+  "updatedAt": zod.string(),
+  "propertyQualification": zod.object({
+  "discoveryId": zod.string(),
+  "status": zod.enum(['QUALIFIED_LEAD', 'CALL_READY', 'DISQUALIFIED']),
+  "score": zod.number().int().min(recordClosingMilestoneResponseContractOneCommitmentSnapshotOneDetailLeadTwoPropertyQualificationScoreMin).max(recordClosingMilestoneResponseContractOneCommitmentSnapshotOneDetailLeadTwoPropertyQualificationScoreMax),
+  "confidence": zod.number().min(recordClosingMilestoneResponseContractOneCommitmentSnapshotOneDetailLeadTwoPropertyQualificationConfidenceMin).max(recordClosingMilestoneResponseContractOneCommitmentSnapshotOneDetailLeadTwoPropertyQualificationConfidenceMax),
+  "criteriaVersion": zod.number().int().min(1),
+  "reviewReason": zod.string(),
+  "qualifiedBy": zod.string(),
+  "qualifiedAt": zod.string().datetime({"offset":true}),
+  "reason": zod.string(),
+  "signals": zod.array(zod.object({
+  "id": zod.string(),
+  "key": zod.enum(['ENTITY_OWNER', 'LONG_TERM_HOLD', 'REPORTED_POOR_CONDITION', 'SELLER_MOTIVATION', 'TAX_DELINQUENCY', 'FORECLOSURE', 'PROBATE', 'ABSENTEE_OWNER', 'STALE_LISTING', 'REPEATED_PRICE_REDUCTION', 'BELOW_MARKET', 'VACANCY', 'EQUITY_OPPORTUNITY', 'MARKET_FIT']),
+  "group": zod.enum(['OWNERSHIP_CONTEXT', 'CONDITION', 'MOTIVATION', 'DISTRESS', 'LISTING_PRESSURE', 'VACANCY', 'FINANCIAL_OPPORTUNITY', 'MARKET_FIT']),
+  "classification": zod.enum(['VERIFIED', 'OBSERVED', 'INDICATED', 'AI_HYPOTHESIS']),
+  "sourceType": zod.enum(['PUBLIC_RECORD', 'PERMITTED_LISTING', 'SELLER', 'INSPECTION', 'PUBLIC_PAGE', 'ANALYST', 'MODEL']),
+  "statement": zod.string(),
+  "source": zod.string(),
+  "sourceUrl": zod.string().nullable(),
+  "evidenceRef": zod.string().nullable(),
+  "capturedAt": zod.string().datetime({"offset":true}),
+  "confidence": zod.number().min(recordClosingMilestoneResponseContractOneCommitmentSnapshotOneDetailLeadTwoPropertyQualificationSignalsItemConfidenceMin).max(recordClosingMilestoneResponseContractOneCommitmentSnapshotOneDetailLeadTwoPropertyQualificationSignalsItemConfidenceMax),
+  "scoreContribution": zod.number().int().min(recordClosingMilestoneResponseContractOneCommitmentSnapshotOneDetailLeadTwoPropertyQualificationSignalsItemScoreContributionMin).max(recordClosingMilestoneResponseContractOneCommitmentSnapshotOneDetailLeadTwoPropertyQualificationSignalsItemScoreContributionMax)
+})),
+  "missingInformation": zod.array(zod.string()),
+  "nextAction": zod.string()
+}).optional()
 })),
   "intelligence": zod.array(zod.object({
   "classification": zod.enum(['VERIFIED_FACTS', 'OBSERVED', 'INDICATED', 'AI_HYPOTHESIS']),
@@ -15512,6 +16636,19 @@ export const recordDealOutcomeResponseContractOneCommitmentSnapshotOneDetailLead
 
 export const recordDealOutcomeResponseContractOneCommitmentSnapshotOneDetailLeadOneNextActionMax = 1000;
 
+export const recordDealOutcomeResponseContractOneCommitmentSnapshotOneDetailLeadTwoPropertyQualificationScoreMin = 0;
+export const recordDealOutcomeResponseContractOneCommitmentSnapshotOneDetailLeadTwoPropertyQualificationScoreMax = 100;
+
+export const recordDealOutcomeResponseContractOneCommitmentSnapshotOneDetailLeadTwoPropertyQualificationConfidenceMin = 0;
+export const recordDealOutcomeResponseContractOneCommitmentSnapshotOneDetailLeadTwoPropertyQualificationConfidenceMax = 1;
+
+
+export const recordDealOutcomeResponseContractOneCommitmentSnapshotOneDetailLeadTwoPropertyQualificationSignalsItemConfidenceMin = 0;
+export const recordDealOutcomeResponseContractOneCommitmentSnapshotOneDetailLeadTwoPropertyQualificationSignalsItemConfidenceMax = 1;
+
+export const recordDealOutcomeResponseContractOneCommitmentSnapshotOneDetailLeadTwoPropertyQualificationSignalsItemScoreContributionMin = 0;
+export const recordDealOutcomeResponseContractOneCommitmentSnapshotOneDetailLeadTwoPropertyQualificationSignalsItemScoreContributionMax = 100;
+
 export const recordDealOutcomeResponseContractOneCommitmentSnapshotOneDetailIntelligenceItemOneCategoryMax = 100;
 
 export const recordDealOutcomeResponseContractOneCommitmentSnapshotOneDetailIntelligenceItemOneStatementMax = 5000;
@@ -15836,7 +16973,34 @@ export const RecordDealOutcomeResponse = zod.object({
   "nextAction": zod.string(),
   "followUpAt": zod.string().nullish(),
   "createdAt": zod.string(),
-  "updatedAt": zod.string()
+  "updatedAt": zod.string(),
+  "propertyQualification": zod.object({
+  "discoveryId": zod.string(),
+  "status": zod.enum(['QUALIFIED_LEAD', 'CALL_READY', 'DISQUALIFIED']),
+  "score": zod.number().int().min(recordDealOutcomeResponseContractOneCommitmentSnapshotOneDetailLeadTwoPropertyQualificationScoreMin).max(recordDealOutcomeResponseContractOneCommitmentSnapshotOneDetailLeadTwoPropertyQualificationScoreMax),
+  "confidence": zod.number().min(recordDealOutcomeResponseContractOneCommitmentSnapshotOneDetailLeadTwoPropertyQualificationConfidenceMin).max(recordDealOutcomeResponseContractOneCommitmentSnapshotOneDetailLeadTwoPropertyQualificationConfidenceMax),
+  "criteriaVersion": zod.number().int().min(1),
+  "reviewReason": zod.string(),
+  "qualifiedBy": zod.string(),
+  "qualifiedAt": zod.string().datetime({"offset":true}),
+  "reason": zod.string(),
+  "signals": zod.array(zod.object({
+  "id": zod.string(),
+  "key": zod.enum(['ENTITY_OWNER', 'LONG_TERM_HOLD', 'REPORTED_POOR_CONDITION', 'SELLER_MOTIVATION', 'TAX_DELINQUENCY', 'FORECLOSURE', 'PROBATE', 'ABSENTEE_OWNER', 'STALE_LISTING', 'REPEATED_PRICE_REDUCTION', 'BELOW_MARKET', 'VACANCY', 'EQUITY_OPPORTUNITY', 'MARKET_FIT']),
+  "group": zod.enum(['OWNERSHIP_CONTEXT', 'CONDITION', 'MOTIVATION', 'DISTRESS', 'LISTING_PRESSURE', 'VACANCY', 'FINANCIAL_OPPORTUNITY', 'MARKET_FIT']),
+  "classification": zod.enum(['VERIFIED', 'OBSERVED', 'INDICATED', 'AI_HYPOTHESIS']),
+  "sourceType": zod.enum(['PUBLIC_RECORD', 'PERMITTED_LISTING', 'SELLER', 'INSPECTION', 'PUBLIC_PAGE', 'ANALYST', 'MODEL']),
+  "statement": zod.string(),
+  "source": zod.string(),
+  "sourceUrl": zod.string().nullable(),
+  "evidenceRef": zod.string().nullable(),
+  "capturedAt": zod.string().datetime({"offset":true}),
+  "confidence": zod.number().min(recordDealOutcomeResponseContractOneCommitmentSnapshotOneDetailLeadTwoPropertyQualificationSignalsItemConfidenceMin).max(recordDealOutcomeResponseContractOneCommitmentSnapshotOneDetailLeadTwoPropertyQualificationSignalsItemConfidenceMax),
+  "scoreContribution": zod.number().int().min(recordDealOutcomeResponseContractOneCommitmentSnapshotOneDetailLeadTwoPropertyQualificationSignalsItemScoreContributionMin).max(recordDealOutcomeResponseContractOneCommitmentSnapshotOneDetailLeadTwoPropertyQualificationSignalsItemScoreContributionMax)
+})),
+  "missingInformation": zod.array(zod.string()),
+  "nextAction": zod.string()
+}).optional()
 })),
   "intelligence": zod.array(zod.object({
   "classification": zod.enum(['VERIFIED_FACTS', 'OBSERVED', 'INDICATED', 'AI_HYPOTHESIS']),
@@ -16594,6 +17758,9 @@ export const SearchPublicPropertiesResponse = zod.object({
 })
 
 
+/**
+ * @deprecated
+ */
 export const importPublicPropertyPathRecordIdRegExp = new RegExp('^\\d{9}$');
 
 
@@ -16605,105 +17772,653 @@ export const ImportPublicPropertyBody = zod.object({
   "termsReviewed": zod.boolean()
 })
 
-
-export const importPublicPropertyResponseResearchCandidatesItemCompAddressMin = 3;
-
-export const importPublicPropertyResponseResearchCandidatesItemCompSalePriceExclusiveMin = 0;
-export const importPublicPropertyResponseResearchCandidatesItemCompSalePriceMax = 1000000000;
-
-export const importPublicPropertyResponseResearchCandidatesItemCompSqftExclusiveMin = 0;
-export const importPublicPropertyResponseResearchCandidatesItemCompSqftMax = 1000000;
-
-export const importPublicPropertyResponseResearchCandidatesItemCompDistanceMilesMin = 0;
-export const importPublicPropertyResponseResearchCandidatesItemCompDistanceMilesMax = 10000;
+export const ImportPublicPropertyResponse = zod.void()
 
 
-export const importPublicPropertyResponseResearchCandidatesItemCompSaleEvidenceIdMax = 200;
-
-export const importPublicPropertyResponseResearchCandidatesItemCompConditionEvidenceIdMax = 200;
+export const listPropertyDiscoveriesQueryMarketKeyDefault = `PHILADELPHIA_PA`;
+export const listPropertyDiscoveriesQueryLimitDefault = 50;
+export const listPropertyDiscoveriesQueryLimitMax = 100;
 
 
 
-export const ImportPublicPropertyResponse = zod.object({
-  "leadId": zod.string(),
-  "created": zod.boolean(),
-  "research": zod.object({
-  "source": zod.object({
-  "id": zod.string(),
-  "name": zod.string(),
-  "coverage": zod.string(),
-  "termsUrl": zod.string(),
-  "capabilities": zod.array(zod.string()),
-  "limitations": zod.array(zod.string())
-}),
-  "subject": zod.object({
-  "id": zod.string(),
-  "provider": zod.string(),
-  "classification": zod.enum(['OBSERVED']),
-  "address": zod.string(),
-  "city": zod.string(),
-  "state": zod.string(),
-  "zip": zod.string(),
-  "propertyType": zod.enum(['SINGLE_FAMILY', 'TOWNHOUSE']),
-  "sqft": zod.number().nullable(),
-  "beds": zod.number().int().nullable(),
-  "baths": zod.number().nullable(),
-  "recordedOwner": zod.string().nullable(),
-  "entityCandidate": zod.boolean(),
-  "assessedValue": zod.number().nullable(),
-  "lastSalePrice": zod.number().nullable(),
-  "lastSaleAt": zod.string().nullable(),
-  "interiorCondition": zod.string().nullable(),
-  "exteriorCondition": zod.string().nullable(),
-  "lat": zod.number().nullable(),
-  "lng": zod.number().nullable(),
-  "sourceUrl": zod.string(),
-  "capturedAt": zod.string()
-}),
-  "candidates": zod.array(zod.object({
-  "record": zod.object({
-  "id": zod.string(),
-  "provider": zod.string(),
-  "classification": zod.enum(['OBSERVED']),
-  "address": zod.string(),
-  "city": zod.string(),
-  "state": zod.string(),
-  "zip": zod.string(),
-  "propertyType": zod.enum(['SINGLE_FAMILY', 'TOWNHOUSE']),
-  "sqft": zod.number().nullable(),
-  "beds": zod.number().int().nullable(),
-  "baths": zod.number().nullable(),
-  "recordedOwner": zod.string().nullable(),
-  "entityCandidate": zod.boolean(),
-  "assessedValue": zod.number().nullable(),
-  "lastSalePrice": zod.number().nullable(),
-  "lastSaleAt": zod.string().nullable(),
-  "interiorCondition": zod.string().nullable(),
-  "exteriorCondition": zod.string().nullable(),
-  "lat": zod.number().nullable(),
-  "lng": zod.number().nullable(),
-  "sourceUrl": zod.string(),
-  "capturedAt": zod.string()
-}),
-  "comp": zod.object({
-  "id": zod.string().min(1),
-  "address": zod.string().min(importPublicPropertyResponseResearchCandidatesItemCompAddressMin),
-  "salePrice": zod.number().gt(importPublicPropertyResponseResearchCandidatesItemCompSalePriceExclusiveMin).max(importPublicPropertyResponseResearchCandidatesItemCompSalePriceMax),
-  "sqft": zod.number().gt(importPublicPropertyResponseResearchCandidatesItemCompSqftExclusiveMin).max(importPublicPropertyResponseResearchCandidatesItemCompSqftMax),
-  "soldAt": zod.string().date(),
-  "distanceMiles": zod.number().min(importPublicPropertyResponseResearchCandidatesItemCompDistanceMilesMin).max(importPublicPropertyResponseResearchCandidatesItemCompDistanceMilesMax),
-  "propertyType": zod.string(),
-  "condition": zod.enum(['RENOVATED', 'SIMILAR', 'UNKNOWN']),
-  "source": zod.string().min(1),
-  "verified": zod.boolean(),
-  "saleEvidenceId": zod.string().max(importPublicPropertyResponseResearchCandidatesItemCompSaleEvidenceIdMax).optional(),
-  "conditionEvidenceId": zod.string().max(importPublicPropertyResponseResearchCandidatesItemCompConditionEvidenceIdMax).optional()
-}),
-  "reasons": zod.array(zod.string())
-})),
-  "capturedAt": zod.string(),
-  "limitations": zod.array(zod.string())
+export const ListPropertyDiscoveriesQueryParams = zod.object({
+  "marketKey": zod.coerce.string().default(listPropertyDiscoveriesQueryMarketKeyDefault),
+  "status": zod.enum(['DISCOVERED_PROPERTY', 'RELEVANT_CANDIDATE', 'QUALIFIED_LEAD', 'CALL_READY', 'DISQUALIFIED']).optional(),
+  "limit": zod.coerce.number().int().min(1).max(listPropertyDiscoveriesQueryLimitMax).default(listPropertyDiscoveriesQueryLimitDefault)
 })
+
+export const listPropertyDiscoveriesResponseRecordsItemScoreMin = 0;
+export const listPropertyDiscoveriesResponseRecordsItemScoreMax = 100;
+
+export const listPropertyDiscoveriesResponseRecordsItemConfidenceMin = 0;
+export const listPropertyDiscoveriesResponseRecordsItemConfidenceMax = 1;
+
+
+export const listPropertyDiscoveriesResponseRecordsItemSignalsItemConfidenceMin = 0;
+export const listPropertyDiscoveriesResponseRecordsItemSignalsItemConfidenceMax = 1;
+
+export const listPropertyDiscoveriesResponseRecordsItemSignalsItemScoreContributionMin = 0;
+export const listPropertyDiscoveriesResponseRecordsItemSignalsItemScoreContributionMax = 100;
+
+
+
+
+export const listPropertyDiscoveriesResponseCountsDISCOVEREDPROPERTYMin = 0;
+
+export const listPropertyDiscoveriesResponseCountsRELEVANTCANDIDATEMin = 0;
+
+export const listPropertyDiscoveriesResponseCountsQUALIFIEDLEADMin = 0;
+
+export const listPropertyDiscoveriesResponseCountsCALLREADYMin = 0;
+
+export const listPropertyDiscoveriesResponseCountsDISQUALIFIEDMin = 0;
+
+export const listPropertyDiscoveriesResponseCriteriaOneCandidateThresholdMax = 100;
+
+export const listPropertyDiscoveriesResponseCriteriaOneQualifiedLeadThresholdMax = 100;
+
+export const listPropertyDiscoveriesResponseCriteriaOneMinimumIndependentSignalGroupsMin = 2;
+export const listPropertyDiscoveriesResponseCriteriaOneMinimumIndependentSignalGroupsMax = 8;
+
+export const listPropertyDiscoveriesResponseCriteriaOneRequiredLeadGroupAnyOfMax = 8;
+
+export const listPropertyDiscoveriesResponseCriteriaOneLongHoldYearsMax = 100;
+
+export const listPropertyDiscoveriesResponseCriteriaOneSignalRulesItemPointsMin = 0;
+export const listPropertyDiscoveriesResponseCriteriaOneSignalRulesItemPointsMax = 100;
+
+export const listPropertyDiscoveriesResponseCriteriaOneSignalRulesMax = 14;
+
+
+
+
+export const ListPropertyDiscoveriesResponse = zod.object({
+  "records": zod.array(zod.object({
+  "id": zod.string().uuid(),
+  "marketKey": zod.string(),
+  "status": zod.enum(['DISCOVERED_PROPERTY', 'RELEVANT_CANDIDATE', 'QUALIFIED_LEAD', 'CALL_READY', 'DISQUALIFIED']),
+  "score": zod.number().int().min(listPropertyDiscoveriesResponseRecordsItemScoreMin).max(listPropertyDiscoveriesResponseRecordsItemScoreMax),
+  "confidence": zod.number().min(listPropertyDiscoveriesResponseRecordsItemConfidenceMin).max(listPropertyDiscoveriesResponseRecordsItemConfidenceMax),
+  "version": zod.number().int().min(1),
+  "property": zod.object({
+  "id": zod.string(),
+  "provider": zod.string(),
+  "classification": zod.enum(['OBSERVED']),
+  "address": zod.string(),
+  "city": zod.string(),
+  "state": zod.string(),
+  "zip": zod.string(),
+  "propertyType": zod.enum(['SINGLE_FAMILY', 'TOWNHOUSE']),
+  "sqft": zod.number().nullable(),
+  "beds": zod.number().int().nullable(),
+  "baths": zod.number().nullable(),
+  "recordedOwner": zod.string().nullable(),
+  "entityCandidate": zod.boolean(),
+  "assessedValue": zod.number().nullable(),
+  "lastSalePrice": zod.number().nullable(),
+  "lastSaleAt": zod.string().nullable(),
+  "interiorCondition": zod.string().nullable(),
+  "exteriorCondition": zod.string().nullable(),
+  "lat": zod.number().nullable(),
+  "lng": zod.number().nullable(),
+  "sourceUrl": zod.string(),
+  "capturedAt": zod.string()
+}),
+  "signals": zod.array(zod.object({
+  "id": zod.string(),
+  "key": zod.enum(['ENTITY_OWNER', 'LONG_TERM_HOLD', 'REPORTED_POOR_CONDITION', 'SELLER_MOTIVATION', 'TAX_DELINQUENCY', 'FORECLOSURE', 'PROBATE', 'ABSENTEE_OWNER', 'STALE_LISTING', 'REPEATED_PRICE_REDUCTION', 'BELOW_MARKET', 'VACANCY', 'EQUITY_OPPORTUNITY', 'MARKET_FIT']),
+  "group": zod.enum(['OWNERSHIP_CONTEXT', 'CONDITION', 'MOTIVATION', 'DISTRESS', 'LISTING_PRESSURE', 'VACANCY', 'FINANCIAL_OPPORTUNITY', 'MARKET_FIT']),
+  "classification": zod.enum(['VERIFIED', 'OBSERVED', 'INDICATED', 'AI_HYPOTHESIS']),
+  "sourceType": zod.enum(['PUBLIC_RECORD', 'PERMITTED_LISTING', 'SELLER', 'INSPECTION', 'PUBLIC_PAGE', 'ANALYST', 'MODEL']),
+  "statement": zod.string(),
+  "source": zod.string(),
+  "sourceUrl": zod.string().nullable(),
+  "evidenceRef": zod.string().nullable(),
+  "capturedAt": zod.string().datetime({"offset":true}),
+  "confidence": zod.number().min(listPropertyDiscoveriesResponseRecordsItemSignalsItemConfidenceMin).max(listPropertyDiscoveriesResponseRecordsItemSignalsItemConfidenceMax),
+  "scoreContribution": zod.number().int().min(listPropertyDiscoveriesResponseRecordsItemSignalsItemScoreContributionMin).max(listPropertyDiscoveriesResponseRecordsItemSignalsItemScoreContributionMax)
+})),
+  "reason": zod.string(),
+  "missingInformation": zod.array(zod.string()),
+  "nextAction": zod.string(),
+  "sourceObservationCount": zod.number().int().min(1),
+  "relatedOwnerPropertyCount": zod.number().int().min(1),
+  "leadId": zod.string().uuid().nullable(),
+  "criteriaVersion": zod.number().int().min(1),
+  "canPromote": zod.boolean(),
+  "promotionBlockers": zod.array(zod.string()),
+  "firstObservedAt": zod.string().datetime({"offset":true}),
+  "lastObservedAt": zod.string().datetime({"offset":true})
+})),
+  "counts": zod.object({
+  "DISCOVERED_PROPERTY": zod.number().int().min(listPropertyDiscoveriesResponseCountsDISCOVEREDPROPERTYMin),
+  "RELEVANT_CANDIDATE": zod.number().int().min(listPropertyDiscoveriesResponseCountsRELEVANTCANDIDATEMin),
+  "QUALIFIED_LEAD": zod.number().int().min(listPropertyDiscoveriesResponseCountsQUALIFIEDLEADMin),
+  "CALL_READY": zod.number().int().min(listPropertyDiscoveriesResponseCountsCALLREADYMin),
+  "DISQUALIFIED": zod.number().int().min(listPropertyDiscoveriesResponseCountsDISQUALIFIEDMin)
+}),
+  "criteria": zod.object({
+  "candidateThreshold": zod.number().int().min(1).max(listPropertyDiscoveriesResponseCriteriaOneCandidateThresholdMax),
+  "qualifiedLeadThreshold": zod.number().int().min(1).max(listPropertyDiscoveriesResponseCriteriaOneQualifiedLeadThresholdMax),
+  "minimumIndependentSignalGroups": zod.number().int().min(listPropertyDiscoveriesResponseCriteriaOneMinimumIndependentSignalGroupsMin).max(listPropertyDiscoveriesResponseCriteriaOneMinimumIndependentSignalGroupsMax),
+  "requiredLeadGroupAnyOf": zod.array(zod.enum(['OWNERSHIP_CONTEXT', 'CONDITION', 'MOTIVATION', 'DISTRESS', 'LISTING_PRESSURE', 'VACANCY', 'FINANCIAL_OPPORTUNITY', 'MARKET_FIT'])).min(1).max(listPropertyDiscoveriesResponseCriteriaOneRequiredLeadGroupAnyOfMax),
+  "longHoldYears": zod.number().int().min(1).max(listPropertyDiscoveriesResponseCriteriaOneLongHoldYearsMax),
+  "signalRules": zod.array(zod.object({
+  "key": zod.enum(['ENTITY_OWNER', 'LONG_TERM_HOLD', 'REPORTED_POOR_CONDITION', 'SELLER_MOTIVATION', 'TAX_DELINQUENCY', 'FORECLOSURE', 'PROBATE', 'ABSENTEE_OWNER', 'STALE_LISTING', 'REPEATED_PRICE_REDUCTION', 'BELOW_MARKET', 'VACANCY', 'EQUITY_OPPORTUNITY', 'MARKET_FIT']),
+  "points": zod.number().int().min(listPropertyDiscoveriesResponseCriteriaOneSignalRulesItemPointsMin).max(listPropertyDiscoveriesResponseCriteriaOneSignalRulesItemPointsMax),
+  "enabled": zod.boolean()
+})).min(1).max(listPropertyDiscoveriesResponseCriteriaOneSignalRulesMax)
+}).and(zod.object({
+  "marketKey": zod.string(),
+  "version": zod.number().int().min(1)
+}))
+})
+
+
+export const recordPublicPropertyDiscoveryPathRecordIdRegExp = new RegExp('^\\d{9}$');
+
+
+export const RecordPublicPropertyDiscoveryParams = zod.object({
+  "recordId": zod.coerce.string().regex(recordPublicPropertyDiscoveryPathRecordIdRegExp)
+})
+
+export const RecordPublicPropertyDiscoveryBody = zod.object({
+  "termsReviewed": zod.boolean()
+})
+
+export const recordPublicPropertyDiscoveryResponseScoreMin = 0;
+export const recordPublicPropertyDiscoveryResponseScoreMax = 100;
+
+export const recordPublicPropertyDiscoveryResponseConfidenceMin = 0;
+export const recordPublicPropertyDiscoveryResponseConfidenceMax = 1;
+
+
+export const recordPublicPropertyDiscoveryResponseSignalsItemConfidenceMin = 0;
+export const recordPublicPropertyDiscoveryResponseSignalsItemConfidenceMax = 1;
+
+export const recordPublicPropertyDiscoveryResponseSignalsItemScoreContributionMin = 0;
+export const recordPublicPropertyDiscoveryResponseSignalsItemScoreContributionMax = 100;
+
+
+
+
+
+
+export const RecordPublicPropertyDiscoveryResponse = zod.object({
+  "id": zod.string().uuid(),
+  "marketKey": zod.string(),
+  "status": zod.enum(['DISCOVERED_PROPERTY', 'RELEVANT_CANDIDATE', 'QUALIFIED_LEAD', 'CALL_READY', 'DISQUALIFIED']),
+  "score": zod.number().int().min(recordPublicPropertyDiscoveryResponseScoreMin).max(recordPublicPropertyDiscoveryResponseScoreMax),
+  "confidence": zod.number().min(recordPublicPropertyDiscoveryResponseConfidenceMin).max(recordPublicPropertyDiscoveryResponseConfidenceMax),
+  "version": zod.number().int().min(1),
+  "property": zod.object({
+  "id": zod.string(),
+  "provider": zod.string(),
+  "classification": zod.enum(['OBSERVED']),
+  "address": zod.string(),
+  "city": zod.string(),
+  "state": zod.string(),
+  "zip": zod.string(),
+  "propertyType": zod.enum(['SINGLE_FAMILY', 'TOWNHOUSE']),
+  "sqft": zod.number().nullable(),
+  "beds": zod.number().int().nullable(),
+  "baths": zod.number().nullable(),
+  "recordedOwner": zod.string().nullable(),
+  "entityCandidate": zod.boolean(),
+  "assessedValue": zod.number().nullable(),
+  "lastSalePrice": zod.number().nullable(),
+  "lastSaleAt": zod.string().nullable(),
+  "interiorCondition": zod.string().nullable(),
+  "exteriorCondition": zod.string().nullable(),
+  "lat": zod.number().nullable(),
+  "lng": zod.number().nullable(),
+  "sourceUrl": zod.string(),
+  "capturedAt": zod.string()
+}),
+  "signals": zod.array(zod.object({
+  "id": zod.string(),
+  "key": zod.enum(['ENTITY_OWNER', 'LONG_TERM_HOLD', 'REPORTED_POOR_CONDITION', 'SELLER_MOTIVATION', 'TAX_DELINQUENCY', 'FORECLOSURE', 'PROBATE', 'ABSENTEE_OWNER', 'STALE_LISTING', 'REPEATED_PRICE_REDUCTION', 'BELOW_MARKET', 'VACANCY', 'EQUITY_OPPORTUNITY', 'MARKET_FIT']),
+  "group": zod.enum(['OWNERSHIP_CONTEXT', 'CONDITION', 'MOTIVATION', 'DISTRESS', 'LISTING_PRESSURE', 'VACANCY', 'FINANCIAL_OPPORTUNITY', 'MARKET_FIT']),
+  "classification": zod.enum(['VERIFIED', 'OBSERVED', 'INDICATED', 'AI_HYPOTHESIS']),
+  "sourceType": zod.enum(['PUBLIC_RECORD', 'PERMITTED_LISTING', 'SELLER', 'INSPECTION', 'PUBLIC_PAGE', 'ANALYST', 'MODEL']),
+  "statement": zod.string(),
+  "source": zod.string(),
+  "sourceUrl": zod.string().nullable(),
+  "evidenceRef": zod.string().nullable(),
+  "capturedAt": zod.string().datetime({"offset":true}),
+  "confidence": zod.number().min(recordPublicPropertyDiscoveryResponseSignalsItemConfidenceMin).max(recordPublicPropertyDiscoveryResponseSignalsItemConfidenceMax),
+  "scoreContribution": zod.number().int().min(recordPublicPropertyDiscoveryResponseSignalsItemScoreContributionMin).max(recordPublicPropertyDiscoveryResponseSignalsItemScoreContributionMax)
+})),
+  "reason": zod.string(),
+  "missingInformation": zod.array(zod.string()),
+  "nextAction": zod.string(),
+  "sourceObservationCount": zod.number().int().min(1),
+  "relatedOwnerPropertyCount": zod.number().int().min(1),
+  "leadId": zod.string().uuid().nullable(),
+  "criteriaVersion": zod.number().int().min(1),
+  "canPromote": zod.boolean(),
+  "promotionBlockers": zod.array(zod.string()),
+  "firstObservedAt": zod.string().datetime({"offset":true}),
+  "lastObservedAt": zod.string().datetime({"offset":true})
+})
+
+
+export const getPropertyDiscoveryCriteriaPathMarketKeyMin = 2;
+export const getPropertyDiscoveryCriteriaPathMarketKeyMax = 80;
+
+
+
+export const GetPropertyDiscoveryCriteriaParams = zod.object({
+  "marketKey": zod.coerce.string().min(getPropertyDiscoveryCriteriaPathMarketKeyMin).max(getPropertyDiscoveryCriteriaPathMarketKeyMax)
+})
+
+export const getPropertyDiscoveryCriteriaResponseOneCandidateThresholdMax = 100;
+
+export const getPropertyDiscoveryCriteriaResponseOneQualifiedLeadThresholdMax = 100;
+
+export const getPropertyDiscoveryCriteriaResponseOneMinimumIndependentSignalGroupsMin = 2;
+export const getPropertyDiscoveryCriteriaResponseOneMinimumIndependentSignalGroupsMax = 8;
+
+export const getPropertyDiscoveryCriteriaResponseOneRequiredLeadGroupAnyOfMax = 8;
+
+export const getPropertyDiscoveryCriteriaResponseOneLongHoldYearsMax = 100;
+
+export const getPropertyDiscoveryCriteriaResponseOneSignalRulesItemPointsMin = 0;
+export const getPropertyDiscoveryCriteriaResponseOneSignalRulesItemPointsMax = 100;
+
+export const getPropertyDiscoveryCriteriaResponseOneSignalRulesMax = 14;
+
+
+
+
+export const GetPropertyDiscoveryCriteriaResponse = zod.object({
+  "candidateThreshold": zod.number().int().min(1).max(getPropertyDiscoveryCriteriaResponseOneCandidateThresholdMax),
+  "qualifiedLeadThreshold": zod.number().int().min(1).max(getPropertyDiscoveryCriteriaResponseOneQualifiedLeadThresholdMax),
+  "minimumIndependentSignalGroups": zod.number().int().min(getPropertyDiscoveryCriteriaResponseOneMinimumIndependentSignalGroupsMin).max(getPropertyDiscoveryCriteriaResponseOneMinimumIndependentSignalGroupsMax),
+  "requiredLeadGroupAnyOf": zod.array(zod.enum(['OWNERSHIP_CONTEXT', 'CONDITION', 'MOTIVATION', 'DISTRESS', 'LISTING_PRESSURE', 'VACANCY', 'FINANCIAL_OPPORTUNITY', 'MARKET_FIT'])).min(1).max(getPropertyDiscoveryCriteriaResponseOneRequiredLeadGroupAnyOfMax),
+  "longHoldYears": zod.number().int().min(1).max(getPropertyDiscoveryCriteriaResponseOneLongHoldYearsMax),
+  "signalRules": zod.array(zod.object({
+  "key": zod.enum(['ENTITY_OWNER', 'LONG_TERM_HOLD', 'REPORTED_POOR_CONDITION', 'SELLER_MOTIVATION', 'TAX_DELINQUENCY', 'FORECLOSURE', 'PROBATE', 'ABSENTEE_OWNER', 'STALE_LISTING', 'REPEATED_PRICE_REDUCTION', 'BELOW_MARKET', 'VACANCY', 'EQUITY_OPPORTUNITY', 'MARKET_FIT']),
+  "points": zod.number().int().min(getPropertyDiscoveryCriteriaResponseOneSignalRulesItemPointsMin).max(getPropertyDiscoveryCriteriaResponseOneSignalRulesItemPointsMax),
+  "enabled": zod.boolean()
+})).min(1).max(getPropertyDiscoveryCriteriaResponseOneSignalRulesMax)
+}).and(zod.object({
+  "marketKey": zod.string(),
+  "version": zod.number().int().min(1)
+}))
+
+
+export const savePropertyDiscoveryCriteriaPathMarketKeyMin = 2;
+export const savePropertyDiscoveryCriteriaPathMarketKeyMax = 80;
+
+
+
+export const SavePropertyDiscoveryCriteriaParams = zod.object({
+  "marketKey": zod.coerce.string().min(savePropertyDiscoveryCriteriaPathMarketKeyMin).max(savePropertyDiscoveryCriteriaPathMarketKeyMax)
+})
+
+export const savePropertyDiscoveryCriteriaBodyCandidateThresholdMax = 100;
+
+export const savePropertyDiscoveryCriteriaBodyQualifiedLeadThresholdMax = 100;
+
+export const savePropertyDiscoveryCriteriaBodyMinimumIndependentSignalGroupsMin = 2;
+export const savePropertyDiscoveryCriteriaBodyMinimumIndependentSignalGroupsMax = 8;
+
+export const savePropertyDiscoveryCriteriaBodyRequiredLeadGroupAnyOfMax = 8;
+
+export const savePropertyDiscoveryCriteriaBodyLongHoldYearsMax = 100;
+
+export const savePropertyDiscoveryCriteriaBodySignalRulesItemPointsMin = 0;
+export const savePropertyDiscoveryCriteriaBodySignalRulesItemPointsMax = 100;
+
+export const savePropertyDiscoveryCriteriaBodySignalRulesMax = 14;
+
+
+
+export const SavePropertyDiscoveryCriteriaBody = zod.object({
+  "candidateThreshold": zod.number().int().min(1).max(savePropertyDiscoveryCriteriaBodyCandidateThresholdMax),
+  "qualifiedLeadThreshold": zod.number().int().min(1).max(savePropertyDiscoveryCriteriaBodyQualifiedLeadThresholdMax),
+  "minimumIndependentSignalGroups": zod.number().int().min(savePropertyDiscoveryCriteriaBodyMinimumIndependentSignalGroupsMin).max(savePropertyDiscoveryCriteriaBodyMinimumIndependentSignalGroupsMax),
+  "requiredLeadGroupAnyOf": zod.array(zod.enum(['OWNERSHIP_CONTEXT', 'CONDITION', 'MOTIVATION', 'DISTRESS', 'LISTING_PRESSURE', 'VACANCY', 'FINANCIAL_OPPORTUNITY', 'MARKET_FIT'])).min(1).max(savePropertyDiscoveryCriteriaBodyRequiredLeadGroupAnyOfMax),
+  "longHoldYears": zod.number().int().min(1).max(savePropertyDiscoveryCriteriaBodyLongHoldYearsMax),
+  "signalRules": zod.array(zod.object({
+  "key": zod.enum(['ENTITY_OWNER', 'LONG_TERM_HOLD', 'REPORTED_POOR_CONDITION', 'SELLER_MOTIVATION', 'TAX_DELINQUENCY', 'FORECLOSURE', 'PROBATE', 'ABSENTEE_OWNER', 'STALE_LISTING', 'REPEATED_PRICE_REDUCTION', 'BELOW_MARKET', 'VACANCY', 'EQUITY_OPPORTUNITY', 'MARKET_FIT']),
+  "points": zod.number().int().min(savePropertyDiscoveryCriteriaBodySignalRulesItemPointsMin).max(savePropertyDiscoveryCriteriaBodySignalRulesItemPointsMax),
+  "enabled": zod.boolean()
+})).min(1).max(savePropertyDiscoveryCriteriaBodySignalRulesMax)
+})
+
+export const savePropertyDiscoveryCriteriaResponseOneCandidateThresholdMax = 100;
+
+export const savePropertyDiscoveryCriteriaResponseOneQualifiedLeadThresholdMax = 100;
+
+export const savePropertyDiscoveryCriteriaResponseOneMinimumIndependentSignalGroupsMin = 2;
+export const savePropertyDiscoveryCriteriaResponseOneMinimumIndependentSignalGroupsMax = 8;
+
+export const savePropertyDiscoveryCriteriaResponseOneRequiredLeadGroupAnyOfMax = 8;
+
+export const savePropertyDiscoveryCriteriaResponseOneLongHoldYearsMax = 100;
+
+export const savePropertyDiscoveryCriteriaResponseOneSignalRulesItemPointsMin = 0;
+export const savePropertyDiscoveryCriteriaResponseOneSignalRulesItemPointsMax = 100;
+
+export const savePropertyDiscoveryCriteriaResponseOneSignalRulesMax = 14;
+
+
+
+
+export const SavePropertyDiscoveryCriteriaResponse = zod.object({
+  "candidateThreshold": zod.number().int().min(1).max(savePropertyDiscoveryCriteriaResponseOneCandidateThresholdMax),
+  "qualifiedLeadThreshold": zod.number().int().min(1).max(savePropertyDiscoveryCriteriaResponseOneQualifiedLeadThresholdMax),
+  "minimumIndependentSignalGroups": zod.number().int().min(savePropertyDiscoveryCriteriaResponseOneMinimumIndependentSignalGroupsMin).max(savePropertyDiscoveryCriteriaResponseOneMinimumIndependentSignalGroupsMax),
+  "requiredLeadGroupAnyOf": zod.array(zod.enum(['OWNERSHIP_CONTEXT', 'CONDITION', 'MOTIVATION', 'DISTRESS', 'LISTING_PRESSURE', 'VACANCY', 'FINANCIAL_OPPORTUNITY', 'MARKET_FIT'])).min(1).max(savePropertyDiscoveryCriteriaResponseOneRequiredLeadGroupAnyOfMax),
+  "longHoldYears": zod.number().int().min(1).max(savePropertyDiscoveryCriteriaResponseOneLongHoldYearsMax),
+  "signalRules": zod.array(zod.object({
+  "key": zod.enum(['ENTITY_OWNER', 'LONG_TERM_HOLD', 'REPORTED_POOR_CONDITION', 'SELLER_MOTIVATION', 'TAX_DELINQUENCY', 'FORECLOSURE', 'PROBATE', 'ABSENTEE_OWNER', 'STALE_LISTING', 'REPEATED_PRICE_REDUCTION', 'BELOW_MARKET', 'VACANCY', 'EQUITY_OPPORTUNITY', 'MARKET_FIT']),
+  "points": zod.number().int().min(savePropertyDiscoveryCriteriaResponseOneSignalRulesItemPointsMin).max(savePropertyDiscoveryCriteriaResponseOneSignalRulesItemPointsMax),
+  "enabled": zod.boolean()
+})).min(1).max(savePropertyDiscoveryCriteriaResponseOneSignalRulesMax)
+}).and(zod.object({
+  "marketKey": zod.string(),
+  "version": zod.number().int().min(1)
+}))
+
+
+export const AddPropertyRelevanceSignalParams = zod.object({
+  "id": zod.coerce.string().uuid()
+})
+
+
+export const addPropertyRelevanceSignalBodyStatementMin = 8;
+export const addPropertyRelevanceSignalBodyStatementMax = 2000;
+
+export const addPropertyRelevanceSignalBodySourceMin = 3;
+export const addPropertyRelevanceSignalBodySourceMax = 300;
+
+export const addPropertyRelevanceSignalBodySourceUrlMax = 2000;
+
+export const addPropertyRelevanceSignalBodyEvidenceRefMax = 300;
+
+export const addPropertyRelevanceSignalBodyConfidenceMin = 0;
+export const addPropertyRelevanceSignalBodyConfidenceMax = 1;
+
+
+
+export const AddPropertyRelevanceSignalBody = zod.object({
+  "version": zod.number().int().min(1),
+  "key": zod.enum(['ENTITY_OWNER', 'LONG_TERM_HOLD', 'REPORTED_POOR_CONDITION', 'SELLER_MOTIVATION', 'TAX_DELINQUENCY', 'FORECLOSURE', 'PROBATE', 'ABSENTEE_OWNER', 'STALE_LISTING', 'REPEATED_PRICE_REDUCTION', 'BELOW_MARKET', 'VACANCY', 'EQUITY_OPPORTUNITY', 'MARKET_FIT']),
+  "group": zod.enum(['OWNERSHIP_CONTEXT', 'CONDITION', 'MOTIVATION', 'DISTRESS', 'LISTING_PRESSURE', 'VACANCY', 'FINANCIAL_OPPORTUNITY', 'MARKET_FIT']),
+  "classification": zod.enum(['VERIFIED', 'OBSERVED', 'INDICATED', 'AI_HYPOTHESIS']),
+  "sourceType": zod.enum(['PUBLIC_RECORD', 'PERMITTED_LISTING', 'SELLER', 'INSPECTION', 'PUBLIC_PAGE', 'ANALYST', 'MODEL']),
+  "statement": zod.string().min(addPropertyRelevanceSignalBodyStatementMin).max(addPropertyRelevanceSignalBodyStatementMax),
+  "source": zod.string().min(addPropertyRelevanceSignalBodySourceMin).max(addPropertyRelevanceSignalBodySourceMax),
+  "sourceUrl": zod.string().max(addPropertyRelevanceSignalBodySourceUrlMax).nullable(),
+  "evidenceRef": zod.string().max(addPropertyRelevanceSignalBodyEvidenceRefMax).nullable(),
+  "capturedAt": zod.string().datetime({"offset":true}),
+  "confidence": zod.number().min(addPropertyRelevanceSignalBodyConfidenceMin).max(addPropertyRelevanceSignalBodyConfidenceMax)
+})
+
+export const addPropertyRelevanceSignalResponseScoreMin = 0;
+export const addPropertyRelevanceSignalResponseScoreMax = 100;
+
+export const addPropertyRelevanceSignalResponseConfidenceMin = 0;
+export const addPropertyRelevanceSignalResponseConfidenceMax = 1;
+
+
+export const addPropertyRelevanceSignalResponseSignalsItemConfidenceMin = 0;
+export const addPropertyRelevanceSignalResponseSignalsItemConfidenceMax = 1;
+
+export const addPropertyRelevanceSignalResponseSignalsItemScoreContributionMin = 0;
+export const addPropertyRelevanceSignalResponseSignalsItemScoreContributionMax = 100;
+
+
+
+
+
+
+export const AddPropertyRelevanceSignalResponse = zod.object({
+  "id": zod.string().uuid(),
+  "marketKey": zod.string(),
+  "status": zod.enum(['DISCOVERED_PROPERTY', 'RELEVANT_CANDIDATE', 'QUALIFIED_LEAD', 'CALL_READY', 'DISQUALIFIED']),
+  "score": zod.number().int().min(addPropertyRelevanceSignalResponseScoreMin).max(addPropertyRelevanceSignalResponseScoreMax),
+  "confidence": zod.number().min(addPropertyRelevanceSignalResponseConfidenceMin).max(addPropertyRelevanceSignalResponseConfidenceMax),
+  "version": zod.number().int().min(1),
+  "property": zod.object({
+  "id": zod.string(),
+  "provider": zod.string(),
+  "classification": zod.enum(['OBSERVED']),
+  "address": zod.string(),
+  "city": zod.string(),
+  "state": zod.string(),
+  "zip": zod.string(),
+  "propertyType": zod.enum(['SINGLE_FAMILY', 'TOWNHOUSE']),
+  "sqft": zod.number().nullable(),
+  "beds": zod.number().int().nullable(),
+  "baths": zod.number().nullable(),
+  "recordedOwner": zod.string().nullable(),
+  "entityCandidate": zod.boolean(),
+  "assessedValue": zod.number().nullable(),
+  "lastSalePrice": zod.number().nullable(),
+  "lastSaleAt": zod.string().nullable(),
+  "interiorCondition": zod.string().nullable(),
+  "exteriorCondition": zod.string().nullable(),
+  "lat": zod.number().nullable(),
+  "lng": zod.number().nullable(),
+  "sourceUrl": zod.string(),
+  "capturedAt": zod.string()
+}),
+  "signals": zod.array(zod.object({
+  "id": zod.string(),
+  "key": zod.enum(['ENTITY_OWNER', 'LONG_TERM_HOLD', 'REPORTED_POOR_CONDITION', 'SELLER_MOTIVATION', 'TAX_DELINQUENCY', 'FORECLOSURE', 'PROBATE', 'ABSENTEE_OWNER', 'STALE_LISTING', 'REPEATED_PRICE_REDUCTION', 'BELOW_MARKET', 'VACANCY', 'EQUITY_OPPORTUNITY', 'MARKET_FIT']),
+  "group": zod.enum(['OWNERSHIP_CONTEXT', 'CONDITION', 'MOTIVATION', 'DISTRESS', 'LISTING_PRESSURE', 'VACANCY', 'FINANCIAL_OPPORTUNITY', 'MARKET_FIT']),
+  "classification": zod.enum(['VERIFIED', 'OBSERVED', 'INDICATED', 'AI_HYPOTHESIS']),
+  "sourceType": zod.enum(['PUBLIC_RECORD', 'PERMITTED_LISTING', 'SELLER', 'INSPECTION', 'PUBLIC_PAGE', 'ANALYST', 'MODEL']),
+  "statement": zod.string(),
+  "source": zod.string(),
+  "sourceUrl": zod.string().nullable(),
+  "evidenceRef": zod.string().nullable(),
+  "capturedAt": zod.string().datetime({"offset":true}),
+  "confidence": zod.number().min(addPropertyRelevanceSignalResponseSignalsItemConfidenceMin).max(addPropertyRelevanceSignalResponseSignalsItemConfidenceMax),
+  "scoreContribution": zod.number().int().min(addPropertyRelevanceSignalResponseSignalsItemScoreContributionMin).max(addPropertyRelevanceSignalResponseSignalsItemScoreContributionMax)
+})),
+  "reason": zod.string(),
+  "missingInformation": zod.array(zod.string()),
+  "nextAction": zod.string(),
+  "sourceObservationCount": zod.number().int().min(1),
+  "relatedOwnerPropertyCount": zod.number().int().min(1),
+  "leadId": zod.string().uuid().nullable(),
+  "criteriaVersion": zod.number().int().min(1),
+  "canPromote": zod.boolean(),
+  "promotionBlockers": zod.array(zod.string()),
+  "firstObservedAt": zod.string().datetime({"offset":true}),
+  "lastObservedAt": zod.string().datetime({"offset":true})
+})
+
+
+export const PromotePropertyDiscoveryParams = zod.object({
+  "id": zod.coerce.string().uuid()
+})
+
+
+export const promotePropertyDiscoveryBodyReviewReasonMin = 8;
+export const promotePropertyDiscoveryBodyReviewReasonMax = 2000;
+
+
+
+export const PromotePropertyDiscoveryBody = zod.object({
+  "version": zod.number().int().min(1),
+  "reviewReason": zod.string().min(promotePropertyDiscoveryBodyReviewReasonMin).max(promotePropertyDiscoveryBodyReviewReasonMax)
+})
+
+export const promotePropertyDiscoveryResponseDiscoveryScoreMin = 0;
+export const promotePropertyDiscoveryResponseDiscoveryScoreMax = 100;
+
+export const promotePropertyDiscoveryResponseDiscoveryConfidenceMin = 0;
+export const promotePropertyDiscoveryResponseDiscoveryConfidenceMax = 1;
+
+
+export const promotePropertyDiscoveryResponseDiscoverySignalsItemConfidenceMin = 0;
+export const promotePropertyDiscoveryResponseDiscoverySignalsItemConfidenceMax = 1;
+
+export const promotePropertyDiscoveryResponseDiscoverySignalsItemScoreContributionMin = 0;
+export const promotePropertyDiscoveryResponseDiscoverySignalsItemScoreContributionMax = 100;
+
+
+
+
+
+
+export const PromotePropertyDiscoveryResponse = zod.object({
+  "discovery": zod.object({
+  "id": zod.string().uuid(),
+  "marketKey": zod.string(),
+  "status": zod.enum(['DISCOVERED_PROPERTY', 'RELEVANT_CANDIDATE', 'QUALIFIED_LEAD', 'CALL_READY', 'DISQUALIFIED']),
+  "score": zod.number().int().min(promotePropertyDiscoveryResponseDiscoveryScoreMin).max(promotePropertyDiscoveryResponseDiscoveryScoreMax),
+  "confidence": zod.number().min(promotePropertyDiscoveryResponseDiscoveryConfidenceMin).max(promotePropertyDiscoveryResponseDiscoveryConfidenceMax),
+  "version": zod.number().int().min(1),
+  "property": zod.object({
+  "id": zod.string(),
+  "provider": zod.string(),
+  "classification": zod.enum(['OBSERVED']),
+  "address": zod.string(),
+  "city": zod.string(),
+  "state": zod.string(),
+  "zip": zod.string(),
+  "propertyType": zod.enum(['SINGLE_FAMILY', 'TOWNHOUSE']),
+  "sqft": zod.number().nullable(),
+  "beds": zod.number().int().nullable(),
+  "baths": zod.number().nullable(),
+  "recordedOwner": zod.string().nullable(),
+  "entityCandidate": zod.boolean(),
+  "assessedValue": zod.number().nullable(),
+  "lastSalePrice": zod.number().nullable(),
+  "lastSaleAt": zod.string().nullable(),
+  "interiorCondition": zod.string().nullable(),
+  "exteriorCondition": zod.string().nullable(),
+  "lat": zod.number().nullable(),
+  "lng": zod.number().nullable(),
+  "sourceUrl": zod.string(),
+  "capturedAt": zod.string()
+}),
+  "signals": zod.array(zod.object({
+  "id": zod.string(),
+  "key": zod.enum(['ENTITY_OWNER', 'LONG_TERM_HOLD', 'REPORTED_POOR_CONDITION', 'SELLER_MOTIVATION', 'TAX_DELINQUENCY', 'FORECLOSURE', 'PROBATE', 'ABSENTEE_OWNER', 'STALE_LISTING', 'REPEATED_PRICE_REDUCTION', 'BELOW_MARKET', 'VACANCY', 'EQUITY_OPPORTUNITY', 'MARKET_FIT']),
+  "group": zod.enum(['OWNERSHIP_CONTEXT', 'CONDITION', 'MOTIVATION', 'DISTRESS', 'LISTING_PRESSURE', 'VACANCY', 'FINANCIAL_OPPORTUNITY', 'MARKET_FIT']),
+  "classification": zod.enum(['VERIFIED', 'OBSERVED', 'INDICATED', 'AI_HYPOTHESIS']),
+  "sourceType": zod.enum(['PUBLIC_RECORD', 'PERMITTED_LISTING', 'SELLER', 'INSPECTION', 'PUBLIC_PAGE', 'ANALYST', 'MODEL']),
+  "statement": zod.string(),
+  "source": zod.string(),
+  "sourceUrl": zod.string().nullable(),
+  "evidenceRef": zod.string().nullable(),
+  "capturedAt": zod.string().datetime({"offset":true}),
+  "confidence": zod.number().min(promotePropertyDiscoveryResponseDiscoverySignalsItemConfidenceMin).max(promotePropertyDiscoveryResponseDiscoverySignalsItemConfidenceMax),
+  "scoreContribution": zod.number().int().min(promotePropertyDiscoveryResponseDiscoverySignalsItemScoreContributionMin).max(promotePropertyDiscoveryResponseDiscoverySignalsItemScoreContributionMax)
+})),
+  "reason": zod.string(),
+  "missingInformation": zod.array(zod.string()),
+  "nextAction": zod.string(),
+  "sourceObservationCount": zod.number().int().min(1),
+  "relatedOwnerPropertyCount": zod.number().int().min(1),
+  "leadId": zod.string().uuid().nullable(),
+  "criteriaVersion": zod.number().int().min(1),
+  "canPromote": zod.boolean(),
+  "promotionBlockers": zod.array(zod.string()),
+  "firstObservedAt": zod.string().datetime({"offset":true}),
+  "lastObservedAt": zod.string().datetime({"offset":true})
+}),
+  "leadId": zod.string().uuid()
+})
+
+
+export const DisqualifyPropertyDiscoveryParams = zod.object({
+  "id": zod.coerce.string().uuid()
+})
+
+
+export const disqualifyPropertyDiscoveryBodyReasonMin = 8;
+export const disqualifyPropertyDiscoveryBodyReasonMax = 2000;
+
+
+
+export const DisqualifyPropertyDiscoveryBody = zod.object({
+  "version": zod.number().int().min(1),
+  "reason": zod.string().min(disqualifyPropertyDiscoveryBodyReasonMin).max(disqualifyPropertyDiscoveryBodyReasonMax)
+})
+
+export const disqualifyPropertyDiscoveryResponseScoreMin = 0;
+export const disqualifyPropertyDiscoveryResponseScoreMax = 100;
+
+export const disqualifyPropertyDiscoveryResponseConfidenceMin = 0;
+export const disqualifyPropertyDiscoveryResponseConfidenceMax = 1;
+
+
+export const disqualifyPropertyDiscoveryResponseSignalsItemConfidenceMin = 0;
+export const disqualifyPropertyDiscoveryResponseSignalsItemConfidenceMax = 1;
+
+export const disqualifyPropertyDiscoveryResponseSignalsItemScoreContributionMin = 0;
+export const disqualifyPropertyDiscoveryResponseSignalsItemScoreContributionMax = 100;
+
+
+
+
+
+
+export const DisqualifyPropertyDiscoveryResponse = zod.object({
+  "id": zod.string().uuid(),
+  "marketKey": zod.string(),
+  "status": zod.enum(['DISCOVERED_PROPERTY', 'RELEVANT_CANDIDATE', 'QUALIFIED_LEAD', 'CALL_READY', 'DISQUALIFIED']),
+  "score": zod.number().int().min(disqualifyPropertyDiscoveryResponseScoreMin).max(disqualifyPropertyDiscoveryResponseScoreMax),
+  "confidence": zod.number().min(disqualifyPropertyDiscoveryResponseConfidenceMin).max(disqualifyPropertyDiscoveryResponseConfidenceMax),
+  "version": zod.number().int().min(1),
+  "property": zod.object({
+  "id": zod.string(),
+  "provider": zod.string(),
+  "classification": zod.enum(['OBSERVED']),
+  "address": zod.string(),
+  "city": zod.string(),
+  "state": zod.string(),
+  "zip": zod.string(),
+  "propertyType": zod.enum(['SINGLE_FAMILY', 'TOWNHOUSE']),
+  "sqft": zod.number().nullable(),
+  "beds": zod.number().int().nullable(),
+  "baths": zod.number().nullable(),
+  "recordedOwner": zod.string().nullable(),
+  "entityCandidate": zod.boolean(),
+  "assessedValue": zod.number().nullable(),
+  "lastSalePrice": zod.number().nullable(),
+  "lastSaleAt": zod.string().nullable(),
+  "interiorCondition": zod.string().nullable(),
+  "exteriorCondition": zod.string().nullable(),
+  "lat": zod.number().nullable(),
+  "lng": zod.number().nullable(),
+  "sourceUrl": zod.string(),
+  "capturedAt": zod.string()
+}),
+  "signals": zod.array(zod.object({
+  "id": zod.string(),
+  "key": zod.enum(['ENTITY_OWNER', 'LONG_TERM_HOLD', 'REPORTED_POOR_CONDITION', 'SELLER_MOTIVATION', 'TAX_DELINQUENCY', 'FORECLOSURE', 'PROBATE', 'ABSENTEE_OWNER', 'STALE_LISTING', 'REPEATED_PRICE_REDUCTION', 'BELOW_MARKET', 'VACANCY', 'EQUITY_OPPORTUNITY', 'MARKET_FIT']),
+  "group": zod.enum(['OWNERSHIP_CONTEXT', 'CONDITION', 'MOTIVATION', 'DISTRESS', 'LISTING_PRESSURE', 'VACANCY', 'FINANCIAL_OPPORTUNITY', 'MARKET_FIT']),
+  "classification": zod.enum(['VERIFIED', 'OBSERVED', 'INDICATED', 'AI_HYPOTHESIS']),
+  "sourceType": zod.enum(['PUBLIC_RECORD', 'PERMITTED_LISTING', 'SELLER', 'INSPECTION', 'PUBLIC_PAGE', 'ANALYST', 'MODEL']),
+  "statement": zod.string(),
+  "source": zod.string(),
+  "sourceUrl": zod.string().nullable(),
+  "evidenceRef": zod.string().nullable(),
+  "capturedAt": zod.string().datetime({"offset":true}),
+  "confidence": zod.number().min(disqualifyPropertyDiscoveryResponseSignalsItemConfidenceMin).max(disqualifyPropertyDiscoveryResponseSignalsItemConfidenceMax),
+  "scoreContribution": zod.number().int().min(disqualifyPropertyDiscoveryResponseSignalsItemScoreContributionMin).max(disqualifyPropertyDiscoveryResponseSignalsItemScoreContributionMax)
+})),
+  "reason": zod.string(),
+  "missingInformation": zod.array(zod.string()),
+  "nextAction": zod.string(),
+  "sourceObservationCount": zod.number().int().min(1),
+  "relatedOwnerPropertyCount": zod.number().int().min(1),
+  "leadId": zod.string().uuid().nullable(),
+  "criteriaVersion": zod.number().int().min(1),
+  "canPromote": zod.boolean(),
+  "promotionBlockers": zod.array(zod.string()),
+  "firstObservedAt": zod.string().datetime({"offset":true}),
+  "lastObservedAt": zod.string().datetime({"offset":true})
 })
 
 
@@ -16975,6 +18690,19 @@ export const addSourceCompsResponseLeadOneSourceMax = 2000;
 
 export const addSourceCompsResponseLeadOneNextActionMax = 1000;
 
+export const addSourceCompsResponseLeadTwoPropertyQualificationScoreMin = 0;
+export const addSourceCompsResponseLeadTwoPropertyQualificationScoreMax = 100;
+
+export const addSourceCompsResponseLeadTwoPropertyQualificationConfidenceMin = 0;
+export const addSourceCompsResponseLeadTwoPropertyQualificationConfidenceMax = 1;
+
+
+export const addSourceCompsResponseLeadTwoPropertyQualificationSignalsItemConfidenceMin = 0;
+export const addSourceCompsResponseLeadTwoPropertyQualificationSignalsItemConfidenceMax = 1;
+
+export const addSourceCompsResponseLeadTwoPropertyQualificationSignalsItemScoreContributionMin = 0;
+export const addSourceCompsResponseLeadTwoPropertyQualificationSignalsItemScoreContributionMax = 100;
+
 export const addSourceCompsResponseIntelligenceItemOneCategoryMax = 100;
 
 export const addSourceCompsResponseIntelligenceItemOneStatementMax = 5000;
@@ -17127,7 +18855,34 @@ export const AddSourceCompsResponse = zod.object({
   "nextAction": zod.string(),
   "followUpAt": zod.string().nullish(),
   "createdAt": zod.string(),
-  "updatedAt": zod.string()
+  "updatedAt": zod.string(),
+  "propertyQualification": zod.object({
+  "discoveryId": zod.string(),
+  "status": zod.enum(['QUALIFIED_LEAD', 'CALL_READY', 'DISQUALIFIED']),
+  "score": zod.number().int().min(addSourceCompsResponseLeadTwoPropertyQualificationScoreMin).max(addSourceCompsResponseLeadTwoPropertyQualificationScoreMax),
+  "confidence": zod.number().min(addSourceCompsResponseLeadTwoPropertyQualificationConfidenceMin).max(addSourceCompsResponseLeadTwoPropertyQualificationConfidenceMax),
+  "criteriaVersion": zod.number().int().min(1),
+  "reviewReason": zod.string(),
+  "qualifiedBy": zod.string(),
+  "qualifiedAt": zod.string().datetime({"offset":true}),
+  "reason": zod.string(),
+  "signals": zod.array(zod.object({
+  "id": zod.string(),
+  "key": zod.enum(['ENTITY_OWNER', 'LONG_TERM_HOLD', 'REPORTED_POOR_CONDITION', 'SELLER_MOTIVATION', 'TAX_DELINQUENCY', 'FORECLOSURE', 'PROBATE', 'ABSENTEE_OWNER', 'STALE_LISTING', 'REPEATED_PRICE_REDUCTION', 'BELOW_MARKET', 'VACANCY', 'EQUITY_OPPORTUNITY', 'MARKET_FIT']),
+  "group": zod.enum(['OWNERSHIP_CONTEXT', 'CONDITION', 'MOTIVATION', 'DISTRESS', 'LISTING_PRESSURE', 'VACANCY', 'FINANCIAL_OPPORTUNITY', 'MARKET_FIT']),
+  "classification": zod.enum(['VERIFIED', 'OBSERVED', 'INDICATED', 'AI_HYPOTHESIS']),
+  "sourceType": zod.enum(['PUBLIC_RECORD', 'PERMITTED_LISTING', 'SELLER', 'INSPECTION', 'PUBLIC_PAGE', 'ANALYST', 'MODEL']),
+  "statement": zod.string(),
+  "source": zod.string(),
+  "sourceUrl": zod.string().nullable(),
+  "evidenceRef": zod.string().nullable(),
+  "capturedAt": zod.string().datetime({"offset":true}),
+  "confidence": zod.number().min(addSourceCompsResponseLeadTwoPropertyQualificationSignalsItemConfidenceMin).max(addSourceCompsResponseLeadTwoPropertyQualificationSignalsItemConfidenceMax),
+  "scoreContribution": zod.number().int().min(addSourceCompsResponseLeadTwoPropertyQualificationSignalsItemScoreContributionMin).max(addSourceCompsResponseLeadTwoPropertyQualificationSignalsItemScoreContributionMax)
+})),
+  "missingInformation": zod.array(zod.string()),
+  "nextAction": zod.string()
+}).optional()
 })),
   "intelligence": zod.array(zod.object({
   "classification": zod.enum(['VERIFIED_FACTS', 'OBSERVED', 'INDICATED', 'AI_HYPOTHESIS']),

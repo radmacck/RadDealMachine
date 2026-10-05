@@ -14,6 +14,181 @@ export interface PropertySource {
   limitations: string[];
 }
 
+export type PropertySignalKey = typeof PropertySignalKey[keyof typeof PropertySignalKey];
+
+
+export const PropertySignalKey = {
+  ENTITY_OWNER: 'ENTITY_OWNER',
+  LONG_TERM_HOLD: 'LONG_TERM_HOLD',
+  REPORTED_POOR_CONDITION: 'REPORTED_POOR_CONDITION',
+  SELLER_MOTIVATION: 'SELLER_MOTIVATION',
+  TAX_DELINQUENCY: 'TAX_DELINQUENCY',
+  FORECLOSURE: 'FORECLOSURE',
+  PROBATE: 'PROBATE',
+  ABSENTEE_OWNER: 'ABSENTEE_OWNER',
+  STALE_LISTING: 'STALE_LISTING',
+  REPEATED_PRICE_REDUCTION: 'REPEATED_PRICE_REDUCTION',
+  BELOW_MARKET: 'BELOW_MARKET',
+  VACANCY: 'VACANCY',
+  EQUITY_OPPORTUNITY: 'EQUITY_OPPORTUNITY',
+  MARKET_FIT: 'MARKET_FIT',
+} as const;
+
+export type PropertySignalGroup = typeof PropertySignalGroup[keyof typeof PropertySignalGroup];
+
+
+export const PropertySignalGroup = {
+  OWNERSHIP_CONTEXT: 'OWNERSHIP_CONTEXT',
+  CONDITION: 'CONDITION',
+  MOTIVATION: 'MOTIVATION',
+  DISTRESS: 'DISTRESS',
+  LISTING_PRESSURE: 'LISTING_PRESSURE',
+  VACANCY: 'VACANCY',
+  FINANCIAL_OPPORTUNITY: 'FINANCIAL_OPPORTUNITY',
+  MARKET_FIT: 'MARKET_FIT',
+} as const;
+
+export type PropertyEvidenceClassification = typeof PropertyEvidenceClassification[keyof typeof PropertyEvidenceClassification];
+
+
+export const PropertyEvidenceClassification = {
+  VERIFIED: 'VERIFIED',
+  OBSERVED: 'OBSERVED',
+  INDICATED: 'INDICATED',
+  AI_HYPOTHESIS: 'AI_HYPOTHESIS',
+} as const;
+
+export type PropertyEvidenceSourceType = typeof PropertyEvidenceSourceType[keyof typeof PropertyEvidenceSourceType];
+
+
+export const PropertyEvidenceSourceType = {
+  PUBLIC_RECORD: 'PUBLIC_RECORD',
+  PERMITTED_LISTING: 'PERMITTED_LISTING',
+  SELLER: 'SELLER',
+  INSPECTION: 'INSPECTION',
+  PUBLIC_PAGE: 'PUBLIC_PAGE',
+  ANALYST: 'ANALYST',
+  MODEL: 'MODEL',
+} as const;
+
+export type PropertyDiscoveryStatus = typeof PropertyDiscoveryStatus[keyof typeof PropertyDiscoveryStatus];
+
+
+export const PropertyDiscoveryStatus = {
+  DISCOVERED_PROPERTY: 'DISCOVERED_PROPERTY',
+  RELEVANT_CANDIDATE: 'RELEVANT_CANDIDATE',
+  QUALIFIED_LEAD: 'QUALIFIED_LEAD',
+  CALL_READY: 'CALL_READY',
+  DISQUALIFIED: 'DISQUALIFIED',
+} as const;
+
+export interface PropertyRelevanceSignal {
+  id: string;
+  key: PropertySignalKey;
+  group: PropertySignalGroup;
+  classification: PropertyEvidenceClassification;
+  sourceType: PropertyEvidenceSourceType;
+  statement: string;
+  source: string;
+  /** @nullable */
+  sourceUrl: string | null;
+  /** @nullable */
+  evidenceRef: string | null;
+  capturedAt: string;
+  /**
+     * @minimum 0
+     * @maximum 1
+     */
+  confidence: number;
+  /**
+     * @minimum 0
+     * @maximum 100
+     */
+  scoreContribution: number;
+}
+
+export type LeadPropertyQualificationStatus = typeof LeadPropertyQualificationStatus[keyof typeof LeadPropertyQualificationStatus];
+
+
+export const LeadPropertyQualificationStatus = {
+  QUALIFIED_LEAD: 'QUALIFIED_LEAD',
+  CALL_READY: 'CALL_READY',
+  DISQUALIFIED: 'DISQUALIFIED',
+} as const;
+
+export interface LeadPropertyQualification {
+  discoveryId: string;
+  status: LeadPropertyQualificationStatus;
+  /**
+     * @minimum 0
+     * @maximum 100
+     */
+  score: number;
+  /**
+     * @minimum 0
+     * @maximum 1
+     */
+  confidence: number;
+  /** @minimum 1 */
+  criteriaVersion: number;
+  reviewReason: string;
+  qualifiedBy: string;
+  qualifiedAt: string;
+  reason: string;
+  signals: PropertyRelevanceSignal[];
+  missingInformation: string[];
+  nextAction: string;
+}
+
+export interface PropertySignalRule {
+  key: PropertySignalKey;
+  /**
+     * @minimum 0
+     * @maximum 100
+     */
+  points: number;
+  enabled: boolean;
+}
+
+export interface PropertyQualificationCriteriaInput {
+  /**
+     * @minimum 1
+     * @maximum 100
+     */
+  candidateThreshold: number;
+  /**
+     * @minimum 1
+     * @maximum 100
+     */
+  qualifiedLeadThreshold: number;
+  /**
+     * @minimum 2
+     * @maximum 8
+     */
+  minimumIndependentSignalGroups: number;
+  /**
+     * @minItems 1
+     * @maxItems 8
+     */
+  requiredLeadGroupAnyOf: PropertySignalGroup[];
+  /**
+     * @minimum 1
+     * @maximum 100
+     */
+  longHoldYears: number;
+  /**
+     * @minItems 1
+     * @maxItems 14
+     */
+  signalRules: PropertySignalRule[];
+}
+
+export type PropertyQualificationCriteria = PropertyQualificationCriteriaInput & {
+  marketKey: string;
+  /** @minimum 1 */
+  version: number;
+};
+
 export type PublicPropertyClassification = typeof PublicPropertyClassification[keyof typeof PublicPropertyClassification];
 
 
@@ -63,6 +238,120 @@ export interface PublicProperty {
   lng: number | null;
   sourceUrl: string;
   capturedAt: string;
+}
+
+export interface PropertyDiscovery {
+  id: string;
+  marketKey: string;
+  status: PropertyDiscoveryStatus;
+  /**
+     * @minimum 0
+     * @maximum 100
+     */
+  score: number;
+  /**
+     * @minimum 0
+     * @maximum 1
+     */
+  confidence: number;
+  /** @minimum 1 */
+  version: number;
+  property: PublicProperty;
+  signals: PropertyRelevanceSignal[];
+  reason: string;
+  missingInformation: string[];
+  nextAction: string;
+  /** @minimum 1 */
+  sourceObservationCount: number;
+  /** @minimum 1 */
+  relatedOwnerPropertyCount: number;
+  /** @nullable */
+  leadId: string | null;
+  /** @minimum 1 */
+  criteriaVersion: number;
+  canPromote: boolean;
+  promotionBlockers: string[];
+  firstObservedAt: string;
+  lastObservedAt: string;
+}
+
+export type PropertyDiscoveryListCounts = {
+  /** @minimum 0 */
+  DISCOVERED_PROPERTY: number;
+  /** @minimum 0 */
+  RELEVANT_CANDIDATE: number;
+  /** @minimum 0 */
+  QUALIFIED_LEAD: number;
+  /** @minimum 0 */
+  CALL_READY: number;
+  /** @minimum 0 */
+  DISQUALIFIED: number;
+};
+
+export interface PropertyDiscoveryList {
+  records: PropertyDiscovery[];
+  counts: PropertyDiscoveryListCounts;
+  criteria: PropertyQualificationCriteria;
+}
+
+export interface PropertyRelevanceSignalInput {
+  /** @minimum 1 */
+  version: number;
+  key: PropertySignalKey;
+  group: PropertySignalGroup;
+  classification: PropertyEvidenceClassification;
+  sourceType: PropertyEvidenceSourceType;
+  /**
+     * @minLength 8
+     * @maxLength 2000
+     */
+  statement: string;
+  /**
+     * @minLength 3
+     * @maxLength 300
+     */
+  source: string;
+  /**
+     * @maxLength 2000
+     * @nullable
+     */
+  sourceUrl: string | null;
+  /**
+     * @maxLength 300
+     * @nullable
+     */
+  evidenceRef: string | null;
+  capturedAt: string;
+  /**
+     * @minimum 0
+     * @maximum 1
+     */
+  confidence: number;
+}
+
+export interface PropertyDiscoveryPromotionInput {
+  /** @minimum 1 */
+  version: number;
+  /**
+     * @minLength 8
+     * @maxLength 2000
+     */
+  reviewReason: string;
+}
+
+export interface PropertyDiscoveryDispositionInput {
+  /** @minimum 1 */
+  version: number;
+  /**
+     * @minLength 8
+     * @maxLength 2000
+     */
+  reason: string;
+}
+
+export interface PropertyDiscoveryPromotionResponse {
+  discovery: PropertyDiscovery;
+  leadId: string;
 }
 
 export interface PublicPropertySearch {
@@ -1093,6 +1382,7 @@ export type Lead = LeadInput & ({
   followUpAt?: string | null;
   createdAt: string;
   updatedAt: string;
+  propertyQualification?: LeadPropertyQualification;
 });
 
 export type ProvenanceClass = typeof ProvenanceClass[keyof typeof ProvenanceClass];
@@ -2103,6 +2393,7 @@ export const CommandActionCategory = {
   DEADLINE: 'DEADLINE',
   CLOSING: 'CLOSING',
   WORKER: 'WORKER',
+  DISCOVERY_REVIEW: 'DISCOVERY_REVIEW',
 } as const;
 
 export interface CommandAction {
@@ -2140,6 +2431,7 @@ export interface CommandCenter {
   operations: DealOperations[];
   buyers: Buyer[];
   jobs: WorkerJob[];
+  propertyDiscoveries: PropertyDiscoveryList;
 }
 
 export interface HealthStatus {
@@ -2347,6 +2639,27 @@ export type SearchPublicPropertiesLane = typeof SearchPublicPropertiesLane[keyof
 export const SearchPublicPropertiesLane = {
   properties: 'properties',
   buyer_candidates: 'buyer_candidates',
+} as const;
+
+export type ListPropertyDiscoveriesParams = {
+marketKey?: string;
+status?: ListPropertyDiscoveriesStatus;
+/**
+ * @minimum 1
+ * @maximum 100
+ */
+limit?: number;
+};
+
+export type ListPropertyDiscoveriesStatus = typeof ListPropertyDiscoveriesStatus[keyof typeof ListPropertyDiscoveriesStatus];
+
+
+export const ListPropertyDiscoveriesStatus = {
+  DISCOVERED_PROPERTY: 'DISCOVERED_PROPERTY',
+  RELEVANT_CANDIDATE: 'RELEVANT_CANDIDATE',
+  QUALIFIED_LEAD: 'QUALIFIED_LEAD',
+  CALL_READY: 'CALL_READY',
+  DISQUALIFIED: 'DISQUALIFIED',
 } as const;
 
 export type GetSourceResearch200 = {

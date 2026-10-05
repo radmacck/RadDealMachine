@@ -1,10 +1,10 @@
 import assert from "node:assert/strict";
 import { randomUUID } from "node:crypto";
-import { db, pool, intelligenceTable, analysesTable } from "@workspace/db";
+import { db, pool, leadsTable, propertyDiscoveriesTable, intelligenceTable, analysesTable } from "@workspace/db";
 import { count, eq, sql } from "drizzle-orm";
 import { DomainError, type IntelligenceInput, type UnderwritingInput } from "@workspace/deal-domain";
 import { searchProperties } from "@workspace/property-sources";
-import { importPublicProperty } from "./property-source-store";
+import { recordPublicPropertyDiscovery } from "./property-discovery-store";
 import { intakePropertyEvidence } from "./evidence-intake";
 import { callQueue, createLead, leadDetail, transitionLeadForActor } from "./deal-store";
 const now = new Date();
@@ -15,23 +15,44 @@ try {
   // inspection, renovation, comparable verification or buying intent.
   const actual = (await searchProperties(undefined,"properties",now))[0];
   assert.ok(actual,"Official source must return an actual supported property.");
-  const imported = await importPublicProperty(actual.id,true,actor,now);
-  let detail = await leadDetail(imported.leadId);
-  const raw = await intakePropertyEvidence(imported.leadId,{version:detail.lead.version,lead:detail.lead,
-    entries:[{key:"source",classification:"OBSERVED",category:"subject_property",statement:`Official parcel ${actual.id} reports ${actual.address}. Seller/contact/condition unknown.`,
-      source:"Philadelphia OPA",sourceUrl:actual.sourceUrl,sourceType:"PUBLIC_RECORD",capturedAt:actual.capturedAt,confidence:0.7}],
-    underwriting:{version:detail.lead.version,comps:[],repairs:[],repairsComplete:false,conditionConfirmed:false,subjectEvidenceId:"source"},
-  },actor,now);
-  assert.equal(raw.analysis?.classification,"INCOMPLETE");
-  assert.ok(raw.intelligence.some(e=>e.category==="subject_property"&&e.sourceUrl===actual.sourceUrl));
-  assert.ok(!(await callQueue(now)).some(b=>b.lead.id===imported.leadId));
-  await assert.rejects(transitionLeadForActor(imported.leadId,{version:raw.lead.version,to:"CALL_READY",reason:"Source alone",nextAction:"Call"},actor,now),DomainError);
+  const discovery = await recordPublicPropertyDiscovery(actual.id,true,actor,now);
+  assert.ok(["DISCOVERED_PROPERTY","RELEVANT_CANDIDATE"].includes(discovery.status));
+  assert.equal(discovery.leadId,null);
+  assert.equal(discovery.canPromote,false);
+  const matchingLead = await db.select().from(leadsTable).where(sql`${leadsTable.payload}->>'address' = ${actual.address}`);
+  assert.equal(matchingLead.length,0,"An OPA discovery must not create an active lead.");
+  assert.ok(!(await callQueue(now)).some(b=>b.lead.address===actual.address));
+  await assert.rejects(transitionLeadForActor(discovery.id,{version:discovery.version,to:"CALL_READY",reason:"Source alone",nextAction:"Call"},actor,now),DomainError);
 
   // Separately labelled synthetic packet demonstrates the fully supplied
   // input adapter. It is NOT claimed as a completed real-property exercise.
   const lead = await createLead({address:"SYNTHETIC PACKET SUBJECT",city:"Synthetic City",state:"TX",county:"Synthetic County",zip:"75001",
     propertyType:"SINGLE_FAMILY",sqft:1000,beds:3,baths:2,units:1,sellerName:"SYNTHETIC SELLER",sellerPhone:"000-000-0000",
     askingPrice:100000,source:"SYNTHETIC isolated packet exercise"},actor.id,now);
+  const [leadRow] = await db.select().from(leadsTable).where(eq(leadsTable.id,lead.id));
+  const [qualificationDiscovery] = await db.insert(propertyDiscoveriesTable).values({
+    identityKey:`synthetic-qualification:${randomUUID()}`,
+    marketKey:"SYNTHETIC_TX",
+    status:"QUALIFIED_LEAD",
+    score:51,
+    confidence:0.85,
+    version:1,
+    leadId:lead.id,
+    payload:{property:{},signals:[],firstObservedAt:now.toISOString()},
+    createdAt:now,
+    updatedAt:now,
+  }).returning();
+  assert.ok(leadRow&&qualificationDiscovery);
+  await db.update(leadsTable).set({payload:{...leadRow.payload,propertyQualification:{
+    discoveryId:qualificationDiscovery.id,status:"QUALIFIED_LEAD",score:51,confidence:0.85,criteriaVersion:1,
+    reviewReason:"SYNTHETIC qualification-state fixture; not a real opportunity.",
+    qualifiedBy:actor.id,qualifiedAt:now.toISOString(),
+    reason:"SYNTHETIC test fixture for CALL_READY status persistence; not a real property fact.",
+    signals:[],missingInformation:["SYNTHETIC status fixture only."],nextAction:lead.nextAction,
+  }}}).where(eq(leadsTable.id,lead.id));
+  let detail = await leadDetail(lead.id);
+  assert.equal(detail.lead.propertyQualification?.status,"QUALIFIED_LEAD",
+    "The synthetic linked qualification must be exposed on the lead before workflow transitions.");
   const entries: (IntelligenceInput&{key:string})[] = [];
   const evidence = (key: string, category: string, contact = false) => {
     entries.push({key,category,classification:contact?"INDICATED":"VERIFIED_FACTS",sourceType:contact?"SELLER":"INSPECTION",
@@ -55,9 +76,15 @@ try {
   detail = await intakePropertyEvidence(lead.id,packet,actor,now);
   assert.equal(detail.analysis?.classification,"STRONG");
   assert.ok(detail.underwriting?.subjectEvidenceId!== "subject");
+  assert.equal(detail.lead.propertyQualification?.status,"QUALIFIED_LEAD",
+    "Evidence intake must preserve the qualification rationale on the linked lead.");
   await assert.rejects(intakePropertyEvidence(lead.id,packet,actor,now),e=>(e as DomainError).status===409);
   detail = await transitionLeadForActor(lead.id,{version:detail.lead.version,to:"CALL_READY",reason:"Synthetic reviewed packet complete",nextAction:"Synthetic call"},actor,now);
   assert.ok((await callQueue(now)).some(b=>b.lead.id===lead.id));
+  assert.equal(detail.lead.propertyQualification?.status,"CALL_READY");
+  assert.equal(detail.lead.propertyQualification?.nextAction,detail.lead.nextAction);
+  const [readyDiscovery] = await db.select().from(propertyDiscoveriesTable).where(eq(propertyDiscoveriesTable.id,qualificationDiscovery.id));
+  assert.equal(readyDiscovery?.status,"CALL_READY");
   // Expired linked evidence is checked at read time, not only on save.
   const expired = new Date(now.getTime()+31*86400000);
   assert.equal((await leadDetail(lead.id,undefined,expired)).analysis?.classification,"INCOMPLETE");
