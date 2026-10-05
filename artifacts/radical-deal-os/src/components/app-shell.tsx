@@ -7,16 +7,37 @@ import { useAccess } from '@/hooks/use-access';
 import { WorkspaceSearchContext } from '@/components/workspace-search';
 import '@/field-desk.css';
 
-const NAV = [
-  { href: '/dashboard', label: 'Command center', icon: Gauge },
-  { href: '/calls', label: 'Call next', icon: Headphones },
-  { href: '/leads', label: 'Deal inventory', icon: ClipboardCheck },
-  { href: '/sources', label: 'Sources', icon: Radar },
-  { href: '/buyers', label: 'Buyers', icon: UsersRound },
-  { href: '/workers', label: 'Workers', icon: Settings2 },
-  { href: '/audit', label: 'Audit trail', icon: ListChecks },
-  { href: '/settings', label: 'Settings', icon: Settings2 },
+const NAV_GROUPS = [
+  {
+    label: 'Seller acquisition',
+    items: [
+      { href: '/calls', label: 'Call next', icon: Headphones },
+      { href: '/leads', label: 'Seller records', icon: ClipboardCheck },
+      { href: '/sources', label: 'Property research', icon: Radar },
+    ],
+  },
+  {
+    label: 'Deal orchestration',
+    items: [
+      { href: '/dashboard', label: 'Command center', icon: Gauge },
+      { href: '/deals', label: 'Active transactions', icon: ListChecks },
+    ],
+  },
+  {
+    label: 'Buyer disposition',
+    items: [
+      { href: '/buyers', label: 'Buyer & destination pool', icon: UsersRound },
+    ],
+  },
+  {
+    label: 'System operations',
+    items: [
+      { href: '/workers', label: 'Workers', icon: Settings2 },
+      { href: '/audit', label: 'Audit trail', icon: ListChecks },
+    ],
+  },
 ];
+const SETTINGS_NAV = { href: '/settings', label: 'Settings', icon: Settings2 };
 
 export function AppShell({ children }: { children: ReactNode }) {
   const [loc, setLocation] = useLocation();
@@ -29,9 +50,8 @@ export function AppShell({ children }: { children: ReactNode }) {
   const ready = dash.data?.calls.length ?? 0;
   const failedJobs = dash.data?.jobs.filter((job) => job.state === 'FAILED').length ?? 0;
   const base = import.meta.env.BASE_URL.replace(/\/$/, '');
-  const mainNav = NAV.filter((item) => item.href !== '/settings');
-  const settingsNav = NAV.find((item) => item.href === '/settings')!;
-  const currentPage = NAV.find((item) => loc === item.href || loc.startsWith(`${item.href}/`));
+  const mainNav = NAV_GROUPS.flatMap((group) => group.items);
+  const currentPage = mainNav.find((item) => loc === item.href || loc.startsWith(`${item.href}/`));
   const pageLabel = loc.startsWith('/deals/') ? 'Deal detail' : currentPage?.label ?? 'Workspace';
   const displayName = user?.fullName || user?.primaryEmailAddress?.emailAddress || 'Workspace account';
   const initials = displayName.split(/[\s@._-]+/).filter(Boolean).slice(0, 2).map((part) => part[0]?.toUpperCase()).join('') || 'RD';
@@ -59,25 +79,31 @@ export function AppShell({ children }: { children: ReactNode }) {
             <span className="fd-workspace-mark">RD</span>
             <span><div className="fd-workspace-name">Deal workspace</div><div className="fd-workspace-loc">Owner-controlled operations</div></span>
           </div>
-          <div className="fd-nav-label">Workspace</div>
-          <nav className="fd-nav" aria-label="Main navigation">
-            {mainNav.map((item) => {
-              const active = loc === item.href || loc.startsWith(`${item.href}/`) || (item.href === '/dashboard' && loc.startsWith('/deals/'));
-              return (
-                <Link key={item.href} href={item.href} data-testid={`nav-${item.href === '/audit' ? 'audit' : item.label.toLowerCase().replace(/ /g, '-')}`}
-                  className={active ? 'active' : ''} aria-current={active ? 'page' : undefined}>
-                  <item.icon size={15} strokeWidth={1.9} />
-                  <span>{item.label}</span>
-                  {item.href === '/calls' && ready > 0 && <span className="fd-nav-count" data-testid="badge-call-ready">{ready}</span>}
-                </Link>
-              );
-            })}
+          <nav className="fd-nav-groups" aria-label="Operating systems">
+            {NAV_GROUPS.map((group) => (
+              <section className="fd-nav-group" key={group.label} aria-label={group.label}>
+                <div className="fd-nav-label">{group.label}</div>
+                <div className="fd-nav">
+                  {group.items.map((item) => {
+                    const active = loc === item.href || loc.startsWith(`${item.href}/`);
+                    return (
+                      <Link key={item.href} href={item.href} data-testid={`nav-${item.href === '/audit' ? 'audit' : item.label.toLowerCase().replace(/ /g, '-')}`}
+                        className={active ? 'active' : ''} aria-current={active ? 'page' : undefined}>
+                        <item.icon size={15} strokeWidth={1.9} />
+                        <span>{item.label}</span>
+                        {item.href === '/calls' && ready > 0 && <span className="fd-nav-count" data-testid="badge-call-ready">{ready}</span>}
+                      </Link>
+                    );
+                  })}
+                </div>
+              </section>
+            ))}
           </nav>
           <div className="fd-sidebar-bottom">
             <div className="fd-nav-label">Workspace</div>
             <nav className="fd-nav" aria-label="Workspace settings">
-              <Link href={settingsNav.href} data-testid="nav-settings" className={loc === settingsNav.href ? 'active' : ''}>
-                <settingsNav.icon size={15} strokeWidth={1.9} /><span>{settingsNav.label}</span>
+              <Link href={SETTINGS_NAV.href} data-testid="nav-settings" className={loc === SETTINGS_NAV.href ? 'active' : ''}>
+                <SETTINGS_NAV.icon size={15} strokeWidth={1.9} /><span>{SETTINGS_NAV.label}</span>
               </Link>
             </nav>
             <div className="fd-sidebar-note">

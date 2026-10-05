@@ -12,6 +12,7 @@ import { queryClient } from '@/lib/queryClient';
 import NotFound from '@/pages/not-found';
 import Landing from '@/pages/landing';
 import Dashboard from '@/pages/dashboard';
+import Deals from '@/pages/deals';
 import Leads from '@/pages/leads';
 import LeadDetailPage from '@/pages/lead-detail';
 import Calls from '@/pages/calls';
@@ -142,6 +143,7 @@ function RoutedErrorBoundary({ children }: { children: ReactNode }) {
 
 const page = (C: () => ReactNode) => () => <Protected><C /></Protected>;
 const DashboardRoute = page(Dashboard);
+const DealsRoute = page(Deals);
 const LeadsRoute = page(Leads);
 const LeadRoute = page(LeadDetailPage);
 const CallsRoute = page(Calls);
@@ -180,6 +182,7 @@ function ClerkProviderWithRoutes() {
               <Route path="/sign-in/*?" component={SignInPage} />
               <Route path="/sign-up/*?" component={SignUpPage} />
               <Route path="/dashboard" component={DashboardRoute} />
+              <Route path="/deals" component={DealsRoute} />
               <Route path="/leads" component={LeadsRoute} />
               <Route path="/leads/:id" component={LeadRoute} />
               <Route path="/deals/:id" component={LeadRoute} />
