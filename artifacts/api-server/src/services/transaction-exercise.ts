@@ -15,6 +15,7 @@ import { CLOSING_MILESTONES } from "@workspace/deal-domain";
 import { recordTransactionException } from "./transaction-exceptions";
 import { reviewHandoffs, listHandoffs, recordHandoffEvent } from "./handoffs";
 import { getBuyerRecord } from "./operations-records";
+import { requestBuyerQualification } from "./buyer-pool";
 const actor = {id:`synthetic-transaction:${randomUUID()}`,role:"OWNER"};
 const operator = {...actor,role:"OPERATOR"};
 const now = new Date();
@@ -100,12 +101,20 @@ try {
    await reviewHandoffs(now);
    const stoppedQualification = (await listHandoffs()).find(h=>h.id===qualificationHandoff.id)!;
    assert.equal(stoppedQualification.state,"CANCELLED");
+   buyer = await requestBuyerQualification(buyer.id,{version:buyer.version,note:"SYNTHETIC explicit additional evidence before committing."},actor,now);
+   await reviewHandoffs(now);
+   const replacementTaskId = buyer.qualificationTask!.id;
+   assert.ok((await listHandoffs()).some(h=>h.subjectId===buyer.id&&h.contextKey===replacementTaskId&&h.state==="WAITING_CONTACT"));
    const retainedReply = await recordHandoffEvent(stoppedQualification.id,{version:stoppedQualification.version,eventKey:"synthetic-new-buying-reply",
      kind:"REPLIED",occurredAt:now.toISOString(),evidenceUrl:"https://example.com/synthetic-new-reply",
      note:"SYNTHETIC newer actual-response fixture, requires current evidence review."},operator,now);
    assert.equal(retainedReply.state,"CANCELLED","Late reply must not reactivate stopped outreach.");
    buyer = await getBuyerRecord(buyer.id,db,now);
    assert.equal(buyer.approvalStatus,"QUALIFICATION_REQUIRED");
+   assert.equal(buyer.qualificationTask?.id,replacementTaskId);
+   assert.equal(buyer.qualificationTask?.state,"WAITING_REVIEW","Late reply to older outreach must pause the current evidence request.");
+   await reviewHandoffs(now);
+   assert.equal((await getBuyerRecord(buyer.id,db,now)).qualificationTask?.state,"WAITING_REVIEW");
    op = await refreshMatches(id,now);
    assert.equal(op.matches.find(m=>m.buyerId===buyer.id)?.eligible,false);
    assert.equal(op.contract?.purchasePrice,110000);

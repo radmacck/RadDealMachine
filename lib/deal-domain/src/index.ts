@@ -11,5 +11,6 @@ export * from "./buyer-qualification";
 export * from "./buyer-criteria";
 export * from "./worker-interface";
 export * from "./handoffs";
+export * from "./handoff-evidence";
 export * from "./transactions";
 export * from "./evidence-readiness";

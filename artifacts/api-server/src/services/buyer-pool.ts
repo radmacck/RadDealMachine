@@ -2,7 +2,7 @@ import { createHash, randomUUID } from "node:crypto";
 import { eq, sql } from "drizzle-orm";
 import { db, buyersTable } from "@workspace/db";
 import { DiscoverBuyerBody, RequestBuyerQualificationBody } from "@workspace/api-zod";
-import { assertOperationsRole, DomainError, evidenceUrl, pastInstant, buyerQualification, type OfferActor, type Buyer } from "@workspace/deal-domain";
+import { assertOperationsRole, DomainError, evidenceUrl, pastInstant, qualificationMaintenanceKind, type OfferActor, type Buyer } from "@workspace/deal-domain";
 import { searchPublicProperties } from "./property-source-store";
 import { audit } from "./deal-store";
 import { allBuyerRecords, buyerRecord, queueJob } from "./operations-records";
@@ -49,13 +49,12 @@ export async function reviewBuyerPool(now = new Date()) {
   const rows = await allBuyerRecords(db,now);
   let created = 0;
   for (const b of rows) {
-    if (buyerQualification(b,now).approvalStatus==="APPROVED" || b.currentBuyingStatus==="NOT_BUYING") continue;
+    if (!qualificationMaintenanceKind(b,now)) continue;
     await db.transaction(async tx=>{
       const [row] = await tx.select().from(buyersTable).where(eq(buyersTable.id,b.id)).for("update");
       const current = buyerRecord(row!,now);
-      if (current.approvalStatus==="APPROVED" || current.currentBuyingStatus==="NOT_BUYING") return;
-      const kind = current.approvalStatus==="REVERIFICATION_REQUIRED"?"REVERIFY":"QUALIFY";
-      if (current.qualificationTask?.kind===kind&&current.qualificationTask.state!=="COMPLETED") return;
+      const kind = qualificationMaintenanceKind(current,now);
+      if (!kind) return;
       const task = qualificationTask(current,kind,now);
       await tx.update(buyersTable).set({payload:{...row!.payload,qualificationTask:task},version:row!.version+1,updatedAt:now}).where(eq(buyersTable.id,b.id));
       await audit(tx,"system:buyer-pool","BUYER_QUALIFICATION_QUEUED",b.id,`${task.kind}: ${task.reason} External execution is pending, not sent.`);

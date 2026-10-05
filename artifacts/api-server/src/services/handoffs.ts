@@ -8,6 +8,7 @@ import { assertOperationsRole, applyHandoffEvent, DomainError, type HumanHandoff
 import { buyerRecord, queueJob, type Tx } from "./operations-records";
 import { audit } from "./deal-store";
 import { reviewBuyerPool } from "./buyer-pool";
+import { retainSellerHandoffReply } from "./handoff-effects";
 
 const parseHandoff = (row: typeof jobsTable.$inferSelect) => ListHandoffsResponse.element.parse({...row.payload.handoff as object,id:row.id});
 const active = (h: HumanHandoff) => !["REPLIED","CANCELLED"].includes(h.state);
@@ -50,7 +51,10 @@ export class NativeHandoffExecutor implements WorkerExecutionPort {
         if (["CLOSED","DEAD_DEAL"].includes(l.stage)||!l.followUpAt||l.followUpAt>this.now)
           throw new DomainError("No current due seller follow-up.",409);
         contextKey = sellerContext(l); recipient = `${l.payload.sellerName||"Seller contact unconfirmed"} — ${l.payload.address}`;
-        message = `Follow up on ${l.payload.address}: confirm current status and next coordination steps. Read the current CALL NEXT brief before contacting. Do not quote or alter price, deposit, assignment or closing terms without the current exact owner-approved offer. Record the actual conversation in the seller workflow; this handoff is not a call or an offer.`;
+        const review = ["UNDER_CONTRACT","BUYER_MATCHED","BUYER_INTERESTED","BUYER_COMMITTED","CLOSING"].includes(l.stage)
+          ? "Review live deal operations, current contract, buyer eligibility, closing milestones and deadlines before coordinating."
+          : "Read the current CALL NEXT brief, sourced intelligence and reviewed underwriting before contacting.";
+        message = `Follow up on ${l.payload.address}: confirm current status and next coordination steps. ${review} Do not quote or alter price, deposit, assignment or closing terms without current exact owner authority. Record the actual conversation in the seller workflow; this handoff is not a call, approval, contract amendment or offer.`;
       }
       const key = `native-handoff:${command.id}`;
       const [existing] = await tx.select().from(jobsTable).where(eq(jobsTable.idempotencyKey,key));
@@ -120,12 +124,13 @@ export async function recordHandoffEvent(id:string,input:unknown,actor:OfferActo
         const task = buyerRecord(b,now).qualificationTask;
         const needsReview = Date.parse(p.occurredAt)>Date.parse(String(b.payload.buyingEvidenceAt??"1970-01-01"));
         await tx.update(buyersTable).set({payload:{...b.payload,lastOutreachReplyAt:p.occurredAt,
-          lastOutreachReplyEvidenceUrl:p.evidenceUrl,...(task&&task.id===h.contextKey&&needsReview
+          lastOutreachReplyEvidenceUrl:p.evidenceUrl,...(task&&needsReview
             ?{qualificationTask:{...task,state:"WAITING_REVIEW",reason:"Actual reply retained. Owner review of dated buying/criteria/identity/funding evidence is pending; no automatic resend.",updatedAt:now.toISOString()}}:{})},
           version:b.version+1,updatedAt:now}).where(eq(buyersTable.id,b.id));
         await queueJob(tx,"MATCH_BUYERS",null,`handoff-reply:${h.id}:${result.version}`,actor.id);
       }
     }
+    if (h.subjectType==="SELLER"&&p.kind==="REPLIED") await retainSellerHandoffReply(tx,h,p,actor,now);
     await audit(tx,actor.id,`HANDOFF_${p.kind}`,h.subjectId,`Actual event ${p.occurredAt}; recorded ${now.toISOString()}. Human-reported evidence ${p.evidenceUrl}; no automatic send, qualification, offer acceptance or transfer.`);
     return result;
   });

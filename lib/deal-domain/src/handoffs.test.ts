@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import { test } from "node:test";
 import { RecordHandoffEventBody } from "@workspace/api-zod";
 import { applyHandoffEvent, type HumanHandoff } from "./handoffs";
+import { sellerHandoffReplyEvidence } from "./handoff-evidence";
 const now = new Date("2026-10-05T12:00:00Z");
 const initial:HumanHandoff = {id:"fixture",version:1,subjectType:"BUYER",subjectId:"fixture-buyer",subjectVersion:1,
   contextKey:"fixture-task",recipient:"SYNTHETIC",preparedMessage:"Informational request only",state:"WAITING_CONTACT",
@@ -10,6 +11,17 @@ const contact = () => RecordHandoffEventBody.parse({version:1,eventKey:"syntheti
   occurredAt:"2026-10-05T11:00:00Z",evidenceUrl:"https://example.com/contact",note:"SYNTHETIC contact only",
   channel:"EMAIL",routeValue:"synthetic@example.com",permissionEvidenceUrl:"https://example.com/permission",
   followUpAt:"2026-10-06T12:00:00Z"});
+test("seller reply adapter retains dated indications without inferring financial facts",()=>{
+  const seller = {...initial,subjectType:"SELLER" as const};
+  const reply = {...contact(),kind:"REPLIED" as const};
+  const evidence = sellerHandoffReplyEvidence(seller,reply,now);
+  assert.equal(evidence.classification,"INDICATED"); assert.equal(evidence.sourceType,"SELLER");
+  assert.equal(evidence.capturedAt,reply.occurredAt); assert.equal(evidence.sourceUrl,reply.evidenceUrl);
+  assert.match(evidence.source,/fixture.*synthetic-contact/);
+  assert.match(evidence.action??"",/reviewed underwriting and owner approval/);
+  assert.throws(()=>sellerHandoffReplyEvidence(initial,reply,now),/seller handoff/);
+  assert.throws(()=>sellerHandoffReplyEvidence(seller,contact(),now),/actual reply/);
+});
 test("preparation never implies sending; contact retains actual/recorded times and permission",()=>{
   const h = applyHandoffEvent(initial,contact(),"actor",now);
   assert.equal(initial.state,"WAITING_CONTACT"); assert.equal(h.state,"WAITING_REPLY");

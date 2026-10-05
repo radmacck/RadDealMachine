@@ -3,6 +3,7 @@ import assert from "node:assert/strict";
 import { matchBuyer, verificationStatus, evidenceUrl, type Buyer, type DealContract } from "./buyers";
 import type { LeadDetail } from "./types";
 import { analyzeDeal, DEFAULT_ASSUMPTIONS } from "./underwriting";
+import { qualificationMaintenanceKind } from "./buyer-qualification";
 import { buyerQualification, criteriaSignature } from "./buyer-qualification";
 const now = new Date("2026-10-04T12:00:00Z");
 const buyer: Buyer = {
@@ -46,6 +47,16 @@ test("newer actual reply blocks otherwise-qualified matching until dated owner r
   assert.equal(evaluated.eligible,false); assert.match(evaluated.mismatches.join(";"),/newer actual outreach reply/);
   const reviewed = {...withReply,buyingEvidenceAt:"2026-10-05T12:00:01Z",buyingVerifiedAt:"2026-10-05T12:00:02Z"};
   assert.equal(matchBuyer(reviewed,detail,contract,new Date("2026-10-05T12:00:02Z")).eligible,true);
+});
+test("maintenance preserves pending human review through qualification-kind and expiry changes",()=>{
+  for (const kind of ["QUALIFY","REVERIFY"] as const) for (const at of ["2026-10-05T12:00:00Z","2026-12-05T12:00:00Z"]) {
+    const pending = {...buyer,qualificationTask:{id:"synthetic-review",kind,state:"WAITING_REVIEW" as const,
+      reason:"SYNTHETIC actual reply awaiting review",preparedMessage:"Not sent",dueAt:at,updatedAt:at}};
+    assert.equal(qualificationMaintenanceKind(pending,new Date(at)),null);
+  }
+  assert.equal(qualificationMaintenanceKind({...buyer,qualificationTask:{id:"synthetic-completed",kind:"QUALIFY",state:"COMPLETED",
+    reason:"Reviewed",preparedMessage:"Not sent",dueAt:"2026-10-05T12:00:00Z",updatedAt:"2026-10-05T12:00:00Z"}},
+    new Date("2026-12-05T12:00:00Z")),"REVERIFY");
 });
 test("funding preferences are not evidenced methods and loan funding does not pass native cash assignment",()=>{
   const missing = matchBuyer({...buyer,verifiedFundingTypes:undefined},detail,contract,now);

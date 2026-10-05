@@ -53,3 +53,12 @@ export function buyerQualification(b: Buyer, now: Date) {
     stale ? "REVERIFICATION_REQUIRED" : blockers.length ? "QUALIFICATION_REQUIRED" : "APPROVED";
   return {approvalStatus,qualificationBlockers:[...new Set(blockers)]};
 }
+
+/** Maintenance may request evidence, but cannot replace a human reply review. */
+export function qualificationMaintenanceKind(b: Buyer, now: Date): "QUALIFY"|"REVERIFY"|null {
+  const status = buyerQualification(b,now).approvalStatus;
+  if (status==="APPROVED"||b.currentBuyingStatus==="NOT_BUYING"||b.qualificationTask?.state==="WAITING_REVIEW")
+    return null;
+  const kind = status==="REVERIFICATION_REQUIRED"?"REVERIFY":"QUALIFY";
+  return b.qualificationTask?.kind===kind&&b.qualificationTask.state!=="COMPLETED"?null:kind;
+}
