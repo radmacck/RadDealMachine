@@ -20,26 +20,38 @@ test("seller reply adapter retains dated indications without inferring financial
   const evidence = sellerHandoffReplyEvidence(seller,reply,now);
   assert.equal(evidence.classification,"INDICATED"); assert.equal(evidence.sourceType,"SELLER");
   assert.equal(evidence.capturedAt,reply.occurredAt); assert.equal(evidence.sourceUrl,reply.evidenceUrl);
-  assert.match(evidence.source,/fixture.*synthetic-contact/);
+  assert.match(evidence.source,/fixture.*synthetic-reply/);
   assert.match(evidence.action??"",/reviewed underwriting and owner approval/);
   assert.throws(()=>sellerHandoffReplyEvidence(initial,reply,now),/seller handoff/);
   assert.throws(()=>sellerHandoffReplyEvidence(seller,contact(),now),/actual reply/);
 });
 test("preparation never implies sending; contact retains actual/recorded times and permission",()=>{
-  const h = applyHandoffEvent(reviewed(),contact(),"actor",now);
-
-  const later = new Date("2026-10-07T12:00:00Z");
-  assert.equal(h.state,"WAITING_CONTACT");
-  assert.match(h.nextAction,/nothing has been sent/);
-  assert.throws(()=>applyHandoffEvent(h,{...contact(),routeValue:"different@example.com"},"actor",now),/must match/);
+  const permittedRoute = reviewed();
+  assert.equal(permittedRoute.state,"WAITING_CONTACT");
+  assert.match(permittedRoute.nextAction,/nothing has been sent/);
+  const h = applyHandoffEvent(permittedRoute,contact(),"actor",now);
+  assert.equal(h.state,"WAITING_REPLY");
+  assert.match(h.nextAction,/No buying intent/);
+  assert.equal(h.events.at(-1)?.occurredAt,contact().occurredAt);
+  assert.equal(h.events.at(-1)?.recordedAt,now.toISOString());
+  assert.throws(()=>applyHandoffEvent(permittedRoute,{...contact(),eventKey:"synthetic-wrong-route",
+    routeValue:"different@example.com"},"actor",now),/must match/);
 });
-test("late-entered reply after no-response retains both events and stops retries",()=>{
-  const h = applyHandoffEvent(reviewed(),contact(),"actor",now);
-
+test("reply entered after no-response retains actual and recorded times without restarting outreach",()=>{
+  const contacted = applyHandoffEvent(reviewed(),contact(),"actor",now);
   const later = new Date("2026-10-07T12:00:00Z");
-  assert.equal(applyHandoffEvent(h,contact(),"actor",now),h);
-  assert.throws(()=>applyHandoffEvent(h,{...contact(),note:"Different"},"actor",now),/another event/);
-  assert.throws(()=>applyHandoffEvent(h,contact(),"other",now),/another event/);
+  const noResponse = applyHandoffEvent(contacted,{...contact(),version:contacted.version,eventKey:"synthetic-no-response",
+    kind:"NO_RESPONSE",occurredAt:later.toISOString(),followUpAt:"2026-10-08T12:00:00Z"},"actor",later);
+  const replyOccurredAt = "2026-10-05T11:30:00Z";
+  const replied = applyHandoffEvent(noResponse,{...contact(),version:noResponse.version,eventKey:"synthetic-entered-late",
+    kind:"REPLIED",occurredAt:replyOccurredAt},"actor",later);
+  assert.equal(noResponse.state,"WAITING_CONTACT");
+  assert.equal(replied.state,"REPLIED");
+  assert.equal(replied.events.length,4);
+  assert.equal(replied.events.at(-1)?.occurredAt,replyOccurredAt);
+  assert.equal(replied.events.at(-1)?.recordedAt,later.toISOString());
+  assert.throws(()=>applyHandoffEvent(replied,{...contact(),version:replied.version,eventKey:"synthetic-retry"},
+    "actor",later),/terminal/);
 });
 test("contact needs permission/route/future follow-up and actual past event",()=>{
   for (const override of [{permissionEvidenceUrl:undefined},{routeValue:undefined},{followUpAt:undefined},
@@ -90,7 +102,9 @@ test("late reply to stopped contacted outreach is retained without reactivation"
     occurredAt:now.toISOString()},"actor",now);
   const retained = applyHandoffEvent(stopped,{...contact(),version:4,eventKey:"synthetic-late-reply",kind:"REPLIED",
     occurredAt:"2026-10-05T11:30:00Z"},"actor",now);
-  assert.equal(replied.state,"REPLIED");
-  assert.equal(replied.events.length,4);
-  assert.equal(replied.events.at(-1)?.recordedAt,later.toISOString());
+  assert.equal(retained.state,"CANCELLED");
+  assert.equal(retained.events.length,4);
+  assert.equal(retained.events.at(-1)?.occurredAt,"2026-10-05T11:30:00Z");
+  assert.equal(retained.events.at(-1)?.recordedAt,now.toISOString());
+  assert.match(retained.nextAction,/Late actual reply retained/);
 });

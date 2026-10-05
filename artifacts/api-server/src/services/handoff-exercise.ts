@@ -184,7 +184,7 @@ try {
 
   const job = await submitWorkerJob({kind:"REVIEW_HANDOFFS",idempotencyKey:"synthetic-recurring-recovery"},actor);
   await db.update(jobsTable).set({state:"RUNNING",attempts:1,updatedAt:new Date(now.getTime()-4*60000)}).where(eq(jobsTable.id,job.id));
-  const workerRaces = await Promise.all([runWorkerOnce(later(130),false,job.id),runWorkerOnce(later(130),false,job.id)]);
+  const workerRaces = await Promise.all([runWorkerOnce(later(130),true,job.id),runWorkerOnce(later(130),true,job.id)]);
 
   const exhausted = await submitWorkerJob({kind:"REVIEW_HANDOFFS",idempotencyKey:"synthetic-exhausted-lease"},actor);
   const scheduled = await db.select().from(jobsTable).where(and(eq(jobsTable.kind,"REVIEW_HANDOFFS"),
