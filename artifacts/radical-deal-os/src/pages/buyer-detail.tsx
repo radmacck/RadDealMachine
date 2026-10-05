@@ -46,6 +46,7 @@ export default function BuyerDetail() {
       <section className="ledger p-4" data-testid="panel-qualification-task">
         <p className="eyebrow mb-2">Qualification work</p>
         <p className="text-sm">Destination {(b.destinationKind ?? 'BUYER').replace('_', ' ').toLowerCase()} / current buying {(b.currentBuyingStatus ?? 'UNKNOWN').replace('_', ' ').toLowerCase()}{b.qualifiedDealFee != null ? ` / quoted fee ${money(b.qualifiedDealFee)}${b.feeTermsSource ? ` (${b.feeTermsSource})` : ''}` : ''}{b.confidence != null ? ` / confidence ${b.confidence}` : ''}</p>
+        {(b.destinationKind ?? 'BUYER') !== 'BUYER' && <p className="mt-1 text-xs text-muted-foreground" data-testid="text-destination-fee-boundary">Any fee shown on this profile is a quote/reference only, not a received payment. Record evidenced terms and actual receipt, dispute, or waiver in the deal&apos;s destination activity history.</p>}
         {(b.qualificationBlockers ?? []).length > 0 && <ul className="mt-2 list-disc pl-4 text-sm" data-testid="list-blockers">{b.qualificationBlockers!.map((x, i) => <li key={i}>{x}</li>)}</ul>}
         {(b.qualificationBlockers ?? []).length === 0 && b.approvalStatus !== 'APPROVED' && <p className="mt-2 text-sm text-muted-foreground">No blockers listed; record verification to approve.</p>}
         {b.qualificationTask && b.qualificationTask.state!=='COMPLETED' && <div className="mt-3 border-t border-border pt-3" data-testid="panel-task">

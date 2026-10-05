@@ -737,7 +737,11 @@ export const RecordTransactionExceptionResponse = zod.object({
   "buyerVersion": zod.number().int(),
   "agreedPrice": zod.number().nullish(),
   "evidence": zod.string().nullish(),
-  "updatedAt": zod.string()
+  "updatedAt": zod.string(),
+  "legacyDestinationResponse": zod.union([zod.object({
+  "status": zod.enum(['INTERESTED', 'COMMITTED', 'DECLINED']),
+  "evidence": zod.string().nullable()
+}),zod.null()]).optional()
 })),
   "jobs": zod.array(zod.object({
   "id": zod.string(),
@@ -7006,7 +7010,11 @@ export const GetCommandCenterResponse = zod.object({
   "buyerVersion": zod.number().int(),
   "agreedPrice": zod.number().nullish(),
   "evidence": zod.string().nullish(),
-  "updatedAt": zod.string()
+  "updatedAt": zod.string(),
+  "legacyDestinationResponse": zod.union([zod.object({
+  "status": zod.enum(['INTERESTED', 'COMMITTED', 'DECLINED']),
+  "evidence": zod.string().nullable()
+}),zod.null()]).optional()
 })),
   "jobs": zod.array(zod.object({
   "id": zod.string(),
@@ -9576,7 +9584,11 @@ export const GetDealOperationsResponse = zod.object({
   "buyerVersion": zod.number().int(),
   "agreedPrice": zod.number().nullish(),
   "evidence": zod.string().nullish(),
-  "updatedAt": zod.string()
+  "updatedAt": zod.string(),
+  "legacyDestinationResponse": zod.union([zod.object({
+  "status": zod.enum(['INTERESTED', 'COMMITTED', 'DECLINED']),
+  "evidence": zod.string().nullable()
+}),zod.null()]).optional()
 })),
   "jobs": zod.array(zod.object({
   "id": zod.string(),
@@ -10300,7 +10312,11 @@ export const RefreshMatchesResponse = zod.object({
   "buyerVersion": zod.number().int(),
   "agreedPrice": zod.number().nullish(),
   "evidence": zod.string().nullish(),
-  "updatedAt": zod.string()
+  "updatedAt": zod.string(),
+  "legacyDestinationResponse": zod.union([zod.object({
+  "status": zod.enum(['INTERESTED', 'COMMITTED', 'DECLINED']),
+  "evidence": zod.string().nullable()
+}),zod.null()]).optional()
 })),
   "jobs": zod.array(zod.object({
   "id": zod.string(),
@@ -11046,7 +11062,11 @@ export const RecordBuyerResponseResponse = zod.object({
   "buyerVersion": zod.number().int(),
   "agreedPrice": zod.number().nullish(),
   "evidence": zod.string().nullish(),
-  "updatedAt": zod.string()
+  "updatedAt": zod.string(),
+  "legacyDestinationResponse": zod.union([zod.object({
+  "status": zod.enum(['INTERESTED', 'COMMITTED', 'DECLINED']),
+  "evidence": zod.string().nullable()
+}),zod.null()]).optional()
 })),
   "jobs": zod.array(zod.object({
   "id": zod.string(),
@@ -11808,7 +11828,11 @@ export const RecordDestinationActivityResponse = zod.object({
   "buyerVersion": zod.number().int(),
   "agreedPrice": zod.number().nullish(),
   "evidence": zod.string().nullish(),
-  "updatedAt": zod.string()
+  "updatedAt": zod.string(),
+  "legacyDestinationResponse": zod.union([zod.object({
+  "status": zod.enum(['INTERESTED', 'COMMITTED', 'DECLINED']),
+  "evidence": zod.string().nullable()
+}),zod.null()]).optional()
 })),
   "jobs": zod.array(zod.object({
   "id": zod.string(),
@@ -12541,7 +12565,11 @@ export const CreateContractResponse = zod.object({
   "buyerVersion": zod.number().int(),
   "agreedPrice": zod.number().nullish(),
   "evidence": zod.string().nullish(),
-  "updatedAt": zod.string()
+  "updatedAt": zod.string(),
+  "legacyDestinationResponse": zod.union([zod.object({
+  "status": zod.enum(['INTERESTED', 'COMMITTED', 'DECLINED']),
+  "evidence": zod.string().nullable()
+}),zod.null()]).optional()
 })),
   "jobs": zod.array(zod.object({
   "id": zod.string(),
@@ -13282,7 +13310,11 @@ export const ExecuteContractResponse = zod.object({
   "buyerVersion": zod.number().int(),
   "agreedPrice": zod.number().nullish(),
   "evidence": zod.string().nullish(),
-  "updatedAt": zod.string()
+  "updatedAt": zod.string(),
+  "legacyDestinationResponse": zod.union([zod.object({
+  "status": zod.enum(['INTERESTED', 'COMMITTED', 'DECLINED']),
+  "evidence": zod.string().nullable()
+}),zod.null()]).optional()
 })),
   "jobs": zod.array(zod.object({
   "id": zod.string(),
@@ -14022,7 +14054,11 @@ export const RecordClosingMilestoneResponse = zod.object({
   "buyerVersion": zod.number().int(),
   "agreedPrice": zod.number().nullish(),
   "evidence": zod.string().nullish(),
-  "updatedAt": zod.string()
+  "updatedAt": zod.string(),
+  "legacyDestinationResponse": zod.union([zod.object({
+  "status": zod.enum(['INTERESTED', 'COMMITTED', 'DECLINED']),
+  "evidence": zod.string().nullable()
+}),zod.null()]).optional()
 })),
   "jobs": zod.array(zod.object({
   "id": zod.string(),
@@ -14775,7 +14811,11 @@ export const RecordDealOutcomeResponse = zod.object({
   "buyerVersion": zod.number().int(),
   "agreedPrice": zod.number().nullish(),
   "evidence": zod.string().nullish(),
-  "updatedAt": zod.string()
+  "updatedAt": zod.string(),
+  "legacyDestinationResponse": zod.union([zod.object({
+  "status": zod.enum(['INTERESTED', 'COMMITTED', 'DECLINED']),
+  "evidence": zod.string().nullable()
+}),zod.null()]).optional()
 })),
   "jobs": zod.array(zod.object({
   "id": zod.string(),

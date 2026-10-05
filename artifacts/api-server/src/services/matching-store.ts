@@ -12,14 +12,20 @@ async function evaluatedMatches(detail: LeadDetail, contract: DealContract|null,
   const contracts = (await database.select().from(contractsTable)).map(contractRecord);
   return buyers.map(b=>{
     const existing = recorded.find(m=>m.buyerId===b.id);
-    const status = existing?.payload.status as BuyerMatch["status"]|undefined;
+    const previousStatus = existing?.payload.status as BuyerMatch["status"]|undefined;
+    const status = b.destinationKind==="BUYER"?previousStatus:undefined;
     const price = status==="COMMITTED"?existing?.payload.agreedPrice as number|undefined:undefined;
     const reservations = buyerReservations(contracts,b.id,contract?.id);
     const evaluated = matchBuyer(b,detail,contract,now,price,reservations.count,reservations.funds);
+    const legacyDestinationResponse = b.destinationKind!=="BUYER"&&existing
+      ? existing.payload.legacyDestinationResponse??(["INTERESTED","COMMITTED","DECLINED"].includes(String(previousStatus))
+        ?{status:previousStatus,evidence:typeof existing.payload.evidence==="string"?existing.payload.evidence:null}:undefined)
+      : undefined;
     return {...evaluated,eligible:evaluated.eligible&&status!=="DECLINED",
       mismatches:status==="DECLINED"?[...evaluated.mismatches,"Buyer declined this exact deal."]:evaluated.mismatches,
-      status:status??"MATCHED",agreedPrice:existing?.payload.agreedPrice as number|null??null,
-      evidence:existing?.payload.evidence as string|null??null};
+      status:status??"MATCHED",agreedPrice:status==="COMMITTED"?existing?.payload.agreedPrice as number|null??null:null,
+      evidence:status?existing?.payload.evidence as string|null??null:null,
+      ...(legacyDestinationResponse?{legacyDestinationResponse}:{})};
   }).sort((a,b)=>Number(b.eligible)-Number(a.eligible)||b.score-a.score||a.buyerId.localeCompare(b.buyerId));
 }
 export async function dealOperations(id: string, now = new Date()) {

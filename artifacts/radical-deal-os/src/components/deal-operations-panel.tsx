@@ -2,9 +2,10 @@ import { useState } from 'react';
 import { Link } from 'wouter';
 import { RefreshCw } from 'lucide-react';
 import {
-  getGetDealOperationsQueryKey, useCreateContract, useExecuteContract, useGetDealOperations, useRecordBuyerResponse,
+  getGetDealOperationsQueryKey, useCreateContract, useExecuteContract, useGetDealOperations, useRecordBuyerResponse, useRecordDestinationActivity,
   useRecordClosingMilestone, useRecordDealOutcome, useRecordTransactionException, useRefreshMatches,
-  type BuyerMatch, type BuyerResponseInputStatus, type ClosingMilestoneInputKind, type DealContract, type DealOutcomeInputOutcome, type TransactionExceptionInputKind, type LeadDetail,
+  type BuyerMatch, type BuyerResponseInputStatus, type ClosingMilestoneInputKind, type DealContract, type DealOutcomeInputOutcome,
+  type DestinationActivityEvent, type DestinationActivityInputKind, type TransactionExceptionInputKind, type LeadDetail,
 } from '@workspace/api-client-react';
 import { ErrorNotice, RowsSkeleton } from '@/components/state-views';
 import { EvidenceLink, Field, SELECT } from '@/components/field-row';
@@ -14,7 +15,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { useAccess } from '@/hooks/use-access';
 import { useInvalidateWork } from '@/hooks/use-invalidate';
 import { useToast } from '@/hooks/use-toast';
-import { ago, fmtDate, fromLocalInput, isOverdue, money, num } from '@/lib/format';
+import { ago, fmtDate, fromLocalInput, isOverdue, money, num, toLocalInput } from '@/lib/format';
 
 const MILESTONES: { k: ClosingMilestoneInputKind; label: string }[] = [
   { k: 'TITLE_CLEARED', label: 'Title cleared' }, { k: 'EARNEST_MONEY_CONFIRMED', label: 'Earnest money confirmed' },
@@ -258,6 +259,122 @@ function ExceptionHistory({ contract }: { contract: DealContract }) {
   );
 }
 
+const DESTINATION_ACTIVITY_KINDS: { kind: DestinationActivityInputKind; label: string; ownerOnly?: boolean }[] = [
+  { kind: 'SUBMITTED', label: 'Opportunity already submitted' },
+  { kind: 'ACKNOWLEDGED', label: 'Submission acknowledged' },
+  { kind: 'DECLINED', label: 'Destination declined' },
+  { kind: 'TERMS_REVIEWED', label: 'Exact referral terms reviewed', ownerOnly: true },
+  { kind: 'TERMS_ACCEPTED', label: 'Exact referral terms accepted', ownerOnly: true },
+  { kind: 'FEE_RECEIVED', label: 'Referral fee actually received', ownerOnly: true },
+  { kind: 'FEE_DISPUTED', label: 'Referral fee disputed', ownerOnly: true },
+  { kind: 'FEE_WAIVED', label: 'Referral fee waived', ownerOnly: true },
+];
+const LINKED_ACTIVITY_KINDS: Partial<Record<DestinationActivityInputKind, DestinationActivityEvent['kind'][]>> = {
+  ACKNOWLEDGED: ['SUBMITTED'],
+  DECLINED: ['SUBMITTED'],
+  TERMS_REVIEWED: ['SUBMITTED', 'ACKNOWLEDGED'],
+  TERMS_ACCEPTED: ['TERMS_REVIEWED'],
+  FEE_RECEIVED: ['TERMS_ACCEPTED'],
+  FEE_DISPUTED: ['TERMS_ACCEPTED', 'FEE_RECEIVED'],
+  FEE_WAIVED: ['TERMS_ACCEPTED', 'FEE_RECEIVED', 'FEE_DISPUTED'],
+};
+const newDestinationEventKey = () => globalThis.crypto?.randomUUID?.() ?? `destination-${Date.now()}-${Math.random()}`;
+
+function DestinationActivityForm({ contract, destinations, history, onDone }: {
+  contract: DealContract;
+  destinations: BuyerMatch[];
+  history: DestinationActivityEvent[];
+  onDone: () => void;
+}) {
+  const { canResearch, canCall, isOwner } = useAccess();
+  const record = useRecordDestinationActivity();
+  const { toast } = useToast();
+  const [destinationId, setDestinationId] = useState(destinations[0]?.buyerId ?? '');
+  const [kind, setKind] = useState<DestinationActivityInputKind>('SUBMITTED');
+  const [eventKey, setEventKey] = useState(newDestinationEventKey);
+  const [occurredAt, setOccurredAt] = useState(() => toLocalInput(new Date().toISOString()));
+  const [evidenceUrl, setEvidenceUrl] = useState('');
+  const [note, setNote] = useState('');
+  const [exactTerms, setExactTerms] = useState('');
+  const [feeAmount, setFeeAmount] = useState('');
+  const [currency, setCurrency] = useState('');
+  const [relatedEventKey, setRelatedEventKey] = useState('');
+  const [local, setLocal] = useState<string | null>(null);
+  const selected = destinations.find((d) => d.buyerId === destinationId);
+  const linkKinds = LINKED_ACTIVITY_KINDS[kind] ?? [];
+  const relatedChoices = history.filter((e) => e.destinationId === destinationId && linkKinds.includes(e.kind));
+  const needsTerms = kind === 'TERMS_REVIEWED' || kind === 'TERMS_ACCEPTED';
+  const needsFee = ['FEE_RECEIVED', 'FEE_DISPUTED', 'FEE_WAIVED'].includes(kind);
+  const needsRelated = kind !== 'SUBMITTED';
+  const canWrite = canResearch || canCall || isOwner;
+  const reset = () => {
+    setEventKey(newDestinationEventKey()); setOccurredAt(toLocalInput(new Date().toISOString()));
+    setEvidenceUrl(''); setNote(''); setExactTerms(''); setFeeAmount(''); setCurrency(''); setRelatedEventKey('');
+  };
+  const submit = () => {
+    if (!selected) return setLocal('Choose a deal-finder or guru destination.');
+    const actualAt = fromLocalInput(occurredAt);
+    if (!actualAt || new Date(actualAt).getTime() > Date.now()) return setLocal('Enter when the event actually happened; it cannot be in the future.');
+    if (evidenceUrl.trim().length < 8) return setLocal('Link the evidence for this event.');
+    if (note.trim().length < 10) return setLocal('Add a note of at least 10 characters.');
+    if (needsRelated && !relatedChoices.some((e) => e.eventKey === relatedEventKey)) return setLocal('Link this event to a prior event for the same destination.');
+    if (needsTerms && exactTerms.trim().length < 10) return setLocal('Record the exact terms from the evidence.');
+    const amount = num(feeAmount);
+    if (needsFee && (!Number.isFinite(amount) || amount <= 0 || !/^[A-Z]{3}$/.test(currency.trim()))) return setLocal('Enter the evidenced fee amount and its three-letter currency.');
+    setLocal(null);
+    record.mutate({
+      id: contract.leadId, buyerId: selected.buyerId,
+      data: {
+        version: contract.version, buyerVersion: selected.buyerVersion, eventKey, kind, occurredAt: actualAt,
+        evidenceUrl: evidenceUrl.trim(), note: note.trim(),
+        ...(needsTerms ? { exactTerms: exactTerms.trim() } : {}),
+        ...(needsFee ? { feeAmount: amount, currency: currency.trim() } : {}),
+        ...(needsRelated ? { relatedEventKey } : {}),
+      },
+    }, { onSuccess: () => { reset(); onDone(); toast({ title: 'Destination activity recorded', description: 'No message was sent and buyer/closing state was not changed.' }); } });
+  };
+  if (!destinations.length) return <p className="text-sm text-muted-foreground">No deal-finder or guru destinations are recorded for this deal.</p>;
+  return (
+    <div className="space-y-3" data-testid="form-destination-activity">
+      <p className="text-xs text-muted-foreground">Record only an event that already happened outside this system. This form does not send a submission, negotiate terms, approve a buyer, or change closing state. Profile fee amounts are quotes, not receipts.</p>
+      <div className="grid gap-3 sm:grid-cols-2">
+        <Field label="Destination"><select className={SELECT} value={destinationId} onChange={(e) => { setDestinationId(e.target.value); setRelatedEventKey(''); }} disabled={!canWrite} data-testid="select-destination-activity-destination">{destinations.map((d) => <option key={d.buyerId} value={d.buyerId}>{d.buyerName} / {(d.destinationKind ?? '').replace('_', ' ')}</option>)}</select></Field>
+        <Field label="Event"><select className={SELECT} value={kind} onChange={(e) => { setKind(e.target.value as DestinationActivityInputKind); setRelatedEventKey(''); }} disabled={!canWrite} data-testid="select-destination-activity-kind">{DESTINATION_ACTIVITY_KINDS.map((item) => <option key={item.kind} value={item.kind} disabled={!!item.ownerOnly && !isOwner}>{item.label}{item.ownerOnly ? ' (owner only)' : ''}</option>)}</select></Field>
+        <Field label="When it actually happened"><Input type="datetime-local" value={occurredAt} onChange={(e) => setOccurredAt(e.target.value)} disabled={!canWrite} data-testid="input-destination-activity-occurred" /></Field>
+        {needsRelated && <Field label="Related prior event"><select className={SELECT} value={relatedEventKey} onChange={(e) => setRelatedEventKey(e.target.value)} disabled={!canWrite || !relatedChoices.length} data-testid="select-destination-activity-related"><option value="">Select linked event</option>{relatedChoices.map((event) => <option key={event.eventKey} value={event.eventKey}>{event.kind.replace(/_/g, ' ')} / {fmtDate(event.occurredAt)} / {event.eventKey}</option>)}</select></Field>}
+        {needsFee && <div className="grid grid-cols-2 gap-3"><Field label="Exact fee amount"><Input inputMode="decimal" value={feeAmount} onChange={(e) => setFeeAmount(e.target.value)} disabled={!canWrite || !isOwner} data-testid="input-destination-activity-fee" /></Field><Field label="Currency"><Input maxLength={3} placeholder="e.g. USD" value={currency} onChange={(e) => setCurrency(e.target.value.toUpperCase())} disabled={!canWrite || !isOwner} data-testid="input-destination-activity-currency" /></Field></div>}
+      </div>
+      {needsTerms && <Field label={kind === 'TERMS_ACCEPTED' ? 'Exact accepted terms' : 'Exact terms reviewed'}><Textarea rows={3} value={exactTerms} onChange={(e) => setExactTerms(e.target.value)} disabled={!canWrite || !isOwner} data-testid="input-destination-activity-terms" /></Field>}
+      <Field label="Evidence link"><Input value={evidenceUrl} onChange={(e) => setEvidenceUrl(e.target.value)} disabled={!canWrite} data-testid="input-destination-activity-evidence" /></Field>
+      <Field label="What happened"><Textarea rows={2} value={note} onChange={(e) => setNote(e.target.value)} disabled={!canWrite} data-testid="input-destination-activity-note" /></Field>
+      {needsRelated && !relatedChoices.length && <p className="text-xs text-muted-foreground">A matching prior submission, terms review, or fee event must be recorded first.</p>}
+      {local && <p className="text-sm text-destructive">{local}</p>}
+      {record.error != null && <ErrorNotice error={record.error} />}
+      <Button size="sm" disabled={!canWrite || record.isPending || (needsRelated && !relatedChoices.length)} onClick={submit} data-testid="button-record-destination-activity">{record.isPending ? 'Recording...' : 'Record activity'}</Button>
+      {!isOwner && <p className="text-xs text-muted-foreground">Only the owner can record reviewed/accepted terms or referral-fee outcomes.</p>}
+    </div>
+  );
+}
+
+function DestinationActivityHistory({ events }: { events: DestinationActivityEvent[] }) {
+  return (
+    <div data-testid="list-destination-activity-history">
+      <p className="eyebrow mb-2">Append-only event history ({events.length})</p>
+      {!events.length ? <p className="text-sm text-muted-foreground">No deal-finder/guru activity recorded.</p> : (
+        <ol className="space-y-2">{[...events].reverse().map((event) => (
+          <li key={event.eventKey} className="border-t border-border pt-2 text-sm">
+            <p><span className="tag tone-signal mr-2">{event.kind.replace(/_/g, ' ')}</span><span className="font-semibold">{event.destinationName}</span></p>
+            <p className="font-mono text-xs text-muted-foreground">Actual {fmtDate(event.occurredAt)} / recorded {fmtDate(event.recordedAt)} by {event.recordedBy}</p>
+            {event.exactTerms && <p className="mt-1 whitespace-pre-wrap"><b>Exact terms:</b> {event.exactTerms}</p>}
+            {event.feeAmount != null && <p className="font-mono">{event.kind.replace(/_/g, ' ')}: {event.feeAmount.toLocaleString()} {event.currency ?? 'currency not recorded'}</p>}
+            <p className="whitespace-pre-wrap">{event.note} <EvidenceLink url={event.evidenceUrl} label="evidence" /></p>
+            {event.relatedEventKey && <p className="font-mono text-[11px] text-muted-foreground">Linked event: {event.relatedEventKey}</p>}
+          </li>))}</ol>
+      )}
+    </div>
+  );
+}
+
 export function DealOperationsPanel({ detail }: { detail: LeadDetail }) {
   const id = detail.lead.id;
   const invalidate = useInvalidateWork();
@@ -275,6 +392,8 @@ export function DealOperationsPanel({ detail }: { detail: LeadDetail }) {
   const live = c && (c.status === 'UNDER_CONTRACT' || c.status === 'CLOSING');
   const eligible = ops.matches.filter((m) => m.eligible);
   const excluded = ops.matches.filter((m) => !m.eligible);
+  const destinations = ops.matches.filter((m) => (m.destinationKind ?? 'BUYER') !== 'BUYER');
+  const destinationActivity = c?.destinationActivityHistory ?? [];
 
   return (
     <div className="space-y-4" data-testid="panel-deal-operations">
@@ -321,16 +440,30 @@ export function DealOperationsPanel({ detail }: { detail: LeadDetail }) {
             {m.mismatches.length > 0 && <p className="mt-1 text-xs text-muted-foreground">Watch: {m.mismatches.join('; ')}</p>}
             {m.status === 'COMMITTED' && m.agreedPrice != null && <p className="mt-1 font-mono text-xs">Agreed {money(m.agreedPrice)}</p>}
             {m.evidence && <p className="mt-1 text-xs">Evidence: {m.evidence}</p>}
-            {(m.destinationKind ?? 'BUYER') !== 'BUYER' && <p className="mt-1 text-xs" data-testid={`text-destination-${m.buyerId}`}><span className="tag tone-signal mr-1">{(m.destinationKind ?? '').replace('_', ' ')}</span>Not an end buyer. Interest here is a referral route, not a purchase commitment.</p>}
-            {live && c && (respondTo === m.buyerId ? <RespondForm key={`${c.version}:${m.buyerVersion}`} contract={c} match={m} onDone={done} /> :
+            {(m.destinationKind ?? 'BUYER') !== 'BUYER' && <div className="mt-1 text-xs" data-testid={`text-destination-${m.buyerId}`}><p><span className="tag tone-signal mr-1">{(m.destinationKind ?? '').replace('_', ' ')}</span>Referral route only. Destination replies and fees are not acquisition-buyer interest, commitment, or closing.</p>{m.legacyDestinationResponse && <p className="mt-1 border-l-2 border-warn pl-2">Previous buyer-workflow entry ({m.legacyDestinationResponse.status.replace(/_/g, ' ')}): {m.legacyDestinationResponse.evidence || 'no note'}. It has no retained destination-event time or actor; it is not part of the verified destination history.</p>}</div>}
+            {live && c && (m.destinationKind ?? 'BUYER') === 'BUYER' && (respondTo === m.buyerId ? <RespondForm key={`${c.version}:${m.buyerVersion}`} contract={c} match={m} onDone={done} /> :
               <Button size="sm" variant="outline" className="mt-2" onClick={() => setRespondTo(m.buyerId)} data-testid={`button-respond-${m.buyerId}`}>Record buyer response</Button>)}
           </li>))}</ul>
         {!live && eligible.length > 0 && <p className="mt-2 text-xs text-muted-foreground">Buyer responses can be recorded once the contract is executed.</p>}
         {excluded.length > 0 && (
           <details className="mt-3" data-testid="list-excluded"><summary className="cursor-pointer text-sm text-muted-foreground">{excluded.length} buyer{excluded.length === 1 ? '' : 's'} excluded</summary>
-            <ul className="mt-2 space-y-1 text-sm">{excluded.map((m) => <li key={m.buyerId}><span className="font-semibold">{m.buyerName}</span>: {m.mismatches.join('; ') || 'does not fit'}</li>)}</ul></details>
+            <ul className="mt-2 space-y-1 text-sm">{excluded.map((m) => <li key={m.buyerId}><span className="font-semibold">{m.buyerName}</span>: {m.mismatches.join('; ') || 'does not fit'}
+              {m.legacyDestinationResponse && <p className="mt-1 border-l-2 border-warn pl-2 text-xs">Prior buyer-workflow response ({m.legacyDestinationResponse.status.replace(/_/g, ' ')}): {m.legacyDestinationResponse.evidence || 'no note'}. It has no retained destination-event time or actor; it is not verified destination activity.</p>}
+            </li>)}</ul></details>
         )}
       </Block>
+
+      {c && (
+        <Block title="Deal-finder submissions & referral fees" tid="panel-destination-activity">
+          <div className="grid gap-5 lg:grid-cols-2">
+            <div>
+              {c.status === 'DRAFT' ? <p className="text-sm text-muted-foreground">Destination activity is recorded after the acquisition agreement is executed.</p> :
+                <DestinationActivityForm key={`${c.version}:${destinations.map((d) => d.buyerId).join(',')}`} contract={c} destinations={destinations} history={destinationActivity} onDone={done} />}
+            </div>
+            <div className="border-border lg:border-l lg:pl-5"><DestinationActivityHistory events={destinationActivity} /></div>
+          </div>
+        </Block>
+      )}
 
       <Block title="Closing" tid="panel-closing">
         {!c || c.status === 'DRAFT' ? <p className="text-sm text-muted-foreground">Closing work opens after the contract is executed.</p> : (

@@ -59,6 +59,11 @@ router.patch("/deals/:id/matches/:buyerId",roles("OWNER","OPERATOR"),async(req,r
   const {id,buyerId} = parse(schemas.RecordBuyerResponseParams,req.params);
   res.json(schemas.RecordBuyerResponseResponse.parse(await transactions.recordBuyerResponse(id,buyerId,parse(schemas.RecordBuyerResponseBody,req.body),actor(res))));
 });
+router.post("/deals/:id/destinations/:buyerId/activity",roles("OWNER","ANALYST","OPERATOR"),async(req,res)=>{
+  const {id,buyerId} = parse(schemas.RecordDestinationActivityParams,req.params);
+  res.json(schemas.RecordDestinationActivityResponse.parse(await transactions.recordDestinationActivity(id,buyerId,
+    parse(schemas.RecordDestinationActivityBody,req.body),actor(res))));
+});
 router.post("/deals/:id/contract",roles("OWNER","OPERATOR"),async(req,res)=>{
   const {id} = parse(schemas.CreateContractParams,req.params);
   res.status(201).json(schemas.CreateContractResponse.parse(await transactions.createContract(id,parse(schemas.CreateContractBody,req.body),actor(res))));

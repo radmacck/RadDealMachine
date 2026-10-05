@@ -133,12 +133,49 @@ try {
     currentBuyingStatus:"BUYING",buyingEvidenceAt:now.toISOString(),buyingEvidenceUrl:"https://example.com/synthetic-guru-accepting",
     criteriaEvidenceUrl:"https://example.com/synthetic-guru-criteria",verificationSource:"Synthetic reviewed destination",confidence:0.9},actor,now);
   assert.equal(destination.approvalStatus,"APPROVED");
-  op = await transactions.recordBuyerResponse(id,destination.id,{version:op.contract!.version,buyerVersion:destination.version,
-    status:"INTERESTED",evidence:"Synthetic destination interest, not end-buyer commitment."},operator,now);
-  assert.equal((await seller.leadDetail(id)).lead.stage,"BUYER_MATCHED","Destination interest must not impersonate buyer interest");
-  await assert.rejects(transactions.recordBuyerResponse(id,destination.id,{version:op.contract!.version,buyerVersion:destination.version,
-    status:"COMMITTED",evidence:"Synthetic attempt to commit a non-acquisition destination.",agreedPrice:130000,
-    commitmentEvidenceUrl:"https://example.com/synthetic-invalid-destination-commitment"},actor,now),/cannot commit/);
+   const destinationSubmission = {version:op.contract!.version,buyerVersion:destination.version,eventKey:"synthetic-guru-submission",
+     kind:"SUBMITTED" as const,occurredAt:now.toISOString(),evidenceUrl:"https://example.com/synthetic-guru-submission",
+     note:"SYNTHETIC opportunity submission; no external message sent by the system."};
+   op = await transactions.recordDestinationActivity(id,destination.id,destinationSubmission,operator,now);
+   assert.equal(op.contract?.destinationActivityHistory?.length,1);
+   assert.equal(op.contract?.destinationActivityHistory?.[0]?.feeAmount,null,"A profile quote is not a recorded receipt.");
+   const submittedVersion = op.contract!.version;
+   op = await transactions.recordDestinationActivity(id,destination.id,destinationSubmission,operator,now);
+   assert.equal(op.contract?.version,submittedVersion,"An identical event-key retry must not append or re-version.");
+   await assert.rejects(transactions.recordDestinationActivity(id,destination.id,{...destinationSubmission,note:"SYNTHETIC changed command on reused event key."},operator,now),/different destination activity/);
+   await assert.rejects(transactions.recordDestinationActivity(id,destination.id,{...destinationSubmission,eventKey:"synthetic-stale-event",
+     version:submittedVersion-1},operator,now),e=>(e as {status:number}).status===409);
+   const acknowledgement = {version:op.contract!.version,buyerVersion:destination.version,eventKey:"synthetic-guru-ack",
+     kind:"ACKNOWLEDGED" as const,occurredAt:now.toISOString(),evidenceUrl:"https://example.com/synthetic-guru-ack",
+     note:"SYNTHETIC destination confirmed receipt.",relatedEventKey:destinationSubmission.eventKey};
+   op = await transactions.recordDestinationActivity(id,destination.id,acknowledgement,operator,now);
+   const termsReview = {version:op.contract!.version,buyerVersion:destination.version,eventKey:"synthetic-guru-terms-reviewed",
+     kind:"TERMS_REVIEWED" as const,occurredAt:now.toISOString(),evidenceUrl:"https://example.com/synthetic-guru-terms",
+     note:"SYNTHETIC owner reviewed exact referral terms.",exactTerms:"USD 500 only if the evidenced referral results in the described transaction.",
+     relatedEventKey:acknowledgement.eventKey};
+   await assert.rejects(transactions.recordDestinationActivity(id,destination.id,termsReview,operator,now),e=>(e as {status:number}).status===403);
+   op = await transactions.recordDestinationActivity(id,destination.id,termsReview,actor,now);
+   const termsAccepted = {version:op.contract!.version,buyerVersion:destination.version,eventKey:"synthetic-guru-terms-accepted",
+     kind:"TERMS_ACCEPTED" as const,occurredAt:now.toISOString(),evidenceUrl:"https://example.com/synthetic-guru-terms-acceptance",
+     note:"SYNTHETIC exact referral terms accepted with owner review.",exactTerms:termsReview.exactTerms,
+     relatedEventKey:termsReview.eventKey};
+   op = await transactions.recordDestinationActivity(id,destination.id,termsAccepted,actor,now);
+   assert.equal(op.contract?.destinationActivityHistory?.length,4);
+   const feeReceivedDetails = {buyerVersion:destination.version,eventKey:"synthetic-guru-fee-received",kind:"FEE_RECEIVED" as const,
+     occurredAt:future(3),evidenceUrl:"https://example.com/synthetic-guru-fee-receipt",
+     note:"SYNTHETIC evidenced receipt after acquisition closing for isolated exercise only.",feeAmount:500,currency:"USD",
+     relatedEventKey:termsAccepted.eventKey};
+   await assert.rejects(transactions.recordDestinationActivity(id,destination.id,{...feeReceivedDetails,version:op.contract!.version},operator,
+     new Date(future(5))),e=>(e as {status:number}).status===403);
+   assert.equal(op.contract?.assignmentFeeReceived??null,null,"A quoted fee is not automatically recorded as received.");
+   assert.equal(op.contract?.committedBuyerId??null,null);
+   assert.equal((await seller.leadDetail(id)).lead.stage,"BUYER_MATCHED","Destination activity must not promote buyer interest or commitment.");
+   assert.equal(op.matches.find(m=>m.buyerId===destination.id)?.status,"MATCHED");
+   await assert.rejects(transactions.recordBuyerResponse(id,destination.id,{version:op.contract!.version,buyerVersion:destination.version,
+     status:"INTERESTED",evidence:"Synthetic destination interest must not use buyer response."},operator,now),/separate destination history/);
+   await assert.rejects(transactions.recordBuyerResponse(id,destination.id,{version:op.contract!.version,buyerVersion:destination.version,
+     status:"COMMITTED",evidence:"Synthetic attempt to commit a non-acquisition destination.",agreedPrice:130000,
+     commitmentEvidenceUrl:"https://example.com/synthetic-invalid-destination-commitment"},actor,now),/separate destination history/);
   op = await transactions.recordBuyerResponse(id,buyer.id,{version:op.contract!.version,buyerVersion:buyer.version,status:"INTERESTED",evidence:"Synthetic actual-interest attestation."},operator,now);
   const commitment = {version:op.contract!.version,buyerVersion:buyer.version,status:"COMMITTED" as const,
     evidence:"Synthetic owner commitment review.",commitmentEvidenceUrl:"https://example.com/synthetic-assignment",agreedPrice:130000};
@@ -208,6 +245,30 @@ try {
   assert.equal((await seller.leadDetail(id)).lead.stage,"CLOSED");
   assert.ok(!(await commandCenter("OWNER",now)).actions.some(a=>a.leadId===id));
   await assert.rejects(transactions.recordDealOutcome(id,{...outcome,version:op.contract!.version},actor,now));
+   await assert.rejects(transactions.recordDestinationActivity(id,destination.id,{version:op.contract!.version,buyerVersion:destination.version,
+     eventKey:"synthetic-invalid-post-close-submission",kind:"SUBMITTED",occurredAt:future(3),
+     evidenceUrl:"https://example.com/synthetic-post-close-submission",note:"SYNTHETIC submission after terminal close is not valid."},actor,new Date(future(6))),
+     /actually occurred before closing/);
+   op = await transactions.recordDestinationActivity(id,destination.id,{...feeReceivedDetails,version:op.contract!.version},actor,new Date(future(6)));
+   assert.equal(op.contract?.status,"CLOSED");
+   assert.equal(op.contract?.closedAt,future(2));
+   assert.equal(op.contract?.assignmentFeeReceived,20000);
+   assert.equal(op.contract?.netProceeds,18000);
+   assert.equal(op.contract?.destinationActivityHistory?.at(-1)?.occurredAt,future(3));
+   assert.equal(op.contract?.destinationActivityHistory?.at(-1)?.recordedAt,future(6));
+   const lateDispute = {version:op.contract!.version,buyerVersion:destination.version,eventKey:"synthetic-guru-fee-disputed",
+     kind:"FEE_DISPUTED" as const,occurredAt:future(4),evidenceUrl:"https://example.com/synthetic-guru-fee-dispute",
+     note:"SYNTHETIC post-close fee dispute, retained outside acquisition closing state.",feeAmount:500,currency:"USD",
+     relatedEventKey:feeReceivedDetails.eventKey};
+   op = await transactions.recordDestinationActivity(id,destination.id,lateDispute,actor,new Date(future(7)));
+   const lateWaiver = {version:op.contract!.version,buyerVersion:destination.version,eventKey:"synthetic-guru-fee-waived",
+     kind:"FEE_WAIVED" as const,occurredAt:future(5),evidenceUrl:"https://example.com/synthetic-guru-fee-waiver",
+     note:"SYNTHETIC post-close owner-recorded fee waiver following the dispute.",feeAmount:500,currency:"USD",
+     relatedEventKey:lateDispute.eventKey};
+   op = await transactions.recordDestinationActivity(id,destination.id,lateWaiver,actor,new Date(future(8)));
+   assert.equal(op.contract?.destinationActivityHistory?.length,7);
+   assert.equal(op.contract?.status,"CLOSED");
+   assert.equal((await seller.leadDetail(id)).lead.stage,"CLOSED");
   const deadline = await submitWorkerJob({kind:"REVIEW_DEADLINES",idempotencyKey:"synthetic-deadlines-once"},actor);
   assert.equal((await runWorkerOnce(now,false,deadline.id))?.state,"SUCCEEDED");
   const fail = await submitWorkerJob({kind:"MATCH_BUYERS",leadId:id,idempotencyKey:"synthetic-terminal-failure"},actor);
@@ -260,5 +321,5 @@ try {
   assert.equal((await db.select().from(contractsTable).where(eq(contractsTable.leadId,nextId))).length,1);
   assert.equal((await seller.leadDetail(nextId)).offers.length,2);
   logger.info("Cancellation/restart PASSED: owner-only, fresh underwriting/approval/communication, distinct attempt, original cancellation/signatures/terms/buyer history retained; CLOSED cannot reopen.");
-  logger.info({checks:"approved terms → draft → historically authorized late execution → matching; leases; owner/buyer-consented amendment; evidenced release archives old assignment → verified replacement → commitment; refreshed research preserves lifecycle; four milestones; late evidenced settlement preserves actual/recorded times; reconciliation and terminal guards"},"Full lifecycle persistence exercise PASSED (isolated synthetic schema)");
+   logger.info({checks:"approved terms → draft → historically authorized late execution → matching; append-only deal-finder submission, exact terms, and post-close fee receipt/dispute/waiver isolated from buyer commitment and closing; leases; owner/buyer-consented amendment; evidenced release archives old assignment → verified replacement → commitment; refreshed research preserves lifecycle; four milestones; late evidenced settlement preserves actual/recorded times; reconciliation and terminal guards"},"Full lifecycle persistence exercise PASSED (isolated synthetic schema)");
 } finally { await pool.end(); }

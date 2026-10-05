@@ -94,6 +94,8 @@ export * from './leadInput';
 export * from './leadInputPropertyType';
 export * from './leadInputUrgency';
 export * from './leadUpdate';
+export * from './legacyDestinationResponse';
+export * from './legacyDestinationResponseStatus';
 export * from './member';
 export * from './memberUpdate';
 export * from './memberUpdateRole';

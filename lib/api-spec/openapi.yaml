@@ -951,6 +951,16 @@ components:
         agreedPrice: { type: [number, "null"] }
         evidence: { type: [string, "null"] }
         updatedAt: { type: string }
+        legacyDestinationResponse:
+          oneOf:
+            - { $ref: "#/components/schemas/LegacyDestinationResponse" }
+            - { type: "null" }
+    LegacyDestinationResponse:
+      type: object
+      required: [status, evidence]
+      properties:
+        status: { type: string, enum: [INTERESTED, COMMITTED, DECLINED] }
+        evidence: { type: [string, "null"] }
     BuyerResponseInput:
       type: object
       required: [version, buyerVersion, status, evidence]

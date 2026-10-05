@@ -694,6 +694,21 @@ export const BuyerMatchStatus = {
   DECLINED: 'DECLINED',
 } as const;
 
+export type LegacyDestinationResponseStatus = typeof LegacyDestinationResponseStatus[keyof typeof LegacyDestinationResponseStatus];
+
+
+export const LegacyDestinationResponseStatus = {
+  INTERESTED: 'INTERESTED',
+  COMMITTED: 'COMMITTED',
+  DECLINED: 'DECLINED',
+} as const;
+
+export interface LegacyDestinationResponse {
+  status: LegacyDestinationResponseStatus;
+  /** @nullable */
+  evidence: string | null;
+}
+
 export interface BuyerMatch {
   buyerId: string;
   leadId: string;
@@ -710,6 +725,7 @@ export interface BuyerMatch {
   /** @nullable */
   evidence?: string | null;
   updatedAt: string;
+  legacyDestinationResponse?: LegacyDestinationResponse | null;
 }
 
 export type BuyerResponseInputStatus = typeof BuyerResponseInputStatus[keyof typeof BuyerResponseInputStatus];

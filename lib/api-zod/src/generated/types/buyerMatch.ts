@@ -7,6 +7,7 @@
  */
 import type { BuyerMatchDestinationKind } from './buyerMatchDestinationKind';
 import type { BuyerMatchStatus } from './buyerMatchStatus';
+import type { LegacyDestinationResponse } from './legacyDestinationResponse';
 
 export interface BuyerMatch {
   buyerId: string;
@@ -24,4 +25,5 @@ export interface BuyerMatch {
   /** @nullable */
   evidence?: string | null;
   updatedAt: string;
+  legacyDestinationResponse?: LegacyDestinationResponse | null;
 }

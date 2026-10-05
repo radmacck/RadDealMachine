@@ -1,6 +1,7 @@
 - [Canonical build direction](build-direction.md) — reuse-first two-sided engine; verified vertical slices, Oct 4–18 delivery window; Google Form is historical only.
 - [Domain interoperability](domain-interoperability.md) — wire dates stay strings; calendar dates differ from timestamps across reusable adapters.
 - [Offer authority boundaries](offer-authority.md) — a ceiling is not permission to vary commercial terms; preserve prior communication when approval changes.
+- [Destination activity boundaries](destination-activity.md) — referral events stay independent of buyer authority and closing; profile fee quotes never imply receipt.
 - [Managed workflow port conflicts](workflow-port-conflicts.md) — a failed workflow can coexist with an old listener; verify process ownership before restarting.
 - [Executed transaction boundaries](executed-transactions.md) — supplemental reasoning and ordinary coordination cannot erase financial authority or external commitments.
 - [Isolated persistence exercises](isolated-service-exercises.md) — isolate every pooled connection and preserve relational constraints without mutating real workspace records.

@@ -1,8 +1,10 @@
 import { eq, and, lte, gt, desc, sql } from "drizzle-orm";
+import { isDeepStrictEqual } from "node:util";
 import { db, contractsTable, leadsTable, buyersTable, matchesTable, offersTable, analysesTable, intelligenceTable } from "@workspace/db";
 import type { z } from "zod";
 import {
-  CreateContractBody, ExecuteContractBody, RecordBuyerResponseBody, RecordClosingMilestoneBody, RecordDealOutcomeBody,
+  CreateContractBody, RecordDestinationActivityBody as DestinationActivityBody, ExecuteContractBody, RecordBuyerResponseBody, RecordClosingMilestoneBody, RecordDealOutcomeBody,
+  type DestinationActivityEvent,
 } from "@workspace/api-zod";
 import {
   assertOperationsRole, buyerReservations, evidenceUrl, pastInstant, wholeDollars, closingBlockers, matchBuyer, DomainError, DAY,
@@ -44,6 +46,7 @@ export async function createContract(id: string,input: z.infer<typeof CreateCont
       offerId:offer.id,status:"DRAFT",purchasePrice:offer.amount,assignmentTarget:detail.analysis.assumptions.assignmentTarget,
       earnestMoney:offer.earnestMoney,assignmentAllowed:offer.assignmentIntent,closingAt:parsed.closingAt,
       contingencies:offer.contingencies,milestones:[],attemptNumber:exists?Number(exists.payload.attemptNumber??1)+1:1,
+      destinationActivityHistory:Array.isArray(exists?.payload.destinationActivityHistory)?exists.payload.destinationActivityHistory:[],
     };
     if (exists) {
       const responses = await tx.select().from(matchesTable).where(eq(matchesTable.leadId,id));
@@ -56,8 +59,14 @@ export async function createContract(id: string,input: z.infer<typeof CreateCont
       }];
       await tx.update(contractsTable).set({payload,version:exists.version+1,updatedAt:now}).where(eq(contractsTable.id,exists.id));
       // Clear only derived CURRENT response state; originals remain in the cancelled-attempt history.
-      for (const r of responses) await tx.update(matchesTable).set({payload:{...r.payload,status:"MATCHED",agreedPrice:null,
-        commitmentEvidenceUrl:null,evidence:null,eligible:false,mismatches:["New attempt is not externally executed yet."]},updatedAt:now}).where(eq(matchesTable.id,r.id));
+      for (const r of responses) {
+        const legacy = r.payload.destinationKind!=="BUYER" && ["INTERESTED","COMMITTED","DECLINED"].includes(String(r.payload.status))
+          ? r.payload.legacyDestinationResponse??{status:r.payload.status,evidence:typeof r.payload.evidence==="string"?r.payload.evidence:null}
+          : r.payload.legacyDestinationResponse;
+        await tx.update(matchesTable).set({payload:{...r.payload,status:"MATCHED",agreedPrice:null,
+          commitmentEvidenceUrl:null,evidence:null,eligible:false,mismatches:["New attempt is not externally executed yet."],
+          ...(legacy?{legacyDestinationResponse:legacy}:{})},updatedAt:now}).where(eq(matchesTable.id,r.id));
+      }
     } else await tx.insert(contractsTable).values({leadId:id,payload});
     await move(tx,lead,"CONTRACT_PENDING","Prepared frozen terms from the exact communicated proposal","Review external contract against frozen terms, then record both signatures.",actor.id,now);
     await saveLead(tx,lead,now);
@@ -113,9 +122,10 @@ export async function recordBuyerResponse(id: string,buyerId: string,input: z.in
     if (contract.status==="DRAFT") throw new DomainError("Record the externally signed acquisition contract before buyer responses.",409);
     const [buyerRow] = await tx.select().from(buyersTable).where(eq(buyersTable.id,buyerId)).for("update");
     if (!buyerRow) throw new DomainError("Buyer not found.",404);
+    if ((buyerRow.payload.destinationKind??"BUYER")!=="BUYER")
+      throw new DomainError("Deal-finder/guru activity must use the separate destination history; it cannot change buyer interest, commitment, or closing.",409);
     if (buyerRow.version!==parsed.buyerVersion) throw new DomainError("Buyer criteria or evidence changed. Review the current match.",409);
     const buyer = buyerRecord(buyerRow,now), detail = await leadDetail(id,tx,now);
-    if (parsed.status==="COMMITTED"&&buyer.destinationKind!=="BUYER") throw new DomainError("A deal-finder/guru destination cannot commit as the acquisition buyer. Qualify and record the actual end buyer.",409);
     const reservations = buyerReservations((await tx.select().from(contractsTable)).map(contractRecord),buyer.id,contract.id);
     const evaluated = matchBuyer(buyer,detail,contract,now,parsed.status==="COMMITTED"?parsed.agreedPrice:undefined,reservations.count,reservations.funds);
     const [existing] = await tx.select().from(matchesTable).where(and(eq(matchesTable.leadId,id),eq(matchesTable.buyerId,buyerId)));
@@ -145,6 +155,84 @@ export async function recordBuyerResponse(id: string,buyerId: string,input: z.in
   });
   return dealOperations(id,now);
 }
+
+export async function recordDestinationActivity(id: string,buyerId: string,input: unknown,actor: OfferActor,now = new Date()) {
+  assertOperationsRole(actor,["OWNER","ANALYST","OPERATOR"]);
+  const parsed = DestinationActivityBody.parse(input);
+  const ownerOnly = ["TERMS_REVIEWED","TERMS_ACCEPTED","FEE_RECEIVED","FEE_DISPUTED","FEE_WAIVED"].includes(parsed.kind);
+  if (ownerOnly) assertOperationsRole(actor,["OWNER"]);
+  const eventAt = pastInstant(parsed.occurredAt,now,"Actual destination event time");
+  const occurredAt = new Date(eventAt).toISOString();
+  const evidence = evidenceUrl(parsed.evidenceUrl);
+  const termEvent = parsed.kind==="TERMS_REVIEWED"||parsed.kind==="TERMS_ACCEPTED";
+  const feeEvent = ["FEE_RECEIVED","FEE_DISPUTED","FEE_WAIVED"].includes(parsed.kind);
+  if (termEvent&&!parsed.exactTerms) throw new DomainError("Terms review and acceptance must record the exact evidenced terms.");
+  if (!termEvent&&parsed.exactTerms) throw new DomainError("Exact commercial terms belong on a terms-review or terms-acceptance event.");
+  if (feeEvent&&(parsed.feeAmount==null||!parsed.currency)) throw new DomainError("Fee outcomes need the exact evidenced amount and currency; no quoted fee is assumed.");
+  if (!feeEvent&&(parsed.feeAmount!=null||parsed.currency)) throw new DomainError("Fee amount and currency belong on a fee outcome.");
+
+  await db.transaction(async tx=>{
+    const [lead] = await tx.select({id:leadsTable.id}).from(leadsTable).where(eq(leadsTable.id,id)).for("update");
+    if (!lead) throw new DomainError("Deal not found.",404);
+    const [row] = await tx.select().from(contractsTable).where(eq(contractsTable.leadId,id)).for("update");
+    if (!row) throw new DomainError("Prepare the acquisition contract before recording destination activity.",409);
+    const contract = contractRecord(row);
+    const history = contract.destinationActivityHistory??[];
+    const existingKey = history.find(event=>event.eventKey===parsed.eventKey);
+    const command = {
+      eventKey:parsed.eventKey,destinationId:buyerId,kind:parsed.kind,occurredAt,evidenceUrl:evidence,note:parsed.note,
+      exactTerms:parsed.exactTerms??null,feeAmount:parsed.feeAmount??null,currency:parsed.currency??null,relatedEventKey:parsed.relatedEventKey??null,
+      recordedBy:actor.id,
+    };
+    if (existingKey) {
+      const prior = {
+        eventKey:existingKey.eventKey,destinationId:existingKey.destinationId,kind:existingKey.kind,occurredAt:existingKey.occurredAt,
+        evidenceUrl:existingKey.evidenceUrl,note:existingKey.note,exactTerms:existingKey.exactTerms??null,
+        feeAmount:existingKey.feeAmount??null,currency:existingKey.currency??null,relatedEventKey:existingKey.relatedEventKey??null,
+        recordedBy:existingKey.recordedBy,
+      };
+      if (!isDeepStrictEqual(prior,command)) throw new DomainError("Event key already belongs to a different destination activity.",409);
+      return;
+    }
+    if (row.version!==parsed.version) throw new DomainError("Transaction changed. Reload before recording destination activity.",409);
+    if (contract.status==="DRAFT") throw new DomainError("Record the externally executed acquisition contract before destination activity.",409);
+    const terminalAt=contract.status==="CLOSED"?contract.closedAt:contract.status==="CANCELLED"?contract.cancelledAt:null;
+    if (terminalAt&&!feeEvent&&eventAt>Date.parse(terminalAt))
+      throw new DomainError("Submission, reply, and terms events recorded after a terminal deal must have actually occurred before closing/cancellation; fee outcomes may be recorded later.",409);
+    const [buyerRow] = await tx.select().from(buyersTable).where(eq(buyersTable.id,buyerId)).for("update");
+    if (!buyerRow) throw new DomainError("Destination not found.",404);
+    if (buyerRow.version!==parsed.buyerVersion) throw new DomainError("Destination profile changed. Reload before recording activity.",409);
+    const destination = buyerRecord(buyerRow,now);
+    if (destination.destinationKind==="BUYER") throw new DomainError("This history is only for deal-finder/guru destinations; acquisition buyers use buyer-response records.",409);
+    const requireRelated = (kinds: DestinationActivityEvent["kind"][]) => {
+      if (!parsed.relatedEventKey) throw new DomainError("Link this event to its prior destination activity.");
+      const linked = history.find(event=>event.eventKey===parsed.relatedEventKey);
+      if (!linked||linked.destinationId!==buyerId||!kinds.includes(linked.kind))
+        throw new DomainError("The linked event must be a prior event of the same destination and the required type.",409);
+      if (Date.parse(linked.occurredAt)>eventAt) throw new DomainError("A destination event cannot precede the event it references.",409);
+      return linked;
+    };
+    if (parsed.kind==="ACKNOWLEDGED"||parsed.kind==="DECLINED") requireRelated(["SUBMITTED"]);
+    if (parsed.kind==="TERMS_REVIEWED") requireRelated(["SUBMITTED","ACKNOWLEDGED"]);
+    if (parsed.kind==="TERMS_ACCEPTED") {
+      const reviewed = requireRelated(["TERMS_REVIEWED"]);
+      if (reviewed.exactTerms!==parsed.exactTerms) throw new DomainError("Accepted terms must exactly match the linked owner-reviewed terms.",409);
+    }
+    if (parsed.kind==="FEE_RECEIVED") requireRelated(["TERMS_ACCEPTED"]);
+    if (parsed.kind==="FEE_DISPUTED") requireRelated(["TERMS_ACCEPTED","FEE_RECEIVED"]);
+    if (parsed.kind==="FEE_WAIVED") requireRelated(["TERMS_ACCEPTED","FEE_RECEIVED","FEE_DISPUTED"]);
+    const event: DestinationActivityEvent = {
+      ...command,destinationName:destination.name,destinationKind:destination.destinationKind,
+      recordedAt:now.toISOString(),
+    };
+    contract.destinationActivityHistory=[...history,event];
+    await save(tx,row,contract,now);
+    await audit(tx,actor.id,`DESTINATION_${parsed.kind}`,id,
+      `${destination.destinationKind} ${destination.name}; actual event ${occurredAt}; recorded ${now.toISOString()}; evidence ${evidence}. Referral activity only; no buyer commitment, fee receipt default, or closing state changed.`);
+  });
+  return dealOperations(id,now);
+}
+
 export async function recordClosingMilestone(id: string,input: z.infer<typeof RecordClosingMilestoneBody>,actor: OfferActor,now = new Date()) {
   assertOperationsRole(actor,["OWNER"]);
   const parsed = RecordClosingMilestoneBody.parse(input); evidenceUrl(parsed.evidenceUrl);

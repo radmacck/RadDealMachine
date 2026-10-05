@@ -94,8 +94,8 @@ export function BuyerForm({ buyer, disabled, pending, error, submitLabel, onSubm
         <Field label="Phone"><Input value={phone} disabled={disabled} onChange={(e) => setPhone(e.target.value)} data-testid="input-buyer-phone" /></Field>
         <Field label="Status"><select className={SELECT} value={status} disabled={disabled} onChange={(e) => setStatus(e.target.value as BuyerInputStatus)} data-testid="select-buyer-status"><option value="ACTIVE">Active</option><option value="PAUSED">Paused</option></select></Field>
         <Field label="Destination" hint="Only an actual buyer can commit to a deal."><select className={SELECT} value={dest} disabled={disabled} onChange={(e) => setDest(e.target.value as BuyerInputDestinationKind)} data-testid="select-buyer-destination"><option value="BUYER">Buyer</option><option value="DEAL_FINDER">Deal finder</option><option value="GURU">Guru</option></select></Field>
-        <Field label="Quoted qualified-deal fee" hint="Blank if none quoted"><Input inputMode="decimal" value={fee} disabled={disabled} onChange={(e) => setFee(e.target.value)} data-testid="input-buyer-fee" /></Field>
-        <Field label="Fee terms source"><Input value={feeSrc} disabled={disabled} onChange={(e) => setFeeSrc(e.target.value)} data-testid="input-buyer-fee-source" /></Field>
+        <Field label="Quoted qualified-deal fee" hint="Profile quote only; actual receipts are recorded on each deal. Blank if none quoted"><Input inputMode="decimal" value={fee} disabled={disabled} onChange={(e) => setFee(e.target.value)} data-testid="input-buyer-fee" /></Field>
+        <Field label="Fee terms source" hint="Source for the quote, not proof of payment"><Input value={feeSrc} disabled={disabled} onChange={(e) => setFeeSrc(e.target.value)} data-testid="input-buyer-fee-source" /></Field>
       </div>
       <div>
         <p className="eyebrow mb-2">Buy box</p>
