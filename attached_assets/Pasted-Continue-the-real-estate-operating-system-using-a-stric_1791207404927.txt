@@ -1,0 +1,53 @@
+Continue the real-estate operating system using a strict LEGO architecture philosophy.
+
+The goal is NOT to recreate one existing CRM or copy one competitor. Build a superior operating system by identifying, implementing, and integrating the strongest proven capabilities from multiple sources, tools, open-source projects, workflows, and industry patterns.
+
+Treat every major capability as an interchangeable module with a clear contract/interface:
+
+* property discovery
+* property intelligence
+* seller intelligence
+* provenance/evidence
+* comps/ARV
+* repair estimation
+* MAO/underwriting
+* deal classification
+* seller calling/conversation
+* offer authority
+* negotiation
+* contracts
+* buyer discovery
+* buyer qualification
+* buyer verification
+* buyer criteria
+* buyer matching
+* deal-finder/guru destinations
+* transaction/closing
+* follow-ups
+* recurring workers
+* alerts
+* audit/history
+* communications
+* future Naelo orchestration
+
+For every capability, ask:
+
+1. What is the best proven way to do this?
+2. Is there an existing open-source component, API, worker, model, workflow, or industry pattern worth adopting?
+3. Can we isolate it behind our own interface?
+4. Can it be replaced later without rewriting the rest of the system?
+5. What evidence proves the capability actually works?
+
+Use external tools/providers as interchangeable workers, NOT as permanent architectural dependencies.
+
+Do not create fake UI representations of capabilities that do not actually execute.
+
+Preserve the existing working foundation, database, security, provenance, deterministic financial calculations, state machines, audit history, and tested modules.
+
+Do not turn the product into a generic CRM.
+
+The final system should feel like one coherent intelligent operating system even though internally it is composed of many specialized Lego pieces.
+
+Continue vertically: identify the highest-value missing Lego piece → implement it → test it → exercise it against the real system → verify it → mark GREEN → move to the next piece.
+
+Research and reuse strong existing implementations where appropriate rather than unnecessarily reinventing functionality.
