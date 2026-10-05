@@ -25,12 +25,14 @@ const HSTATE: Record<HumanHandoff['state'], { label: string; tone: string }> = {
   REPLIED: { label: 'Replied', tone: 'tone-go' }, CANCELLED: { label: 'Cancelled', tone: 'tone-muted' },
 };
 type EvKind = HandoffEventInput['kind'];
-const EV_KINDS: EvKind[] = ['CONTACTED', 'REPLIED', 'NO_RESPONSE', 'FAILED', 'CANCELLED'];
+const EV_KINDS: EvKind[] = ['ROUTE_REVIEWED', 'CONTACTED', 'REPLIED', 'NO_RESPONSE', 'FAILED', 'CANCELLED'];
 const allowed = (k: EvKind, st: HumanHandoff['state'], events: HumanHandoff['events']) => {
   if (st === 'CANCELLED') return k === 'REPLIED' && events.some(e => e.kind === 'CONTACTED') && !events.some(e => e.kind === 'REPLIED');
   if (st === 'REPLIED') return false;
-  if (k === 'CONTACTED') return st === 'WAITING_CONTACT';
-  if (k === 'REPLIED' || k === 'NO_RESPONSE') return st === 'WAITING_REPLY';
+  if (k === 'ROUTE_REVIEWED') return st === 'WAITING_CONTACT';
+  if (k === 'CONTACTED') return st === 'WAITING_CONTACT' && events.some(e => e.kind === 'ROUTE_REVIEWED');
+  if (k === 'REPLIED') return st === 'WAITING_REPLY' || (st === 'WAITING_CONTACT' && events.some(e => e.kind === 'CONTACTED'));
+  if (k === 'NO_RESPONSE') return st === 'WAITING_REPLY';
   return true;
 };
 const toIso = (v: string) => { const d = new Date(v); return Number.isNaN(d.getTime()) ? null : d.toISOString(); };
@@ -49,12 +51,14 @@ function HandoffCard({ h, can }: { h: HumanHandoff; can: boolean }) {
   const [at, setAt] = useState('');
   const [evidence, setEvidence] = useState('');
   const [note, setNote] = useState('');
-  const [channel, setChannel] = useState<'PHONE' | 'EMAIL' | 'OTHER'>('PHONE');
-  const [route, setRoute] = useState('');
-  const [perm, setPerm] = useState('');
+  const initialRoute = h.events.filter(e => e.kind === 'ROUTE_REVIEWED').at(-1);
+  const [channel, setChannel] = useState<'PHONE' | 'EMAIL' | 'OTHER'>(initialRoute?.channel ?? 'PHONE');
+  const [route, setRoute] = useState(initialRoute?.routeValue ?? '');
+  const [perm, setPerm] = useState(initialRoute?.permissionEvidenceUrl ?? '');
   const [follow, setFollow] = useState('');
   const [err, setErr] = useState<string | null>(null);
   const activeKind = allowed(kind, h.state, h.events) ? kind : first;
+  const reviewedRoute = h.events.filter(e => e.kind === 'ROUTE_REVIEWED').at(-1);
   const needFollow = activeKind === 'CONTACTED' || activeKind === 'NO_RESPONSE' || activeKind === 'FAILED';
   const href = h.subjectType === 'BUYER' ? `/buyers/${h.subjectId}` : `/deals/${h.subjectId}`;
   const due = new Date(h.dueAt);
@@ -67,7 +71,7 @@ function HandoffCard({ h, can }: { h: HumanHandoff; can: boolean }) {
     if (evidence.trim().length < 8) return setErr('Evidence URL needs at least 8 characters.');
     if (note.trim().length < 3) return setErr('Add a note.');
     const data: HandoffEventInput = { version: h.version, eventKey, kind: activeKind, occurredAt, evidenceUrl: evidence.trim(), note: note.trim() };
-    if (activeKind === 'CONTACTED') {
+    if (activeKind === 'CONTACTED' || activeKind === 'ROUTE_REVIEWED') {
       if (!route.trim()) return setErr('Route value (phone or email used) is required.');
       if (perm.trim().length < 8) return setErr('Permission evidence URL is required.');
       data.channel = channel; data.routeValue = route.trim(); data.permissionEvidenceUrl = perm.trim();
@@ -83,8 +87,12 @@ function HandoffCard({ h, can }: { h: HumanHandoff; can: boolean }) {
         qc.invalidateQueries({ queryKey: getListHandoffsQueryKey() });
         invalidate();
         setFormVersion(saved.version);
-        setKind(EV_KINDS.find(k => allowed(k, saved.state, saved.events)) ?? 'CANCELLED');
-        setEventKey(crypto.randomUUID()); setAt(''); setEvidence(''); setNote(''); setRoute(''); setPerm(''); setFollow(''); setErr(null);
+        setKind(saved.events.at(-1)?.kind === 'ROUTE_REVIEWED' ? 'CONTACTED' : EV_KINDS.find(k => allowed(k, saved.state, saved.events)) ?? 'CANCELLED');
+        setEventKey(crypto.randomUUID()); setAt(''); setEvidence(''); setNote('');
+        const reviewed = saved.events.filter(e => e.kind === 'ROUTE_REVIEWED').at(-1);
+        setRoute(reviewed?.routeValue ?? ''); setPerm(reviewed?.permissionEvidenceUrl ?? '');
+        if (reviewed?.channel) setChannel(reviewed.channel);
+        setFollow(''); setErr(null);
         rec.reset();
         toast({ title: 'Event recorded', description: activeKind });
       },
@@ -107,15 +115,20 @@ function HandoffCard({ h, can }: { h: HumanHandoff; can: boolean }) {
         Handoff changed in another session or worker review. Review its latest events before continuing.
         <Button size="sm" variant="outline" className="ml-2" onClick={() => {
           setFormVersion(h.version); setKind(first); setEventKey(crypto.randomUUID()); setAt(''); setEvidence(''); setNote('');
-          setRoute(''); setPerm(''); setFollow(''); setErr(null); rec.reset();
+          setRoute(reviewedRoute?.routeValue ?? ''); setPerm(reviewedRoute?.permissionEvidenceUrl ?? '');
+          if (reviewedRoute?.channel) setChannel(reviewedRoute.channel);
+          setFollow(''); setErr(null); rec.reset();
         }}>Reload event form</Button>
       </div>}
+      <p className="text-xs text-muted-foreground">{reviewedRoute
+        ? `Reviewed route: ${reviewedRoute.channel} / ${reviewedRoute.routeValue}. Contact must match the latest review.`
+        : 'No permitted route reviewed yet. Record ROUTE_REVIEWED with recipient-route permission evidence before performing contact. Preparation is not sending.'}</p>
       <fieldset disabled={!can || terminal || rec.isPending || formVersion !== h.version} className="grid gap-2 border-t border-border pt-3 sm:grid-cols-2">
         <Field label="Event"><select className={SELECT} value={activeKind} onChange={(e) => setKind(e.target.value as EvKind)} data-testid={`select-event-kind-${h.id}`}>{EV_KINDS.map((k) => <option key={k} value={k} disabled={!allowed(k, h.state, h.events)}>{k}</option>)}</select></Field>
         <Field label="Actually happened"><input type="datetime-local" className={INPUT} value={at} onChange={(e) => setAt(e.target.value)} data-testid={`input-event-at-${h.id}`} /></Field>
         <Field label="Evidence URL"><input className={INPUT} value={evidence} onChange={(e) => setEvidence(e.target.value)} data-testid={`input-event-evidence-${h.id}`} /></Field>
         <Field label="Note"><input className={INPUT} value={note} onChange={(e) => setNote(e.target.value)} data-testid={`input-event-note-${h.id}`} /></Field>
-        {activeKind === 'CONTACTED' && <>
+        {(activeKind === 'CONTACTED' || activeKind === 'ROUTE_REVIEWED') && <>
           <Field label="Channel"><select className={SELECT} value={channel} onChange={(e) => setChannel(e.target.value as 'PHONE' | 'EMAIL' | 'OTHER')} data-testid={`select-event-channel-${h.id}`}><option>PHONE</option><option>EMAIL</option><option>OTHER</option></select></Field>
           <Field label="Route value"><input className={INPUT} value={route} onChange={(e) => setRoute(e.target.value)} data-testid={`input-event-route-${h.id}`} /></Field>
           <Field label="Permission evidence URL"><input className={INPUT} value={perm} onChange={(e) => setPerm(e.target.value)} data-testid={`input-event-permission-${h.id}`} /></Field></>}

@@ -38,24 +38,30 @@ try {
   await assert.rejects(native.execute({...command,actorId:"different"}),e=>(e as {status:number}).status===403);
   await assert.rejects(native.execute({...command,approvedCommunicationReference:"unapproved-fiction"}),/does not execute/);
   await assert.rejects(native.execute({...command,capability:"MONITOR_DEAL"}),/Unsupported/);
-  const input = {version:h.version,eventKey:"synthetic-contact-once",kind:"CONTACTED" as const,occurredAt:later(1).toISOString(),
+  let input = {version:h.version,eventKey:"synthetic-contact-once",kind:"CONTACTED" as const,occurredAt:later(1).toISOString(),
     evidenceUrl:"https://example.com/synthetic-contact",note:"SYNTHETIC contact; no actual communication performed.",
     channel:"EMAIL" as const,routeValue:"synthetic@example.com",permissionEvidenceUrl:"https://example.com/synthetic-permission",
     followUpAt:later(120).toISOString()};
   await assert.rejects(recordHandoffEvent(h.id,input,{...actor,role:"VIEWER"},later(2)),e=>(e as {status:number}).status===403);
   await assert.rejects(recordHandoffEvent(h.id,{...input,permissionEvidenceUrl:undefined},actor,later(2)),/permission/);
+  await assert.rejects(recordHandoffEvent(h.id,input,actor,later(2)),/persist the permitted/);
+  h = await recordHandoffEvent(h.id,{...input,kind:"ROUTE_REVIEWED",eventKey:"synthetic-route-review",
+    occurredAt:now.toISOString()},actor,now);
+  assert.equal(h.state,"WAITING_CONTACT");
+  input = {...input,version:h.version};
   const contacts = await Promise.all([recordHandoffEvent(h.id,input,actor,later(2)),recordHandoffEvent(h.id,input,actor,later(2))]);
-  assert.equal(contacts[0]!.version,2); assert.equal(contacts[1]!.version,2);
+  assert.equal(contacts[0]!.version,3); assert.equal(contacts[1]!.version,3);
   h = RecordHandoffEventResponse.parse(contacts[0]);
-  assert.equal(h.events.length,1); assert.equal(h.events[0]?.occurredAt,later(1).toISOString());
+  assert.equal(h.events.length,2); assert.equal(h.events[1]?.occurredAt,later(1).toISOString());
   await assert.rejects(recordHandoffEvent(h.id,{...input,note:"Different event"},actor,later(2)),/another event/);
-  const reply = {version:2,eventKey:"synthetic-reply-once",kind:"REPLIED" as const,occurredAt:later(3).toISOString(),
+  const reply = {version:3,eventKey:"synthetic-reply-once",kind:"REPLIED" as const,occurredAt:later(3).toISOString(),
     evidenceUrl:"https://example.com/synthetic-reply",note:"SYNTHETIC actual-response fixture, not a real reply."};
   const races = await Promise.allSettled([recordHandoffEvent(h.id,reply,actor,later(4)),
     recordHandoffEvent(h.id,{...reply,eventKey:"synthetic-competing-reply"},actor,later(4))]);
   assert.equal(races.filter(r=>r.status==="fulfilled").length,1);
   h = (await listHandoffs()).find(x=>x.id===h.id)!;
-  assert.equal(h.state,"REPLIED"); assert.equal(h.events.length,2);
+  assert.equal(h.state,"REPLIED"); assert.equal(h.events.length,3);
+  assert.equal((await native.execute(command)).state,"WAITING_EXTERNAL","Retry after a recorded reply still requires domain review, not automatic qualification.");
   assert.equal((await getBuyerRecord(b.id,db,later(4))).approvalStatus,"DISCOVERED");
   assert.equal((await getBuyerRecord(b.id,db,later(4))).currentBuyingStatus,"UNKNOWN");
   const awaiting = await getBuyerRecord(b.id,db,later(4));
@@ -114,12 +120,16 @@ try {
     followUpAt:later(240).toISOString()},actor,later(4)),/deadline/);
   pending = await recordHandoffEvent(pending.id,{...reply,version:pending.version,kind:"NO_RESPONSE",
     occurredAt:later(121).toISOString(),followUpAt:later(240).toISOString()},actor,later(122));
-  assert.equal(pending.state,"WAITING_CONTACT"); assert.equal(pending.events.length,2);
+  assert.equal(pending.state,"WAITING_CONTACT"); assert.equal(pending.events.length,3);
   await db.update(buyersTable).set({version:second.version+1}).where(eq(buyersTable.id,second.id));
   await assert.rejects(recordHandoffEvent(pending.id,{...input,eventKey:"synthetic-stale-contact",version:pending.version},actor,later(123)),/context changed/);
   await reviewHandoffs(later(124));
   const retired = (await listHandoffs()).find(x=>x.id===pending.id)!;
-  assert.equal(retired.state,"CANCELLED"); assert.equal(retired.events.length,2);
+  assert.equal(retired.state,"CANCELLED"); assert.equal(retired.events.length,3);
+  assert.equal((await native.execute({...command,id:`synthetic:${second.id}`,subjectId:second.id})).state,"FAILED",
+    "An identical command retry returns its retained result after context changes.");
+  await assert.rejects(native.execute({...command,id:`synthetic:${second.id}`,subjectId:second.id,
+    evidenceReferences:["changed"]}),/another execution/);
   assert.ok((await listHandoffs()).some(x=>x.subjectId===second.id&&x.id!==retired.id&&x.state==="WAITING_CONTACT"));
 
   // Seller handoffs freeze informational requests, never prices or signed agreements.
@@ -171,11 +181,8 @@ try {
   const job = await submitWorkerJob({kind:"REVIEW_HANDOFFS",idempotencyKey:"synthetic-recurring-recovery"},actor);
   await db.update(jobsTable).set({state:"RUNNING",attempts:1,updatedAt:new Date(now.getTime()-4*60000)}).where(eq(jobsTable.id,job.id));
   const workerRaces = await Promise.all([runWorkerOnce(later(130),false,job.id),runWorkerOnce(later(130),false,job.id)]);
-  assert.equal(workerRaces.filter(Boolean).length,1);
-  assert.equal(workerRaces.find(Boolean)?.state,"SUCCEEDED");
-  assert.equal((await db.select().from(jobsTable).where(eq(jobsTable.id,job.id)))[0]?.attempts,2);
-  await runWorkerOnce(later(131),true,job.id);
-  await runWorkerOnce(later(131),true,job.id);
+
+  const exhausted = await submitWorkerJob({kind:"REVIEW_HANDOFFS",idempotencyKey:"synthetic-exhausted-lease"},actor);
   const scheduled = await db.select().from(jobsTable).where(and(eq(jobsTable.kind,"REVIEW_HANDOFFS"),
     sql`${jobsTable.idempotencyKey} like 'scheduled:handoffs:%'`));
   assert.equal(scheduled.length,1);

@@ -14216,7 +14216,7 @@ export const ListHandoffsResponseItem = zod.object({
   "events": zod.array(zod.object({
   "version": zod.number().int().min(1),
   "eventKey": zod.string().min(listHandoffsResponseEventsItemOneEventKeyMin).max(listHandoffsResponseEventsItemOneEventKeyMax),
-  "kind": zod.enum(['CONTACTED', 'REPLIED', 'NO_RESPONSE', 'FAILED', 'CANCELLED']),
+  "kind": zod.enum(['ROUTE_REVIEWED', 'CONTACTED', 'REPLIED', 'NO_RESPONSE', 'FAILED', 'CANCELLED']),
   "occurredAt": zod.string(),
   "evidenceUrl": zod.string().min(listHandoffsResponseEventsItemOneEvidenceUrlMin).max(listHandoffsResponseEventsItemOneEvidenceUrlMax),
   "note": zod.string().min(listHandoffsResponseEventsItemOneNoteMin).max(listHandoffsResponseEventsItemOneNoteMax),
@@ -14256,7 +14256,7 @@ export const recordHandoffEventBodyPermissionEvidenceUrlMax = 2000;
 export const RecordHandoffEventBody = zod.object({
   "version": zod.number().int().min(1),
   "eventKey": zod.string().min(recordHandoffEventBodyEventKeyMin).max(recordHandoffEventBodyEventKeyMax),
-  "kind": zod.enum(['CONTACTED', 'REPLIED', 'NO_RESPONSE', 'FAILED', 'CANCELLED']),
+  "kind": zod.enum(['ROUTE_REVIEWED', 'CONTACTED', 'REPLIED', 'NO_RESPONSE', 'FAILED', 'CANCELLED']),
   "occurredAt": zod.string(),
   "evidenceUrl": zod.string().min(recordHandoffEventBodyEvidenceUrlMin).max(recordHandoffEventBodyEvidenceUrlMax),
   "note": zod.string().min(recordHandoffEventBodyNoteMin).max(recordHandoffEventBodyNoteMax),
@@ -14300,7 +14300,7 @@ export const RecordHandoffEventResponse = zod.object({
   "events": zod.array(zod.object({
   "version": zod.number().int().min(1),
   "eventKey": zod.string().min(recordHandoffEventResponseEventsItemOneEventKeyMin).max(recordHandoffEventResponseEventsItemOneEventKeyMax),
-  "kind": zod.enum(['CONTACTED', 'REPLIED', 'NO_RESPONSE', 'FAILED', 'CANCELLED']),
+  "kind": zod.enum(['ROUTE_REVIEWED', 'CONTACTED', 'REPLIED', 'NO_RESPONSE', 'FAILED', 'CANCELLED']),
   "occurredAt": zod.string(),
   "evidenceUrl": zod.string().min(recordHandoffEventResponseEventsItemOneEvidenceUrlMin).max(recordHandoffEventResponseEventsItemOneEvidenceUrlMax),
   "note": zod.string().min(recordHandoffEventResponseEventsItemOneNoteMin).max(recordHandoffEventResponseEventsItemOneNoteMax),

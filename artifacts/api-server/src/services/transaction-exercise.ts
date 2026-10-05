@@ -79,7 +79,10 @@ try {
   assert.equal(op.matches.find(m=>m.buyerId===buyer.id)?.eligible,false);
    await reviewHandoffs(now);
    buyer = await getBuyerRecord(buyer.id,db,now);
-   const qualificationHandoff = (await listHandoffs()).find(h=>h.subjectId===buyer.id)!;
+   let qualificationHandoff = (await listHandoffs()).find(h=>h.subjectId===buyer.id)!;
+   qualificationHandoff = await recordHandoffEvent(qualificationHandoff.id,{version:qualificationHandoff.version,eventKey:"synthetic-qualification-route",
+     kind:"ROUTE_REVIEWED",occurredAt:now.toISOString(),evidenceUrl:"https://example.com/synthetic-permission",note:"SYNTHETIC permitted route fixture.",
+     channel:"EMAIL",routeValue:"synthetic@example.com",permissionEvidenceUrl:"https://example.com/synthetic-permission"},operator,now);
    await recordHandoffEvent(qualificationHandoff.id,{version:qualificationHandoff.version,eventKey:"synthetic-qualification-contact",
      kind:"CONTACTED",occurredAt:now.toISOString(),evidenceUrl:"https://example.com/synthetic-contact",note:"SYNTHETIC contact fixture, no message sent.",
      channel:"EMAIL",routeValue:"synthetic@example.com",permissionEvidenceUrl:"https://example.com/synthetic-permission",followUpAt:future(1)},operator,now);

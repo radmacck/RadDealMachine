@@ -1062,7 +1062,7 @@ components:
       properties:
         version: { type: integer, minimum: 1 }
         eventKey: { type: string, minLength: 8, maxLength: 200 }
-        kind: { type: string, enum: [CONTACTED, REPLIED, NO_RESPONSE, FAILED, CANCELLED] }
+        kind: { type: string, enum: [ROUTE_REVIEWED, CONTACTED, REPLIED, NO_RESPONSE, FAILED, CANCELLED] }
         occurredAt: { type: string }
         evidenceUrl: { type: string, minLength: 8, maxLength: 2000 }
         note: { type: string, minLength: 3, maxLength: 5000 }

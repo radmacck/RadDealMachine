@@ -10,6 +10,7 @@ export type HandoffEventInputKind = typeof HandoffEventInputKind[keyof typeof Ha
 
 
 export const HandoffEventInputKind = {
+  ROUTE_REVIEWED: 'ROUTE_REVIEWED',
   CONTACTED: 'CONTACTED',
   REPLIED: 'REPLIED',
   NO_RESPONSE: 'NO_RESPONSE',

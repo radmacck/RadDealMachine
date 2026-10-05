@@ -1,7 +1,8 @@
 /**
  * Standalone boundary only. No dependency on unfinished Naelo/RDS/RDC.
  * Future orchestrators call domain commands through adapters, never bypass guards.
- * This is deliberately an interface, not a running worker framework.
+ * Native recurring workers execute WorkerExecutionPort for durable human handoffs.
+ * This orchestration adapter remains optional; submission is not external sending.
  */
 import type { WorkerExecutionPort } from "./worker-interface";
 export interface DomainCommand {

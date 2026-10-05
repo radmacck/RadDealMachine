@@ -32,3 +32,9 @@ Retiring outreach must not erase an actual inbound reply or imply that it reopen
 **Why:** A buyer can reply after outreach stops or after prior verification. The software must preserve the external event without promoting an unreviewed response into buying intent, funding or acceptance.
 
 **How to apply:** Retain actual and recorded reply times. Check actual pre-settlement replies against retained reviews even when the replies were recorded after settlement; software recording time alone cannot establish historical eligibility.
+
+Human outreach permission and financial authority are separate reviews. Route permission permits only the informational outreach described, never commercial terms, buyer qualification or approval.
+
+**Why:** The user requires intended recipients and permitted contact routes while insisting that a prepared message is never SENT and a human reply is never buyer verification.
+
+**How to apply:** Preserve route-permission evidence alongside human contact history. Native command results must not imply successful buyer qualification merely because a reply was recorded; approval remains with the existing owner-reviewed domain commands.

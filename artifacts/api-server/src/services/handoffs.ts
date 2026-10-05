@@ -36,6 +36,12 @@ export class NativeHandoffExecutor implements WorkerExecutionPort {
       const buyer = command.capability!=="FOLLOW_UP_SELLER";
       const table = buyer?buyersTable:leadsTable;
       const [subject] = await tx.select().from(table).where(eq(table.id,command.subjectId!)).for("update");
+      const key = `native-handoff:${command.id}`;
+      const [existing] = await tx.select().from(jobsTable).where(eq(jobsTable.idempotencyKey,key));
+      if (existing) {
+        if (!isDeepStrictEqual(existing.payload.command,command)) throw new DomainError("Command ID belongs to another execution.",409);
+        return parseHandoff(existing);
+      }
       if (!subject) throw new DomainError("Handoff subject not found.",404);
       let contextKey:string, recipient:string, message:string;
       if (buyer) {
@@ -56,12 +62,6 @@ export class NativeHandoffExecutor implements WorkerExecutionPort {
           : "Read the current CALL NEXT brief, sourced intelligence and reviewed underwriting before contacting.";
         message = `Follow up on ${l.payload.address}: confirm current status and next coordination steps. ${review} Do not quote or alter price, deposit, assignment or closing terms without current exact owner authority. Record the actual conversation in the seller workflow; this handoff is not a call, approval, contract amendment or offer.`;
       }
-      const key = `native-handoff:${command.id}`;
-      const [existing] = await tx.select().from(jobsTable).where(eq(jobsTable.idempotencyKey,key));
-      if (existing) {
-        if (!isDeepStrictEqual(existing.payload.command,command)) throw new DomainError("Command ID belongs to another execution.",409);
-        return parseHandoff(existing);
-      }
       const old = await tx.select().from(jobsTable).where(and(eq(jobsTable.kind,"HUMAN_HANDOFF"),
         sql`${jobsTable.payload}->'handoff'->>'subjectType' = ${buyer?"BUYER":"SELLER"}`,
         sql`${jobsTable.payload}->'handoff'->>'subjectId' = ${command.subjectId}`)).for("update");
@@ -80,6 +80,8 @@ export class NativeHandoffExecutor implements WorkerExecutionPort {
       await audit(tx,this.actor.id,"HUMAN_HANDOFF_PREPARED",command.subjectId!,"Native executor prepared informational outreach only; no external execution or verification claimed.");
       return parseHandoff(row);
     });
+    // A reply completes the outreach history, not the qualification/call command.
+    // Reviewed domain authority is still required outside this informational port.
     return {commandId:command.id,state:h.state==="CANCELLED"?"FAILED":"WAITING_EXTERNAL",
       reason:h.nextAction,evidenceReferences:command.evidenceReferences,nextAction:h.nextAction};
   }
