@@ -21,6 +21,7 @@ import Buyers from '@/pages/buyers';
 import BuyerDetail from '@/pages/buyer-detail';
 import Workers from '@/pages/workers';
 import Sources from '@/pages/sources';
+import BuyerPacketPage from '@/pages/buyer-packet';
 
 const clerkPubKey = publishableKeyFromHost(window.location.hostname, import.meta.env.VITE_CLERK_PUBLISHABLE_KEY);
 const clerkProxyUrl = import.meta.env.VITE_CLERK_PROXY_URL;
@@ -174,6 +175,7 @@ function ClerkProviderWithRoutes() {
           <ClerkQueryClientCacheInvalidator />
           <RoutedErrorBoundary>
             <Switch>
+              <Route path="/buyer-packet" component={BuyerPacketPage} />
               <Route path="/" component={HomeRedirect} />
               <Route path="/sign-in/*?" component={SignInPage} />
               <Route path="/sign-up/*?" component={SignUpPage} />

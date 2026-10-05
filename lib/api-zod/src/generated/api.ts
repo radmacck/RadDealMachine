@@ -11084,6 +11084,500 @@ export const RecordBuyerResponseResponse = zod.object({
 })
 
 
+export const GetDealDistributionParams = zod.object({
+  "id": zod.coerce.string().uuid()
+})
+
+export const GetDealDistributionResponse = zod.object({
+  "packetId": zod.string().nullable(),
+  "version": zod.number().int(),
+  "status": zod.union([zod.literal('ACTIVE'),zod.literal('FIRST_ACCEPTED'),zod.literal('CLOSED'),zod.literal('REVOKED'),zod.literal(null)]).nullable(),
+  "packet": zod.union([zod.object({
+  "location": zod.object({
+  "city": zod.string(),
+  "county": zod.string(),
+  "state": zod.string(),
+  "zip": zod.string()
+}),
+  "property": zod.object({
+  "propertyType": zod.string(),
+  "sqft": zod.number(),
+  "beds": zod.number(),
+  "baths": zod.number(),
+  "units": zod.number().int(),
+  "askingPrice": zod.number().nullish()
+}),
+  "economics": zod.object({
+  "acquisitionPrice": zod.number(),
+  "authorizedAssignmentFee": zod.number(),
+  "buyerPrice": zod.number()
+}),
+  "underwriting": zod.object({
+  "arv": zod.object({
+  "low": zod.number(),
+  "expected": zod.number(),
+  "high": zod.number(),
+  "confidence": zod.number()
+}),
+  "repairs": zod.object({
+  "low": zod.number(),
+  "expected": zod.number(),
+  "high": zod.number(),
+  "confidence": zod.number()
+}),
+  "grossProfitPotential": zod.object({
+  "low": zod.number(),
+  "expected": zod.number(),
+  "caveat": zod.string()
+}),
+  "formula": zod.string(),
+  "calculatedAt": zod.string()
+}),
+  "closeBy": zod.string(),
+  "contingencies": zod.string(),
+  "media": zod.array(zod.record(zod.string(), zod.unknown())),
+  "mediaNotice": zod.string(),
+  "disclosure": zod.string()
+}),zod.null()]),
+  "authorizedBy": zod.string().nullable(),
+  "authorizedAt": zod.string().nullable(),
+  "expiresAt": zod.string().nullable(),
+  "acceptedBuyerId": zod.string().nullable(),
+  "acceptedAt": zod.string().nullable(),
+  "recipients": zod.array(zod.object({
+  "buyerId": zod.string().uuid(),
+  "buyerName": zod.string(),
+  "status": zod.enum(['INVITED', 'INTERESTED', 'ACCEPTED', 'DECLINED']),
+  "events": zod.array(zod.object({
+  "eventKey": zod.string(),
+  "action": zod.enum(['INTERESTED', 'ACCEPTED', 'DECLINED']),
+  "recordedAt": zod.string(),
+  "note": zod.string()
+})),
+  "createdAt": zod.string(),
+  "updatedAt": zod.string()
+}))
+})
+
+
+export const AuthorizeDealDistributionParams = zod.object({
+  "id": zod.coerce.string().uuid()
+})
+
+
+export const authorizeDealDistributionBodyReasonMin = 3;
+export const authorizeDealDistributionBodyReasonMax = 2000;
+
+
+
+export const AuthorizeDealDistributionBody = zod.object({
+  "version": zod.number().int().min(1),
+  "reason": zod.string().min(authorizeDealDistributionBodyReasonMin).max(authorizeDealDistributionBodyReasonMax)
+})
+
+export const AuthorizeDealDistributionResponse = zod.object({
+  "packetId": zod.string().nullable(),
+  "version": zod.number().int(),
+  "status": zod.union([zod.literal('ACTIVE'),zod.literal('FIRST_ACCEPTED'),zod.literal('CLOSED'),zod.literal('REVOKED'),zod.literal(null)]).nullable(),
+  "packet": zod.union([zod.object({
+  "location": zod.object({
+  "city": zod.string(),
+  "county": zod.string(),
+  "state": zod.string(),
+  "zip": zod.string()
+}),
+  "property": zod.object({
+  "propertyType": zod.string(),
+  "sqft": zod.number(),
+  "beds": zod.number(),
+  "baths": zod.number(),
+  "units": zod.number().int(),
+  "askingPrice": zod.number().nullish()
+}),
+  "economics": zod.object({
+  "acquisitionPrice": zod.number(),
+  "authorizedAssignmentFee": zod.number(),
+  "buyerPrice": zod.number()
+}),
+  "underwriting": zod.object({
+  "arv": zod.object({
+  "low": zod.number(),
+  "expected": zod.number(),
+  "high": zod.number(),
+  "confidence": zod.number()
+}),
+  "repairs": zod.object({
+  "low": zod.number(),
+  "expected": zod.number(),
+  "high": zod.number(),
+  "confidence": zod.number()
+}),
+  "grossProfitPotential": zod.object({
+  "low": zod.number(),
+  "expected": zod.number(),
+  "caveat": zod.string()
+}),
+  "formula": zod.string(),
+  "calculatedAt": zod.string()
+}),
+  "closeBy": zod.string(),
+  "contingencies": zod.string(),
+  "media": zod.array(zod.record(zod.string(), zod.unknown())),
+  "mediaNotice": zod.string(),
+  "disclosure": zod.string()
+}),zod.null()]),
+  "authorizedBy": zod.string().nullable(),
+  "authorizedAt": zod.string().nullable(),
+  "expiresAt": zod.string().nullable(),
+  "acceptedBuyerId": zod.string().nullable(),
+  "acceptedAt": zod.string().nullable(),
+  "recipients": zod.array(zod.object({
+  "buyerId": zod.string().uuid(),
+  "buyerName": zod.string(),
+  "status": zod.enum(['INVITED', 'INTERESTED', 'ACCEPTED', 'DECLINED']),
+  "events": zod.array(zod.object({
+  "eventKey": zod.string(),
+  "action": zod.enum(['INTERESTED', 'ACCEPTED', 'DECLINED']),
+  "recordedAt": zod.string(),
+  "note": zod.string()
+})),
+  "createdAt": zod.string(),
+  "updatedAt": zod.string()
+}))
+})
+
+
+export const ShareDistributionRecipientsParams = zod.object({
+  "id": zod.coerce.string().uuid()
+})
+
+
+export const shareDistributionRecipientsBodyBuyerIdsMax = 50;
+
+
+
+export const ShareDistributionRecipientsBody = zod.object({
+  "version": zod.number().int().min(1),
+  "buyerIds": zod.array(zod.string().uuid()).min(1).max(shareDistributionRecipientsBodyBuyerIdsMax)
+})
+
+export const ShareDistributionRecipientsResponse = zod.object({
+  "distribution": zod.object({
+  "packetId": zod.string().nullable(),
+  "version": zod.number().int(),
+  "status": zod.union([zod.literal('ACTIVE'),zod.literal('FIRST_ACCEPTED'),zod.literal('CLOSED'),zod.literal('REVOKED'),zod.literal(null)]).nullable(),
+  "packet": zod.union([zod.object({
+  "location": zod.object({
+  "city": zod.string(),
+  "county": zod.string(),
+  "state": zod.string(),
+  "zip": zod.string()
+}),
+  "property": zod.object({
+  "propertyType": zod.string(),
+  "sqft": zod.number(),
+  "beds": zod.number(),
+  "baths": zod.number(),
+  "units": zod.number().int(),
+  "askingPrice": zod.number().nullish()
+}),
+  "economics": zod.object({
+  "acquisitionPrice": zod.number(),
+  "authorizedAssignmentFee": zod.number(),
+  "buyerPrice": zod.number()
+}),
+  "underwriting": zod.object({
+  "arv": zod.object({
+  "low": zod.number(),
+  "expected": zod.number(),
+  "high": zod.number(),
+  "confidence": zod.number()
+}),
+  "repairs": zod.object({
+  "low": zod.number(),
+  "expected": zod.number(),
+  "high": zod.number(),
+  "confidence": zod.number()
+}),
+  "grossProfitPotential": zod.object({
+  "low": zod.number(),
+  "expected": zod.number(),
+  "caveat": zod.string()
+}),
+  "formula": zod.string(),
+  "calculatedAt": zod.string()
+}),
+  "closeBy": zod.string(),
+  "contingencies": zod.string(),
+  "media": zod.array(zod.record(zod.string(), zod.unknown())),
+  "mediaNotice": zod.string(),
+  "disclosure": zod.string()
+}),zod.null()]),
+  "authorizedBy": zod.string().nullable(),
+  "authorizedAt": zod.string().nullable(),
+  "expiresAt": zod.string().nullable(),
+  "acceptedBuyerId": zod.string().nullable(),
+  "acceptedAt": zod.string().nullable(),
+  "recipients": zod.array(zod.object({
+  "buyerId": zod.string().uuid(),
+  "buyerName": zod.string(),
+  "status": zod.enum(['INVITED', 'INTERESTED', 'ACCEPTED', 'DECLINED']),
+  "events": zod.array(zod.object({
+  "eventKey": zod.string(),
+  "action": zod.enum(['INTERESTED', 'ACCEPTED', 'DECLINED']),
+  "recordedAt": zod.string(),
+  "note": zod.string()
+})),
+  "createdAt": zod.string(),
+  "updatedAt": zod.string()
+}))
+}),
+  "links": zod.array(zod.object({
+  "buyerId": zod.string(),
+  "buyerName": zod.string(),
+  "token": zod.string()
+}))
+})
+
+
+export const ReleaseDistributionAcceptanceParams = zod.object({
+  "id": zod.coerce.string().uuid()
+})
+
+
+export const releaseDistributionAcceptanceBodyReasonMin = 3;
+export const releaseDistributionAcceptanceBodyReasonMax = 2000;
+
+
+
+export const ReleaseDistributionAcceptanceBody = zod.object({
+  "version": zod.number().int().min(1),
+  "reason": zod.string().min(releaseDistributionAcceptanceBodyReasonMin).max(releaseDistributionAcceptanceBodyReasonMax)
+})
+
+export const ReleaseDistributionAcceptanceResponse = zod.object({
+  "packetId": zod.string().nullable(),
+  "version": zod.number().int(),
+  "status": zod.union([zod.literal('ACTIVE'),zod.literal('FIRST_ACCEPTED'),zod.literal('CLOSED'),zod.literal('REVOKED'),zod.literal(null)]).nullable(),
+  "packet": zod.union([zod.object({
+  "location": zod.object({
+  "city": zod.string(),
+  "county": zod.string(),
+  "state": zod.string(),
+  "zip": zod.string()
+}),
+  "property": zod.object({
+  "propertyType": zod.string(),
+  "sqft": zod.number(),
+  "beds": zod.number(),
+  "baths": zod.number(),
+  "units": zod.number().int(),
+  "askingPrice": zod.number().nullish()
+}),
+  "economics": zod.object({
+  "acquisitionPrice": zod.number(),
+  "authorizedAssignmentFee": zod.number(),
+  "buyerPrice": zod.number()
+}),
+  "underwriting": zod.object({
+  "arv": zod.object({
+  "low": zod.number(),
+  "expected": zod.number(),
+  "high": zod.number(),
+  "confidence": zod.number()
+}),
+  "repairs": zod.object({
+  "low": zod.number(),
+  "expected": zod.number(),
+  "high": zod.number(),
+  "confidence": zod.number()
+}),
+  "grossProfitPotential": zod.object({
+  "low": zod.number(),
+  "expected": zod.number(),
+  "caveat": zod.string()
+}),
+  "formula": zod.string(),
+  "calculatedAt": zod.string()
+}),
+  "closeBy": zod.string(),
+  "contingencies": zod.string(),
+  "media": zod.array(zod.record(zod.string(), zod.unknown())),
+  "mediaNotice": zod.string(),
+  "disclosure": zod.string()
+}),zod.null()]),
+  "authorizedBy": zod.string().nullable(),
+  "authorizedAt": zod.string().nullable(),
+  "expiresAt": zod.string().nullable(),
+  "acceptedBuyerId": zod.string().nullable(),
+  "acceptedAt": zod.string().nullable(),
+  "recipients": zod.array(zod.object({
+  "buyerId": zod.string().uuid(),
+  "buyerName": zod.string(),
+  "status": zod.enum(['INVITED', 'INTERESTED', 'ACCEPTED', 'DECLINED']),
+  "events": zod.array(zod.object({
+  "eventKey": zod.string(),
+  "action": zod.enum(['INTERESTED', 'ACCEPTED', 'DECLINED']),
+  "recordedAt": zod.string(),
+  "note": zod.string()
+})),
+  "createdAt": zod.string(),
+  "updatedAt": zod.string()
+}))
+})
+
+
+export const getBuyerPortalDealHeaderXPortalTokenMin = 40;
+export const getBuyerPortalDealHeaderXPortalTokenMax = 50;
+
+
+
+export const GetBuyerPortalDealHeader = zod.object({
+  "X-Portal-Token": zod.string().min(getBuyerPortalDealHeaderXPortalTokenMin).max(getBuyerPortalDealHeaderXPortalTokenMax)
+})
+
+export const GetBuyerPortalDealResponse = zod.object({
+  "packet": zod.object({
+  "location": zod.object({
+  "city": zod.string(),
+  "county": zod.string(),
+  "state": zod.string(),
+  "zip": zod.string()
+}),
+  "property": zod.object({
+  "propertyType": zod.string(),
+  "sqft": zod.number(),
+  "beds": zod.number(),
+  "baths": zod.number(),
+  "units": zod.number().int(),
+  "askingPrice": zod.number().nullish()
+}),
+  "economics": zod.object({
+  "acquisitionPrice": zod.number(),
+  "authorizedAssignmentFee": zod.number(),
+  "buyerPrice": zod.number()
+}),
+  "underwriting": zod.object({
+  "arv": zod.object({
+  "low": zod.number(),
+  "expected": zod.number(),
+  "high": zod.number(),
+  "confidence": zod.number()
+}),
+  "repairs": zod.object({
+  "low": zod.number(),
+  "expected": zod.number(),
+  "high": zod.number(),
+  "confidence": zod.number()
+}),
+  "grossProfitPotential": zod.object({
+  "low": zod.number(),
+  "expected": zod.number(),
+  "caveat": zod.string()
+}),
+  "formula": zod.string(),
+  "calculatedAt": zod.string()
+}),
+  "closeBy": zod.string(),
+  "contingencies": zod.string(),
+  "media": zod.array(zod.record(zod.string(), zod.unknown())),
+  "mediaNotice": zod.string(),
+  "disclosure": zod.string()
+}),
+  "recipientStatus": zod.enum(['INVITED', 'INTERESTED', 'ACCEPTED', 'DECLINED']),
+  "canAccept": zod.boolean(),
+  "unavailableReason": zod.string().nullable(),
+  "events": zod.array(zod.object({
+  "eventKey": zod.string(),
+  "action": zod.enum(['INTERESTED', 'ACCEPTED', 'DECLINED']),
+  "recordedAt": zod.string(),
+  "note": zod.string()
+}))
+})
+
+
+export const respondToBuyerPortalDealHeaderXPortalTokenMin = 40;
+export const respondToBuyerPortalDealHeaderXPortalTokenMax = 50;
+
+
+
+export const RespondToBuyerPortalDealHeader = zod.object({
+  "X-Portal-Token": zod.string().min(respondToBuyerPortalDealHeaderXPortalTokenMin).max(respondToBuyerPortalDealHeaderXPortalTokenMax)
+})
+
+export const respondToBuyerPortalDealBodyEventKeyMin = 8;
+export const respondToBuyerPortalDealBodyEventKeyMax = 120;
+
+export const respondToBuyerPortalDealBodyNoteMax = 2000;
+
+
+
+export const RespondToBuyerPortalDealBody = zod.object({
+  "eventKey": zod.string().min(respondToBuyerPortalDealBodyEventKeyMin).max(respondToBuyerPortalDealBodyEventKeyMax),
+  "action": zod.enum(['INTERESTED', 'ACCEPTED', 'DECLINED']),
+  "note": zod.string().max(respondToBuyerPortalDealBodyNoteMax).optional()
+})
+
+export const RespondToBuyerPortalDealResponse = zod.object({
+  "packet": zod.object({
+  "location": zod.object({
+  "city": zod.string(),
+  "county": zod.string(),
+  "state": zod.string(),
+  "zip": zod.string()
+}),
+  "property": zod.object({
+  "propertyType": zod.string(),
+  "sqft": zod.number(),
+  "beds": zod.number(),
+  "baths": zod.number(),
+  "units": zod.number().int(),
+  "askingPrice": zod.number().nullish()
+}),
+  "economics": zod.object({
+  "acquisitionPrice": zod.number(),
+  "authorizedAssignmentFee": zod.number(),
+  "buyerPrice": zod.number()
+}),
+  "underwriting": zod.object({
+  "arv": zod.object({
+  "low": zod.number(),
+  "expected": zod.number(),
+  "high": zod.number(),
+  "confidence": zod.number()
+}),
+  "repairs": zod.object({
+  "low": zod.number(),
+  "expected": zod.number(),
+  "high": zod.number(),
+  "confidence": zod.number()
+}),
+  "grossProfitPotential": zod.object({
+  "low": zod.number(),
+  "expected": zod.number(),
+  "caveat": zod.string()
+}),
+  "formula": zod.string(),
+  "calculatedAt": zod.string()
+}),
+  "closeBy": zod.string(),
+  "contingencies": zod.string(),
+  "media": zod.array(zod.record(zod.string(), zod.unknown())),
+  "mediaNotice": zod.string(),
+  "disclosure": zod.string()
+}),
+  "recipientStatus": zod.enum(['INVITED', 'INTERESTED', 'ACCEPTED', 'DECLINED']),
+  "canAccept": zod.boolean(),
+  "unavailableReason": zod.string().nullable(),
+  "events": zod.array(zod.object({
+  "eventKey": zod.string(),
+  "action": zod.enum(['INTERESTED', 'ACCEPTED', 'DECLINED']),
+  "recordedAt": zod.string(),
+  "note": zod.string()
+}))
+})
+
+
 export const RecordDestinationActivityParams = zod.object({
   "id": zod.coerce.string(),
   "buyerId": zod.coerce.string()

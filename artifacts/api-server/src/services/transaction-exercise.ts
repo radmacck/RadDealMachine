@@ -16,6 +16,10 @@ import { recordTransactionException } from "./transaction-exceptions";
 import { reviewHandoffs, listHandoffs, recordHandoffEvent } from "./handoffs";
 import { getBuyerRecord } from "./operations-records";
 import { requestBuyerQualification } from "./buyer-pool";
+import {
+  authorizeDealDistribution, getBuyerPortalDeal, getDealDistribution,
+  releaseDistributionAcceptance, respondToBuyerPortalDeal, shareDistributionRecipients,
+} from "./distribution-store";
 const actor = {id:`synthetic-transaction:${randomUUID()}`,role:"OWNER"};
 const operator = {...actor,role:"OPERATOR"};
 const now = new Date();
@@ -125,6 +129,33 @@ try {
    buyer = await buyers.verifyBuyer(buyer.id,{...verificationInput,version:buyer.version,buyingEvidenceAt:now.toISOString()},actor,now);
    op = await refreshMatches(id,now);
    assert.equal(op.matches.find(m=>m.buyerId===buyer.id)?.eligible,true);
+    const distribution = await authorizeDealDistribution(id,{version:op.contract!.version,
+      reason:"Synthetic owner authorization for isolated distribution exercise."},actor,now);
+    assert.ok(distribution.packetId);
+    const expectedBuyerPrice=op.contract!.purchasePrice+op.contract!.assignmentTarget;
+    assert.equal(distribution.packet?.economics.buyerPrice,expectedBuyerPrice);
+    const shared = await shareDistributionRecipients(distribution.packetId!,{version:distribution.version,buyerIds:[buyer.id]},operator,now);
+    assert.equal(shared.links.length,1);
+    const portalToken = shared.links[0]!.token;
+    const portal = await getBuyerPortalDeal(portalToken,now);
+    assert.equal(portal.packet.economics.buyerPrice,expectedBuyerPrice);
+    assert.equal(JSON.stringify(portal).includes(detail.lead.address),false,"The public buyer packet must not expose the street address.");
+    assert.equal(JSON.stringify(portal).includes(detail.lead.sellerName),false,"The public buyer packet must not expose seller identity.");
+    const interest = {eventKey:"synthetic-portal-interest",action:"INTERESTED" as const,note:"Synthetic interest, no external contact."};
+    let portalResult = await respondToBuyerPortalDeal(portalToken,interest,now);
+    assert.equal(portalResult.recipientStatus,"INTERESTED");
+    portalResult = await respondToBuyerPortalDeal(portalToken,interest,now);
+    assert.equal(portalResult.events.length,1,"An identical portal event retry must not duplicate activity.");
+    await assert.rejects(respondToBuyerPortalDeal(portalToken,{...interest,action:"DECLINED"},now),/different response/);
+    portalResult = await respondToBuyerPortalDeal(portalToken,{eventKey:"synthetic-portal-accept",action:"ACCEPTED"},now);
+    assert.equal(portalResult.recipientStatus,"ACCEPTED");
+    assert.equal(portalResult.canAccept,false);
+    assert.ok(!(await dealOperations(id,now)).contract?.committedBuyerId,
+      "A portal acceptance is intent only; it must not create a buyer commitment.");
+    const held = await getDealDistribution(id);
+    assert.equal(held.status,"FIRST_ACCEPTED");
+    await releaseDistributionAcceptance(id,{version:held.version,reason:"Synthetic owner review completed without assignment."},actor,now);
+    assert.equal((await getDealDistribution(id)).status,"ACTIVE");
   let destination = await buyers.createBuyer({name:"SYNTHETIC GURU DESTINATION",email:"synthetic-guru@example.com",phone:"",
     source:"Synthetic destination exercise",status:"ACTIVE",destinationKind:"GURU",qualifiedDealFee:500,feeTermsSource:"Synthetic quoted terms, not receipt",
     criteria:buyer.criteria},actor);

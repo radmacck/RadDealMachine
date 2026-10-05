@@ -1581,6 +1581,205 @@ export interface DealContract {
   createdAt: string;
 }
 
+export interface DistributionAuthorizationInput {
+  /** @minimum 1 */
+  version: number;
+  /**
+     * @minLength 3
+     * @maxLength 2000
+     */
+  reason: string;
+}
+
+export interface DistributionShareInput {
+  /** @minimum 1 */
+  version: number;
+  /**
+     * @minItems 1
+     * @maxItems 50
+     */
+  buyerIds: string[];
+}
+
+export interface ReleaseDistributionAcceptanceInput {
+  /** @minimum 1 */
+  version: number;
+  /**
+     * @minLength 3
+     * @maxLength 2000
+     */
+  reason: string;
+}
+
+export type DistributionPacketSnapshotLocation = {
+  city: string;
+  county: string;
+  state: string;
+  zip: string;
+};
+
+export type DistributionPacketSnapshotProperty = {
+  propertyType: string;
+  sqft: number;
+  beds: number;
+  baths: number;
+  units: number;
+  /** @nullable */
+  askingPrice?: number | null;
+};
+
+export type DistributionPacketSnapshotEconomics = {
+  acquisitionPrice: number;
+  authorizedAssignmentFee: number;
+  buyerPrice: number;
+};
+
+export type DistributionPacketSnapshotUnderwritingGrossProfitPotential = {
+  low: number;
+  expected: number;
+  caveat: string;
+};
+
+export type DistributionPacketSnapshotUnderwriting = {
+  arv: Range;
+  repairs: Range;
+  grossProfitPotential: DistributionPacketSnapshotUnderwritingGrossProfitPotential;
+  formula: string;
+  calculatedAt: string;
+};
+
+export type DistributionPacketSnapshotMediaItem = { [key: string]: unknown };
+
+export interface DistributionPacketSnapshot {
+  location: DistributionPacketSnapshotLocation;
+  property: DistributionPacketSnapshotProperty;
+  economics: DistributionPacketSnapshotEconomics;
+  underwriting: DistributionPacketSnapshotUnderwriting;
+  closeBy: string;
+  contingencies: string;
+  media: DistributionPacketSnapshotMediaItem[];
+  mediaNotice: string;
+  disclosure: string;
+}
+
+export type DistributionRecipientStatus = typeof DistributionRecipientStatus[keyof typeof DistributionRecipientStatus];
+
+
+export const DistributionRecipientStatus = {
+  INVITED: 'INVITED',
+  INTERESTED: 'INTERESTED',
+  ACCEPTED: 'ACCEPTED',
+  DECLINED: 'DECLINED',
+} as const;
+
+export type BuyerPortalEventAction = typeof BuyerPortalEventAction[keyof typeof BuyerPortalEventAction];
+
+
+export const BuyerPortalEventAction = {
+  INTERESTED: 'INTERESTED',
+  ACCEPTED: 'ACCEPTED',
+  DECLINED: 'DECLINED',
+} as const;
+
+export interface BuyerPortalEvent {
+  eventKey: string;
+  action: BuyerPortalEventAction;
+  recordedAt: string;
+  note: string;
+}
+
+export interface DistributionRecipient {
+  buyerId: string;
+  buyerName: string;
+  status: DistributionRecipientStatus;
+  events: BuyerPortalEvent[];
+  createdAt: string;
+  updatedAt: string;
+}
+
+/**
+ * @nullable
+ */
+export type DealDistributionStatus = typeof DealDistributionStatus[keyof typeof DealDistributionStatus] | null;
+
+
+export const DealDistributionStatus = {
+  ACTIVE: 'ACTIVE',
+  FIRST_ACCEPTED: 'FIRST_ACCEPTED',
+  CLOSED: 'CLOSED',
+  REVOKED: 'REVOKED',
+} as const;
+
+export interface DealDistribution {
+  /** @nullable */
+  packetId: string | null;
+  version: number;
+  /** @nullable */
+  status: DealDistributionStatus;
+  packet: DistributionPacketSnapshot | null;
+  /** @nullable */
+  authorizedBy: string | null;
+  /** @nullable */
+  authorizedAt: string | null;
+  /** @nullable */
+  expiresAt: string | null;
+  /** @nullable */
+  acceptedBuyerId: string | null;
+  /** @nullable */
+  acceptedAt: string | null;
+  recipients: DistributionRecipient[];
+}
+
+export type DistributionShareResponseLinksItem = {
+  buyerId: string;
+  buyerName: string;
+  token: string;
+};
+
+export interface DistributionShareResponse {
+  distribution: DealDistribution;
+  links: DistributionShareResponseLinksItem[];
+}
+
+export type BuyerPortalIntentInputAction = typeof BuyerPortalIntentInputAction[keyof typeof BuyerPortalIntentInputAction];
+
+
+export const BuyerPortalIntentInputAction = {
+  INTERESTED: 'INTERESTED',
+  ACCEPTED: 'ACCEPTED',
+  DECLINED: 'DECLINED',
+} as const;
+
+export interface BuyerPortalIntentInput {
+  /**
+     * @minLength 8
+     * @maxLength 120
+     */
+  eventKey: string;
+  action: BuyerPortalIntentInputAction;
+  /** @maxLength 2000 */
+  note?: string;
+}
+
+export type BuyerPortalDealRecipientStatus = typeof BuyerPortalDealRecipientStatus[keyof typeof BuyerPortalDealRecipientStatus];
+
+
+export const BuyerPortalDealRecipientStatus = {
+  INVITED: 'INVITED',
+  INTERESTED: 'INTERESTED',
+  ACCEPTED: 'ACCEPTED',
+  DECLINED: 'DECLINED',
+} as const;
+
+export interface BuyerPortalDeal {
+  packet: DistributionPacketSnapshot;
+  recipientStatus: BuyerPortalDealRecipientStatus;
+  canAccept: boolean;
+  /** @nullable */
+  unavailableReason: string | null;
+  events: BuyerPortalEvent[];
+}
+
 export type HandoffEventInputKind = typeof HandoffEventInputKind[keyof typeof HandoffEventInputKind];
 
 

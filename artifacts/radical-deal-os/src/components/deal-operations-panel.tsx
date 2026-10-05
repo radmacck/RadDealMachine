@@ -16,6 +16,7 @@ import { useAccess } from '@/hooks/use-access';
 import { useInvalidateWork } from '@/hooks/use-invalidate';
 import { useToast } from '@/hooks/use-toast';
 import { ago, fmtDate, fromLocalInput, isOverdue, money, num, toLocalInput } from '@/lib/format';
+import { DistributionPanel } from '@/components/distribution-panel';
 
 const MILESTONES: { k: ClosingMilestoneInputKind; label: string }[] = [
   { k: 'TITLE_CLEARED', label: 'Title cleared' }, { k: 'EARNEST_MONEY_CONFIRMED', label: 'Earnest money confirmed' },
@@ -423,6 +424,8 @@ export function DealOperationsPanel({ detail }: { detail: LeadDetail }) {
           </div>
         )}
       </Block>
+
+      <DistributionPanel detail={detail} contract={c ?? null} matches={ops.matches} onChanged={done} />
 
       <Block title="Buyers for this deal" tid="panel-matches">
         <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
