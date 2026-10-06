@@ -1,4 +1,5 @@
 import { z } from "zod";
+export { ConnectorRegistry } from "./connector-registry";
 export {
   PHILA_LI_VIOLATIONS_SOURCE,
   PHILA_PUBLIC_RECORD_SOURCES,

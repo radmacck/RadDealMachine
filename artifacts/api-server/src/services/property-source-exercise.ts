@@ -9,6 +9,7 @@ import {
   db, pool, jobsTable, leadsTable, intelligenceTable, propertySourceObservationsTable,
   unmatchedPropertySourceObservationsTable,
 } from "@workspace/db";
+import { ListPropertySourcesResponse } from "@workspace/api-zod";
 import { DomainError } from "@workspace/deal-domain";
 import type { PropertySourceRefresh } from "@workspace/property-sources";
 import { logger } from "../lib/logger";
@@ -19,14 +20,66 @@ import {
   promotePropertyDiscovery, recordPropertyObservation, recordPublicPropertyDiscovery,
   refreshPropertySourceEvidence, stalePropertySourceRefreshTargets,
 } from "./property-discovery-store";
-import { addSourceComps, getSourceResearch, importPublicProperty, refreshSourceResearch, searchPublicProperties } from "./property-source-store";
+import { addSourceComps, getSourceResearch, importPublicProperty, listPropertySources, refreshSourceResearch, searchPublicProperties } from "./property-source-store";
 import { callQueue, createLead, leadDetail } from "./deal-store";
 import { createBuyer, verifyBuyer } from "./buyer-store";
 import { runWorkerOnce, submitWorkerJob } from "./workers";
+import {
+  allPropertySourceConnectors,
+  listPropertySourceDescriptors,
+  runPropertyDiscoveryConnectors,
+  runPropertyEvidenceRefresh,
+} from "./property-source-connectors";
 
 const actor = { id: `synthetic-source:${randomUUID()}`, role: "OWNER" };
 const now = new Date();
 try {
+  const registeredConnectors = allPropertySourceConnectors();
+  assert.ok(registeredConnectors.length >= 4, "The live system must register multiple real, replaceable source adapters.");
+  const listedSources = ListPropertySourcesResponse.parse(listPropertySources());
+  assert.equal(new Set(listedSources.map(source => source.id)).size,
+    listedSources.length, "The public source catalog must deduplicate source descriptors and conform to the API contract.");
+  assert.ok(listedSources.length >= 5, "The public catalog must enumerate the live OPA, L&I, unsafe-building, vacancy, and deed-record sources.");
+  assert.ok(registeredConnectors.some(connector => connector.id === "phila-opa" &&
+    connector.searchProperties && connector.propertyById && connector.discoverProperties));
+  assert.ok(registeredConnectors.some(connector => connector.id === "phila-li-enforcement" &&
+    connector.discoverProperties && connector.refreshEvidence));
+  assert.ok(registeredConnectors.some(connector => connector.id === "phila-vacancy-indicators" &&
+    connector.refreshEvidence));
+  assert.ok(registeredConnectors.some(connector => connector.discoverBuyerActivity),
+    "Current buyer activity research must also run through a registered source adapter.");
+  const connectorFailureProbe = await runPropertyDiscoveryConnectors([
+    {
+      id: "exercise-source-success",
+      sources: [{id:"exercise-source-success",name:"Synthetic source exercise",coverage:"Isolated exercise only",termsUrl:"https://example.com/terms",capabilities:["synthetic test"],limitations:["not a real feed"]}],
+      discoverProperties: async () => ({properties:[],unmatchedObservations:[]}),
+    },
+    {
+      id: "exercise-source-failure",
+      sources: [{id:"exercise-source-failure",name:"Synthetic failing exercise",coverage:"Isolated exercise only",termsUrl:"https://example.com/terms",capabilities:["synthetic test"],limitations:["not a real feed"]}],
+      discoverProperties: async () => { throw new Error("controlled connector failure"); },
+    },
+  ], now);
+  assert.equal(connectorFailureProbe.batches.length, 1, "A failing source must not discard another source's results.");
+  assert.equal(connectorFailureProbe.failures[0]?.connectorId, "exercise-source-failure");
+  assert.equal(connectorFailureProbe.failures[0]?.operation, "DISCOVER");
+  const refreshBatchSizes: number[] = [];
+  const refreshFailureProbe = await runPropertyEvidenceRefresh([
+    {
+      id: "exercise-refresh-success",
+      sources: [{id:"exercise-refresh-success",name:"Synthetic refresh exercise",coverage:"Isolated exercise only",termsUrl:"https://example.com/terms",capabilities:["synthetic test"],limitations:["not a real feed"]}],
+      maxRefreshBatchSize: 2,
+      refreshEvidence: async (ids) => { refreshBatchSizes.push(ids.length); return []; },
+    },
+    {
+      id: "exercise-refresh-failure",
+      sources: [{id:"exercise-refresh-failure",name:"Synthetic failing refresh",coverage:"Isolated exercise only",termsUrl:"https://example.com/terms",capabilities:["synthetic test"],limitations:["not a real feed"]}],
+      refreshEvidence: async () => { throw new Error("controlled refresh failure"); },
+    },
+  ], ["parcel-1","parcel-2","parcel-3"], now);
+  assert.deepEqual(refreshBatchSizes, [2,1], "Connector-specific refresh batch limits must work without imposing a global connector cap.");
+  assert.equal(refreshFailureProbe.failures[0]?.connectorId, "exercise-refresh-failure");
+  assert.equal(refreshFailureProbe.failures[0]?.operation, "REFRESH");
   await assert.rejects(() => submitWorkerJob({
     kind: "DISCOVER_PROPERTIES", idempotencyKey: "synthetic-property-no-terms",
   }, actor), /reviewed source terms/i);
@@ -36,6 +89,7 @@ try {
   }, actor);
   const discoveryRun = await runWorkerOnce(now, false, discoveryJob.id);
   assert.equal(discoveryRun?.state, "SUCCEEDED", "The durable seller discovery job must complete from the official source.");
+  assert.match(discoveryRun?.message ?? "", /Registered discovery connector results:.*phila-opa/);
   assert.match(discoveryRun?.message ?? "", /no active lead was created/i);
   const unmatchedCountFromRun = Number(discoveryRun?.message?.match(/Retained (\d+) unmatched L&I source observations/)?.[1]);
   assert.ok(Number.isInteger(unmatchedCountFromRun), "Worker outcome must report the count of unmatched source observations retained.");

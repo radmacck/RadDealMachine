@@ -5,9 +5,10 @@ import { db, buyersTable } from "@workspace/db";
 import { DiscoverBuyerBody, RequestBuyerQualificationBody } from "@workspace/api-zod";
 import { assertOperationsRole, DomainError, evidenceUrl, pastInstant, qualificationMaintenanceKind, type OfferActor, type Buyer } from "@workspace/deal-domain";
 import { searchPublicProperties } from "./property-source-store";
-import { searchRepeatedRecordedBuyers, type RepeatedTransferBuyer } from "@workspace/property-sources";
+import type { RepeatedTransferBuyer } from "@workspace/property-sources";
 import { audit } from "./deal-store";
 import { allBuyerRecords, buyerRecord, queueJob } from "./operations-records";
+import { allPropertySourceConnectors } from "./property-source-connectors";
 type Prospect = ReturnType<typeof DiscoverBuyerBody.parse>;
 type SourceObservationInput = {
   sourceId: string;
@@ -267,23 +268,29 @@ export async function discoverPublicBuyers(now = new Date()) {
     });
     ownerGroups++;
   }
-  const transferBuyers: RepeatedTransferBuyer[] = await searchRepeatedRecordedBuyers(now);
-  for (const buyer of transferBuyers) {
-    const sourceId = `phila-transfer-grantee:${entityIdentity(buyer.name)}`;
-    await discoverBuyer({
-      name:buyer.name,
-      source:buyer.source,
-      sourceUrl:buyer.sourceUrl,
-      capturedAt:buyer.capturedAt,
-      confidence:buyer.confidence,
-    },{id:"system:buyer-discovery",role:"ANALYST"},now,publicOwnerKey(buyer.name),{
-      sourceId,
-      recordIdentities:buyer.recordIdentities,
-      activityCount:buyer.activityCount,
-      eventAt:buyer.latestActivityAt,
-    });
+  const buyerActivityConnectors = allPropertySourceConnectors().filter(adapter => adapter.discoverBuyerActivity);
+  if (!buyerActivityConnectors.length) throw new DomainError("No public buyer-activity source connector is registered.", 503);
+  let transferBuyerGroups = 0;
+  for (const adapter of buyerActivityConnectors) {
+    const transferBuyers: RepeatedTransferBuyer[] = await adapter.discoverBuyerActivity!(now);
+    transferBuyerGroups += transferBuyers.length;
+    for (const buyer of transferBuyers) {
+      const sourceId = `${adapter.observationKeyPrefix ?? adapter.id}:${entityIdentity(buyer.name)}`;
+      await discoverBuyer({
+        name:buyer.name,
+        source:buyer.source,
+        sourceUrl:buyer.sourceUrl,
+        capturedAt:buyer.capturedAt,
+        confidence:buyer.confidence,
+      },{id:"system:buyer-discovery",role:"ANALYST"},now,publicOwnerKey(buyer.name),{
+        sourceId,
+        recordIdentities:buyer.recordIdentities,
+        activityCount:buyer.activityCount,
+        eventAt:buyer.latestActivityAt,
+      });
+    }
   }
-  return `Refreshed ${ownerGroups} bounded Philadelphia OPA corporate-owner groups and ${transferBuyers.length} repeated recorded-grantee groups. Source observations are deduplicated by entity and channel; every record remains unverified with UNKNOWN current buying status and is excluded from matching. No criteria, contact permission, funding, current intent or approval inferred.`;
+  return `Refreshed ${ownerGroups} bounded Philadelphia OPA corporate-owner groups and ${transferBuyerGroups} repeated recorded-grantee groups. Source observations are deduplicated by entity and channel; every record remains unverified with UNKNOWN current buying status and is excluded from matching. No criteria, contact permission, funding, current intent or approval inferred.`;
 }
 export async function reviewBuyerPool(now = new Date()) {
   const rows = await allBuyerRecords(db,now);

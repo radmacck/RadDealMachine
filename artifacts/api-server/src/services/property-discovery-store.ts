@@ -23,12 +23,11 @@ import {
 import {
   rankContactPaths,
   propertyById,
-  refreshPhiladelphiaEnforcementEvidence,
-  refreshPhiladelphiaVacancyEvidence,
   type PropertySourceRefresh,
 } from "@workspace/property-sources";
 import { audit, createLead, move } from "./deal-store";
 import { allBuyerRecords } from "./operations-records";
+import { refreshEvidenceFromRegisteredSources } from "./property-source-connectors";
 
 type Tx = Parameters<Parameters<typeof db.transaction>[0]>[0];
 type Database = typeof db | Tx;
@@ -804,12 +803,11 @@ function checkAdapterEvidence(evidence: PropertySourceRefresh, now: Date): Prope
  */
 export async function refreshPropertySourceEvidence(propertyIds: string[], actor: string, now = new Date()) {
   const ids = [...new Set(propertyIds)];
-  if (!ids.length) return { checked: 0, changed: 0, signals: 0 };
-  const [enforcement, vacancy] = await Promise.all([
-    refreshPhiladelphiaEnforcementEvidence(ids, now),
-    refreshPhiladelphiaVacancyEvidence(ids, now),
-  ]);
-  const observations = [...enforcement, ...vacancy];
+  if (!ids.length) return {
+    checked: 0, changed: 0, signals: 0,
+    failures: [] as Awaited<ReturnType<typeof refreshEvidenceFromRegisteredSources>>["failures"],
+  };
+  const { observations, failures } = await refreshEvidenceFromRegisteredSources(ids, now);
   let changed = 0;
   let signals = 0;
   await db.transaction(async tx => {
@@ -936,7 +934,7 @@ export async function refreshPropertySourceEvidence(propertyIds: string[], actor
       }
     }
   });
-  return { checked: observations.length, changed, signals };
+  return { checked: observations.length, changed, signals, failures };
 }
 
 export async function recordPublicPropertyDiscovery(recordId: string, termsReviewed: boolean, actor: OfferActor, now = new Date()) {

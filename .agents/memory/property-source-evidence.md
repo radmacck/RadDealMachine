@@ -5,6 +5,8 @@ description: Provenance and uncertainty rules for public parcel-level property r
 
 Join public property evidence only on exact stable parcel identifiers; never infer a match from nearby addresses. A source no-match describes that query result, not the absence or resolution of a condition. Keep source identity, retrieval time, record identity, epistemic classification, confidence, freshness, and material prior versions visible.
 
-**Why:** Public records can be stale, incomplete, or changed without establishing a property's present condition, occupancy, title, or seller motivation.
+Persist each distinct source record even when multiple feeds resolve to one property; deduplicate the property workflow, not away its source provenance. Register external connectors only when access for the intended use is documented, honoring terms, robots rules, authentication, licenses, and rate limits. Never bypass restrictions; when permission is unclear, leave the source disconnected and report that limitation rather than listing it as an active feed.
 
-**How to apply:** For parcel-source connectors, keep no-match, stale, and undated results distinct; use freshness to control qualification weight, preserve changed evidence history, and route uncertainty to a verification action.
+**Why:** Public records can be stale, incomplete, or changed without establishing a property's present condition, occupancy, title, or seller motivation. A public page also does not by itself establish permission for automated collection.
+
+**How to apply:** For parcel-source connectors, keep no-match, stale, and undated results distinct; use freshness to control qualification weight, preserve changed evidence history, and route uncertainty to a verification action. Keep one discovery per exact parcel identity while retaining each source's own record observation. Before activating a new connector, verify and encode its permitted access method and source-specific limits.

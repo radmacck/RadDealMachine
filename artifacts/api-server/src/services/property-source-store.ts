@@ -3,10 +3,11 @@ import { db, intelligenceTable, leadsTable } from "@workspace/db";
 import { assertOperationsRole, DomainError, validateProvenance, type OfferActor, type IntelligenceInput, type Lead } from "@workspace/deal-domain";
 import { GetSourceResearchResponse, RefreshSourceResearchResponse, ImportPublicPropertyResponse, AddSourceCompsBody } from "@workspace/api-zod";
 import {
-  PHILA_PUBLIC_RECORD_SOURCES, PHILA_SOURCE, searchProperties, propertyById, propertyByAddress, nearbySales,
+  PHILA_SOURCE, propertyById, propertyByAddress,
   type PublicProperty,
 } from "@workspace/property-sources";
 import { audit, getAssumptions, leadDetail, lockedLead, saveUnderwriting } from "./deal-store";
+import { getPropertySourceConnector, listPropertySourceDescriptors } from "./property-source-connectors";
 
 type Tx = Parameters<Parameters<typeof db.transaction>[0]>[0];
 type Research = ReturnType<typeof RefreshSourceResearchResponse.parse>;
@@ -28,13 +29,17 @@ async function sourceRequest<T>(action: () => Promise<T>) {
     throw new DomainError(`Official property source: ${message}. No source success was recorded.`,409);
   }
 }
-export function listPropertySources() { return [PHILA_SOURCE, ...PHILA_PUBLIC_RECORD_SOURCES]; }
+export function listPropertySources() { return listPropertySourceDescriptors(); }
 export async function searchPublicProperties(zip?: string, lane = "properties", now = new Date()) {
-  return {source:PHILA_SOURCE,records:await sourceRequest(()=>searchProperties(zip,lane,now)),capturedAt:now.toISOString()};
+  const connector = getPropertySourceConnector(PHILA_SOURCE.id);
+  if (!connector?.searchProperties) throw new DomainError("The Philadelphia OPA search adapter is not registered.", 503);
+  return {source:PHILA_SOURCE,records:await sourceRequest(()=>connector.searchProperties!(zip,lane,now)),capturedAt:now.toISOString()};
 }
 export async function collectPublicSourceResearch(subject: PublicProperty, now: Date): Promise<Research> {
   const assumptions = await getAssumptions();
-  const candidates = await sourceRequest(()=>nearbySales(subject,{
+  const connector = getPropertySourceConnector(PHILA_SOURCE.id);
+  if (!connector?.nearbySales) throw new DomainError("The Philadelphia OPA comp adapter is not registered.", 503);
+  const candidates = await sourceRequest(()=>connector.nearbySales!(subject,{
     radius:assumptions.maxDistanceMiles,ageDays:assumptions.maxCompAgeDays,sizeTolerance:assumptions.maxSqftDifferencePct,
   },now));
   return RefreshSourceResearchResponse.parse({

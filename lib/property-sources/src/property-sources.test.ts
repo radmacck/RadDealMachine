@@ -1,5 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
+import { ConnectorRegistry } from "./connector-registry";
 import {
   candidateSales, normalizeCorporateGrantee, normalizeProperty, PHILA_SOURCE, propertyById,
   discoverPhiladelphiaViolationParcels, rankContactPaths, refreshPhiladelphiaEnforcementEvidence,
@@ -85,4 +86,11 @@ test("repeated recorded grantees reject ambiguous names rather than treating the
   assert.equal(normalizeCorporateGrantee("Jane Smith"),null);
   assert.equal(normalizeCorporateGrantee("Example Holdings LLC AND Seller LLC"),null);
   assert.equal(normalizeCorporateGrantee("Example Holdings LLC; Seller LLC"),null);
+});
+test("replaceable source registry has no product-level connector-count ceiling",()=>{
+  const registry = new ConnectorRegistry<{id:string; sourceType:string}>();
+  for(let index=0;index<128;index++) registry.register({id:`source-${index}`,sourceType:"replaceable-adapter"});
+  assert.equal(registry.all().length,128);
+  assert.equal(registry.get("source-127")?.sourceType,"replaceable-adapter");
+  assert.throws(()=>registry.register({id:"source-127",sourceType:"duplicate"}),/already registered/);
 });
