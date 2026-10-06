@@ -95,7 +95,9 @@ async function buildDistribution(tx: Store, packet: Packet | undefined) {
   return {
     packetId: packet.id,
     version: packet.version,
-    status: packetStatus(packet.status) ? packet.status : "REVOKED",
+    status: packet.status === "FIRST_ACCEPTED"
+      ? "ACTIVE"
+      : packetStatus(packet.status) ? packet.status : "REVOKED",
     packet: packet.snapshot as unknown as DistributionPacketSnapshot,
     authorizedBy: packet.authorizedBy,
     authorizedAt: packet.authorizedAt.toISOString(),
@@ -198,7 +200,7 @@ export async function shareDistributionRecipients(
     if (packet.version !== parsed.version) throw new DomainError("Distribution packet changed. Reload before sharing.", 409);
     if (contractRow.id !== packet.contractId || (contract.attemptNumber ?? 1) !== packet.attemptNumber ||
       !["UNDER_CONTRACT", "CLOSING"].includes(contract.status) || contract.committedBuyerId ||
-      packet.status !== "ACTIVE" || packet.expiresAt.getTime() <= now.getTime()) {
+      !["ACTIVE", "FIRST_ACCEPTED"].includes(packet.status) || packet.expiresAt.getTime() <= now.getTime()) {
       throw new DomainError("This distribution is no longer open for new buyers.", 409);
     }
     const detail = await leadDetail(leadId, tx, now);
@@ -265,18 +267,15 @@ async function loadPortalRecord(tx: Store, tokenHash: string, now: Date) {
   const reservations = buyerReservations(contracts, buyer.id, contract.id);
   const match = matchBuyer(buyer, detail, contract, now, undefined, reservations.count, reservations.funds);
   const events = eventsOf(recipient);
-  const acceptanceHeldByOther = packet.acceptedBuyerId != null && packet.acceptedBuyerId !== recipient.buyerId;
   const alreadyAccepted = recipient.status === "ACCEPTED";
-  const canAccept = match.eligible && !acceptanceHeldByOther && !alreadyAccepted && packet.status === "ACTIVE";
-  const unavailableReason = acceptanceHeldByOther
-    ? "A qualified buyer has already accepted first; the owner is reviewing that response."
-    : alreadyAccepted
-      ? "Your acceptance is recorded for owner review. It is not a buyer commitment."
-      : !match.eligible
-        ? "Your current reviewed buyer qualification no longer meets this opportunity's requirements."
-        : packet.status !== "ACTIVE"
-          ? "This opportunity is waiting for owner review."
-          : null;
+  const canAccept = match.eligible && !alreadyAccepted && ["ACTIVE", "FIRST_ACCEPTED"].includes(packet.status);
+  const unavailableReason = alreadyAccepted
+    ? "Your acceptance is recorded as non-binding intent. Other qualified buyers may still respond; only an owner-reviewed valid commitment closes distribution."
+    : !match.eligible
+      ? "Your current reviewed buyer qualification no longer meets this opportunity's requirements."
+      : !["ACTIVE", "FIRST_ACCEPTED"].includes(packet.status)
+        ? "This opportunity is no longer accepting responses."
+        : null;
   return {
     packet: packet.snapshot as unknown as DistributionPacketSnapshot,
     recipientStatus: recipient.status,
@@ -335,9 +334,6 @@ export async function respondToBuyerPortalDeal(
       currentMatch = matchBuyer(buyer, detail, contract, now, undefined, reservations.count, reservations.funds);
       if (!currentMatch.eligible) throw new DomainError(`Your current buyer qualification is no longer eligible: ${currentMatch.mismatches.join("; ")}`, 409);
     }
-    if (parsed.action === "ACCEPTED" && packet.acceptedBuyerId && packet.acceptedBuyerId !== recipient.buyerId) {
-      throw new DomainError("A qualified buyer already submitted the first acceptance. The owner is reviewing that response.", 409);
-    }
     const event: BuyerPortalEvent = {
       eventKey: parsed.eventKey,
       action: parsed.action,
@@ -350,15 +346,24 @@ export async function respondToBuyerPortalDeal(
       payload: { ...recipient.payload, events: [...previous, event] },
       updatedAt: now,
     }).where(eq(distributionRecipientsTable.id, recipient.id));
-    const nextPacketStatus = parsed.action === "ACCEPTED" ? "FIRST_ACCEPTED"
-      : parsed.action === "DECLINED" && packet.acceptedBuyerId === recipient.buyerId ? "ACTIVE"
-        : packet.status;
+    const currentRecipients = await tx.select().from(distributionRecipientsTable)
+      .where(eq(distributionRecipientsTable.packetId, packet.id));
+    const activeAcceptances = currentRecipients
+      .filter((candidate) => candidate.status === "ACCEPTED")
+      .map((candidate) => {
+        const acceptedEvent = [...eventsOf(candidate)].reverse().find((item) => item.action === "ACCEPTED");
+        return {
+          buyerId: candidate.buyerId,
+          acceptedAt: acceptedEvent?.recordedAt ?? candidate.updatedAt.toISOString(),
+        };
+      })
+      .sort((a, b) => Date.parse(a.acceptedAt) - Date.parse(b.acceptedAt) || a.buyerId.localeCompare(b.buyerId));
+    const earliestActiveAcceptance = activeAcceptances.find((item) => item.buyerId === packet.acceptedBuyerId) ??
+      activeAcceptances[0];
     await tx.update(distributionPacketsTable).set({
-      status: nextPacketStatus,
-      acceptedBuyerId: parsed.action === "ACCEPTED" ? recipient.buyerId
-        : parsed.action === "DECLINED" && packet.acceptedBuyerId === recipient.buyerId ? null : packet.acceptedBuyerId,
-      acceptedAt: parsed.action === "ACCEPTED" ? now
-        : parsed.action === "DECLINED" && packet.acceptedBuyerId === recipient.buyerId ? null : packet.acceptedAt,
+      status: "ACTIVE",
+      acceptedBuyerId: earliestActiveAcceptance?.buyerId ?? null,
+      acceptedAt: earliestActiveAcceptance ? new Date(earliestActiveAcceptance.acceptedAt) : null,
       version: packet.version + 1,
       updatedAt: now,
     }).where(eq(distributionPacketsTable.id, packet.id));
@@ -419,15 +424,15 @@ export async function releaseDistributionAcceptance(
     const [packet] = await tx.select().from(distributionPacketsTable)
       .where(and(eq(distributionPacketsTable.leadId, leadId), eq(distributionPacketsTable.attemptNumber, contract.attemptNumber ?? 1))).for("update");
     if (!packet) throw new DomainError("Distribution packet not found.", 404);
-    if (packet.version !== parsed.version || packet.status !== "FIRST_ACCEPTED" || !packet.acceptedBuyerId) {
-      throw new DomainError("The first acceptance changed or is no longer awaiting review.", 409);
+    if (packet.version !== parsed.version || !["ACTIVE", "FIRST_ACCEPTED"].includes(packet.status) || !packet.acceptedBuyerId) {
+      throw new DomainError("The informational earliest-response marker changed or is no longer present.", 409);
     }
     await tx.update(distributionPacketsTable).set({
       status: "ACTIVE", acceptedBuyerId: null, acceptedAt: null,
       version: packet.version + 1, updatedAt: now,
     }).where(eq(distributionPacketsTable.id, packet.id));
     await audit(tx, actor.id, "DISTRIBUTION_ACCEPTANCE_RELEASED", leadId,
-      `Owner released soft acceptance for buyer ${packet.acceptedBuyerId}: ${parsed.reason}. No contract commitment was created or erased.`);
+      `Owner cleared the informational earliest-acceptance marker for buyer ${packet.acceptedBuyerId}: ${parsed.reason}. All qualified buyers remain eligible to respond; no buyer commitment was created or erased.`);
   });
   return getDealDistribution(leadId);
 }

@@ -19,7 +19,7 @@ import { getBuyerRecord } from "./operations-records";
 import { requestBuyerQualification } from "./buyer-pool";
 import {
   authorizeDealDistribution, getBuyerPortalDeal, getDealDistribution,
-  releaseDistributionAcceptance, respondToBuyerPortalDeal, shareDistributionRecipients,
+  respondToBuyerPortalDeal, shareDistributionRecipients,
 } from "./distribution-store";
 const actor = {id:`synthetic-transaction:${randomUUID()}`,role:"OWNER"};
 const operator = {...actor,role:"OPERATOR"};
@@ -181,36 +181,103 @@ try {
     const shared = await shareDistributionRecipients(distribution.packetId!,{version:distribution.version,buyerIds:[buyer.id,competitor.id]},operator,now);
     assert.equal(shared.links.length,2);
     const portalToken = shared.links.find(link=>link.buyerId===buyer.id)!.token;
+   const competitorPortalToken = shared.links.find(link=>link.buyerId===competitor.id)!.token;
     const portal = await getBuyerPortalDeal(portalToken,now);
+   const competitorPortal = await getBuyerPortalDeal(competitorPortalToken,now);
     assert.equal(portal.packet.economics.buyerPrice,expectedBuyerPrice);
+   assert.deepEqual(competitorPortal.packet,portal.packet,"Every selected buyer must receive the same immutable authorized packet.");
+   assert.equal(competitorPortal.canAccept,true,"A second currently qualified buyer can accept after another buyer's soft response.");
     assert.equal(JSON.stringify(portal).includes(detail.lead.address),false,"The public buyer packet must not expose the street address.");
     assert.equal(JSON.stringify(portal).includes(detail.lead.sellerName),false,"The public buyer packet must not expose seller identity.");
-    const interest = {eventKey:"synthetic-portal-interest",action:"INTERESTED" as const,note:"Synthetic interest, no external contact."};
-    let portalResult = await respondToBuyerPortalDeal(portalToken,interest,now);
+   const interest = {eventKey:"synthetic-portal-interest",action:"INTERESTED" as const,note:"Synthetic interest, no external contact."};
+   let portalResult = await respondToBuyerPortalDeal(portalToken,interest,now);
     assert.equal(portalResult.recipientStatus,"INTERESTED");
-    portalResult = await respondToBuyerPortalDeal(portalToken,interest,now);
+   portalResult = await respondToBuyerPortalDeal(portalToken,interest,now);
     assert.equal(portalResult.events.length,1,"An identical portal event retry must not duplicate activity.");
     await assert.rejects(respondToBuyerPortalDeal(portalToken,{...interest,action:"DECLINED"},now),/different response/);
-    portalResult = await respondToBuyerPortalDeal(portalToken,{eventKey:"synthetic-portal-accept",action:"ACCEPTED"},now);
+   portalResult = await respondToBuyerPortalDeal(portalToken,{eventKey:"synthetic-portal-accept",action:"ACCEPTED"},now);
     assert.equal(portalResult.recipientStatus,"ACCEPTED");
     assert.equal(portalResult.canAccept,false);
+   const secondAcceptance = await respondToBuyerPortalDeal(competitorPortalToken,
+     {eventKey:"synthetic-competitor-accept",action:"ACCEPTED"},now);
+   assert.equal(secondAcceptance.recipientStatus,"ACCEPTED","A prior soft acceptance must not block a second qualified buyer's response.");
     const afterPortalAcceptance = await dealOperations(id,now);
     assert.equal(afterPortalAcceptance.matches.find(m=>m.buyerId===buyer.id)?.status,"INTERESTED",
       "Portal interest/acceptance must propagate to the persisted buyer match without re-entry.");
+   assert.equal(afterPortalAcceptance.matches.find(m=>m.buyerId===competitor.id)?.status,"INTERESTED",
+     "A second buyer's soft acceptance is independently persisted as interest.");
     assert.equal((await seller.leadDetail(id)).lead.stage,"BUYER_INTERESTED");
     assert.ok(!(await dealOperations(id,now)).contract?.committedBuyerId,
       "A portal acceptance is intent only; it must not create a buyer commitment.");
-    const held = await getDealDistribution(id);
-    assert.equal(held.status,"FIRST_ACCEPTED");
-    op=await transactions.recordBuyerResponse(id,competitor.id,{version:afterPortalAcceptance.contract!.version,
-      buyerVersion:competitor.version,status:"INTERESTED",evidence:"Synthetic second buyer response."},operator,now);
-    await assert.rejects(transactions.recordBuyerResponse(id,competitor.id,{
-      version:op.contract!.version,buyerVersion:competitor.version,status:"COMMITTED",
-      evidence:"Synthetic attempt to bypass first qualified acceptance.",agreedPrice:130000,
-      commitmentEvidenceUrl:"https://example.com/synthetic-second-assignment",
-    },actor,now),/different qualified buyer accepted the current package first/);
-    await releaseDistributionAcceptance(id,{version:held.version,reason:"Synthetic owner review completed without assignment."},actor,now);
-    assert.equal((await getDealDistribution(id)).status,"ACTIVE");
+   let openDistribution = await getDealDistribution(id);
+   assert.equal(openDistribution.status,"ACTIVE","A soft acceptance must not close or reserve the distribution.");
+   assert.equal(openDistribution.acceptedBuyerId,buyer.id,"The earliest response is informational only.");
+   const lateQualified = await buyers.createBuyer({name:"SYNTHETIC LATE QUALIFIED BUYER",email:"late@example.com",phone:"",
+     source:"Synthetic post-acceptance distribution fixture",status:"ACTIVE",criteria:buyer.criteria},actor);
+   const lateVerified = await buyers.verifyBuyer(lateQualified.id,{...verificationInput,version:lateQualified.version,
+     identityEvidenceUrl:"https://example.com/synthetic-late-id",fundingEvidenceUrl:"https://example.com/synthetic-late-funds",
+     buyingEvidenceUrl:"https://example.com/synthetic-late-buying",criteriaEvidenceUrl:"https://example.com/synthetic-late-criteria"},actor,now);
+   await refreshMatches(id,now);
+   openDistribution = await getDealDistribution(id);
+   const thirdShare = await shareDistributionRecipients(openDistribution.packetId!,{
+     version:openDistribution.version,buyerIds:[lateVerified.id],
+   },operator,now);
+   assert.equal(thirdShare.links.length,1,"The owner/operator can add a new qualified buyer after soft acceptances.");
+   const latePortal = await getBuyerPortalDeal(thirdShare.links[0]!.token,now);
+   assert.deepEqual(latePortal.packet,portal.packet,"Later recipients receive the same frozen authorized package.");
+   const lateInterest = await respondToBuyerPortalDeal(thirdShare.links[0]!.token,{
+     eventKey:"synthetic-late-buyer-interest",action:"INTERESTED",note:"Synthetic third-buyer interest.",
+   },now);
+   assert.equal(lateInterest.recipientStatus,"INTERESTED");
+   op = await dealOperations(id,now);
+   assert.equal(op.matches.find(m=>m.buyerId===competitor.id)?.status,"INTERESTED");
+   await assert.rejects(transactions.recordBuyerResponse(id,competitor.id,{
+     version:op.contract!.version,buyerVersion:competitor.version,status:"COMMITTED",
+     evidence:"Synthetic second buyer commitment; owner reviewed signed assignment evidence.",agreedPrice:130000,
+     commitmentEvidenceUrl:"https://example.com/synthetic-second-assignment",
+   },operator,now),(error:unknown)=>(error as {status?:number}).status===403);
+   await assert.rejects(transactions.recordBuyerResponse(id,competitor.id,{
+     version:op.contract!.version,buyerVersion:competitor.version,status:"COMMITTED",
+     evidence:"Synthetic below-floor attempt; should not win.",agreedPrice:100000,
+     commitmentEvidenceUrl:"https://example.com/synthetic-below-floor-assignment",
+   },actor,now),/below the frozen acquisition/);
+   const sameContractVersion = op.contract!.version;
+   const commitRace = await Promise.allSettled([
+     transactions.recordBuyerResponse(id,competitor.id,{
+       version:sameContractVersion,buyerVersion:competitor.version,status:"COMMITTED",
+       evidence:"Synthetic second buyer commitment; owner reviewed signed assignment evidence.",agreedPrice:130000,
+       commitmentEvidenceUrl:"https://example.com/synthetic-second-assignment",
+     },actor,now),
+     transactions.recordBuyerResponse(id,lateVerified.id,{
+       version:sameContractVersion,buyerVersion:lateVerified.version,status:"COMMITTED",
+       evidence:"Synthetic third buyer commitment; owner reviewed signed assignment evidence.",agreedPrice:130000,
+       commitmentEvidenceUrl:"https://example.com/synthetic-third-assignment",
+     },actor,now),
+   ]);
+   const winners = commitRace.filter((result)=>result.status==="fulfilled");
+   const losers = commitRace.filter((result)=>result.status==="rejected");
+   assert.equal(winners.length,1,"Concurrent valid commitments must produce exactly one winner.");
+   assert.equal(losers.length,1,"The competing commitment must fail after the contract lock is won.");
+   const loser = losers[0];
+   assert.ok(loser?.status==="rejected");
+   assert.equal((loser.reason as {status?:number}).status,409);
+   const winner = winners[0];
+   if (!winner || winner.status!=="fulfilled") throw new Error("The first valid commitment race did not produce a winner.");
+   op = winner.value;
+   const winnerBuyerId = op.contract?.committedBuyerId;
+   assert.ok(winnerBuyerId && [competitor.id,lateVerified.id].includes(winnerBuyerId));
+   assert.equal(op.contract?.committedBuyerId,winnerBuyerId,
+      "A valid owner-reviewed commitment wins even though another buyer accepted earlier.");
+   const committedDistribution=await getDealDistribution(id);
+   assert.equal(committedDistribution.status,"CLOSED");
+   assert.equal(committedDistribution.acceptedBuyerId,buyer.id,"Soft acceptance history must not overwrite the actual commitment winner.");
+   for (const selectedBuyer of [buyer,competitor,lateVerified]) {
+     assert.equal(committedDistribution.recipients.find(r=>r.buyerId===selectedBuyer.id)?.status,
+       selectedBuyer.id===winnerBuyerId?"COMMITTED":"EXPIRED");
+     assert.equal(op.matches.find(m=>m.buyerId===selectedBuyer.id)?.status,
+       selectedBuyer.id===winnerBuyerId?"COMMITTED":"EXPIRED");
+   }
+   await assert.rejects(getBuyerPortalDeal(thirdShare.links[0]!.token,now),/no longer available/);
   let destination = await buyers.createBuyer({name:"SYNTHETIC GURU DESTINATION",email:"synthetic-guru@example.com",phone:"",
     source:"Synthetic destination exercise",status:"ACTIVE",destinationKind:"GURU",qualifiedDealFee:500,feeTermsSource:"Synthetic quoted terms, not receipt",
     criteria:buyer.criteria},actor);
@@ -254,26 +321,20 @@ try {
    await assert.rejects(transactions.recordDestinationActivity(id,destination.id,{...feeReceivedDetails,version:op.contract!.version},operator,
      new Date(future(5))),e=>(e as {status:number}).status===403);
    assert.equal(op.contract?.assignmentFeeReceived??null,null,"A quoted fee is not automatically recorded as received.");
-   assert.equal(op.contract?.committedBuyerId??null,null);
-   assert.equal((await seller.leadDetail(id)).lead.stage,"BUYER_INTERESTED","Destination activity must not alter the separately recorded buyer portal interest.");
+    assert.equal(op.contract?.committedBuyerId,winnerBuyerId);
+    assert.equal((await seller.leadDetail(id)).lead.stage,"BUYER_COMMITTED","Destination activity must not alter the separately committed acquisition buyer.");
    assert.equal(op.matches.find(m=>m.buyerId===destination.id)?.status,"MATCHED");
    await assert.rejects(transactions.recordBuyerResponse(id,destination.id,{version:op.contract!.version,buyerVersion:destination.version,
      status:"INTERESTED",evidence:"Synthetic destination interest must not use buyer response."},operator,now),/separate destination history/);
    await assert.rejects(transactions.recordBuyerResponse(id,destination.id,{version:op.contract!.version,buyerVersion:destination.version,
      status:"COMMITTED",evidence:"Synthetic attempt to commit a non-acquisition destination.",agreedPrice:130000,
      commitmentEvidenceUrl:"https://example.com/synthetic-invalid-destination-commitment"},actor,now),/separate destination history/);
-  assert.equal(op.matches.find(m=>m.buyerId===buyer.id)?.status,"INTERESTED","The portal response already created the buyer-interest record; no duplicate manual entry is needed.");
-  const commitment = {version:op.contract!.version,buyerVersion:buyer.version,status:"COMMITTED" as const,
-    evidence:"Synthetic owner commitment review.",commitmentEvidenceUrl:"https://example.com/synthetic-assignment",agreedPrice:130000};
-  await assert.rejects(transactions.recordBuyerResponse(id,buyer.id,commitment,operator,now),e=>(e as {status:number}).status===403);
-  await assert.rejects(transactions.recordBuyerResponse(id,buyer.id,{...commitment,agreedPrice:100000},actor,now));
-  op = await transactions.recordBuyerResponse(id,buyer.id,commitment,actor,now);
   assert.equal(op.contract?.agreedBuyerPrice,130000);
-  const committedDistribution=await getDealDistribution(id);
-  assert.equal(committedDistribution.status,"CLOSED");
-  assert.equal(committedDistribution.recipients.find(r=>r.buyerId===buyer.id)?.status,"COMMITTED");
-  assert.equal(committedDistribution.recipients.find(r=>r.buyerId===competitor.id)?.status,"EXPIRED");
-  assert.equal(op.matches.find(m=>m.buyerId===competitor.id)?.status,"EXPIRED");
+   assert.equal(op.matches.find(m=>m.buyerId===winnerBuyerId)?.status,"COMMITTED");
+   assert.equal(op.matches.find(m=>m.buyerId===buyer.id)?.status,"EXPIRED");
+   assert.equal(committedDistribution.status,"CLOSED");
+   assert.equal(committedDistribution.recipients.find(r=>r.buyerId===winnerBuyerId)?.status,"COMMITTED");
+   assert.equal(committedDistribution.recipients.find(r=>r.buyerId===buyer.id)?.status,"EXPIRED");
   const amend = {version:op.contract!.version,kind:"AMEND_CLOSING" as const,effectiveAt:now.toISOString(),
     newClosingAt:future(4),evidenceUrl:"https://example.com/synthetic-amendment",note:"SYNTHETIC signed date amendment, no real agreement."};
   await assert.rejects(recordTransactionException(id,amend,operator,now),e=>(e as {status:number}).status===403);
@@ -288,7 +349,7 @@ try {
   );
   op = await transactions.recordClosingMilestone(id,{version:op.contract!.version,kind:"ASSIGNMENT_SIGNED",
     evidenceUrl:"https://example.com/synthetic-old-assignment",note:"SYNTHETIC former buyer assignment."},actor,now);
-  const oldBuyerId = buyer.id;
+    const oldBuyerId = winnerBuyerId;
   op = await recordTransactionException(id,{version:op.contract!.version,kind:"RELEASE_BUYER",buyerId:oldBuyerId,
     effectiveAt:now.toISOString(),evidenceUrl:"https://example.com/synthetic-release",note:"SYNTHETIC externally reviewed release only."},actor,now);
   assert.equal(op.contract?.committedBuyerId,null);
@@ -303,8 +364,10 @@ try {
     verificationSource:"SYNTHETIC response",confidence:0.9},actor,now);
   op = await transactions.recordBuyerResponse(id,buyer.id,{version:op.contract!.version,buyerVersion:buyer.version,status:"INTERESTED",
     evidence:"SYNTHETIC replacement actual-interest fixture."},operator,now);
-  op = await transactions.recordBuyerResponse(id,buyer.id,{...commitment,version:op.contract!.version,buyerVersion:buyer.version,
-    commitmentEvidenceUrl:"https://example.com/synthetic-replacement-assignment"},actor,now);
+   const replacementCommitment = {version:op.contract!.version,buyerVersion:buyer.version,status:"COMMITTED" as const,
+     evidence:"Synthetic owner-reviewed replacement commitment.",agreedPrice:130000,
+     commitmentEvidenceUrl:"https://example.com/synthetic-replacement-assignment"};
+   op = await transactions.recordBuyerResponse(id,buyer.id,replacementCommitment,actor,now);
   assert.equal(op.contract?.committedBuyerId,buyer.id);
   const before = await seller.leadDetail(id);
   await seller.addIntelligence(id,{classification:"OBSERVED",category:"condition",statement:"Synthetic new research",

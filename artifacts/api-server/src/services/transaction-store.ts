@@ -243,9 +243,6 @@ export async function recordBuyerResponse(id: string,buyerId: string,input: z.in
       if (packet && ["ACTIVE","FIRST_ACCEPTED"].includes(packet.status) && packet.expiresAt.getTime()<=now.getTime()) {
         throw new DomainError("The authorized buyer packet expired; renew it and refresh buyer eligibility before recording commitment.",409);
       }
-      if (packet?.status==="FIRST_ACCEPTED" && packet.acceptedBuyerId!==buyerId) {
-        throw new DomainError("A different qualified buyer accepted the current package first. Resolve or release that soft acceptance before committing another buyer.",409);
-      }
       Object.assign(contract,{committedBuyerId:buyerId,agreedBuyerPrice:parsed.agreedPrice,buyerCommittedAt:now.toISOString(),
         commitmentSnapshot:{recordedAt:now.toISOString(),buyer,detail,reservedCount:reservations.count,reservedFunds:reservations.funds}});
       await save(tx,row,contract,now);

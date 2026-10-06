@@ -2,12 +2,11 @@ import { useMemo, useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import {
   getGetDealDistributionQueryKey, useAuthorizeDealDistribution, useGetDealDistribution,
-  useRecordBuyerResponse, useReleaseDistributionAcceptance, useShareDistributionRecipients,
+  useRecordBuyerResponse, useShareDistributionRecipients,
   type BuyerMatch, type DealContract, type LeadDetail,
 } from '@workspace/api-client-react';
 import { ErrorNotice } from '@/components/state-views';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { useAccess } from '@/hooks/use-access';
 import { useToast } from '@/hooks/use-toast';
@@ -25,11 +24,9 @@ export function DistributionPanel({ detail, contract, matches, onChanged }: {
   });
   const authorize = useAuthorizeDealDistribution();
   const share = useShareDistributionRecipients();
-  const release = useReleaseDistributionAcceptance();
   const recordBuyer = useRecordBuyerResponse();
   const [selected, setSelected] = useState<string[]>([]);
   const [reason, setReason] = useState('');
-  const [releasedReason, setReleasedReason] = useState('');
   const [links, setLinks] = useState<{ buyerId: string; buyerName: string; token: string }[]>([]);
   const canShare = isOwner || canCall;
   const qualified = useMemo(() => matches.filter((match) =>
@@ -97,29 +94,23 @@ export function DistributionPanel({ detail, contract, matches, onChanged }: {
           <p className="text-xs text-muted-foreground">{distribution.packet?.mediaNotice}</p>
           <p className="text-xs text-muted-foreground">Authorized by {distribution.authorizedBy}; no notification has been sent.</p>
         </div>
-        {distribution.status === 'FIRST_ACCEPTED' && (
+        {distribution.acceptedBuyerId && (
           <div className="border border-warn p-3" data-testid="panel-first-acceptance">
             <p className="font-semibold">{contract.committedBuyerId
-              ? contract.committedBuyerId === distribution.acceptedBuyerId ? 'Accepted buyer is now committed' : 'A different buyer is now committed'
-              : 'First qualified acceptance recorded'}</p>
+              ? contract.committedBuyerId === distribution.acceptedBuyerId
+                ? 'The earliest acceptance also completed commitment review'
+                : 'A later valid commitment selected a different buyer'
+              : 'Non-binding buyer acceptance recorded'}</p>
             <p className="mt-1 text-sm">{distribution.recipients.find((r) => r.buyerId === distribution.acceptedBuyerId)?.buyerName ?? 'Buyer'} · {fmtDate(distribution.acceptedAt)}</p>
             <p className="mt-1 text-sm text-muted-foreground">{contract.committedBuyerId
-              ? 'The separate owner-reviewed transaction workflow records commitment and closing evidence.'
-              : 'This is a soft hold for owner review, not a buyer commitment or executed assignment.'}</p>
-            {isOwner && lifecycleOpen && !contract.committedBuyerId && <div className="mt-3 space-y-2">
-              <Input value={releasedReason} onChange={(e) => setReleasedReason(e.target.value)} placeholder="Reason to release this soft hold" />
-              {release.error && <ErrorNotice error={release.error} />}
-              <Button size="sm" variant="outline" disabled={releasedReason.trim().length < 3 || release.isPending} onClick={() => release.mutate({
-                id: leadId, data: { version: distribution.version, reason: releasedReason.trim() },
-              }, { onSuccess: () => { setReleasedReason(''); refresh(); toast({ title: 'Soft acceptance released' }); } })}>
-                Release acceptance hold
-              </Button>
-            </div>}
+              ? 'The recorded acceptance did not decide the winner. Commitment and closing evidence are tracked separately.'
+              : 'This response is intent only. Other qualified buyers may still respond or be added; only the first valid owner-reviewed commitment closes distribution.'}</p>
           </div>
         )}
-        {canShare && lifecycleOpen && !contract.committedBuyerId && new Date(contract.closingAt).getTime() > Date.now() && distribution.status === 'ACTIVE' && (
+        {canShare && lifecycleOpen && !contract.committedBuyerId && new Date(contract.closingAt).getTime() > Date.now() && ['ACTIVE', 'FIRST_ACCEPTED'].includes(distribution.status ?? '') && (
           <div className="space-y-3">
             <p className="eyebrow">Share with qualified buyers</p>
+            <p className="text-xs text-muted-foreground">A buyer’s acceptance is non-binding; this packet remains open until the first valid, owner-reviewed commitment.</p>
             {qualified.length === 0 ? <p className="text-sm text-muted-foreground">No currently qualified acquisition buyers are available. Refresh matching after buyer evidence or criteria changes.</p> :
               <div className="grid gap-2 sm:grid-cols-2">{qualified.map((match) => {
                 const recipient = distribution.recipients.find((r) => r.buyerId === match.buyerId);

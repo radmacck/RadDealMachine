@@ -51,8 +51,8 @@ Human outreach permission and financial authority are separate reviews. Route pe
 
 **How to apply:** Preserve route-permission evidence alongside human contact history. Native command results must not imply successful buyer qualification merely because a reply was recorded; approval remains with the existing owner-reviewed domain commands.
 
-Buyer-portal interest and acceptance are recorded intent only. Acceptance creates a soft owner-review hold, not qualification approval, buyer commitment, an executed assignment, or proof of funds.
+Buyer-portal interest and acceptance are non-binding intent only. Neither response creates an exclusive hold, qualification approval, buyer commitment, an executed assignment, or proof of funds; the authorized packet remains open to other qualified buyers until a valid owner-reviewed commitment closes it.
 
-**Why:** A capability link provides a response channel; it cannot itself establish the separate authority and evidence required to bind a buyer or confirm funds.
+**Why:** The user explicitly requires first-valid-qualified-commitment ordering; the first click or acceptance must not block another buyer or determine who wins.
 
-**How to apply:** Recheck current buyer eligibility for non-decline responses, then advance only through the existing owner-reviewed commitment and closing commands with their required evidence.
+**How to apply:** Recheck current buyer eligibility for each response and commitment. Keep the packet open across soft responses and additional qualified recipients; serialize competing owner-reviewed commitments so exactly one eligible buyer with the required evidence can win, then expire the competing links and matches.

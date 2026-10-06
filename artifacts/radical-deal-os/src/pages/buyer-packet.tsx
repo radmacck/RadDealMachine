@@ -252,8 +252,8 @@ export default function BuyerPacketPage() {
           </div>
           <div className="border-t border-border pt-4">
             <h2 className="eyebrow mb-1">Respond to the opportunity</h2>
-            <p className="mb-3 text-xs text-muted-foreground">All selected buyers receive the same locked economics. The first currently qualified acceptance is held for owner review. This portal does not create an assignment, buyer commitment, or funds transfer.</p>
-            {deal.recipientStatus === 'ACCEPTED' && <p className="mb-3 border-l-2 border-signal pl-3 text-sm font-semibold">Your acceptance is recorded for owner review. You are not committed until separate documents are executed and confirmed.</p>}
+            <p className="mb-3 text-xs text-muted-foreground">All selected buyers receive the same locked economics. Interest and acceptance are non-binding; other qualified buyers may still respond. Only the first valid commitment with current qualification and owner-reviewed evidence closes distribution.</p>
+            {deal.recipientStatus === 'ACCEPTED' && <p className="mb-3 border-l-2 border-signal pl-3 text-sm font-semibold">Your acceptance is recorded as intent, not a commitment. The deal remains open to other qualified buyers until a valid commitment is reviewed.</p>}
             {deal.unavailableReason && <p className="mb-3 text-sm text-muted-foreground">{deal.unavailableReason}</p>}
             <label className="mb-3 block text-sm">Optional note
             <Input value={note} onChange={(e) => setNote(e.target.value)} maxLength={2000} className="mt-1" placeholder="Questions or requested diligence" disabled={busy || Boolean(pendingResponse) || !sessionStorageReady} />
