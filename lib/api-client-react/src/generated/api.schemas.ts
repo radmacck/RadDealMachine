@@ -981,6 +981,7 @@ export const BuyerMatchStatus = {
   INTERESTED: 'INTERESTED',
   COMMITTED: 'COMMITTED',
   DECLINED: 'DECLINED',
+  EXPIRED: 'EXPIRED',
 } as const;
 
 export type LegacyDestinationResponseStatus = typeof LegacyDestinationResponseStatus[keyof typeof LegacyDestinationResponseStatus];
@@ -1466,6 +1467,143 @@ export interface Range {
   confidence: number;
 }
 
+export type RepairEstimateStatus = typeof RepairEstimateStatus[keyof typeof RepairEstimateStatus];
+
+
+export const RepairEstimateStatus = {
+  NOT_USED: 'NOT_USED',
+  CALCULATED: 'CALCULATED',
+  BLOCKED: 'BLOCKED',
+} as const;
+
+export type RepairEstimateLineSeverity = typeof RepairEstimateLineSeverity[keyof typeof RepairEstimateLineSeverity];
+
+
+export const RepairEstimateLineSeverity = {
+  NO_REPAIR: 'NO_REPAIR',
+  COSMETIC: 'COSMETIC',
+  MODERATE: 'MODERATE',
+  MAJOR: 'MAJOR',
+  REPLACEMENT: 'REPLACEMENT',
+} as const;
+
+export type RepairEstimateLineUnit = typeof RepairEstimateLineUnit[keyof typeof RepairEstimateLineUnit];
+
+
+export const RepairEstimateLineUnit = {
+  SQFT: 'SQFT',
+  LINEAR_FT: 'LINEAR_FT',
+  EACH: 'EACH',
+  LUMP_SUM: 'LUMP_SUM',
+} as const;
+
+export interface RepairEstimateLine {
+  category: string;
+  severity: RepairEstimateLineSeverity;
+  quantity: number;
+  unit: RepairEstimateLineUnit;
+  evidenceId: string;
+  rateCardId?: string;
+  rateCardVersion?: number;
+  /** @minimum 0 */
+  low: number;
+  /** @minimum 0 */
+  expected: number;
+  /** @minimum 0 */
+  high: number;
+  /**
+     * @minimum 0
+     * @maximum 1
+     */
+  confidence: number;
+  source: string;
+  sourceUrl?: string;
+}
+
+export interface RepairEstimate {
+  status: RepairEstimateStatus;
+  marketKey: string;
+  /** @minimum 0 */
+  catalogVersion: number;
+  calculatedAt: string;
+  /** @maxItems 50 */
+  lines: RepairEstimateLine[];
+  total: Range | null;
+  blockers: string[];
+}
+
+export type RepairRateCardSeverity = typeof RepairRateCardSeverity[keyof typeof RepairRateCardSeverity];
+
+
+export const RepairRateCardSeverity = {
+  COSMETIC: 'COSMETIC',
+  MODERATE: 'MODERATE',
+  MAJOR: 'MAJOR',
+  REPLACEMENT: 'REPLACEMENT',
+} as const;
+
+export type RepairRateCardUnit = typeof RepairRateCardUnit[keyof typeof RepairRateCardUnit];
+
+
+export const RepairRateCardUnit = {
+  SQFT: 'SQFT',
+  LINEAR_FT: 'LINEAR_FT',
+  EACH: 'EACH',
+  LUMP_SUM: 'LUMP_SUM',
+} as const;
+
+export interface RepairRateCard {
+  /**
+     * @minLength 1
+     * @maxLength 100
+     */
+  id: string;
+  /** @minimum 1 */
+  version: number;
+  /**
+     * @minLength 2
+     * @maxLength 100
+     */
+  marketKey: string;
+  /**
+     * @minLength 1
+     * @maxLength 100
+     */
+  category: string;
+  severity: RepairRateCardSeverity;
+  unit: RepairRateCardUnit;
+  /**
+     * @minimum 0
+     * @maximum 100000000
+     */
+  lowRate: number;
+  /**
+     * @minimum 0
+     * @maximum 100000000
+     */
+  expectedRate: number;
+  /**
+     * @minimum 0
+     * @maximum 100000000
+     */
+  highRate: number;
+  /**
+     * @minimum 0
+     * @maximum 1
+     */
+  confidence: number;
+  /**
+     * @minLength 1
+     * @maxLength 2000
+     */
+  source: string;
+  /** @maxLength 2000 */
+  sourceUrl: string;
+  capturedOn: string;
+  validThrough: string;
+  active: boolean;
+}
+
 export interface Assumptions {
   /**
      * @minimum 0.1
@@ -1543,6 +1681,10 @@ export interface Assumptions {
      */
   minConfidence: number;
   approvalRequired: boolean;
+  /** @minimum 0 */
+  repairRateCatalogVersion: number;
+  /** @maxItems 1000 */
+  repairRates: RepairRateCard[];
 }
 
 export interface CompDecision {
@@ -1557,6 +1699,7 @@ export interface Analysis {
   classification: AnalysisClassification;
   arv: Range;
   repairs: Range;
+  repairEstimate: RepairEstimate;
   mao: number;
   openingLow: number;
   openingHigh: number;
@@ -1673,6 +1816,47 @@ export interface Repair {
   evidenceId?: string;
 }
 
+export type RepairObservationSeverity = typeof RepairObservationSeverity[keyof typeof RepairObservationSeverity];
+
+
+export const RepairObservationSeverity = {
+  NO_REPAIR: 'NO_REPAIR',
+  COSMETIC: 'COSMETIC',
+  MODERATE: 'MODERATE',
+  MAJOR: 'MAJOR',
+  REPLACEMENT: 'REPLACEMENT',
+} as const;
+
+export type RepairObservationUnit = typeof RepairObservationUnit[keyof typeof RepairObservationUnit];
+
+
+export const RepairObservationUnit = {
+  SQFT: 'SQFT',
+  LINEAR_FT: 'LINEAR_FT',
+  EACH: 'EACH',
+  LUMP_SUM: 'LUMP_SUM',
+} as const;
+
+export interface RepairObservation {
+  /**
+     * @minLength 1
+     * @maxLength 100
+     */
+  category: string;
+  severity: RepairObservationSeverity;
+  /**
+     * @minimum 0
+     * @maximum 1000000
+     */
+  quantity: number;
+  unit: RepairObservationUnit;
+  /**
+     * @minLength 1
+     * @maxLength 200
+     */
+  evidenceId: string;
+}
+
 export interface UnderwritingInput {
   /** @minimum 1 */
   version: number;
@@ -1682,6 +1866,9 @@ export interface UnderwritingInput {
   repairs: Repair[];
   repairsComplete: boolean;
   conditionConfirmed: boolean;
+  /** @maxItems 50 */
+  repairObservations?: RepairObservation[];
+  repairEstimate?: RepairEstimate;
   /** @maxLength 200 */
   subjectEvidenceId?: string;
   /** @maxLength 200 */
@@ -2008,6 +2195,8 @@ export const DistributionRecipientStatus = {
   INTERESTED: 'INTERESTED',
   ACCEPTED: 'ACCEPTED',
   DECLINED: 'DECLINED',
+  COMMITTED: 'COMMITTED',
+  EXPIRED: 'EXPIRED',
 } as const;
 
 export type BuyerPortalEventAction = typeof BuyerPortalEventAction[keyof typeof BuyerPortalEventAction];
@@ -2107,6 +2296,8 @@ export const BuyerPortalDealRecipientStatus = {
   INTERESTED: 'INTERESTED',
   ACCEPTED: 'ACCEPTED',
   DECLINED: 'DECLINED',
+  COMMITTED: 'COMMITTED',
+  EXPIRED: 'EXPIRED',
 } as const;
 
 export interface BuyerPortalDeal {

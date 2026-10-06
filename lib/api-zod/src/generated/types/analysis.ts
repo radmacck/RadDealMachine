@@ -9,6 +9,7 @@ import type { AnalysisClassification } from './analysisClassification';
 import type { Assumptions } from './assumptions';
 import type { CompDecision } from './compDecision';
 import type { Range } from './range';
+import type { RepairEstimate } from './repairEstimate';
 
 export interface Analysis {
   engineVersion: string;
@@ -16,6 +17,7 @@ export interface Analysis {
   classification: AnalysisClassification;
   arv: Range;
   repairs: Range;
+  repairEstimate: RepairEstimate;
   mao: number;
   openingLow: number;
   openingHigh: number;

@@ -3,7 +3,7 @@ import { isDeepStrictEqual } from "node:util";
 import { and, desc, eq } from "drizzle-orm";
 import {
   db, analysesTable, buyersTable, contractsTable, distributionPacketsTable,
-  distributionRecipientsTable, offersTable,
+  distributionRecipientsTable, offersTable, matchesTable, leadsTable,
 } from "@workspace/db";
 import {
   type Analysis, type DealContract, type Lead, type OfferActor,
@@ -15,7 +15,7 @@ import {
   type BuyerPortalEvent, type DistributionPacketSnapshot,
 } from "@workspace/api-zod";
 import type { z } from "zod";
-import { lockedLead, leadDetail, audit } from "./deal-store";
+import { lockedLead, leadDetail, move, audit } from "./deal-store";
 import { allBuyerRecords, buyerRecord, contractRecord, type Store, type Tx } from "./operations-records";
 
 type Intent = z.infer<typeof RespondToBuyerPortalDealBody>;
@@ -24,7 +24,7 @@ type Recipient = typeof distributionRecipientsTable.$inferSelect;
 type OriginalSnapshot = { lead: Lead; analysis: Analysis };
 
 const packetStatus = (value: string) => ["ACTIVE", "FIRST_ACCEPTED", "CLOSED", "REVOKED"].includes(value);
-const recipientStatus = (value: string) => ["INVITED", "INTERESTED", "ACCEPTED", "DECLINED"].includes(value);
+const recipientStatus = (value: string) => ["INVITED", "INTERESTED", "ACCEPTED", "DECLINED", "COMMITTED", "EXPIRED"].includes(value);
 const eventsOf = (row: Recipient): BuyerPortalEvent[] =>
   Array.isArray(row.payload.events) ? row.payload.events as BuyerPortalEvent[] : [];
 const hashToken = (token: string) => createHash("sha256").update(token, "utf8").digest("hex");
@@ -303,7 +303,7 @@ export async function respondToBuyerPortalDeal(
     if (!recipientLookup) throw new DomainError("This buyer link is invalid or no longer active.", 404);
     const [packetLookup] = await tx.select().from(distributionPacketsTable).where(eq(distributionPacketsTable.id, recipientLookup.packetId));
     if (!packetLookup) throw new DomainError("This opportunity is no longer available.", 410);
-    await lockedLead(tx, packetLookup.leadId);
+    const lead = await lockedLead(tx, packetLookup.leadId);
     await liveContract(tx, packetLookup.leadId);
     const [packet] = await tx.select().from(distributionPacketsTable).where(eq(distributionPacketsTable.id, packetLookup.id)).for("update");
     const [recipient] = await tx.select().from(distributionRecipientsTable).where(eq(distributionRecipientsTable.id, recipientLookup.id)).for("update");
@@ -326,13 +326,14 @@ export async function respondToBuyerPortalDeal(
     if (contract.status === "CLOSED" || contract.status === "CANCELLED" || contract.committedBuyerId) {
       throw new DomainError("This opportunity is no longer available.", 410);
     }
+    let currentMatch: ReturnType<typeof matchBuyer> | undefined;
     if (parsed.action !== "DECLINED") {
       const buyer = buyerRecord(buyerRow, now);
       const detail = await leadDetail(packet.leadId, tx, now);
       const contracts = (await tx.select().from(contractsTable)).map(contractRecord);
       const reservations = buyerReservations(contracts, buyer.id, contract.id);
-      const match = matchBuyer(buyer, detail, contract, now, undefined, reservations.count, reservations.funds);
-      if (!match.eligible) throw new DomainError(`Your current buyer qualification is no longer eligible: ${match.mismatches.join("; ")}`, 409);
+      currentMatch = matchBuyer(buyer, detail, contract, now, undefined, reservations.count, reservations.funds);
+      if (!currentMatch.eligible) throw new DomainError(`Your current buyer qualification is no longer eligible: ${currentMatch.mismatches.join("; ")}`, 409);
     }
     if (parsed.action === "ACCEPTED" && packet.acceptedBuyerId && packet.acceptedBuyerId !== recipient.buyerId) {
       throw new DomainError("A qualified buyer already submitted the first acceptance. The owner is reviewing that response.", 409);
@@ -361,6 +362,40 @@ export async function respondToBuyerPortalDeal(
       version: packet.version + 1,
       updatedAt: now,
     }).where(eq(distributionPacketsTable.id, packet.id));
+    if (parsed.action === "INTERESTED" || parsed.action === "ACCEPTED") {
+      if (!currentMatch) throw new Error("Qualified portal response has no current buyer match.");
+      const evidence = `Private buyer portal ${parsed.action.toLowerCase()} at ${now.toISOString()} (event ${parsed.eventKey})${parsed.note ? `: ${parsed.note}` : ""}. Acceptance is intent only; signed commitment review remains required.`;
+      await tx.insert(matchesTable).values({
+        leadId:packet.leadId,buyerId:recipient.buyerId,
+        payload:{...currentMatch,status:"INTERESTED",evidence,agreedPrice:null,commitmentEvidenceUrl:null,
+          responseSource:"PRIVATE_BUYER_PORTAL",portalAcceptanceAt:parsed.action==="ACCEPTED"?now.toISOString():null},
+        updatedAt:now,
+      }).onConflictDoUpdate({target:[matchesTable.leadId,matchesTable.buyerId],set:{
+        payload:{...currentMatch,status:"INTERESTED",evidence,agreedPrice:null,commitmentEvidenceUrl:null,
+          responseSource:"PRIVATE_BUYER_PORTAL",portalAcceptanceAt:parsed.action==="ACCEPTED"?now.toISOString():null},
+        updatedAt:now,
+      }});
+      if (["UNDER_CONTRACT","BUYER_MATCHED"].includes(lead.stage)) {
+        await move(tx,lead,"BUYER_INTERESTED","Qualified buyer responded through the private deal portal","Review signed commitment evidence and exact buyer terms; portal interest is not a commitment.",`PORTAL_BUYER:${recipient.buyerId}`,now);
+        await tx.update(leadsTable).set({stage:lead.stage,nextAction:lead.nextAction,version:lead.version+1,updatedAt:now}).where(eq(leadsTable.id,lead.id));
+      }
+    } else if (parsed.action === "DECLINED") {
+      const [existingMatch] = await tx.select().from(matchesTable)
+        .where(and(eq(matchesTable.leadId,packet.leadId),eq(matchesTable.buyerId,recipient.buyerId))).for("update");
+      if (existingMatch && existingMatch.payload.status !== "COMMITTED") {
+        await tx.update(matchesTable).set({payload:{
+          ...existingMatch.payload,status:"DECLINED",eligible:false,
+          mismatches:[...(Array.isArray(existingMatch.payload.mismatches)?existingMatch.payload.mismatches as string[]:[]),"Buyer declined this authorized deal package."],
+          evidence:`Private buyer portal decline at ${now.toISOString()} (event ${parsed.eventKey})${parsed.note?`: ${parsed.note}`:""}.`,
+        },updatedAt:now}).where(eq(matchesTable.id,existingMatch.id));
+      }
+    }
+    const [currentContractVersion] = await tx.select({version:contractsTable.version})
+      .from(contractsTable).where(eq(contractsTable.id,contract.id));
+    if (currentContractVersion) {
+      await tx.update(contractsTable).set({version:currentContractVersion.version+1,updatedAt:now})
+        .where(eq(contractsTable.id,contract.id));
+    }
     await audit(tx, `PORTAL_BUYER:${recipient.buyerId}`, `PORTAL_BUYER_${parsed.action}`, packet.leadId,
       `Capability-link response ${parsed.action} for buyer ${recipient.buyerId}; event ${parsed.eventKey}. This records intent only and does not create a buyer commitment.`);
     response = await loadPortalRecord(tx, tokenHash, now);

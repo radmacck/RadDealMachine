@@ -14,4 +14,6 @@ export const BuyerPortalDealRecipientStatus = {
   INTERESTED: 'INTERESTED',
   ACCEPTED: 'ACCEPTED',
   DECLINED: 'DECLINED',
+  COMMITTED: 'COMMITTED',
+  EXPIRED: 'EXPIRED',
 } as const;

@@ -1,7 +1,9 @@
 import { DomainError, type Analysis, type Assumptions, type Lead, type UnderwritingInput } from "./types";
 import { CreateLeadResponse, SaveUnderwritingBody, UpdateAssumptionsBody } from "@workspace/api-zod";
+import type { Intelligence } from "./types";
+import { estimateRepairScope, repairsFromEstimate, validateRepairRateCards } from "./repair-estimation";
 
-export const ENGINE_VERSION = "deterministic-underwriting/1.0";
+export const ENGINE_VERSION = "deterministic-underwriting/1.1";
 export const DEFAULT_ASSUMPTIONS: Assumptions = {
   arvMultiplier: 0.7,
   sellingCostPct: 0.06,
@@ -19,6 +21,8 @@ export const DEFAULT_ASSUMPTIONS: Assumptions = {
   minComps: 3,
   minConfidence: 0.65,
   approvalRequired: true,
+  repairRateCatalogVersion: 0,
+  repairRates: [],
 };
 
 const money = (n: number) => Math.round(n * 100) / 100;
@@ -30,23 +34,28 @@ const median = (values: number[]) => {
 };
 const normalize = (address: string) => address.toLowerCase().replace(/[^a-z0-9]/g, "");
 
-export function validateAssumptions(a: Assumptions): void {
+export function validateAssumptions(a: Assumptions, now = new Date()): void {
   const parsed = UpdateAssumptionsBody.safeParse(a);
   if (!parsed.success) throw new DomainError(`Invalid calculation assumptions: ${parsed.error.message}`);
   if (a.openingLowPct > a.openingHighPct) throw new DomainError("Opening range low cannot exceed high.");
   if (!a.approvalRequired) throw new DomainError("Offer authorization cannot be disabled. Every seller offer requires explicit owner approval.");
+  validateRepairRateCards(a.repairRates,now);
 }
 
 /** All numeric inputs are supplied with source records. No LLM, fetch or database dependency. */
-export function analyzeDeal(lead: Lead, input: UnderwritingInput, assumptions: Assumptions, now: Date): Analysis {
+export function analyzeDeal(lead: Lead, input: UnderwritingInput, assumptions: Assumptions, now: Date, intelligence: Intelligence[] = []): Analysis {
   const validLead = CreateLeadResponse.safeParse(lead);
   const validInput = SaveUnderwritingBody.safeParse(input);
   if (!validLead.success || !validInput.success || !Number.isFinite(now.getTime())) throw new DomainError("Invalid lead, underwriting input or calculation date.");
-  validateAssumptions(assumptions);
+  validateAssumptions(assumptions,now);
   const seenIds = new Set<string>();
   const seenAddresses = new Set<string>();
+  const repairEstimate = estimateRepairScope(lead,input.repairObservations ?? [],assumptions,intelligence,now);
+  const resolvedRepairs = (input.repairObservations?.length ?? 0) > 0
+    ? repairsFromEstimate(repairEstimate)
+    : input.repairs;
   const repairCategories = new Set<string>();
-  for (const r of input.repairs) {
+  for (const r of resolvedRepairs) {
     if (r.low > r.expected || r.expected > r.high) throw new DomainError(`Repair ${r.category}: require low ≤ expected ≤ high.`);
     const key = r.category.trim().toLowerCase();
     if (repairCategories.has(key)) throw new DomainError(`Duplicate repair category: ${r.category}.`);
@@ -87,19 +96,20 @@ export function analyzeDeal(lead: Lead, input: UnderwritingInput, assumptions: A
     high: ppsf.length ? money(Math.max(...ppsf) * lead.sqft) : 0,
     confidence: confidence(selected.length < assumptions.minComps ? 0.3 * selected.length / assumptions.minComps : Math.min(0.9, 0.65 + 0.05 * (selected.length - assumptions.minComps))),
   };
+  const estimateBlocked = repairEstimate.status === "BLOCKED";
   const repairs = {
-    low: money(input.repairs.reduce((s,r) => s + r.low, 0)),
-    expected: money(input.repairs.reduce((s,r) => s + r.expected, 0)),
-    high: money(input.repairs.reduce((s,r) => s + r.high, 0)),
-    confidence: input.repairs.length ? confidence(Math.min(...input.repairs.map(r => r.confidence))) : 0,
+    low: estimateBlocked ? 0 : money(resolvedRepairs.reduce((s,r) => s + r.low, 0)),
+    expected: estimateBlocked ? 0 : money(resolvedRepairs.reduce((s,r) => s + r.expected, 0)),
+    high: estimateBlocked ? 0 : money(resolvedRepairs.reduce((s,r) => s + r.high, 0)),
+    confidence: estimateBlocked ? 0 : resolvedRepairs.length ? confidence(Math.min(...resolvedRepairs.map(r => r.confidence))) : 0,
   };
   const risks: string[] = [];
-  const blockers: string[] = [];
+  const blockers: string[] = [...repairEstimate.blockers];
   if (!lead.sqft) blockers.push("Subject square footage must be sourced and greater than zero");
   if (!["SINGLE_FAMILY", "CONDO", "TOWNHOUSE"].includes(lead.propertyType)) blockers.push("This engine supports residential 1-unit underwriting only; this property needs a dedicated valuation adapter");
   if (lead.units !== 1) blockers.push("Multi-unit valuation is not supported by this underwriting engine");
   if (selected.length < assumptions.minComps) blockers.push(`Need at least ${assumptions.minComps} eligible, verified, renovated comps; found ${selected.length}`);
-  if (!input.repairsComplete || !input.repairs.length) blockers.push("Complete a sourced repair scope, including explicit zero-cost assessment if appropriate");
+  if (!input.repairsComplete || !resolvedRepairs.length) blockers.push("Complete a sourced repair scope, including explicit zero-cost assessment if appropriate");
   if (!input.conditionConfirmed) blockers.push("Property condition must be confirmed before underwriting is call-ready");
   if (Math.min(arv.confidence, repairs.confidence) < assumptions.minConfidence) blockers.push("ARV or repair confidence is below the configured threshold");
   if (arv.expected && (arv.high - arv.low) / arv.expected > 0.25) risks.push("Wide comp dispersion: ARV spread exceeds 25%");
@@ -110,9 +120,9 @@ export function analyzeDeal(lead: Lead, input: UnderwritingInput, assumptions: A
   const buyerCeiling = (arvValue: number, repairValue: number) =>
     arvValue * assumptions.arvMultiplier - arvValue * assumptions.sellingCostPct - repairValue * (1 + assumptions.contingencyPct) - costs;
   // Conservative acquisition ceiling: low ARV, high repairs, all explicit costs, target assignment.
-  const rawMao = money(buyerCeiling(arv.low, repairs.high) - assumptions.assignmentTarget);
+  const rawMao = estimateBlocked ? 0 : money(buyerCeiling(arv.low, repairs.high) - assumptions.assignmentTarget);
   const mao = Math.max(0, rawMao);
-  const expectedMao = money(buyerCeiling(arv.expected, repairs.expected) - assumptions.assignmentTarget);
+  const expectedMao = estimateBlocked ? 0 : money(buyerCeiling(arv.expected, repairs.expected) - assumptions.assignmentTarget);
   if (rawMao <= 0 && selected.length) risks.push("Conservative economics do not support a positive acquisition price");
   let classification: Analysis["classification"] = "INCOMPLETE";
   if (!blockers.length) {
@@ -124,11 +134,11 @@ export function analyzeDeal(lead: Lead, input: UnderwritingInput, assumptions: A
   return {
     engineVersion: ENGINE_VERSION,
     calculatedAt: now.toISOString(),
-    classification, arv, repairs, mao,
+    classification, arv, repairs, repairEstimate, mao,
     openingLow: money(mao * assumptions.openingLowPct),
     openingHigh: money(mao * assumptions.openingHighPct),
     maximumApprovedAcquisitionPrice: null,
-    spreadAtAsking: ppsf.length && lead.askingPrice != null ? money(buyerCeiling(arv.low, repairs.high) - lead.askingPrice) : null,
+    spreadAtAsking: ppsf.length && lead.askingPrice != null && !estimateBlocked ? money(buyerCeiling(arv.low, repairs.high) - lead.askingPrice) : null,
     assumptions: structuredClone(assumptions), risks, blockers, compDecisions,
     formula: "MAO = low ARV × ARV multiplier − low ARV × selling cost % − high repairs × (1 + contingency %) − acquisition cost − monthly holding × months − target assignment. ARV = subject sqft × verified renovated comp $/sqft (min/median/max). STRONG: asking ≤ MAO − strong margin; NEGOTIABLE: asking unknown or ≤ expected-case MAO; otherwise PASS. Ranges are scenario bounds, not statistical confidence intervals. Calculated ceiling is NOT offer authorization.",
   };

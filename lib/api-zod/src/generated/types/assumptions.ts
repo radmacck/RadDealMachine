@@ -5,6 +5,7 @@
  * Radical Deal OS seller intake, underwriting, conversations and approved offers
  * OpenAPI spec version: 1.0.0
  */
+import type { RepairRateCard } from './repairRateCard';
 
 export interface Assumptions {
   /**
@@ -83,4 +84,8 @@ export interface Assumptions {
      */
   minConfidence: number;
   approvalRequired: boolean;
+  /** @minimum 0 */
+  repairRateCatalogVersion: number;
+  /** @maxItems 1000 */
+  repairRates: RepairRateCard[];
 }

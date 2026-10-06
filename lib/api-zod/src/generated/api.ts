@@ -251,6 +251,19 @@ export const recordTransactionExceptionResponseContractOneCommitmentSnapshotOneD
 
 export const recordTransactionExceptionResponseContractOneCommitmentSnapshotOneDetailIntelligenceItemOneActionMax = 2000;
 
+export const recordTransactionExceptionResponseContractOneCommitmentSnapshotOneDetailAnalysisOneRepairEstimateCatalogVersionMin = 0;
+
+export const recordTransactionExceptionResponseContractOneCommitmentSnapshotOneDetailAnalysisOneRepairEstimateLinesItemLowMin = 0;
+
+export const recordTransactionExceptionResponseContractOneCommitmentSnapshotOneDetailAnalysisOneRepairEstimateLinesItemExpectedMin = 0;
+
+export const recordTransactionExceptionResponseContractOneCommitmentSnapshotOneDetailAnalysisOneRepairEstimateLinesItemHighMin = 0;
+
+export const recordTransactionExceptionResponseContractOneCommitmentSnapshotOneDetailAnalysisOneRepairEstimateLinesItemConfidenceMin = 0;
+export const recordTransactionExceptionResponseContractOneCommitmentSnapshotOneDetailAnalysisOneRepairEstimateLinesItemConfidenceMax = 1;
+
+export const recordTransactionExceptionResponseContractOneCommitmentSnapshotOneDetailAnalysisOneRepairEstimateLinesMax = 50;
+
 export const recordTransactionExceptionResponseContractOneCommitmentSnapshotOneDetailAnalysisOneAssumptionsArvMultiplierMin = 0.1;
 export const recordTransactionExceptionResponseContractOneCommitmentSnapshotOneDetailAnalysisOneAssumptionsArvMultiplierMax = 1;
 
@@ -294,6 +307,34 @@ export const recordTransactionExceptionResponseContractOneCommitmentSnapshotOneD
 
 export const recordTransactionExceptionResponseContractOneCommitmentSnapshotOneDetailAnalysisOneAssumptionsMinConfidenceMin = 0.3;
 export const recordTransactionExceptionResponseContractOneCommitmentSnapshotOneDetailAnalysisOneAssumptionsMinConfidenceMax = 1;
+
+export const recordTransactionExceptionResponseContractOneCommitmentSnapshotOneDetailAnalysisOneAssumptionsRepairRateCatalogVersionMin = 0;
+
+export const recordTransactionExceptionResponseContractOneCommitmentSnapshotOneDetailAnalysisOneAssumptionsRepairRatesItemIdMax = 100;
+
+
+export const recordTransactionExceptionResponseContractOneCommitmentSnapshotOneDetailAnalysisOneAssumptionsRepairRatesItemMarketKeyMin = 2;
+export const recordTransactionExceptionResponseContractOneCommitmentSnapshotOneDetailAnalysisOneAssumptionsRepairRatesItemMarketKeyMax = 100;
+
+export const recordTransactionExceptionResponseContractOneCommitmentSnapshotOneDetailAnalysisOneAssumptionsRepairRatesItemCategoryMax = 100;
+
+export const recordTransactionExceptionResponseContractOneCommitmentSnapshotOneDetailAnalysisOneAssumptionsRepairRatesItemLowRateMin = 0;
+export const recordTransactionExceptionResponseContractOneCommitmentSnapshotOneDetailAnalysisOneAssumptionsRepairRatesItemLowRateMax = 100000000;
+
+export const recordTransactionExceptionResponseContractOneCommitmentSnapshotOneDetailAnalysisOneAssumptionsRepairRatesItemExpectedRateMin = 0;
+export const recordTransactionExceptionResponseContractOneCommitmentSnapshotOneDetailAnalysisOneAssumptionsRepairRatesItemExpectedRateMax = 100000000;
+
+export const recordTransactionExceptionResponseContractOneCommitmentSnapshotOneDetailAnalysisOneAssumptionsRepairRatesItemHighRateMin = 0;
+export const recordTransactionExceptionResponseContractOneCommitmentSnapshotOneDetailAnalysisOneAssumptionsRepairRatesItemHighRateMax = 100000000;
+
+export const recordTransactionExceptionResponseContractOneCommitmentSnapshotOneDetailAnalysisOneAssumptionsRepairRatesItemConfidenceMin = 0;
+export const recordTransactionExceptionResponseContractOneCommitmentSnapshotOneDetailAnalysisOneAssumptionsRepairRatesItemConfidenceMax = 1;
+
+export const recordTransactionExceptionResponseContractOneCommitmentSnapshotOneDetailAnalysisOneAssumptionsRepairRatesItemSourceMax = 2000;
+
+export const recordTransactionExceptionResponseContractOneCommitmentSnapshotOneDetailAnalysisOneAssumptionsRepairRatesItemSourceUrlMax = 2000;
+
+export const recordTransactionExceptionResponseContractOneCommitmentSnapshotOneDetailAnalysisOneAssumptionsRepairRatesMax = 1000;
 
 export const recordTransactionExceptionResponseContractOneCommitmentSnapshotOneDetailOffersItemOneAmountExclusiveMin = 0;
 export const recordTransactionExceptionResponseContractOneCommitmentSnapshotOneDetailOffersItemOneAmountMax = 1000000000;
@@ -343,6 +384,28 @@ export const recordTransactionExceptionResponseContractOneCommitmentSnapshotOneD
 export const recordTransactionExceptionResponseContractOneCommitmentSnapshotOneDetailUnderwritingOneRepairsItemEvidenceIdMax = 200;
 
 export const recordTransactionExceptionResponseContractOneCommitmentSnapshotOneDetailUnderwritingOneRepairsMax = 50;
+
+export const recordTransactionExceptionResponseContractOneCommitmentSnapshotOneDetailUnderwritingOneRepairObservationsItemCategoryMax = 100;
+
+export const recordTransactionExceptionResponseContractOneCommitmentSnapshotOneDetailUnderwritingOneRepairObservationsItemQuantityMin = 0;
+export const recordTransactionExceptionResponseContractOneCommitmentSnapshotOneDetailUnderwritingOneRepairObservationsItemQuantityMax = 1000000;
+
+export const recordTransactionExceptionResponseContractOneCommitmentSnapshotOneDetailUnderwritingOneRepairObservationsItemEvidenceIdMax = 200;
+
+export const recordTransactionExceptionResponseContractOneCommitmentSnapshotOneDetailUnderwritingOneRepairObservationsMax = 50;
+
+export const recordTransactionExceptionResponseContractOneCommitmentSnapshotOneDetailUnderwritingOneRepairEstimateCatalogVersionMin = 0;
+
+export const recordTransactionExceptionResponseContractOneCommitmentSnapshotOneDetailUnderwritingOneRepairEstimateLinesItemLowMin = 0;
+
+export const recordTransactionExceptionResponseContractOneCommitmentSnapshotOneDetailUnderwritingOneRepairEstimateLinesItemExpectedMin = 0;
+
+export const recordTransactionExceptionResponseContractOneCommitmentSnapshotOneDetailUnderwritingOneRepairEstimateLinesItemHighMin = 0;
+
+export const recordTransactionExceptionResponseContractOneCommitmentSnapshotOneDetailUnderwritingOneRepairEstimateLinesItemConfidenceMin = 0;
+export const recordTransactionExceptionResponseContractOneCommitmentSnapshotOneDetailUnderwritingOneRepairEstimateLinesItemConfidenceMax = 1;
+
+export const recordTransactionExceptionResponseContractOneCommitmentSnapshotOneDetailUnderwritingOneRepairEstimateLinesMax = 50;
 
 export const recordTransactionExceptionResponseContractOneCommitmentSnapshotOneDetailUnderwritingOneSubjectEvidenceIdMax = 200;
 
@@ -621,6 +684,34 @@ export const RecordTransactionExceptionResponse = zod.object({
   "high": zod.number(),
   "confidence": zod.number()
 }),
+  "repairEstimate": zod.object({
+  "status": zod.enum(['NOT_USED', 'CALCULATED', 'BLOCKED']),
+  "marketKey": zod.string(),
+  "catalogVersion": zod.number().int().min(recordTransactionExceptionResponseContractOneCommitmentSnapshotOneDetailAnalysisOneRepairEstimateCatalogVersionMin),
+  "calculatedAt": zod.string().datetime({"offset":true}),
+  "lines": zod.array(zod.object({
+  "category": zod.string(),
+  "severity": zod.enum(['NO_REPAIR', 'COSMETIC', 'MODERATE', 'MAJOR', 'REPLACEMENT']),
+  "quantity": zod.number(),
+  "unit": zod.enum(['SQFT', 'LINEAR_FT', 'EACH', 'LUMP_SUM']),
+  "evidenceId": zod.string(),
+  "rateCardId": zod.string().optional(),
+  "rateCardVersion": zod.number().int().optional(),
+  "low": zod.number().min(recordTransactionExceptionResponseContractOneCommitmentSnapshotOneDetailAnalysisOneRepairEstimateLinesItemLowMin),
+  "expected": zod.number().min(recordTransactionExceptionResponseContractOneCommitmentSnapshotOneDetailAnalysisOneRepairEstimateLinesItemExpectedMin),
+  "high": zod.number().min(recordTransactionExceptionResponseContractOneCommitmentSnapshotOneDetailAnalysisOneRepairEstimateLinesItemHighMin),
+  "confidence": zod.number().min(recordTransactionExceptionResponseContractOneCommitmentSnapshotOneDetailAnalysisOneRepairEstimateLinesItemConfidenceMin).max(recordTransactionExceptionResponseContractOneCommitmentSnapshotOneDetailAnalysisOneRepairEstimateLinesItemConfidenceMax),
+  "source": zod.string(),
+  "sourceUrl": zod.string().url().optional()
+})).max(recordTransactionExceptionResponseContractOneCommitmentSnapshotOneDetailAnalysisOneRepairEstimateLinesMax),
+  "total": zod.union([zod.object({
+  "low": zod.number(),
+  "expected": zod.number(),
+  "high": zod.number(),
+  "confidence": zod.number()
+}),zod.null()]),
+  "blockers": zod.array(zod.string())
+}),
   "mao": zod.number(),
   "openingLow": zod.number(),
   "openingHigh": zod.number(),
@@ -642,7 +733,25 @@ export const RecordTransactionExceptionResponse = zod.object({
   "maxSqftDifferencePct": zod.number().min(recordTransactionExceptionResponseContractOneCommitmentSnapshotOneDetailAnalysisOneAssumptionsMaxSqftDifferencePctMin).max(recordTransactionExceptionResponseContractOneCommitmentSnapshotOneDetailAnalysisOneAssumptionsMaxSqftDifferencePctMax),
   "minComps": zod.number().int().min(recordTransactionExceptionResponseContractOneCommitmentSnapshotOneDetailAnalysisOneAssumptionsMinCompsMin).max(recordTransactionExceptionResponseContractOneCommitmentSnapshotOneDetailAnalysisOneAssumptionsMinCompsMax),
   "minConfidence": zod.number().min(recordTransactionExceptionResponseContractOneCommitmentSnapshotOneDetailAnalysisOneAssumptionsMinConfidenceMin).max(recordTransactionExceptionResponseContractOneCommitmentSnapshotOneDetailAnalysisOneAssumptionsMinConfidenceMax),
-  "approvalRequired": zod.boolean()
+  "approvalRequired": zod.boolean(),
+  "repairRateCatalogVersion": zod.number().int().min(recordTransactionExceptionResponseContractOneCommitmentSnapshotOneDetailAnalysisOneAssumptionsRepairRateCatalogVersionMin),
+  "repairRates": zod.array(zod.object({
+  "id": zod.string().min(1).max(recordTransactionExceptionResponseContractOneCommitmentSnapshotOneDetailAnalysisOneAssumptionsRepairRatesItemIdMax),
+  "version": zod.number().int().min(1),
+  "marketKey": zod.string().min(recordTransactionExceptionResponseContractOneCommitmentSnapshotOneDetailAnalysisOneAssumptionsRepairRatesItemMarketKeyMin).max(recordTransactionExceptionResponseContractOneCommitmentSnapshotOneDetailAnalysisOneAssumptionsRepairRatesItemMarketKeyMax),
+  "category": zod.string().min(1).max(recordTransactionExceptionResponseContractOneCommitmentSnapshotOneDetailAnalysisOneAssumptionsRepairRatesItemCategoryMax),
+  "severity": zod.enum(['COSMETIC', 'MODERATE', 'MAJOR', 'REPLACEMENT']),
+  "unit": zod.enum(['SQFT', 'LINEAR_FT', 'EACH', 'LUMP_SUM']),
+  "lowRate": zod.number().min(recordTransactionExceptionResponseContractOneCommitmentSnapshotOneDetailAnalysisOneAssumptionsRepairRatesItemLowRateMin).max(recordTransactionExceptionResponseContractOneCommitmentSnapshotOneDetailAnalysisOneAssumptionsRepairRatesItemLowRateMax),
+  "expectedRate": zod.number().min(recordTransactionExceptionResponseContractOneCommitmentSnapshotOneDetailAnalysisOneAssumptionsRepairRatesItemExpectedRateMin).max(recordTransactionExceptionResponseContractOneCommitmentSnapshotOneDetailAnalysisOneAssumptionsRepairRatesItemExpectedRateMax),
+  "highRate": zod.number().min(recordTransactionExceptionResponseContractOneCommitmentSnapshotOneDetailAnalysisOneAssumptionsRepairRatesItemHighRateMin).max(recordTransactionExceptionResponseContractOneCommitmentSnapshotOneDetailAnalysisOneAssumptionsRepairRatesItemHighRateMax),
+  "confidence": zod.number().min(recordTransactionExceptionResponseContractOneCommitmentSnapshotOneDetailAnalysisOneAssumptionsRepairRatesItemConfidenceMin).max(recordTransactionExceptionResponseContractOneCommitmentSnapshotOneDetailAnalysisOneAssumptionsRepairRatesItemConfidenceMax),
+  "source": zod.string().min(1).max(recordTransactionExceptionResponseContractOneCommitmentSnapshotOneDetailAnalysisOneAssumptionsRepairRatesItemSourceMax),
+  "sourceUrl": zod.string().url().max(recordTransactionExceptionResponseContractOneCommitmentSnapshotOneDetailAnalysisOneAssumptionsRepairRatesItemSourceUrlMax),
+  "capturedOn": zod.string().date(),
+  "validThrough": zod.string().date(),
+  "active": zod.boolean()
+})).max(recordTransactionExceptionResponseContractOneCommitmentSnapshotOneDetailAnalysisOneAssumptionsRepairRatesMax)
 }),
   "risks": zod.array(zod.string()),
   "blockers": zod.array(zod.string()),
@@ -711,6 +820,41 @@ export const RecordTransactionExceptionResponse = zod.object({
 })).max(recordTransactionExceptionResponseContractOneCommitmentSnapshotOneDetailUnderwritingOneRepairsMax),
   "repairsComplete": zod.boolean(),
   "conditionConfirmed": zod.boolean(),
+  "repairObservations": zod.array(zod.object({
+  "category": zod.string().min(1).max(recordTransactionExceptionResponseContractOneCommitmentSnapshotOneDetailUnderwritingOneRepairObservationsItemCategoryMax),
+  "severity": zod.enum(['NO_REPAIR', 'COSMETIC', 'MODERATE', 'MAJOR', 'REPLACEMENT']),
+  "quantity": zod.number().min(recordTransactionExceptionResponseContractOneCommitmentSnapshotOneDetailUnderwritingOneRepairObservationsItemQuantityMin).max(recordTransactionExceptionResponseContractOneCommitmentSnapshotOneDetailUnderwritingOneRepairObservationsItemQuantityMax),
+  "unit": zod.enum(['SQFT', 'LINEAR_FT', 'EACH', 'LUMP_SUM']),
+  "evidenceId": zod.string().min(1).max(recordTransactionExceptionResponseContractOneCommitmentSnapshotOneDetailUnderwritingOneRepairObservationsItemEvidenceIdMax)
+})).max(recordTransactionExceptionResponseContractOneCommitmentSnapshotOneDetailUnderwritingOneRepairObservationsMax).optional(),
+  "repairEstimate": zod.object({
+  "status": zod.enum(['NOT_USED', 'CALCULATED', 'BLOCKED']),
+  "marketKey": zod.string(),
+  "catalogVersion": zod.number().int().min(recordTransactionExceptionResponseContractOneCommitmentSnapshotOneDetailUnderwritingOneRepairEstimateCatalogVersionMin),
+  "calculatedAt": zod.string().datetime({"offset":true}),
+  "lines": zod.array(zod.object({
+  "category": zod.string(),
+  "severity": zod.enum(['NO_REPAIR', 'COSMETIC', 'MODERATE', 'MAJOR', 'REPLACEMENT']),
+  "quantity": zod.number(),
+  "unit": zod.enum(['SQFT', 'LINEAR_FT', 'EACH', 'LUMP_SUM']),
+  "evidenceId": zod.string(),
+  "rateCardId": zod.string().optional(),
+  "rateCardVersion": zod.number().int().optional(),
+  "low": zod.number().min(recordTransactionExceptionResponseContractOneCommitmentSnapshotOneDetailUnderwritingOneRepairEstimateLinesItemLowMin),
+  "expected": zod.number().min(recordTransactionExceptionResponseContractOneCommitmentSnapshotOneDetailUnderwritingOneRepairEstimateLinesItemExpectedMin),
+  "high": zod.number().min(recordTransactionExceptionResponseContractOneCommitmentSnapshotOneDetailUnderwritingOneRepairEstimateLinesItemHighMin),
+  "confidence": zod.number().min(recordTransactionExceptionResponseContractOneCommitmentSnapshotOneDetailUnderwritingOneRepairEstimateLinesItemConfidenceMin).max(recordTransactionExceptionResponseContractOneCommitmentSnapshotOneDetailUnderwritingOneRepairEstimateLinesItemConfidenceMax),
+  "source": zod.string(),
+  "sourceUrl": zod.string().url().optional()
+})).max(recordTransactionExceptionResponseContractOneCommitmentSnapshotOneDetailUnderwritingOneRepairEstimateLinesMax),
+  "total": zod.union([zod.object({
+  "low": zod.number(),
+  "expected": zod.number(),
+  "high": zod.number(),
+  "confidence": zod.number()
+}),zod.null()]),
+  "blockers": zod.array(zod.string())
+}).optional(),
   "subjectEvidenceId": zod.string().max(recordTransactionExceptionResponseContractOneCommitmentSnapshotOneDetailUnderwritingOneSubjectEvidenceIdMax).optional(),
   "conditionEvidenceId": zod.string().max(recordTransactionExceptionResponseContractOneCommitmentSnapshotOneDetailUnderwritingOneConditionEvidenceIdMax).optional(),
   "sellerContactEvidenceId": zod.string().max(recordTransactionExceptionResponseContractOneCommitmentSnapshotOneDetailUnderwritingOneSellerContactEvidenceIdMax).optional()
@@ -791,7 +935,7 @@ export const RecordTransactionExceptionResponse = zod.object({
   "score": zod.number(),
   "reasons": zod.array(zod.string()),
   "mismatches": zod.array(zod.string()),
-  "status": zod.enum(['MATCHED', 'INTERESTED', 'COMMITTED', 'DECLINED']),
+  "status": zod.enum(['MATCHED', 'INTERESTED', 'COMMITTED', 'DECLINED', 'EXPIRED']),
   "buyerVersion": zod.number().int(),
   "agreedPrice": zod.number().nullish(),
   "evidence": zod.string().nullish(),
@@ -922,6 +1066,28 @@ export const intakePropertyEvidenceBodyUnderwritingRepairsItemEvidenceIdMax = 20
 
 export const intakePropertyEvidenceBodyUnderwritingRepairsMax = 50;
 
+export const intakePropertyEvidenceBodyUnderwritingRepairObservationsItemCategoryMax = 100;
+
+export const intakePropertyEvidenceBodyUnderwritingRepairObservationsItemQuantityMin = 0;
+export const intakePropertyEvidenceBodyUnderwritingRepairObservationsItemQuantityMax = 1000000;
+
+export const intakePropertyEvidenceBodyUnderwritingRepairObservationsItemEvidenceIdMax = 200;
+
+export const intakePropertyEvidenceBodyUnderwritingRepairObservationsMax = 50;
+
+export const intakePropertyEvidenceBodyUnderwritingRepairEstimateCatalogVersionMin = 0;
+
+export const intakePropertyEvidenceBodyUnderwritingRepairEstimateLinesItemLowMin = 0;
+
+export const intakePropertyEvidenceBodyUnderwritingRepairEstimateLinesItemExpectedMin = 0;
+
+export const intakePropertyEvidenceBodyUnderwritingRepairEstimateLinesItemHighMin = 0;
+
+export const intakePropertyEvidenceBodyUnderwritingRepairEstimateLinesItemConfidenceMin = 0;
+export const intakePropertyEvidenceBodyUnderwritingRepairEstimateLinesItemConfidenceMax = 1;
+
+export const intakePropertyEvidenceBodyUnderwritingRepairEstimateLinesMax = 50;
+
 export const intakePropertyEvidenceBodyUnderwritingSubjectEvidenceIdMax = 200;
 
 export const intakePropertyEvidenceBodyUnderwritingConditionEvidenceIdMax = 200;
@@ -995,6 +1161,41 @@ export const IntakePropertyEvidenceBody = zod.object({
 })).max(intakePropertyEvidenceBodyUnderwritingRepairsMax),
   "repairsComplete": zod.boolean(),
   "conditionConfirmed": zod.boolean(),
+  "repairObservations": zod.array(zod.object({
+  "category": zod.string().min(1).max(intakePropertyEvidenceBodyUnderwritingRepairObservationsItemCategoryMax),
+  "severity": zod.enum(['NO_REPAIR', 'COSMETIC', 'MODERATE', 'MAJOR', 'REPLACEMENT']),
+  "quantity": zod.number().min(intakePropertyEvidenceBodyUnderwritingRepairObservationsItemQuantityMin).max(intakePropertyEvidenceBodyUnderwritingRepairObservationsItemQuantityMax),
+  "unit": zod.enum(['SQFT', 'LINEAR_FT', 'EACH', 'LUMP_SUM']),
+  "evidenceId": zod.string().min(1).max(intakePropertyEvidenceBodyUnderwritingRepairObservationsItemEvidenceIdMax)
+})).max(intakePropertyEvidenceBodyUnderwritingRepairObservationsMax).optional(),
+  "repairEstimate": zod.object({
+  "status": zod.enum(['NOT_USED', 'CALCULATED', 'BLOCKED']),
+  "marketKey": zod.string(),
+  "catalogVersion": zod.number().int().min(intakePropertyEvidenceBodyUnderwritingRepairEstimateCatalogVersionMin),
+  "calculatedAt": zod.string().datetime({"offset":true}),
+  "lines": zod.array(zod.object({
+  "category": zod.string(),
+  "severity": zod.enum(['NO_REPAIR', 'COSMETIC', 'MODERATE', 'MAJOR', 'REPLACEMENT']),
+  "quantity": zod.number(),
+  "unit": zod.enum(['SQFT', 'LINEAR_FT', 'EACH', 'LUMP_SUM']),
+  "evidenceId": zod.string(),
+  "rateCardId": zod.string().optional(),
+  "rateCardVersion": zod.number().int().optional(),
+  "low": zod.number().min(intakePropertyEvidenceBodyUnderwritingRepairEstimateLinesItemLowMin),
+  "expected": zod.number().min(intakePropertyEvidenceBodyUnderwritingRepairEstimateLinesItemExpectedMin),
+  "high": zod.number().min(intakePropertyEvidenceBodyUnderwritingRepairEstimateLinesItemHighMin),
+  "confidence": zod.number().min(intakePropertyEvidenceBodyUnderwritingRepairEstimateLinesItemConfidenceMin).max(intakePropertyEvidenceBodyUnderwritingRepairEstimateLinesItemConfidenceMax),
+  "source": zod.string(),
+  "sourceUrl": zod.string().url().optional()
+})).max(intakePropertyEvidenceBodyUnderwritingRepairEstimateLinesMax),
+  "total": zod.union([zod.object({
+  "low": zod.number(),
+  "expected": zod.number(),
+  "high": zod.number(),
+  "confidence": zod.number()
+}),zod.null()]),
+  "blockers": zod.array(zod.string())
+}).optional(),
   "subjectEvidenceId": zod.string().max(intakePropertyEvidenceBodyUnderwritingSubjectEvidenceIdMax).optional(),
   "conditionEvidenceId": zod.string().max(intakePropertyEvidenceBodyUnderwritingConditionEvidenceIdMax).optional(),
   "sellerContactEvidenceId": zod.string().max(intakePropertyEvidenceBodyUnderwritingSellerContactEvidenceIdMax).optional()
@@ -1070,6 +1271,19 @@ export const intakePropertyEvidenceResponseIntelligenceItemOneQuestionMax = 2000
 
 export const intakePropertyEvidenceResponseIntelligenceItemOneActionMax = 2000;
 
+export const intakePropertyEvidenceResponseAnalysisOneRepairEstimateCatalogVersionMin = 0;
+
+export const intakePropertyEvidenceResponseAnalysisOneRepairEstimateLinesItemLowMin = 0;
+
+export const intakePropertyEvidenceResponseAnalysisOneRepairEstimateLinesItemExpectedMin = 0;
+
+export const intakePropertyEvidenceResponseAnalysisOneRepairEstimateLinesItemHighMin = 0;
+
+export const intakePropertyEvidenceResponseAnalysisOneRepairEstimateLinesItemConfidenceMin = 0;
+export const intakePropertyEvidenceResponseAnalysisOneRepairEstimateLinesItemConfidenceMax = 1;
+
+export const intakePropertyEvidenceResponseAnalysisOneRepairEstimateLinesMax = 50;
+
 export const intakePropertyEvidenceResponseAnalysisOneAssumptionsArvMultiplierMin = 0.1;
 export const intakePropertyEvidenceResponseAnalysisOneAssumptionsArvMultiplierMax = 1;
 
@@ -1113,6 +1327,34 @@ export const intakePropertyEvidenceResponseAnalysisOneAssumptionsMinCompsMax = 2
 
 export const intakePropertyEvidenceResponseAnalysisOneAssumptionsMinConfidenceMin = 0.3;
 export const intakePropertyEvidenceResponseAnalysisOneAssumptionsMinConfidenceMax = 1;
+
+export const intakePropertyEvidenceResponseAnalysisOneAssumptionsRepairRateCatalogVersionMin = 0;
+
+export const intakePropertyEvidenceResponseAnalysisOneAssumptionsRepairRatesItemIdMax = 100;
+
+
+export const intakePropertyEvidenceResponseAnalysisOneAssumptionsRepairRatesItemMarketKeyMin = 2;
+export const intakePropertyEvidenceResponseAnalysisOneAssumptionsRepairRatesItemMarketKeyMax = 100;
+
+export const intakePropertyEvidenceResponseAnalysisOneAssumptionsRepairRatesItemCategoryMax = 100;
+
+export const intakePropertyEvidenceResponseAnalysisOneAssumptionsRepairRatesItemLowRateMin = 0;
+export const intakePropertyEvidenceResponseAnalysisOneAssumptionsRepairRatesItemLowRateMax = 100000000;
+
+export const intakePropertyEvidenceResponseAnalysisOneAssumptionsRepairRatesItemExpectedRateMin = 0;
+export const intakePropertyEvidenceResponseAnalysisOneAssumptionsRepairRatesItemExpectedRateMax = 100000000;
+
+export const intakePropertyEvidenceResponseAnalysisOneAssumptionsRepairRatesItemHighRateMin = 0;
+export const intakePropertyEvidenceResponseAnalysisOneAssumptionsRepairRatesItemHighRateMax = 100000000;
+
+export const intakePropertyEvidenceResponseAnalysisOneAssumptionsRepairRatesItemConfidenceMin = 0;
+export const intakePropertyEvidenceResponseAnalysisOneAssumptionsRepairRatesItemConfidenceMax = 1;
+
+export const intakePropertyEvidenceResponseAnalysisOneAssumptionsRepairRatesItemSourceMax = 2000;
+
+export const intakePropertyEvidenceResponseAnalysisOneAssumptionsRepairRatesItemSourceUrlMax = 2000;
+
+export const intakePropertyEvidenceResponseAnalysisOneAssumptionsRepairRatesMax = 1000;
 
 export const intakePropertyEvidenceResponseOffersItemOneAmountExclusiveMin = 0;
 export const intakePropertyEvidenceResponseOffersItemOneAmountMax = 1000000000;
@@ -1162,6 +1404,28 @@ export const intakePropertyEvidenceResponseUnderwritingOneRepairsItemConfidenceM
 export const intakePropertyEvidenceResponseUnderwritingOneRepairsItemEvidenceIdMax = 200;
 
 export const intakePropertyEvidenceResponseUnderwritingOneRepairsMax = 50;
+
+export const intakePropertyEvidenceResponseUnderwritingOneRepairObservationsItemCategoryMax = 100;
+
+export const intakePropertyEvidenceResponseUnderwritingOneRepairObservationsItemQuantityMin = 0;
+export const intakePropertyEvidenceResponseUnderwritingOneRepairObservationsItemQuantityMax = 1000000;
+
+export const intakePropertyEvidenceResponseUnderwritingOneRepairObservationsItemEvidenceIdMax = 200;
+
+export const intakePropertyEvidenceResponseUnderwritingOneRepairObservationsMax = 50;
+
+export const intakePropertyEvidenceResponseUnderwritingOneRepairEstimateCatalogVersionMin = 0;
+
+export const intakePropertyEvidenceResponseUnderwritingOneRepairEstimateLinesItemLowMin = 0;
+
+export const intakePropertyEvidenceResponseUnderwritingOneRepairEstimateLinesItemExpectedMin = 0;
+
+export const intakePropertyEvidenceResponseUnderwritingOneRepairEstimateLinesItemHighMin = 0;
+
+export const intakePropertyEvidenceResponseUnderwritingOneRepairEstimateLinesItemConfidenceMin = 0;
+export const intakePropertyEvidenceResponseUnderwritingOneRepairEstimateLinesItemConfidenceMax = 1;
+
+export const intakePropertyEvidenceResponseUnderwritingOneRepairEstimateLinesMax = 50;
 
 export const intakePropertyEvidenceResponseUnderwritingOneSubjectEvidenceIdMax = 200;
 
@@ -1268,6 +1532,34 @@ export const IntakePropertyEvidenceResponse = zod.object({
   "high": zod.number(),
   "confidence": zod.number()
 }),
+  "repairEstimate": zod.object({
+  "status": zod.enum(['NOT_USED', 'CALCULATED', 'BLOCKED']),
+  "marketKey": zod.string(),
+  "catalogVersion": zod.number().int().min(intakePropertyEvidenceResponseAnalysisOneRepairEstimateCatalogVersionMin),
+  "calculatedAt": zod.string().datetime({"offset":true}),
+  "lines": zod.array(zod.object({
+  "category": zod.string(),
+  "severity": zod.enum(['NO_REPAIR', 'COSMETIC', 'MODERATE', 'MAJOR', 'REPLACEMENT']),
+  "quantity": zod.number(),
+  "unit": zod.enum(['SQFT', 'LINEAR_FT', 'EACH', 'LUMP_SUM']),
+  "evidenceId": zod.string(),
+  "rateCardId": zod.string().optional(),
+  "rateCardVersion": zod.number().int().optional(),
+  "low": zod.number().min(intakePropertyEvidenceResponseAnalysisOneRepairEstimateLinesItemLowMin),
+  "expected": zod.number().min(intakePropertyEvidenceResponseAnalysisOneRepairEstimateLinesItemExpectedMin),
+  "high": zod.number().min(intakePropertyEvidenceResponseAnalysisOneRepairEstimateLinesItemHighMin),
+  "confidence": zod.number().min(intakePropertyEvidenceResponseAnalysisOneRepairEstimateLinesItemConfidenceMin).max(intakePropertyEvidenceResponseAnalysisOneRepairEstimateLinesItemConfidenceMax),
+  "source": zod.string(),
+  "sourceUrl": zod.string().url().optional()
+})).max(intakePropertyEvidenceResponseAnalysisOneRepairEstimateLinesMax),
+  "total": zod.union([zod.object({
+  "low": zod.number(),
+  "expected": zod.number(),
+  "high": zod.number(),
+  "confidence": zod.number()
+}),zod.null()]),
+  "blockers": zod.array(zod.string())
+}),
   "mao": zod.number(),
   "openingLow": zod.number(),
   "openingHigh": zod.number(),
@@ -1289,7 +1581,25 @@ export const IntakePropertyEvidenceResponse = zod.object({
   "maxSqftDifferencePct": zod.number().min(intakePropertyEvidenceResponseAnalysisOneAssumptionsMaxSqftDifferencePctMin).max(intakePropertyEvidenceResponseAnalysisOneAssumptionsMaxSqftDifferencePctMax),
   "minComps": zod.number().int().min(intakePropertyEvidenceResponseAnalysisOneAssumptionsMinCompsMin).max(intakePropertyEvidenceResponseAnalysisOneAssumptionsMinCompsMax),
   "minConfidence": zod.number().min(intakePropertyEvidenceResponseAnalysisOneAssumptionsMinConfidenceMin).max(intakePropertyEvidenceResponseAnalysisOneAssumptionsMinConfidenceMax),
-  "approvalRequired": zod.boolean()
+  "approvalRequired": zod.boolean(),
+  "repairRateCatalogVersion": zod.number().int().min(intakePropertyEvidenceResponseAnalysisOneAssumptionsRepairRateCatalogVersionMin),
+  "repairRates": zod.array(zod.object({
+  "id": zod.string().min(1).max(intakePropertyEvidenceResponseAnalysisOneAssumptionsRepairRatesItemIdMax),
+  "version": zod.number().int().min(1),
+  "marketKey": zod.string().min(intakePropertyEvidenceResponseAnalysisOneAssumptionsRepairRatesItemMarketKeyMin).max(intakePropertyEvidenceResponseAnalysisOneAssumptionsRepairRatesItemMarketKeyMax),
+  "category": zod.string().min(1).max(intakePropertyEvidenceResponseAnalysisOneAssumptionsRepairRatesItemCategoryMax),
+  "severity": zod.enum(['COSMETIC', 'MODERATE', 'MAJOR', 'REPLACEMENT']),
+  "unit": zod.enum(['SQFT', 'LINEAR_FT', 'EACH', 'LUMP_SUM']),
+  "lowRate": zod.number().min(intakePropertyEvidenceResponseAnalysisOneAssumptionsRepairRatesItemLowRateMin).max(intakePropertyEvidenceResponseAnalysisOneAssumptionsRepairRatesItemLowRateMax),
+  "expectedRate": zod.number().min(intakePropertyEvidenceResponseAnalysisOneAssumptionsRepairRatesItemExpectedRateMin).max(intakePropertyEvidenceResponseAnalysisOneAssumptionsRepairRatesItemExpectedRateMax),
+  "highRate": zod.number().min(intakePropertyEvidenceResponseAnalysisOneAssumptionsRepairRatesItemHighRateMin).max(intakePropertyEvidenceResponseAnalysisOneAssumptionsRepairRatesItemHighRateMax),
+  "confidence": zod.number().min(intakePropertyEvidenceResponseAnalysisOneAssumptionsRepairRatesItemConfidenceMin).max(intakePropertyEvidenceResponseAnalysisOneAssumptionsRepairRatesItemConfidenceMax),
+  "source": zod.string().min(1).max(intakePropertyEvidenceResponseAnalysisOneAssumptionsRepairRatesItemSourceMax),
+  "sourceUrl": zod.string().url().max(intakePropertyEvidenceResponseAnalysisOneAssumptionsRepairRatesItemSourceUrlMax),
+  "capturedOn": zod.string().date(),
+  "validThrough": zod.string().date(),
+  "active": zod.boolean()
+})).max(intakePropertyEvidenceResponseAnalysisOneAssumptionsRepairRatesMax)
 }),
   "risks": zod.array(zod.string()),
   "blockers": zod.array(zod.string()),
@@ -1358,6 +1668,41 @@ export const IntakePropertyEvidenceResponse = zod.object({
 })).max(intakePropertyEvidenceResponseUnderwritingOneRepairsMax),
   "repairsComplete": zod.boolean(),
   "conditionConfirmed": zod.boolean(),
+  "repairObservations": zod.array(zod.object({
+  "category": zod.string().min(1).max(intakePropertyEvidenceResponseUnderwritingOneRepairObservationsItemCategoryMax),
+  "severity": zod.enum(['NO_REPAIR', 'COSMETIC', 'MODERATE', 'MAJOR', 'REPLACEMENT']),
+  "quantity": zod.number().min(intakePropertyEvidenceResponseUnderwritingOneRepairObservationsItemQuantityMin).max(intakePropertyEvidenceResponseUnderwritingOneRepairObservationsItemQuantityMax),
+  "unit": zod.enum(['SQFT', 'LINEAR_FT', 'EACH', 'LUMP_SUM']),
+  "evidenceId": zod.string().min(1).max(intakePropertyEvidenceResponseUnderwritingOneRepairObservationsItemEvidenceIdMax)
+})).max(intakePropertyEvidenceResponseUnderwritingOneRepairObservationsMax).optional(),
+  "repairEstimate": zod.object({
+  "status": zod.enum(['NOT_USED', 'CALCULATED', 'BLOCKED']),
+  "marketKey": zod.string(),
+  "catalogVersion": zod.number().int().min(intakePropertyEvidenceResponseUnderwritingOneRepairEstimateCatalogVersionMin),
+  "calculatedAt": zod.string().datetime({"offset":true}),
+  "lines": zod.array(zod.object({
+  "category": zod.string(),
+  "severity": zod.enum(['NO_REPAIR', 'COSMETIC', 'MODERATE', 'MAJOR', 'REPLACEMENT']),
+  "quantity": zod.number(),
+  "unit": zod.enum(['SQFT', 'LINEAR_FT', 'EACH', 'LUMP_SUM']),
+  "evidenceId": zod.string(),
+  "rateCardId": zod.string().optional(),
+  "rateCardVersion": zod.number().int().optional(),
+  "low": zod.number().min(intakePropertyEvidenceResponseUnderwritingOneRepairEstimateLinesItemLowMin),
+  "expected": zod.number().min(intakePropertyEvidenceResponseUnderwritingOneRepairEstimateLinesItemExpectedMin),
+  "high": zod.number().min(intakePropertyEvidenceResponseUnderwritingOneRepairEstimateLinesItemHighMin),
+  "confidence": zod.number().min(intakePropertyEvidenceResponseUnderwritingOneRepairEstimateLinesItemConfidenceMin).max(intakePropertyEvidenceResponseUnderwritingOneRepairEstimateLinesItemConfidenceMax),
+  "source": zod.string(),
+  "sourceUrl": zod.string().url().optional()
+})).max(intakePropertyEvidenceResponseUnderwritingOneRepairEstimateLinesMax),
+  "total": zod.union([zod.object({
+  "low": zod.number(),
+  "expected": zod.number(),
+  "high": zod.number(),
+  "confidence": zod.number()
+}),zod.null()]),
+  "blockers": zod.array(zod.string())
+}).optional(),
   "subjectEvidenceId": zod.string().max(intakePropertyEvidenceResponseUnderwritingOneSubjectEvidenceIdMax).optional(),
   "conditionEvidenceId": zod.string().max(intakePropertyEvidenceResponseUnderwritingOneConditionEvidenceIdMax).optional(),
   "sellerContactEvidenceId": zod.string().max(intakePropertyEvidenceResponseUnderwritingOneSellerContactEvidenceIdMax).optional()
@@ -1830,6 +2175,19 @@ export const getLeadResponseIntelligenceItemOneQuestionMax = 2000;
 
 export const getLeadResponseIntelligenceItemOneActionMax = 2000;
 
+export const getLeadResponseAnalysisOneRepairEstimateCatalogVersionMin = 0;
+
+export const getLeadResponseAnalysisOneRepairEstimateLinesItemLowMin = 0;
+
+export const getLeadResponseAnalysisOneRepairEstimateLinesItemExpectedMin = 0;
+
+export const getLeadResponseAnalysisOneRepairEstimateLinesItemHighMin = 0;
+
+export const getLeadResponseAnalysisOneRepairEstimateLinesItemConfidenceMin = 0;
+export const getLeadResponseAnalysisOneRepairEstimateLinesItemConfidenceMax = 1;
+
+export const getLeadResponseAnalysisOneRepairEstimateLinesMax = 50;
+
 export const getLeadResponseAnalysisOneAssumptionsArvMultiplierMin = 0.1;
 export const getLeadResponseAnalysisOneAssumptionsArvMultiplierMax = 1;
 
@@ -1873,6 +2231,34 @@ export const getLeadResponseAnalysisOneAssumptionsMinCompsMax = 20;
 
 export const getLeadResponseAnalysisOneAssumptionsMinConfidenceMin = 0.3;
 export const getLeadResponseAnalysisOneAssumptionsMinConfidenceMax = 1;
+
+export const getLeadResponseAnalysisOneAssumptionsRepairRateCatalogVersionMin = 0;
+
+export const getLeadResponseAnalysisOneAssumptionsRepairRatesItemIdMax = 100;
+
+
+export const getLeadResponseAnalysisOneAssumptionsRepairRatesItemMarketKeyMin = 2;
+export const getLeadResponseAnalysisOneAssumptionsRepairRatesItemMarketKeyMax = 100;
+
+export const getLeadResponseAnalysisOneAssumptionsRepairRatesItemCategoryMax = 100;
+
+export const getLeadResponseAnalysisOneAssumptionsRepairRatesItemLowRateMin = 0;
+export const getLeadResponseAnalysisOneAssumptionsRepairRatesItemLowRateMax = 100000000;
+
+export const getLeadResponseAnalysisOneAssumptionsRepairRatesItemExpectedRateMin = 0;
+export const getLeadResponseAnalysisOneAssumptionsRepairRatesItemExpectedRateMax = 100000000;
+
+export const getLeadResponseAnalysisOneAssumptionsRepairRatesItemHighRateMin = 0;
+export const getLeadResponseAnalysisOneAssumptionsRepairRatesItemHighRateMax = 100000000;
+
+export const getLeadResponseAnalysisOneAssumptionsRepairRatesItemConfidenceMin = 0;
+export const getLeadResponseAnalysisOneAssumptionsRepairRatesItemConfidenceMax = 1;
+
+export const getLeadResponseAnalysisOneAssumptionsRepairRatesItemSourceMax = 2000;
+
+export const getLeadResponseAnalysisOneAssumptionsRepairRatesItemSourceUrlMax = 2000;
+
+export const getLeadResponseAnalysisOneAssumptionsRepairRatesMax = 1000;
 
 export const getLeadResponseOffersItemOneAmountExclusiveMin = 0;
 export const getLeadResponseOffersItemOneAmountMax = 1000000000;
@@ -1922,6 +2308,28 @@ export const getLeadResponseUnderwritingOneRepairsItemConfidenceMax = 1;
 export const getLeadResponseUnderwritingOneRepairsItemEvidenceIdMax = 200;
 
 export const getLeadResponseUnderwritingOneRepairsMax = 50;
+
+export const getLeadResponseUnderwritingOneRepairObservationsItemCategoryMax = 100;
+
+export const getLeadResponseUnderwritingOneRepairObservationsItemQuantityMin = 0;
+export const getLeadResponseUnderwritingOneRepairObservationsItemQuantityMax = 1000000;
+
+export const getLeadResponseUnderwritingOneRepairObservationsItemEvidenceIdMax = 200;
+
+export const getLeadResponseUnderwritingOneRepairObservationsMax = 50;
+
+export const getLeadResponseUnderwritingOneRepairEstimateCatalogVersionMin = 0;
+
+export const getLeadResponseUnderwritingOneRepairEstimateLinesItemLowMin = 0;
+
+export const getLeadResponseUnderwritingOneRepairEstimateLinesItemExpectedMin = 0;
+
+export const getLeadResponseUnderwritingOneRepairEstimateLinesItemHighMin = 0;
+
+export const getLeadResponseUnderwritingOneRepairEstimateLinesItemConfidenceMin = 0;
+export const getLeadResponseUnderwritingOneRepairEstimateLinesItemConfidenceMax = 1;
+
+export const getLeadResponseUnderwritingOneRepairEstimateLinesMax = 50;
 
 export const getLeadResponseUnderwritingOneSubjectEvidenceIdMax = 200;
 
@@ -2028,6 +2436,34 @@ export const GetLeadResponse = zod.object({
   "high": zod.number(),
   "confidence": zod.number()
 }),
+  "repairEstimate": zod.object({
+  "status": zod.enum(['NOT_USED', 'CALCULATED', 'BLOCKED']),
+  "marketKey": zod.string(),
+  "catalogVersion": zod.number().int().min(getLeadResponseAnalysisOneRepairEstimateCatalogVersionMin),
+  "calculatedAt": zod.string().datetime({"offset":true}),
+  "lines": zod.array(zod.object({
+  "category": zod.string(),
+  "severity": zod.enum(['NO_REPAIR', 'COSMETIC', 'MODERATE', 'MAJOR', 'REPLACEMENT']),
+  "quantity": zod.number(),
+  "unit": zod.enum(['SQFT', 'LINEAR_FT', 'EACH', 'LUMP_SUM']),
+  "evidenceId": zod.string(),
+  "rateCardId": zod.string().optional(),
+  "rateCardVersion": zod.number().int().optional(),
+  "low": zod.number().min(getLeadResponseAnalysisOneRepairEstimateLinesItemLowMin),
+  "expected": zod.number().min(getLeadResponseAnalysisOneRepairEstimateLinesItemExpectedMin),
+  "high": zod.number().min(getLeadResponseAnalysisOneRepairEstimateLinesItemHighMin),
+  "confidence": zod.number().min(getLeadResponseAnalysisOneRepairEstimateLinesItemConfidenceMin).max(getLeadResponseAnalysisOneRepairEstimateLinesItemConfidenceMax),
+  "source": zod.string(),
+  "sourceUrl": zod.string().url().optional()
+})).max(getLeadResponseAnalysisOneRepairEstimateLinesMax),
+  "total": zod.union([zod.object({
+  "low": zod.number(),
+  "expected": zod.number(),
+  "high": zod.number(),
+  "confidence": zod.number()
+}),zod.null()]),
+  "blockers": zod.array(zod.string())
+}),
   "mao": zod.number(),
   "openingLow": zod.number(),
   "openingHigh": zod.number(),
@@ -2049,7 +2485,25 @@ export const GetLeadResponse = zod.object({
   "maxSqftDifferencePct": zod.number().min(getLeadResponseAnalysisOneAssumptionsMaxSqftDifferencePctMin).max(getLeadResponseAnalysisOneAssumptionsMaxSqftDifferencePctMax),
   "minComps": zod.number().int().min(getLeadResponseAnalysisOneAssumptionsMinCompsMin).max(getLeadResponseAnalysisOneAssumptionsMinCompsMax),
   "minConfidence": zod.number().min(getLeadResponseAnalysisOneAssumptionsMinConfidenceMin).max(getLeadResponseAnalysisOneAssumptionsMinConfidenceMax),
-  "approvalRequired": zod.boolean()
+  "approvalRequired": zod.boolean(),
+  "repairRateCatalogVersion": zod.number().int().min(getLeadResponseAnalysisOneAssumptionsRepairRateCatalogVersionMin),
+  "repairRates": zod.array(zod.object({
+  "id": zod.string().min(1).max(getLeadResponseAnalysisOneAssumptionsRepairRatesItemIdMax),
+  "version": zod.number().int().min(1),
+  "marketKey": zod.string().min(getLeadResponseAnalysisOneAssumptionsRepairRatesItemMarketKeyMin).max(getLeadResponseAnalysisOneAssumptionsRepairRatesItemMarketKeyMax),
+  "category": zod.string().min(1).max(getLeadResponseAnalysisOneAssumptionsRepairRatesItemCategoryMax),
+  "severity": zod.enum(['COSMETIC', 'MODERATE', 'MAJOR', 'REPLACEMENT']),
+  "unit": zod.enum(['SQFT', 'LINEAR_FT', 'EACH', 'LUMP_SUM']),
+  "lowRate": zod.number().min(getLeadResponseAnalysisOneAssumptionsRepairRatesItemLowRateMin).max(getLeadResponseAnalysisOneAssumptionsRepairRatesItemLowRateMax),
+  "expectedRate": zod.number().min(getLeadResponseAnalysisOneAssumptionsRepairRatesItemExpectedRateMin).max(getLeadResponseAnalysisOneAssumptionsRepairRatesItemExpectedRateMax),
+  "highRate": zod.number().min(getLeadResponseAnalysisOneAssumptionsRepairRatesItemHighRateMin).max(getLeadResponseAnalysisOneAssumptionsRepairRatesItemHighRateMax),
+  "confidence": zod.number().min(getLeadResponseAnalysisOneAssumptionsRepairRatesItemConfidenceMin).max(getLeadResponseAnalysisOneAssumptionsRepairRatesItemConfidenceMax),
+  "source": zod.string().min(1).max(getLeadResponseAnalysisOneAssumptionsRepairRatesItemSourceMax),
+  "sourceUrl": zod.string().url().max(getLeadResponseAnalysisOneAssumptionsRepairRatesItemSourceUrlMax),
+  "capturedOn": zod.string().date(),
+  "validThrough": zod.string().date(),
+  "active": zod.boolean()
+})).max(getLeadResponseAnalysisOneAssumptionsRepairRatesMax)
 }),
   "risks": zod.array(zod.string()),
   "blockers": zod.array(zod.string()),
@@ -2118,6 +2572,41 @@ export const GetLeadResponse = zod.object({
 })).max(getLeadResponseUnderwritingOneRepairsMax),
   "repairsComplete": zod.boolean(),
   "conditionConfirmed": zod.boolean(),
+  "repairObservations": zod.array(zod.object({
+  "category": zod.string().min(1).max(getLeadResponseUnderwritingOneRepairObservationsItemCategoryMax),
+  "severity": zod.enum(['NO_REPAIR', 'COSMETIC', 'MODERATE', 'MAJOR', 'REPLACEMENT']),
+  "quantity": zod.number().min(getLeadResponseUnderwritingOneRepairObservationsItemQuantityMin).max(getLeadResponseUnderwritingOneRepairObservationsItemQuantityMax),
+  "unit": zod.enum(['SQFT', 'LINEAR_FT', 'EACH', 'LUMP_SUM']),
+  "evidenceId": zod.string().min(1).max(getLeadResponseUnderwritingOneRepairObservationsItemEvidenceIdMax)
+})).max(getLeadResponseUnderwritingOneRepairObservationsMax).optional(),
+  "repairEstimate": zod.object({
+  "status": zod.enum(['NOT_USED', 'CALCULATED', 'BLOCKED']),
+  "marketKey": zod.string(),
+  "catalogVersion": zod.number().int().min(getLeadResponseUnderwritingOneRepairEstimateCatalogVersionMin),
+  "calculatedAt": zod.string().datetime({"offset":true}),
+  "lines": zod.array(zod.object({
+  "category": zod.string(),
+  "severity": zod.enum(['NO_REPAIR', 'COSMETIC', 'MODERATE', 'MAJOR', 'REPLACEMENT']),
+  "quantity": zod.number(),
+  "unit": zod.enum(['SQFT', 'LINEAR_FT', 'EACH', 'LUMP_SUM']),
+  "evidenceId": zod.string(),
+  "rateCardId": zod.string().optional(),
+  "rateCardVersion": zod.number().int().optional(),
+  "low": zod.number().min(getLeadResponseUnderwritingOneRepairEstimateLinesItemLowMin),
+  "expected": zod.number().min(getLeadResponseUnderwritingOneRepairEstimateLinesItemExpectedMin),
+  "high": zod.number().min(getLeadResponseUnderwritingOneRepairEstimateLinesItemHighMin),
+  "confidence": zod.number().min(getLeadResponseUnderwritingOneRepairEstimateLinesItemConfidenceMin).max(getLeadResponseUnderwritingOneRepairEstimateLinesItemConfidenceMax),
+  "source": zod.string(),
+  "sourceUrl": zod.string().url().optional()
+})).max(getLeadResponseUnderwritingOneRepairEstimateLinesMax),
+  "total": zod.union([zod.object({
+  "low": zod.number(),
+  "expected": zod.number(),
+  "high": zod.number(),
+  "confidence": zod.number()
+}),zod.null()]),
+  "blockers": zod.array(zod.string())
+}).optional(),
   "subjectEvidenceId": zod.string().max(getLeadResponseUnderwritingOneSubjectEvidenceIdMax).optional(),
   "conditionEvidenceId": zod.string().max(getLeadResponseUnderwritingOneConditionEvidenceIdMax).optional(),
   "sellerContactEvidenceId": zod.string().max(getLeadResponseUnderwritingOneSellerContactEvidenceIdMax).optional()
@@ -2464,6 +2953,28 @@ export const saveUnderwritingBodyRepairsItemEvidenceIdMax = 200;
 
 export const saveUnderwritingBodyRepairsMax = 50;
 
+export const saveUnderwritingBodyRepairObservationsItemCategoryMax = 100;
+
+export const saveUnderwritingBodyRepairObservationsItemQuantityMin = 0;
+export const saveUnderwritingBodyRepairObservationsItemQuantityMax = 1000000;
+
+export const saveUnderwritingBodyRepairObservationsItemEvidenceIdMax = 200;
+
+export const saveUnderwritingBodyRepairObservationsMax = 50;
+
+export const saveUnderwritingBodyRepairEstimateCatalogVersionMin = 0;
+
+export const saveUnderwritingBodyRepairEstimateLinesItemLowMin = 0;
+
+export const saveUnderwritingBodyRepairEstimateLinesItemExpectedMin = 0;
+
+export const saveUnderwritingBodyRepairEstimateLinesItemHighMin = 0;
+
+export const saveUnderwritingBodyRepairEstimateLinesItemConfidenceMin = 0;
+export const saveUnderwritingBodyRepairEstimateLinesItemConfidenceMax = 1;
+
+export const saveUnderwritingBodyRepairEstimateLinesMax = 50;
+
 export const saveUnderwritingBodySubjectEvidenceIdMax = 200;
 
 export const saveUnderwritingBodyConditionEvidenceIdMax = 200;
@@ -2499,6 +3010,41 @@ export const SaveUnderwritingBody = zod.object({
 })).max(saveUnderwritingBodyRepairsMax),
   "repairsComplete": zod.boolean(),
   "conditionConfirmed": zod.boolean(),
+  "repairObservations": zod.array(zod.object({
+  "category": zod.string().min(1).max(saveUnderwritingBodyRepairObservationsItemCategoryMax),
+  "severity": zod.enum(['NO_REPAIR', 'COSMETIC', 'MODERATE', 'MAJOR', 'REPLACEMENT']),
+  "quantity": zod.number().min(saveUnderwritingBodyRepairObservationsItemQuantityMin).max(saveUnderwritingBodyRepairObservationsItemQuantityMax),
+  "unit": zod.enum(['SQFT', 'LINEAR_FT', 'EACH', 'LUMP_SUM']),
+  "evidenceId": zod.string().min(1).max(saveUnderwritingBodyRepairObservationsItemEvidenceIdMax)
+})).max(saveUnderwritingBodyRepairObservationsMax).optional(),
+  "repairEstimate": zod.object({
+  "status": zod.enum(['NOT_USED', 'CALCULATED', 'BLOCKED']),
+  "marketKey": zod.string(),
+  "catalogVersion": zod.number().int().min(saveUnderwritingBodyRepairEstimateCatalogVersionMin),
+  "calculatedAt": zod.string().datetime({"offset":true}),
+  "lines": zod.array(zod.object({
+  "category": zod.string(),
+  "severity": zod.enum(['NO_REPAIR', 'COSMETIC', 'MODERATE', 'MAJOR', 'REPLACEMENT']),
+  "quantity": zod.number(),
+  "unit": zod.enum(['SQFT', 'LINEAR_FT', 'EACH', 'LUMP_SUM']),
+  "evidenceId": zod.string(),
+  "rateCardId": zod.string().optional(),
+  "rateCardVersion": zod.number().int().optional(),
+  "low": zod.number().min(saveUnderwritingBodyRepairEstimateLinesItemLowMin),
+  "expected": zod.number().min(saveUnderwritingBodyRepairEstimateLinesItemExpectedMin),
+  "high": zod.number().min(saveUnderwritingBodyRepairEstimateLinesItemHighMin),
+  "confidence": zod.number().min(saveUnderwritingBodyRepairEstimateLinesItemConfidenceMin).max(saveUnderwritingBodyRepairEstimateLinesItemConfidenceMax),
+  "source": zod.string(),
+  "sourceUrl": zod.string().url().optional()
+})).max(saveUnderwritingBodyRepairEstimateLinesMax),
+  "total": zod.union([zod.object({
+  "low": zod.number(),
+  "expected": zod.number(),
+  "high": zod.number(),
+  "confidence": zod.number()
+}),zod.null()]),
+  "blockers": zod.array(zod.string())
+}).optional(),
   "subjectEvidenceId": zod.string().max(saveUnderwritingBodySubjectEvidenceIdMax).optional(),
   "conditionEvidenceId": zod.string().max(saveUnderwritingBodyConditionEvidenceIdMax).optional(),
   "sellerContactEvidenceId": zod.string().max(saveUnderwritingBodySellerContactEvidenceIdMax).optional()
@@ -2573,6 +3119,19 @@ export const saveUnderwritingResponseIntelligenceItemOneQuestionMax = 2000;
 
 export const saveUnderwritingResponseIntelligenceItemOneActionMax = 2000;
 
+export const saveUnderwritingResponseAnalysisOneRepairEstimateCatalogVersionMin = 0;
+
+export const saveUnderwritingResponseAnalysisOneRepairEstimateLinesItemLowMin = 0;
+
+export const saveUnderwritingResponseAnalysisOneRepairEstimateLinesItemExpectedMin = 0;
+
+export const saveUnderwritingResponseAnalysisOneRepairEstimateLinesItemHighMin = 0;
+
+export const saveUnderwritingResponseAnalysisOneRepairEstimateLinesItemConfidenceMin = 0;
+export const saveUnderwritingResponseAnalysisOneRepairEstimateLinesItemConfidenceMax = 1;
+
+export const saveUnderwritingResponseAnalysisOneRepairEstimateLinesMax = 50;
+
 export const saveUnderwritingResponseAnalysisOneAssumptionsArvMultiplierMin = 0.1;
 export const saveUnderwritingResponseAnalysisOneAssumptionsArvMultiplierMax = 1;
 
@@ -2616,6 +3175,34 @@ export const saveUnderwritingResponseAnalysisOneAssumptionsMinCompsMax = 20;
 
 export const saveUnderwritingResponseAnalysisOneAssumptionsMinConfidenceMin = 0.3;
 export const saveUnderwritingResponseAnalysisOneAssumptionsMinConfidenceMax = 1;
+
+export const saveUnderwritingResponseAnalysisOneAssumptionsRepairRateCatalogVersionMin = 0;
+
+export const saveUnderwritingResponseAnalysisOneAssumptionsRepairRatesItemIdMax = 100;
+
+
+export const saveUnderwritingResponseAnalysisOneAssumptionsRepairRatesItemMarketKeyMin = 2;
+export const saveUnderwritingResponseAnalysisOneAssumptionsRepairRatesItemMarketKeyMax = 100;
+
+export const saveUnderwritingResponseAnalysisOneAssumptionsRepairRatesItemCategoryMax = 100;
+
+export const saveUnderwritingResponseAnalysisOneAssumptionsRepairRatesItemLowRateMin = 0;
+export const saveUnderwritingResponseAnalysisOneAssumptionsRepairRatesItemLowRateMax = 100000000;
+
+export const saveUnderwritingResponseAnalysisOneAssumptionsRepairRatesItemExpectedRateMin = 0;
+export const saveUnderwritingResponseAnalysisOneAssumptionsRepairRatesItemExpectedRateMax = 100000000;
+
+export const saveUnderwritingResponseAnalysisOneAssumptionsRepairRatesItemHighRateMin = 0;
+export const saveUnderwritingResponseAnalysisOneAssumptionsRepairRatesItemHighRateMax = 100000000;
+
+export const saveUnderwritingResponseAnalysisOneAssumptionsRepairRatesItemConfidenceMin = 0;
+export const saveUnderwritingResponseAnalysisOneAssumptionsRepairRatesItemConfidenceMax = 1;
+
+export const saveUnderwritingResponseAnalysisOneAssumptionsRepairRatesItemSourceMax = 2000;
+
+export const saveUnderwritingResponseAnalysisOneAssumptionsRepairRatesItemSourceUrlMax = 2000;
+
+export const saveUnderwritingResponseAnalysisOneAssumptionsRepairRatesMax = 1000;
 
 export const saveUnderwritingResponseOffersItemOneAmountExclusiveMin = 0;
 export const saveUnderwritingResponseOffersItemOneAmountMax = 1000000000;
@@ -2665,6 +3252,28 @@ export const saveUnderwritingResponseUnderwritingOneRepairsItemConfidenceMax = 1
 export const saveUnderwritingResponseUnderwritingOneRepairsItemEvidenceIdMax = 200;
 
 export const saveUnderwritingResponseUnderwritingOneRepairsMax = 50;
+
+export const saveUnderwritingResponseUnderwritingOneRepairObservationsItemCategoryMax = 100;
+
+export const saveUnderwritingResponseUnderwritingOneRepairObservationsItemQuantityMin = 0;
+export const saveUnderwritingResponseUnderwritingOneRepairObservationsItemQuantityMax = 1000000;
+
+export const saveUnderwritingResponseUnderwritingOneRepairObservationsItemEvidenceIdMax = 200;
+
+export const saveUnderwritingResponseUnderwritingOneRepairObservationsMax = 50;
+
+export const saveUnderwritingResponseUnderwritingOneRepairEstimateCatalogVersionMin = 0;
+
+export const saveUnderwritingResponseUnderwritingOneRepairEstimateLinesItemLowMin = 0;
+
+export const saveUnderwritingResponseUnderwritingOneRepairEstimateLinesItemExpectedMin = 0;
+
+export const saveUnderwritingResponseUnderwritingOneRepairEstimateLinesItemHighMin = 0;
+
+export const saveUnderwritingResponseUnderwritingOneRepairEstimateLinesItemConfidenceMin = 0;
+export const saveUnderwritingResponseUnderwritingOneRepairEstimateLinesItemConfidenceMax = 1;
+
+export const saveUnderwritingResponseUnderwritingOneRepairEstimateLinesMax = 50;
 
 export const saveUnderwritingResponseUnderwritingOneSubjectEvidenceIdMax = 200;
 
@@ -2771,6 +3380,34 @@ export const SaveUnderwritingResponse = zod.object({
   "high": zod.number(),
   "confidence": zod.number()
 }),
+  "repairEstimate": zod.object({
+  "status": zod.enum(['NOT_USED', 'CALCULATED', 'BLOCKED']),
+  "marketKey": zod.string(),
+  "catalogVersion": zod.number().int().min(saveUnderwritingResponseAnalysisOneRepairEstimateCatalogVersionMin),
+  "calculatedAt": zod.string().datetime({"offset":true}),
+  "lines": zod.array(zod.object({
+  "category": zod.string(),
+  "severity": zod.enum(['NO_REPAIR', 'COSMETIC', 'MODERATE', 'MAJOR', 'REPLACEMENT']),
+  "quantity": zod.number(),
+  "unit": zod.enum(['SQFT', 'LINEAR_FT', 'EACH', 'LUMP_SUM']),
+  "evidenceId": zod.string(),
+  "rateCardId": zod.string().optional(),
+  "rateCardVersion": zod.number().int().optional(),
+  "low": zod.number().min(saveUnderwritingResponseAnalysisOneRepairEstimateLinesItemLowMin),
+  "expected": zod.number().min(saveUnderwritingResponseAnalysisOneRepairEstimateLinesItemExpectedMin),
+  "high": zod.number().min(saveUnderwritingResponseAnalysisOneRepairEstimateLinesItemHighMin),
+  "confidence": zod.number().min(saveUnderwritingResponseAnalysisOneRepairEstimateLinesItemConfidenceMin).max(saveUnderwritingResponseAnalysisOneRepairEstimateLinesItemConfidenceMax),
+  "source": zod.string(),
+  "sourceUrl": zod.string().url().optional()
+})).max(saveUnderwritingResponseAnalysisOneRepairEstimateLinesMax),
+  "total": zod.union([zod.object({
+  "low": zod.number(),
+  "expected": zod.number(),
+  "high": zod.number(),
+  "confidence": zod.number()
+}),zod.null()]),
+  "blockers": zod.array(zod.string())
+}),
   "mao": zod.number(),
   "openingLow": zod.number(),
   "openingHigh": zod.number(),
@@ -2792,7 +3429,25 @@ export const SaveUnderwritingResponse = zod.object({
   "maxSqftDifferencePct": zod.number().min(saveUnderwritingResponseAnalysisOneAssumptionsMaxSqftDifferencePctMin).max(saveUnderwritingResponseAnalysisOneAssumptionsMaxSqftDifferencePctMax),
   "minComps": zod.number().int().min(saveUnderwritingResponseAnalysisOneAssumptionsMinCompsMin).max(saveUnderwritingResponseAnalysisOneAssumptionsMinCompsMax),
   "minConfidence": zod.number().min(saveUnderwritingResponseAnalysisOneAssumptionsMinConfidenceMin).max(saveUnderwritingResponseAnalysisOneAssumptionsMinConfidenceMax),
-  "approvalRequired": zod.boolean()
+  "approvalRequired": zod.boolean(),
+  "repairRateCatalogVersion": zod.number().int().min(saveUnderwritingResponseAnalysisOneAssumptionsRepairRateCatalogVersionMin),
+  "repairRates": zod.array(zod.object({
+  "id": zod.string().min(1).max(saveUnderwritingResponseAnalysisOneAssumptionsRepairRatesItemIdMax),
+  "version": zod.number().int().min(1),
+  "marketKey": zod.string().min(saveUnderwritingResponseAnalysisOneAssumptionsRepairRatesItemMarketKeyMin).max(saveUnderwritingResponseAnalysisOneAssumptionsRepairRatesItemMarketKeyMax),
+  "category": zod.string().min(1).max(saveUnderwritingResponseAnalysisOneAssumptionsRepairRatesItemCategoryMax),
+  "severity": zod.enum(['COSMETIC', 'MODERATE', 'MAJOR', 'REPLACEMENT']),
+  "unit": zod.enum(['SQFT', 'LINEAR_FT', 'EACH', 'LUMP_SUM']),
+  "lowRate": zod.number().min(saveUnderwritingResponseAnalysisOneAssumptionsRepairRatesItemLowRateMin).max(saveUnderwritingResponseAnalysisOneAssumptionsRepairRatesItemLowRateMax),
+  "expectedRate": zod.number().min(saveUnderwritingResponseAnalysisOneAssumptionsRepairRatesItemExpectedRateMin).max(saveUnderwritingResponseAnalysisOneAssumptionsRepairRatesItemExpectedRateMax),
+  "highRate": zod.number().min(saveUnderwritingResponseAnalysisOneAssumptionsRepairRatesItemHighRateMin).max(saveUnderwritingResponseAnalysisOneAssumptionsRepairRatesItemHighRateMax),
+  "confidence": zod.number().min(saveUnderwritingResponseAnalysisOneAssumptionsRepairRatesItemConfidenceMin).max(saveUnderwritingResponseAnalysisOneAssumptionsRepairRatesItemConfidenceMax),
+  "source": zod.string().min(1).max(saveUnderwritingResponseAnalysisOneAssumptionsRepairRatesItemSourceMax),
+  "sourceUrl": zod.string().url().max(saveUnderwritingResponseAnalysisOneAssumptionsRepairRatesItemSourceUrlMax),
+  "capturedOn": zod.string().date(),
+  "validThrough": zod.string().date(),
+  "active": zod.boolean()
+})).max(saveUnderwritingResponseAnalysisOneAssumptionsRepairRatesMax)
 }),
   "risks": zod.array(zod.string()),
   "blockers": zod.array(zod.string()),
@@ -2861,6 +3516,41 @@ export const SaveUnderwritingResponse = zod.object({
 })).max(saveUnderwritingResponseUnderwritingOneRepairsMax),
   "repairsComplete": zod.boolean(),
   "conditionConfirmed": zod.boolean(),
+  "repairObservations": zod.array(zod.object({
+  "category": zod.string().min(1).max(saveUnderwritingResponseUnderwritingOneRepairObservationsItemCategoryMax),
+  "severity": zod.enum(['NO_REPAIR', 'COSMETIC', 'MODERATE', 'MAJOR', 'REPLACEMENT']),
+  "quantity": zod.number().min(saveUnderwritingResponseUnderwritingOneRepairObservationsItemQuantityMin).max(saveUnderwritingResponseUnderwritingOneRepairObservationsItemQuantityMax),
+  "unit": zod.enum(['SQFT', 'LINEAR_FT', 'EACH', 'LUMP_SUM']),
+  "evidenceId": zod.string().min(1).max(saveUnderwritingResponseUnderwritingOneRepairObservationsItemEvidenceIdMax)
+})).max(saveUnderwritingResponseUnderwritingOneRepairObservationsMax).optional(),
+  "repairEstimate": zod.object({
+  "status": zod.enum(['NOT_USED', 'CALCULATED', 'BLOCKED']),
+  "marketKey": zod.string(),
+  "catalogVersion": zod.number().int().min(saveUnderwritingResponseUnderwritingOneRepairEstimateCatalogVersionMin),
+  "calculatedAt": zod.string().datetime({"offset":true}),
+  "lines": zod.array(zod.object({
+  "category": zod.string(),
+  "severity": zod.enum(['NO_REPAIR', 'COSMETIC', 'MODERATE', 'MAJOR', 'REPLACEMENT']),
+  "quantity": zod.number(),
+  "unit": zod.enum(['SQFT', 'LINEAR_FT', 'EACH', 'LUMP_SUM']),
+  "evidenceId": zod.string(),
+  "rateCardId": zod.string().optional(),
+  "rateCardVersion": zod.number().int().optional(),
+  "low": zod.number().min(saveUnderwritingResponseUnderwritingOneRepairEstimateLinesItemLowMin),
+  "expected": zod.number().min(saveUnderwritingResponseUnderwritingOneRepairEstimateLinesItemExpectedMin),
+  "high": zod.number().min(saveUnderwritingResponseUnderwritingOneRepairEstimateLinesItemHighMin),
+  "confidence": zod.number().min(saveUnderwritingResponseUnderwritingOneRepairEstimateLinesItemConfidenceMin).max(saveUnderwritingResponseUnderwritingOneRepairEstimateLinesItemConfidenceMax),
+  "source": zod.string(),
+  "sourceUrl": zod.string().url().optional()
+})).max(saveUnderwritingResponseUnderwritingOneRepairEstimateLinesMax),
+  "total": zod.union([zod.object({
+  "low": zod.number(),
+  "expected": zod.number(),
+  "high": zod.number(),
+  "confidence": zod.number()
+}),zod.null()]),
+  "blockers": zod.array(zod.string())
+}).optional(),
   "subjectEvidenceId": zod.string().max(saveUnderwritingResponseUnderwritingOneSubjectEvidenceIdMax).optional(),
   "conditionEvidenceId": zod.string().max(saveUnderwritingResponseUnderwritingOneConditionEvidenceIdMax).optional(),
   "sellerContactEvidenceId": zod.string().max(saveUnderwritingResponseUnderwritingOneSellerContactEvidenceIdMax).optional()
@@ -2997,6 +3687,19 @@ export const transitionLeadResponseIntelligenceItemOneQuestionMax = 2000;
 
 export const transitionLeadResponseIntelligenceItemOneActionMax = 2000;
 
+export const transitionLeadResponseAnalysisOneRepairEstimateCatalogVersionMin = 0;
+
+export const transitionLeadResponseAnalysisOneRepairEstimateLinesItemLowMin = 0;
+
+export const transitionLeadResponseAnalysisOneRepairEstimateLinesItemExpectedMin = 0;
+
+export const transitionLeadResponseAnalysisOneRepairEstimateLinesItemHighMin = 0;
+
+export const transitionLeadResponseAnalysisOneRepairEstimateLinesItemConfidenceMin = 0;
+export const transitionLeadResponseAnalysisOneRepairEstimateLinesItemConfidenceMax = 1;
+
+export const transitionLeadResponseAnalysisOneRepairEstimateLinesMax = 50;
+
 export const transitionLeadResponseAnalysisOneAssumptionsArvMultiplierMin = 0.1;
 export const transitionLeadResponseAnalysisOneAssumptionsArvMultiplierMax = 1;
 
@@ -3040,6 +3743,34 @@ export const transitionLeadResponseAnalysisOneAssumptionsMinCompsMax = 20;
 
 export const transitionLeadResponseAnalysisOneAssumptionsMinConfidenceMin = 0.3;
 export const transitionLeadResponseAnalysisOneAssumptionsMinConfidenceMax = 1;
+
+export const transitionLeadResponseAnalysisOneAssumptionsRepairRateCatalogVersionMin = 0;
+
+export const transitionLeadResponseAnalysisOneAssumptionsRepairRatesItemIdMax = 100;
+
+
+export const transitionLeadResponseAnalysisOneAssumptionsRepairRatesItemMarketKeyMin = 2;
+export const transitionLeadResponseAnalysisOneAssumptionsRepairRatesItemMarketKeyMax = 100;
+
+export const transitionLeadResponseAnalysisOneAssumptionsRepairRatesItemCategoryMax = 100;
+
+export const transitionLeadResponseAnalysisOneAssumptionsRepairRatesItemLowRateMin = 0;
+export const transitionLeadResponseAnalysisOneAssumptionsRepairRatesItemLowRateMax = 100000000;
+
+export const transitionLeadResponseAnalysisOneAssumptionsRepairRatesItemExpectedRateMin = 0;
+export const transitionLeadResponseAnalysisOneAssumptionsRepairRatesItemExpectedRateMax = 100000000;
+
+export const transitionLeadResponseAnalysisOneAssumptionsRepairRatesItemHighRateMin = 0;
+export const transitionLeadResponseAnalysisOneAssumptionsRepairRatesItemHighRateMax = 100000000;
+
+export const transitionLeadResponseAnalysisOneAssumptionsRepairRatesItemConfidenceMin = 0;
+export const transitionLeadResponseAnalysisOneAssumptionsRepairRatesItemConfidenceMax = 1;
+
+export const transitionLeadResponseAnalysisOneAssumptionsRepairRatesItemSourceMax = 2000;
+
+export const transitionLeadResponseAnalysisOneAssumptionsRepairRatesItemSourceUrlMax = 2000;
+
+export const transitionLeadResponseAnalysisOneAssumptionsRepairRatesMax = 1000;
 
 export const transitionLeadResponseOffersItemOneAmountExclusiveMin = 0;
 export const transitionLeadResponseOffersItemOneAmountMax = 1000000000;
@@ -3089,6 +3820,28 @@ export const transitionLeadResponseUnderwritingOneRepairsItemConfidenceMax = 1;
 export const transitionLeadResponseUnderwritingOneRepairsItemEvidenceIdMax = 200;
 
 export const transitionLeadResponseUnderwritingOneRepairsMax = 50;
+
+export const transitionLeadResponseUnderwritingOneRepairObservationsItemCategoryMax = 100;
+
+export const transitionLeadResponseUnderwritingOneRepairObservationsItemQuantityMin = 0;
+export const transitionLeadResponseUnderwritingOneRepairObservationsItemQuantityMax = 1000000;
+
+export const transitionLeadResponseUnderwritingOneRepairObservationsItemEvidenceIdMax = 200;
+
+export const transitionLeadResponseUnderwritingOneRepairObservationsMax = 50;
+
+export const transitionLeadResponseUnderwritingOneRepairEstimateCatalogVersionMin = 0;
+
+export const transitionLeadResponseUnderwritingOneRepairEstimateLinesItemLowMin = 0;
+
+export const transitionLeadResponseUnderwritingOneRepairEstimateLinesItemExpectedMin = 0;
+
+export const transitionLeadResponseUnderwritingOneRepairEstimateLinesItemHighMin = 0;
+
+export const transitionLeadResponseUnderwritingOneRepairEstimateLinesItemConfidenceMin = 0;
+export const transitionLeadResponseUnderwritingOneRepairEstimateLinesItemConfidenceMax = 1;
+
+export const transitionLeadResponseUnderwritingOneRepairEstimateLinesMax = 50;
 
 export const transitionLeadResponseUnderwritingOneSubjectEvidenceIdMax = 200;
 
@@ -3195,6 +3948,34 @@ export const TransitionLeadResponse = zod.object({
   "high": zod.number(),
   "confidence": zod.number()
 }),
+  "repairEstimate": zod.object({
+  "status": zod.enum(['NOT_USED', 'CALCULATED', 'BLOCKED']),
+  "marketKey": zod.string(),
+  "catalogVersion": zod.number().int().min(transitionLeadResponseAnalysisOneRepairEstimateCatalogVersionMin),
+  "calculatedAt": zod.string().datetime({"offset":true}),
+  "lines": zod.array(zod.object({
+  "category": zod.string(),
+  "severity": zod.enum(['NO_REPAIR', 'COSMETIC', 'MODERATE', 'MAJOR', 'REPLACEMENT']),
+  "quantity": zod.number(),
+  "unit": zod.enum(['SQFT', 'LINEAR_FT', 'EACH', 'LUMP_SUM']),
+  "evidenceId": zod.string(),
+  "rateCardId": zod.string().optional(),
+  "rateCardVersion": zod.number().int().optional(),
+  "low": zod.number().min(transitionLeadResponseAnalysisOneRepairEstimateLinesItemLowMin),
+  "expected": zod.number().min(transitionLeadResponseAnalysisOneRepairEstimateLinesItemExpectedMin),
+  "high": zod.number().min(transitionLeadResponseAnalysisOneRepairEstimateLinesItemHighMin),
+  "confidence": zod.number().min(transitionLeadResponseAnalysisOneRepairEstimateLinesItemConfidenceMin).max(transitionLeadResponseAnalysisOneRepairEstimateLinesItemConfidenceMax),
+  "source": zod.string(),
+  "sourceUrl": zod.string().url().optional()
+})).max(transitionLeadResponseAnalysisOneRepairEstimateLinesMax),
+  "total": zod.union([zod.object({
+  "low": zod.number(),
+  "expected": zod.number(),
+  "high": zod.number(),
+  "confidence": zod.number()
+}),zod.null()]),
+  "blockers": zod.array(zod.string())
+}),
   "mao": zod.number(),
   "openingLow": zod.number(),
   "openingHigh": zod.number(),
@@ -3216,7 +3997,25 @@ export const TransitionLeadResponse = zod.object({
   "maxSqftDifferencePct": zod.number().min(transitionLeadResponseAnalysisOneAssumptionsMaxSqftDifferencePctMin).max(transitionLeadResponseAnalysisOneAssumptionsMaxSqftDifferencePctMax),
   "minComps": zod.number().int().min(transitionLeadResponseAnalysisOneAssumptionsMinCompsMin).max(transitionLeadResponseAnalysisOneAssumptionsMinCompsMax),
   "minConfidence": zod.number().min(transitionLeadResponseAnalysisOneAssumptionsMinConfidenceMin).max(transitionLeadResponseAnalysisOneAssumptionsMinConfidenceMax),
-  "approvalRequired": zod.boolean()
+  "approvalRequired": zod.boolean(),
+  "repairRateCatalogVersion": zod.number().int().min(transitionLeadResponseAnalysisOneAssumptionsRepairRateCatalogVersionMin),
+  "repairRates": zod.array(zod.object({
+  "id": zod.string().min(1).max(transitionLeadResponseAnalysisOneAssumptionsRepairRatesItemIdMax),
+  "version": zod.number().int().min(1),
+  "marketKey": zod.string().min(transitionLeadResponseAnalysisOneAssumptionsRepairRatesItemMarketKeyMin).max(transitionLeadResponseAnalysisOneAssumptionsRepairRatesItemMarketKeyMax),
+  "category": zod.string().min(1).max(transitionLeadResponseAnalysisOneAssumptionsRepairRatesItemCategoryMax),
+  "severity": zod.enum(['COSMETIC', 'MODERATE', 'MAJOR', 'REPLACEMENT']),
+  "unit": zod.enum(['SQFT', 'LINEAR_FT', 'EACH', 'LUMP_SUM']),
+  "lowRate": zod.number().min(transitionLeadResponseAnalysisOneAssumptionsRepairRatesItemLowRateMin).max(transitionLeadResponseAnalysisOneAssumptionsRepairRatesItemLowRateMax),
+  "expectedRate": zod.number().min(transitionLeadResponseAnalysisOneAssumptionsRepairRatesItemExpectedRateMin).max(transitionLeadResponseAnalysisOneAssumptionsRepairRatesItemExpectedRateMax),
+  "highRate": zod.number().min(transitionLeadResponseAnalysisOneAssumptionsRepairRatesItemHighRateMin).max(transitionLeadResponseAnalysisOneAssumptionsRepairRatesItemHighRateMax),
+  "confidence": zod.number().min(transitionLeadResponseAnalysisOneAssumptionsRepairRatesItemConfidenceMin).max(transitionLeadResponseAnalysisOneAssumptionsRepairRatesItemConfidenceMax),
+  "source": zod.string().min(1).max(transitionLeadResponseAnalysisOneAssumptionsRepairRatesItemSourceMax),
+  "sourceUrl": zod.string().url().max(transitionLeadResponseAnalysisOneAssumptionsRepairRatesItemSourceUrlMax),
+  "capturedOn": zod.string().date(),
+  "validThrough": zod.string().date(),
+  "active": zod.boolean()
+})).max(transitionLeadResponseAnalysisOneAssumptionsRepairRatesMax)
 }),
   "risks": zod.array(zod.string()),
   "blockers": zod.array(zod.string()),
@@ -3285,6 +4084,41 @@ export const TransitionLeadResponse = zod.object({
 })).max(transitionLeadResponseUnderwritingOneRepairsMax),
   "repairsComplete": zod.boolean(),
   "conditionConfirmed": zod.boolean(),
+  "repairObservations": zod.array(zod.object({
+  "category": zod.string().min(1).max(transitionLeadResponseUnderwritingOneRepairObservationsItemCategoryMax),
+  "severity": zod.enum(['NO_REPAIR', 'COSMETIC', 'MODERATE', 'MAJOR', 'REPLACEMENT']),
+  "quantity": zod.number().min(transitionLeadResponseUnderwritingOneRepairObservationsItemQuantityMin).max(transitionLeadResponseUnderwritingOneRepairObservationsItemQuantityMax),
+  "unit": zod.enum(['SQFT', 'LINEAR_FT', 'EACH', 'LUMP_SUM']),
+  "evidenceId": zod.string().min(1).max(transitionLeadResponseUnderwritingOneRepairObservationsItemEvidenceIdMax)
+})).max(transitionLeadResponseUnderwritingOneRepairObservationsMax).optional(),
+  "repairEstimate": zod.object({
+  "status": zod.enum(['NOT_USED', 'CALCULATED', 'BLOCKED']),
+  "marketKey": zod.string(),
+  "catalogVersion": zod.number().int().min(transitionLeadResponseUnderwritingOneRepairEstimateCatalogVersionMin),
+  "calculatedAt": zod.string().datetime({"offset":true}),
+  "lines": zod.array(zod.object({
+  "category": zod.string(),
+  "severity": zod.enum(['NO_REPAIR', 'COSMETIC', 'MODERATE', 'MAJOR', 'REPLACEMENT']),
+  "quantity": zod.number(),
+  "unit": zod.enum(['SQFT', 'LINEAR_FT', 'EACH', 'LUMP_SUM']),
+  "evidenceId": zod.string(),
+  "rateCardId": zod.string().optional(),
+  "rateCardVersion": zod.number().int().optional(),
+  "low": zod.number().min(transitionLeadResponseUnderwritingOneRepairEstimateLinesItemLowMin),
+  "expected": zod.number().min(transitionLeadResponseUnderwritingOneRepairEstimateLinesItemExpectedMin),
+  "high": zod.number().min(transitionLeadResponseUnderwritingOneRepairEstimateLinesItemHighMin),
+  "confidence": zod.number().min(transitionLeadResponseUnderwritingOneRepairEstimateLinesItemConfidenceMin).max(transitionLeadResponseUnderwritingOneRepairEstimateLinesItemConfidenceMax),
+  "source": zod.string(),
+  "sourceUrl": zod.string().url().optional()
+})).max(transitionLeadResponseUnderwritingOneRepairEstimateLinesMax),
+  "total": zod.union([zod.object({
+  "low": zod.number(),
+  "expected": zod.number(),
+  "high": zod.number(),
+  "confidence": zod.number()
+}),zod.null()]),
+  "blockers": zod.array(zod.string())
+}).optional(),
   "subjectEvidenceId": zod.string().max(transitionLeadResponseUnderwritingOneSubjectEvidenceIdMax).optional(),
   "conditionEvidenceId": zod.string().max(transitionLeadResponseUnderwritingOneConditionEvidenceIdMax).optional(),
   "sellerContactEvidenceId": zod.string().max(transitionLeadResponseUnderwritingOneSellerContactEvidenceIdMax).optional()
@@ -3420,6 +4254,19 @@ export const recordCallResponseIntelligenceItemOneQuestionMax = 2000;
 
 export const recordCallResponseIntelligenceItemOneActionMax = 2000;
 
+export const recordCallResponseAnalysisOneRepairEstimateCatalogVersionMin = 0;
+
+export const recordCallResponseAnalysisOneRepairEstimateLinesItemLowMin = 0;
+
+export const recordCallResponseAnalysisOneRepairEstimateLinesItemExpectedMin = 0;
+
+export const recordCallResponseAnalysisOneRepairEstimateLinesItemHighMin = 0;
+
+export const recordCallResponseAnalysisOneRepairEstimateLinesItemConfidenceMin = 0;
+export const recordCallResponseAnalysisOneRepairEstimateLinesItemConfidenceMax = 1;
+
+export const recordCallResponseAnalysisOneRepairEstimateLinesMax = 50;
+
 export const recordCallResponseAnalysisOneAssumptionsArvMultiplierMin = 0.1;
 export const recordCallResponseAnalysisOneAssumptionsArvMultiplierMax = 1;
 
@@ -3463,6 +4310,34 @@ export const recordCallResponseAnalysisOneAssumptionsMinCompsMax = 20;
 
 export const recordCallResponseAnalysisOneAssumptionsMinConfidenceMin = 0.3;
 export const recordCallResponseAnalysisOneAssumptionsMinConfidenceMax = 1;
+
+export const recordCallResponseAnalysisOneAssumptionsRepairRateCatalogVersionMin = 0;
+
+export const recordCallResponseAnalysisOneAssumptionsRepairRatesItemIdMax = 100;
+
+
+export const recordCallResponseAnalysisOneAssumptionsRepairRatesItemMarketKeyMin = 2;
+export const recordCallResponseAnalysisOneAssumptionsRepairRatesItemMarketKeyMax = 100;
+
+export const recordCallResponseAnalysisOneAssumptionsRepairRatesItemCategoryMax = 100;
+
+export const recordCallResponseAnalysisOneAssumptionsRepairRatesItemLowRateMin = 0;
+export const recordCallResponseAnalysisOneAssumptionsRepairRatesItemLowRateMax = 100000000;
+
+export const recordCallResponseAnalysisOneAssumptionsRepairRatesItemExpectedRateMin = 0;
+export const recordCallResponseAnalysisOneAssumptionsRepairRatesItemExpectedRateMax = 100000000;
+
+export const recordCallResponseAnalysisOneAssumptionsRepairRatesItemHighRateMin = 0;
+export const recordCallResponseAnalysisOneAssumptionsRepairRatesItemHighRateMax = 100000000;
+
+export const recordCallResponseAnalysisOneAssumptionsRepairRatesItemConfidenceMin = 0;
+export const recordCallResponseAnalysisOneAssumptionsRepairRatesItemConfidenceMax = 1;
+
+export const recordCallResponseAnalysisOneAssumptionsRepairRatesItemSourceMax = 2000;
+
+export const recordCallResponseAnalysisOneAssumptionsRepairRatesItemSourceUrlMax = 2000;
+
+export const recordCallResponseAnalysisOneAssumptionsRepairRatesMax = 1000;
 
 export const recordCallResponseOffersItemOneAmountExclusiveMin = 0;
 export const recordCallResponseOffersItemOneAmountMax = 1000000000;
@@ -3512,6 +4387,28 @@ export const recordCallResponseUnderwritingOneRepairsItemConfidenceMax = 1;
 export const recordCallResponseUnderwritingOneRepairsItemEvidenceIdMax = 200;
 
 export const recordCallResponseUnderwritingOneRepairsMax = 50;
+
+export const recordCallResponseUnderwritingOneRepairObservationsItemCategoryMax = 100;
+
+export const recordCallResponseUnderwritingOneRepairObservationsItemQuantityMin = 0;
+export const recordCallResponseUnderwritingOneRepairObservationsItemQuantityMax = 1000000;
+
+export const recordCallResponseUnderwritingOneRepairObservationsItemEvidenceIdMax = 200;
+
+export const recordCallResponseUnderwritingOneRepairObservationsMax = 50;
+
+export const recordCallResponseUnderwritingOneRepairEstimateCatalogVersionMin = 0;
+
+export const recordCallResponseUnderwritingOneRepairEstimateLinesItemLowMin = 0;
+
+export const recordCallResponseUnderwritingOneRepairEstimateLinesItemExpectedMin = 0;
+
+export const recordCallResponseUnderwritingOneRepairEstimateLinesItemHighMin = 0;
+
+export const recordCallResponseUnderwritingOneRepairEstimateLinesItemConfidenceMin = 0;
+export const recordCallResponseUnderwritingOneRepairEstimateLinesItemConfidenceMax = 1;
+
+export const recordCallResponseUnderwritingOneRepairEstimateLinesMax = 50;
 
 export const recordCallResponseUnderwritingOneSubjectEvidenceIdMax = 200;
 
@@ -3618,6 +4515,34 @@ export const RecordCallResponse = zod.object({
   "high": zod.number(),
   "confidence": zod.number()
 }),
+  "repairEstimate": zod.object({
+  "status": zod.enum(['NOT_USED', 'CALCULATED', 'BLOCKED']),
+  "marketKey": zod.string(),
+  "catalogVersion": zod.number().int().min(recordCallResponseAnalysisOneRepairEstimateCatalogVersionMin),
+  "calculatedAt": zod.string().datetime({"offset":true}),
+  "lines": zod.array(zod.object({
+  "category": zod.string(),
+  "severity": zod.enum(['NO_REPAIR', 'COSMETIC', 'MODERATE', 'MAJOR', 'REPLACEMENT']),
+  "quantity": zod.number(),
+  "unit": zod.enum(['SQFT', 'LINEAR_FT', 'EACH', 'LUMP_SUM']),
+  "evidenceId": zod.string(),
+  "rateCardId": zod.string().optional(),
+  "rateCardVersion": zod.number().int().optional(),
+  "low": zod.number().min(recordCallResponseAnalysisOneRepairEstimateLinesItemLowMin),
+  "expected": zod.number().min(recordCallResponseAnalysisOneRepairEstimateLinesItemExpectedMin),
+  "high": zod.number().min(recordCallResponseAnalysisOneRepairEstimateLinesItemHighMin),
+  "confidence": zod.number().min(recordCallResponseAnalysisOneRepairEstimateLinesItemConfidenceMin).max(recordCallResponseAnalysisOneRepairEstimateLinesItemConfidenceMax),
+  "source": zod.string(),
+  "sourceUrl": zod.string().url().optional()
+})).max(recordCallResponseAnalysisOneRepairEstimateLinesMax),
+  "total": zod.union([zod.object({
+  "low": zod.number(),
+  "expected": zod.number(),
+  "high": zod.number(),
+  "confidence": zod.number()
+}),zod.null()]),
+  "blockers": zod.array(zod.string())
+}),
   "mao": zod.number(),
   "openingLow": zod.number(),
   "openingHigh": zod.number(),
@@ -3639,7 +4564,25 @@ export const RecordCallResponse = zod.object({
   "maxSqftDifferencePct": zod.number().min(recordCallResponseAnalysisOneAssumptionsMaxSqftDifferencePctMin).max(recordCallResponseAnalysisOneAssumptionsMaxSqftDifferencePctMax),
   "minComps": zod.number().int().min(recordCallResponseAnalysisOneAssumptionsMinCompsMin).max(recordCallResponseAnalysisOneAssumptionsMinCompsMax),
   "minConfidence": zod.number().min(recordCallResponseAnalysisOneAssumptionsMinConfidenceMin).max(recordCallResponseAnalysisOneAssumptionsMinConfidenceMax),
-  "approvalRequired": zod.boolean()
+  "approvalRequired": zod.boolean(),
+  "repairRateCatalogVersion": zod.number().int().min(recordCallResponseAnalysisOneAssumptionsRepairRateCatalogVersionMin),
+  "repairRates": zod.array(zod.object({
+  "id": zod.string().min(1).max(recordCallResponseAnalysisOneAssumptionsRepairRatesItemIdMax),
+  "version": zod.number().int().min(1),
+  "marketKey": zod.string().min(recordCallResponseAnalysisOneAssumptionsRepairRatesItemMarketKeyMin).max(recordCallResponseAnalysisOneAssumptionsRepairRatesItemMarketKeyMax),
+  "category": zod.string().min(1).max(recordCallResponseAnalysisOneAssumptionsRepairRatesItemCategoryMax),
+  "severity": zod.enum(['COSMETIC', 'MODERATE', 'MAJOR', 'REPLACEMENT']),
+  "unit": zod.enum(['SQFT', 'LINEAR_FT', 'EACH', 'LUMP_SUM']),
+  "lowRate": zod.number().min(recordCallResponseAnalysisOneAssumptionsRepairRatesItemLowRateMin).max(recordCallResponseAnalysisOneAssumptionsRepairRatesItemLowRateMax),
+  "expectedRate": zod.number().min(recordCallResponseAnalysisOneAssumptionsRepairRatesItemExpectedRateMin).max(recordCallResponseAnalysisOneAssumptionsRepairRatesItemExpectedRateMax),
+  "highRate": zod.number().min(recordCallResponseAnalysisOneAssumptionsRepairRatesItemHighRateMin).max(recordCallResponseAnalysisOneAssumptionsRepairRatesItemHighRateMax),
+  "confidence": zod.number().min(recordCallResponseAnalysisOneAssumptionsRepairRatesItemConfidenceMin).max(recordCallResponseAnalysisOneAssumptionsRepairRatesItemConfidenceMax),
+  "source": zod.string().min(1).max(recordCallResponseAnalysisOneAssumptionsRepairRatesItemSourceMax),
+  "sourceUrl": zod.string().url().max(recordCallResponseAnalysisOneAssumptionsRepairRatesItemSourceUrlMax),
+  "capturedOn": zod.string().date(),
+  "validThrough": zod.string().date(),
+  "active": zod.boolean()
+})).max(recordCallResponseAnalysisOneAssumptionsRepairRatesMax)
 }),
   "risks": zod.array(zod.string()),
   "blockers": zod.array(zod.string()),
@@ -3708,6 +4651,41 @@ export const RecordCallResponse = zod.object({
 })).max(recordCallResponseUnderwritingOneRepairsMax),
   "repairsComplete": zod.boolean(),
   "conditionConfirmed": zod.boolean(),
+  "repairObservations": zod.array(zod.object({
+  "category": zod.string().min(1).max(recordCallResponseUnderwritingOneRepairObservationsItemCategoryMax),
+  "severity": zod.enum(['NO_REPAIR', 'COSMETIC', 'MODERATE', 'MAJOR', 'REPLACEMENT']),
+  "quantity": zod.number().min(recordCallResponseUnderwritingOneRepairObservationsItemQuantityMin).max(recordCallResponseUnderwritingOneRepairObservationsItemQuantityMax),
+  "unit": zod.enum(['SQFT', 'LINEAR_FT', 'EACH', 'LUMP_SUM']),
+  "evidenceId": zod.string().min(1).max(recordCallResponseUnderwritingOneRepairObservationsItemEvidenceIdMax)
+})).max(recordCallResponseUnderwritingOneRepairObservationsMax).optional(),
+  "repairEstimate": zod.object({
+  "status": zod.enum(['NOT_USED', 'CALCULATED', 'BLOCKED']),
+  "marketKey": zod.string(),
+  "catalogVersion": zod.number().int().min(recordCallResponseUnderwritingOneRepairEstimateCatalogVersionMin),
+  "calculatedAt": zod.string().datetime({"offset":true}),
+  "lines": zod.array(zod.object({
+  "category": zod.string(),
+  "severity": zod.enum(['NO_REPAIR', 'COSMETIC', 'MODERATE', 'MAJOR', 'REPLACEMENT']),
+  "quantity": zod.number(),
+  "unit": zod.enum(['SQFT', 'LINEAR_FT', 'EACH', 'LUMP_SUM']),
+  "evidenceId": zod.string(),
+  "rateCardId": zod.string().optional(),
+  "rateCardVersion": zod.number().int().optional(),
+  "low": zod.number().min(recordCallResponseUnderwritingOneRepairEstimateLinesItemLowMin),
+  "expected": zod.number().min(recordCallResponseUnderwritingOneRepairEstimateLinesItemExpectedMin),
+  "high": zod.number().min(recordCallResponseUnderwritingOneRepairEstimateLinesItemHighMin),
+  "confidence": zod.number().min(recordCallResponseUnderwritingOneRepairEstimateLinesItemConfidenceMin).max(recordCallResponseUnderwritingOneRepairEstimateLinesItemConfidenceMax),
+  "source": zod.string(),
+  "sourceUrl": zod.string().url().optional()
+})).max(recordCallResponseUnderwritingOneRepairEstimateLinesMax),
+  "total": zod.union([zod.object({
+  "low": zod.number(),
+  "expected": zod.number(),
+  "high": zod.number(),
+  "confidence": zod.number()
+}),zod.null()]),
+  "blockers": zod.array(zod.string())
+}).optional(),
   "subjectEvidenceId": zod.string().max(recordCallResponseUnderwritingOneSubjectEvidenceIdMax).optional(),
   "conditionEvidenceId": zod.string().max(recordCallResponseUnderwritingOneConditionEvidenceIdMax).optional(),
   "sellerContactEvidenceId": zod.string().max(recordCallResponseUnderwritingOneSellerContactEvidenceIdMax).optional()
@@ -3855,6 +4833,19 @@ export const createOfferDraftResponseIntelligenceItemOneQuestionMax = 2000;
 
 export const createOfferDraftResponseIntelligenceItemOneActionMax = 2000;
 
+export const createOfferDraftResponseAnalysisOneRepairEstimateCatalogVersionMin = 0;
+
+export const createOfferDraftResponseAnalysisOneRepairEstimateLinesItemLowMin = 0;
+
+export const createOfferDraftResponseAnalysisOneRepairEstimateLinesItemExpectedMin = 0;
+
+export const createOfferDraftResponseAnalysisOneRepairEstimateLinesItemHighMin = 0;
+
+export const createOfferDraftResponseAnalysisOneRepairEstimateLinesItemConfidenceMin = 0;
+export const createOfferDraftResponseAnalysisOneRepairEstimateLinesItemConfidenceMax = 1;
+
+export const createOfferDraftResponseAnalysisOneRepairEstimateLinesMax = 50;
+
 export const createOfferDraftResponseAnalysisOneAssumptionsArvMultiplierMin = 0.1;
 export const createOfferDraftResponseAnalysisOneAssumptionsArvMultiplierMax = 1;
 
@@ -3898,6 +4889,34 @@ export const createOfferDraftResponseAnalysisOneAssumptionsMinCompsMax = 20;
 
 export const createOfferDraftResponseAnalysisOneAssumptionsMinConfidenceMin = 0.3;
 export const createOfferDraftResponseAnalysisOneAssumptionsMinConfidenceMax = 1;
+
+export const createOfferDraftResponseAnalysisOneAssumptionsRepairRateCatalogVersionMin = 0;
+
+export const createOfferDraftResponseAnalysisOneAssumptionsRepairRatesItemIdMax = 100;
+
+
+export const createOfferDraftResponseAnalysisOneAssumptionsRepairRatesItemMarketKeyMin = 2;
+export const createOfferDraftResponseAnalysisOneAssumptionsRepairRatesItemMarketKeyMax = 100;
+
+export const createOfferDraftResponseAnalysisOneAssumptionsRepairRatesItemCategoryMax = 100;
+
+export const createOfferDraftResponseAnalysisOneAssumptionsRepairRatesItemLowRateMin = 0;
+export const createOfferDraftResponseAnalysisOneAssumptionsRepairRatesItemLowRateMax = 100000000;
+
+export const createOfferDraftResponseAnalysisOneAssumptionsRepairRatesItemExpectedRateMin = 0;
+export const createOfferDraftResponseAnalysisOneAssumptionsRepairRatesItemExpectedRateMax = 100000000;
+
+export const createOfferDraftResponseAnalysisOneAssumptionsRepairRatesItemHighRateMin = 0;
+export const createOfferDraftResponseAnalysisOneAssumptionsRepairRatesItemHighRateMax = 100000000;
+
+export const createOfferDraftResponseAnalysisOneAssumptionsRepairRatesItemConfidenceMin = 0;
+export const createOfferDraftResponseAnalysisOneAssumptionsRepairRatesItemConfidenceMax = 1;
+
+export const createOfferDraftResponseAnalysisOneAssumptionsRepairRatesItemSourceMax = 2000;
+
+export const createOfferDraftResponseAnalysisOneAssumptionsRepairRatesItemSourceUrlMax = 2000;
+
+export const createOfferDraftResponseAnalysisOneAssumptionsRepairRatesMax = 1000;
 
 export const createOfferDraftResponseOffersItemOneAmountExclusiveMin = 0;
 export const createOfferDraftResponseOffersItemOneAmountMax = 1000000000;
@@ -3947,6 +4966,28 @@ export const createOfferDraftResponseUnderwritingOneRepairsItemConfidenceMax = 1
 export const createOfferDraftResponseUnderwritingOneRepairsItemEvidenceIdMax = 200;
 
 export const createOfferDraftResponseUnderwritingOneRepairsMax = 50;
+
+export const createOfferDraftResponseUnderwritingOneRepairObservationsItemCategoryMax = 100;
+
+export const createOfferDraftResponseUnderwritingOneRepairObservationsItemQuantityMin = 0;
+export const createOfferDraftResponseUnderwritingOneRepairObservationsItemQuantityMax = 1000000;
+
+export const createOfferDraftResponseUnderwritingOneRepairObservationsItemEvidenceIdMax = 200;
+
+export const createOfferDraftResponseUnderwritingOneRepairObservationsMax = 50;
+
+export const createOfferDraftResponseUnderwritingOneRepairEstimateCatalogVersionMin = 0;
+
+export const createOfferDraftResponseUnderwritingOneRepairEstimateLinesItemLowMin = 0;
+
+export const createOfferDraftResponseUnderwritingOneRepairEstimateLinesItemExpectedMin = 0;
+
+export const createOfferDraftResponseUnderwritingOneRepairEstimateLinesItemHighMin = 0;
+
+export const createOfferDraftResponseUnderwritingOneRepairEstimateLinesItemConfidenceMin = 0;
+export const createOfferDraftResponseUnderwritingOneRepairEstimateLinesItemConfidenceMax = 1;
+
+export const createOfferDraftResponseUnderwritingOneRepairEstimateLinesMax = 50;
 
 export const createOfferDraftResponseUnderwritingOneSubjectEvidenceIdMax = 200;
 
@@ -4053,6 +5094,34 @@ export const CreateOfferDraftResponse = zod.object({
   "high": zod.number(),
   "confidence": zod.number()
 }),
+  "repairEstimate": zod.object({
+  "status": zod.enum(['NOT_USED', 'CALCULATED', 'BLOCKED']),
+  "marketKey": zod.string(),
+  "catalogVersion": zod.number().int().min(createOfferDraftResponseAnalysisOneRepairEstimateCatalogVersionMin),
+  "calculatedAt": zod.string().datetime({"offset":true}),
+  "lines": zod.array(zod.object({
+  "category": zod.string(),
+  "severity": zod.enum(['NO_REPAIR', 'COSMETIC', 'MODERATE', 'MAJOR', 'REPLACEMENT']),
+  "quantity": zod.number(),
+  "unit": zod.enum(['SQFT', 'LINEAR_FT', 'EACH', 'LUMP_SUM']),
+  "evidenceId": zod.string(),
+  "rateCardId": zod.string().optional(),
+  "rateCardVersion": zod.number().int().optional(),
+  "low": zod.number().min(createOfferDraftResponseAnalysisOneRepairEstimateLinesItemLowMin),
+  "expected": zod.number().min(createOfferDraftResponseAnalysisOneRepairEstimateLinesItemExpectedMin),
+  "high": zod.number().min(createOfferDraftResponseAnalysisOneRepairEstimateLinesItemHighMin),
+  "confidence": zod.number().min(createOfferDraftResponseAnalysisOneRepairEstimateLinesItemConfidenceMin).max(createOfferDraftResponseAnalysisOneRepairEstimateLinesItemConfidenceMax),
+  "source": zod.string(),
+  "sourceUrl": zod.string().url().optional()
+})).max(createOfferDraftResponseAnalysisOneRepairEstimateLinesMax),
+  "total": zod.union([zod.object({
+  "low": zod.number(),
+  "expected": zod.number(),
+  "high": zod.number(),
+  "confidence": zod.number()
+}),zod.null()]),
+  "blockers": zod.array(zod.string())
+}),
   "mao": zod.number(),
   "openingLow": zod.number(),
   "openingHigh": zod.number(),
@@ -4074,7 +5143,25 @@ export const CreateOfferDraftResponse = zod.object({
   "maxSqftDifferencePct": zod.number().min(createOfferDraftResponseAnalysisOneAssumptionsMaxSqftDifferencePctMin).max(createOfferDraftResponseAnalysisOneAssumptionsMaxSqftDifferencePctMax),
   "minComps": zod.number().int().min(createOfferDraftResponseAnalysisOneAssumptionsMinCompsMin).max(createOfferDraftResponseAnalysisOneAssumptionsMinCompsMax),
   "minConfidence": zod.number().min(createOfferDraftResponseAnalysisOneAssumptionsMinConfidenceMin).max(createOfferDraftResponseAnalysisOneAssumptionsMinConfidenceMax),
-  "approvalRequired": zod.boolean()
+  "approvalRequired": zod.boolean(),
+  "repairRateCatalogVersion": zod.number().int().min(createOfferDraftResponseAnalysisOneAssumptionsRepairRateCatalogVersionMin),
+  "repairRates": zod.array(zod.object({
+  "id": zod.string().min(1).max(createOfferDraftResponseAnalysisOneAssumptionsRepairRatesItemIdMax),
+  "version": zod.number().int().min(1),
+  "marketKey": zod.string().min(createOfferDraftResponseAnalysisOneAssumptionsRepairRatesItemMarketKeyMin).max(createOfferDraftResponseAnalysisOneAssumptionsRepairRatesItemMarketKeyMax),
+  "category": zod.string().min(1).max(createOfferDraftResponseAnalysisOneAssumptionsRepairRatesItemCategoryMax),
+  "severity": zod.enum(['COSMETIC', 'MODERATE', 'MAJOR', 'REPLACEMENT']),
+  "unit": zod.enum(['SQFT', 'LINEAR_FT', 'EACH', 'LUMP_SUM']),
+  "lowRate": zod.number().min(createOfferDraftResponseAnalysisOneAssumptionsRepairRatesItemLowRateMin).max(createOfferDraftResponseAnalysisOneAssumptionsRepairRatesItemLowRateMax),
+  "expectedRate": zod.number().min(createOfferDraftResponseAnalysisOneAssumptionsRepairRatesItemExpectedRateMin).max(createOfferDraftResponseAnalysisOneAssumptionsRepairRatesItemExpectedRateMax),
+  "highRate": zod.number().min(createOfferDraftResponseAnalysisOneAssumptionsRepairRatesItemHighRateMin).max(createOfferDraftResponseAnalysisOneAssumptionsRepairRatesItemHighRateMax),
+  "confidence": zod.number().min(createOfferDraftResponseAnalysisOneAssumptionsRepairRatesItemConfidenceMin).max(createOfferDraftResponseAnalysisOneAssumptionsRepairRatesItemConfidenceMax),
+  "source": zod.string().min(1).max(createOfferDraftResponseAnalysisOneAssumptionsRepairRatesItemSourceMax),
+  "sourceUrl": zod.string().url().max(createOfferDraftResponseAnalysisOneAssumptionsRepairRatesItemSourceUrlMax),
+  "capturedOn": zod.string().date(),
+  "validThrough": zod.string().date(),
+  "active": zod.boolean()
+})).max(createOfferDraftResponseAnalysisOneAssumptionsRepairRatesMax)
 }),
   "risks": zod.array(zod.string()),
   "blockers": zod.array(zod.string()),
@@ -4143,6 +5230,41 @@ export const CreateOfferDraftResponse = zod.object({
 })).max(createOfferDraftResponseUnderwritingOneRepairsMax),
   "repairsComplete": zod.boolean(),
   "conditionConfirmed": zod.boolean(),
+  "repairObservations": zod.array(zod.object({
+  "category": zod.string().min(1).max(createOfferDraftResponseUnderwritingOneRepairObservationsItemCategoryMax),
+  "severity": zod.enum(['NO_REPAIR', 'COSMETIC', 'MODERATE', 'MAJOR', 'REPLACEMENT']),
+  "quantity": zod.number().min(createOfferDraftResponseUnderwritingOneRepairObservationsItemQuantityMin).max(createOfferDraftResponseUnderwritingOneRepairObservationsItemQuantityMax),
+  "unit": zod.enum(['SQFT', 'LINEAR_FT', 'EACH', 'LUMP_SUM']),
+  "evidenceId": zod.string().min(1).max(createOfferDraftResponseUnderwritingOneRepairObservationsItemEvidenceIdMax)
+})).max(createOfferDraftResponseUnderwritingOneRepairObservationsMax).optional(),
+  "repairEstimate": zod.object({
+  "status": zod.enum(['NOT_USED', 'CALCULATED', 'BLOCKED']),
+  "marketKey": zod.string(),
+  "catalogVersion": zod.number().int().min(createOfferDraftResponseUnderwritingOneRepairEstimateCatalogVersionMin),
+  "calculatedAt": zod.string().datetime({"offset":true}),
+  "lines": zod.array(zod.object({
+  "category": zod.string(),
+  "severity": zod.enum(['NO_REPAIR', 'COSMETIC', 'MODERATE', 'MAJOR', 'REPLACEMENT']),
+  "quantity": zod.number(),
+  "unit": zod.enum(['SQFT', 'LINEAR_FT', 'EACH', 'LUMP_SUM']),
+  "evidenceId": zod.string(),
+  "rateCardId": zod.string().optional(),
+  "rateCardVersion": zod.number().int().optional(),
+  "low": zod.number().min(createOfferDraftResponseUnderwritingOneRepairEstimateLinesItemLowMin),
+  "expected": zod.number().min(createOfferDraftResponseUnderwritingOneRepairEstimateLinesItemExpectedMin),
+  "high": zod.number().min(createOfferDraftResponseUnderwritingOneRepairEstimateLinesItemHighMin),
+  "confidence": zod.number().min(createOfferDraftResponseUnderwritingOneRepairEstimateLinesItemConfidenceMin).max(createOfferDraftResponseUnderwritingOneRepairEstimateLinesItemConfidenceMax),
+  "source": zod.string(),
+  "sourceUrl": zod.string().url().optional()
+})).max(createOfferDraftResponseUnderwritingOneRepairEstimateLinesMax),
+  "total": zod.union([zod.object({
+  "low": zod.number(),
+  "expected": zod.number(),
+  "high": zod.number(),
+  "confidence": zod.number()
+}),zod.null()]),
+  "blockers": zod.array(zod.string())
+}).optional(),
   "subjectEvidenceId": zod.string().max(createOfferDraftResponseUnderwritingOneSubjectEvidenceIdMax).optional(),
   "conditionEvidenceId": zod.string().max(createOfferDraftResponseUnderwritingOneConditionEvidenceIdMax).optional(),
   "sellerContactEvidenceId": zod.string().max(createOfferDraftResponseUnderwritingOneSellerContactEvidenceIdMax).optional()
@@ -4285,6 +5407,19 @@ export const authorizeOfferResponseIntelligenceItemOneQuestionMax = 2000;
 
 export const authorizeOfferResponseIntelligenceItemOneActionMax = 2000;
 
+export const authorizeOfferResponseAnalysisOneRepairEstimateCatalogVersionMin = 0;
+
+export const authorizeOfferResponseAnalysisOneRepairEstimateLinesItemLowMin = 0;
+
+export const authorizeOfferResponseAnalysisOneRepairEstimateLinesItemExpectedMin = 0;
+
+export const authorizeOfferResponseAnalysisOneRepairEstimateLinesItemHighMin = 0;
+
+export const authorizeOfferResponseAnalysisOneRepairEstimateLinesItemConfidenceMin = 0;
+export const authorizeOfferResponseAnalysisOneRepairEstimateLinesItemConfidenceMax = 1;
+
+export const authorizeOfferResponseAnalysisOneRepairEstimateLinesMax = 50;
+
 export const authorizeOfferResponseAnalysisOneAssumptionsArvMultiplierMin = 0.1;
 export const authorizeOfferResponseAnalysisOneAssumptionsArvMultiplierMax = 1;
 
@@ -4328,6 +5463,34 @@ export const authorizeOfferResponseAnalysisOneAssumptionsMinCompsMax = 20;
 
 export const authorizeOfferResponseAnalysisOneAssumptionsMinConfidenceMin = 0.3;
 export const authorizeOfferResponseAnalysisOneAssumptionsMinConfidenceMax = 1;
+
+export const authorizeOfferResponseAnalysisOneAssumptionsRepairRateCatalogVersionMin = 0;
+
+export const authorizeOfferResponseAnalysisOneAssumptionsRepairRatesItemIdMax = 100;
+
+
+export const authorizeOfferResponseAnalysisOneAssumptionsRepairRatesItemMarketKeyMin = 2;
+export const authorizeOfferResponseAnalysisOneAssumptionsRepairRatesItemMarketKeyMax = 100;
+
+export const authorizeOfferResponseAnalysisOneAssumptionsRepairRatesItemCategoryMax = 100;
+
+export const authorizeOfferResponseAnalysisOneAssumptionsRepairRatesItemLowRateMin = 0;
+export const authorizeOfferResponseAnalysisOneAssumptionsRepairRatesItemLowRateMax = 100000000;
+
+export const authorizeOfferResponseAnalysisOneAssumptionsRepairRatesItemExpectedRateMin = 0;
+export const authorizeOfferResponseAnalysisOneAssumptionsRepairRatesItemExpectedRateMax = 100000000;
+
+export const authorizeOfferResponseAnalysisOneAssumptionsRepairRatesItemHighRateMin = 0;
+export const authorizeOfferResponseAnalysisOneAssumptionsRepairRatesItemHighRateMax = 100000000;
+
+export const authorizeOfferResponseAnalysisOneAssumptionsRepairRatesItemConfidenceMin = 0;
+export const authorizeOfferResponseAnalysisOneAssumptionsRepairRatesItemConfidenceMax = 1;
+
+export const authorizeOfferResponseAnalysisOneAssumptionsRepairRatesItemSourceMax = 2000;
+
+export const authorizeOfferResponseAnalysisOneAssumptionsRepairRatesItemSourceUrlMax = 2000;
+
+export const authorizeOfferResponseAnalysisOneAssumptionsRepairRatesMax = 1000;
 
 export const authorizeOfferResponseOffersItemOneAmountExclusiveMin = 0;
 export const authorizeOfferResponseOffersItemOneAmountMax = 1000000000;
@@ -4377,6 +5540,28 @@ export const authorizeOfferResponseUnderwritingOneRepairsItemConfidenceMax = 1;
 export const authorizeOfferResponseUnderwritingOneRepairsItemEvidenceIdMax = 200;
 
 export const authorizeOfferResponseUnderwritingOneRepairsMax = 50;
+
+export const authorizeOfferResponseUnderwritingOneRepairObservationsItemCategoryMax = 100;
+
+export const authorizeOfferResponseUnderwritingOneRepairObservationsItemQuantityMin = 0;
+export const authorizeOfferResponseUnderwritingOneRepairObservationsItemQuantityMax = 1000000;
+
+export const authorizeOfferResponseUnderwritingOneRepairObservationsItemEvidenceIdMax = 200;
+
+export const authorizeOfferResponseUnderwritingOneRepairObservationsMax = 50;
+
+export const authorizeOfferResponseUnderwritingOneRepairEstimateCatalogVersionMin = 0;
+
+export const authorizeOfferResponseUnderwritingOneRepairEstimateLinesItemLowMin = 0;
+
+export const authorizeOfferResponseUnderwritingOneRepairEstimateLinesItemExpectedMin = 0;
+
+export const authorizeOfferResponseUnderwritingOneRepairEstimateLinesItemHighMin = 0;
+
+export const authorizeOfferResponseUnderwritingOneRepairEstimateLinesItemConfidenceMin = 0;
+export const authorizeOfferResponseUnderwritingOneRepairEstimateLinesItemConfidenceMax = 1;
+
+export const authorizeOfferResponseUnderwritingOneRepairEstimateLinesMax = 50;
 
 export const authorizeOfferResponseUnderwritingOneSubjectEvidenceIdMax = 200;
 
@@ -4483,6 +5668,34 @@ export const AuthorizeOfferResponse = zod.object({
   "high": zod.number(),
   "confidence": zod.number()
 }),
+  "repairEstimate": zod.object({
+  "status": zod.enum(['NOT_USED', 'CALCULATED', 'BLOCKED']),
+  "marketKey": zod.string(),
+  "catalogVersion": zod.number().int().min(authorizeOfferResponseAnalysisOneRepairEstimateCatalogVersionMin),
+  "calculatedAt": zod.string().datetime({"offset":true}),
+  "lines": zod.array(zod.object({
+  "category": zod.string(),
+  "severity": zod.enum(['NO_REPAIR', 'COSMETIC', 'MODERATE', 'MAJOR', 'REPLACEMENT']),
+  "quantity": zod.number(),
+  "unit": zod.enum(['SQFT', 'LINEAR_FT', 'EACH', 'LUMP_SUM']),
+  "evidenceId": zod.string(),
+  "rateCardId": zod.string().optional(),
+  "rateCardVersion": zod.number().int().optional(),
+  "low": zod.number().min(authorizeOfferResponseAnalysisOneRepairEstimateLinesItemLowMin),
+  "expected": zod.number().min(authorizeOfferResponseAnalysisOneRepairEstimateLinesItemExpectedMin),
+  "high": zod.number().min(authorizeOfferResponseAnalysisOneRepairEstimateLinesItemHighMin),
+  "confidence": zod.number().min(authorizeOfferResponseAnalysisOneRepairEstimateLinesItemConfidenceMin).max(authorizeOfferResponseAnalysisOneRepairEstimateLinesItemConfidenceMax),
+  "source": zod.string(),
+  "sourceUrl": zod.string().url().optional()
+})).max(authorizeOfferResponseAnalysisOneRepairEstimateLinesMax),
+  "total": zod.union([zod.object({
+  "low": zod.number(),
+  "expected": zod.number(),
+  "high": zod.number(),
+  "confidence": zod.number()
+}),zod.null()]),
+  "blockers": zod.array(zod.string())
+}),
   "mao": zod.number(),
   "openingLow": zod.number(),
   "openingHigh": zod.number(),
@@ -4504,7 +5717,25 @@ export const AuthorizeOfferResponse = zod.object({
   "maxSqftDifferencePct": zod.number().min(authorizeOfferResponseAnalysisOneAssumptionsMaxSqftDifferencePctMin).max(authorizeOfferResponseAnalysisOneAssumptionsMaxSqftDifferencePctMax),
   "minComps": zod.number().int().min(authorizeOfferResponseAnalysisOneAssumptionsMinCompsMin).max(authorizeOfferResponseAnalysisOneAssumptionsMinCompsMax),
   "minConfidence": zod.number().min(authorizeOfferResponseAnalysisOneAssumptionsMinConfidenceMin).max(authorizeOfferResponseAnalysisOneAssumptionsMinConfidenceMax),
-  "approvalRequired": zod.boolean()
+  "approvalRequired": zod.boolean(),
+  "repairRateCatalogVersion": zod.number().int().min(authorizeOfferResponseAnalysisOneAssumptionsRepairRateCatalogVersionMin),
+  "repairRates": zod.array(zod.object({
+  "id": zod.string().min(1).max(authorizeOfferResponseAnalysisOneAssumptionsRepairRatesItemIdMax),
+  "version": zod.number().int().min(1),
+  "marketKey": zod.string().min(authorizeOfferResponseAnalysisOneAssumptionsRepairRatesItemMarketKeyMin).max(authorizeOfferResponseAnalysisOneAssumptionsRepairRatesItemMarketKeyMax),
+  "category": zod.string().min(1).max(authorizeOfferResponseAnalysisOneAssumptionsRepairRatesItemCategoryMax),
+  "severity": zod.enum(['COSMETIC', 'MODERATE', 'MAJOR', 'REPLACEMENT']),
+  "unit": zod.enum(['SQFT', 'LINEAR_FT', 'EACH', 'LUMP_SUM']),
+  "lowRate": zod.number().min(authorizeOfferResponseAnalysisOneAssumptionsRepairRatesItemLowRateMin).max(authorizeOfferResponseAnalysisOneAssumptionsRepairRatesItemLowRateMax),
+  "expectedRate": zod.number().min(authorizeOfferResponseAnalysisOneAssumptionsRepairRatesItemExpectedRateMin).max(authorizeOfferResponseAnalysisOneAssumptionsRepairRatesItemExpectedRateMax),
+  "highRate": zod.number().min(authorizeOfferResponseAnalysisOneAssumptionsRepairRatesItemHighRateMin).max(authorizeOfferResponseAnalysisOneAssumptionsRepairRatesItemHighRateMax),
+  "confidence": zod.number().min(authorizeOfferResponseAnalysisOneAssumptionsRepairRatesItemConfidenceMin).max(authorizeOfferResponseAnalysisOneAssumptionsRepairRatesItemConfidenceMax),
+  "source": zod.string().min(1).max(authorizeOfferResponseAnalysisOneAssumptionsRepairRatesItemSourceMax),
+  "sourceUrl": zod.string().url().max(authorizeOfferResponseAnalysisOneAssumptionsRepairRatesItemSourceUrlMax),
+  "capturedOn": zod.string().date(),
+  "validThrough": zod.string().date(),
+  "active": zod.boolean()
+})).max(authorizeOfferResponseAnalysisOneAssumptionsRepairRatesMax)
 }),
   "risks": zod.array(zod.string()),
   "blockers": zod.array(zod.string()),
@@ -4573,6 +5804,41 @@ export const AuthorizeOfferResponse = zod.object({
 })).max(authorizeOfferResponseUnderwritingOneRepairsMax),
   "repairsComplete": zod.boolean(),
   "conditionConfirmed": zod.boolean(),
+  "repairObservations": zod.array(zod.object({
+  "category": zod.string().min(1).max(authorizeOfferResponseUnderwritingOneRepairObservationsItemCategoryMax),
+  "severity": zod.enum(['NO_REPAIR', 'COSMETIC', 'MODERATE', 'MAJOR', 'REPLACEMENT']),
+  "quantity": zod.number().min(authorizeOfferResponseUnderwritingOneRepairObservationsItemQuantityMin).max(authorizeOfferResponseUnderwritingOneRepairObservationsItemQuantityMax),
+  "unit": zod.enum(['SQFT', 'LINEAR_FT', 'EACH', 'LUMP_SUM']),
+  "evidenceId": zod.string().min(1).max(authorizeOfferResponseUnderwritingOneRepairObservationsItemEvidenceIdMax)
+})).max(authorizeOfferResponseUnderwritingOneRepairObservationsMax).optional(),
+  "repairEstimate": zod.object({
+  "status": zod.enum(['NOT_USED', 'CALCULATED', 'BLOCKED']),
+  "marketKey": zod.string(),
+  "catalogVersion": zod.number().int().min(authorizeOfferResponseUnderwritingOneRepairEstimateCatalogVersionMin),
+  "calculatedAt": zod.string().datetime({"offset":true}),
+  "lines": zod.array(zod.object({
+  "category": zod.string(),
+  "severity": zod.enum(['NO_REPAIR', 'COSMETIC', 'MODERATE', 'MAJOR', 'REPLACEMENT']),
+  "quantity": zod.number(),
+  "unit": zod.enum(['SQFT', 'LINEAR_FT', 'EACH', 'LUMP_SUM']),
+  "evidenceId": zod.string(),
+  "rateCardId": zod.string().optional(),
+  "rateCardVersion": zod.number().int().optional(),
+  "low": zod.number().min(authorizeOfferResponseUnderwritingOneRepairEstimateLinesItemLowMin),
+  "expected": zod.number().min(authorizeOfferResponseUnderwritingOneRepairEstimateLinesItemExpectedMin),
+  "high": zod.number().min(authorizeOfferResponseUnderwritingOneRepairEstimateLinesItemHighMin),
+  "confidence": zod.number().min(authorizeOfferResponseUnderwritingOneRepairEstimateLinesItemConfidenceMin).max(authorizeOfferResponseUnderwritingOneRepairEstimateLinesItemConfidenceMax),
+  "source": zod.string(),
+  "sourceUrl": zod.string().url().optional()
+})).max(authorizeOfferResponseUnderwritingOneRepairEstimateLinesMax),
+  "total": zod.union([zod.object({
+  "low": zod.number(),
+  "expected": zod.number(),
+  "high": zod.number(),
+  "confidence": zod.number()
+}),zod.null()]),
+  "blockers": zod.array(zod.string())
+}).optional(),
   "subjectEvidenceId": zod.string().max(authorizeOfferResponseUnderwritingOneSubjectEvidenceIdMax).optional(),
   "conditionEvidenceId": zod.string().max(authorizeOfferResponseUnderwritingOneConditionEvidenceIdMax).optional(),
   "sellerContactEvidenceId": zod.string().max(authorizeOfferResponseUnderwritingOneSellerContactEvidenceIdMax).optional()
@@ -4714,6 +5980,19 @@ export const communicateOfferResponseIntelligenceItemOneQuestionMax = 2000;
 
 export const communicateOfferResponseIntelligenceItemOneActionMax = 2000;
 
+export const communicateOfferResponseAnalysisOneRepairEstimateCatalogVersionMin = 0;
+
+export const communicateOfferResponseAnalysisOneRepairEstimateLinesItemLowMin = 0;
+
+export const communicateOfferResponseAnalysisOneRepairEstimateLinesItemExpectedMin = 0;
+
+export const communicateOfferResponseAnalysisOneRepairEstimateLinesItemHighMin = 0;
+
+export const communicateOfferResponseAnalysisOneRepairEstimateLinesItemConfidenceMin = 0;
+export const communicateOfferResponseAnalysisOneRepairEstimateLinesItemConfidenceMax = 1;
+
+export const communicateOfferResponseAnalysisOneRepairEstimateLinesMax = 50;
+
 export const communicateOfferResponseAnalysisOneAssumptionsArvMultiplierMin = 0.1;
 export const communicateOfferResponseAnalysisOneAssumptionsArvMultiplierMax = 1;
 
@@ -4757,6 +6036,34 @@ export const communicateOfferResponseAnalysisOneAssumptionsMinCompsMax = 20;
 
 export const communicateOfferResponseAnalysisOneAssumptionsMinConfidenceMin = 0.3;
 export const communicateOfferResponseAnalysisOneAssumptionsMinConfidenceMax = 1;
+
+export const communicateOfferResponseAnalysisOneAssumptionsRepairRateCatalogVersionMin = 0;
+
+export const communicateOfferResponseAnalysisOneAssumptionsRepairRatesItemIdMax = 100;
+
+
+export const communicateOfferResponseAnalysisOneAssumptionsRepairRatesItemMarketKeyMin = 2;
+export const communicateOfferResponseAnalysisOneAssumptionsRepairRatesItemMarketKeyMax = 100;
+
+export const communicateOfferResponseAnalysisOneAssumptionsRepairRatesItemCategoryMax = 100;
+
+export const communicateOfferResponseAnalysisOneAssumptionsRepairRatesItemLowRateMin = 0;
+export const communicateOfferResponseAnalysisOneAssumptionsRepairRatesItemLowRateMax = 100000000;
+
+export const communicateOfferResponseAnalysisOneAssumptionsRepairRatesItemExpectedRateMin = 0;
+export const communicateOfferResponseAnalysisOneAssumptionsRepairRatesItemExpectedRateMax = 100000000;
+
+export const communicateOfferResponseAnalysisOneAssumptionsRepairRatesItemHighRateMin = 0;
+export const communicateOfferResponseAnalysisOneAssumptionsRepairRatesItemHighRateMax = 100000000;
+
+export const communicateOfferResponseAnalysisOneAssumptionsRepairRatesItemConfidenceMin = 0;
+export const communicateOfferResponseAnalysisOneAssumptionsRepairRatesItemConfidenceMax = 1;
+
+export const communicateOfferResponseAnalysisOneAssumptionsRepairRatesItemSourceMax = 2000;
+
+export const communicateOfferResponseAnalysisOneAssumptionsRepairRatesItemSourceUrlMax = 2000;
+
+export const communicateOfferResponseAnalysisOneAssumptionsRepairRatesMax = 1000;
 
 export const communicateOfferResponseOffersItemOneAmountExclusiveMin = 0;
 export const communicateOfferResponseOffersItemOneAmountMax = 1000000000;
@@ -4806,6 +6113,28 @@ export const communicateOfferResponseUnderwritingOneRepairsItemConfidenceMax = 1
 export const communicateOfferResponseUnderwritingOneRepairsItemEvidenceIdMax = 200;
 
 export const communicateOfferResponseUnderwritingOneRepairsMax = 50;
+
+export const communicateOfferResponseUnderwritingOneRepairObservationsItemCategoryMax = 100;
+
+export const communicateOfferResponseUnderwritingOneRepairObservationsItemQuantityMin = 0;
+export const communicateOfferResponseUnderwritingOneRepairObservationsItemQuantityMax = 1000000;
+
+export const communicateOfferResponseUnderwritingOneRepairObservationsItemEvidenceIdMax = 200;
+
+export const communicateOfferResponseUnderwritingOneRepairObservationsMax = 50;
+
+export const communicateOfferResponseUnderwritingOneRepairEstimateCatalogVersionMin = 0;
+
+export const communicateOfferResponseUnderwritingOneRepairEstimateLinesItemLowMin = 0;
+
+export const communicateOfferResponseUnderwritingOneRepairEstimateLinesItemExpectedMin = 0;
+
+export const communicateOfferResponseUnderwritingOneRepairEstimateLinesItemHighMin = 0;
+
+export const communicateOfferResponseUnderwritingOneRepairEstimateLinesItemConfidenceMin = 0;
+export const communicateOfferResponseUnderwritingOneRepairEstimateLinesItemConfidenceMax = 1;
+
+export const communicateOfferResponseUnderwritingOneRepairEstimateLinesMax = 50;
 
 export const communicateOfferResponseUnderwritingOneSubjectEvidenceIdMax = 200;
 
@@ -4912,6 +6241,34 @@ export const CommunicateOfferResponse = zod.object({
   "high": zod.number(),
   "confidence": zod.number()
 }),
+  "repairEstimate": zod.object({
+  "status": zod.enum(['NOT_USED', 'CALCULATED', 'BLOCKED']),
+  "marketKey": zod.string(),
+  "catalogVersion": zod.number().int().min(communicateOfferResponseAnalysisOneRepairEstimateCatalogVersionMin),
+  "calculatedAt": zod.string().datetime({"offset":true}),
+  "lines": zod.array(zod.object({
+  "category": zod.string(),
+  "severity": zod.enum(['NO_REPAIR', 'COSMETIC', 'MODERATE', 'MAJOR', 'REPLACEMENT']),
+  "quantity": zod.number(),
+  "unit": zod.enum(['SQFT', 'LINEAR_FT', 'EACH', 'LUMP_SUM']),
+  "evidenceId": zod.string(),
+  "rateCardId": zod.string().optional(),
+  "rateCardVersion": zod.number().int().optional(),
+  "low": zod.number().min(communicateOfferResponseAnalysisOneRepairEstimateLinesItemLowMin),
+  "expected": zod.number().min(communicateOfferResponseAnalysisOneRepairEstimateLinesItemExpectedMin),
+  "high": zod.number().min(communicateOfferResponseAnalysisOneRepairEstimateLinesItemHighMin),
+  "confidence": zod.number().min(communicateOfferResponseAnalysisOneRepairEstimateLinesItemConfidenceMin).max(communicateOfferResponseAnalysisOneRepairEstimateLinesItemConfidenceMax),
+  "source": zod.string(),
+  "sourceUrl": zod.string().url().optional()
+})).max(communicateOfferResponseAnalysisOneRepairEstimateLinesMax),
+  "total": zod.union([zod.object({
+  "low": zod.number(),
+  "expected": zod.number(),
+  "high": zod.number(),
+  "confidence": zod.number()
+}),zod.null()]),
+  "blockers": zod.array(zod.string())
+}),
   "mao": zod.number(),
   "openingLow": zod.number(),
   "openingHigh": zod.number(),
@@ -4933,7 +6290,25 @@ export const CommunicateOfferResponse = zod.object({
   "maxSqftDifferencePct": zod.number().min(communicateOfferResponseAnalysisOneAssumptionsMaxSqftDifferencePctMin).max(communicateOfferResponseAnalysisOneAssumptionsMaxSqftDifferencePctMax),
   "minComps": zod.number().int().min(communicateOfferResponseAnalysisOneAssumptionsMinCompsMin).max(communicateOfferResponseAnalysisOneAssumptionsMinCompsMax),
   "minConfidence": zod.number().min(communicateOfferResponseAnalysisOneAssumptionsMinConfidenceMin).max(communicateOfferResponseAnalysisOneAssumptionsMinConfidenceMax),
-  "approvalRequired": zod.boolean()
+  "approvalRequired": zod.boolean(),
+  "repairRateCatalogVersion": zod.number().int().min(communicateOfferResponseAnalysisOneAssumptionsRepairRateCatalogVersionMin),
+  "repairRates": zod.array(zod.object({
+  "id": zod.string().min(1).max(communicateOfferResponseAnalysisOneAssumptionsRepairRatesItemIdMax),
+  "version": zod.number().int().min(1),
+  "marketKey": zod.string().min(communicateOfferResponseAnalysisOneAssumptionsRepairRatesItemMarketKeyMin).max(communicateOfferResponseAnalysisOneAssumptionsRepairRatesItemMarketKeyMax),
+  "category": zod.string().min(1).max(communicateOfferResponseAnalysisOneAssumptionsRepairRatesItemCategoryMax),
+  "severity": zod.enum(['COSMETIC', 'MODERATE', 'MAJOR', 'REPLACEMENT']),
+  "unit": zod.enum(['SQFT', 'LINEAR_FT', 'EACH', 'LUMP_SUM']),
+  "lowRate": zod.number().min(communicateOfferResponseAnalysisOneAssumptionsRepairRatesItemLowRateMin).max(communicateOfferResponseAnalysisOneAssumptionsRepairRatesItemLowRateMax),
+  "expectedRate": zod.number().min(communicateOfferResponseAnalysisOneAssumptionsRepairRatesItemExpectedRateMin).max(communicateOfferResponseAnalysisOneAssumptionsRepairRatesItemExpectedRateMax),
+  "highRate": zod.number().min(communicateOfferResponseAnalysisOneAssumptionsRepairRatesItemHighRateMin).max(communicateOfferResponseAnalysisOneAssumptionsRepairRatesItemHighRateMax),
+  "confidence": zod.number().min(communicateOfferResponseAnalysisOneAssumptionsRepairRatesItemConfidenceMin).max(communicateOfferResponseAnalysisOneAssumptionsRepairRatesItemConfidenceMax),
+  "source": zod.string().min(1).max(communicateOfferResponseAnalysisOneAssumptionsRepairRatesItemSourceMax),
+  "sourceUrl": zod.string().url().max(communicateOfferResponseAnalysisOneAssumptionsRepairRatesItemSourceUrlMax),
+  "capturedOn": zod.string().date(),
+  "validThrough": zod.string().date(),
+  "active": zod.boolean()
+})).max(communicateOfferResponseAnalysisOneAssumptionsRepairRatesMax)
 }),
   "risks": zod.array(zod.string()),
   "blockers": zod.array(zod.string()),
@@ -5002,6 +6377,41 @@ export const CommunicateOfferResponse = zod.object({
 })).max(communicateOfferResponseUnderwritingOneRepairsMax),
   "repairsComplete": zod.boolean(),
   "conditionConfirmed": zod.boolean(),
+  "repairObservations": zod.array(zod.object({
+  "category": zod.string().min(1).max(communicateOfferResponseUnderwritingOneRepairObservationsItemCategoryMax),
+  "severity": zod.enum(['NO_REPAIR', 'COSMETIC', 'MODERATE', 'MAJOR', 'REPLACEMENT']),
+  "quantity": zod.number().min(communicateOfferResponseUnderwritingOneRepairObservationsItemQuantityMin).max(communicateOfferResponseUnderwritingOneRepairObservationsItemQuantityMax),
+  "unit": zod.enum(['SQFT', 'LINEAR_FT', 'EACH', 'LUMP_SUM']),
+  "evidenceId": zod.string().min(1).max(communicateOfferResponseUnderwritingOneRepairObservationsItemEvidenceIdMax)
+})).max(communicateOfferResponseUnderwritingOneRepairObservationsMax).optional(),
+  "repairEstimate": zod.object({
+  "status": zod.enum(['NOT_USED', 'CALCULATED', 'BLOCKED']),
+  "marketKey": zod.string(),
+  "catalogVersion": zod.number().int().min(communicateOfferResponseUnderwritingOneRepairEstimateCatalogVersionMin),
+  "calculatedAt": zod.string().datetime({"offset":true}),
+  "lines": zod.array(zod.object({
+  "category": zod.string(),
+  "severity": zod.enum(['NO_REPAIR', 'COSMETIC', 'MODERATE', 'MAJOR', 'REPLACEMENT']),
+  "quantity": zod.number(),
+  "unit": zod.enum(['SQFT', 'LINEAR_FT', 'EACH', 'LUMP_SUM']),
+  "evidenceId": zod.string(),
+  "rateCardId": zod.string().optional(),
+  "rateCardVersion": zod.number().int().optional(),
+  "low": zod.number().min(communicateOfferResponseUnderwritingOneRepairEstimateLinesItemLowMin),
+  "expected": zod.number().min(communicateOfferResponseUnderwritingOneRepairEstimateLinesItemExpectedMin),
+  "high": zod.number().min(communicateOfferResponseUnderwritingOneRepairEstimateLinesItemHighMin),
+  "confidence": zod.number().min(communicateOfferResponseUnderwritingOneRepairEstimateLinesItemConfidenceMin).max(communicateOfferResponseUnderwritingOneRepairEstimateLinesItemConfidenceMax),
+  "source": zod.string(),
+  "sourceUrl": zod.string().url().optional()
+})).max(communicateOfferResponseUnderwritingOneRepairEstimateLinesMax),
+  "total": zod.union([zod.object({
+  "low": zod.number(),
+  "expected": zod.number(),
+  "high": zod.number(),
+  "confidence": zod.number()
+}),zod.null()]),
+  "blockers": zod.array(zod.string())
+}).optional(),
   "subjectEvidenceId": zod.string().max(communicateOfferResponseUnderwritingOneSubjectEvidenceIdMax).optional(),
   "conditionEvidenceId": zod.string().max(communicateOfferResponseUnderwritingOneConditionEvidenceIdMax).optional(),
   "sellerContactEvidenceId": zod.string().max(communicateOfferResponseUnderwritingOneSellerContactEvidenceIdMax).optional()
@@ -5138,6 +6548,19 @@ export const withdrawOfferResponseIntelligenceItemOneQuestionMax = 2000;
 
 export const withdrawOfferResponseIntelligenceItemOneActionMax = 2000;
 
+export const withdrawOfferResponseAnalysisOneRepairEstimateCatalogVersionMin = 0;
+
+export const withdrawOfferResponseAnalysisOneRepairEstimateLinesItemLowMin = 0;
+
+export const withdrawOfferResponseAnalysisOneRepairEstimateLinesItemExpectedMin = 0;
+
+export const withdrawOfferResponseAnalysisOneRepairEstimateLinesItemHighMin = 0;
+
+export const withdrawOfferResponseAnalysisOneRepairEstimateLinesItemConfidenceMin = 0;
+export const withdrawOfferResponseAnalysisOneRepairEstimateLinesItemConfidenceMax = 1;
+
+export const withdrawOfferResponseAnalysisOneRepairEstimateLinesMax = 50;
+
 export const withdrawOfferResponseAnalysisOneAssumptionsArvMultiplierMin = 0.1;
 export const withdrawOfferResponseAnalysisOneAssumptionsArvMultiplierMax = 1;
 
@@ -5181,6 +6604,34 @@ export const withdrawOfferResponseAnalysisOneAssumptionsMinCompsMax = 20;
 
 export const withdrawOfferResponseAnalysisOneAssumptionsMinConfidenceMin = 0.3;
 export const withdrawOfferResponseAnalysisOneAssumptionsMinConfidenceMax = 1;
+
+export const withdrawOfferResponseAnalysisOneAssumptionsRepairRateCatalogVersionMin = 0;
+
+export const withdrawOfferResponseAnalysisOneAssumptionsRepairRatesItemIdMax = 100;
+
+
+export const withdrawOfferResponseAnalysisOneAssumptionsRepairRatesItemMarketKeyMin = 2;
+export const withdrawOfferResponseAnalysisOneAssumptionsRepairRatesItemMarketKeyMax = 100;
+
+export const withdrawOfferResponseAnalysisOneAssumptionsRepairRatesItemCategoryMax = 100;
+
+export const withdrawOfferResponseAnalysisOneAssumptionsRepairRatesItemLowRateMin = 0;
+export const withdrawOfferResponseAnalysisOneAssumptionsRepairRatesItemLowRateMax = 100000000;
+
+export const withdrawOfferResponseAnalysisOneAssumptionsRepairRatesItemExpectedRateMin = 0;
+export const withdrawOfferResponseAnalysisOneAssumptionsRepairRatesItemExpectedRateMax = 100000000;
+
+export const withdrawOfferResponseAnalysisOneAssumptionsRepairRatesItemHighRateMin = 0;
+export const withdrawOfferResponseAnalysisOneAssumptionsRepairRatesItemHighRateMax = 100000000;
+
+export const withdrawOfferResponseAnalysisOneAssumptionsRepairRatesItemConfidenceMin = 0;
+export const withdrawOfferResponseAnalysisOneAssumptionsRepairRatesItemConfidenceMax = 1;
+
+export const withdrawOfferResponseAnalysisOneAssumptionsRepairRatesItemSourceMax = 2000;
+
+export const withdrawOfferResponseAnalysisOneAssumptionsRepairRatesItemSourceUrlMax = 2000;
+
+export const withdrawOfferResponseAnalysisOneAssumptionsRepairRatesMax = 1000;
 
 export const withdrawOfferResponseOffersItemOneAmountExclusiveMin = 0;
 export const withdrawOfferResponseOffersItemOneAmountMax = 1000000000;
@@ -5230,6 +6681,28 @@ export const withdrawOfferResponseUnderwritingOneRepairsItemConfidenceMax = 1;
 export const withdrawOfferResponseUnderwritingOneRepairsItemEvidenceIdMax = 200;
 
 export const withdrawOfferResponseUnderwritingOneRepairsMax = 50;
+
+export const withdrawOfferResponseUnderwritingOneRepairObservationsItemCategoryMax = 100;
+
+export const withdrawOfferResponseUnderwritingOneRepairObservationsItemQuantityMin = 0;
+export const withdrawOfferResponseUnderwritingOneRepairObservationsItemQuantityMax = 1000000;
+
+export const withdrawOfferResponseUnderwritingOneRepairObservationsItemEvidenceIdMax = 200;
+
+export const withdrawOfferResponseUnderwritingOneRepairObservationsMax = 50;
+
+export const withdrawOfferResponseUnderwritingOneRepairEstimateCatalogVersionMin = 0;
+
+export const withdrawOfferResponseUnderwritingOneRepairEstimateLinesItemLowMin = 0;
+
+export const withdrawOfferResponseUnderwritingOneRepairEstimateLinesItemExpectedMin = 0;
+
+export const withdrawOfferResponseUnderwritingOneRepairEstimateLinesItemHighMin = 0;
+
+export const withdrawOfferResponseUnderwritingOneRepairEstimateLinesItemConfidenceMin = 0;
+export const withdrawOfferResponseUnderwritingOneRepairEstimateLinesItemConfidenceMax = 1;
+
+export const withdrawOfferResponseUnderwritingOneRepairEstimateLinesMax = 50;
 
 export const withdrawOfferResponseUnderwritingOneSubjectEvidenceIdMax = 200;
 
@@ -5336,6 +6809,34 @@ export const WithdrawOfferResponse = zod.object({
   "high": zod.number(),
   "confidence": zod.number()
 }),
+  "repairEstimate": zod.object({
+  "status": zod.enum(['NOT_USED', 'CALCULATED', 'BLOCKED']),
+  "marketKey": zod.string(),
+  "catalogVersion": zod.number().int().min(withdrawOfferResponseAnalysisOneRepairEstimateCatalogVersionMin),
+  "calculatedAt": zod.string().datetime({"offset":true}),
+  "lines": zod.array(zod.object({
+  "category": zod.string(),
+  "severity": zod.enum(['NO_REPAIR', 'COSMETIC', 'MODERATE', 'MAJOR', 'REPLACEMENT']),
+  "quantity": zod.number(),
+  "unit": zod.enum(['SQFT', 'LINEAR_FT', 'EACH', 'LUMP_SUM']),
+  "evidenceId": zod.string(),
+  "rateCardId": zod.string().optional(),
+  "rateCardVersion": zod.number().int().optional(),
+  "low": zod.number().min(withdrawOfferResponseAnalysisOneRepairEstimateLinesItemLowMin),
+  "expected": zod.number().min(withdrawOfferResponseAnalysisOneRepairEstimateLinesItemExpectedMin),
+  "high": zod.number().min(withdrawOfferResponseAnalysisOneRepairEstimateLinesItemHighMin),
+  "confidence": zod.number().min(withdrawOfferResponseAnalysisOneRepairEstimateLinesItemConfidenceMin).max(withdrawOfferResponseAnalysisOneRepairEstimateLinesItemConfidenceMax),
+  "source": zod.string(),
+  "sourceUrl": zod.string().url().optional()
+})).max(withdrawOfferResponseAnalysisOneRepairEstimateLinesMax),
+  "total": zod.union([zod.object({
+  "low": zod.number(),
+  "expected": zod.number(),
+  "high": zod.number(),
+  "confidence": zod.number()
+}),zod.null()]),
+  "blockers": zod.array(zod.string())
+}),
   "mao": zod.number(),
   "openingLow": zod.number(),
   "openingHigh": zod.number(),
@@ -5357,7 +6858,25 @@ export const WithdrawOfferResponse = zod.object({
   "maxSqftDifferencePct": zod.number().min(withdrawOfferResponseAnalysisOneAssumptionsMaxSqftDifferencePctMin).max(withdrawOfferResponseAnalysisOneAssumptionsMaxSqftDifferencePctMax),
   "minComps": zod.number().int().min(withdrawOfferResponseAnalysisOneAssumptionsMinCompsMin).max(withdrawOfferResponseAnalysisOneAssumptionsMinCompsMax),
   "minConfidence": zod.number().min(withdrawOfferResponseAnalysisOneAssumptionsMinConfidenceMin).max(withdrawOfferResponseAnalysisOneAssumptionsMinConfidenceMax),
-  "approvalRequired": zod.boolean()
+  "approvalRequired": zod.boolean(),
+  "repairRateCatalogVersion": zod.number().int().min(withdrawOfferResponseAnalysisOneAssumptionsRepairRateCatalogVersionMin),
+  "repairRates": zod.array(zod.object({
+  "id": zod.string().min(1).max(withdrawOfferResponseAnalysisOneAssumptionsRepairRatesItemIdMax),
+  "version": zod.number().int().min(1),
+  "marketKey": zod.string().min(withdrawOfferResponseAnalysisOneAssumptionsRepairRatesItemMarketKeyMin).max(withdrawOfferResponseAnalysisOneAssumptionsRepairRatesItemMarketKeyMax),
+  "category": zod.string().min(1).max(withdrawOfferResponseAnalysisOneAssumptionsRepairRatesItemCategoryMax),
+  "severity": zod.enum(['COSMETIC', 'MODERATE', 'MAJOR', 'REPLACEMENT']),
+  "unit": zod.enum(['SQFT', 'LINEAR_FT', 'EACH', 'LUMP_SUM']),
+  "lowRate": zod.number().min(withdrawOfferResponseAnalysisOneAssumptionsRepairRatesItemLowRateMin).max(withdrawOfferResponseAnalysisOneAssumptionsRepairRatesItemLowRateMax),
+  "expectedRate": zod.number().min(withdrawOfferResponseAnalysisOneAssumptionsRepairRatesItemExpectedRateMin).max(withdrawOfferResponseAnalysisOneAssumptionsRepairRatesItemExpectedRateMax),
+  "highRate": zod.number().min(withdrawOfferResponseAnalysisOneAssumptionsRepairRatesItemHighRateMin).max(withdrawOfferResponseAnalysisOneAssumptionsRepairRatesItemHighRateMax),
+  "confidence": zod.number().min(withdrawOfferResponseAnalysisOneAssumptionsRepairRatesItemConfidenceMin).max(withdrawOfferResponseAnalysisOneAssumptionsRepairRatesItemConfidenceMax),
+  "source": zod.string().min(1).max(withdrawOfferResponseAnalysisOneAssumptionsRepairRatesItemSourceMax),
+  "sourceUrl": zod.string().url().max(withdrawOfferResponseAnalysisOneAssumptionsRepairRatesItemSourceUrlMax),
+  "capturedOn": zod.string().date(),
+  "validThrough": zod.string().date(),
+  "active": zod.boolean()
+})).max(withdrawOfferResponseAnalysisOneAssumptionsRepairRatesMax)
 }),
   "risks": zod.array(zod.string()),
   "blockers": zod.array(zod.string()),
@@ -5426,6 +6945,41 @@ export const WithdrawOfferResponse = zod.object({
 })).max(withdrawOfferResponseUnderwritingOneRepairsMax),
   "repairsComplete": zod.boolean(),
   "conditionConfirmed": zod.boolean(),
+  "repairObservations": zod.array(zod.object({
+  "category": zod.string().min(1).max(withdrawOfferResponseUnderwritingOneRepairObservationsItemCategoryMax),
+  "severity": zod.enum(['NO_REPAIR', 'COSMETIC', 'MODERATE', 'MAJOR', 'REPLACEMENT']),
+  "quantity": zod.number().min(withdrawOfferResponseUnderwritingOneRepairObservationsItemQuantityMin).max(withdrawOfferResponseUnderwritingOneRepairObservationsItemQuantityMax),
+  "unit": zod.enum(['SQFT', 'LINEAR_FT', 'EACH', 'LUMP_SUM']),
+  "evidenceId": zod.string().min(1).max(withdrawOfferResponseUnderwritingOneRepairObservationsItemEvidenceIdMax)
+})).max(withdrawOfferResponseUnderwritingOneRepairObservationsMax).optional(),
+  "repairEstimate": zod.object({
+  "status": zod.enum(['NOT_USED', 'CALCULATED', 'BLOCKED']),
+  "marketKey": zod.string(),
+  "catalogVersion": zod.number().int().min(withdrawOfferResponseUnderwritingOneRepairEstimateCatalogVersionMin),
+  "calculatedAt": zod.string().datetime({"offset":true}),
+  "lines": zod.array(zod.object({
+  "category": zod.string(),
+  "severity": zod.enum(['NO_REPAIR', 'COSMETIC', 'MODERATE', 'MAJOR', 'REPLACEMENT']),
+  "quantity": zod.number(),
+  "unit": zod.enum(['SQFT', 'LINEAR_FT', 'EACH', 'LUMP_SUM']),
+  "evidenceId": zod.string(),
+  "rateCardId": zod.string().optional(),
+  "rateCardVersion": zod.number().int().optional(),
+  "low": zod.number().min(withdrawOfferResponseUnderwritingOneRepairEstimateLinesItemLowMin),
+  "expected": zod.number().min(withdrawOfferResponseUnderwritingOneRepairEstimateLinesItemExpectedMin),
+  "high": zod.number().min(withdrawOfferResponseUnderwritingOneRepairEstimateLinesItemHighMin),
+  "confidence": zod.number().min(withdrawOfferResponseUnderwritingOneRepairEstimateLinesItemConfidenceMin).max(withdrawOfferResponseUnderwritingOneRepairEstimateLinesItemConfidenceMax),
+  "source": zod.string(),
+  "sourceUrl": zod.string().url().optional()
+})).max(withdrawOfferResponseUnderwritingOneRepairEstimateLinesMax),
+  "total": zod.union([zod.object({
+  "low": zod.number(),
+  "expected": zod.number(),
+  "high": zod.number(),
+  "confidence": zod.number()
+}),zod.null()]),
+  "blockers": zod.array(zod.string())
+}).optional(),
   "subjectEvidenceId": zod.string().max(withdrawOfferResponseUnderwritingOneSubjectEvidenceIdMax).optional(),
   "conditionEvidenceId": zod.string().max(withdrawOfferResponseUnderwritingOneConditionEvidenceIdMax).optional(),
   "sellerContactEvidenceId": zod.string().max(withdrawOfferResponseUnderwritingOneSellerContactEvidenceIdMax).optional()
@@ -5700,6 +7254,19 @@ export const getCallQueueResponseIntelligenceItemOneQuestionMax = 2000;
 
 export const getCallQueueResponseIntelligenceItemOneActionMax = 2000;
 
+export const getCallQueueResponseAnalysisRepairEstimateCatalogVersionMin = 0;
+
+export const getCallQueueResponseAnalysisRepairEstimateLinesItemLowMin = 0;
+
+export const getCallQueueResponseAnalysisRepairEstimateLinesItemExpectedMin = 0;
+
+export const getCallQueueResponseAnalysisRepairEstimateLinesItemHighMin = 0;
+
+export const getCallQueueResponseAnalysisRepairEstimateLinesItemConfidenceMin = 0;
+export const getCallQueueResponseAnalysisRepairEstimateLinesItemConfidenceMax = 1;
+
+export const getCallQueueResponseAnalysisRepairEstimateLinesMax = 50;
+
 export const getCallQueueResponseAnalysisAssumptionsArvMultiplierMin = 0.1;
 export const getCallQueueResponseAnalysisAssumptionsArvMultiplierMax = 1;
 
@@ -5743,6 +7310,34 @@ export const getCallQueueResponseAnalysisAssumptionsMinCompsMax = 20;
 
 export const getCallQueueResponseAnalysisAssumptionsMinConfidenceMin = 0.3;
 export const getCallQueueResponseAnalysisAssumptionsMinConfidenceMax = 1;
+
+export const getCallQueueResponseAnalysisAssumptionsRepairRateCatalogVersionMin = 0;
+
+export const getCallQueueResponseAnalysisAssumptionsRepairRatesItemIdMax = 100;
+
+
+export const getCallQueueResponseAnalysisAssumptionsRepairRatesItemMarketKeyMin = 2;
+export const getCallQueueResponseAnalysisAssumptionsRepairRatesItemMarketKeyMax = 100;
+
+export const getCallQueueResponseAnalysisAssumptionsRepairRatesItemCategoryMax = 100;
+
+export const getCallQueueResponseAnalysisAssumptionsRepairRatesItemLowRateMin = 0;
+export const getCallQueueResponseAnalysisAssumptionsRepairRatesItemLowRateMax = 100000000;
+
+export const getCallQueueResponseAnalysisAssumptionsRepairRatesItemExpectedRateMin = 0;
+export const getCallQueueResponseAnalysisAssumptionsRepairRatesItemExpectedRateMax = 100000000;
+
+export const getCallQueueResponseAnalysisAssumptionsRepairRatesItemHighRateMin = 0;
+export const getCallQueueResponseAnalysisAssumptionsRepairRatesItemHighRateMax = 100000000;
+
+export const getCallQueueResponseAnalysisAssumptionsRepairRatesItemConfidenceMin = 0;
+export const getCallQueueResponseAnalysisAssumptionsRepairRatesItemConfidenceMax = 1;
+
+export const getCallQueueResponseAnalysisAssumptionsRepairRatesItemSourceMax = 2000;
+
+export const getCallQueueResponseAnalysisAssumptionsRepairRatesItemSourceUrlMax = 2000;
+
+export const getCallQueueResponseAnalysisAssumptionsRepairRatesMax = 1000;
 
 export const getCallQueueResponseAuthorizedOfferOneOneAmountExclusiveMin = 0;
 export const getCallQueueResponseAuthorizedOfferOneOneAmountMax = 1000000000;
@@ -5852,6 +7447,34 @@ export const GetCallQueueResponseItem = zod.object({
   "high": zod.number(),
   "confidence": zod.number()
 }),
+  "repairEstimate": zod.object({
+  "status": zod.enum(['NOT_USED', 'CALCULATED', 'BLOCKED']),
+  "marketKey": zod.string(),
+  "catalogVersion": zod.number().int().min(getCallQueueResponseAnalysisRepairEstimateCatalogVersionMin),
+  "calculatedAt": zod.string().datetime({"offset":true}),
+  "lines": zod.array(zod.object({
+  "category": zod.string(),
+  "severity": zod.enum(['NO_REPAIR', 'COSMETIC', 'MODERATE', 'MAJOR', 'REPLACEMENT']),
+  "quantity": zod.number(),
+  "unit": zod.enum(['SQFT', 'LINEAR_FT', 'EACH', 'LUMP_SUM']),
+  "evidenceId": zod.string(),
+  "rateCardId": zod.string().optional(),
+  "rateCardVersion": zod.number().int().optional(),
+  "low": zod.number().min(getCallQueueResponseAnalysisRepairEstimateLinesItemLowMin),
+  "expected": zod.number().min(getCallQueueResponseAnalysisRepairEstimateLinesItemExpectedMin),
+  "high": zod.number().min(getCallQueueResponseAnalysisRepairEstimateLinesItemHighMin),
+  "confidence": zod.number().min(getCallQueueResponseAnalysisRepairEstimateLinesItemConfidenceMin).max(getCallQueueResponseAnalysisRepairEstimateLinesItemConfidenceMax),
+  "source": zod.string(),
+  "sourceUrl": zod.string().url().optional()
+})).max(getCallQueueResponseAnalysisRepairEstimateLinesMax),
+  "total": zod.union([zod.object({
+  "low": zod.number(),
+  "expected": zod.number(),
+  "high": zod.number(),
+  "confidence": zod.number()
+}),zod.null()]),
+  "blockers": zod.array(zod.string())
+}),
   "mao": zod.number(),
   "openingLow": zod.number(),
   "openingHigh": zod.number(),
@@ -5873,7 +7496,25 @@ export const GetCallQueueResponseItem = zod.object({
   "maxSqftDifferencePct": zod.number().min(getCallQueueResponseAnalysisAssumptionsMaxSqftDifferencePctMin).max(getCallQueueResponseAnalysisAssumptionsMaxSqftDifferencePctMax),
   "minComps": zod.number().int().min(getCallQueueResponseAnalysisAssumptionsMinCompsMin).max(getCallQueueResponseAnalysisAssumptionsMinCompsMax),
   "minConfidence": zod.number().min(getCallQueueResponseAnalysisAssumptionsMinConfidenceMin).max(getCallQueueResponseAnalysisAssumptionsMinConfidenceMax),
-  "approvalRequired": zod.boolean()
+  "approvalRequired": zod.boolean(),
+  "repairRateCatalogVersion": zod.number().int().min(getCallQueueResponseAnalysisAssumptionsRepairRateCatalogVersionMin),
+  "repairRates": zod.array(zod.object({
+  "id": zod.string().min(1).max(getCallQueueResponseAnalysisAssumptionsRepairRatesItemIdMax),
+  "version": zod.number().int().min(1),
+  "marketKey": zod.string().min(getCallQueueResponseAnalysisAssumptionsRepairRatesItemMarketKeyMin).max(getCallQueueResponseAnalysisAssumptionsRepairRatesItemMarketKeyMax),
+  "category": zod.string().min(1).max(getCallQueueResponseAnalysisAssumptionsRepairRatesItemCategoryMax),
+  "severity": zod.enum(['COSMETIC', 'MODERATE', 'MAJOR', 'REPLACEMENT']),
+  "unit": zod.enum(['SQFT', 'LINEAR_FT', 'EACH', 'LUMP_SUM']),
+  "lowRate": zod.number().min(getCallQueueResponseAnalysisAssumptionsRepairRatesItemLowRateMin).max(getCallQueueResponseAnalysisAssumptionsRepairRatesItemLowRateMax),
+  "expectedRate": zod.number().min(getCallQueueResponseAnalysisAssumptionsRepairRatesItemExpectedRateMin).max(getCallQueueResponseAnalysisAssumptionsRepairRatesItemExpectedRateMax),
+  "highRate": zod.number().min(getCallQueueResponseAnalysisAssumptionsRepairRatesItemHighRateMin).max(getCallQueueResponseAnalysisAssumptionsRepairRatesItemHighRateMax),
+  "confidence": zod.number().min(getCallQueueResponseAnalysisAssumptionsRepairRatesItemConfidenceMin).max(getCallQueueResponseAnalysisAssumptionsRepairRatesItemConfidenceMax),
+  "source": zod.string().min(1).max(getCallQueueResponseAnalysisAssumptionsRepairRatesItemSourceMax),
+  "sourceUrl": zod.string().url().max(getCallQueueResponseAnalysisAssumptionsRepairRatesItemSourceUrlMax),
+  "capturedOn": zod.string().date(),
+  "validThrough": zod.string().date(),
+  "active": zod.boolean()
+})).max(getCallQueueResponseAnalysisAssumptionsRepairRatesMax)
 }),
   "risks": zod.array(zod.string()),
   "blockers": zod.array(zod.string()),
@@ -5962,6 +7603,34 @@ export const getAssumptionsResponseMinCompsMax = 20;
 export const getAssumptionsResponseMinConfidenceMin = 0.3;
 export const getAssumptionsResponseMinConfidenceMax = 1;
 
+export const getAssumptionsResponseRepairRateCatalogVersionMin = 0;
+
+export const getAssumptionsResponseRepairRatesItemIdMax = 100;
+
+
+export const getAssumptionsResponseRepairRatesItemMarketKeyMin = 2;
+export const getAssumptionsResponseRepairRatesItemMarketKeyMax = 100;
+
+export const getAssumptionsResponseRepairRatesItemCategoryMax = 100;
+
+export const getAssumptionsResponseRepairRatesItemLowRateMin = 0;
+export const getAssumptionsResponseRepairRatesItemLowRateMax = 100000000;
+
+export const getAssumptionsResponseRepairRatesItemExpectedRateMin = 0;
+export const getAssumptionsResponseRepairRatesItemExpectedRateMax = 100000000;
+
+export const getAssumptionsResponseRepairRatesItemHighRateMin = 0;
+export const getAssumptionsResponseRepairRatesItemHighRateMax = 100000000;
+
+export const getAssumptionsResponseRepairRatesItemConfidenceMin = 0;
+export const getAssumptionsResponseRepairRatesItemConfidenceMax = 1;
+
+export const getAssumptionsResponseRepairRatesItemSourceMax = 2000;
+
+export const getAssumptionsResponseRepairRatesItemSourceUrlMax = 2000;
+
+export const getAssumptionsResponseRepairRatesMax = 1000;
+
 
 
 export const GetAssumptionsResponse = zod.object({
@@ -5980,7 +7649,25 @@ export const GetAssumptionsResponse = zod.object({
   "maxSqftDifferencePct": zod.number().min(getAssumptionsResponseMaxSqftDifferencePctMin).max(getAssumptionsResponseMaxSqftDifferencePctMax),
   "minComps": zod.number().int().min(getAssumptionsResponseMinCompsMin).max(getAssumptionsResponseMinCompsMax),
   "minConfidence": zod.number().min(getAssumptionsResponseMinConfidenceMin).max(getAssumptionsResponseMinConfidenceMax),
-  "approvalRequired": zod.boolean()
+  "approvalRequired": zod.boolean(),
+  "repairRateCatalogVersion": zod.number().int().min(getAssumptionsResponseRepairRateCatalogVersionMin),
+  "repairRates": zod.array(zod.object({
+  "id": zod.string().min(1).max(getAssumptionsResponseRepairRatesItemIdMax),
+  "version": zod.number().int().min(1),
+  "marketKey": zod.string().min(getAssumptionsResponseRepairRatesItemMarketKeyMin).max(getAssumptionsResponseRepairRatesItemMarketKeyMax),
+  "category": zod.string().min(1).max(getAssumptionsResponseRepairRatesItemCategoryMax),
+  "severity": zod.enum(['COSMETIC', 'MODERATE', 'MAJOR', 'REPLACEMENT']),
+  "unit": zod.enum(['SQFT', 'LINEAR_FT', 'EACH', 'LUMP_SUM']),
+  "lowRate": zod.number().min(getAssumptionsResponseRepairRatesItemLowRateMin).max(getAssumptionsResponseRepairRatesItemLowRateMax),
+  "expectedRate": zod.number().min(getAssumptionsResponseRepairRatesItemExpectedRateMin).max(getAssumptionsResponseRepairRatesItemExpectedRateMax),
+  "highRate": zod.number().min(getAssumptionsResponseRepairRatesItemHighRateMin).max(getAssumptionsResponseRepairRatesItemHighRateMax),
+  "confidence": zod.number().min(getAssumptionsResponseRepairRatesItemConfidenceMin).max(getAssumptionsResponseRepairRatesItemConfidenceMax),
+  "source": zod.string().min(1).max(getAssumptionsResponseRepairRatesItemSourceMax),
+  "sourceUrl": zod.string().url().max(getAssumptionsResponseRepairRatesItemSourceUrlMax),
+  "capturedOn": zod.string().date(),
+  "validThrough": zod.string().date(),
+  "active": zod.boolean()
+})).max(getAssumptionsResponseRepairRatesMax)
 })
 
 
@@ -6028,6 +7715,34 @@ export const updateAssumptionsBodyMinCompsMax = 20;
 export const updateAssumptionsBodyMinConfidenceMin = 0.3;
 export const updateAssumptionsBodyMinConfidenceMax = 1;
 
+export const updateAssumptionsBodyRepairRateCatalogVersionMin = 0;
+
+export const updateAssumptionsBodyRepairRatesItemIdMax = 100;
+
+
+export const updateAssumptionsBodyRepairRatesItemMarketKeyMin = 2;
+export const updateAssumptionsBodyRepairRatesItemMarketKeyMax = 100;
+
+export const updateAssumptionsBodyRepairRatesItemCategoryMax = 100;
+
+export const updateAssumptionsBodyRepairRatesItemLowRateMin = 0;
+export const updateAssumptionsBodyRepairRatesItemLowRateMax = 100000000;
+
+export const updateAssumptionsBodyRepairRatesItemExpectedRateMin = 0;
+export const updateAssumptionsBodyRepairRatesItemExpectedRateMax = 100000000;
+
+export const updateAssumptionsBodyRepairRatesItemHighRateMin = 0;
+export const updateAssumptionsBodyRepairRatesItemHighRateMax = 100000000;
+
+export const updateAssumptionsBodyRepairRatesItemConfidenceMin = 0;
+export const updateAssumptionsBodyRepairRatesItemConfidenceMax = 1;
+
+export const updateAssumptionsBodyRepairRatesItemSourceMax = 2000;
+
+export const updateAssumptionsBodyRepairRatesItemSourceUrlMax = 2000;
+
+export const updateAssumptionsBodyRepairRatesMax = 1000;
+
 
 
 export const UpdateAssumptionsBody = zod.object({
@@ -6046,7 +7761,25 @@ export const UpdateAssumptionsBody = zod.object({
   "maxSqftDifferencePct": zod.number().min(updateAssumptionsBodyMaxSqftDifferencePctMin).max(updateAssumptionsBodyMaxSqftDifferencePctMax),
   "minComps": zod.number().int().min(updateAssumptionsBodyMinCompsMin).max(updateAssumptionsBodyMinCompsMax),
   "minConfidence": zod.number().min(updateAssumptionsBodyMinConfidenceMin).max(updateAssumptionsBodyMinConfidenceMax),
-  "approvalRequired": zod.boolean()
+  "approvalRequired": zod.boolean(),
+  "repairRateCatalogVersion": zod.number().int().min(updateAssumptionsBodyRepairRateCatalogVersionMin),
+  "repairRates": zod.array(zod.object({
+  "id": zod.string().min(1).max(updateAssumptionsBodyRepairRatesItemIdMax),
+  "version": zod.number().int().min(1),
+  "marketKey": zod.string().min(updateAssumptionsBodyRepairRatesItemMarketKeyMin).max(updateAssumptionsBodyRepairRatesItemMarketKeyMax),
+  "category": zod.string().min(1).max(updateAssumptionsBodyRepairRatesItemCategoryMax),
+  "severity": zod.enum(['COSMETIC', 'MODERATE', 'MAJOR', 'REPLACEMENT']),
+  "unit": zod.enum(['SQFT', 'LINEAR_FT', 'EACH', 'LUMP_SUM']),
+  "lowRate": zod.number().min(updateAssumptionsBodyRepairRatesItemLowRateMin).max(updateAssumptionsBodyRepairRatesItemLowRateMax),
+  "expectedRate": zod.number().min(updateAssumptionsBodyRepairRatesItemExpectedRateMin).max(updateAssumptionsBodyRepairRatesItemExpectedRateMax),
+  "highRate": zod.number().min(updateAssumptionsBodyRepairRatesItemHighRateMin).max(updateAssumptionsBodyRepairRatesItemHighRateMax),
+  "confidence": zod.number().min(updateAssumptionsBodyRepairRatesItemConfidenceMin).max(updateAssumptionsBodyRepairRatesItemConfidenceMax),
+  "source": zod.string().min(1).max(updateAssumptionsBodyRepairRatesItemSourceMax),
+  "sourceUrl": zod.string().url().max(updateAssumptionsBodyRepairRatesItemSourceUrlMax),
+  "capturedOn": zod.string().date(),
+  "validThrough": zod.string().date(),
+  "active": zod.boolean()
+})).max(updateAssumptionsBodyRepairRatesMax)
 })
 
 export const updateAssumptionsResponseArvMultiplierMin = 0.1;
@@ -6093,6 +7826,34 @@ export const updateAssumptionsResponseMinCompsMax = 20;
 export const updateAssumptionsResponseMinConfidenceMin = 0.3;
 export const updateAssumptionsResponseMinConfidenceMax = 1;
 
+export const updateAssumptionsResponseRepairRateCatalogVersionMin = 0;
+
+export const updateAssumptionsResponseRepairRatesItemIdMax = 100;
+
+
+export const updateAssumptionsResponseRepairRatesItemMarketKeyMin = 2;
+export const updateAssumptionsResponseRepairRatesItemMarketKeyMax = 100;
+
+export const updateAssumptionsResponseRepairRatesItemCategoryMax = 100;
+
+export const updateAssumptionsResponseRepairRatesItemLowRateMin = 0;
+export const updateAssumptionsResponseRepairRatesItemLowRateMax = 100000000;
+
+export const updateAssumptionsResponseRepairRatesItemExpectedRateMin = 0;
+export const updateAssumptionsResponseRepairRatesItemExpectedRateMax = 100000000;
+
+export const updateAssumptionsResponseRepairRatesItemHighRateMin = 0;
+export const updateAssumptionsResponseRepairRatesItemHighRateMax = 100000000;
+
+export const updateAssumptionsResponseRepairRatesItemConfidenceMin = 0;
+export const updateAssumptionsResponseRepairRatesItemConfidenceMax = 1;
+
+export const updateAssumptionsResponseRepairRatesItemSourceMax = 2000;
+
+export const updateAssumptionsResponseRepairRatesItemSourceUrlMax = 2000;
+
+export const updateAssumptionsResponseRepairRatesMax = 1000;
+
 
 
 export const UpdateAssumptionsResponse = zod.object({
@@ -6111,7 +7872,25 @@ export const UpdateAssumptionsResponse = zod.object({
   "maxSqftDifferencePct": zod.number().min(updateAssumptionsResponseMaxSqftDifferencePctMin).max(updateAssumptionsResponseMaxSqftDifferencePctMax),
   "minComps": zod.number().int().min(updateAssumptionsResponseMinCompsMin).max(updateAssumptionsResponseMinCompsMax),
   "minConfidence": zod.number().min(updateAssumptionsResponseMinConfidenceMin).max(updateAssumptionsResponseMinConfidenceMax),
-  "approvalRequired": zod.boolean()
+  "approvalRequired": zod.boolean(),
+  "repairRateCatalogVersion": zod.number().int().min(updateAssumptionsResponseRepairRateCatalogVersionMin),
+  "repairRates": zod.array(zod.object({
+  "id": zod.string().min(1).max(updateAssumptionsResponseRepairRatesItemIdMax),
+  "version": zod.number().int().min(1),
+  "marketKey": zod.string().min(updateAssumptionsResponseRepairRatesItemMarketKeyMin).max(updateAssumptionsResponseRepairRatesItemMarketKeyMax),
+  "category": zod.string().min(1).max(updateAssumptionsResponseRepairRatesItemCategoryMax),
+  "severity": zod.enum(['COSMETIC', 'MODERATE', 'MAJOR', 'REPLACEMENT']),
+  "unit": zod.enum(['SQFT', 'LINEAR_FT', 'EACH', 'LUMP_SUM']),
+  "lowRate": zod.number().min(updateAssumptionsResponseRepairRatesItemLowRateMin).max(updateAssumptionsResponseRepairRatesItemLowRateMax),
+  "expectedRate": zod.number().min(updateAssumptionsResponseRepairRatesItemExpectedRateMin).max(updateAssumptionsResponseRepairRatesItemExpectedRateMax),
+  "highRate": zod.number().min(updateAssumptionsResponseRepairRatesItemHighRateMin).max(updateAssumptionsResponseRepairRatesItemHighRateMax),
+  "confidence": zod.number().min(updateAssumptionsResponseRepairRatesItemConfidenceMin).max(updateAssumptionsResponseRepairRatesItemConfidenceMax),
+  "source": zod.string().min(1).max(updateAssumptionsResponseRepairRatesItemSourceMax),
+  "sourceUrl": zod.string().url().max(updateAssumptionsResponseRepairRatesItemSourceUrlMax),
+  "capturedOn": zod.string().date(),
+  "validThrough": zod.string().date(),
+  "active": zod.boolean()
+})).max(updateAssumptionsResponseRepairRatesMax)
 })
 
 
@@ -6195,6 +7974,19 @@ export const getCommandCenterResponseOpportunitiesItemIntelligenceItemOneQuestio
 
 export const getCommandCenterResponseOpportunitiesItemIntelligenceItemOneActionMax = 2000;
 
+export const getCommandCenterResponseOpportunitiesItemAnalysisOneRepairEstimateCatalogVersionMin = 0;
+
+export const getCommandCenterResponseOpportunitiesItemAnalysisOneRepairEstimateLinesItemLowMin = 0;
+
+export const getCommandCenterResponseOpportunitiesItemAnalysisOneRepairEstimateLinesItemExpectedMin = 0;
+
+export const getCommandCenterResponseOpportunitiesItemAnalysisOneRepairEstimateLinesItemHighMin = 0;
+
+export const getCommandCenterResponseOpportunitiesItemAnalysisOneRepairEstimateLinesItemConfidenceMin = 0;
+export const getCommandCenterResponseOpportunitiesItemAnalysisOneRepairEstimateLinesItemConfidenceMax = 1;
+
+export const getCommandCenterResponseOpportunitiesItemAnalysisOneRepairEstimateLinesMax = 50;
+
 export const getCommandCenterResponseOpportunitiesItemAnalysisOneAssumptionsArvMultiplierMin = 0.1;
 export const getCommandCenterResponseOpportunitiesItemAnalysisOneAssumptionsArvMultiplierMax = 1;
 
@@ -6238,6 +8030,34 @@ export const getCommandCenterResponseOpportunitiesItemAnalysisOneAssumptionsMinC
 
 export const getCommandCenterResponseOpportunitiesItemAnalysisOneAssumptionsMinConfidenceMin = 0.3;
 export const getCommandCenterResponseOpportunitiesItemAnalysisOneAssumptionsMinConfidenceMax = 1;
+
+export const getCommandCenterResponseOpportunitiesItemAnalysisOneAssumptionsRepairRateCatalogVersionMin = 0;
+
+export const getCommandCenterResponseOpportunitiesItemAnalysisOneAssumptionsRepairRatesItemIdMax = 100;
+
+
+export const getCommandCenterResponseOpportunitiesItemAnalysisOneAssumptionsRepairRatesItemMarketKeyMin = 2;
+export const getCommandCenterResponseOpportunitiesItemAnalysisOneAssumptionsRepairRatesItemMarketKeyMax = 100;
+
+export const getCommandCenterResponseOpportunitiesItemAnalysisOneAssumptionsRepairRatesItemCategoryMax = 100;
+
+export const getCommandCenterResponseOpportunitiesItemAnalysisOneAssumptionsRepairRatesItemLowRateMin = 0;
+export const getCommandCenterResponseOpportunitiesItemAnalysisOneAssumptionsRepairRatesItemLowRateMax = 100000000;
+
+export const getCommandCenterResponseOpportunitiesItemAnalysisOneAssumptionsRepairRatesItemExpectedRateMin = 0;
+export const getCommandCenterResponseOpportunitiesItemAnalysisOneAssumptionsRepairRatesItemExpectedRateMax = 100000000;
+
+export const getCommandCenterResponseOpportunitiesItemAnalysisOneAssumptionsRepairRatesItemHighRateMin = 0;
+export const getCommandCenterResponseOpportunitiesItemAnalysisOneAssumptionsRepairRatesItemHighRateMax = 100000000;
+
+export const getCommandCenterResponseOpportunitiesItemAnalysisOneAssumptionsRepairRatesItemConfidenceMin = 0;
+export const getCommandCenterResponseOpportunitiesItemAnalysisOneAssumptionsRepairRatesItemConfidenceMax = 1;
+
+export const getCommandCenterResponseOpportunitiesItemAnalysisOneAssumptionsRepairRatesItemSourceMax = 2000;
+
+export const getCommandCenterResponseOpportunitiesItemAnalysisOneAssumptionsRepairRatesItemSourceUrlMax = 2000;
+
+export const getCommandCenterResponseOpportunitiesItemAnalysisOneAssumptionsRepairRatesMax = 1000;
 
 export const getCommandCenterResponseOpportunitiesItemOffersItemOneAmountExclusiveMin = 0;
 export const getCommandCenterResponseOpportunitiesItemOffersItemOneAmountMax = 1000000000;
@@ -6287,6 +8107,28 @@ export const getCommandCenterResponseOpportunitiesItemUnderwritingOneRepairsItem
 export const getCommandCenterResponseOpportunitiesItemUnderwritingOneRepairsItemEvidenceIdMax = 200;
 
 export const getCommandCenterResponseOpportunitiesItemUnderwritingOneRepairsMax = 50;
+
+export const getCommandCenterResponseOpportunitiesItemUnderwritingOneRepairObservationsItemCategoryMax = 100;
+
+export const getCommandCenterResponseOpportunitiesItemUnderwritingOneRepairObservationsItemQuantityMin = 0;
+export const getCommandCenterResponseOpportunitiesItemUnderwritingOneRepairObservationsItemQuantityMax = 1000000;
+
+export const getCommandCenterResponseOpportunitiesItemUnderwritingOneRepairObservationsItemEvidenceIdMax = 200;
+
+export const getCommandCenterResponseOpportunitiesItemUnderwritingOneRepairObservationsMax = 50;
+
+export const getCommandCenterResponseOpportunitiesItemUnderwritingOneRepairEstimateCatalogVersionMin = 0;
+
+export const getCommandCenterResponseOpportunitiesItemUnderwritingOneRepairEstimateLinesItemLowMin = 0;
+
+export const getCommandCenterResponseOpportunitiesItemUnderwritingOneRepairEstimateLinesItemExpectedMin = 0;
+
+export const getCommandCenterResponseOpportunitiesItemUnderwritingOneRepairEstimateLinesItemHighMin = 0;
+
+export const getCommandCenterResponseOpportunitiesItemUnderwritingOneRepairEstimateLinesItemConfidenceMin = 0;
+export const getCommandCenterResponseOpportunitiesItemUnderwritingOneRepairEstimateLinesItemConfidenceMax = 1;
+
+export const getCommandCenterResponseOpportunitiesItemUnderwritingOneRepairEstimateLinesMax = 50;
 
 export const getCommandCenterResponseOpportunitiesItemUnderwritingOneSubjectEvidenceIdMax = 200;
 
@@ -6369,6 +8211,19 @@ export const getCommandCenterResponseCallsItemIntelligenceItemOneQuestionMax = 2
 
 export const getCommandCenterResponseCallsItemIntelligenceItemOneActionMax = 2000;
 
+export const getCommandCenterResponseCallsItemAnalysisRepairEstimateCatalogVersionMin = 0;
+
+export const getCommandCenterResponseCallsItemAnalysisRepairEstimateLinesItemLowMin = 0;
+
+export const getCommandCenterResponseCallsItemAnalysisRepairEstimateLinesItemExpectedMin = 0;
+
+export const getCommandCenterResponseCallsItemAnalysisRepairEstimateLinesItemHighMin = 0;
+
+export const getCommandCenterResponseCallsItemAnalysisRepairEstimateLinesItemConfidenceMin = 0;
+export const getCommandCenterResponseCallsItemAnalysisRepairEstimateLinesItemConfidenceMax = 1;
+
+export const getCommandCenterResponseCallsItemAnalysisRepairEstimateLinesMax = 50;
+
 export const getCommandCenterResponseCallsItemAnalysisAssumptionsArvMultiplierMin = 0.1;
 export const getCommandCenterResponseCallsItemAnalysisAssumptionsArvMultiplierMax = 1;
 
@@ -6412,6 +8267,34 @@ export const getCommandCenterResponseCallsItemAnalysisAssumptionsMinCompsMax = 2
 
 export const getCommandCenterResponseCallsItemAnalysisAssumptionsMinConfidenceMin = 0.3;
 export const getCommandCenterResponseCallsItemAnalysisAssumptionsMinConfidenceMax = 1;
+
+export const getCommandCenterResponseCallsItemAnalysisAssumptionsRepairRateCatalogVersionMin = 0;
+
+export const getCommandCenterResponseCallsItemAnalysisAssumptionsRepairRatesItemIdMax = 100;
+
+
+export const getCommandCenterResponseCallsItemAnalysisAssumptionsRepairRatesItemMarketKeyMin = 2;
+export const getCommandCenterResponseCallsItemAnalysisAssumptionsRepairRatesItemMarketKeyMax = 100;
+
+export const getCommandCenterResponseCallsItemAnalysisAssumptionsRepairRatesItemCategoryMax = 100;
+
+export const getCommandCenterResponseCallsItemAnalysisAssumptionsRepairRatesItemLowRateMin = 0;
+export const getCommandCenterResponseCallsItemAnalysisAssumptionsRepairRatesItemLowRateMax = 100000000;
+
+export const getCommandCenterResponseCallsItemAnalysisAssumptionsRepairRatesItemExpectedRateMin = 0;
+export const getCommandCenterResponseCallsItemAnalysisAssumptionsRepairRatesItemExpectedRateMax = 100000000;
+
+export const getCommandCenterResponseCallsItemAnalysisAssumptionsRepairRatesItemHighRateMin = 0;
+export const getCommandCenterResponseCallsItemAnalysisAssumptionsRepairRatesItemHighRateMax = 100000000;
+
+export const getCommandCenterResponseCallsItemAnalysisAssumptionsRepairRatesItemConfidenceMin = 0;
+export const getCommandCenterResponseCallsItemAnalysisAssumptionsRepairRatesItemConfidenceMax = 1;
+
+export const getCommandCenterResponseCallsItemAnalysisAssumptionsRepairRatesItemSourceMax = 2000;
+
+export const getCommandCenterResponseCallsItemAnalysisAssumptionsRepairRatesItemSourceUrlMax = 2000;
+
+export const getCommandCenterResponseCallsItemAnalysisAssumptionsRepairRatesMax = 1000;
 
 export const getCommandCenterResponseCallsItemAuthorizedOfferOneOneAmountExclusiveMin = 0;
 export const getCommandCenterResponseCallsItemAuthorizedOfferOneOneAmountMax = 1000000000;
@@ -6493,6 +8376,19 @@ export const getCommandCenterResponseDealsItemIntelligenceItemOneQuestionMax = 2
 
 export const getCommandCenterResponseDealsItemIntelligenceItemOneActionMax = 2000;
 
+export const getCommandCenterResponseDealsItemAnalysisOneRepairEstimateCatalogVersionMin = 0;
+
+export const getCommandCenterResponseDealsItemAnalysisOneRepairEstimateLinesItemLowMin = 0;
+
+export const getCommandCenterResponseDealsItemAnalysisOneRepairEstimateLinesItemExpectedMin = 0;
+
+export const getCommandCenterResponseDealsItemAnalysisOneRepairEstimateLinesItemHighMin = 0;
+
+export const getCommandCenterResponseDealsItemAnalysisOneRepairEstimateLinesItemConfidenceMin = 0;
+export const getCommandCenterResponseDealsItemAnalysisOneRepairEstimateLinesItemConfidenceMax = 1;
+
+export const getCommandCenterResponseDealsItemAnalysisOneRepairEstimateLinesMax = 50;
+
 export const getCommandCenterResponseDealsItemAnalysisOneAssumptionsArvMultiplierMin = 0.1;
 export const getCommandCenterResponseDealsItemAnalysisOneAssumptionsArvMultiplierMax = 1;
 
@@ -6536,6 +8432,34 @@ export const getCommandCenterResponseDealsItemAnalysisOneAssumptionsMinCompsMax 
 
 export const getCommandCenterResponseDealsItemAnalysisOneAssumptionsMinConfidenceMin = 0.3;
 export const getCommandCenterResponseDealsItemAnalysisOneAssumptionsMinConfidenceMax = 1;
+
+export const getCommandCenterResponseDealsItemAnalysisOneAssumptionsRepairRateCatalogVersionMin = 0;
+
+export const getCommandCenterResponseDealsItemAnalysisOneAssumptionsRepairRatesItemIdMax = 100;
+
+
+export const getCommandCenterResponseDealsItemAnalysisOneAssumptionsRepairRatesItemMarketKeyMin = 2;
+export const getCommandCenterResponseDealsItemAnalysisOneAssumptionsRepairRatesItemMarketKeyMax = 100;
+
+export const getCommandCenterResponseDealsItemAnalysisOneAssumptionsRepairRatesItemCategoryMax = 100;
+
+export const getCommandCenterResponseDealsItemAnalysisOneAssumptionsRepairRatesItemLowRateMin = 0;
+export const getCommandCenterResponseDealsItemAnalysisOneAssumptionsRepairRatesItemLowRateMax = 100000000;
+
+export const getCommandCenterResponseDealsItemAnalysisOneAssumptionsRepairRatesItemExpectedRateMin = 0;
+export const getCommandCenterResponseDealsItemAnalysisOneAssumptionsRepairRatesItemExpectedRateMax = 100000000;
+
+export const getCommandCenterResponseDealsItemAnalysisOneAssumptionsRepairRatesItemHighRateMin = 0;
+export const getCommandCenterResponseDealsItemAnalysisOneAssumptionsRepairRatesItemHighRateMax = 100000000;
+
+export const getCommandCenterResponseDealsItemAnalysisOneAssumptionsRepairRatesItemConfidenceMin = 0;
+export const getCommandCenterResponseDealsItemAnalysisOneAssumptionsRepairRatesItemConfidenceMax = 1;
+
+export const getCommandCenterResponseDealsItemAnalysisOneAssumptionsRepairRatesItemSourceMax = 2000;
+
+export const getCommandCenterResponseDealsItemAnalysisOneAssumptionsRepairRatesItemSourceUrlMax = 2000;
+
+export const getCommandCenterResponseDealsItemAnalysisOneAssumptionsRepairRatesMax = 1000;
 
 export const getCommandCenterResponseDealsItemOffersItemOneAmountExclusiveMin = 0;
 export const getCommandCenterResponseDealsItemOffersItemOneAmountMax = 1000000000;
@@ -6585,6 +8509,28 @@ export const getCommandCenterResponseDealsItemUnderwritingOneRepairsItemConfiden
 export const getCommandCenterResponseDealsItemUnderwritingOneRepairsItemEvidenceIdMax = 200;
 
 export const getCommandCenterResponseDealsItemUnderwritingOneRepairsMax = 50;
+
+export const getCommandCenterResponseDealsItemUnderwritingOneRepairObservationsItemCategoryMax = 100;
+
+export const getCommandCenterResponseDealsItemUnderwritingOneRepairObservationsItemQuantityMin = 0;
+export const getCommandCenterResponseDealsItemUnderwritingOneRepairObservationsItemQuantityMax = 1000000;
+
+export const getCommandCenterResponseDealsItemUnderwritingOneRepairObservationsItemEvidenceIdMax = 200;
+
+export const getCommandCenterResponseDealsItemUnderwritingOneRepairObservationsMax = 50;
+
+export const getCommandCenterResponseDealsItemUnderwritingOneRepairEstimateCatalogVersionMin = 0;
+
+export const getCommandCenterResponseDealsItemUnderwritingOneRepairEstimateLinesItemLowMin = 0;
+
+export const getCommandCenterResponseDealsItemUnderwritingOneRepairEstimateLinesItemExpectedMin = 0;
+
+export const getCommandCenterResponseDealsItemUnderwritingOneRepairEstimateLinesItemHighMin = 0;
+
+export const getCommandCenterResponseDealsItemUnderwritingOneRepairEstimateLinesItemConfidenceMin = 0;
+export const getCommandCenterResponseDealsItemUnderwritingOneRepairEstimateLinesItemConfidenceMax = 1;
+
+export const getCommandCenterResponseDealsItemUnderwritingOneRepairEstimateLinesMax = 50;
 
 export const getCommandCenterResponseDealsItemUnderwritingOneSubjectEvidenceIdMax = 200;
 
@@ -6814,6 +8760,19 @@ export const getCommandCenterResponseOperationsItemContractOneCommitmentSnapshot
 
 export const getCommandCenterResponseOperationsItemContractOneCommitmentSnapshotOneDetailIntelligenceItemOneActionMax = 2000;
 
+export const getCommandCenterResponseOperationsItemContractOneCommitmentSnapshotOneDetailAnalysisOneRepairEstimateCatalogVersionMin = 0;
+
+export const getCommandCenterResponseOperationsItemContractOneCommitmentSnapshotOneDetailAnalysisOneRepairEstimateLinesItemLowMin = 0;
+
+export const getCommandCenterResponseOperationsItemContractOneCommitmentSnapshotOneDetailAnalysisOneRepairEstimateLinesItemExpectedMin = 0;
+
+export const getCommandCenterResponseOperationsItemContractOneCommitmentSnapshotOneDetailAnalysisOneRepairEstimateLinesItemHighMin = 0;
+
+export const getCommandCenterResponseOperationsItemContractOneCommitmentSnapshotOneDetailAnalysisOneRepairEstimateLinesItemConfidenceMin = 0;
+export const getCommandCenterResponseOperationsItemContractOneCommitmentSnapshotOneDetailAnalysisOneRepairEstimateLinesItemConfidenceMax = 1;
+
+export const getCommandCenterResponseOperationsItemContractOneCommitmentSnapshotOneDetailAnalysisOneRepairEstimateLinesMax = 50;
+
 export const getCommandCenterResponseOperationsItemContractOneCommitmentSnapshotOneDetailAnalysisOneAssumptionsArvMultiplierMin = 0.1;
 export const getCommandCenterResponseOperationsItemContractOneCommitmentSnapshotOneDetailAnalysisOneAssumptionsArvMultiplierMax = 1;
 
@@ -6857,6 +8816,34 @@ export const getCommandCenterResponseOperationsItemContractOneCommitmentSnapshot
 
 export const getCommandCenterResponseOperationsItemContractOneCommitmentSnapshotOneDetailAnalysisOneAssumptionsMinConfidenceMin = 0.3;
 export const getCommandCenterResponseOperationsItemContractOneCommitmentSnapshotOneDetailAnalysisOneAssumptionsMinConfidenceMax = 1;
+
+export const getCommandCenterResponseOperationsItemContractOneCommitmentSnapshotOneDetailAnalysisOneAssumptionsRepairRateCatalogVersionMin = 0;
+
+export const getCommandCenterResponseOperationsItemContractOneCommitmentSnapshotOneDetailAnalysisOneAssumptionsRepairRatesItemIdMax = 100;
+
+
+export const getCommandCenterResponseOperationsItemContractOneCommitmentSnapshotOneDetailAnalysisOneAssumptionsRepairRatesItemMarketKeyMin = 2;
+export const getCommandCenterResponseOperationsItemContractOneCommitmentSnapshotOneDetailAnalysisOneAssumptionsRepairRatesItemMarketKeyMax = 100;
+
+export const getCommandCenterResponseOperationsItemContractOneCommitmentSnapshotOneDetailAnalysisOneAssumptionsRepairRatesItemCategoryMax = 100;
+
+export const getCommandCenterResponseOperationsItemContractOneCommitmentSnapshotOneDetailAnalysisOneAssumptionsRepairRatesItemLowRateMin = 0;
+export const getCommandCenterResponseOperationsItemContractOneCommitmentSnapshotOneDetailAnalysisOneAssumptionsRepairRatesItemLowRateMax = 100000000;
+
+export const getCommandCenterResponseOperationsItemContractOneCommitmentSnapshotOneDetailAnalysisOneAssumptionsRepairRatesItemExpectedRateMin = 0;
+export const getCommandCenterResponseOperationsItemContractOneCommitmentSnapshotOneDetailAnalysisOneAssumptionsRepairRatesItemExpectedRateMax = 100000000;
+
+export const getCommandCenterResponseOperationsItemContractOneCommitmentSnapshotOneDetailAnalysisOneAssumptionsRepairRatesItemHighRateMin = 0;
+export const getCommandCenterResponseOperationsItemContractOneCommitmentSnapshotOneDetailAnalysisOneAssumptionsRepairRatesItemHighRateMax = 100000000;
+
+export const getCommandCenterResponseOperationsItemContractOneCommitmentSnapshotOneDetailAnalysisOneAssumptionsRepairRatesItemConfidenceMin = 0;
+export const getCommandCenterResponseOperationsItemContractOneCommitmentSnapshotOneDetailAnalysisOneAssumptionsRepairRatesItemConfidenceMax = 1;
+
+export const getCommandCenterResponseOperationsItemContractOneCommitmentSnapshotOneDetailAnalysisOneAssumptionsRepairRatesItemSourceMax = 2000;
+
+export const getCommandCenterResponseOperationsItemContractOneCommitmentSnapshotOneDetailAnalysisOneAssumptionsRepairRatesItemSourceUrlMax = 2000;
+
+export const getCommandCenterResponseOperationsItemContractOneCommitmentSnapshotOneDetailAnalysisOneAssumptionsRepairRatesMax = 1000;
 
 export const getCommandCenterResponseOperationsItemContractOneCommitmentSnapshotOneDetailOffersItemOneAmountExclusiveMin = 0;
 export const getCommandCenterResponseOperationsItemContractOneCommitmentSnapshotOneDetailOffersItemOneAmountMax = 1000000000;
@@ -6906,6 +8893,28 @@ export const getCommandCenterResponseOperationsItemContractOneCommitmentSnapshot
 export const getCommandCenterResponseOperationsItemContractOneCommitmentSnapshotOneDetailUnderwritingOneRepairsItemEvidenceIdMax = 200;
 
 export const getCommandCenterResponseOperationsItemContractOneCommitmentSnapshotOneDetailUnderwritingOneRepairsMax = 50;
+
+export const getCommandCenterResponseOperationsItemContractOneCommitmentSnapshotOneDetailUnderwritingOneRepairObservationsItemCategoryMax = 100;
+
+export const getCommandCenterResponseOperationsItemContractOneCommitmentSnapshotOneDetailUnderwritingOneRepairObservationsItemQuantityMin = 0;
+export const getCommandCenterResponseOperationsItemContractOneCommitmentSnapshotOneDetailUnderwritingOneRepairObservationsItemQuantityMax = 1000000;
+
+export const getCommandCenterResponseOperationsItemContractOneCommitmentSnapshotOneDetailUnderwritingOneRepairObservationsItemEvidenceIdMax = 200;
+
+export const getCommandCenterResponseOperationsItemContractOneCommitmentSnapshotOneDetailUnderwritingOneRepairObservationsMax = 50;
+
+export const getCommandCenterResponseOperationsItemContractOneCommitmentSnapshotOneDetailUnderwritingOneRepairEstimateCatalogVersionMin = 0;
+
+export const getCommandCenterResponseOperationsItemContractOneCommitmentSnapshotOneDetailUnderwritingOneRepairEstimateLinesItemLowMin = 0;
+
+export const getCommandCenterResponseOperationsItemContractOneCommitmentSnapshotOneDetailUnderwritingOneRepairEstimateLinesItemExpectedMin = 0;
+
+export const getCommandCenterResponseOperationsItemContractOneCommitmentSnapshotOneDetailUnderwritingOneRepairEstimateLinesItemHighMin = 0;
+
+export const getCommandCenterResponseOperationsItemContractOneCommitmentSnapshotOneDetailUnderwritingOneRepairEstimateLinesItemConfidenceMin = 0;
+export const getCommandCenterResponseOperationsItemContractOneCommitmentSnapshotOneDetailUnderwritingOneRepairEstimateLinesItemConfidenceMax = 1;
+
+export const getCommandCenterResponseOperationsItemContractOneCommitmentSnapshotOneDetailUnderwritingOneRepairEstimateLinesMax = 50;
 
 export const getCommandCenterResponseOperationsItemContractOneCommitmentSnapshotOneDetailUnderwritingOneSubjectEvidenceIdMax = 200;
 
@@ -7232,6 +9241,34 @@ export const GetCommandCenterResponse = zod.object({
   "high": zod.number(),
   "confidence": zod.number()
 }),
+  "repairEstimate": zod.object({
+  "status": zod.enum(['NOT_USED', 'CALCULATED', 'BLOCKED']),
+  "marketKey": zod.string(),
+  "catalogVersion": zod.number().int().min(getCommandCenterResponseOpportunitiesItemAnalysisOneRepairEstimateCatalogVersionMin),
+  "calculatedAt": zod.string().datetime({"offset":true}),
+  "lines": zod.array(zod.object({
+  "category": zod.string(),
+  "severity": zod.enum(['NO_REPAIR', 'COSMETIC', 'MODERATE', 'MAJOR', 'REPLACEMENT']),
+  "quantity": zod.number(),
+  "unit": zod.enum(['SQFT', 'LINEAR_FT', 'EACH', 'LUMP_SUM']),
+  "evidenceId": zod.string(),
+  "rateCardId": zod.string().optional(),
+  "rateCardVersion": zod.number().int().optional(),
+  "low": zod.number().min(getCommandCenterResponseOpportunitiesItemAnalysisOneRepairEstimateLinesItemLowMin),
+  "expected": zod.number().min(getCommandCenterResponseOpportunitiesItemAnalysisOneRepairEstimateLinesItemExpectedMin),
+  "high": zod.number().min(getCommandCenterResponseOpportunitiesItemAnalysisOneRepairEstimateLinesItemHighMin),
+  "confidence": zod.number().min(getCommandCenterResponseOpportunitiesItemAnalysisOneRepairEstimateLinesItemConfidenceMin).max(getCommandCenterResponseOpportunitiesItemAnalysisOneRepairEstimateLinesItemConfidenceMax),
+  "source": zod.string(),
+  "sourceUrl": zod.string().url().optional()
+})).max(getCommandCenterResponseOpportunitiesItemAnalysisOneRepairEstimateLinesMax),
+  "total": zod.union([zod.object({
+  "low": zod.number(),
+  "expected": zod.number(),
+  "high": zod.number(),
+  "confidence": zod.number()
+}),zod.null()]),
+  "blockers": zod.array(zod.string())
+}),
   "mao": zod.number(),
   "openingLow": zod.number(),
   "openingHigh": zod.number(),
@@ -7253,7 +9290,25 @@ export const GetCommandCenterResponse = zod.object({
   "maxSqftDifferencePct": zod.number().min(getCommandCenterResponseOpportunitiesItemAnalysisOneAssumptionsMaxSqftDifferencePctMin).max(getCommandCenterResponseOpportunitiesItemAnalysisOneAssumptionsMaxSqftDifferencePctMax),
   "minComps": zod.number().int().min(getCommandCenterResponseOpportunitiesItemAnalysisOneAssumptionsMinCompsMin).max(getCommandCenterResponseOpportunitiesItemAnalysisOneAssumptionsMinCompsMax),
   "minConfidence": zod.number().min(getCommandCenterResponseOpportunitiesItemAnalysisOneAssumptionsMinConfidenceMin).max(getCommandCenterResponseOpportunitiesItemAnalysisOneAssumptionsMinConfidenceMax),
-  "approvalRequired": zod.boolean()
+  "approvalRequired": zod.boolean(),
+  "repairRateCatalogVersion": zod.number().int().min(getCommandCenterResponseOpportunitiesItemAnalysisOneAssumptionsRepairRateCatalogVersionMin),
+  "repairRates": zod.array(zod.object({
+  "id": zod.string().min(1).max(getCommandCenterResponseOpportunitiesItemAnalysisOneAssumptionsRepairRatesItemIdMax),
+  "version": zod.number().int().min(1),
+  "marketKey": zod.string().min(getCommandCenterResponseOpportunitiesItemAnalysisOneAssumptionsRepairRatesItemMarketKeyMin).max(getCommandCenterResponseOpportunitiesItemAnalysisOneAssumptionsRepairRatesItemMarketKeyMax),
+  "category": zod.string().min(1).max(getCommandCenterResponseOpportunitiesItemAnalysisOneAssumptionsRepairRatesItemCategoryMax),
+  "severity": zod.enum(['COSMETIC', 'MODERATE', 'MAJOR', 'REPLACEMENT']),
+  "unit": zod.enum(['SQFT', 'LINEAR_FT', 'EACH', 'LUMP_SUM']),
+  "lowRate": zod.number().min(getCommandCenterResponseOpportunitiesItemAnalysisOneAssumptionsRepairRatesItemLowRateMin).max(getCommandCenterResponseOpportunitiesItemAnalysisOneAssumptionsRepairRatesItemLowRateMax),
+  "expectedRate": zod.number().min(getCommandCenterResponseOpportunitiesItemAnalysisOneAssumptionsRepairRatesItemExpectedRateMin).max(getCommandCenterResponseOpportunitiesItemAnalysisOneAssumptionsRepairRatesItemExpectedRateMax),
+  "highRate": zod.number().min(getCommandCenterResponseOpportunitiesItemAnalysisOneAssumptionsRepairRatesItemHighRateMin).max(getCommandCenterResponseOpportunitiesItemAnalysisOneAssumptionsRepairRatesItemHighRateMax),
+  "confidence": zod.number().min(getCommandCenterResponseOpportunitiesItemAnalysisOneAssumptionsRepairRatesItemConfidenceMin).max(getCommandCenterResponseOpportunitiesItemAnalysisOneAssumptionsRepairRatesItemConfidenceMax),
+  "source": zod.string().min(1).max(getCommandCenterResponseOpportunitiesItemAnalysisOneAssumptionsRepairRatesItemSourceMax),
+  "sourceUrl": zod.string().url().max(getCommandCenterResponseOpportunitiesItemAnalysisOneAssumptionsRepairRatesItemSourceUrlMax),
+  "capturedOn": zod.string().date(),
+  "validThrough": zod.string().date(),
+  "active": zod.boolean()
+})).max(getCommandCenterResponseOpportunitiesItemAnalysisOneAssumptionsRepairRatesMax)
 }),
   "risks": zod.array(zod.string()),
   "blockers": zod.array(zod.string()),
@@ -7322,6 +9377,41 @@ export const GetCommandCenterResponse = zod.object({
 })).max(getCommandCenterResponseOpportunitiesItemUnderwritingOneRepairsMax),
   "repairsComplete": zod.boolean(),
   "conditionConfirmed": zod.boolean(),
+  "repairObservations": zod.array(zod.object({
+  "category": zod.string().min(1).max(getCommandCenterResponseOpportunitiesItemUnderwritingOneRepairObservationsItemCategoryMax),
+  "severity": zod.enum(['NO_REPAIR', 'COSMETIC', 'MODERATE', 'MAJOR', 'REPLACEMENT']),
+  "quantity": zod.number().min(getCommandCenterResponseOpportunitiesItemUnderwritingOneRepairObservationsItemQuantityMin).max(getCommandCenterResponseOpportunitiesItemUnderwritingOneRepairObservationsItemQuantityMax),
+  "unit": zod.enum(['SQFT', 'LINEAR_FT', 'EACH', 'LUMP_SUM']),
+  "evidenceId": zod.string().min(1).max(getCommandCenterResponseOpportunitiesItemUnderwritingOneRepairObservationsItemEvidenceIdMax)
+})).max(getCommandCenterResponseOpportunitiesItemUnderwritingOneRepairObservationsMax).optional(),
+  "repairEstimate": zod.object({
+  "status": zod.enum(['NOT_USED', 'CALCULATED', 'BLOCKED']),
+  "marketKey": zod.string(),
+  "catalogVersion": zod.number().int().min(getCommandCenterResponseOpportunitiesItemUnderwritingOneRepairEstimateCatalogVersionMin),
+  "calculatedAt": zod.string().datetime({"offset":true}),
+  "lines": zod.array(zod.object({
+  "category": zod.string(),
+  "severity": zod.enum(['NO_REPAIR', 'COSMETIC', 'MODERATE', 'MAJOR', 'REPLACEMENT']),
+  "quantity": zod.number(),
+  "unit": zod.enum(['SQFT', 'LINEAR_FT', 'EACH', 'LUMP_SUM']),
+  "evidenceId": zod.string(),
+  "rateCardId": zod.string().optional(),
+  "rateCardVersion": zod.number().int().optional(),
+  "low": zod.number().min(getCommandCenterResponseOpportunitiesItemUnderwritingOneRepairEstimateLinesItemLowMin),
+  "expected": zod.number().min(getCommandCenterResponseOpportunitiesItemUnderwritingOneRepairEstimateLinesItemExpectedMin),
+  "high": zod.number().min(getCommandCenterResponseOpportunitiesItemUnderwritingOneRepairEstimateLinesItemHighMin),
+  "confidence": zod.number().min(getCommandCenterResponseOpportunitiesItemUnderwritingOneRepairEstimateLinesItemConfidenceMin).max(getCommandCenterResponseOpportunitiesItemUnderwritingOneRepairEstimateLinesItemConfidenceMax),
+  "source": zod.string(),
+  "sourceUrl": zod.string().url().optional()
+})).max(getCommandCenterResponseOpportunitiesItemUnderwritingOneRepairEstimateLinesMax),
+  "total": zod.union([zod.object({
+  "low": zod.number(),
+  "expected": zod.number(),
+  "high": zod.number(),
+  "confidence": zod.number()
+}),zod.null()]),
+  "blockers": zod.array(zod.string())
+}).optional(),
   "subjectEvidenceId": zod.string().max(getCommandCenterResponseOpportunitiesItemUnderwritingOneSubjectEvidenceIdMax).optional(),
   "conditionEvidenceId": zod.string().max(getCommandCenterResponseOpportunitiesItemUnderwritingOneConditionEvidenceIdMax).optional(),
   "sellerContactEvidenceId": zod.string().max(getCommandCenterResponseOpportunitiesItemUnderwritingOneSellerContactEvidenceIdMax).optional()
@@ -7461,6 +9551,34 @@ export const GetCommandCenterResponse = zod.object({
   "high": zod.number(),
   "confidence": zod.number()
 }),
+  "repairEstimate": zod.object({
+  "status": zod.enum(['NOT_USED', 'CALCULATED', 'BLOCKED']),
+  "marketKey": zod.string(),
+  "catalogVersion": zod.number().int().min(getCommandCenterResponseCallsItemAnalysisRepairEstimateCatalogVersionMin),
+  "calculatedAt": zod.string().datetime({"offset":true}),
+  "lines": zod.array(zod.object({
+  "category": zod.string(),
+  "severity": zod.enum(['NO_REPAIR', 'COSMETIC', 'MODERATE', 'MAJOR', 'REPLACEMENT']),
+  "quantity": zod.number(),
+  "unit": zod.enum(['SQFT', 'LINEAR_FT', 'EACH', 'LUMP_SUM']),
+  "evidenceId": zod.string(),
+  "rateCardId": zod.string().optional(),
+  "rateCardVersion": zod.number().int().optional(),
+  "low": zod.number().min(getCommandCenterResponseCallsItemAnalysisRepairEstimateLinesItemLowMin),
+  "expected": zod.number().min(getCommandCenterResponseCallsItemAnalysisRepairEstimateLinesItemExpectedMin),
+  "high": zod.number().min(getCommandCenterResponseCallsItemAnalysisRepairEstimateLinesItemHighMin),
+  "confidence": zod.number().min(getCommandCenterResponseCallsItemAnalysisRepairEstimateLinesItemConfidenceMin).max(getCommandCenterResponseCallsItemAnalysisRepairEstimateLinesItemConfidenceMax),
+  "source": zod.string(),
+  "sourceUrl": zod.string().url().optional()
+})).max(getCommandCenterResponseCallsItemAnalysisRepairEstimateLinesMax),
+  "total": zod.union([zod.object({
+  "low": zod.number(),
+  "expected": zod.number(),
+  "high": zod.number(),
+  "confidence": zod.number()
+}),zod.null()]),
+  "blockers": zod.array(zod.string())
+}),
   "mao": zod.number(),
   "openingLow": zod.number(),
   "openingHigh": zod.number(),
@@ -7482,7 +9600,25 @@ export const GetCommandCenterResponse = zod.object({
   "maxSqftDifferencePct": zod.number().min(getCommandCenterResponseCallsItemAnalysisAssumptionsMaxSqftDifferencePctMin).max(getCommandCenterResponseCallsItemAnalysisAssumptionsMaxSqftDifferencePctMax),
   "minComps": zod.number().int().min(getCommandCenterResponseCallsItemAnalysisAssumptionsMinCompsMin).max(getCommandCenterResponseCallsItemAnalysisAssumptionsMinCompsMax),
   "minConfidence": zod.number().min(getCommandCenterResponseCallsItemAnalysisAssumptionsMinConfidenceMin).max(getCommandCenterResponseCallsItemAnalysisAssumptionsMinConfidenceMax),
-  "approvalRequired": zod.boolean()
+  "approvalRequired": zod.boolean(),
+  "repairRateCatalogVersion": zod.number().int().min(getCommandCenterResponseCallsItemAnalysisAssumptionsRepairRateCatalogVersionMin),
+  "repairRates": zod.array(zod.object({
+  "id": zod.string().min(1).max(getCommandCenterResponseCallsItemAnalysisAssumptionsRepairRatesItemIdMax),
+  "version": zod.number().int().min(1),
+  "marketKey": zod.string().min(getCommandCenterResponseCallsItemAnalysisAssumptionsRepairRatesItemMarketKeyMin).max(getCommandCenterResponseCallsItemAnalysisAssumptionsRepairRatesItemMarketKeyMax),
+  "category": zod.string().min(1).max(getCommandCenterResponseCallsItemAnalysisAssumptionsRepairRatesItemCategoryMax),
+  "severity": zod.enum(['COSMETIC', 'MODERATE', 'MAJOR', 'REPLACEMENT']),
+  "unit": zod.enum(['SQFT', 'LINEAR_FT', 'EACH', 'LUMP_SUM']),
+  "lowRate": zod.number().min(getCommandCenterResponseCallsItemAnalysisAssumptionsRepairRatesItemLowRateMin).max(getCommandCenterResponseCallsItemAnalysisAssumptionsRepairRatesItemLowRateMax),
+  "expectedRate": zod.number().min(getCommandCenterResponseCallsItemAnalysisAssumptionsRepairRatesItemExpectedRateMin).max(getCommandCenterResponseCallsItemAnalysisAssumptionsRepairRatesItemExpectedRateMax),
+  "highRate": zod.number().min(getCommandCenterResponseCallsItemAnalysisAssumptionsRepairRatesItemHighRateMin).max(getCommandCenterResponseCallsItemAnalysisAssumptionsRepairRatesItemHighRateMax),
+  "confidence": zod.number().min(getCommandCenterResponseCallsItemAnalysisAssumptionsRepairRatesItemConfidenceMin).max(getCommandCenterResponseCallsItemAnalysisAssumptionsRepairRatesItemConfidenceMax),
+  "source": zod.string().min(1).max(getCommandCenterResponseCallsItemAnalysisAssumptionsRepairRatesItemSourceMax),
+  "sourceUrl": zod.string().url().max(getCommandCenterResponseCallsItemAnalysisAssumptionsRepairRatesItemSourceUrlMax),
+  "capturedOn": zod.string().date(),
+  "validThrough": zod.string().date(),
+  "active": zod.boolean()
+})).max(getCommandCenterResponseCallsItemAnalysisAssumptionsRepairRatesMax)
 }),
   "risks": zod.array(zod.string()),
   "blockers": zod.array(zod.string()),
@@ -7615,6 +9751,34 @@ export const GetCommandCenterResponse = zod.object({
   "high": zod.number(),
   "confidence": zod.number()
 }),
+  "repairEstimate": zod.object({
+  "status": zod.enum(['NOT_USED', 'CALCULATED', 'BLOCKED']),
+  "marketKey": zod.string(),
+  "catalogVersion": zod.number().int().min(getCommandCenterResponseDealsItemAnalysisOneRepairEstimateCatalogVersionMin),
+  "calculatedAt": zod.string().datetime({"offset":true}),
+  "lines": zod.array(zod.object({
+  "category": zod.string(),
+  "severity": zod.enum(['NO_REPAIR', 'COSMETIC', 'MODERATE', 'MAJOR', 'REPLACEMENT']),
+  "quantity": zod.number(),
+  "unit": zod.enum(['SQFT', 'LINEAR_FT', 'EACH', 'LUMP_SUM']),
+  "evidenceId": zod.string(),
+  "rateCardId": zod.string().optional(),
+  "rateCardVersion": zod.number().int().optional(),
+  "low": zod.number().min(getCommandCenterResponseDealsItemAnalysisOneRepairEstimateLinesItemLowMin),
+  "expected": zod.number().min(getCommandCenterResponseDealsItemAnalysisOneRepairEstimateLinesItemExpectedMin),
+  "high": zod.number().min(getCommandCenterResponseDealsItemAnalysisOneRepairEstimateLinesItemHighMin),
+  "confidence": zod.number().min(getCommandCenterResponseDealsItemAnalysisOneRepairEstimateLinesItemConfidenceMin).max(getCommandCenterResponseDealsItemAnalysisOneRepairEstimateLinesItemConfidenceMax),
+  "source": zod.string(),
+  "sourceUrl": zod.string().url().optional()
+})).max(getCommandCenterResponseDealsItemAnalysisOneRepairEstimateLinesMax),
+  "total": zod.union([zod.object({
+  "low": zod.number(),
+  "expected": zod.number(),
+  "high": zod.number(),
+  "confidence": zod.number()
+}),zod.null()]),
+  "blockers": zod.array(zod.string())
+}),
   "mao": zod.number(),
   "openingLow": zod.number(),
   "openingHigh": zod.number(),
@@ -7636,7 +9800,25 @@ export const GetCommandCenterResponse = zod.object({
   "maxSqftDifferencePct": zod.number().min(getCommandCenterResponseDealsItemAnalysisOneAssumptionsMaxSqftDifferencePctMin).max(getCommandCenterResponseDealsItemAnalysisOneAssumptionsMaxSqftDifferencePctMax),
   "minComps": zod.number().int().min(getCommandCenterResponseDealsItemAnalysisOneAssumptionsMinCompsMin).max(getCommandCenterResponseDealsItemAnalysisOneAssumptionsMinCompsMax),
   "minConfidence": zod.number().min(getCommandCenterResponseDealsItemAnalysisOneAssumptionsMinConfidenceMin).max(getCommandCenterResponseDealsItemAnalysisOneAssumptionsMinConfidenceMax),
-  "approvalRequired": zod.boolean()
+  "approvalRequired": zod.boolean(),
+  "repairRateCatalogVersion": zod.number().int().min(getCommandCenterResponseDealsItemAnalysisOneAssumptionsRepairRateCatalogVersionMin),
+  "repairRates": zod.array(zod.object({
+  "id": zod.string().min(1).max(getCommandCenterResponseDealsItemAnalysisOneAssumptionsRepairRatesItemIdMax),
+  "version": zod.number().int().min(1),
+  "marketKey": zod.string().min(getCommandCenterResponseDealsItemAnalysisOneAssumptionsRepairRatesItemMarketKeyMin).max(getCommandCenterResponseDealsItemAnalysisOneAssumptionsRepairRatesItemMarketKeyMax),
+  "category": zod.string().min(1).max(getCommandCenterResponseDealsItemAnalysisOneAssumptionsRepairRatesItemCategoryMax),
+  "severity": zod.enum(['COSMETIC', 'MODERATE', 'MAJOR', 'REPLACEMENT']),
+  "unit": zod.enum(['SQFT', 'LINEAR_FT', 'EACH', 'LUMP_SUM']),
+  "lowRate": zod.number().min(getCommandCenterResponseDealsItemAnalysisOneAssumptionsRepairRatesItemLowRateMin).max(getCommandCenterResponseDealsItemAnalysisOneAssumptionsRepairRatesItemLowRateMax),
+  "expectedRate": zod.number().min(getCommandCenterResponseDealsItemAnalysisOneAssumptionsRepairRatesItemExpectedRateMin).max(getCommandCenterResponseDealsItemAnalysisOneAssumptionsRepairRatesItemExpectedRateMax),
+  "highRate": zod.number().min(getCommandCenterResponseDealsItemAnalysisOneAssumptionsRepairRatesItemHighRateMin).max(getCommandCenterResponseDealsItemAnalysisOneAssumptionsRepairRatesItemHighRateMax),
+  "confidence": zod.number().min(getCommandCenterResponseDealsItemAnalysisOneAssumptionsRepairRatesItemConfidenceMin).max(getCommandCenterResponseDealsItemAnalysisOneAssumptionsRepairRatesItemConfidenceMax),
+  "source": zod.string().min(1).max(getCommandCenterResponseDealsItemAnalysisOneAssumptionsRepairRatesItemSourceMax),
+  "sourceUrl": zod.string().url().max(getCommandCenterResponseDealsItemAnalysisOneAssumptionsRepairRatesItemSourceUrlMax),
+  "capturedOn": zod.string().date(),
+  "validThrough": zod.string().date(),
+  "active": zod.boolean()
+})).max(getCommandCenterResponseDealsItemAnalysisOneAssumptionsRepairRatesMax)
 }),
   "risks": zod.array(zod.string()),
   "blockers": zod.array(zod.string()),
@@ -7705,6 +9887,41 @@ export const GetCommandCenterResponse = zod.object({
 })).max(getCommandCenterResponseDealsItemUnderwritingOneRepairsMax),
   "repairsComplete": zod.boolean(),
   "conditionConfirmed": zod.boolean(),
+  "repairObservations": zod.array(zod.object({
+  "category": zod.string().min(1).max(getCommandCenterResponseDealsItemUnderwritingOneRepairObservationsItemCategoryMax),
+  "severity": zod.enum(['NO_REPAIR', 'COSMETIC', 'MODERATE', 'MAJOR', 'REPLACEMENT']),
+  "quantity": zod.number().min(getCommandCenterResponseDealsItemUnderwritingOneRepairObservationsItemQuantityMin).max(getCommandCenterResponseDealsItemUnderwritingOneRepairObservationsItemQuantityMax),
+  "unit": zod.enum(['SQFT', 'LINEAR_FT', 'EACH', 'LUMP_SUM']),
+  "evidenceId": zod.string().min(1).max(getCommandCenterResponseDealsItemUnderwritingOneRepairObservationsItemEvidenceIdMax)
+})).max(getCommandCenterResponseDealsItemUnderwritingOneRepairObservationsMax).optional(),
+  "repairEstimate": zod.object({
+  "status": zod.enum(['NOT_USED', 'CALCULATED', 'BLOCKED']),
+  "marketKey": zod.string(),
+  "catalogVersion": zod.number().int().min(getCommandCenterResponseDealsItemUnderwritingOneRepairEstimateCatalogVersionMin),
+  "calculatedAt": zod.string().datetime({"offset":true}),
+  "lines": zod.array(zod.object({
+  "category": zod.string(),
+  "severity": zod.enum(['NO_REPAIR', 'COSMETIC', 'MODERATE', 'MAJOR', 'REPLACEMENT']),
+  "quantity": zod.number(),
+  "unit": zod.enum(['SQFT', 'LINEAR_FT', 'EACH', 'LUMP_SUM']),
+  "evidenceId": zod.string(),
+  "rateCardId": zod.string().optional(),
+  "rateCardVersion": zod.number().int().optional(),
+  "low": zod.number().min(getCommandCenterResponseDealsItemUnderwritingOneRepairEstimateLinesItemLowMin),
+  "expected": zod.number().min(getCommandCenterResponseDealsItemUnderwritingOneRepairEstimateLinesItemExpectedMin),
+  "high": zod.number().min(getCommandCenterResponseDealsItemUnderwritingOneRepairEstimateLinesItemHighMin),
+  "confidence": zod.number().min(getCommandCenterResponseDealsItemUnderwritingOneRepairEstimateLinesItemConfidenceMin).max(getCommandCenterResponseDealsItemUnderwritingOneRepairEstimateLinesItemConfidenceMax),
+  "source": zod.string(),
+  "sourceUrl": zod.string().url().optional()
+})).max(getCommandCenterResponseDealsItemUnderwritingOneRepairEstimateLinesMax),
+  "total": zod.union([zod.object({
+  "low": zod.number(),
+  "expected": zod.number(),
+  "high": zod.number(),
+  "confidence": zod.number()
+}),zod.null()]),
+  "blockers": zod.array(zod.string())
+}).optional(),
   "subjectEvidenceId": zod.string().max(getCommandCenterResponseDealsItemUnderwritingOneSubjectEvidenceIdMax).optional(),
   "conditionEvidenceId": zod.string().max(getCommandCenterResponseDealsItemUnderwritingOneConditionEvidenceIdMax).optional(),
   "sellerContactEvidenceId": zod.string().max(getCommandCenterResponseDealsItemUnderwritingOneSellerContactEvidenceIdMax).optional()
@@ -8012,6 +10229,34 @@ export const GetCommandCenterResponse = zod.object({
   "high": zod.number(),
   "confidence": zod.number()
 }),
+  "repairEstimate": zod.object({
+  "status": zod.enum(['NOT_USED', 'CALCULATED', 'BLOCKED']),
+  "marketKey": zod.string(),
+  "catalogVersion": zod.number().int().min(getCommandCenterResponseOperationsItemContractOneCommitmentSnapshotOneDetailAnalysisOneRepairEstimateCatalogVersionMin),
+  "calculatedAt": zod.string().datetime({"offset":true}),
+  "lines": zod.array(zod.object({
+  "category": zod.string(),
+  "severity": zod.enum(['NO_REPAIR', 'COSMETIC', 'MODERATE', 'MAJOR', 'REPLACEMENT']),
+  "quantity": zod.number(),
+  "unit": zod.enum(['SQFT', 'LINEAR_FT', 'EACH', 'LUMP_SUM']),
+  "evidenceId": zod.string(),
+  "rateCardId": zod.string().optional(),
+  "rateCardVersion": zod.number().int().optional(),
+  "low": zod.number().min(getCommandCenterResponseOperationsItemContractOneCommitmentSnapshotOneDetailAnalysisOneRepairEstimateLinesItemLowMin),
+  "expected": zod.number().min(getCommandCenterResponseOperationsItemContractOneCommitmentSnapshotOneDetailAnalysisOneRepairEstimateLinesItemExpectedMin),
+  "high": zod.number().min(getCommandCenterResponseOperationsItemContractOneCommitmentSnapshotOneDetailAnalysisOneRepairEstimateLinesItemHighMin),
+  "confidence": zod.number().min(getCommandCenterResponseOperationsItemContractOneCommitmentSnapshotOneDetailAnalysisOneRepairEstimateLinesItemConfidenceMin).max(getCommandCenterResponseOperationsItemContractOneCommitmentSnapshotOneDetailAnalysisOneRepairEstimateLinesItemConfidenceMax),
+  "source": zod.string(),
+  "sourceUrl": zod.string().url().optional()
+})).max(getCommandCenterResponseOperationsItemContractOneCommitmentSnapshotOneDetailAnalysisOneRepairEstimateLinesMax),
+  "total": zod.union([zod.object({
+  "low": zod.number(),
+  "expected": zod.number(),
+  "high": zod.number(),
+  "confidence": zod.number()
+}),zod.null()]),
+  "blockers": zod.array(zod.string())
+}),
   "mao": zod.number(),
   "openingLow": zod.number(),
   "openingHigh": zod.number(),
@@ -8033,7 +10278,25 @@ export const GetCommandCenterResponse = zod.object({
   "maxSqftDifferencePct": zod.number().min(getCommandCenterResponseOperationsItemContractOneCommitmentSnapshotOneDetailAnalysisOneAssumptionsMaxSqftDifferencePctMin).max(getCommandCenterResponseOperationsItemContractOneCommitmentSnapshotOneDetailAnalysisOneAssumptionsMaxSqftDifferencePctMax),
   "minComps": zod.number().int().min(getCommandCenterResponseOperationsItemContractOneCommitmentSnapshotOneDetailAnalysisOneAssumptionsMinCompsMin).max(getCommandCenterResponseOperationsItemContractOneCommitmentSnapshotOneDetailAnalysisOneAssumptionsMinCompsMax),
   "minConfidence": zod.number().min(getCommandCenterResponseOperationsItemContractOneCommitmentSnapshotOneDetailAnalysisOneAssumptionsMinConfidenceMin).max(getCommandCenterResponseOperationsItemContractOneCommitmentSnapshotOneDetailAnalysisOneAssumptionsMinConfidenceMax),
-  "approvalRequired": zod.boolean()
+  "approvalRequired": zod.boolean(),
+  "repairRateCatalogVersion": zod.number().int().min(getCommandCenterResponseOperationsItemContractOneCommitmentSnapshotOneDetailAnalysisOneAssumptionsRepairRateCatalogVersionMin),
+  "repairRates": zod.array(zod.object({
+  "id": zod.string().min(1).max(getCommandCenterResponseOperationsItemContractOneCommitmentSnapshotOneDetailAnalysisOneAssumptionsRepairRatesItemIdMax),
+  "version": zod.number().int().min(1),
+  "marketKey": zod.string().min(getCommandCenterResponseOperationsItemContractOneCommitmentSnapshotOneDetailAnalysisOneAssumptionsRepairRatesItemMarketKeyMin).max(getCommandCenterResponseOperationsItemContractOneCommitmentSnapshotOneDetailAnalysisOneAssumptionsRepairRatesItemMarketKeyMax),
+  "category": zod.string().min(1).max(getCommandCenterResponseOperationsItemContractOneCommitmentSnapshotOneDetailAnalysisOneAssumptionsRepairRatesItemCategoryMax),
+  "severity": zod.enum(['COSMETIC', 'MODERATE', 'MAJOR', 'REPLACEMENT']),
+  "unit": zod.enum(['SQFT', 'LINEAR_FT', 'EACH', 'LUMP_SUM']),
+  "lowRate": zod.number().min(getCommandCenterResponseOperationsItemContractOneCommitmentSnapshotOneDetailAnalysisOneAssumptionsRepairRatesItemLowRateMin).max(getCommandCenterResponseOperationsItemContractOneCommitmentSnapshotOneDetailAnalysisOneAssumptionsRepairRatesItemLowRateMax),
+  "expectedRate": zod.number().min(getCommandCenterResponseOperationsItemContractOneCommitmentSnapshotOneDetailAnalysisOneAssumptionsRepairRatesItemExpectedRateMin).max(getCommandCenterResponseOperationsItemContractOneCommitmentSnapshotOneDetailAnalysisOneAssumptionsRepairRatesItemExpectedRateMax),
+  "highRate": zod.number().min(getCommandCenterResponseOperationsItemContractOneCommitmentSnapshotOneDetailAnalysisOneAssumptionsRepairRatesItemHighRateMin).max(getCommandCenterResponseOperationsItemContractOneCommitmentSnapshotOneDetailAnalysisOneAssumptionsRepairRatesItemHighRateMax),
+  "confidence": zod.number().min(getCommandCenterResponseOperationsItemContractOneCommitmentSnapshotOneDetailAnalysisOneAssumptionsRepairRatesItemConfidenceMin).max(getCommandCenterResponseOperationsItemContractOneCommitmentSnapshotOneDetailAnalysisOneAssumptionsRepairRatesItemConfidenceMax),
+  "source": zod.string().min(1).max(getCommandCenterResponseOperationsItemContractOneCommitmentSnapshotOneDetailAnalysisOneAssumptionsRepairRatesItemSourceMax),
+  "sourceUrl": zod.string().url().max(getCommandCenterResponseOperationsItemContractOneCommitmentSnapshotOneDetailAnalysisOneAssumptionsRepairRatesItemSourceUrlMax),
+  "capturedOn": zod.string().date(),
+  "validThrough": zod.string().date(),
+  "active": zod.boolean()
+})).max(getCommandCenterResponseOperationsItemContractOneCommitmentSnapshotOneDetailAnalysisOneAssumptionsRepairRatesMax)
 }),
   "risks": zod.array(zod.string()),
   "blockers": zod.array(zod.string()),
@@ -8102,6 +10365,41 @@ export const GetCommandCenterResponse = zod.object({
 })).max(getCommandCenterResponseOperationsItemContractOneCommitmentSnapshotOneDetailUnderwritingOneRepairsMax),
   "repairsComplete": zod.boolean(),
   "conditionConfirmed": zod.boolean(),
+  "repairObservations": zod.array(zod.object({
+  "category": zod.string().min(1).max(getCommandCenterResponseOperationsItemContractOneCommitmentSnapshotOneDetailUnderwritingOneRepairObservationsItemCategoryMax),
+  "severity": zod.enum(['NO_REPAIR', 'COSMETIC', 'MODERATE', 'MAJOR', 'REPLACEMENT']),
+  "quantity": zod.number().min(getCommandCenterResponseOperationsItemContractOneCommitmentSnapshotOneDetailUnderwritingOneRepairObservationsItemQuantityMin).max(getCommandCenterResponseOperationsItemContractOneCommitmentSnapshotOneDetailUnderwritingOneRepairObservationsItemQuantityMax),
+  "unit": zod.enum(['SQFT', 'LINEAR_FT', 'EACH', 'LUMP_SUM']),
+  "evidenceId": zod.string().min(1).max(getCommandCenterResponseOperationsItemContractOneCommitmentSnapshotOneDetailUnderwritingOneRepairObservationsItemEvidenceIdMax)
+})).max(getCommandCenterResponseOperationsItemContractOneCommitmentSnapshotOneDetailUnderwritingOneRepairObservationsMax).optional(),
+  "repairEstimate": zod.object({
+  "status": zod.enum(['NOT_USED', 'CALCULATED', 'BLOCKED']),
+  "marketKey": zod.string(),
+  "catalogVersion": zod.number().int().min(getCommandCenterResponseOperationsItemContractOneCommitmentSnapshotOneDetailUnderwritingOneRepairEstimateCatalogVersionMin),
+  "calculatedAt": zod.string().datetime({"offset":true}),
+  "lines": zod.array(zod.object({
+  "category": zod.string(),
+  "severity": zod.enum(['NO_REPAIR', 'COSMETIC', 'MODERATE', 'MAJOR', 'REPLACEMENT']),
+  "quantity": zod.number(),
+  "unit": zod.enum(['SQFT', 'LINEAR_FT', 'EACH', 'LUMP_SUM']),
+  "evidenceId": zod.string(),
+  "rateCardId": zod.string().optional(),
+  "rateCardVersion": zod.number().int().optional(),
+  "low": zod.number().min(getCommandCenterResponseOperationsItemContractOneCommitmentSnapshotOneDetailUnderwritingOneRepairEstimateLinesItemLowMin),
+  "expected": zod.number().min(getCommandCenterResponseOperationsItemContractOneCommitmentSnapshotOneDetailUnderwritingOneRepairEstimateLinesItemExpectedMin),
+  "high": zod.number().min(getCommandCenterResponseOperationsItemContractOneCommitmentSnapshotOneDetailUnderwritingOneRepairEstimateLinesItemHighMin),
+  "confidence": zod.number().min(getCommandCenterResponseOperationsItemContractOneCommitmentSnapshotOneDetailUnderwritingOneRepairEstimateLinesItemConfidenceMin).max(getCommandCenterResponseOperationsItemContractOneCommitmentSnapshotOneDetailUnderwritingOneRepairEstimateLinesItemConfidenceMax),
+  "source": zod.string(),
+  "sourceUrl": zod.string().url().optional()
+})).max(getCommandCenterResponseOperationsItemContractOneCommitmentSnapshotOneDetailUnderwritingOneRepairEstimateLinesMax),
+  "total": zod.union([zod.object({
+  "low": zod.number(),
+  "expected": zod.number(),
+  "high": zod.number(),
+  "confidence": zod.number()
+}),zod.null()]),
+  "blockers": zod.array(zod.string())
+}).optional(),
   "subjectEvidenceId": zod.string().max(getCommandCenterResponseOperationsItemContractOneCommitmentSnapshotOneDetailUnderwritingOneSubjectEvidenceIdMax).optional(),
   "conditionEvidenceId": zod.string().max(getCommandCenterResponseOperationsItemContractOneCommitmentSnapshotOneDetailUnderwritingOneConditionEvidenceIdMax).optional(),
   "sellerContactEvidenceId": zod.string().max(getCommandCenterResponseOperationsItemContractOneCommitmentSnapshotOneDetailUnderwritingOneSellerContactEvidenceIdMax).optional()
@@ -8182,7 +10480,7 @@ export const GetCommandCenterResponse = zod.object({
   "score": zod.number(),
   "reasons": zod.array(zod.string()),
   "mismatches": zod.array(zod.string()),
-  "status": zod.enum(['MATCHED', 'INTERESTED', 'COMMITTED', 'DECLINED']),
+  "status": zod.enum(['MATCHED', 'INTERESTED', 'COMMITTED', 'DECLINED', 'EXPIRED']),
   "buyerVersion": zod.number().int(),
   "agreedPrice": zod.number().nullish(),
   "evidence": zod.string().nullish(),
@@ -10359,6 +12657,19 @@ export const getDealOperationsResponseContractOneCommitmentSnapshotOneDetailInte
 
 export const getDealOperationsResponseContractOneCommitmentSnapshotOneDetailIntelligenceItemOneActionMax = 2000;
 
+export const getDealOperationsResponseContractOneCommitmentSnapshotOneDetailAnalysisOneRepairEstimateCatalogVersionMin = 0;
+
+export const getDealOperationsResponseContractOneCommitmentSnapshotOneDetailAnalysisOneRepairEstimateLinesItemLowMin = 0;
+
+export const getDealOperationsResponseContractOneCommitmentSnapshotOneDetailAnalysisOneRepairEstimateLinesItemExpectedMin = 0;
+
+export const getDealOperationsResponseContractOneCommitmentSnapshotOneDetailAnalysisOneRepairEstimateLinesItemHighMin = 0;
+
+export const getDealOperationsResponseContractOneCommitmentSnapshotOneDetailAnalysisOneRepairEstimateLinesItemConfidenceMin = 0;
+export const getDealOperationsResponseContractOneCommitmentSnapshotOneDetailAnalysisOneRepairEstimateLinesItemConfidenceMax = 1;
+
+export const getDealOperationsResponseContractOneCommitmentSnapshotOneDetailAnalysisOneRepairEstimateLinesMax = 50;
+
 export const getDealOperationsResponseContractOneCommitmentSnapshotOneDetailAnalysisOneAssumptionsArvMultiplierMin = 0.1;
 export const getDealOperationsResponseContractOneCommitmentSnapshotOneDetailAnalysisOneAssumptionsArvMultiplierMax = 1;
 
@@ -10402,6 +12713,34 @@ export const getDealOperationsResponseContractOneCommitmentSnapshotOneDetailAnal
 
 export const getDealOperationsResponseContractOneCommitmentSnapshotOneDetailAnalysisOneAssumptionsMinConfidenceMin = 0.3;
 export const getDealOperationsResponseContractOneCommitmentSnapshotOneDetailAnalysisOneAssumptionsMinConfidenceMax = 1;
+
+export const getDealOperationsResponseContractOneCommitmentSnapshotOneDetailAnalysisOneAssumptionsRepairRateCatalogVersionMin = 0;
+
+export const getDealOperationsResponseContractOneCommitmentSnapshotOneDetailAnalysisOneAssumptionsRepairRatesItemIdMax = 100;
+
+
+export const getDealOperationsResponseContractOneCommitmentSnapshotOneDetailAnalysisOneAssumptionsRepairRatesItemMarketKeyMin = 2;
+export const getDealOperationsResponseContractOneCommitmentSnapshotOneDetailAnalysisOneAssumptionsRepairRatesItemMarketKeyMax = 100;
+
+export const getDealOperationsResponseContractOneCommitmentSnapshotOneDetailAnalysisOneAssumptionsRepairRatesItemCategoryMax = 100;
+
+export const getDealOperationsResponseContractOneCommitmentSnapshotOneDetailAnalysisOneAssumptionsRepairRatesItemLowRateMin = 0;
+export const getDealOperationsResponseContractOneCommitmentSnapshotOneDetailAnalysisOneAssumptionsRepairRatesItemLowRateMax = 100000000;
+
+export const getDealOperationsResponseContractOneCommitmentSnapshotOneDetailAnalysisOneAssumptionsRepairRatesItemExpectedRateMin = 0;
+export const getDealOperationsResponseContractOneCommitmentSnapshotOneDetailAnalysisOneAssumptionsRepairRatesItemExpectedRateMax = 100000000;
+
+export const getDealOperationsResponseContractOneCommitmentSnapshotOneDetailAnalysisOneAssumptionsRepairRatesItemHighRateMin = 0;
+export const getDealOperationsResponseContractOneCommitmentSnapshotOneDetailAnalysisOneAssumptionsRepairRatesItemHighRateMax = 100000000;
+
+export const getDealOperationsResponseContractOneCommitmentSnapshotOneDetailAnalysisOneAssumptionsRepairRatesItemConfidenceMin = 0;
+export const getDealOperationsResponseContractOneCommitmentSnapshotOneDetailAnalysisOneAssumptionsRepairRatesItemConfidenceMax = 1;
+
+export const getDealOperationsResponseContractOneCommitmentSnapshotOneDetailAnalysisOneAssumptionsRepairRatesItemSourceMax = 2000;
+
+export const getDealOperationsResponseContractOneCommitmentSnapshotOneDetailAnalysisOneAssumptionsRepairRatesItemSourceUrlMax = 2000;
+
+export const getDealOperationsResponseContractOneCommitmentSnapshotOneDetailAnalysisOneAssumptionsRepairRatesMax = 1000;
 
 export const getDealOperationsResponseContractOneCommitmentSnapshotOneDetailOffersItemOneAmountExclusiveMin = 0;
 export const getDealOperationsResponseContractOneCommitmentSnapshotOneDetailOffersItemOneAmountMax = 1000000000;
@@ -10451,6 +12790,28 @@ export const getDealOperationsResponseContractOneCommitmentSnapshotOneDetailUnde
 export const getDealOperationsResponseContractOneCommitmentSnapshotOneDetailUnderwritingOneRepairsItemEvidenceIdMax = 200;
 
 export const getDealOperationsResponseContractOneCommitmentSnapshotOneDetailUnderwritingOneRepairsMax = 50;
+
+export const getDealOperationsResponseContractOneCommitmentSnapshotOneDetailUnderwritingOneRepairObservationsItemCategoryMax = 100;
+
+export const getDealOperationsResponseContractOneCommitmentSnapshotOneDetailUnderwritingOneRepairObservationsItemQuantityMin = 0;
+export const getDealOperationsResponseContractOneCommitmentSnapshotOneDetailUnderwritingOneRepairObservationsItemQuantityMax = 1000000;
+
+export const getDealOperationsResponseContractOneCommitmentSnapshotOneDetailUnderwritingOneRepairObservationsItemEvidenceIdMax = 200;
+
+export const getDealOperationsResponseContractOneCommitmentSnapshotOneDetailUnderwritingOneRepairObservationsMax = 50;
+
+export const getDealOperationsResponseContractOneCommitmentSnapshotOneDetailUnderwritingOneRepairEstimateCatalogVersionMin = 0;
+
+export const getDealOperationsResponseContractOneCommitmentSnapshotOneDetailUnderwritingOneRepairEstimateLinesItemLowMin = 0;
+
+export const getDealOperationsResponseContractOneCommitmentSnapshotOneDetailUnderwritingOneRepairEstimateLinesItemExpectedMin = 0;
+
+export const getDealOperationsResponseContractOneCommitmentSnapshotOneDetailUnderwritingOneRepairEstimateLinesItemHighMin = 0;
+
+export const getDealOperationsResponseContractOneCommitmentSnapshotOneDetailUnderwritingOneRepairEstimateLinesItemConfidenceMin = 0;
+export const getDealOperationsResponseContractOneCommitmentSnapshotOneDetailUnderwritingOneRepairEstimateLinesItemConfidenceMax = 1;
+
+export const getDealOperationsResponseContractOneCommitmentSnapshotOneDetailUnderwritingOneRepairEstimateLinesMax = 50;
 
 export const getDealOperationsResponseContractOneCommitmentSnapshotOneDetailUnderwritingOneSubjectEvidenceIdMax = 200;
 
@@ -10729,6 +13090,34 @@ export const GetDealOperationsResponse = zod.object({
   "high": zod.number(),
   "confidence": zod.number()
 }),
+  "repairEstimate": zod.object({
+  "status": zod.enum(['NOT_USED', 'CALCULATED', 'BLOCKED']),
+  "marketKey": zod.string(),
+  "catalogVersion": zod.number().int().min(getDealOperationsResponseContractOneCommitmentSnapshotOneDetailAnalysisOneRepairEstimateCatalogVersionMin),
+  "calculatedAt": zod.string().datetime({"offset":true}),
+  "lines": zod.array(zod.object({
+  "category": zod.string(),
+  "severity": zod.enum(['NO_REPAIR', 'COSMETIC', 'MODERATE', 'MAJOR', 'REPLACEMENT']),
+  "quantity": zod.number(),
+  "unit": zod.enum(['SQFT', 'LINEAR_FT', 'EACH', 'LUMP_SUM']),
+  "evidenceId": zod.string(),
+  "rateCardId": zod.string().optional(),
+  "rateCardVersion": zod.number().int().optional(),
+  "low": zod.number().min(getDealOperationsResponseContractOneCommitmentSnapshotOneDetailAnalysisOneRepairEstimateLinesItemLowMin),
+  "expected": zod.number().min(getDealOperationsResponseContractOneCommitmentSnapshotOneDetailAnalysisOneRepairEstimateLinesItemExpectedMin),
+  "high": zod.number().min(getDealOperationsResponseContractOneCommitmentSnapshotOneDetailAnalysisOneRepairEstimateLinesItemHighMin),
+  "confidence": zod.number().min(getDealOperationsResponseContractOneCommitmentSnapshotOneDetailAnalysisOneRepairEstimateLinesItemConfidenceMin).max(getDealOperationsResponseContractOneCommitmentSnapshotOneDetailAnalysisOneRepairEstimateLinesItemConfidenceMax),
+  "source": zod.string(),
+  "sourceUrl": zod.string().url().optional()
+})).max(getDealOperationsResponseContractOneCommitmentSnapshotOneDetailAnalysisOneRepairEstimateLinesMax),
+  "total": zod.union([zod.object({
+  "low": zod.number(),
+  "expected": zod.number(),
+  "high": zod.number(),
+  "confidence": zod.number()
+}),zod.null()]),
+  "blockers": zod.array(zod.string())
+}),
   "mao": zod.number(),
   "openingLow": zod.number(),
   "openingHigh": zod.number(),
@@ -10750,7 +13139,25 @@ export const GetDealOperationsResponse = zod.object({
   "maxSqftDifferencePct": zod.number().min(getDealOperationsResponseContractOneCommitmentSnapshotOneDetailAnalysisOneAssumptionsMaxSqftDifferencePctMin).max(getDealOperationsResponseContractOneCommitmentSnapshotOneDetailAnalysisOneAssumptionsMaxSqftDifferencePctMax),
   "minComps": zod.number().int().min(getDealOperationsResponseContractOneCommitmentSnapshotOneDetailAnalysisOneAssumptionsMinCompsMin).max(getDealOperationsResponseContractOneCommitmentSnapshotOneDetailAnalysisOneAssumptionsMinCompsMax),
   "minConfidence": zod.number().min(getDealOperationsResponseContractOneCommitmentSnapshotOneDetailAnalysisOneAssumptionsMinConfidenceMin).max(getDealOperationsResponseContractOneCommitmentSnapshotOneDetailAnalysisOneAssumptionsMinConfidenceMax),
-  "approvalRequired": zod.boolean()
+  "approvalRequired": zod.boolean(),
+  "repairRateCatalogVersion": zod.number().int().min(getDealOperationsResponseContractOneCommitmentSnapshotOneDetailAnalysisOneAssumptionsRepairRateCatalogVersionMin),
+  "repairRates": zod.array(zod.object({
+  "id": zod.string().min(1).max(getDealOperationsResponseContractOneCommitmentSnapshotOneDetailAnalysisOneAssumptionsRepairRatesItemIdMax),
+  "version": zod.number().int().min(1),
+  "marketKey": zod.string().min(getDealOperationsResponseContractOneCommitmentSnapshotOneDetailAnalysisOneAssumptionsRepairRatesItemMarketKeyMin).max(getDealOperationsResponseContractOneCommitmentSnapshotOneDetailAnalysisOneAssumptionsRepairRatesItemMarketKeyMax),
+  "category": zod.string().min(1).max(getDealOperationsResponseContractOneCommitmentSnapshotOneDetailAnalysisOneAssumptionsRepairRatesItemCategoryMax),
+  "severity": zod.enum(['COSMETIC', 'MODERATE', 'MAJOR', 'REPLACEMENT']),
+  "unit": zod.enum(['SQFT', 'LINEAR_FT', 'EACH', 'LUMP_SUM']),
+  "lowRate": zod.number().min(getDealOperationsResponseContractOneCommitmentSnapshotOneDetailAnalysisOneAssumptionsRepairRatesItemLowRateMin).max(getDealOperationsResponseContractOneCommitmentSnapshotOneDetailAnalysisOneAssumptionsRepairRatesItemLowRateMax),
+  "expectedRate": zod.number().min(getDealOperationsResponseContractOneCommitmentSnapshotOneDetailAnalysisOneAssumptionsRepairRatesItemExpectedRateMin).max(getDealOperationsResponseContractOneCommitmentSnapshotOneDetailAnalysisOneAssumptionsRepairRatesItemExpectedRateMax),
+  "highRate": zod.number().min(getDealOperationsResponseContractOneCommitmentSnapshotOneDetailAnalysisOneAssumptionsRepairRatesItemHighRateMin).max(getDealOperationsResponseContractOneCommitmentSnapshotOneDetailAnalysisOneAssumptionsRepairRatesItemHighRateMax),
+  "confidence": zod.number().min(getDealOperationsResponseContractOneCommitmentSnapshotOneDetailAnalysisOneAssumptionsRepairRatesItemConfidenceMin).max(getDealOperationsResponseContractOneCommitmentSnapshotOneDetailAnalysisOneAssumptionsRepairRatesItemConfidenceMax),
+  "source": zod.string().min(1).max(getDealOperationsResponseContractOneCommitmentSnapshotOneDetailAnalysisOneAssumptionsRepairRatesItemSourceMax),
+  "sourceUrl": zod.string().url().max(getDealOperationsResponseContractOneCommitmentSnapshotOneDetailAnalysisOneAssumptionsRepairRatesItemSourceUrlMax),
+  "capturedOn": zod.string().date(),
+  "validThrough": zod.string().date(),
+  "active": zod.boolean()
+})).max(getDealOperationsResponseContractOneCommitmentSnapshotOneDetailAnalysisOneAssumptionsRepairRatesMax)
 }),
   "risks": zod.array(zod.string()),
   "blockers": zod.array(zod.string()),
@@ -10819,6 +13226,41 @@ export const GetDealOperationsResponse = zod.object({
 })).max(getDealOperationsResponseContractOneCommitmentSnapshotOneDetailUnderwritingOneRepairsMax),
   "repairsComplete": zod.boolean(),
   "conditionConfirmed": zod.boolean(),
+  "repairObservations": zod.array(zod.object({
+  "category": zod.string().min(1).max(getDealOperationsResponseContractOneCommitmentSnapshotOneDetailUnderwritingOneRepairObservationsItemCategoryMax),
+  "severity": zod.enum(['NO_REPAIR', 'COSMETIC', 'MODERATE', 'MAJOR', 'REPLACEMENT']),
+  "quantity": zod.number().min(getDealOperationsResponseContractOneCommitmentSnapshotOneDetailUnderwritingOneRepairObservationsItemQuantityMin).max(getDealOperationsResponseContractOneCommitmentSnapshotOneDetailUnderwritingOneRepairObservationsItemQuantityMax),
+  "unit": zod.enum(['SQFT', 'LINEAR_FT', 'EACH', 'LUMP_SUM']),
+  "evidenceId": zod.string().min(1).max(getDealOperationsResponseContractOneCommitmentSnapshotOneDetailUnderwritingOneRepairObservationsItemEvidenceIdMax)
+})).max(getDealOperationsResponseContractOneCommitmentSnapshotOneDetailUnderwritingOneRepairObservationsMax).optional(),
+  "repairEstimate": zod.object({
+  "status": zod.enum(['NOT_USED', 'CALCULATED', 'BLOCKED']),
+  "marketKey": zod.string(),
+  "catalogVersion": zod.number().int().min(getDealOperationsResponseContractOneCommitmentSnapshotOneDetailUnderwritingOneRepairEstimateCatalogVersionMin),
+  "calculatedAt": zod.string().datetime({"offset":true}),
+  "lines": zod.array(zod.object({
+  "category": zod.string(),
+  "severity": zod.enum(['NO_REPAIR', 'COSMETIC', 'MODERATE', 'MAJOR', 'REPLACEMENT']),
+  "quantity": zod.number(),
+  "unit": zod.enum(['SQFT', 'LINEAR_FT', 'EACH', 'LUMP_SUM']),
+  "evidenceId": zod.string(),
+  "rateCardId": zod.string().optional(),
+  "rateCardVersion": zod.number().int().optional(),
+  "low": zod.number().min(getDealOperationsResponseContractOneCommitmentSnapshotOneDetailUnderwritingOneRepairEstimateLinesItemLowMin),
+  "expected": zod.number().min(getDealOperationsResponseContractOneCommitmentSnapshotOneDetailUnderwritingOneRepairEstimateLinesItemExpectedMin),
+  "high": zod.number().min(getDealOperationsResponseContractOneCommitmentSnapshotOneDetailUnderwritingOneRepairEstimateLinesItemHighMin),
+  "confidence": zod.number().min(getDealOperationsResponseContractOneCommitmentSnapshotOneDetailUnderwritingOneRepairEstimateLinesItemConfidenceMin).max(getDealOperationsResponseContractOneCommitmentSnapshotOneDetailUnderwritingOneRepairEstimateLinesItemConfidenceMax),
+  "source": zod.string(),
+  "sourceUrl": zod.string().url().optional()
+})).max(getDealOperationsResponseContractOneCommitmentSnapshotOneDetailUnderwritingOneRepairEstimateLinesMax),
+  "total": zod.union([zod.object({
+  "low": zod.number(),
+  "expected": zod.number(),
+  "high": zod.number(),
+  "confidence": zod.number()
+}),zod.null()]),
+  "blockers": zod.array(zod.string())
+}).optional(),
   "subjectEvidenceId": zod.string().max(getDealOperationsResponseContractOneCommitmentSnapshotOneDetailUnderwritingOneSubjectEvidenceIdMax).optional(),
   "conditionEvidenceId": zod.string().max(getDealOperationsResponseContractOneCommitmentSnapshotOneDetailUnderwritingOneConditionEvidenceIdMax).optional(),
   "sellerContactEvidenceId": zod.string().max(getDealOperationsResponseContractOneCommitmentSnapshotOneDetailUnderwritingOneSellerContactEvidenceIdMax).optional()
@@ -10899,7 +13341,7 @@ export const GetDealOperationsResponse = zod.object({
   "score": zod.number(),
   "reasons": zod.array(zod.string()),
   "mismatches": zod.array(zod.string()),
-  "status": zod.enum(['MATCHED', 'INTERESTED', 'COMMITTED', 'DECLINED']),
+  "status": zod.enum(['MATCHED', 'INTERESTED', 'COMMITTED', 'DECLINED', 'EXPIRED']),
   "buyerVersion": zod.number().int(),
   "agreedPrice": zod.number().nullish(),
   "evidence": zod.string().nullish(),
@@ -11147,6 +13589,19 @@ export const refreshMatchesResponseContractOneCommitmentSnapshotOneDetailIntelli
 
 export const refreshMatchesResponseContractOneCommitmentSnapshotOneDetailIntelligenceItemOneActionMax = 2000;
 
+export const refreshMatchesResponseContractOneCommitmentSnapshotOneDetailAnalysisOneRepairEstimateCatalogVersionMin = 0;
+
+export const refreshMatchesResponseContractOneCommitmentSnapshotOneDetailAnalysisOneRepairEstimateLinesItemLowMin = 0;
+
+export const refreshMatchesResponseContractOneCommitmentSnapshotOneDetailAnalysisOneRepairEstimateLinesItemExpectedMin = 0;
+
+export const refreshMatchesResponseContractOneCommitmentSnapshotOneDetailAnalysisOneRepairEstimateLinesItemHighMin = 0;
+
+export const refreshMatchesResponseContractOneCommitmentSnapshotOneDetailAnalysisOneRepairEstimateLinesItemConfidenceMin = 0;
+export const refreshMatchesResponseContractOneCommitmentSnapshotOneDetailAnalysisOneRepairEstimateLinesItemConfidenceMax = 1;
+
+export const refreshMatchesResponseContractOneCommitmentSnapshotOneDetailAnalysisOneRepairEstimateLinesMax = 50;
+
 export const refreshMatchesResponseContractOneCommitmentSnapshotOneDetailAnalysisOneAssumptionsArvMultiplierMin = 0.1;
 export const refreshMatchesResponseContractOneCommitmentSnapshotOneDetailAnalysisOneAssumptionsArvMultiplierMax = 1;
 
@@ -11190,6 +13645,34 @@ export const refreshMatchesResponseContractOneCommitmentSnapshotOneDetailAnalysi
 
 export const refreshMatchesResponseContractOneCommitmentSnapshotOneDetailAnalysisOneAssumptionsMinConfidenceMin = 0.3;
 export const refreshMatchesResponseContractOneCommitmentSnapshotOneDetailAnalysisOneAssumptionsMinConfidenceMax = 1;
+
+export const refreshMatchesResponseContractOneCommitmentSnapshotOneDetailAnalysisOneAssumptionsRepairRateCatalogVersionMin = 0;
+
+export const refreshMatchesResponseContractOneCommitmentSnapshotOneDetailAnalysisOneAssumptionsRepairRatesItemIdMax = 100;
+
+
+export const refreshMatchesResponseContractOneCommitmentSnapshotOneDetailAnalysisOneAssumptionsRepairRatesItemMarketKeyMin = 2;
+export const refreshMatchesResponseContractOneCommitmentSnapshotOneDetailAnalysisOneAssumptionsRepairRatesItemMarketKeyMax = 100;
+
+export const refreshMatchesResponseContractOneCommitmentSnapshotOneDetailAnalysisOneAssumptionsRepairRatesItemCategoryMax = 100;
+
+export const refreshMatchesResponseContractOneCommitmentSnapshotOneDetailAnalysisOneAssumptionsRepairRatesItemLowRateMin = 0;
+export const refreshMatchesResponseContractOneCommitmentSnapshotOneDetailAnalysisOneAssumptionsRepairRatesItemLowRateMax = 100000000;
+
+export const refreshMatchesResponseContractOneCommitmentSnapshotOneDetailAnalysisOneAssumptionsRepairRatesItemExpectedRateMin = 0;
+export const refreshMatchesResponseContractOneCommitmentSnapshotOneDetailAnalysisOneAssumptionsRepairRatesItemExpectedRateMax = 100000000;
+
+export const refreshMatchesResponseContractOneCommitmentSnapshotOneDetailAnalysisOneAssumptionsRepairRatesItemHighRateMin = 0;
+export const refreshMatchesResponseContractOneCommitmentSnapshotOneDetailAnalysisOneAssumptionsRepairRatesItemHighRateMax = 100000000;
+
+export const refreshMatchesResponseContractOneCommitmentSnapshotOneDetailAnalysisOneAssumptionsRepairRatesItemConfidenceMin = 0;
+export const refreshMatchesResponseContractOneCommitmentSnapshotOneDetailAnalysisOneAssumptionsRepairRatesItemConfidenceMax = 1;
+
+export const refreshMatchesResponseContractOneCommitmentSnapshotOneDetailAnalysisOneAssumptionsRepairRatesItemSourceMax = 2000;
+
+export const refreshMatchesResponseContractOneCommitmentSnapshotOneDetailAnalysisOneAssumptionsRepairRatesItemSourceUrlMax = 2000;
+
+export const refreshMatchesResponseContractOneCommitmentSnapshotOneDetailAnalysisOneAssumptionsRepairRatesMax = 1000;
 
 export const refreshMatchesResponseContractOneCommitmentSnapshotOneDetailOffersItemOneAmountExclusiveMin = 0;
 export const refreshMatchesResponseContractOneCommitmentSnapshotOneDetailOffersItemOneAmountMax = 1000000000;
@@ -11239,6 +13722,28 @@ export const refreshMatchesResponseContractOneCommitmentSnapshotOneDetailUnderwr
 export const refreshMatchesResponseContractOneCommitmentSnapshotOneDetailUnderwritingOneRepairsItemEvidenceIdMax = 200;
 
 export const refreshMatchesResponseContractOneCommitmentSnapshotOneDetailUnderwritingOneRepairsMax = 50;
+
+export const refreshMatchesResponseContractOneCommitmentSnapshotOneDetailUnderwritingOneRepairObservationsItemCategoryMax = 100;
+
+export const refreshMatchesResponseContractOneCommitmentSnapshotOneDetailUnderwritingOneRepairObservationsItemQuantityMin = 0;
+export const refreshMatchesResponseContractOneCommitmentSnapshotOneDetailUnderwritingOneRepairObservationsItemQuantityMax = 1000000;
+
+export const refreshMatchesResponseContractOneCommitmentSnapshotOneDetailUnderwritingOneRepairObservationsItemEvidenceIdMax = 200;
+
+export const refreshMatchesResponseContractOneCommitmentSnapshotOneDetailUnderwritingOneRepairObservationsMax = 50;
+
+export const refreshMatchesResponseContractOneCommitmentSnapshotOneDetailUnderwritingOneRepairEstimateCatalogVersionMin = 0;
+
+export const refreshMatchesResponseContractOneCommitmentSnapshotOneDetailUnderwritingOneRepairEstimateLinesItemLowMin = 0;
+
+export const refreshMatchesResponseContractOneCommitmentSnapshotOneDetailUnderwritingOneRepairEstimateLinesItemExpectedMin = 0;
+
+export const refreshMatchesResponseContractOneCommitmentSnapshotOneDetailUnderwritingOneRepairEstimateLinesItemHighMin = 0;
+
+export const refreshMatchesResponseContractOneCommitmentSnapshotOneDetailUnderwritingOneRepairEstimateLinesItemConfidenceMin = 0;
+export const refreshMatchesResponseContractOneCommitmentSnapshotOneDetailUnderwritingOneRepairEstimateLinesItemConfidenceMax = 1;
+
+export const refreshMatchesResponseContractOneCommitmentSnapshotOneDetailUnderwritingOneRepairEstimateLinesMax = 50;
 
 export const refreshMatchesResponseContractOneCommitmentSnapshotOneDetailUnderwritingOneSubjectEvidenceIdMax = 200;
 
@@ -11517,6 +14022,34 @@ export const RefreshMatchesResponse = zod.object({
   "high": zod.number(),
   "confidence": zod.number()
 }),
+  "repairEstimate": zod.object({
+  "status": zod.enum(['NOT_USED', 'CALCULATED', 'BLOCKED']),
+  "marketKey": zod.string(),
+  "catalogVersion": zod.number().int().min(refreshMatchesResponseContractOneCommitmentSnapshotOneDetailAnalysisOneRepairEstimateCatalogVersionMin),
+  "calculatedAt": zod.string().datetime({"offset":true}),
+  "lines": zod.array(zod.object({
+  "category": zod.string(),
+  "severity": zod.enum(['NO_REPAIR', 'COSMETIC', 'MODERATE', 'MAJOR', 'REPLACEMENT']),
+  "quantity": zod.number(),
+  "unit": zod.enum(['SQFT', 'LINEAR_FT', 'EACH', 'LUMP_SUM']),
+  "evidenceId": zod.string(),
+  "rateCardId": zod.string().optional(),
+  "rateCardVersion": zod.number().int().optional(),
+  "low": zod.number().min(refreshMatchesResponseContractOneCommitmentSnapshotOneDetailAnalysisOneRepairEstimateLinesItemLowMin),
+  "expected": zod.number().min(refreshMatchesResponseContractOneCommitmentSnapshotOneDetailAnalysisOneRepairEstimateLinesItemExpectedMin),
+  "high": zod.number().min(refreshMatchesResponseContractOneCommitmentSnapshotOneDetailAnalysisOneRepairEstimateLinesItemHighMin),
+  "confidence": zod.number().min(refreshMatchesResponseContractOneCommitmentSnapshotOneDetailAnalysisOneRepairEstimateLinesItemConfidenceMin).max(refreshMatchesResponseContractOneCommitmentSnapshotOneDetailAnalysisOneRepairEstimateLinesItemConfidenceMax),
+  "source": zod.string(),
+  "sourceUrl": zod.string().url().optional()
+})).max(refreshMatchesResponseContractOneCommitmentSnapshotOneDetailAnalysisOneRepairEstimateLinesMax),
+  "total": zod.union([zod.object({
+  "low": zod.number(),
+  "expected": zod.number(),
+  "high": zod.number(),
+  "confidence": zod.number()
+}),zod.null()]),
+  "blockers": zod.array(zod.string())
+}),
   "mao": zod.number(),
   "openingLow": zod.number(),
   "openingHigh": zod.number(),
@@ -11538,7 +14071,25 @@ export const RefreshMatchesResponse = zod.object({
   "maxSqftDifferencePct": zod.number().min(refreshMatchesResponseContractOneCommitmentSnapshotOneDetailAnalysisOneAssumptionsMaxSqftDifferencePctMin).max(refreshMatchesResponseContractOneCommitmentSnapshotOneDetailAnalysisOneAssumptionsMaxSqftDifferencePctMax),
   "minComps": zod.number().int().min(refreshMatchesResponseContractOneCommitmentSnapshotOneDetailAnalysisOneAssumptionsMinCompsMin).max(refreshMatchesResponseContractOneCommitmentSnapshotOneDetailAnalysisOneAssumptionsMinCompsMax),
   "minConfidence": zod.number().min(refreshMatchesResponseContractOneCommitmentSnapshotOneDetailAnalysisOneAssumptionsMinConfidenceMin).max(refreshMatchesResponseContractOneCommitmentSnapshotOneDetailAnalysisOneAssumptionsMinConfidenceMax),
-  "approvalRequired": zod.boolean()
+  "approvalRequired": zod.boolean(),
+  "repairRateCatalogVersion": zod.number().int().min(refreshMatchesResponseContractOneCommitmentSnapshotOneDetailAnalysisOneAssumptionsRepairRateCatalogVersionMin),
+  "repairRates": zod.array(zod.object({
+  "id": zod.string().min(1).max(refreshMatchesResponseContractOneCommitmentSnapshotOneDetailAnalysisOneAssumptionsRepairRatesItemIdMax),
+  "version": zod.number().int().min(1),
+  "marketKey": zod.string().min(refreshMatchesResponseContractOneCommitmentSnapshotOneDetailAnalysisOneAssumptionsRepairRatesItemMarketKeyMin).max(refreshMatchesResponseContractOneCommitmentSnapshotOneDetailAnalysisOneAssumptionsRepairRatesItemMarketKeyMax),
+  "category": zod.string().min(1).max(refreshMatchesResponseContractOneCommitmentSnapshotOneDetailAnalysisOneAssumptionsRepairRatesItemCategoryMax),
+  "severity": zod.enum(['COSMETIC', 'MODERATE', 'MAJOR', 'REPLACEMENT']),
+  "unit": zod.enum(['SQFT', 'LINEAR_FT', 'EACH', 'LUMP_SUM']),
+  "lowRate": zod.number().min(refreshMatchesResponseContractOneCommitmentSnapshotOneDetailAnalysisOneAssumptionsRepairRatesItemLowRateMin).max(refreshMatchesResponseContractOneCommitmentSnapshotOneDetailAnalysisOneAssumptionsRepairRatesItemLowRateMax),
+  "expectedRate": zod.number().min(refreshMatchesResponseContractOneCommitmentSnapshotOneDetailAnalysisOneAssumptionsRepairRatesItemExpectedRateMin).max(refreshMatchesResponseContractOneCommitmentSnapshotOneDetailAnalysisOneAssumptionsRepairRatesItemExpectedRateMax),
+  "highRate": zod.number().min(refreshMatchesResponseContractOneCommitmentSnapshotOneDetailAnalysisOneAssumptionsRepairRatesItemHighRateMin).max(refreshMatchesResponseContractOneCommitmentSnapshotOneDetailAnalysisOneAssumptionsRepairRatesItemHighRateMax),
+  "confidence": zod.number().min(refreshMatchesResponseContractOneCommitmentSnapshotOneDetailAnalysisOneAssumptionsRepairRatesItemConfidenceMin).max(refreshMatchesResponseContractOneCommitmentSnapshotOneDetailAnalysisOneAssumptionsRepairRatesItemConfidenceMax),
+  "source": zod.string().min(1).max(refreshMatchesResponseContractOneCommitmentSnapshotOneDetailAnalysisOneAssumptionsRepairRatesItemSourceMax),
+  "sourceUrl": zod.string().url().max(refreshMatchesResponseContractOneCommitmentSnapshotOneDetailAnalysisOneAssumptionsRepairRatesItemSourceUrlMax),
+  "capturedOn": zod.string().date(),
+  "validThrough": zod.string().date(),
+  "active": zod.boolean()
+})).max(refreshMatchesResponseContractOneCommitmentSnapshotOneDetailAnalysisOneAssumptionsRepairRatesMax)
 }),
   "risks": zod.array(zod.string()),
   "blockers": zod.array(zod.string()),
@@ -11607,6 +14158,41 @@ export const RefreshMatchesResponse = zod.object({
 })).max(refreshMatchesResponseContractOneCommitmentSnapshotOneDetailUnderwritingOneRepairsMax),
   "repairsComplete": zod.boolean(),
   "conditionConfirmed": zod.boolean(),
+  "repairObservations": zod.array(zod.object({
+  "category": zod.string().min(1).max(refreshMatchesResponseContractOneCommitmentSnapshotOneDetailUnderwritingOneRepairObservationsItemCategoryMax),
+  "severity": zod.enum(['NO_REPAIR', 'COSMETIC', 'MODERATE', 'MAJOR', 'REPLACEMENT']),
+  "quantity": zod.number().min(refreshMatchesResponseContractOneCommitmentSnapshotOneDetailUnderwritingOneRepairObservationsItemQuantityMin).max(refreshMatchesResponseContractOneCommitmentSnapshotOneDetailUnderwritingOneRepairObservationsItemQuantityMax),
+  "unit": zod.enum(['SQFT', 'LINEAR_FT', 'EACH', 'LUMP_SUM']),
+  "evidenceId": zod.string().min(1).max(refreshMatchesResponseContractOneCommitmentSnapshotOneDetailUnderwritingOneRepairObservationsItemEvidenceIdMax)
+})).max(refreshMatchesResponseContractOneCommitmentSnapshotOneDetailUnderwritingOneRepairObservationsMax).optional(),
+  "repairEstimate": zod.object({
+  "status": zod.enum(['NOT_USED', 'CALCULATED', 'BLOCKED']),
+  "marketKey": zod.string(),
+  "catalogVersion": zod.number().int().min(refreshMatchesResponseContractOneCommitmentSnapshotOneDetailUnderwritingOneRepairEstimateCatalogVersionMin),
+  "calculatedAt": zod.string().datetime({"offset":true}),
+  "lines": zod.array(zod.object({
+  "category": zod.string(),
+  "severity": zod.enum(['NO_REPAIR', 'COSMETIC', 'MODERATE', 'MAJOR', 'REPLACEMENT']),
+  "quantity": zod.number(),
+  "unit": zod.enum(['SQFT', 'LINEAR_FT', 'EACH', 'LUMP_SUM']),
+  "evidenceId": zod.string(),
+  "rateCardId": zod.string().optional(),
+  "rateCardVersion": zod.number().int().optional(),
+  "low": zod.number().min(refreshMatchesResponseContractOneCommitmentSnapshotOneDetailUnderwritingOneRepairEstimateLinesItemLowMin),
+  "expected": zod.number().min(refreshMatchesResponseContractOneCommitmentSnapshotOneDetailUnderwritingOneRepairEstimateLinesItemExpectedMin),
+  "high": zod.number().min(refreshMatchesResponseContractOneCommitmentSnapshotOneDetailUnderwritingOneRepairEstimateLinesItemHighMin),
+  "confidence": zod.number().min(refreshMatchesResponseContractOneCommitmentSnapshotOneDetailUnderwritingOneRepairEstimateLinesItemConfidenceMin).max(refreshMatchesResponseContractOneCommitmentSnapshotOneDetailUnderwritingOneRepairEstimateLinesItemConfidenceMax),
+  "source": zod.string(),
+  "sourceUrl": zod.string().url().optional()
+})).max(refreshMatchesResponseContractOneCommitmentSnapshotOneDetailUnderwritingOneRepairEstimateLinesMax),
+  "total": zod.union([zod.object({
+  "low": zod.number(),
+  "expected": zod.number(),
+  "high": zod.number(),
+  "confidence": zod.number()
+}),zod.null()]),
+  "blockers": zod.array(zod.string())
+}).optional(),
   "subjectEvidenceId": zod.string().max(refreshMatchesResponseContractOneCommitmentSnapshotOneDetailUnderwritingOneSubjectEvidenceIdMax).optional(),
   "conditionEvidenceId": zod.string().max(refreshMatchesResponseContractOneCommitmentSnapshotOneDetailUnderwritingOneConditionEvidenceIdMax).optional(),
   "sellerContactEvidenceId": zod.string().max(refreshMatchesResponseContractOneCommitmentSnapshotOneDetailUnderwritingOneSellerContactEvidenceIdMax).optional()
@@ -11687,7 +14273,7 @@ export const RefreshMatchesResponse = zod.object({
   "score": zod.number(),
   "reasons": zod.array(zod.string()),
   "mismatches": zod.array(zod.string()),
-  "status": zod.enum(['MATCHED', 'INTERESTED', 'COMMITTED', 'DECLINED']),
+  "status": zod.enum(['MATCHED', 'INTERESTED', 'COMMITTED', 'DECLINED', 'EXPIRED']),
   "buyerVersion": zod.number().int(),
   "agreedPrice": zod.number().nullish(),
   "evidence": zod.string().nullish(),
@@ -11957,6 +14543,19 @@ export const recordBuyerResponseResponseContractOneCommitmentSnapshotOneDetailIn
 
 export const recordBuyerResponseResponseContractOneCommitmentSnapshotOneDetailIntelligenceItemOneActionMax = 2000;
 
+export const recordBuyerResponseResponseContractOneCommitmentSnapshotOneDetailAnalysisOneRepairEstimateCatalogVersionMin = 0;
+
+export const recordBuyerResponseResponseContractOneCommitmentSnapshotOneDetailAnalysisOneRepairEstimateLinesItemLowMin = 0;
+
+export const recordBuyerResponseResponseContractOneCommitmentSnapshotOneDetailAnalysisOneRepairEstimateLinesItemExpectedMin = 0;
+
+export const recordBuyerResponseResponseContractOneCommitmentSnapshotOneDetailAnalysisOneRepairEstimateLinesItemHighMin = 0;
+
+export const recordBuyerResponseResponseContractOneCommitmentSnapshotOneDetailAnalysisOneRepairEstimateLinesItemConfidenceMin = 0;
+export const recordBuyerResponseResponseContractOneCommitmentSnapshotOneDetailAnalysisOneRepairEstimateLinesItemConfidenceMax = 1;
+
+export const recordBuyerResponseResponseContractOneCommitmentSnapshotOneDetailAnalysisOneRepairEstimateLinesMax = 50;
+
 export const recordBuyerResponseResponseContractOneCommitmentSnapshotOneDetailAnalysisOneAssumptionsArvMultiplierMin = 0.1;
 export const recordBuyerResponseResponseContractOneCommitmentSnapshotOneDetailAnalysisOneAssumptionsArvMultiplierMax = 1;
 
@@ -12000,6 +14599,34 @@ export const recordBuyerResponseResponseContractOneCommitmentSnapshotOneDetailAn
 
 export const recordBuyerResponseResponseContractOneCommitmentSnapshotOneDetailAnalysisOneAssumptionsMinConfidenceMin = 0.3;
 export const recordBuyerResponseResponseContractOneCommitmentSnapshotOneDetailAnalysisOneAssumptionsMinConfidenceMax = 1;
+
+export const recordBuyerResponseResponseContractOneCommitmentSnapshotOneDetailAnalysisOneAssumptionsRepairRateCatalogVersionMin = 0;
+
+export const recordBuyerResponseResponseContractOneCommitmentSnapshotOneDetailAnalysisOneAssumptionsRepairRatesItemIdMax = 100;
+
+
+export const recordBuyerResponseResponseContractOneCommitmentSnapshotOneDetailAnalysisOneAssumptionsRepairRatesItemMarketKeyMin = 2;
+export const recordBuyerResponseResponseContractOneCommitmentSnapshotOneDetailAnalysisOneAssumptionsRepairRatesItemMarketKeyMax = 100;
+
+export const recordBuyerResponseResponseContractOneCommitmentSnapshotOneDetailAnalysisOneAssumptionsRepairRatesItemCategoryMax = 100;
+
+export const recordBuyerResponseResponseContractOneCommitmentSnapshotOneDetailAnalysisOneAssumptionsRepairRatesItemLowRateMin = 0;
+export const recordBuyerResponseResponseContractOneCommitmentSnapshotOneDetailAnalysisOneAssumptionsRepairRatesItemLowRateMax = 100000000;
+
+export const recordBuyerResponseResponseContractOneCommitmentSnapshotOneDetailAnalysisOneAssumptionsRepairRatesItemExpectedRateMin = 0;
+export const recordBuyerResponseResponseContractOneCommitmentSnapshotOneDetailAnalysisOneAssumptionsRepairRatesItemExpectedRateMax = 100000000;
+
+export const recordBuyerResponseResponseContractOneCommitmentSnapshotOneDetailAnalysisOneAssumptionsRepairRatesItemHighRateMin = 0;
+export const recordBuyerResponseResponseContractOneCommitmentSnapshotOneDetailAnalysisOneAssumptionsRepairRatesItemHighRateMax = 100000000;
+
+export const recordBuyerResponseResponseContractOneCommitmentSnapshotOneDetailAnalysisOneAssumptionsRepairRatesItemConfidenceMin = 0;
+export const recordBuyerResponseResponseContractOneCommitmentSnapshotOneDetailAnalysisOneAssumptionsRepairRatesItemConfidenceMax = 1;
+
+export const recordBuyerResponseResponseContractOneCommitmentSnapshotOneDetailAnalysisOneAssumptionsRepairRatesItemSourceMax = 2000;
+
+export const recordBuyerResponseResponseContractOneCommitmentSnapshotOneDetailAnalysisOneAssumptionsRepairRatesItemSourceUrlMax = 2000;
+
+export const recordBuyerResponseResponseContractOneCommitmentSnapshotOneDetailAnalysisOneAssumptionsRepairRatesMax = 1000;
 
 export const recordBuyerResponseResponseContractOneCommitmentSnapshotOneDetailOffersItemOneAmountExclusiveMin = 0;
 export const recordBuyerResponseResponseContractOneCommitmentSnapshotOneDetailOffersItemOneAmountMax = 1000000000;
@@ -12049,6 +14676,28 @@ export const recordBuyerResponseResponseContractOneCommitmentSnapshotOneDetailUn
 export const recordBuyerResponseResponseContractOneCommitmentSnapshotOneDetailUnderwritingOneRepairsItemEvidenceIdMax = 200;
 
 export const recordBuyerResponseResponseContractOneCommitmentSnapshotOneDetailUnderwritingOneRepairsMax = 50;
+
+export const recordBuyerResponseResponseContractOneCommitmentSnapshotOneDetailUnderwritingOneRepairObservationsItemCategoryMax = 100;
+
+export const recordBuyerResponseResponseContractOneCommitmentSnapshotOneDetailUnderwritingOneRepairObservationsItemQuantityMin = 0;
+export const recordBuyerResponseResponseContractOneCommitmentSnapshotOneDetailUnderwritingOneRepairObservationsItemQuantityMax = 1000000;
+
+export const recordBuyerResponseResponseContractOneCommitmentSnapshotOneDetailUnderwritingOneRepairObservationsItemEvidenceIdMax = 200;
+
+export const recordBuyerResponseResponseContractOneCommitmentSnapshotOneDetailUnderwritingOneRepairObservationsMax = 50;
+
+export const recordBuyerResponseResponseContractOneCommitmentSnapshotOneDetailUnderwritingOneRepairEstimateCatalogVersionMin = 0;
+
+export const recordBuyerResponseResponseContractOneCommitmentSnapshotOneDetailUnderwritingOneRepairEstimateLinesItemLowMin = 0;
+
+export const recordBuyerResponseResponseContractOneCommitmentSnapshotOneDetailUnderwritingOneRepairEstimateLinesItemExpectedMin = 0;
+
+export const recordBuyerResponseResponseContractOneCommitmentSnapshotOneDetailUnderwritingOneRepairEstimateLinesItemHighMin = 0;
+
+export const recordBuyerResponseResponseContractOneCommitmentSnapshotOneDetailUnderwritingOneRepairEstimateLinesItemConfidenceMin = 0;
+export const recordBuyerResponseResponseContractOneCommitmentSnapshotOneDetailUnderwritingOneRepairEstimateLinesItemConfidenceMax = 1;
+
+export const recordBuyerResponseResponseContractOneCommitmentSnapshotOneDetailUnderwritingOneRepairEstimateLinesMax = 50;
 
 export const recordBuyerResponseResponseContractOneCommitmentSnapshotOneDetailUnderwritingOneSubjectEvidenceIdMax = 200;
 
@@ -12327,6 +14976,34 @@ export const RecordBuyerResponseResponse = zod.object({
   "high": zod.number(),
   "confidence": zod.number()
 }),
+  "repairEstimate": zod.object({
+  "status": zod.enum(['NOT_USED', 'CALCULATED', 'BLOCKED']),
+  "marketKey": zod.string(),
+  "catalogVersion": zod.number().int().min(recordBuyerResponseResponseContractOneCommitmentSnapshotOneDetailAnalysisOneRepairEstimateCatalogVersionMin),
+  "calculatedAt": zod.string().datetime({"offset":true}),
+  "lines": zod.array(zod.object({
+  "category": zod.string(),
+  "severity": zod.enum(['NO_REPAIR', 'COSMETIC', 'MODERATE', 'MAJOR', 'REPLACEMENT']),
+  "quantity": zod.number(),
+  "unit": zod.enum(['SQFT', 'LINEAR_FT', 'EACH', 'LUMP_SUM']),
+  "evidenceId": zod.string(),
+  "rateCardId": zod.string().optional(),
+  "rateCardVersion": zod.number().int().optional(),
+  "low": zod.number().min(recordBuyerResponseResponseContractOneCommitmentSnapshotOneDetailAnalysisOneRepairEstimateLinesItemLowMin),
+  "expected": zod.number().min(recordBuyerResponseResponseContractOneCommitmentSnapshotOneDetailAnalysisOneRepairEstimateLinesItemExpectedMin),
+  "high": zod.number().min(recordBuyerResponseResponseContractOneCommitmentSnapshotOneDetailAnalysisOneRepairEstimateLinesItemHighMin),
+  "confidence": zod.number().min(recordBuyerResponseResponseContractOneCommitmentSnapshotOneDetailAnalysisOneRepairEstimateLinesItemConfidenceMin).max(recordBuyerResponseResponseContractOneCommitmentSnapshotOneDetailAnalysisOneRepairEstimateLinesItemConfidenceMax),
+  "source": zod.string(),
+  "sourceUrl": zod.string().url().optional()
+})).max(recordBuyerResponseResponseContractOneCommitmentSnapshotOneDetailAnalysisOneRepairEstimateLinesMax),
+  "total": zod.union([zod.object({
+  "low": zod.number(),
+  "expected": zod.number(),
+  "high": zod.number(),
+  "confidence": zod.number()
+}),zod.null()]),
+  "blockers": zod.array(zod.string())
+}),
   "mao": zod.number(),
   "openingLow": zod.number(),
   "openingHigh": zod.number(),
@@ -12348,7 +15025,25 @@ export const RecordBuyerResponseResponse = zod.object({
   "maxSqftDifferencePct": zod.number().min(recordBuyerResponseResponseContractOneCommitmentSnapshotOneDetailAnalysisOneAssumptionsMaxSqftDifferencePctMin).max(recordBuyerResponseResponseContractOneCommitmentSnapshotOneDetailAnalysisOneAssumptionsMaxSqftDifferencePctMax),
   "minComps": zod.number().int().min(recordBuyerResponseResponseContractOneCommitmentSnapshotOneDetailAnalysisOneAssumptionsMinCompsMin).max(recordBuyerResponseResponseContractOneCommitmentSnapshotOneDetailAnalysisOneAssumptionsMinCompsMax),
   "minConfidence": zod.number().min(recordBuyerResponseResponseContractOneCommitmentSnapshotOneDetailAnalysisOneAssumptionsMinConfidenceMin).max(recordBuyerResponseResponseContractOneCommitmentSnapshotOneDetailAnalysisOneAssumptionsMinConfidenceMax),
-  "approvalRequired": zod.boolean()
+  "approvalRequired": zod.boolean(),
+  "repairRateCatalogVersion": zod.number().int().min(recordBuyerResponseResponseContractOneCommitmentSnapshotOneDetailAnalysisOneAssumptionsRepairRateCatalogVersionMin),
+  "repairRates": zod.array(zod.object({
+  "id": zod.string().min(1).max(recordBuyerResponseResponseContractOneCommitmentSnapshotOneDetailAnalysisOneAssumptionsRepairRatesItemIdMax),
+  "version": zod.number().int().min(1),
+  "marketKey": zod.string().min(recordBuyerResponseResponseContractOneCommitmentSnapshotOneDetailAnalysisOneAssumptionsRepairRatesItemMarketKeyMin).max(recordBuyerResponseResponseContractOneCommitmentSnapshotOneDetailAnalysisOneAssumptionsRepairRatesItemMarketKeyMax),
+  "category": zod.string().min(1).max(recordBuyerResponseResponseContractOneCommitmentSnapshotOneDetailAnalysisOneAssumptionsRepairRatesItemCategoryMax),
+  "severity": zod.enum(['COSMETIC', 'MODERATE', 'MAJOR', 'REPLACEMENT']),
+  "unit": zod.enum(['SQFT', 'LINEAR_FT', 'EACH', 'LUMP_SUM']),
+  "lowRate": zod.number().min(recordBuyerResponseResponseContractOneCommitmentSnapshotOneDetailAnalysisOneAssumptionsRepairRatesItemLowRateMin).max(recordBuyerResponseResponseContractOneCommitmentSnapshotOneDetailAnalysisOneAssumptionsRepairRatesItemLowRateMax),
+  "expectedRate": zod.number().min(recordBuyerResponseResponseContractOneCommitmentSnapshotOneDetailAnalysisOneAssumptionsRepairRatesItemExpectedRateMin).max(recordBuyerResponseResponseContractOneCommitmentSnapshotOneDetailAnalysisOneAssumptionsRepairRatesItemExpectedRateMax),
+  "highRate": zod.number().min(recordBuyerResponseResponseContractOneCommitmentSnapshotOneDetailAnalysisOneAssumptionsRepairRatesItemHighRateMin).max(recordBuyerResponseResponseContractOneCommitmentSnapshotOneDetailAnalysisOneAssumptionsRepairRatesItemHighRateMax),
+  "confidence": zod.number().min(recordBuyerResponseResponseContractOneCommitmentSnapshotOneDetailAnalysisOneAssumptionsRepairRatesItemConfidenceMin).max(recordBuyerResponseResponseContractOneCommitmentSnapshotOneDetailAnalysisOneAssumptionsRepairRatesItemConfidenceMax),
+  "source": zod.string().min(1).max(recordBuyerResponseResponseContractOneCommitmentSnapshotOneDetailAnalysisOneAssumptionsRepairRatesItemSourceMax),
+  "sourceUrl": zod.string().url().max(recordBuyerResponseResponseContractOneCommitmentSnapshotOneDetailAnalysisOneAssumptionsRepairRatesItemSourceUrlMax),
+  "capturedOn": zod.string().date(),
+  "validThrough": zod.string().date(),
+  "active": zod.boolean()
+})).max(recordBuyerResponseResponseContractOneCommitmentSnapshotOneDetailAnalysisOneAssumptionsRepairRatesMax)
 }),
   "risks": zod.array(zod.string()),
   "blockers": zod.array(zod.string()),
@@ -12417,6 +15112,41 @@ export const RecordBuyerResponseResponse = zod.object({
 })).max(recordBuyerResponseResponseContractOneCommitmentSnapshotOneDetailUnderwritingOneRepairsMax),
   "repairsComplete": zod.boolean(),
   "conditionConfirmed": zod.boolean(),
+  "repairObservations": zod.array(zod.object({
+  "category": zod.string().min(1).max(recordBuyerResponseResponseContractOneCommitmentSnapshotOneDetailUnderwritingOneRepairObservationsItemCategoryMax),
+  "severity": zod.enum(['NO_REPAIR', 'COSMETIC', 'MODERATE', 'MAJOR', 'REPLACEMENT']),
+  "quantity": zod.number().min(recordBuyerResponseResponseContractOneCommitmentSnapshotOneDetailUnderwritingOneRepairObservationsItemQuantityMin).max(recordBuyerResponseResponseContractOneCommitmentSnapshotOneDetailUnderwritingOneRepairObservationsItemQuantityMax),
+  "unit": zod.enum(['SQFT', 'LINEAR_FT', 'EACH', 'LUMP_SUM']),
+  "evidenceId": zod.string().min(1).max(recordBuyerResponseResponseContractOneCommitmentSnapshotOneDetailUnderwritingOneRepairObservationsItemEvidenceIdMax)
+})).max(recordBuyerResponseResponseContractOneCommitmentSnapshotOneDetailUnderwritingOneRepairObservationsMax).optional(),
+  "repairEstimate": zod.object({
+  "status": zod.enum(['NOT_USED', 'CALCULATED', 'BLOCKED']),
+  "marketKey": zod.string(),
+  "catalogVersion": zod.number().int().min(recordBuyerResponseResponseContractOneCommitmentSnapshotOneDetailUnderwritingOneRepairEstimateCatalogVersionMin),
+  "calculatedAt": zod.string().datetime({"offset":true}),
+  "lines": zod.array(zod.object({
+  "category": zod.string(),
+  "severity": zod.enum(['NO_REPAIR', 'COSMETIC', 'MODERATE', 'MAJOR', 'REPLACEMENT']),
+  "quantity": zod.number(),
+  "unit": zod.enum(['SQFT', 'LINEAR_FT', 'EACH', 'LUMP_SUM']),
+  "evidenceId": zod.string(),
+  "rateCardId": zod.string().optional(),
+  "rateCardVersion": zod.number().int().optional(),
+  "low": zod.number().min(recordBuyerResponseResponseContractOneCommitmentSnapshotOneDetailUnderwritingOneRepairEstimateLinesItemLowMin),
+  "expected": zod.number().min(recordBuyerResponseResponseContractOneCommitmentSnapshotOneDetailUnderwritingOneRepairEstimateLinesItemExpectedMin),
+  "high": zod.number().min(recordBuyerResponseResponseContractOneCommitmentSnapshotOneDetailUnderwritingOneRepairEstimateLinesItemHighMin),
+  "confidence": zod.number().min(recordBuyerResponseResponseContractOneCommitmentSnapshotOneDetailUnderwritingOneRepairEstimateLinesItemConfidenceMin).max(recordBuyerResponseResponseContractOneCommitmentSnapshotOneDetailUnderwritingOneRepairEstimateLinesItemConfidenceMax),
+  "source": zod.string(),
+  "sourceUrl": zod.string().url().optional()
+})).max(recordBuyerResponseResponseContractOneCommitmentSnapshotOneDetailUnderwritingOneRepairEstimateLinesMax),
+  "total": zod.union([zod.object({
+  "low": zod.number(),
+  "expected": zod.number(),
+  "high": zod.number(),
+  "confidence": zod.number()
+}),zod.null()]),
+  "blockers": zod.array(zod.string())
+}).optional(),
   "subjectEvidenceId": zod.string().max(recordBuyerResponseResponseContractOneCommitmentSnapshotOneDetailUnderwritingOneSubjectEvidenceIdMax).optional(),
   "conditionEvidenceId": zod.string().max(recordBuyerResponseResponseContractOneCommitmentSnapshotOneDetailUnderwritingOneConditionEvidenceIdMax).optional(),
   "sellerContactEvidenceId": zod.string().max(recordBuyerResponseResponseContractOneCommitmentSnapshotOneDetailUnderwritingOneSellerContactEvidenceIdMax).optional()
@@ -12497,7 +15227,7 @@ export const RecordBuyerResponseResponse = zod.object({
   "score": zod.number(),
   "reasons": zod.array(zod.string()),
   "mismatches": zod.array(zod.string()),
-  "status": zod.enum(['MATCHED', 'INTERESTED', 'COMMITTED', 'DECLINED']),
+  "status": zod.enum(['MATCHED', 'INTERESTED', 'COMMITTED', 'DECLINED', 'EXPIRED']),
   "buyerVersion": zod.number().int(),
   "agreedPrice": zod.number().nullish(),
   "evidence": zod.string().nullish(),
@@ -12588,7 +15318,7 @@ export const GetDealDistributionResponse = zod.object({
   "recipients": zod.array(zod.object({
   "buyerId": zod.string().uuid(),
   "buyerName": zod.string(),
-  "status": zod.enum(['INVITED', 'INTERESTED', 'ACCEPTED', 'DECLINED']),
+  "status": zod.enum(['INVITED', 'INTERESTED', 'ACCEPTED', 'DECLINED', 'COMMITTED', 'EXPIRED']),
   "events": zod.array(zod.object({
   "eventKey": zod.string(),
   "action": zod.enum(['INTERESTED', 'ACCEPTED', 'DECLINED']),
@@ -12675,7 +15405,7 @@ export const AuthorizeDealDistributionResponse = zod.object({
   "recipients": zod.array(zod.object({
   "buyerId": zod.string().uuid(),
   "buyerName": zod.string(),
-  "status": zod.enum(['INVITED', 'INTERESTED', 'ACCEPTED', 'DECLINED']),
+  "status": zod.enum(['INVITED', 'INTERESTED', 'ACCEPTED', 'DECLINED', 'COMMITTED', 'EXPIRED']),
   "events": zod.array(zod.object({
   "eventKey": zod.string(),
   "action": zod.enum(['INTERESTED', 'ACCEPTED', 'DECLINED']),
@@ -12762,7 +15492,7 @@ export const ShareDistributionRecipientsResponse = zod.object({
   "recipients": zod.array(zod.object({
   "buyerId": zod.string().uuid(),
   "buyerName": zod.string(),
-  "status": zod.enum(['INVITED', 'INTERESTED', 'ACCEPTED', 'DECLINED']),
+  "status": zod.enum(['INVITED', 'INTERESTED', 'ACCEPTED', 'DECLINED', 'COMMITTED', 'EXPIRED']),
   "events": zod.array(zod.object({
   "eventKey": zod.string(),
   "action": zod.enum(['INTERESTED', 'ACCEPTED', 'DECLINED']),
@@ -12855,7 +15585,7 @@ export const ReleaseDistributionAcceptanceResponse = zod.object({
   "recipients": zod.array(zod.object({
   "buyerId": zod.string().uuid(),
   "buyerName": zod.string(),
-  "status": zod.enum(['INVITED', 'INTERESTED', 'ACCEPTED', 'DECLINED']),
+  "status": zod.enum(['INVITED', 'INTERESTED', 'ACCEPTED', 'DECLINED', 'COMMITTED', 'EXPIRED']),
   "events": zod.array(zod.object({
   "eventKey": zod.string(),
   "action": zod.enum(['INTERESTED', 'ACCEPTED', 'DECLINED']),
@@ -12925,7 +15655,7 @@ export const GetBuyerPortalDealResponse = zod.object({
   "mediaNotice": zod.string(),
   "disclosure": zod.string()
 }),
-  "recipientStatus": zod.enum(['INVITED', 'INTERESTED', 'ACCEPTED', 'DECLINED']),
+  "recipientStatus": zod.enum(['INVITED', 'INTERESTED', 'ACCEPTED', 'DECLINED', 'COMMITTED', 'EXPIRED']),
   "canAccept": zod.boolean(),
   "unavailableReason": zod.string().nullable(),
   "events": zod.array(zod.object({
@@ -13007,7 +15737,7 @@ export const RespondToBuyerPortalDealResponse = zod.object({
   "mediaNotice": zod.string(),
   "disclosure": zod.string()
 }),
-  "recipientStatus": zod.enum(['INVITED', 'INTERESTED', 'ACCEPTED', 'DECLINED']),
+  "recipientStatus": zod.enum(['INVITED', 'INTERESTED', 'ACCEPTED', 'DECLINED', 'COMMITTED', 'EXPIRED']),
   "canAccept": zod.boolean(),
   "unavailableReason": zod.string().nullable(),
   "events": zod.array(zod.object({
@@ -13463,6 +16193,19 @@ export const recordDestinationActivityResponseContractOneCommitmentSnapshotOneDe
 
 export const recordDestinationActivityResponseContractOneCommitmentSnapshotOneDetailIntelligenceItemOneActionMax = 2000;
 
+export const recordDestinationActivityResponseContractOneCommitmentSnapshotOneDetailAnalysisOneRepairEstimateCatalogVersionMin = 0;
+
+export const recordDestinationActivityResponseContractOneCommitmentSnapshotOneDetailAnalysisOneRepairEstimateLinesItemLowMin = 0;
+
+export const recordDestinationActivityResponseContractOneCommitmentSnapshotOneDetailAnalysisOneRepairEstimateLinesItemExpectedMin = 0;
+
+export const recordDestinationActivityResponseContractOneCommitmentSnapshotOneDetailAnalysisOneRepairEstimateLinesItemHighMin = 0;
+
+export const recordDestinationActivityResponseContractOneCommitmentSnapshotOneDetailAnalysisOneRepairEstimateLinesItemConfidenceMin = 0;
+export const recordDestinationActivityResponseContractOneCommitmentSnapshotOneDetailAnalysisOneRepairEstimateLinesItemConfidenceMax = 1;
+
+export const recordDestinationActivityResponseContractOneCommitmentSnapshotOneDetailAnalysisOneRepairEstimateLinesMax = 50;
+
 export const recordDestinationActivityResponseContractOneCommitmentSnapshotOneDetailAnalysisOneAssumptionsArvMultiplierMin = 0.1;
 export const recordDestinationActivityResponseContractOneCommitmentSnapshotOneDetailAnalysisOneAssumptionsArvMultiplierMax = 1;
 
@@ -13506,6 +16249,34 @@ export const recordDestinationActivityResponseContractOneCommitmentSnapshotOneDe
 
 export const recordDestinationActivityResponseContractOneCommitmentSnapshotOneDetailAnalysisOneAssumptionsMinConfidenceMin = 0.3;
 export const recordDestinationActivityResponseContractOneCommitmentSnapshotOneDetailAnalysisOneAssumptionsMinConfidenceMax = 1;
+
+export const recordDestinationActivityResponseContractOneCommitmentSnapshotOneDetailAnalysisOneAssumptionsRepairRateCatalogVersionMin = 0;
+
+export const recordDestinationActivityResponseContractOneCommitmentSnapshotOneDetailAnalysisOneAssumptionsRepairRatesItemIdMax = 100;
+
+
+export const recordDestinationActivityResponseContractOneCommitmentSnapshotOneDetailAnalysisOneAssumptionsRepairRatesItemMarketKeyMin = 2;
+export const recordDestinationActivityResponseContractOneCommitmentSnapshotOneDetailAnalysisOneAssumptionsRepairRatesItemMarketKeyMax = 100;
+
+export const recordDestinationActivityResponseContractOneCommitmentSnapshotOneDetailAnalysisOneAssumptionsRepairRatesItemCategoryMax = 100;
+
+export const recordDestinationActivityResponseContractOneCommitmentSnapshotOneDetailAnalysisOneAssumptionsRepairRatesItemLowRateMin = 0;
+export const recordDestinationActivityResponseContractOneCommitmentSnapshotOneDetailAnalysisOneAssumptionsRepairRatesItemLowRateMax = 100000000;
+
+export const recordDestinationActivityResponseContractOneCommitmentSnapshotOneDetailAnalysisOneAssumptionsRepairRatesItemExpectedRateMin = 0;
+export const recordDestinationActivityResponseContractOneCommitmentSnapshotOneDetailAnalysisOneAssumptionsRepairRatesItemExpectedRateMax = 100000000;
+
+export const recordDestinationActivityResponseContractOneCommitmentSnapshotOneDetailAnalysisOneAssumptionsRepairRatesItemHighRateMin = 0;
+export const recordDestinationActivityResponseContractOneCommitmentSnapshotOneDetailAnalysisOneAssumptionsRepairRatesItemHighRateMax = 100000000;
+
+export const recordDestinationActivityResponseContractOneCommitmentSnapshotOneDetailAnalysisOneAssumptionsRepairRatesItemConfidenceMin = 0;
+export const recordDestinationActivityResponseContractOneCommitmentSnapshotOneDetailAnalysisOneAssumptionsRepairRatesItemConfidenceMax = 1;
+
+export const recordDestinationActivityResponseContractOneCommitmentSnapshotOneDetailAnalysisOneAssumptionsRepairRatesItemSourceMax = 2000;
+
+export const recordDestinationActivityResponseContractOneCommitmentSnapshotOneDetailAnalysisOneAssumptionsRepairRatesItemSourceUrlMax = 2000;
+
+export const recordDestinationActivityResponseContractOneCommitmentSnapshotOneDetailAnalysisOneAssumptionsRepairRatesMax = 1000;
 
 export const recordDestinationActivityResponseContractOneCommitmentSnapshotOneDetailOffersItemOneAmountExclusiveMin = 0;
 export const recordDestinationActivityResponseContractOneCommitmentSnapshotOneDetailOffersItemOneAmountMax = 1000000000;
@@ -13555,6 +16326,28 @@ export const recordDestinationActivityResponseContractOneCommitmentSnapshotOneDe
 export const recordDestinationActivityResponseContractOneCommitmentSnapshotOneDetailUnderwritingOneRepairsItemEvidenceIdMax = 200;
 
 export const recordDestinationActivityResponseContractOneCommitmentSnapshotOneDetailUnderwritingOneRepairsMax = 50;
+
+export const recordDestinationActivityResponseContractOneCommitmentSnapshotOneDetailUnderwritingOneRepairObservationsItemCategoryMax = 100;
+
+export const recordDestinationActivityResponseContractOneCommitmentSnapshotOneDetailUnderwritingOneRepairObservationsItemQuantityMin = 0;
+export const recordDestinationActivityResponseContractOneCommitmentSnapshotOneDetailUnderwritingOneRepairObservationsItemQuantityMax = 1000000;
+
+export const recordDestinationActivityResponseContractOneCommitmentSnapshotOneDetailUnderwritingOneRepairObservationsItemEvidenceIdMax = 200;
+
+export const recordDestinationActivityResponseContractOneCommitmentSnapshotOneDetailUnderwritingOneRepairObservationsMax = 50;
+
+export const recordDestinationActivityResponseContractOneCommitmentSnapshotOneDetailUnderwritingOneRepairEstimateCatalogVersionMin = 0;
+
+export const recordDestinationActivityResponseContractOneCommitmentSnapshotOneDetailUnderwritingOneRepairEstimateLinesItemLowMin = 0;
+
+export const recordDestinationActivityResponseContractOneCommitmentSnapshotOneDetailUnderwritingOneRepairEstimateLinesItemExpectedMin = 0;
+
+export const recordDestinationActivityResponseContractOneCommitmentSnapshotOneDetailUnderwritingOneRepairEstimateLinesItemHighMin = 0;
+
+export const recordDestinationActivityResponseContractOneCommitmentSnapshotOneDetailUnderwritingOneRepairEstimateLinesItemConfidenceMin = 0;
+export const recordDestinationActivityResponseContractOneCommitmentSnapshotOneDetailUnderwritingOneRepairEstimateLinesItemConfidenceMax = 1;
+
+export const recordDestinationActivityResponseContractOneCommitmentSnapshotOneDetailUnderwritingOneRepairEstimateLinesMax = 50;
 
 export const recordDestinationActivityResponseContractOneCommitmentSnapshotOneDetailUnderwritingOneSubjectEvidenceIdMax = 200;
 
@@ -13833,6 +16626,34 @@ export const RecordDestinationActivityResponse = zod.object({
   "high": zod.number(),
   "confidence": zod.number()
 }),
+  "repairEstimate": zod.object({
+  "status": zod.enum(['NOT_USED', 'CALCULATED', 'BLOCKED']),
+  "marketKey": zod.string(),
+  "catalogVersion": zod.number().int().min(recordDestinationActivityResponseContractOneCommitmentSnapshotOneDetailAnalysisOneRepairEstimateCatalogVersionMin),
+  "calculatedAt": zod.string().datetime({"offset":true}),
+  "lines": zod.array(zod.object({
+  "category": zod.string(),
+  "severity": zod.enum(['NO_REPAIR', 'COSMETIC', 'MODERATE', 'MAJOR', 'REPLACEMENT']),
+  "quantity": zod.number(),
+  "unit": zod.enum(['SQFT', 'LINEAR_FT', 'EACH', 'LUMP_SUM']),
+  "evidenceId": zod.string(),
+  "rateCardId": zod.string().optional(),
+  "rateCardVersion": zod.number().int().optional(),
+  "low": zod.number().min(recordDestinationActivityResponseContractOneCommitmentSnapshotOneDetailAnalysisOneRepairEstimateLinesItemLowMin),
+  "expected": zod.number().min(recordDestinationActivityResponseContractOneCommitmentSnapshotOneDetailAnalysisOneRepairEstimateLinesItemExpectedMin),
+  "high": zod.number().min(recordDestinationActivityResponseContractOneCommitmentSnapshotOneDetailAnalysisOneRepairEstimateLinesItemHighMin),
+  "confidence": zod.number().min(recordDestinationActivityResponseContractOneCommitmentSnapshotOneDetailAnalysisOneRepairEstimateLinesItemConfidenceMin).max(recordDestinationActivityResponseContractOneCommitmentSnapshotOneDetailAnalysisOneRepairEstimateLinesItemConfidenceMax),
+  "source": zod.string(),
+  "sourceUrl": zod.string().url().optional()
+})).max(recordDestinationActivityResponseContractOneCommitmentSnapshotOneDetailAnalysisOneRepairEstimateLinesMax),
+  "total": zod.union([zod.object({
+  "low": zod.number(),
+  "expected": zod.number(),
+  "high": zod.number(),
+  "confidence": zod.number()
+}),zod.null()]),
+  "blockers": zod.array(zod.string())
+}),
   "mao": zod.number(),
   "openingLow": zod.number(),
   "openingHigh": zod.number(),
@@ -13854,7 +16675,25 @@ export const RecordDestinationActivityResponse = zod.object({
   "maxSqftDifferencePct": zod.number().min(recordDestinationActivityResponseContractOneCommitmentSnapshotOneDetailAnalysisOneAssumptionsMaxSqftDifferencePctMin).max(recordDestinationActivityResponseContractOneCommitmentSnapshotOneDetailAnalysisOneAssumptionsMaxSqftDifferencePctMax),
   "minComps": zod.number().int().min(recordDestinationActivityResponseContractOneCommitmentSnapshotOneDetailAnalysisOneAssumptionsMinCompsMin).max(recordDestinationActivityResponseContractOneCommitmentSnapshotOneDetailAnalysisOneAssumptionsMinCompsMax),
   "minConfidence": zod.number().min(recordDestinationActivityResponseContractOneCommitmentSnapshotOneDetailAnalysisOneAssumptionsMinConfidenceMin).max(recordDestinationActivityResponseContractOneCommitmentSnapshotOneDetailAnalysisOneAssumptionsMinConfidenceMax),
-  "approvalRequired": zod.boolean()
+  "approvalRequired": zod.boolean(),
+  "repairRateCatalogVersion": zod.number().int().min(recordDestinationActivityResponseContractOneCommitmentSnapshotOneDetailAnalysisOneAssumptionsRepairRateCatalogVersionMin),
+  "repairRates": zod.array(zod.object({
+  "id": zod.string().min(1).max(recordDestinationActivityResponseContractOneCommitmentSnapshotOneDetailAnalysisOneAssumptionsRepairRatesItemIdMax),
+  "version": zod.number().int().min(1),
+  "marketKey": zod.string().min(recordDestinationActivityResponseContractOneCommitmentSnapshotOneDetailAnalysisOneAssumptionsRepairRatesItemMarketKeyMin).max(recordDestinationActivityResponseContractOneCommitmentSnapshotOneDetailAnalysisOneAssumptionsRepairRatesItemMarketKeyMax),
+  "category": zod.string().min(1).max(recordDestinationActivityResponseContractOneCommitmentSnapshotOneDetailAnalysisOneAssumptionsRepairRatesItemCategoryMax),
+  "severity": zod.enum(['COSMETIC', 'MODERATE', 'MAJOR', 'REPLACEMENT']),
+  "unit": zod.enum(['SQFT', 'LINEAR_FT', 'EACH', 'LUMP_SUM']),
+  "lowRate": zod.number().min(recordDestinationActivityResponseContractOneCommitmentSnapshotOneDetailAnalysisOneAssumptionsRepairRatesItemLowRateMin).max(recordDestinationActivityResponseContractOneCommitmentSnapshotOneDetailAnalysisOneAssumptionsRepairRatesItemLowRateMax),
+  "expectedRate": zod.number().min(recordDestinationActivityResponseContractOneCommitmentSnapshotOneDetailAnalysisOneAssumptionsRepairRatesItemExpectedRateMin).max(recordDestinationActivityResponseContractOneCommitmentSnapshotOneDetailAnalysisOneAssumptionsRepairRatesItemExpectedRateMax),
+  "highRate": zod.number().min(recordDestinationActivityResponseContractOneCommitmentSnapshotOneDetailAnalysisOneAssumptionsRepairRatesItemHighRateMin).max(recordDestinationActivityResponseContractOneCommitmentSnapshotOneDetailAnalysisOneAssumptionsRepairRatesItemHighRateMax),
+  "confidence": zod.number().min(recordDestinationActivityResponseContractOneCommitmentSnapshotOneDetailAnalysisOneAssumptionsRepairRatesItemConfidenceMin).max(recordDestinationActivityResponseContractOneCommitmentSnapshotOneDetailAnalysisOneAssumptionsRepairRatesItemConfidenceMax),
+  "source": zod.string().min(1).max(recordDestinationActivityResponseContractOneCommitmentSnapshotOneDetailAnalysisOneAssumptionsRepairRatesItemSourceMax),
+  "sourceUrl": zod.string().url().max(recordDestinationActivityResponseContractOneCommitmentSnapshotOneDetailAnalysisOneAssumptionsRepairRatesItemSourceUrlMax),
+  "capturedOn": zod.string().date(),
+  "validThrough": zod.string().date(),
+  "active": zod.boolean()
+})).max(recordDestinationActivityResponseContractOneCommitmentSnapshotOneDetailAnalysisOneAssumptionsRepairRatesMax)
 }),
   "risks": zod.array(zod.string()),
   "blockers": zod.array(zod.string()),
@@ -13923,6 +16762,41 @@ export const RecordDestinationActivityResponse = zod.object({
 })).max(recordDestinationActivityResponseContractOneCommitmentSnapshotOneDetailUnderwritingOneRepairsMax),
   "repairsComplete": zod.boolean(),
   "conditionConfirmed": zod.boolean(),
+  "repairObservations": zod.array(zod.object({
+  "category": zod.string().min(1).max(recordDestinationActivityResponseContractOneCommitmentSnapshotOneDetailUnderwritingOneRepairObservationsItemCategoryMax),
+  "severity": zod.enum(['NO_REPAIR', 'COSMETIC', 'MODERATE', 'MAJOR', 'REPLACEMENT']),
+  "quantity": zod.number().min(recordDestinationActivityResponseContractOneCommitmentSnapshotOneDetailUnderwritingOneRepairObservationsItemQuantityMin).max(recordDestinationActivityResponseContractOneCommitmentSnapshotOneDetailUnderwritingOneRepairObservationsItemQuantityMax),
+  "unit": zod.enum(['SQFT', 'LINEAR_FT', 'EACH', 'LUMP_SUM']),
+  "evidenceId": zod.string().min(1).max(recordDestinationActivityResponseContractOneCommitmentSnapshotOneDetailUnderwritingOneRepairObservationsItemEvidenceIdMax)
+})).max(recordDestinationActivityResponseContractOneCommitmentSnapshotOneDetailUnderwritingOneRepairObservationsMax).optional(),
+  "repairEstimate": zod.object({
+  "status": zod.enum(['NOT_USED', 'CALCULATED', 'BLOCKED']),
+  "marketKey": zod.string(),
+  "catalogVersion": zod.number().int().min(recordDestinationActivityResponseContractOneCommitmentSnapshotOneDetailUnderwritingOneRepairEstimateCatalogVersionMin),
+  "calculatedAt": zod.string().datetime({"offset":true}),
+  "lines": zod.array(zod.object({
+  "category": zod.string(),
+  "severity": zod.enum(['NO_REPAIR', 'COSMETIC', 'MODERATE', 'MAJOR', 'REPLACEMENT']),
+  "quantity": zod.number(),
+  "unit": zod.enum(['SQFT', 'LINEAR_FT', 'EACH', 'LUMP_SUM']),
+  "evidenceId": zod.string(),
+  "rateCardId": zod.string().optional(),
+  "rateCardVersion": zod.number().int().optional(),
+  "low": zod.number().min(recordDestinationActivityResponseContractOneCommitmentSnapshotOneDetailUnderwritingOneRepairEstimateLinesItemLowMin),
+  "expected": zod.number().min(recordDestinationActivityResponseContractOneCommitmentSnapshotOneDetailUnderwritingOneRepairEstimateLinesItemExpectedMin),
+  "high": zod.number().min(recordDestinationActivityResponseContractOneCommitmentSnapshotOneDetailUnderwritingOneRepairEstimateLinesItemHighMin),
+  "confidence": zod.number().min(recordDestinationActivityResponseContractOneCommitmentSnapshotOneDetailUnderwritingOneRepairEstimateLinesItemConfidenceMin).max(recordDestinationActivityResponseContractOneCommitmentSnapshotOneDetailUnderwritingOneRepairEstimateLinesItemConfidenceMax),
+  "source": zod.string(),
+  "sourceUrl": zod.string().url().optional()
+})).max(recordDestinationActivityResponseContractOneCommitmentSnapshotOneDetailUnderwritingOneRepairEstimateLinesMax),
+  "total": zod.union([zod.object({
+  "low": zod.number(),
+  "expected": zod.number(),
+  "high": zod.number(),
+  "confidence": zod.number()
+}),zod.null()]),
+  "blockers": zod.array(zod.string())
+}).optional(),
   "subjectEvidenceId": zod.string().max(recordDestinationActivityResponseContractOneCommitmentSnapshotOneDetailUnderwritingOneSubjectEvidenceIdMax).optional(),
   "conditionEvidenceId": zod.string().max(recordDestinationActivityResponseContractOneCommitmentSnapshotOneDetailUnderwritingOneConditionEvidenceIdMax).optional(),
   "sellerContactEvidenceId": zod.string().max(recordDestinationActivityResponseContractOneCommitmentSnapshotOneDetailUnderwritingOneSellerContactEvidenceIdMax).optional()
@@ -14003,7 +16877,7 @@ export const RecordDestinationActivityResponse = zod.object({
   "score": zod.number(),
   "reasons": zod.array(zod.string()),
   "mismatches": zod.array(zod.string()),
-  "status": zod.enum(['MATCHED', 'INTERESTED', 'COMMITTED', 'DECLINED']),
+  "status": zod.enum(['MATCHED', 'INTERESTED', 'COMMITTED', 'DECLINED', 'EXPIRED']),
   "buyerVersion": zod.number().int(),
   "agreedPrice": zod.number().nullish(),
   "evidence": zod.string().nullish(),
@@ -14260,6 +17134,19 @@ export const createContractResponseContractOneCommitmentSnapshotOneDetailIntelli
 
 export const createContractResponseContractOneCommitmentSnapshotOneDetailIntelligenceItemOneActionMax = 2000;
 
+export const createContractResponseContractOneCommitmentSnapshotOneDetailAnalysisOneRepairEstimateCatalogVersionMin = 0;
+
+export const createContractResponseContractOneCommitmentSnapshotOneDetailAnalysisOneRepairEstimateLinesItemLowMin = 0;
+
+export const createContractResponseContractOneCommitmentSnapshotOneDetailAnalysisOneRepairEstimateLinesItemExpectedMin = 0;
+
+export const createContractResponseContractOneCommitmentSnapshotOneDetailAnalysisOneRepairEstimateLinesItemHighMin = 0;
+
+export const createContractResponseContractOneCommitmentSnapshotOneDetailAnalysisOneRepairEstimateLinesItemConfidenceMin = 0;
+export const createContractResponseContractOneCommitmentSnapshotOneDetailAnalysisOneRepairEstimateLinesItemConfidenceMax = 1;
+
+export const createContractResponseContractOneCommitmentSnapshotOneDetailAnalysisOneRepairEstimateLinesMax = 50;
+
 export const createContractResponseContractOneCommitmentSnapshotOneDetailAnalysisOneAssumptionsArvMultiplierMin = 0.1;
 export const createContractResponseContractOneCommitmentSnapshotOneDetailAnalysisOneAssumptionsArvMultiplierMax = 1;
 
@@ -14303,6 +17190,34 @@ export const createContractResponseContractOneCommitmentSnapshotOneDetailAnalysi
 
 export const createContractResponseContractOneCommitmentSnapshotOneDetailAnalysisOneAssumptionsMinConfidenceMin = 0.3;
 export const createContractResponseContractOneCommitmentSnapshotOneDetailAnalysisOneAssumptionsMinConfidenceMax = 1;
+
+export const createContractResponseContractOneCommitmentSnapshotOneDetailAnalysisOneAssumptionsRepairRateCatalogVersionMin = 0;
+
+export const createContractResponseContractOneCommitmentSnapshotOneDetailAnalysisOneAssumptionsRepairRatesItemIdMax = 100;
+
+
+export const createContractResponseContractOneCommitmentSnapshotOneDetailAnalysisOneAssumptionsRepairRatesItemMarketKeyMin = 2;
+export const createContractResponseContractOneCommitmentSnapshotOneDetailAnalysisOneAssumptionsRepairRatesItemMarketKeyMax = 100;
+
+export const createContractResponseContractOneCommitmentSnapshotOneDetailAnalysisOneAssumptionsRepairRatesItemCategoryMax = 100;
+
+export const createContractResponseContractOneCommitmentSnapshotOneDetailAnalysisOneAssumptionsRepairRatesItemLowRateMin = 0;
+export const createContractResponseContractOneCommitmentSnapshotOneDetailAnalysisOneAssumptionsRepairRatesItemLowRateMax = 100000000;
+
+export const createContractResponseContractOneCommitmentSnapshotOneDetailAnalysisOneAssumptionsRepairRatesItemExpectedRateMin = 0;
+export const createContractResponseContractOneCommitmentSnapshotOneDetailAnalysisOneAssumptionsRepairRatesItemExpectedRateMax = 100000000;
+
+export const createContractResponseContractOneCommitmentSnapshotOneDetailAnalysisOneAssumptionsRepairRatesItemHighRateMin = 0;
+export const createContractResponseContractOneCommitmentSnapshotOneDetailAnalysisOneAssumptionsRepairRatesItemHighRateMax = 100000000;
+
+export const createContractResponseContractOneCommitmentSnapshotOneDetailAnalysisOneAssumptionsRepairRatesItemConfidenceMin = 0;
+export const createContractResponseContractOneCommitmentSnapshotOneDetailAnalysisOneAssumptionsRepairRatesItemConfidenceMax = 1;
+
+export const createContractResponseContractOneCommitmentSnapshotOneDetailAnalysisOneAssumptionsRepairRatesItemSourceMax = 2000;
+
+export const createContractResponseContractOneCommitmentSnapshotOneDetailAnalysisOneAssumptionsRepairRatesItemSourceUrlMax = 2000;
+
+export const createContractResponseContractOneCommitmentSnapshotOneDetailAnalysisOneAssumptionsRepairRatesMax = 1000;
 
 export const createContractResponseContractOneCommitmentSnapshotOneDetailOffersItemOneAmountExclusiveMin = 0;
 export const createContractResponseContractOneCommitmentSnapshotOneDetailOffersItemOneAmountMax = 1000000000;
@@ -14352,6 +17267,28 @@ export const createContractResponseContractOneCommitmentSnapshotOneDetailUnderwr
 export const createContractResponseContractOneCommitmentSnapshotOneDetailUnderwritingOneRepairsItemEvidenceIdMax = 200;
 
 export const createContractResponseContractOneCommitmentSnapshotOneDetailUnderwritingOneRepairsMax = 50;
+
+export const createContractResponseContractOneCommitmentSnapshotOneDetailUnderwritingOneRepairObservationsItemCategoryMax = 100;
+
+export const createContractResponseContractOneCommitmentSnapshotOneDetailUnderwritingOneRepairObservationsItemQuantityMin = 0;
+export const createContractResponseContractOneCommitmentSnapshotOneDetailUnderwritingOneRepairObservationsItemQuantityMax = 1000000;
+
+export const createContractResponseContractOneCommitmentSnapshotOneDetailUnderwritingOneRepairObservationsItemEvidenceIdMax = 200;
+
+export const createContractResponseContractOneCommitmentSnapshotOneDetailUnderwritingOneRepairObservationsMax = 50;
+
+export const createContractResponseContractOneCommitmentSnapshotOneDetailUnderwritingOneRepairEstimateCatalogVersionMin = 0;
+
+export const createContractResponseContractOneCommitmentSnapshotOneDetailUnderwritingOneRepairEstimateLinesItemLowMin = 0;
+
+export const createContractResponseContractOneCommitmentSnapshotOneDetailUnderwritingOneRepairEstimateLinesItemExpectedMin = 0;
+
+export const createContractResponseContractOneCommitmentSnapshotOneDetailUnderwritingOneRepairEstimateLinesItemHighMin = 0;
+
+export const createContractResponseContractOneCommitmentSnapshotOneDetailUnderwritingOneRepairEstimateLinesItemConfidenceMin = 0;
+export const createContractResponseContractOneCommitmentSnapshotOneDetailUnderwritingOneRepairEstimateLinesItemConfidenceMax = 1;
+
+export const createContractResponseContractOneCommitmentSnapshotOneDetailUnderwritingOneRepairEstimateLinesMax = 50;
 
 export const createContractResponseContractOneCommitmentSnapshotOneDetailUnderwritingOneSubjectEvidenceIdMax = 200;
 
@@ -14630,6 +17567,34 @@ export const CreateContractResponse = zod.object({
   "high": zod.number(),
   "confidence": zod.number()
 }),
+  "repairEstimate": zod.object({
+  "status": zod.enum(['NOT_USED', 'CALCULATED', 'BLOCKED']),
+  "marketKey": zod.string(),
+  "catalogVersion": zod.number().int().min(createContractResponseContractOneCommitmentSnapshotOneDetailAnalysisOneRepairEstimateCatalogVersionMin),
+  "calculatedAt": zod.string().datetime({"offset":true}),
+  "lines": zod.array(zod.object({
+  "category": zod.string(),
+  "severity": zod.enum(['NO_REPAIR', 'COSMETIC', 'MODERATE', 'MAJOR', 'REPLACEMENT']),
+  "quantity": zod.number(),
+  "unit": zod.enum(['SQFT', 'LINEAR_FT', 'EACH', 'LUMP_SUM']),
+  "evidenceId": zod.string(),
+  "rateCardId": zod.string().optional(),
+  "rateCardVersion": zod.number().int().optional(),
+  "low": zod.number().min(createContractResponseContractOneCommitmentSnapshotOneDetailAnalysisOneRepairEstimateLinesItemLowMin),
+  "expected": zod.number().min(createContractResponseContractOneCommitmentSnapshotOneDetailAnalysisOneRepairEstimateLinesItemExpectedMin),
+  "high": zod.number().min(createContractResponseContractOneCommitmentSnapshotOneDetailAnalysisOneRepairEstimateLinesItemHighMin),
+  "confidence": zod.number().min(createContractResponseContractOneCommitmentSnapshotOneDetailAnalysisOneRepairEstimateLinesItemConfidenceMin).max(createContractResponseContractOneCommitmentSnapshotOneDetailAnalysisOneRepairEstimateLinesItemConfidenceMax),
+  "source": zod.string(),
+  "sourceUrl": zod.string().url().optional()
+})).max(createContractResponseContractOneCommitmentSnapshotOneDetailAnalysisOneRepairEstimateLinesMax),
+  "total": zod.union([zod.object({
+  "low": zod.number(),
+  "expected": zod.number(),
+  "high": zod.number(),
+  "confidence": zod.number()
+}),zod.null()]),
+  "blockers": zod.array(zod.string())
+}),
   "mao": zod.number(),
   "openingLow": zod.number(),
   "openingHigh": zod.number(),
@@ -14651,7 +17616,25 @@ export const CreateContractResponse = zod.object({
   "maxSqftDifferencePct": zod.number().min(createContractResponseContractOneCommitmentSnapshotOneDetailAnalysisOneAssumptionsMaxSqftDifferencePctMin).max(createContractResponseContractOneCommitmentSnapshotOneDetailAnalysisOneAssumptionsMaxSqftDifferencePctMax),
   "minComps": zod.number().int().min(createContractResponseContractOneCommitmentSnapshotOneDetailAnalysisOneAssumptionsMinCompsMin).max(createContractResponseContractOneCommitmentSnapshotOneDetailAnalysisOneAssumptionsMinCompsMax),
   "minConfidence": zod.number().min(createContractResponseContractOneCommitmentSnapshotOneDetailAnalysisOneAssumptionsMinConfidenceMin).max(createContractResponseContractOneCommitmentSnapshotOneDetailAnalysisOneAssumptionsMinConfidenceMax),
-  "approvalRequired": zod.boolean()
+  "approvalRequired": zod.boolean(),
+  "repairRateCatalogVersion": zod.number().int().min(createContractResponseContractOneCommitmentSnapshotOneDetailAnalysisOneAssumptionsRepairRateCatalogVersionMin),
+  "repairRates": zod.array(zod.object({
+  "id": zod.string().min(1).max(createContractResponseContractOneCommitmentSnapshotOneDetailAnalysisOneAssumptionsRepairRatesItemIdMax),
+  "version": zod.number().int().min(1),
+  "marketKey": zod.string().min(createContractResponseContractOneCommitmentSnapshotOneDetailAnalysisOneAssumptionsRepairRatesItemMarketKeyMin).max(createContractResponseContractOneCommitmentSnapshotOneDetailAnalysisOneAssumptionsRepairRatesItemMarketKeyMax),
+  "category": zod.string().min(1).max(createContractResponseContractOneCommitmentSnapshotOneDetailAnalysisOneAssumptionsRepairRatesItemCategoryMax),
+  "severity": zod.enum(['COSMETIC', 'MODERATE', 'MAJOR', 'REPLACEMENT']),
+  "unit": zod.enum(['SQFT', 'LINEAR_FT', 'EACH', 'LUMP_SUM']),
+  "lowRate": zod.number().min(createContractResponseContractOneCommitmentSnapshotOneDetailAnalysisOneAssumptionsRepairRatesItemLowRateMin).max(createContractResponseContractOneCommitmentSnapshotOneDetailAnalysisOneAssumptionsRepairRatesItemLowRateMax),
+  "expectedRate": zod.number().min(createContractResponseContractOneCommitmentSnapshotOneDetailAnalysisOneAssumptionsRepairRatesItemExpectedRateMin).max(createContractResponseContractOneCommitmentSnapshotOneDetailAnalysisOneAssumptionsRepairRatesItemExpectedRateMax),
+  "highRate": zod.number().min(createContractResponseContractOneCommitmentSnapshotOneDetailAnalysisOneAssumptionsRepairRatesItemHighRateMin).max(createContractResponseContractOneCommitmentSnapshotOneDetailAnalysisOneAssumptionsRepairRatesItemHighRateMax),
+  "confidence": zod.number().min(createContractResponseContractOneCommitmentSnapshotOneDetailAnalysisOneAssumptionsRepairRatesItemConfidenceMin).max(createContractResponseContractOneCommitmentSnapshotOneDetailAnalysisOneAssumptionsRepairRatesItemConfidenceMax),
+  "source": zod.string().min(1).max(createContractResponseContractOneCommitmentSnapshotOneDetailAnalysisOneAssumptionsRepairRatesItemSourceMax),
+  "sourceUrl": zod.string().url().max(createContractResponseContractOneCommitmentSnapshotOneDetailAnalysisOneAssumptionsRepairRatesItemSourceUrlMax),
+  "capturedOn": zod.string().date(),
+  "validThrough": zod.string().date(),
+  "active": zod.boolean()
+})).max(createContractResponseContractOneCommitmentSnapshotOneDetailAnalysisOneAssumptionsRepairRatesMax)
 }),
   "risks": zod.array(zod.string()),
   "blockers": zod.array(zod.string()),
@@ -14720,6 +17703,41 @@ export const CreateContractResponse = zod.object({
 })).max(createContractResponseContractOneCommitmentSnapshotOneDetailUnderwritingOneRepairsMax),
   "repairsComplete": zod.boolean(),
   "conditionConfirmed": zod.boolean(),
+  "repairObservations": zod.array(zod.object({
+  "category": zod.string().min(1).max(createContractResponseContractOneCommitmentSnapshotOneDetailUnderwritingOneRepairObservationsItemCategoryMax),
+  "severity": zod.enum(['NO_REPAIR', 'COSMETIC', 'MODERATE', 'MAJOR', 'REPLACEMENT']),
+  "quantity": zod.number().min(createContractResponseContractOneCommitmentSnapshotOneDetailUnderwritingOneRepairObservationsItemQuantityMin).max(createContractResponseContractOneCommitmentSnapshotOneDetailUnderwritingOneRepairObservationsItemQuantityMax),
+  "unit": zod.enum(['SQFT', 'LINEAR_FT', 'EACH', 'LUMP_SUM']),
+  "evidenceId": zod.string().min(1).max(createContractResponseContractOneCommitmentSnapshotOneDetailUnderwritingOneRepairObservationsItemEvidenceIdMax)
+})).max(createContractResponseContractOneCommitmentSnapshotOneDetailUnderwritingOneRepairObservationsMax).optional(),
+  "repairEstimate": zod.object({
+  "status": zod.enum(['NOT_USED', 'CALCULATED', 'BLOCKED']),
+  "marketKey": zod.string(),
+  "catalogVersion": zod.number().int().min(createContractResponseContractOneCommitmentSnapshotOneDetailUnderwritingOneRepairEstimateCatalogVersionMin),
+  "calculatedAt": zod.string().datetime({"offset":true}),
+  "lines": zod.array(zod.object({
+  "category": zod.string(),
+  "severity": zod.enum(['NO_REPAIR', 'COSMETIC', 'MODERATE', 'MAJOR', 'REPLACEMENT']),
+  "quantity": zod.number(),
+  "unit": zod.enum(['SQFT', 'LINEAR_FT', 'EACH', 'LUMP_SUM']),
+  "evidenceId": zod.string(),
+  "rateCardId": zod.string().optional(),
+  "rateCardVersion": zod.number().int().optional(),
+  "low": zod.number().min(createContractResponseContractOneCommitmentSnapshotOneDetailUnderwritingOneRepairEstimateLinesItemLowMin),
+  "expected": zod.number().min(createContractResponseContractOneCommitmentSnapshotOneDetailUnderwritingOneRepairEstimateLinesItemExpectedMin),
+  "high": zod.number().min(createContractResponseContractOneCommitmentSnapshotOneDetailUnderwritingOneRepairEstimateLinesItemHighMin),
+  "confidence": zod.number().min(createContractResponseContractOneCommitmentSnapshotOneDetailUnderwritingOneRepairEstimateLinesItemConfidenceMin).max(createContractResponseContractOneCommitmentSnapshotOneDetailUnderwritingOneRepairEstimateLinesItemConfidenceMax),
+  "source": zod.string(),
+  "sourceUrl": zod.string().url().optional()
+})).max(createContractResponseContractOneCommitmentSnapshotOneDetailUnderwritingOneRepairEstimateLinesMax),
+  "total": zod.union([zod.object({
+  "low": zod.number(),
+  "expected": zod.number(),
+  "high": zod.number(),
+  "confidence": zod.number()
+}),zod.null()]),
+  "blockers": zod.array(zod.string())
+}).optional(),
   "subjectEvidenceId": zod.string().max(createContractResponseContractOneCommitmentSnapshotOneDetailUnderwritingOneSubjectEvidenceIdMax).optional(),
   "conditionEvidenceId": zod.string().max(createContractResponseContractOneCommitmentSnapshotOneDetailUnderwritingOneConditionEvidenceIdMax).optional(),
   "sellerContactEvidenceId": zod.string().max(createContractResponseContractOneCommitmentSnapshotOneDetailUnderwritingOneSellerContactEvidenceIdMax).optional()
@@ -14800,7 +17818,7 @@ export const CreateContractResponse = zod.object({
   "score": zod.number(),
   "reasons": zod.array(zod.string()),
   "mismatches": zod.array(zod.string()),
-  "status": zod.enum(['MATCHED', 'INTERESTED', 'COMMITTED', 'DECLINED']),
+  "status": zod.enum(['MATCHED', 'INTERESTED', 'COMMITTED', 'DECLINED', 'EXPIRED']),
   "buyerVersion": zod.number().int(),
   "agreedPrice": zod.number().nullish(),
   "evidence": zod.string().nullish(),
@@ -15065,6 +18083,19 @@ export const executeContractResponseContractOneCommitmentSnapshotOneDetailIntell
 
 export const executeContractResponseContractOneCommitmentSnapshotOneDetailIntelligenceItemOneActionMax = 2000;
 
+export const executeContractResponseContractOneCommitmentSnapshotOneDetailAnalysisOneRepairEstimateCatalogVersionMin = 0;
+
+export const executeContractResponseContractOneCommitmentSnapshotOneDetailAnalysisOneRepairEstimateLinesItemLowMin = 0;
+
+export const executeContractResponseContractOneCommitmentSnapshotOneDetailAnalysisOneRepairEstimateLinesItemExpectedMin = 0;
+
+export const executeContractResponseContractOneCommitmentSnapshotOneDetailAnalysisOneRepairEstimateLinesItemHighMin = 0;
+
+export const executeContractResponseContractOneCommitmentSnapshotOneDetailAnalysisOneRepairEstimateLinesItemConfidenceMin = 0;
+export const executeContractResponseContractOneCommitmentSnapshotOneDetailAnalysisOneRepairEstimateLinesItemConfidenceMax = 1;
+
+export const executeContractResponseContractOneCommitmentSnapshotOneDetailAnalysisOneRepairEstimateLinesMax = 50;
+
 export const executeContractResponseContractOneCommitmentSnapshotOneDetailAnalysisOneAssumptionsArvMultiplierMin = 0.1;
 export const executeContractResponseContractOneCommitmentSnapshotOneDetailAnalysisOneAssumptionsArvMultiplierMax = 1;
 
@@ -15108,6 +18139,34 @@ export const executeContractResponseContractOneCommitmentSnapshotOneDetailAnalys
 
 export const executeContractResponseContractOneCommitmentSnapshotOneDetailAnalysisOneAssumptionsMinConfidenceMin = 0.3;
 export const executeContractResponseContractOneCommitmentSnapshotOneDetailAnalysisOneAssumptionsMinConfidenceMax = 1;
+
+export const executeContractResponseContractOneCommitmentSnapshotOneDetailAnalysisOneAssumptionsRepairRateCatalogVersionMin = 0;
+
+export const executeContractResponseContractOneCommitmentSnapshotOneDetailAnalysisOneAssumptionsRepairRatesItemIdMax = 100;
+
+
+export const executeContractResponseContractOneCommitmentSnapshotOneDetailAnalysisOneAssumptionsRepairRatesItemMarketKeyMin = 2;
+export const executeContractResponseContractOneCommitmentSnapshotOneDetailAnalysisOneAssumptionsRepairRatesItemMarketKeyMax = 100;
+
+export const executeContractResponseContractOneCommitmentSnapshotOneDetailAnalysisOneAssumptionsRepairRatesItemCategoryMax = 100;
+
+export const executeContractResponseContractOneCommitmentSnapshotOneDetailAnalysisOneAssumptionsRepairRatesItemLowRateMin = 0;
+export const executeContractResponseContractOneCommitmentSnapshotOneDetailAnalysisOneAssumptionsRepairRatesItemLowRateMax = 100000000;
+
+export const executeContractResponseContractOneCommitmentSnapshotOneDetailAnalysisOneAssumptionsRepairRatesItemExpectedRateMin = 0;
+export const executeContractResponseContractOneCommitmentSnapshotOneDetailAnalysisOneAssumptionsRepairRatesItemExpectedRateMax = 100000000;
+
+export const executeContractResponseContractOneCommitmentSnapshotOneDetailAnalysisOneAssumptionsRepairRatesItemHighRateMin = 0;
+export const executeContractResponseContractOneCommitmentSnapshotOneDetailAnalysisOneAssumptionsRepairRatesItemHighRateMax = 100000000;
+
+export const executeContractResponseContractOneCommitmentSnapshotOneDetailAnalysisOneAssumptionsRepairRatesItemConfidenceMin = 0;
+export const executeContractResponseContractOneCommitmentSnapshotOneDetailAnalysisOneAssumptionsRepairRatesItemConfidenceMax = 1;
+
+export const executeContractResponseContractOneCommitmentSnapshotOneDetailAnalysisOneAssumptionsRepairRatesItemSourceMax = 2000;
+
+export const executeContractResponseContractOneCommitmentSnapshotOneDetailAnalysisOneAssumptionsRepairRatesItemSourceUrlMax = 2000;
+
+export const executeContractResponseContractOneCommitmentSnapshotOneDetailAnalysisOneAssumptionsRepairRatesMax = 1000;
 
 export const executeContractResponseContractOneCommitmentSnapshotOneDetailOffersItemOneAmountExclusiveMin = 0;
 export const executeContractResponseContractOneCommitmentSnapshotOneDetailOffersItemOneAmountMax = 1000000000;
@@ -15157,6 +18216,28 @@ export const executeContractResponseContractOneCommitmentSnapshotOneDetailUnderw
 export const executeContractResponseContractOneCommitmentSnapshotOneDetailUnderwritingOneRepairsItemEvidenceIdMax = 200;
 
 export const executeContractResponseContractOneCommitmentSnapshotOneDetailUnderwritingOneRepairsMax = 50;
+
+export const executeContractResponseContractOneCommitmentSnapshotOneDetailUnderwritingOneRepairObservationsItemCategoryMax = 100;
+
+export const executeContractResponseContractOneCommitmentSnapshotOneDetailUnderwritingOneRepairObservationsItemQuantityMin = 0;
+export const executeContractResponseContractOneCommitmentSnapshotOneDetailUnderwritingOneRepairObservationsItemQuantityMax = 1000000;
+
+export const executeContractResponseContractOneCommitmentSnapshotOneDetailUnderwritingOneRepairObservationsItemEvidenceIdMax = 200;
+
+export const executeContractResponseContractOneCommitmentSnapshotOneDetailUnderwritingOneRepairObservationsMax = 50;
+
+export const executeContractResponseContractOneCommitmentSnapshotOneDetailUnderwritingOneRepairEstimateCatalogVersionMin = 0;
+
+export const executeContractResponseContractOneCommitmentSnapshotOneDetailUnderwritingOneRepairEstimateLinesItemLowMin = 0;
+
+export const executeContractResponseContractOneCommitmentSnapshotOneDetailUnderwritingOneRepairEstimateLinesItemExpectedMin = 0;
+
+export const executeContractResponseContractOneCommitmentSnapshotOneDetailUnderwritingOneRepairEstimateLinesItemHighMin = 0;
+
+export const executeContractResponseContractOneCommitmentSnapshotOneDetailUnderwritingOneRepairEstimateLinesItemConfidenceMin = 0;
+export const executeContractResponseContractOneCommitmentSnapshotOneDetailUnderwritingOneRepairEstimateLinesItemConfidenceMax = 1;
+
+export const executeContractResponseContractOneCommitmentSnapshotOneDetailUnderwritingOneRepairEstimateLinesMax = 50;
 
 export const executeContractResponseContractOneCommitmentSnapshotOneDetailUnderwritingOneSubjectEvidenceIdMax = 200;
 
@@ -15435,6 +18516,34 @@ export const ExecuteContractResponse = zod.object({
   "high": zod.number(),
   "confidence": zod.number()
 }),
+  "repairEstimate": zod.object({
+  "status": zod.enum(['NOT_USED', 'CALCULATED', 'BLOCKED']),
+  "marketKey": zod.string(),
+  "catalogVersion": zod.number().int().min(executeContractResponseContractOneCommitmentSnapshotOneDetailAnalysisOneRepairEstimateCatalogVersionMin),
+  "calculatedAt": zod.string().datetime({"offset":true}),
+  "lines": zod.array(zod.object({
+  "category": zod.string(),
+  "severity": zod.enum(['NO_REPAIR', 'COSMETIC', 'MODERATE', 'MAJOR', 'REPLACEMENT']),
+  "quantity": zod.number(),
+  "unit": zod.enum(['SQFT', 'LINEAR_FT', 'EACH', 'LUMP_SUM']),
+  "evidenceId": zod.string(),
+  "rateCardId": zod.string().optional(),
+  "rateCardVersion": zod.number().int().optional(),
+  "low": zod.number().min(executeContractResponseContractOneCommitmentSnapshotOneDetailAnalysisOneRepairEstimateLinesItemLowMin),
+  "expected": zod.number().min(executeContractResponseContractOneCommitmentSnapshotOneDetailAnalysisOneRepairEstimateLinesItemExpectedMin),
+  "high": zod.number().min(executeContractResponseContractOneCommitmentSnapshotOneDetailAnalysisOneRepairEstimateLinesItemHighMin),
+  "confidence": zod.number().min(executeContractResponseContractOneCommitmentSnapshotOneDetailAnalysisOneRepairEstimateLinesItemConfidenceMin).max(executeContractResponseContractOneCommitmentSnapshotOneDetailAnalysisOneRepairEstimateLinesItemConfidenceMax),
+  "source": zod.string(),
+  "sourceUrl": zod.string().url().optional()
+})).max(executeContractResponseContractOneCommitmentSnapshotOneDetailAnalysisOneRepairEstimateLinesMax),
+  "total": zod.union([zod.object({
+  "low": zod.number(),
+  "expected": zod.number(),
+  "high": zod.number(),
+  "confidence": zod.number()
+}),zod.null()]),
+  "blockers": zod.array(zod.string())
+}),
   "mao": zod.number(),
   "openingLow": zod.number(),
   "openingHigh": zod.number(),
@@ -15456,7 +18565,25 @@ export const ExecuteContractResponse = zod.object({
   "maxSqftDifferencePct": zod.number().min(executeContractResponseContractOneCommitmentSnapshotOneDetailAnalysisOneAssumptionsMaxSqftDifferencePctMin).max(executeContractResponseContractOneCommitmentSnapshotOneDetailAnalysisOneAssumptionsMaxSqftDifferencePctMax),
   "minComps": zod.number().int().min(executeContractResponseContractOneCommitmentSnapshotOneDetailAnalysisOneAssumptionsMinCompsMin).max(executeContractResponseContractOneCommitmentSnapshotOneDetailAnalysisOneAssumptionsMinCompsMax),
   "minConfidence": zod.number().min(executeContractResponseContractOneCommitmentSnapshotOneDetailAnalysisOneAssumptionsMinConfidenceMin).max(executeContractResponseContractOneCommitmentSnapshotOneDetailAnalysisOneAssumptionsMinConfidenceMax),
-  "approvalRequired": zod.boolean()
+  "approvalRequired": zod.boolean(),
+  "repairRateCatalogVersion": zod.number().int().min(executeContractResponseContractOneCommitmentSnapshotOneDetailAnalysisOneAssumptionsRepairRateCatalogVersionMin),
+  "repairRates": zod.array(zod.object({
+  "id": zod.string().min(1).max(executeContractResponseContractOneCommitmentSnapshotOneDetailAnalysisOneAssumptionsRepairRatesItemIdMax),
+  "version": zod.number().int().min(1),
+  "marketKey": zod.string().min(executeContractResponseContractOneCommitmentSnapshotOneDetailAnalysisOneAssumptionsRepairRatesItemMarketKeyMin).max(executeContractResponseContractOneCommitmentSnapshotOneDetailAnalysisOneAssumptionsRepairRatesItemMarketKeyMax),
+  "category": zod.string().min(1).max(executeContractResponseContractOneCommitmentSnapshotOneDetailAnalysisOneAssumptionsRepairRatesItemCategoryMax),
+  "severity": zod.enum(['COSMETIC', 'MODERATE', 'MAJOR', 'REPLACEMENT']),
+  "unit": zod.enum(['SQFT', 'LINEAR_FT', 'EACH', 'LUMP_SUM']),
+  "lowRate": zod.number().min(executeContractResponseContractOneCommitmentSnapshotOneDetailAnalysisOneAssumptionsRepairRatesItemLowRateMin).max(executeContractResponseContractOneCommitmentSnapshotOneDetailAnalysisOneAssumptionsRepairRatesItemLowRateMax),
+  "expectedRate": zod.number().min(executeContractResponseContractOneCommitmentSnapshotOneDetailAnalysisOneAssumptionsRepairRatesItemExpectedRateMin).max(executeContractResponseContractOneCommitmentSnapshotOneDetailAnalysisOneAssumptionsRepairRatesItemExpectedRateMax),
+  "highRate": zod.number().min(executeContractResponseContractOneCommitmentSnapshotOneDetailAnalysisOneAssumptionsRepairRatesItemHighRateMin).max(executeContractResponseContractOneCommitmentSnapshotOneDetailAnalysisOneAssumptionsRepairRatesItemHighRateMax),
+  "confidence": zod.number().min(executeContractResponseContractOneCommitmentSnapshotOneDetailAnalysisOneAssumptionsRepairRatesItemConfidenceMin).max(executeContractResponseContractOneCommitmentSnapshotOneDetailAnalysisOneAssumptionsRepairRatesItemConfidenceMax),
+  "source": zod.string().min(1).max(executeContractResponseContractOneCommitmentSnapshotOneDetailAnalysisOneAssumptionsRepairRatesItemSourceMax),
+  "sourceUrl": zod.string().url().max(executeContractResponseContractOneCommitmentSnapshotOneDetailAnalysisOneAssumptionsRepairRatesItemSourceUrlMax),
+  "capturedOn": zod.string().date(),
+  "validThrough": zod.string().date(),
+  "active": zod.boolean()
+})).max(executeContractResponseContractOneCommitmentSnapshotOneDetailAnalysisOneAssumptionsRepairRatesMax)
 }),
   "risks": zod.array(zod.string()),
   "blockers": zod.array(zod.string()),
@@ -15525,6 +18652,41 @@ export const ExecuteContractResponse = zod.object({
 })).max(executeContractResponseContractOneCommitmentSnapshotOneDetailUnderwritingOneRepairsMax),
   "repairsComplete": zod.boolean(),
   "conditionConfirmed": zod.boolean(),
+  "repairObservations": zod.array(zod.object({
+  "category": zod.string().min(1).max(executeContractResponseContractOneCommitmentSnapshotOneDetailUnderwritingOneRepairObservationsItemCategoryMax),
+  "severity": zod.enum(['NO_REPAIR', 'COSMETIC', 'MODERATE', 'MAJOR', 'REPLACEMENT']),
+  "quantity": zod.number().min(executeContractResponseContractOneCommitmentSnapshotOneDetailUnderwritingOneRepairObservationsItemQuantityMin).max(executeContractResponseContractOneCommitmentSnapshotOneDetailUnderwritingOneRepairObservationsItemQuantityMax),
+  "unit": zod.enum(['SQFT', 'LINEAR_FT', 'EACH', 'LUMP_SUM']),
+  "evidenceId": zod.string().min(1).max(executeContractResponseContractOneCommitmentSnapshotOneDetailUnderwritingOneRepairObservationsItemEvidenceIdMax)
+})).max(executeContractResponseContractOneCommitmentSnapshotOneDetailUnderwritingOneRepairObservationsMax).optional(),
+  "repairEstimate": zod.object({
+  "status": zod.enum(['NOT_USED', 'CALCULATED', 'BLOCKED']),
+  "marketKey": zod.string(),
+  "catalogVersion": zod.number().int().min(executeContractResponseContractOneCommitmentSnapshotOneDetailUnderwritingOneRepairEstimateCatalogVersionMin),
+  "calculatedAt": zod.string().datetime({"offset":true}),
+  "lines": zod.array(zod.object({
+  "category": zod.string(),
+  "severity": zod.enum(['NO_REPAIR', 'COSMETIC', 'MODERATE', 'MAJOR', 'REPLACEMENT']),
+  "quantity": zod.number(),
+  "unit": zod.enum(['SQFT', 'LINEAR_FT', 'EACH', 'LUMP_SUM']),
+  "evidenceId": zod.string(),
+  "rateCardId": zod.string().optional(),
+  "rateCardVersion": zod.number().int().optional(),
+  "low": zod.number().min(executeContractResponseContractOneCommitmentSnapshotOneDetailUnderwritingOneRepairEstimateLinesItemLowMin),
+  "expected": zod.number().min(executeContractResponseContractOneCommitmentSnapshotOneDetailUnderwritingOneRepairEstimateLinesItemExpectedMin),
+  "high": zod.number().min(executeContractResponseContractOneCommitmentSnapshotOneDetailUnderwritingOneRepairEstimateLinesItemHighMin),
+  "confidence": zod.number().min(executeContractResponseContractOneCommitmentSnapshotOneDetailUnderwritingOneRepairEstimateLinesItemConfidenceMin).max(executeContractResponseContractOneCommitmentSnapshotOneDetailUnderwritingOneRepairEstimateLinesItemConfidenceMax),
+  "source": zod.string(),
+  "sourceUrl": zod.string().url().optional()
+})).max(executeContractResponseContractOneCommitmentSnapshotOneDetailUnderwritingOneRepairEstimateLinesMax),
+  "total": zod.union([zod.object({
+  "low": zod.number(),
+  "expected": zod.number(),
+  "high": zod.number(),
+  "confidence": zod.number()
+}),zod.null()]),
+  "blockers": zod.array(zod.string())
+}).optional(),
   "subjectEvidenceId": zod.string().max(executeContractResponseContractOneCommitmentSnapshotOneDetailUnderwritingOneSubjectEvidenceIdMax).optional(),
   "conditionEvidenceId": zod.string().max(executeContractResponseContractOneCommitmentSnapshotOneDetailUnderwritingOneConditionEvidenceIdMax).optional(),
   "sellerContactEvidenceId": zod.string().max(executeContractResponseContractOneCommitmentSnapshotOneDetailUnderwritingOneSellerContactEvidenceIdMax).optional()
@@ -15605,7 +18767,7 @@ export const ExecuteContractResponse = zod.object({
   "score": zod.number(),
   "reasons": zod.array(zod.string()),
   "mismatches": zod.array(zod.string()),
-  "status": zod.enum(['MATCHED', 'INTERESTED', 'COMMITTED', 'DECLINED']),
+  "status": zod.enum(['MATCHED', 'INTERESTED', 'COMMITTED', 'DECLINED', 'EXPIRED']),
   "buyerVersion": zod.number().int(),
   "agreedPrice": zod.number().nullish(),
   "evidence": zod.string().nullish(),
@@ -15869,6 +19031,19 @@ export const recordClosingMilestoneResponseContractOneCommitmentSnapshotOneDetai
 
 export const recordClosingMilestoneResponseContractOneCommitmentSnapshotOneDetailIntelligenceItemOneActionMax = 2000;
 
+export const recordClosingMilestoneResponseContractOneCommitmentSnapshotOneDetailAnalysisOneRepairEstimateCatalogVersionMin = 0;
+
+export const recordClosingMilestoneResponseContractOneCommitmentSnapshotOneDetailAnalysisOneRepairEstimateLinesItemLowMin = 0;
+
+export const recordClosingMilestoneResponseContractOneCommitmentSnapshotOneDetailAnalysisOneRepairEstimateLinesItemExpectedMin = 0;
+
+export const recordClosingMilestoneResponseContractOneCommitmentSnapshotOneDetailAnalysisOneRepairEstimateLinesItemHighMin = 0;
+
+export const recordClosingMilestoneResponseContractOneCommitmentSnapshotOneDetailAnalysisOneRepairEstimateLinesItemConfidenceMin = 0;
+export const recordClosingMilestoneResponseContractOneCommitmentSnapshotOneDetailAnalysisOneRepairEstimateLinesItemConfidenceMax = 1;
+
+export const recordClosingMilestoneResponseContractOneCommitmentSnapshotOneDetailAnalysisOneRepairEstimateLinesMax = 50;
+
 export const recordClosingMilestoneResponseContractOneCommitmentSnapshotOneDetailAnalysisOneAssumptionsArvMultiplierMin = 0.1;
 export const recordClosingMilestoneResponseContractOneCommitmentSnapshotOneDetailAnalysisOneAssumptionsArvMultiplierMax = 1;
 
@@ -15912,6 +19087,34 @@ export const recordClosingMilestoneResponseContractOneCommitmentSnapshotOneDetai
 
 export const recordClosingMilestoneResponseContractOneCommitmentSnapshotOneDetailAnalysisOneAssumptionsMinConfidenceMin = 0.3;
 export const recordClosingMilestoneResponseContractOneCommitmentSnapshotOneDetailAnalysisOneAssumptionsMinConfidenceMax = 1;
+
+export const recordClosingMilestoneResponseContractOneCommitmentSnapshotOneDetailAnalysisOneAssumptionsRepairRateCatalogVersionMin = 0;
+
+export const recordClosingMilestoneResponseContractOneCommitmentSnapshotOneDetailAnalysisOneAssumptionsRepairRatesItemIdMax = 100;
+
+
+export const recordClosingMilestoneResponseContractOneCommitmentSnapshotOneDetailAnalysisOneAssumptionsRepairRatesItemMarketKeyMin = 2;
+export const recordClosingMilestoneResponseContractOneCommitmentSnapshotOneDetailAnalysisOneAssumptionsRepairRatesItemMarketKeyMax = 100;
+
+export const recordClosingMilestoneResponseContractOneCommitmentSnapshotOneDetailAnalysisOneAssumptionsRepairRatesItemCategoryMax = 100;
+
+export const recordClosingMilestoneResponseContractOneCommitmentSnapshotOneDetailAnalysisOneAssumptionsRepairRatesItemLowRateMin = 0;
+export const recordClosingMilestoneResponseContractOneCommitmentSnapshotOneDetailAnalysisOneAssumptionsRepairRatesItemLowRateMax = 100000000;
+
+export const recordClosingMilestoneResponseContractOneCommitmentSnapshotOneDetailAnalysisOneAssumptionsRepairRatesItemExpectedRateMin = 0;
+export const recordClosingMilestoneResponseContractOneCommitmentSnapshotOneDetailAnalysisOneAssumptionsRepairRatesItemExpectedRateMax = 100000000;
+
+export const recordClosingMilestoneResponseContractOneCommitmentSnapshotOneDetailAnalysisOneAssumptionsRepairRatesItemHighRateMin = 0;
+export const recordClosingMilestoneResponseContractOneCommitmentSnapshotOneDetailAnalysisOneAssumptionsRepairRatesItemHighRateMax = 100000000;
+
+export const recordClosingMilestoneResponseContractOneCommitmentSnapshotOneDetailAnalysisOneAssumptionsRepairRatesItemConfidenceMin = 0;
+export const recordClosingMilestoneResponseContractOneCommitmentSnapshotOneDetailAnalysisOneAssumptionsRepairRatesItemConfidenceMax = 1;
+
+export const recordClosingMilestoneResponseContractOneCommitmentSnapshotOneDetailAnalysisOneAssumptionsRepairRatesItemSourceMax = 2000;
+
+export const recordClosingMilestoneResponseContractOneCommitmentSnapshotOneDetailAnalysisOneAssumptionsRepairRatesItemSourceUrlMax = 2000;
+
+export const recordClosingMilestoneResponseContractOneCommitmentSnapshotOneDetailAnalysisOneAssumptionsRepairRatesMax = 1000;
 
 export const recordClosingMilestoneResponseContractOneCommitmentSnapshotOneDetailOffersItemOneAmountExclusiveMin = 0;
 export const recordClosingMilestoneResponseContractOneCommitmentSnapshotOneDetailOffersItemOneAmountMax = 1000000000;
@@ -15961,6 +19164,28 @@ export const recordClosingMilestoneResponseContractOneCommitmentSnapshotOneDetai
 export const recordClosingMilestoneResponseContractOneCommitmentSnapshotOneDetailUnderwritingOneRepairsItemEvidenceIdMax = 200;
 
 export const recordClosingMilestoneResponseContractOneCommitmentSnapshotOneDetailUnderwritingOneRepairsMax = 50;
+
+export const recordClosingMilestoneResponseContractOneCommitmentSnapshotOneDetailUnderwritingOneRepairObservationsItemCategoryMax = 100;
+
+export const recordClosingMilestoneResponseContractOneCommitmentSnapshotOneDetailUnderwritingOneRepairObservationsItemQuantityMin = 0;
+export const recordClosingMilestoneResponseContractOneCommitmentSnapshotOneDetailUnderwritingOneRepairObservationsItemQuantityMax = 1000000;
+
+export const recordClosingMilestoneResponseContractOneCommitmentSnapshotOneDetailUnderwritingOneRepairObservationsItemEvidenceIdMax = 200;
+
+export const recordClosingMilestoneResponseContractOneCommitmentSnapshotOneDetailUnderwritingOneRepairObservationsMax = 50;
+
+export const recordClosingMilestoneResponseContractOneCommitmentSnapshotOneDetailUnderwritingOneRepairEstimateCatalogVersionMin = 0;
+
+export const recordClosingMilestoneResponseContractOneCommitmentSnapshotOneDetailUnderwritingOneRepairEstimateLinesItemLowMin = 0;
+
+export const recordClosingMilestoneResponseContractOneCommitmentSnapshotOneDetailUnderwritingOneRepairEstimateLinesItemExpectedMin = 0;
+
+export const recordClosingMilestoneResponseContractOneCommitmentSnapshotOneDetailUnderwritingOneRepairEstimateLinesItemHighMin = 0;
+
+export const recordClosingMilestoneResponseContractOneCommitmentSnapshotOneDetailUnderwritingOneRepairEstimateLinesItemConfidenceMin = 0;
+export const recordClosingMilestoneResponseContractOneCommitmentSnapshotOneDetailUnderwritingOneRepairEstimateLinesItemConfidenceMax = 1;
+
+export const recordClosingMilestoneResponseContractOneCommitmentSnapshotOneDetailUnderwritingOneRepairEstimateLinesMax = 50;
 
 export const recordClosingMilestoneResponseContractOneCommitmentSnapshotOneDetailUnderwritingOneSubjectEvidenceIdMax = 200;
 
@@ -16239,6 +19464,34 @@ export const RecordClosingMilestoneResponse = zod.object({
   "high": zod.number(),
   "confidence": zod.number()
 }),
+  "repairEstimate": zod.object({
+  "status": zod.enum(['NOT_USED', 'CALCULATED', 'BLOCKED']),
+  "marketKey": zod.string(),
+  "catalogVersion": zod.number().int().min(recordClosingMilestoneResponseContractOneCommitmentSnapshotOneDetailAnalysisOneRepairEstimateCatalogVersionMin),
+  "calculatedAt": zod.string().datetime({"offset":true}),
+  "lines": zod.array(zod.object({
+  "category": zod.string(),
+  "severity": zod.enum(['NO_REPAIR', 'COSMETIC', 'MODERATE', 'MAJOR', 'REPLACEMENT']),
+  "quantity": zod.number(),
+  "unit": zod.enum(['SQFT', 'LINEAR_FT', 'EACH', 'LUMP_SUM']),
+  "evidenceId": zod.string(),
+  "rateCardId": zod.string().optional(),
+  "rateCardVersion": zod.number().int().optional(),
+  "low": zod.number().min(recordClosingMilestoneResponseContractOneCommitmentSnapshotOneDetailAnalysisOneRepairEstimateLinesItemLowMin),
+  "expected": zod.number().min(recordClosingMilestoneResponseContractOneCommitmentSnapshotOneDetailAnalysisOneRepairEstimateLinesItemExpectedMin),
+  "high": zod.number().min(recordClosingMilestoneResponseContractOneCommitmentSnapshotOneDetailAnalysisOneRepairEstimateLinesItemHighMin),
+  "confidence": zod.number().min(recordClosingMilestoneResponseContractOneCommitmentSnapshotOneDetailAnalysisOneRepairEstimateLinesItemConfidenceMin).max(recordClosingMilestoneResponseContractOneCommitmentSnapshotOneDetailAnalysisOneRepairEstimateLinesItemConfidenceMax),
+  "source": zod.string(),
+  "sourceUrl": zod.string().url().optional()
+})).max(recordClosingMilestoneResponseContractOneCommitmentSnapshotOneDetailAnalysisOneRepairEstimateLinesMax),
+  "total": zod.union([zod.object({
+  "low": zod.number(),
+  "expected": zod.number(),
+  "high": zod.number(),
+  "confidence": zod.number()
+}),zod.null()]),
+  "blockers": zod.array(zod.string())
+}),
   "mao": zod.number(),
   "openingLow": zod.number(),
   "openingHigh": zod.number(),
@@ -16260,7 +19513,25 @@ export const RecordClosingMilestoneResponse = zod.object({
   "maxSqftDifferencePct": zod.number().min(recordClosingMilestoneResponseContractOneCommitmentSnapshotOneDetailAnalysisOneAssumptionsMaxSqftDifferencePctMin).max(recordClosingMilestoneResponseContractOneCommitmentSnapshotOneDetailAnalysisOneAssumptionsMaxSqftDifferencePctMax),
   "minComps": zod.number().int().min(recordClosingMilestoneResponseContractOneCommitmentSnapshotOneDetailAnalysisOneAssumptionsMinCompsMin).max(recordClosingMilestoneResponseContractOneCommitmentSnapshotOneDetailAnalysisOneAssumptionsMinCompsMax),
   "minConfidence": zod.number().min(recordClosingMilestoneResponseContractOneCommitmentSnapshotOneDetailAnalysisOneAssumptionsMinConfidenceMin).max(recordClosingMilestoneResponseContractOneCommitmentSnapshotOneDetailAnalysisOneAssumptionsMinConfidenceMax),
-  "approvalRequired": zod.boolean()
+  "approvalRequired": zod.boolean(),
+  "repairRateCatalogVersion": zod.number().int().min(recordClosingMilestoneResponseContractOneCommitmentSnapshotOneDetailAnalysisOneAssumptionsRepairRateCatalogVersionMin),
+  "repairRates": zod.array(zod.object({
+  "id": zod.string().min(1).max(recordClosingMilestoneResponseContractOneCommitmentSnapshotOneDetailAnalysisOneAssumptionsRepairRatesItemIdMax),
+  "version": zod.number().int().min(1),
+  "marketKey": zod.string().min(recordClosingMilestoneResponseContractOneCommitmentSnapshotOneDetailAnalysisOneAssumptionsRepairRatesItemMarketKeyMin).max(recordClosingMilestoneResponseContractOneCommitmentSnapshotOneDetailAnalysisOneAssumptionsRepairRatesItemMarketKeyMax),
+  "category": zod.string().min(1).max(recordClosingMilestoneResponseContractOneCommitmentSnapshotOneDetailAnalysisOneAssumptionsRepairRatesItemCategoryMax),
+  "severity": zod.enum(['COSMETIC', 'MODERATE', 'MAJOR', 'REPLACEMENT']),
+  "unit": zod.enum(['SQFT', 'LINEAR_FT', 'EACH', 'LUMP_SUM']),
+  "lowRate": zod.number().min(recordClosingMilestoneResponseContractOneCommitmentSnapshotOneDetailAnalysisOneAssumptionsRepairRatesItemLowRateMin).max(recordClosingMilestoneResponseContractOneCommitmentSnapshotOneDetailAnalysisOneAssumptionsRepairRatesItemLowRateMax),
+  "expectedRate": zod.number().min(recordClosingMilestoneResponseContractOneCommitmentSnapshotOneDetailAnalysisOneAssumptionsRepairRatesItemExpectedRateMin).max(recordClosingMilestoneResponseContractOneCommitmentSnapshotOneDetailAnalysisOneAssumptionsRepairRatesItemExpectedRateMax),
+  "highRate": zod.number().min(recordClosingMilestoneResponseContractOneCommitmentSnapshotOneDetailAnalysisOneAssumptionsRepairRatesItemHighRateMin).max(recordClosingMilestoneResponseContractOneCommitmentSnapshotOneDetailAnalysisOneAssumptionsRepairRatesItemHighRateMax),
+  "confidence": zod.number().min(recordClosingMilestoneResponseContractOneCommitmentSnapshotOneDetailAnalysisOneAssumptionsRepairRatesItemConfidenceMin).max(recordClosingMilestoneResponseContractOneCommitmentSnapshotOneDetailAnalysisOneAssumptionsRepairRatesItemConfidenceMax),
+  "source": zod.string().min(1).max(recordClosingMilestoneResponseContractOneCommitmentSnapshotOneDetailAnalysisOneAssumptionsRepairRatesItemSourceMax),
+  "sourceUrl": zod.string().url().max(recordClosingMilestoneResponseContractOneCommitmentSnapshotOneDetailAnalysisOneAssumptionsRepairRatesItemSourceUrlMax),
+  "capturedOn": zod.string().date(),
+  "validThrough": zod.string().date(),
+  "active": zod.boolean()
+})).max(recordClosingMilestoneResponseContractOneCommitmentSnapshotOneDetailAnalysisOneAssumptionsRepairRatesMax)
 }),
   "risks": zod.array(zod.string()),
   "blockers": zod.array(zod.string()),
@@ -16329,6 +19600,41 @@ export const RecordClosingMilestoneResponse = zod.object({
 })).max(recordClosingMilestoneResponseContractOneCommitmentSnapshotOneDetailUnderwritingOneRepairsMax),
   "repairsComplete": zod.boolean(),
   "conditionConfirmed": zod.boolean(),
+  "repairObservations": zod.array(zod.object({
+  "category": zod.string().min(1).max(recordClosingMilestoneResponseContractOneCommitmentSnapshotOneDetailUnderwritingOneRepairObservationsItemCategoryMax),
+  "severity": zod.enum(['NO_REPAIR', 'COSMETIC', 'MODERATE', 'MAJOR', 'REPLACEMENT']),
+  "quantity": zod.number().min(recordClosingMilestoneResponseContractOneCommitmentSnapshotOneDetailUnderwritingOneRepairObservationsItemQuantityMin).max(recordClosingMilestoneResponseContractOneCommitmentSnapshotOneDetailUnderwritingOneRepairObservationsItemQuantityMax),
+  "unit": zod.enum(['SQFT', 'LINEAR_FT', 'EACH', 'LUMP_SUM']),
+  "evidenceId": zod.string().min(1).max(recordClosingMilestoneResponseContractOneCommitmentSnapshotOneDetailUnderwritingOneRepairObservationsItemEvidenceIdMax)
+})).max(recordClosingMilestoneResponseContractOneCommitmentSnapshotOneDetailUnderwritingOneRepairObservationsMax).optional(),
+  "repairEstimate": zod.object({
+  "status": zod.enum(['NOT_USED', 'CALCULATED', 'BLOCKED']),
+  "marketKey": zod.string(),
+  "catalogVersion": zod.number().int().min(recordClosingMilestoneResponseContractOneCommitmentSnapshotOneDetailUnderwritingOneRepairEstimateCatalogVersionMin),
+  "calculatedAt": zod.string().datetime({"offset":true}),
+  "lines": zod.array(zod.object({
+  "category": zod.string(),
+  "severity": zod.enum(['NO_REPAIR', 'COSMETIC', 'MODERATE', 'MAJOR', 'REPLACEMENT']),
+  "quantity": zod.number(),
+  "unit": zod.enum(['SQFT', 'LINEAR_FT', 'EACH', 'LUMP_SUM']),
+  "evidenceId": zod.string(),
+  "rateCardId": zod.string().optional(),
+  "rateCardVersion": zod.number().int().optional(),
+  "low": zod.number().min(recordClosingMilestoneResponseContractOneCommitmentSnapshotOneDetailUnderwritingOneRepairEstimateLinesItemLowMin),
+  "expected": zod.number().min(recordClosingMilestoneResponseContractOneCommitmentSnapshotOneDetailUnderwritingOneRepairEstimateLinesItemExpectedMin),
+  "high": zod.number().min(recordClosingMilestoneResponseContractOneCommitmentSnapshotOneDetailUnderwritingOneRepairEstimateLinesItemHighMin),
+  "confidence": zod.number().min(recordClosingMilestoneResponseContractOneCommitmentSnapshotOneDetailUnderwritingOneRepairEstimateLinesItemConfidenceMin).max(recordClosingMilestoneResponseContractOneCommitmentSnapshotOneDetailUnderwritingOneRepairEstimateLinesItemConfidenceMax),
+  "source": zod.string(),
+  "sourceUrl": zod.string().url().optional()
+})).max(recordClosingMilestoneResponseContractOneCommitmentSnapshotOneDetailUnderwritingOneRepairEstimateLinesMax),
+  "total": zod.union([zod.object({
+  "low": zod.number(),
+  "expected": zod.number(),
+  "high": zod.number(),
+  "confidence": zod.number()
+}),zod.null()]),
+  "blockers": zod.array(zod.string())
+}).optional(),
   "subjectEvidenceId": zod.string().max(recordClosingMilestoneResponseContractOneCommitmentSnapshotOneDetailUnderwritingOneSubjectEvidenceIdMax).optional(),
   "conditionEvidenceId": zod.string().max(recordClosingMilestoneResponseContractOneCommitmentSnapshotOneDetailUnderwritingOneConditionEvidenceIdMax).optional(),
   "sellerContactEvidenceId": zod.string().max(recordClosingMilestoneResponseContractOneCommitmentSnapshotOneDetailUnderwritingOneSellerContactEvidenceIdMax).optional()
@@ -16409,7 +19715,7 @@ export const RecordClosingMilestoneResponse = zod.object({
   "score": zod.number(),
   "reasons": zod.array(zod.string()),
   "mismatches": zod.array(zod.string()),
-  "status": zod.enum(['MATCHED', 'INTERESTED', 'COMMITTED', 'DECLINED']),
+  "status": zod.enum(['MATCHED', 'INTERESTED', 'COMMITTED', 'DECLINED', 'EXPIRED']),
   "buyerVersion": zod.number().int(),
   "agreedPrice": zod.number().nullish(),
   "evidence": zod.string().nullish(),
@@ -16686,6 +19992,19 @@ export const recordDealOutcomeResponseContractOneCommitmentSnapshotOneDetailInte
 
 export const recordDealOutcomeResponseContractOneCommitmentSnapshotOneDetailIntelligenceItemOneActionMax = 2000;
 
+export const recordDealOutcomeResponseContractOneCommitmentSnapshotOneDetailAnalysisOneRepairEstimateCatalogVersionMin = 0;
+
+export const recordDealOutcomeResponseContractOneCommitmentSnapshotOneDetailAnalysisOneRepairEstimateLinesItemLowMin = 0;
+
+export const recordDealOutcomeResponseContractOneCommitmentSnapshotOneDetailAnalysisOneRepairEstimateLinesItemExpectedMin = 0;
+
+export const recordDealOutcomeResponseContractOneCommitmentSnapshotOneDetailAnalysisOneRepairEstimateLinesItemHighMin = 0;
+
+export const recordDealOutcomeResponseContractOneCommitmentSnapshotOneDetailAnalysisOneRepairEstimateLinesItemConfidenceMin = 0;
+export const recordDealOutcomeResponseContractOneCommitmentSnapshotOneDetailAnalysisOneRepairEstimateLinesItemConfidenceMax = 1;
+
+export const recordDealOutcomeResponseContractOneCommitmentSnapshotOneDetailAnalysisOneRepairEstimateLinesMax = 50;
+
 export const recordDealOutcomeResponseContractOneCommitmentSnapshotOneDetailAnalysisOneAssumptionsArvMultiplierMin = 0.1;
 export const recordDealOutcomeResponseContractOneCommitmentSnapshotOneDetailAnalysisOneAssumptionsArvMultiplierMax = 1;
 
@@ -16729,6 +20048,34 @@ export const recordDealOutcomeResponseContractOneCommitmentSnapshotOneDetailAnal
 
 export const recordDealOutcomeResponseContractOneCommitmentSnapshotOneDetailAnalysisOneAssumptionsMinConfidenceMin = 0.3;
 export const recordDealOutcomeResponseContractOneCommitmentSnapshotOneDetailAnalysisOneAssumptionsMinConfidenceMax = 1;
+
+export const recordDealOutcomeResponseContractOneCommitmentSnapshotOneDetailAnalysisOneAssumptionsRepairRateCatalogVersionMin = 0;
+
+export const recordDealOutcomeResponseContractOneCommitmentSnapshotOneDetailAnalysisOneAssumptionsRepairRatesItemIdMax = 100;
+
+
+export const recordDealOutcomeResponseContractOneCommitmentSnapshotOneDetailAnalysisOneAssumptionsRepairRatesItemMarketKeyMin = 2;
+export const recordDealOutcomeResponseContractOneCommitmentSnapshotOneDetailAnalysisOneAssumptionsRepairRatesItemMarketKeyMax = 100;
+
+export const recordDealOutcomeResponseContractOneCommitmentSnapshotOneDetailAnalysisOneAssumptionsRepairRatesItemCategoryMax = 100;
+
+export const recordDealOutcomeResponseContractOneCommitmentSnapshotOneDetailAnalysisOneAssumptionsRepairRatesItemLowRateMin = 0;
+export const recordDealOutcomeResponseContractOneCommitmentSnapshotOneDetailAnalysisOneAssumptionsRepairRatesItemLowRateMax = 100000000;
+
+export const recordDealOutcomeResponseContractOneCommitmentSnapshotOneDetailAnalysisOneAssumptionsRepairRatesItemExpectedRateMin = 0;
+export const recordDealOutcomeResponseContractOneCommitmentSnapshotOneDetailAnalysisOneAssumptionsRepairRatesItemExpectedRateMax = 100000000;
+
+export const recordDealOutcomeResponseContractOneCommitmentSnapshotOneDetailAnalysisOneAssumptionsRepairRatesItemHighRateMin = 0;
+export const recordDealOutcomeResponseContractOneCommitmentSnapshotOneDetailAnalysisOneAssumptionsRepairRatesItemHighRateMax = 100000000;
+
+export const recordDealOutcomeResponseContractOneCommitmentSnapshotOneDetailAnalysisOneAssumptionsRepairRatesItemConfidenceMin = 0;
+export const recordDealOutcomeResponseContractOneCommitmentSnapshotOneDetailAnalysisOneAssumptionsRepairRatesItemConfidenceMax = 1;
+
+export const recordDealOutcomeResponseContractOneCommitmentSnapshotOneDetailAnalysisOneAssumptionsRepairRatesItemSourceMax = 2000;
+
+export const recordDealOutcomeResponseContractOneCommitmentSnapshotOneDetailAnalysisOneAssumptionsRepairRatesItemSourceUrlMax = 2000;
+
+export const recordDealOutcomeResponseContractOneCommitmentSnapshotOneDetailAnalysisOneAssumptionsRepairRatesMax = 1000;
 
 export const recordDealOutcomeResponseContractOneCommitmentSnapshotOneDetailOffersItemOneAmountExclusiveMin = 0;
 export const recordDealOutcomeResponseContractOneCommitmentSnapshotOneDetailOffersItemOneAmountMax = 1000000000;
@@ -16778,6 +20125,28 @@ export const recordDealOutcomeResponseContractOneCommitmentSnapshotOneDetailUnde
 export const recordDealOutcomeResponseContractOneCommitmentSnapshotOneDetailUnderwritingOneRepairsItemEvidenceIdMax = 200;
 
 export const recordDealOutcomeResponseContractOneCommitmentSnapshotOneDetailUnderwritingOneRepairsMax = 50;
+
+export const recordDealOutcomeResponseContractOneCommitmentSnapshotOneDetailUnderwritingOneRepairObservationsItemCategoryMax = 100;
+
+export const recordDealOutcomeResponseContractOneCommitmentSnapshotOneDetailUnderwritingOneRepairObservationsItemQuantityMin = 0;
+export const recordDealOutcomeResponseContractOneCommitmentSnapshotOneDetailUnderwritingOneRepairObservationsItemQuantityMax = 1000000;
+
+export const recordDealOutcomeResponseContractOneCommitmentSnapshotOneDetailUnderwritingOneRepairObservationsItemEvidenceIdMax = 200;
+
+export const recordDealOutcomeResponseContractOneCommitmentSnapshotOneDetailUnderwritingOneRepairObservationsMax = 50;
+
+export const recordDealOutcomeResponseContractOneCommitmentSnapshotOneDetailUnderwritingOneRepairEstimateCatalogVersionMin = 0;
+
+export const recordDealOutcomeResponseContractOneCommitmentSnapshotOneDetailUnderwritingOneRepairEstimateLinesItemLowMin = 0;
+
+export const recordDealOutcomeResponseContractOneCommitmentSnapshotOneDetailUnderwritingOneRepairEstimateLinesItemExpectedMin = 0;
+
+export const recordDealOutcomeResponseContractOneCommitmentSnapshotOneDetailUnderwritingOneRepairEstimateLinesItemHighMin = 0;
+
+export const recordDealOutcomeResponseContractOneCommitmentSnapshotOneDetailUnderwritingOneRepairEstimateLinesItemConfidenceMin = 0;
+export const recordDealOutcomeResponseContractOneCommitmentSnapshotOneDetailUnderwritingOneRepairEstimateLinesItemConfidenceMax = 1;
+
+export const recordDealOutcomeResponseContractOneCommitmentSnapshotOneDetailUnderwritingOneRepairEstimateLinesMax = 50;
 
 export const recordDealOutcomeResponseContractOneCommitmentSnapshotOneDetailUnderwritingOneSubjectEvidenceIdMax = 200;
 
@@ -17056,6 +20425,34 @@ export const RecordDealOutcomeResponse = zod.object({
   "high": zod.number(),
   "confidence": zod.number()
 }),
+  "repairEstimate": zod.object({
+  "status": zod.enum(['NOT_USED', 'CALCULATED', 'BLOCKED']),
+  "marketKey": zod.string(),
+  "catalogVersion": zod.number().int().min(recordDealOutcomeResponseContractOneCommitmentSnapshotOneDetailAnalysisOneRepairEstimateCatalogVersionMin),
+  "calculatedAt": zod.string().datetime({"offset":true}),
+  "lines": zod.array(zod.object({
+  "category": zod.string(),
+  "severity": zod.enum(['NO_REPAIR', 'COSMETIC', 'MODERATE', 'MAJOR', 'REPLACEMENT']),
+  "quantity": zod.number(),
+  "unit": zod.enum(['SQFT', 'LINEAR_FT', 'EACH', 'LUMP_SUM']),
+  "evidenceId": zod.string(),
+  "rateCardId": zod.string().optional(),
+  "rateCardVersion": zod.number().int().optional(),
+  "low": zod.number().min(recordDealOutcomeResponseContractOneCommitmentSnapshotOneDetailAnalysisOneRepairEstimateLinesItemLowMin),
+  "expected": zod.number().min(recordDealOutcomeResponseContractOneCommitmentSnapshotOneDetailAnalysisOneRepairEstimateLinesItemExpectedMin),
+  "high": zod.number().min(recordDealOutcomeResponseContractOneCommitmentSnapshotOneDetailAnalysisOneRepairEstimateLinesItemHighMin),
+  "confidence": zod.number().min(recordDealOutcomeResponseContractOneCommitmentSnapshotOneDetailAnalysisOneRepairEstimateLinesItemConfidenceMin).max(recordDealOutcomeResponseContractOneCommitmentSnapshotOneDetailAnalysisOneRepairEstimateLinesItemConfidenceMax),
+  "source": zod.string(),
+  "sourceUrl": zod.string().url().optional()
+})).max(recordDealOutcomeResponseContractOneCommitmentSnapshotOneDetailAnalysisOneRepairEstimateLinesMax),
+  "total": zod.union([zod.object({
+  "low": zod.number(),
+  "expected": zod.number(),
+  "high": zod.number(),
+  "confidence": zod.number()
+}),zod.null()]),
+  "blockers": zod.array(zod.string())
+}),
   "mao": zod.number(),
   "openingLow": zod.number(),
   "openingHigh": zod.number(),
@@ -17077,7 +20474,25 @@ export const RecordDealOutcomeResponse = zod.object({
   "maxSqftDifferencePct": zod.number().min(recordDealOutcomeResponseContractOneCommitmentSnapshotOneDetailAnalysisOneAssumptionsMaxSqftDifferencePctMin).max(recordDealOutcomeResponseContractOneCommitmentSnapshotOneDetailAnalysisOneAssumptionsMaxSqftDifferencePctMax),
   "minComps": zod.number().int().min(recordDealOutcomeResponseContractOneCommitmentSnapshotOneDetailAnalysisOneAssumptionsMinCompsMin).max(recordDealOutcomeResponseContractOneCommitmentSnapshotOneDetailAnalysisOneAssumptionsMinCompsMax),
   "minConfidence": zod.number().min(recordDealOutcomeResponseContractOneCommitmentSnapshotOneDetailAnalysisOneAssumptionsMinConfidenceMin).max(recordDealOutcomeResponseContractOneCommitmentSnapshotOneDetailAnalysisOneAssumptionsMinConfidenceMax),
-  "approvalRequired": zod.boolean()
+  "approvalRequired": zod.boolean(),
+  "repairRateCatalogVersion": zod.number().int().min(recordDealOutcomeResponseContractOneCommitmentSnapshotOneDetailAnalysisOneAssumptionsRepairRateCatalogVersionMin),
+  "repairRates": zod.array(zod.object({
+  "id": zod.string().min(1).max(recordDealOutcomeResponseContractOneCommitmentSnapshotOneDetailAnalysisOneAssumptionsRepairRatesItemIdMax),
+  "version": zod.number().int().min(1),
+  "marketKey": zod.string().min(recordDealOutcomeResponseContractOneCommitmentSnapshotOneDetailAnalysisOneAssumptionsRepairRatesItemMarketKeyMin).max(recordDealOutcomeResponseContractOneCommitmentSnapshotOneDetailAnalysisOneAssumptionsRepairRatesItemMarketKeyMax),
+  "category": zod.string().min(1).max(recordDealOutcomeResponseContractOneCommitmentSnapshotOneDetailAnalysisOneAssumptionsRepairRatesItemCategoryMax),
+  "severity": zod.enum(['COSMETIC', 'MODERATE', 'MAJOR', 'REPLACEMENT']),
+  "unit": zod.enum(['SQFT', 'LINEAR_FT', 'EACH', 'LUMP_SUM']),
+  "lowRate": zod.number().min(recordDealOutcomeResponseContractOneCommitmentSnapshotOneDetailAnalysisOneAssumptionsRepairRatesItemLowRateMin).max(recordDealOutcomeResponseContractOneCommitmentSnapshotOneDetailAnalysisOneAssumptionsRepairRatesItemLowRateMax),
+  "expectedRate": zod.number().min(recordDealOutcomeResponseContractOneCommitmentSnapshotOneDetailAnalysisOneAssumptionsRepairRatesItemExpectedRateMin).max(recordDealOutcomeResponseContractOneCommitmentSnapshotOneDetailAnalysisOneAssumptionsRepairRatesItemExpectedRateMax),
+  "highRate": zod.number().min(recordDealOutcomeResponseContractOneCommitmentSnapshotOneDetailAnalysisOneAssumptionsRepairRatesItemHighRateMin).max(recordDealOutcomeResponseContractOneCommitmentSnapshotOneDetailAnalysisOneAssumptionsRepairRatesItemHighRateMax),
+  "confidence": zod.number().min(recordDealOutcomeResponseContractOneCommitmentSnapshotOneDetailAnalysisOneAssumptionsRepairRatesItemConfidenceMin).max(recordDealOutcomeResponseContractOneCommitmentSnapshotOneDetailAnalysisOneAssumptionsRepairRatesItemConfidenceMax),
+  "source": zod.string().min(1).max(recordDealOutcomeResponseContractOneCommitmentSnapshotOneDetailAnalysisOneAssumptionsRepairRatesItemSourceMax),
+  "sourceUrl": zod.string().url().max(recordDealOutcomeResponseContractOneCommitmentSnapshotOneDetailAnalysisOneAssumptionsRepairRatesItemSourceUrlMax),
+  "capturedOn": zod.string().date(),
+  "validThrough": zod.string().date(),
+  "active": zod.boolean()
+})).max(recordDealOutcomeResponseContractOneCommitmentSnapshotOneDetailAnalysisOneAssumptionsRepairRatesMax)
 }),
   "risks": zod.array(zod.string()),
   "blockers": zod.array(zod.string()),
@@ -17146,6 +20561,41 @@ export const RecordDealOutcomeResponse = zod.object({
 })).max(recordDealOutcomeResponseContractOneCommitmentSnapshotOneDetailUnderwritingOneRepairsMax),
   "repairsComplete": zod.boolean(),
   "conditionConfirmed": zod.boolean(),
+  "repairObservations": zod.array(zod.object({
+  "category": zod.string().min(1).max(recordDealOutcomeResponseContractOneCommitmentSnapshotOneDetailUnderwritingOneRepairObservationsItemCategoryMax),
+  "severity": zod.enum(['NO_REPAIR', 'COSMETIC', 'MODERATE', 'MAJOR', 'REPLACEMENT']),
+  "quantity": zod.number().min(recordDealOutcomeResponseContractOneCommitmentSnapshotOneDetailUnderwritingOneRepairObservationsItemQuantityMin).max(recordDealOutcomeResponseContractOneCommitmentSnapshotOneDetailUnderwritingOneRepairObservationsItemQuantityMax),
+  "unit": zod.enum(['SQFT', 'LINEAR_FT', 'EACH', 'LUMP_SUM']),
+  "evidenceId": zod.string().min(1).max(recordDealOutcomeResponseContractOneCommitmentSnapshotOneDetailUnderwritingOneRepairObservationsItemEvidenceIdMax)
+})).max(recordDealOutcomeResponseContractOneCommitmentSnapshotOneDetailUnderwritingOneRepairObservationsMax).optional(),
+  "repairEstimate": zod.object({
+  "status": zod.enum(['NOT_USED', 'CALCULATED', 'BLOCKED']),
+  "marketKey": zod.string(),
+  "catalogVersion": zod.number().int().min(recordDealOutcomeResponseContractOneCommitmentSnapshotOneDetailUnderwritingOneRepairEstimateCatalogVersionMin),
+  "calculatedAt": zod.string().datetime({"offset":true}),
+  "lines": zod.array(zod.object({
+  "category": zod.string(),
+  "severity": zod.enum(['NO_REPAIR', 'COSMETIC', 'MODERATE', 'MAJOR', 'REPLACEMENT']),
+  "quantity": zod.number(),
+  "unit": zod.enum(['SQFT', 'LINEAR_FT', 'EACH', 'LUMP_SUM']),
+  "evidenceId": zod.string(),
+  "rateCardId": zod.string().optional(),
+  "rateCardVersion": zod.number().int().optional(),
+  "low": zod.number().min(recordDealOutcomeResponseContractOneCommitmentSnapshotOneDetailUnderwritingOneRepairEstimateLinesItemLowMin),
+  "expected": zod.number().min(recordDealOutcomeResponseContractOneCommitmentSnapshotOneDetailUnderwritingOneRepairEstimateLinesItemExpectedMin),
+  "high": zod.number().min(recordDealOutcomeResponseContractOneCommitmentSnapshotOneDetailUnderwritingOneRepairEstimateLinesItemHighMin),
+  "confidence": zod.number().min(recordDealOutcomeResponseContractOneCommitmentSnapshotOneDetailUnderwritingOneRepairEstimateLinesItemConfidenceMin).max(recordDealOutcomeResponseContractOneCommitmentSnapshotOneDetailUnderwritingOneRepairEstimateLinesItemConfidenceMax),
+  "source": zod.string(),
+  "sourceUrl": zod.string().url().optional()
+})).max(recordDealOutcomeResponseContractOneCommitmentSnapshotOneDetailUnderwritingOneRepairEstimateLinesMax),
+  "total": zod.union([zod.object({
+  "low": zod.number(),
+  "expected": zod.number(),
+  "high": zod.number(),
+  "confidence": zod.number()
+}),zod.null()]),
+  "blockers": zod.array(zod.string())
+}).optional(),
   "subjectEvidenceId": zod.string().max(recordDealOutcomeResponseContractOneCommitmentSnapshotOneDetailUnderwritingOneSubjectEvidenceIdMax).optional(),
   "conditionEvidenceId": zod.string().max(recordDealOutcomeResponseContractOneCommitmentSnapshotOneDetailUnderwritingOneConditionEvidenceIdMax).optional(),
   "sellerContactEvidenceId": zod.string().max(recordDealOutcomeResponseContractOneCommitmentSnapshotOneDetailUnderwritingOneSellerContactEvidenceIdMax).optional()
@@ -17226,7 +20676,7 @@ export const RecordDealOutcomeResponse = zod.object({
   "score": zod.number(),
   "reasons": zod.array(zod.string()),
   "mismatches": zod.array(zod.string()),
-  "status": zod.enum(['MATCHED', 'INTERESTED', 'COMMITTED', 'DECLINED']),
+  "status": zod.enum(['MATCHED', 'INTERESTED', 'COMMITTED', 'DECLINED', 'EXPIRED']),
   "buyerVersion": zod.number().int(),
   "agreedPrice": zod.number().nullish(),
   "evidence": zod.string().nullish(),
@@ -18747,6 +22197,19 @@ export const addSourceCompsResponseIntelligenceItemOneQuestionMax = 2000;
 
 export const addSourceCompsResponseIntelligenceItemOneActionMax = 2000;
 
+export const addSourceCompsResponseAnalysisOneRepairEstimateCatalogVersionMin = 0;
+
+export const addSourceCompsResponseAnalysisOneRepairEstimateLinesItemLowMin = 0;
+
+export const addSourceCompsResponseAnalysisOneRepairEstimateLinesItemExpectedMin = 0;
+
+export const addSourceCompsResponseAnalysisOneRepairEstimateLinesItemHighMin = 0;
+
+export const addSourceCompsResponseAnalysisOneRepairEstimateLinesItemConfidenceMin = 0;
+export const addSourceCompsResponseAnalysisOneRepairEstimateLinesItemConfidenceMax = 1;
+
+export const addSourceCompsResponseAnalysisOneRepairEstimateLinesMax = 50;
+
 export const addSourceCompsResponseAnalysisOneAssumptionsArvMultiplierMin = 0.1;
 export const addSourceCompsResponseAnalysisOneAssumptionsArvMultiplierMax = 1;
 
@@ -18790,6 +22253,34 @@ export const addSourceCompsResponseAnalysisOneAssumptionsMinCompsMax = 20;
 
 export const addSourceCompsResponseAnalysisOneAssumptionsMinConfidenceMin = 0.3;
 export const addSourceCompsResponseAnalysisOneAssumptionsMinConfidenceMax = 1;
+
+export const addSourceCompsResponseAnalysisOneAssumptionsRepairRateCatalogVersionMin = 0;
+
+export const addSourceCompsResponseAnalysisOneAssumptionsRepairRatesItemIdMax = 100;
+
+
+export const addSourceCompsResponseAnalysisOneAssumptionsRepairRatesItemMarketKeyMin = 2;
+export const addSourceCompsResponseAnalysisOneAssumptionsRepairRatesItemMarketKeyMax = 100;
+
+export const addSourceCompsResponseAnalysisOneAssumptionsRepairRatesItemCategoryMax = 100;
+
+export const addSourceCompsResponseAnalysisOneAssumptionsRepairRatesItemLowRateMin = 0;
+export const addSourceCompsResponseAnalysisOneAssumptionsRepairRatesItemLowRateMax = 100000000;
+
+export const addSourceCompsResponseAnalysisOneAssumptionsRepairRatesItemExpectedRateMin = 0;
+export const addSourceCompsResponseAnalysisOneAssumptionsRepairRatesItemExpectedRateMax = 100000000;
+
+export const addSourceCompsResponseAnalysisOneAssumptionsRepairRatesItemHighRateMin = 0;
+export const addSourceCompsResponseAnalysisOneAssumptionsRepairRatesItemHighRateMax = 100000000;
+
+export const addSourceCompsResponseAnalysisOneAssumptionsRepairRatesItemConfidenceMin = 0;
+export const addSourceCompsResponseAnalysisOneAssumptionsRepairRatesItemConfidenceMax = 1;
+
+export const addSourceCompsResponseAnalysisOneAssumptionsRepairRatesItemSourceMax = 2000;
+
+export const addSourceCompsResponseAnalysisOneAssumptionsRepairRatesItemSourceUrlMax = 2000;
+
+export const addSourceCompsResponseAnalysisOneAssumptionsRepairRatesMax = 1000;
 
 export const addSourceCompsResponseOffersItemOneAmountExclusiveMin = 0;
 export const addSourceCompsResponseOffersItemOneAmountMax = 1000000000;
@@ -18839,6 +22330,28 @@ export const addSourceCompsResponseUnderwritingOneRepairsItemConfidenceMax = 1;
 export const addSourceCompsResponseUnderwritingOneRepairsItemEvidenceIdMax = 200;
 
 export const addSourceCompsResponseUnderwritingOneRepairsMax = 50;
+
+export const addSourceCompsResponseUnderwritingOneRepairObservationsItemCategoryMax = 100;
+
+export const addSourceCompsResponseUnderwritingOneRepairObservationsItemQuantityMin = 0;
+export const addSourceCompsResponseUnderwritingOneRepairObservationsItemQuantityMax = 1000000;
+
+export const addSourceCompsResponseUnderwritingOneRepairObservationsItemEvidenceIdMax = 200;
+
+export const addSourceCompsResponseUnderwritingOneRepairObservationsMax = 50;
+
+export const addSourceCompsResponseUnderwritingOneRepairEstimateCatalogVersionMin = 0;
+
+export const addSourceCompsResponseUnderwritingOneRepairEstimateLinesItemLowMin = 0;
+
+export const addSourceCompsResponseUnderwritingOneRepairEstimateLinesItemExpectedMin = 0;
+
+export const addSourceCompsResponseUnderwritingOneRepairEstimateLinesItemHighMin = 0;
+
+export const addSourceCompsResponseUnderwritingOneRepairEstimateLinesItemConfidenceMin = 0;
+export const addSourceCompsResponseUnderwritingOneRepairEstimateLinesItemConfidenceMax = 1;
+
+export const addSourceCompsResponseUnderwritingOneRepairEstimateLinesMax = 50;
 
 export const addSourceCompsResponseUnderwritingOneSubjectEvidenceIdMax = 200;
 
@@ -18945,6 +22458,34 @@ export const AddSourceCompsResponse = zod.object({
   "high": zod.number(),
   "confidence": zod.number()
 }),
+  "repairEstimate": zod.object({
+  "status": zod.enum(['NOT_USED', 'CALCULATED', 'BLOCKED']),
+  "marketKey": zod.string(),
+  "catalogVersion": zod.number().int().min(addSourceCompsResponseAnalysisOneRepairEstimateCatalogVersionMin),
+  "calculatedAt": zod.string().datetime({"offset":true}),
+  "lines": zod.array(zod.object({
+  "category": zod.string(),
+  "severity": zod.enum(['NO_REPAIR', 'COSMETIC', 'MODERATE', 'MAJOR', 'REPLACEMENT']),
+  "quantity": zod.number(),
+  "unit": zod.enum(['SQFT', 'LINEAR_FT', 'EACH', 'LUMP_SUM']),
+  "evidenceId": zod.string(),
+  "rateCardId": zod.string().optional(),
+  "rateCardVersion": zod.number().int().optional(),
+  "low": zod.number().min(addSourceCompsResponseAnalysisOneRepairEstimateLinesItemLowMin),
+  "expected": zod.number().min(addSourceCompsResponseAnalysisOneRepairEstimateLinesItemExpectedMin),
+  "high": zod.number().min(addSourceCompsResponseAnalysisOneRepairEstimateLinesItemHighMin),
+  "confidence": zod.number().min(addSourceCompsResponseAnalysisOneRepairEstimateLinesItemConfidenceMin).max(addSourceCompsResponseAnalysisOneRepairEstimateLinesItemConfidenceMax),
+  "source": zod.string(),
+  "sourceUrl": zod.string().url().optional()
+})).max(addSourceCompsResponseAnalysisOneRepairEstimateLinesMax),
+  "total": zod.union([zod.object({
+  "low": zod.number(),
+  "expected": zod.number(),
+  "high": zod.number(),
+  "confidence": zod.number()
+}),zod.null()]),
+  "blockers": zod.array(zod.string())
+}),
   "mao": zod.number(),
   "openingLow": zod.number(),
   "openingHigh": zod.number(),
@@ -18966,7 +22507,25 @@ export const AddSourceCompsResponse = zod.object({
   "maxSqftDifferencePct": zod.number().min(addSourceCompsResponseAnalysisOneAssumptionsMaxSqftDifferencePctMin).max(addSourceCompsResponseAnalysisOneAssumptionsMaxSqftDifferencePctMax),
   "minComps": zod.number().int().min(addSourceCompsResponseAnalysisOneAssumptionsMinCompsMin).max(addSourceCompsResponseAnalysisOneAssumptionsMinCompsMax),
   "minConfidence": zod.number().min(addSourceCompsResponseAnalysisOneAssumptionsMinConfidenceMin).max(addSourceCompsResponseAnalysisOneAssumptionsMinConfidenceMax),
-  "approvalRequired": zod.boolean()
+  "approvalRequired": zod.boolean(),
+  "repairRateCatalogVersion": zod.number().int().min(addSourceCompsResponseAnalysisOneAssumptionsRepairRateCatalogVersionMin),
+  "repairRates": zod.array(zod.object({
+  "id": zod.string().min(1).max(addSourceCompsResponseAnalysisOneAssumptionsRepairRatesItemIdMax),
+  "version": zod.number().int().min(1),
+  "marketKey": zod.string().min(addSourceCompsResponseAnalysisOneAssumptionsRepairRatesItemMarketKeyMin).max(addSourceCompsResponseAnalysisOneAssumptionsRepairRatesItemMarketKeyMax),
+  "category": zod.string().min(1).max(addSourceCompsResponseAnalysisOneAssumptionsRepairRatesItemCategoryMax),
+  "severity": zod.enum(['COSMETIC', 'MODERATE', 'MAJOR', 'REPLACEMENT']),
+  "unit": zod.enum(['SQFT', 'LINEAR_FT', 'EACH', 'LUMP_SUM']),
+  "lowRate": zod.number().min(addSourceCompsResponseAnalysisOneAssumptionsRepairRatesItemLowRateMin).max(addSourceCompsResponseAnalysisOneAssumptionsRepairRatesItemLowRateMax),
+  "expectedRate": zod.number().min(addSourceCompsResponseAnalysisOneAssumptionsRepairRatesItemExpectedRateMin).max(addSourceCompsResponseAnalysisOneAssumptionsRepairRatesItemExpectedRateMax),
+  "highRate": zod.number().min(addSourceCompsResponseAnalysisOneAssumptionsRepairRatesItemHighRateMin).max(addSourceCompsResponseAnalysisOneAssumptionsRepairRatesItemHighRateMax),
+  "confidence": zod.number().min(addSourceCompsResponseAnalysisOneAssumptionsRepairRatesItemConfidenceMin).max(addSourceCompsResponseAnalysisOneAssumptionsRepairRatesItemConfidenceMax),
+  "source": zod.string().min(1).max(addSourceCompsResponseAnalysisOneAssumptionsRepairRatesItemSourceMax),
+  "sourceUrl": zod.string().url().max(addSourceCompsResponseAnalysisOneAssumptionsRepairRatesItemSourceUrlMax),
+  "capturedOn": zod.string().date(),
+  "validThrough": zod.string().date(),
+  "active": zod.boolean()
+})).max(addSourceCompsResponseAnalysisOneAssumptionsRepairRatesMax)
 }),
   "risks": zod.array(zod.string()),
   "blockers": zod.array(zod.string()),
@@ -19035,6 +22594,41 @@ export const AddSourceCompsResponse = zod.object({
 })).max(addSourceCompsResponseUnderwritingOneRepairsMax),
   "repairsComplete": zod.boolean(),
   "conditionConfirmed": zod.boolean(),
+  "repairObservations": zod.array(zod.object({
+  "category": zod.string().min(1).max(addSourceCompsResponseUnderwritingOneRepairObservationsItemCategoryMax),
+  "severity": zod.enum(['NO_REPAIR', 'COSMETIC', 'MODERATE', 'MAJOR', 'REPLACEMENT']),
+  "quantity": zod.number().min(addSourceCompsResponseUnderwritingOneRepairObservationsItemQuantityMin).max(addSourceCompsResponseUnderwritingOneRepairObservationsItemQuantityMax),
+  "unit": zod.enum(['SQFT', 'LINEAR_FT', 'EACH', 'LUMP_SUM']),
+  "evidenceId": zod.string().min(1).max(addSourceCompsResponseUnderwritingOneRepairObservationsItemEvidenceIdMax)
+})).max(addSourceCompsResponseUnderwritingOneRepairObservationsMax).optional(),
+  "repairEstimate": zod.object({
+  "status": zod.enum(['NOT_USED', 'CALCULATED', 'BLOCKED']),
+  "marketKey": zod.string(),
+  "catalogVersion": zod.number().int().min(addSourceCompsResponseUnderwritingOneRepairEstimateCatalogVersionMin),
+  "calculatedAt": zod.string().datetime({"offset":true}),
+  "lines": zod.array(zod.object({
+  "category": zod.string(),
+  "severity": zod.enum(['NO_REPAIR', 'COSMETIC', 'MODERATE', 'MAJOR', 'REPLACEMENT']),
+  "quantity": zod.number(),
+  "unit": zod.enum(['SQFT', 'LINEAR_FT', 'EACH', 'LUMP_SUM']),
+  "evidenceId": zod.string(),
+  "rateCardId": zod.string().optional(),
+  "rateCardVersion": zod.number().int().optional(),
+  "low": zod.number().min(addSourceCompsResponseUnderwritingOneRepairEstimateLinesItemLowMin),
+  "expected": zod.number().min(addSourceCompsResponseUnderwritingOneRepairEstimateLinesItemExpectedMin),
+  "high": zod.number().min(addSourceCompsResponseUnderwritingOneRepairEstimateLinesItemHighMin),
+  "confidence": zod.number().min(addSourceCompsResponseUnderwritingOneRepairEstimateLinesItemConfidenceMin).max(addSourceCompsResponseUnderwritingOneRepairEstimateLinesItemConfidenceMax),
+  "source": zod.string(),
+  "sourceUrl": zod.string().url().optional()
+})).max(addSourceCompsResponseUnderwritingOneRepairEstimateLinesMax),
+  "total": zod.union([zod.object({
+  "low": zod.number(),
+  "expected": zod.number(),
+  "high": zod.number(),
+  "confidence": zod.number()
+}),zod.null()]),
+  "blockers": zod.array(zod.string())
+}).optional(),
   "subjectEvidenceId": zod.string().max(addSourceCompsResponseUnderwritingOneSubjectEvidenceIdMax).optional(),
   "conditionEvidenceId": zod.string().max(addSourceCompsResponseUnderwritingOneConditionEvidenceIdMax).optional(),
   "sellerContactEvidenceId": zod.string().max(addSourceCompsResponseUnderwritingOneSellerContactEvidenceIdMax).optional()

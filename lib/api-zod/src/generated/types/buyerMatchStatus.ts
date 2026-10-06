@@ -14,4 +14,5 @@ export const BuyerMatchStatus = {
   INTERESTED: 'INTERESTED',
   COMMITTED: 'COMMITTED',
   DECLINED: 'DECLINED',
+  EXPIRED: 'EXPIRED',
 } as const;

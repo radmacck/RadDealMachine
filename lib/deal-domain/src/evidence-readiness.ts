@@ -30,6 +30,19 @@ export function evidenceReadiness(lead: Lead, input: UnderwritingInput|null, ent
     review(c.saleEvidenceId,[`comp_sale:${c.id.toLowerCase()}`],`Comparable ${c.address} sale`,180);
     if (c.condition==="RENOVATED") review(c.conditionEvidenceId,[`comp_condition:${c.id.toLowerCase()}`],`Comparable ${c.address} renovation`,180);
   }
+  for (const observation of input.repairObservations ?? []) {
+    const e = entries.find(entry => entry.id === observation.evidenceId);
+    const category = `repair_scope:${observation.category.trim().toLowerCase()}`;
+    if (!e || e.leadId!==lead.id || e.category.trim().toLowerCase()!==category) {
+      blockers.push(`Repair observation ${observation.category}: select same-property inspection evidence classified for ${category}.`);
+      continue;
+    }
+    const age = now.getTime()-Date.parse(e.capturedAt);
+    if (!Number.isFinite(age)||age<0||age>=30*86400000) blockers.push(`Repair observation ${observation.category}: inspection evidence is future, invalid or at least 30 days old.`);
+    if (e.sourceType!=="INSPECTION"||e.classification!=="VERIFIED_FACTS"||!e.verificationNote?.trim()||!/^https?:\/\//i.test(e.sourceUrl??"")) {
+      blockers.push(`Repair observation ${observation.category}: independently reviewed, linked inspection evidence is required; raw assessor codes and model output are insufficient.`);
+    }
+  }
   for (const r of input.repairs) review(r.evidenceId,[`repair_scope:${r.category.trim().toLowerCase()}`],`Repair scope ${r.category}`);
   return [...new Set(blockers)];
 }

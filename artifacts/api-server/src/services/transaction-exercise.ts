@@ -129,14 +129,19 @@ try {
    buyer = await buyers.verifyBuyer(buyer.id,{...verificationInput,version:buyer.version,buyingEvidenceAt:now.toISOString()},actor,now);
    op = await refreshMatches(id,now);
    assert.equal(op.matches.find(m=>m.buyerId===buyer.id)?.eligible,true);
+  let competitor = await buyers.createBuyer({name:"SYNTHETIC SECOND QUALIFIED BUYER",email:"synthetic-second@example.com",phone:"",
+    source:"Synthetic first-commitment ordering fixture",status:"ACTIVE",criteria:buyer.criteria},actor);
+  competitor = await buyers.verifyBuyer(competitor.id,{...verificationInput,version:competitor.version},actor,now);
+  op = await refreshMatches(id,now);
+  assert.equal(op.matches.find(m=>m.buyerId===competitor.id)?.eligible,true);
     const distribution = await authorizeDealDistribution(id,{version:op.contract!.version,
       reason:"Synthetic owner authorization for isolated distribution exercise."},actor,now);
     assert.ok(distribution.packetId);
     const expectedBuyerPrice=op.contract!.purchasePrice+op.contract!.assignmentTarget;
     assert.equal(distribution.packet?.economics.buyerPrice,expectedBuyerPrice);
-    const shared = await shareDistributionRecipients(distribution.packetId!,{version:distribution.version,buyerIds:[buyer.id]},operator,now);
-    assert.equal(shared.links.length,1);
-    const portalToken = shared.links[0]!.token;
+    const shared = await shareDistributionRecipients(distribution.packetId!,{version:distribution.version,buyerIds:[buyer.id,competitor.id]},operator,now);
+    assert.equal(shared.links.length,2);
+    const portalToken = shared.links.find(link=>link.buyerId===buyer.id)!.token;
     const portal = await getBuyerPortalDeal(portalToken,now);
     assert.equal(portal.packet.economics.buyerPrice,expectedBuyerPrice);
     assert.equal(JSON.stringify(portal).includes(detail.lead.address),false,"The public buyer packet must not expose the street address.");
@@ -150,10 +155,21 @@ try {
     portalResult = await respondToBuyerPortalDeal(portalToken,{eventKey:"synthetic-portal-accept",action:"ACCEPTED"},now);
     assert.equal(portalResult.recipientStatus,"ACCEPTED");
     assert.equal(portalResult.canAccept,false);
+    const afterPortalAcceptance = await dealOperations(id,now);
+    assert.equal(afterPortalAcceptance.matches.find(m=>m.buyerId===buyer.id)?.status,"INTERESTED",
+      "Portal interest/acceptance must propagate to the persisted buyer match without re-entry.");
+    assert.equal((await seller.leadDetail(id)).lead.stage,"BUYER_INTERESTED");
     assert.ok(!(await dealOperations(id,now)).contract?.committedBuyerId,
       "A portal acceptance is intent only; it must not create a buyer commitment.");
     const held = await getDealDistribution(id);
     assert.equal(held.status,"FIRST_ACCEPTED");
+    op=await transactions.recordBuyerResponse(id,competitor.id,{version:afterPortalAcceptance.contract!.version,
+      buyerVersion:competitor.version,status:"INTERESTED",evidence:"Synthetic second buyer response."},operator,now);
+    await assert.rejects(transactions.recordBuyerResponse(id,competitor.id,{
+      version:op.contract!.version,buyerVersion:competitor.version,status:"COMMITTED",
+      evidence:"Synthetic attempt to bypass first qualified acceptance.",agreedPrice:130000,
+      commitmentEvidenceUrl:"https://example.com/synthetic-second-assignment",
+    },actor,now),/different qualified buyer accepted the current package first/);
     await releaseDistributionAcceptance(id,{version:held.version,reason:"Synthetic owner review completed without assignment."},actor,now);
     assert.equal((await getDealDistribution(id)).status,"ACTIVE");
   let destination = await buyers.createBuyer({name:"SYNTHETIC GURU DESTINATION",email:"synthetic-guru@example.com",phone:"",
@@ -200,20 +216,25 @@ try {
      new Date(future(5))),e=>(e as {status:number}).status===403);
    assert.equal(op.contract?.assignmentFeeReceived??null,null,"A quoted fee is not automatically recorded as received.");
    assert.equal(op.contract?.committedBuyerId??null,null);
-   assert.equal((await seller.leadDetail(id)).lead.stage,"BUYER_MATCHED","Destination activity must not promote buyer interest or commitment.");
+   assert.equal((await seller.leadDetail(id)).lead.stage,"BUYER_INTERESTED","Destination activity must not alter the separately recorded buyer portal interest.");
    assert.equal(op.matches.find(m=>m.buyerId===destination.id)?.status,"MATCHED");
    await assert.rejects(transactions.recordBuyerResponse(id,destination.id,{version:op.contract!.version,buyerVersion:destination.version,
      status:"INTERESTED",evidence:"Synthetic destination interest must not use buyer response."},operator,now),/separate destination history/);
    await assert.rejects(transactions.recordBuyerResponse(id,destination.id,{version:op.contract!.version,buyerVersion:destination.version,
      status:"COMMITTED",evidence:"Synthetic attempt to commit a non-acquisition destination.",agreedPrice:130000,
      commitmentEvidenceUrl:"https://example.com/synthetic-invalid-destination-commitment"},actor,now),/separate destination history/);
-  op = await transactions.recordBuyerResponse(id,buyer.id,{version:op.contract!.version,buyerVersion:buyer.version,status:"INTERESTED",evidence:"Synthetic actual-interest attestation."},operator,now);
+  assert.equal(op.matches.find(m=>m.buyerId===buyer.id)?.status,"INTERESTED","The portal response already created the buyer-interest record; no duplicate manual entry is needed.");
   const commitment = {version:op.contract!.version,buyerVersion:buyer.version,status:"COMMITTED" as const,
     evidence:"Synthetic owner commitment review.",commitmentEvidenceUrl:"https://example.com/synthetic-assignment",agreedPrice:130000};
   await assert.rejects(transactions.recordBuyerResponse(id,buyer.id,commitment,operator,now),e=>(e as {status:number}).status===403);
   await assert.rejects(transactions.recordBuyerResponse(id,buyer.id,{...commitment,agreedPrice:100000},actor,now));
   op = await transactions.recordBuyerResponse(id,buyer.id,commitment,actor,now);
   assert.equal(op.contract?.agreedBuyerPrice,130000);
+  const committedDistribution=await getDealDistribution(id);
+  assert.equal(committedDistribution.status,"CLOSED");
+  assert.equal(committedDistribution.recipients.find(r=>r.buyerId===buyer.id)?.status,"COMMITTED");
+  assert.equal(committedDistribution.recipients.find(r=>r.buyerId===competitor.id)?.status,"EXPIRED");
+  assert.equal(op.matches.find(m=>m.buyerId===competitor.id)?.status,"EXPIRED");
   const amend = {version:op.contract!.version,kind:"AMEND_CLOSING" as const,effectiveAt:now.toISOString(),
     newClosingAt:future(4),evidenceUrl:"https://example.com/synthetic-amendment",note:"SYNTHETIC signed date amendment, no real agreement."};
   await assert.rejects(recordTransactionException(id,amend,operator,now),e=>(e as {status:number}).status===403);

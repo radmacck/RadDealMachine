@@ -7,6 +7,8 @@
  */
 import type { Comp } from './comp';
 import type { Repair } from './repair';
+import type { RepairEstimate } from './repairEstimate';
+import type { RepairObservation } from './repairObservation';
 
 export interface UnderwritingInput {
   /** @minimum 1 */
@@ -17,6 +19,9 @@ export interface UnderwritingInput {
   repairs: Repair[];
   repairsComplete: boolean;
   conditionConfirmed: boolean;
+  /** @maxItems 50 */
+  repairObservations?: RepairObservation[];
+  repairEstimate?: RepairEstimate;
   /** @maxLength 200 */
   subjectEvidenceId?: string;
   /** @maxLength 200 */

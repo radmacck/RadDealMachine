@@ -1,6 +1,9 @@
 import { eq, and, lte, gt, desc, sql } from "drizzle-orm";
 import { isDeepStrictEqual } from "node:util";
-import { db, contractsTable, leadsTable, buyersTable, matchesTable, offersTable, analysesTable, intelligenceTable } from "@workspace/db";
+import {
+  db, contractsTable, leadsTable, buyersTable, matchesTable, offersTable, analysesTable,
+  intelligenceTable, distributionPacketsTable, distributionRecipientsTable,
+} from "@workspace/db";
 import type { z } from "zod";
 import {
   CreateContractBody, RecordDestinationActivityBody as DestinationActivityBody, ExecuteContractBody, RecordBuyerResponseBody, RecordClosingMilestoneBody, RecordDealOutcomeBody,
@@ -119,6 +122,7 @@ export async function recordBuyerResponse(id: string,buyerId: string,input: z.in
   assertOperationsRole(actor,parsed.status==="COMMITTED"?["OWNER"]:["OWNER","OPERATOR"]);
   await db.transaction(async tx=>{
     const lead = await lockedLead(tx,id), {row,contract} = await lockedContract(tx,id,parsed.version);
+    let currentPacket: typeof distributionPacketsTable.$inferSelect | undefined;
     if (contract.status==="DRAFT") throw new DomainError("Record the externally signed acquisition contract before buyer responses.",409);
     const [buyerRow] = await tx.select().from(buyersTable).where(eq(buyersTable.id,buyerId)).for("update");
     if (!buyerRow) throw new DomainError("Buyer not found.",404);
@@ -137,10 +141,49 @@ export async function recordBuyerResponse(id: string,buyerId: string,input: z.in
       if (parsed.agreedPrice==null || !parsed.commitmentEvidenceUrl) throw new DomainError("Commitment needs exact price and a reviewed signed document reference.");
       wholeDollars(parsed.agreedPrice,"Buyer price"); evidenceUrl(parsed.commitmentEvidenceUrl);
       if (parsed.agreedPrice<contract.purchasePrice+contract.assignmentTarget) throw new DomainError("Buyer price cannot fall below the frozen acquisition plus target assignment.");
+      const [packet] = await tx.select().from(distributionPacketsTable).where(and(
+        eq(distributionPacketsTable.leadId,id),
+        eq(distributionPacketsTable.attemptNumber,contract.attemptNumber??1),
+      )).for("update");
+      currentPacket=packet;
+      if (packet && ["ACTIVE","FIRST_ACCEPTED"].includes(packet.status) && packet.expiresAt.getTime()<=now.getTime()) {
+        throw new DomainError("The authorized buyer packet expired; renew it and refresh buyer eligibility before recording commitment.",409);
+      }
+      if (packet?.status==="FIRST_ACCEPTED" && packet.acceptedBuyerId!==buyerId) {
+        throw new DomainError("A different qualified buyer accepted the current package first. Resolve or release that soft acceptance before committing another buyer.",409);
+      }
       Object.assign(contract,{committedBuyerId:buyerId,agreedBuyerPrice:parsed.agreedPrice,buyerCommittedAt:now.toISOString(),
         commitmentSnapshot:{recordedAt:now.toISOString(),buyer,detail,reservedCount:reservations.count,reservedFunds:reservations.funds}});
       await save(tx,row,contract,now);
       await move(tx,lead,"BUYER_COMMITTED","Owner recorded buyer commitment with reviewed external evidence","Record title, earnest money, assignment and funds evidence before settlement.",actor.id,now);
+      if (currentPacket && ["ACTIVE","FIRST_ACCEPTED"].includes(currentPacket.status)) {
+        await tx.update(distributionPacketsTable).set({status:"CLOSED",version:currentPacket.version+1,updatedAt:now})
+          .where(eq(distributionPacketsTable.id,currentPacket.id));
+        const recipients=await tx.select().from(distributionRecipientsTable)
+          .where(eq(distributionRecipientsTable.packetId,currentPacket.id)).for("update");
+        for (const recipient of recipients) {
+          const winner=recipient.buyerId===buyerId;
+          await tx.update(distributionRecipientsTable).set({
+            status:winner?"COMMITTED":"EXPIRED",
+            payload:{
+              ...recipient.payload,
+              resolution:{kind:winner?"COMMITTED":"EXPIRED",at:now.toISOString(),committedBuyerId:buyerId,
+                commitmentEvidenceUrl:winner?parsed.commitmentEvidenceUrl:null},
+            },
+            updatedAt:now,
+          }).where(eq(distributionRecipientsTable.id,recipient.id));
+        }
+        const competingMatches=await tx.select().from(matchesTable).where(eq(matchesTable.leadId,id)).for("update");
+        for (const match of competingMatches) {
+          if (match.buyerId===buyerId || (match.payload.destinationKind??"BUYER")!=="BUYER" ||
+            !["MATCHED","INTERESTED"].includes(String(match.payload.status))) continue;
+          await tx.update(matchesTable).set({payload:{
+            ...match.payload,status:"EXPIRED",eligible:false,
+            mismatches:[...(Array.isArray(match.payload.mismatches)?match.payload.mismatches as string[]:[]),
+              "The first qualified buyer completed commitment review; this opportunity is closed."],
+          },updatedAt:now}).where(eq(matchesTable.id,match.id));
+        }
+      }
     } else if (parsed.status==="INTERESTED" && buyer.destinationKind==="BUYER" && !contract.committedBuyerId && ["UNDER_CONTRACT","BUYER_MATCHED"].includes(lead.stage)) {
       await move(tx,lead,"BUYER_INTERESTED","Actual buyer interest recorded", "Review buyer commitment evidence and obtain owner approval.",actor.id,now);
       // Version the transaction for every response, not only financial commitment.

@@ -10,6 +10,7 @@ import {
   type Lead, type LeadInput, type LeadDetail, type Intelligence, type IntelligenceInput,
   type UnderwritingInput, type Assumptions, type TransitionInput, type CallInput, type Analysis, type Stage, type OfferActor,
   evidenceReviewedAnalysis, buildDealWorkGuidance,
+  repairMarketKey,
 } from "@workspace/deal-domain";
 import { CreateLeadResponse, GetLeadResponse, AddIntelligenceResponse, GetAssumptionsResponse } from "@workspace/api-zod";
 import { offersForLead, invalidateOffers, invalidateOffersForPolicyChange } from "./offer-records";
@@ -86,7 +87,21 @@ export async function leadDetail(id: string, database: typeof db | Tx = db, now 
   const intelligence = intel.map(e => AddIntelligenceResponse.parse({
     ...e.payload, id:e.id, leadId:e.leadId, createdBy:e.createdBy, createdAt:iso(e.createdAt),
   }));
-  const analysis = evidenceReviewedAnalysis(row.analysis as Analysis|null,lead,row.underwriting as UnderwritingInput|null,intelligence,now);
+  const storedAnalysis = row.analysis as Analysis|null;
+  const legacySafeAnalysis = storedAnalysis ? {
+    ...storedAnalysis,
+    assumptions:{
+      ...DEFAULT_ASSUMPTIONS,
+      ...storedAnalysis.assumptions,
+      repairRateCatalogVersion:storedAnalysis.assumptions?.repairRateCatalogVersion ?? 0,
+      repairRates:Array.isArray(storedAnalysis.assumptions?.repairRates)?storedAnalysis.assumptions.repairRates:[],
+    },
+    repairEstimate:storedAnalysis.repairEstimate ?? {
+      status:"NOT_USED" as const,marketKey:repairMarketKey(lead.city,lead.state),catalogVersion:0,
+      calculatedAt:storedAnalysis.calculatedAt,lines:[],total:null,blockers:[],
+    },
+  } : null;
+  const analysis = evidenceReviewedAnalysis(legacySafeAnalysis,lead,row.underwriting as UnderwritingInput|null,intelligence,now);
   const offers = await offersForLead(database,id,{
     lead,intelligence,analysis,analysisSnapshotId:row.analysisSnapshotId,
     currentPolicy:await getAssumptions(database),conversationLogged:calls.some(c => c.payload.outcome === "CONNECTED"),now,
@@ -102,16 +117,57 @@ export async function leadDetail(id: string, database: typeof db | Tx = db, now 
 
 export async function getAssumptions(database: typeof db | Tx = db): Promise<Assumptions> {
   const [row] = await database.select().from(settingsTable).where(eq(settingsTable.id,1));
-  return GetAssumptionsResponse.parse(row?.assumptions ?? DEFAULT_ASSUMPTIONS);
+  const saved = row?.assumptions ?? {};
+  return GetAssumptionsResponse.parse({
+    ...DEFAULT_ASSUMPTIONS,
+    ...saved,
+    repairRateCatalogVersion:typeof saved.repairRateCatalogVersion==="number"?saved.repairRateCatalogVersion:0,
+    repairRates:Array.isArray(saved.repairRates)?saved.repairRates:[],
+  });
 }
 export async function saveAssumptions(input: Assumptions, actor: string) {
-  validateAssumptions(input);
   return db.transaction(async tx => {
-    await tx.insert(settingsTable).values({ id:1, assumptions:jsonRecord(input) })
-      .onConflictDoUpdate({target:settingsTable.id,set:{assumptions:jsonRecord(input),updatedAt:new Date()}});
-    await invalidateOffersForPolicyChange(tx,actor,new Date());
-    await audit(tx,actor,"ASSUMPTIONS_CHANGED","workspace","Updated assumptions. Existing snapshots remain immutable; live offers invalidated. Refresh underwriting and obtain new approval under the new policy.");
-    return input;
+    const now = new Date();
+    const previous = await getAssumptions(tx);
+    const priorById = new Map(previous.repairRates.map(rate=>[rate.id,rate]));
+    const nextById = new Map(input.repairRates.map(rate=>[rate.id,rate]));
+    for (const oldRate of previous.repairRates) {
+      const nextRate = nextById.get(oldRate.id);
+      if (!nextRate) throw new DomainError(`Repair rate card ${oldRate.id} is part of immutable catalog history; deactivate it instead of deleting it.`,409);
+      const oldTerms=[oldRate.version,oldRate.marketKey,oldRate.category,oldRate.severity,oldRate.unit,
+        oldRate.lowRate,oldRate.expectedRate,oldRate.highRate,oldRate.confidence,oldRate.source,
+        oldRate.sourceUrl,oldRate.capturedOn,oldRate.validThrough];
+      const nextTerms=[nextRate.version,nextRate.marketKey,nextRate.category,nextRate.severity,nextRate.unit,
+        nextRate.lowRate,nextRate.expectedRate,nextRate.highRate,nextRate.confidence,nextRate.source,
+        nextRate.sourceUrl,nextRate.capturedOn,nextRate.validThrough];
+      if (JSON.stringify(oldTerms)!==JSON.stringify(nextTerms)) {
+        throw new DomainError(`Repair rate card ${oldRate.id} is immutable. Add a new version and deactivate the old card.`,409);
+      }
+      if (!oldRate.active && nextRate.active && nextRate.validThrough < now.toISOString().slice(0,10)) {
+        throw new DomainError(`Expired repair rate card ${oldRate.id} cannot be reactivated.`,409);
+      }
+    }
+    for (const rate of input.repairRates) {
+      if (priorById.has(rate.id)) continue;
+      const matchingHistory = previous.repairRates.filter(old=>
+        old.marketKey.toLowerCase()===rate.marketKey.toLowerCase() &&
+        old.category.trim().toLowerCase()===rate.category.trim().toLowerCase() &&
+        old.severity===rate.severity && old.unit===rate.unit,
+      );
+      const expectedVersion = matchingHistory.reduce((max,old)=>Math.max(max,old.version),0)+1;
+      if (rate.version!==expectedVersion) throw new DomainError(`Repair rate card ${rate.id} must use version ${expectedVersion} for this market/category/severity/unit.`,409);
+    }
+    const catalogChanged = JSON.stringify(previous.repairRates)!==JSON.stringify(input.repairRates);
+    const saved = {
+      ...input,
+      repairRateCatalogVersion:catalogChanged?previous.repairRateCatalogVersion+1:previous.repairRateCatalogVersion,
+    };
+    validateAssumptions(saved,now);
+    await tx.insert(settingsTable).values({ id:1, assumptions:jsonRecord(saved) })
+      .onConflictDoUpdate({target:settingsTable.id,set:{assumptions:jsonRecord(saved),updatedAt:now}});
+    await invalidateOffersForPolicyChange(tx,actor,now);
+    await audit(tx,actor,"ASSUMPTIONS_CHANGED","workspace",`Updated deterministic underwriting policy and source-backed repair catalog v${saved.repairRateCatalogVersion}. Existing snapshots remain immutable; live offers invalidated. Refresh underwriting and obtain new approval under the new policy.`);
+    return saved;
   });
 }
 
@@ -214,9 +270,26 @@ export async function saveUnderwriting(id: string, input: UnderwritingInput, act
     const lead = toLead(row);
     const assumptions = await getAssumptions(tx);
     const intelligence = (await tx.select().from(intelligenceTable).where(eq(intelligenceTable.leadId,id))).map(e=>AddIntelligenceResponse.parse({...e.payload,id:e.id,leadId:id,createdBy:e.createdBy,createdAt:iso(e.createdAt)}));
-    const analysis = evidenceReviewedAnalysis(analyzeDeal(lead,input,assumptions,now),lead,input,intelligence,now)!;
+    const {repairEstimate:_untrustedEstimate,...withoutClientEstimate}=input;
+    const calculationInput = (withoutClientEstimate.repairObservations?.length ?? 0) > 0
+      ? {...withoutClientEstimate,repairs:[]}
+      : withoutClientEstimate;
+    const rawAnalysis = analyzeDeal(lead,calculationInput,assumptions,now,intelligence);
+    const persistedInput:UnderwritingInput = (calculationInput.repairObservations?.length ?? 0) > 0
+      ? {
+          ...calculationInput,
+          repairs:rawAnalysis.repairEstimate.status==="CALCULATED"
+            ? rawAnalysis.repairEstimate.lines.map(line=>({
+                category:line.category,low:line.low,expected:line.expected,high:line.high,
+                confidence:line.confidence,source:line.source,evidenceId:line.evidenceId,
+              }))
+            : [],
+          repairEstimate:rawAnalysis.repairEstimate,
+        }
+      : calculationInput;
+    const analysis = evidenceReviewedAnalysis(rawAnalysis,lead,persistedInput,intelligence,now)!;
     const [snapshot] = await tx.insert(analysesTable).values({
-      leadId:id,createdBy:actor,createdAt:now,snapshot:jsonRecord({lead,input,analysis}),
+      leadId:id,createdBy:actor,createdAt:now,snapshot:jsonRecord({lead,input:persistedInput,analysis}),
     }).returning({id:analysesTable.id});
     if (!snapshot) throw new Error("Analysis snapshot insert failed");
     await invalidateOffers(tx,id,actor,"Underwriting refreshed; offers must bind to the new snapshot and be approved again.",now);
@@ -229,7 +302,7 @@ export async function saveUnderwriting(id: string, input: UnderwritingInput, act
       await move(tx,row,analysis.classification,"Classification calculated by deterministic underwriting engine",action,actor,now);
     }
     await tx.update(leadsTable).set({
-      underwriting:jsonRecord(input),analysis:jsonRecord(analysis),analysisSnapshotId:snapshot.id,stage:row.stage,
+      underwriting:jsonRecord(persistedInput),analysis:jsonRecord(analysis),analysisSnapshotId:snapshot.id,stage:row.stage,
       nextAction:row.nextAction,version:row.version+1,updatedAt:now,
     }).where(eq(leadsTable.id,id));
     await audit(tx,actor,"UNDERWRITING_SAVED",id,`${analysis.engineVersion}: ${analysis.classification}; MAO $${analysis.mao}. Snapshot preserves inputs, policy, excluded comps and calculation time. No offer authorized.`);
