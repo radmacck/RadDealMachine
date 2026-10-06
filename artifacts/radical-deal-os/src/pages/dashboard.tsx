@@ -31,7 +31,8 @@ export default function Dashboard() {
   const matchesSearch = (...values: (string | number | null | undefined)[]) =>
     !query || values.some((value) => String(value ?? '').toLowerCase().includes(query));
   const actions = d ? [...d.actions].filter((item) => matchesSearch(item.title, item.reason, LABEL[item.category])).sort((a, b) => b.priority - a.priority) : [];
-  const visibleActions = showAllActions ? actions : actions.slice(0, 3);
+  const primaryAction = actions[0];
+  const secondaryActions = showAllActions ? actions.slice(1) : actions.slice(1, 3);
   const contracts = d ? d.operations.filter((o) => o.contract) : [];
   const deadlines = contracts.filter((o) => o.contract!.status !== 'CLOSED' && o.contract!.status !== 'CANCELLED').sort((a, b) => a.contract!.closingAt.localeCompare(b.contract!.closingAt));
   const qualified = d ? d.buyers.filter((b) => isQualified(b) && (b.destinationKind ?? 'BUYER') === 'BUYER') : [];
@@ -80,7 +81,7 @@ export default function Dashboard() {
           <button className="fd-button" type="button" onClick={() => void q.refetch()} disabled={q.isFetching} aria-busy={q.isFetching}>
             <RefreshCw size={14} className={q.isFetching ? 'animate-spin' : ''} />{q.isFetching ? 'Refreshing' : 'Refresh desk'}
           </button>
-          <Link className="fd-button fd-button-primary" href="/leads" data-testid="link-add-lead"><Plus size={15} />Add a lead</Link>
+          <Link className="fd-button" href="/leads" data-testid="link-add-lead"><Plus size={15} />Manual seller intake</Link>
         </div>
       </header>
       {searchOpen && (
@@ -102,50 +103,98 @@ export default function Dashboard() {
 
           <section className="fd-actions-section" data-testid="panel-actions">
             <div className="fd-section-head">
-              <div className="fd-section-title"><Compass size={16} />Do next <small>{actions.length}</small></div>
-              <Link className="fd-text-link" href="/sources" data-testid="link-sources">Find properties from official records <ArrowRight size={12} style={{ verticalAlign: 'middle', marginLeft: 3 }} /></Link>
+              <div className="fd-section-title"><Compass size={16} />Start here <small>{actions.length ? `1 of ${actions.length}` : 'no assigned task'}</small></div>
             </div>
             {actions.length === 0 ? (
-              <div className="fd-empty">{query ? 'No tasks match that search. Try a different name or address.' : <>Nothing is waiting on you. New work appears here as leads are researched, approved, and followed up. <Link className="fd-text-link" href="/leads" data-testid="link-empty-inventory">Open deal inventory</Link></>}</div>
-            ) : (
-              <div className="fd-action-list">
-                {visibleActions.map((action) => (
-                  <article key={action.id} className="fd-action" data-category={action.category} data-testid={`action-${action.id}`}>
-                    <span className="fd-action-stripe" />
-                    <span className={`fd-action-tag ${TONE[action.category]}`}>{LABEL[action.category]}</span>
+              <div className="fd-start-empty" role="status">
+                {query ? (
+                  <>
+                    <div><b>No open action matches this search.</b><p>Clear the search to return to the system-selected priority.</p></div>
+                    <button className="fd-button" type="button" onClick={() => setSearchQuery('')}>Clear search</button>
+                  </>
+                ) : (
+                  <>
                     <div>
-                      <div className="fd-action-title">{action.title}</div>
-                      <div className="fd-action-reason">{action.reason}</div>
-                      {action.workGuidance && (
-                        <div className="fd-work-guidance" data-testid={`work-guidance-${action.id}`}>
-                          <div className="fd-work-guidance-state">
-                            <span><b>State</b> {action.workGuidance.currentState}</span>
-                            <span><b>Responsible</b> {action.workGuidance.responsibleRole}</span>
-                            <span><b>{action.workGuidance.dueLabel}</b>{action.workGuidance.dueAt ? ` · ${fmtDate(action.workGuidance.dueAt)}` : ''}</span>
-                          </div>
-                          {action.workGuidance.knownFacts.length > 0 && <p><b>Known:</b> {action.workGuidance.knownFacts.join(' · ')}</p>}
-                          {action.workGuidance.missingFacts.length > 0 && <p className="fd-work-guidance-missing"><b>Missing / blocked:</b> {action.workGuidance.missingFacts.join(' · ')}</p>}
-                          <p><b>Why this matters:</b> {action.workGuidance.why}</p>
-                          <p><b>Can happen now:</b> {action.workGuidance.systemCanDo}</p>
-                          <p><b>You must do:</b> {action.workGuidance.humanMustDo}</p>
-                          <p><b>What happens next:</b> {action.workGuidance.completionRecord}</p>
-                          <details className="fd-work-guidance-detail">
-                            <summary>Evidence needed to complete this action</summary>
-                            <p><b>Evidence to record:</b> {action.workGuidance.requiredEvidence.join(' · ')}</p>
-                          </details>
-                        </div>
+                      <b>No action is currently assigned to you.</b>
+                      <p>For acquisition work, the next valid system step is property discovery. Records stay as source observations until market criteria and evidence qualify them; they are not active leads by default.</p>
+                    </div>
+                    <Link className="fd-button fd-button-primary" href="/sources" data-testid="link-empty-discovery">Open property discovery <ArrowRight size={14} /></Link>
+                  </>
+                )}
+              </div>
+            ) : (
+              <div className="fd-start-stack">
+                {primaryAction && (
+                  <article className="fd-start-card" data-category={primaryAction.category} data-testid="primary-command-action">
+                    <div className="fd-start-card-head">
+                      <div>
+                        <div className="fd-start-kicker">Highest-priority persisted action · system-selected first</div>
+                        <span className={`fd-action-tag ${TONE[primaryAction.category]}`}>{LABEL[primaryAction.category]}</span>
+                        <h2>{primaryAction.title}</h2>
+                      </div>
+                      {primaryAction.dueAt && (
+                        <div className="fd-start-due"><span>Due</span><b>{fmtDate(primaryAction.dueAt)}</b><small>{ago(primaryAction.dueAt)}</small></div>
                       )}
                     </div>
-                    {action.dueAt && <span className="fd-due">{action.workGuidance?.dueLabel ?? 'Due'} · {ago(action.dueAt)}</span>}
-                    <Link href={action.href} className="fd-action-link" aria-label={`${action.cta}: ${action.title}`}>
-                      {action.cta}<ArrowRight size={13} />
-                    </Link>
+                    {(() => {
+                      const guidance = primaryAction.workGuidance;
+                      return (
+                        <div className="fd-start-guidance">
+                          <div className="fd-start-state">
+                            <div><span className="fd-start-label">Where we are</span><p>{guidance?.currentState ?? 'This action has no workflow state attached; confirm the linked record before proceeding.'}</p></div>
+                            <div><span className="fd-start-label">Responsible</span><p>{guidance?.responsibleRole ?? 'Review required'}</p></div>
+                          </div>
+                          <div className="fd-start-facts">
+                            <div><span className="fd-start-label">What is known</span><p>{guidance?.knownFacts.length ? guidance.knownFacts.join(' · ') : guidance ? 'No supporting facts are attached.' : 'No supporting facts are attached to this action.'}</p></div>
+                            <div className="fd-start-missing"><span className="fd-start-label">What is missing or blocked</span><p>{guidance?.missingFacts.length ? guidance.missingFacts.join(' · ') : guidance ? 'No additional blocker is reported.' : 'Step-by-step guidance is missing; verify the linked record before taking action.'}</p></div>
+                          </div>
+                          <div className="fd-start-steps">
+                            <div><span className="fd-start-label">Why it matters</span><p>{guidance?.why ?? primaryAction.reason}</p></div>
+                            <div><span className="fd-start-label">What can happen now</span><p>{guidance?.systemCanDo ?? 'The system has prioritized and linked this action; no further system operation is implied.'}</p></div>
+                            <div><span className="fd-start-label">What you must do</span><p>{guidance?.humanMustDo ?? 'Open the linked workflow and confirm its persisted state before making a decision.'}</p></div>
+                            <div><span className="fd-start-label">What happens next</span><p>{guidance?.completionRecord ?? 'The next state is not asserted until the linked workflow records its result.'}</p></div>
+                          </div>
+                          {guidance?.requiredEvidence.length ? (
+                            <details className="fd-work-guidance-detail">
+                              <summary>Evidence required to complete this action</summary>
+                              <p>{guidance.requiredEvidence.join(' · ')}</p>
+                            </details>
+                          ) : null}
+                          <Link href={primaryAction.href} className="fd-start-cta" aria-label={`${primaryAction.cta}: ${primaryAction.title}`}>
+                            {primaryAction.cta}<ArrowRight size={15} />
+                          </Link>
+                        </div>
+                      );
+                    })()}
                   </article>
-                ))}
+                )}
+                {secondaryActions.length > 0 && (
+                  <div className="fd-next-up">
+                    <div className="fd-section-head">
+                      <div className="fd-section-title">Also queued <small>{actions.length - 1} more action(s) · ordered by priority</small></div>
+                    </div>
+                    <div className="fd-action-list">
+                      {secondaryActions.map((action) => (
+                        <article key={action.id} className="fd-action" data-category={action.category} data-testid={`action-${action.id}`}>
+                          <span className="fd-action-stripe" />
+                          <span className={`fd-action-tag ${TONE[action.category]}`}>{LABEL[action.category]}</span>
+                          <div>
+                            <div className="fd-action-title">{action.title}</div>
+                            <div className="fd-action-reason">{action.reason}</div>
+                          </div>
+                          {action.dueAt && <span className="fd-due">{action.workGuidance?.dueLabel ?? 'Due'} · {ago(action.dueAt)}</span>}
+                          <Link href={action.href} className="fd-action-link" aria-label={`${action.cta}: ${action.title}`}>
+                            {action.cta}<ArrowRight size={13} />
+                          </Link>
+                        </article>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </div>
             )}
-            {actions.length > 3 && <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 7 }}>
-              <button className="fd-text-link" type="button" onClick={() => setShowAllActions((current) => !current)}>{showAllActions ? 'Show the essentials' : 'View all tasks'} <ArrowRight size={12} style={{ verticalAlign: 'middle', marginLeft: 3 }} /></button>
+            {actions.length > 3 && <div className="fd-action-more">
+              <button className="fd-text-link" type="button" onClick={() => setShowAllActions((current) => !current)}>{showAllActions ? 'Show fewer actions' : `View all ${actions.length} actions`} <ArrowRight size={12} style={{ verticalAlign: 'middle', marginLeft: 3 }} /></button>
             </div>}
           </section>
 
