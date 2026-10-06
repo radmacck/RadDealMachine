@@ -15,6 +15,12 @@ An executed agreement and an accepted buyer commitment are historical business e
 
 **How to apply:** Use evidenced owner-reviewed cancellation or amendments for changes to executed commitments. Pre-execution paperwork preparation must not itself invalidate the exact approval it is meant to implement.
 
+A material public-source signal change before execution invalidates the underwriting snapshot and seller-offer authority, and abandons only an unexecuted transaction draft. After execution, preserve signed terms and stage, record a research-review action, and queue buyer re-matching.
+
+**Why:** New property evidence can make an unexecuted price unsafe without undoing an external agreement; a prepared worksheet is not a signed contract.
+
+**How to apply:** Compare normalized source signals, not just retrieval timestamps. Keep superseded documents as audit artifacts, block their execution, and never rewrite executed economics from a research refresh.
+
 Without an owner-approved jurisdictional form, a generated PDF may only be a clearly labeled, fillable terms-review worksheet; it must not be presented as a purchase agreement or signature flow.
 
 **Why:** Legal clauses, missing seller/title details, and signature requirements cannot be safely inferred from a deal snapshot, and a prepared file is not external execution evidence.

@@ -6,7 +6,7 @@ import assert from "node:assert/strict";
 import { randomUUID } from "node:crypto";
 import { eq, sql } from "drizzle-orm";
 import {
-  db, pool, jobsTable, leadsTable, intelligenceTable, propertySourceObservationsTable,
+  db, pool, jobsTable, leadsTable, intelligenceTable, analysesTable, offersTable, contractsTable, propertySourceObservationsTable,
   unmatchedPropertySourceObservationsTable,
 } from "@workspace/db";
 import { ListPropertySourcesResponse } from "@workspace/api-zod";
@@ -21,8 +21,12 @@ import {
   refreshPropertySourceEvidence, stalePropertySourceRefreshTargets,
 } from "./property-discovery-store";
 import { addSourceComps, getSourceResearch, importPublicProperty, listPropertySources, refreshSourceResearch, searchPublicProperties } from "./property-source-store";
-import { callQueue, createLead, leadDetail } from "./deal-store";
+import { addIntelligence, callQueue, createLead, leadDetail, updateLead, saveUnderwriting, transitionLead, recordCall } from "./deal-store";
 import { createBuyer, verifyBuyer } from "./buyer-store";
+import * as offers from "./offer-store";
+import * as transactions from "./transaction-store";
+import { dealOperations } from "./matching-store";
+import { exerciseEvidence } from "./exercise-evidence";
 import { runWorkerOnce, submitWorkerJob } from "./workers";
 import {
   allPropertySourceConnectors,
@@ -397,8 +401,182 @@ try {
   assert.ok(buyerResearch.records.every((record) => record.entityCandidate && record.classification === "OBSERVED"));
   const staleTargets = await stalePropertySourceRefreshTargets(new Date(now.getTime() + 7 * 60 * 60 * 1000));
   assert.ok(staleTargets.includes(property.id), "Previously qualified/candidate parcels become eligible for recurring source refresh after six hours.");
+  const sourceObservations = await db.select().from(propertySourceObservationsTable)
+    .where(eq(propertySourceObservationsTable.discoveryId, first.id));
+  const refreshableObservation = sourceObservations.find(row => !row.sourceKey.startsWith("phila-opa:"));
+  assert.ok(refreshableObservation, "A linked non-OPA source observation is required to exercise source-change propagation.");
+  await db.update(propertySourceObservationsTable).set({
+    payload: {
+      ...refreshableObservation.payload,
+      signalId: `synthetic-prior-signal:${randomUUID()}`,
+      evidenceRef: "https://example.com/synthetic-prior-evidence",
+    },
+  }).where(eq(propertySourceObservationsTable.id, refreshableObservation.id));
+
+  // Build a persisted, synthetic seller offer and unexecuted transaction against
+  // the promoted source-linked lead. The source refresh below must stale it.
+  detail = await leadDetail(promoted.leadId);
+  const lead = detail.lead;
+  await updateLead(promoted.leadId, {
+    version: lead.version,
+    address: lead.address, city: lead.city, state: lead.state, county: lead.county, zip: lead.zip,
+    propertyType: lead.propertyType, sqft: lead.sqft ?? 1000, beds: lead.beds ?? 3, baths: lead.baths ?? 2,
+    units: lead.units ?? 1, askingPrice: 50000, sellerName: "SYNTHETIC source-refresh exercise only",
+    sellerPhone: "000-000-0000", source: "SYNTHETIC isolated property-source exercise; no real seller contact",
+  }, actor.id, now);
+  detail = await leadDetail(promoted.leadId);
+  const sellerAuthority = await addIntelligence(promoted.leadId, {
+    classification: "VERIFIED_FACTS", category: "ownership",
+    statement: "Synthetic owner-authority fixture for isolated source-refresh behavior; not a real title fact.",
+    source: "Synthetic isolated exercise evidence", sourceType: "PUBLIC_RECORD", confidence: 0.9,
+    capturedAt: now.toISOString(), verificationNote: "Synthetic test fixture only; no real owner or property is represented.",
+  }, actor.id, now);
+  detail = await leadDetail(promoted.leadId);
+  const future = (hours: number) => new Date(now.getTime() + hours * 3_600_000).toISOString();
+  const syntheticUnderwriting = {
+    version: detail.lead.version, repairsComplete: true, conditionConfirmed: true,
+    comps: [0, 1, 2].map(index => ({
+      id: `synthetic-source-refresh-comp-${index}`,
+      address: `SYNTHETIC SOURCE REFRESH COMP ${index}`,
+      salePrice: 300000 + index * 10000, sqft: Math.max(1, detail.lead.sqft ?? 1000),
+      soldAt: new Date(now.getTime() - (10 + index) * 86_400_000).toISOString().slice(0, 10),
+      distanceMiles: 0.5, propertyType: detail.lead.propertyType,
+      condition: "RENOVATED" as const, source: "Synthetic isolated fixture", verified: true,
+    })),
+    repairs: [{ category: "Synthetic repair scope", low: 10000, expected: 20000, high: 30000,
+      confidence: 0.8, source: "Synthetic isolated repair fixture" }],
+  };
+  Object.assign(syntheticUnderwriting, await exerciseEvidence(promoted.leadId, syntheticUnderwriting, actor.id, now));
+  detail = await saveUnderwriting(promoted.leadId, syntheticUnderwriting, actor.id, now);
+  assert.ok(detail.analysis, "Synthetic underwriting should persist its deterministic calculation.");
+  assert.ok(["STRONG", "NEGOTIABLE"].includes(detail.analysis.classification),
+    `Synthetic source-refresh deal must be offer-ready: ${JSON.stringify({classification:detail.analysis.classification,blockers:detail.analysis.blockers,mao:detail.analysis.mao})}`);
+  detail = await transitionLead(promoted.leadId, {
+    version: detail.lead.version, to: "CALL_READY",
+    reason: "Synthetic isolated call-readiness gate.", nextAction: "Synthetic exercise only.",
+  }, actor.id, now);
+  detail = await recordCall(promoted.leadId, {
+    version: detail.lead.version, outcome: "CONNECTED",
+    notes: "Synthetic exercise only; no external call occurred.",
+    nextAction: "Prepare synthetic exact terms.", followUpAt: future(24),
+  }, actor.id, now);
+  const commandDesk = await commandCenter("OPERATOR", now);
+  const persistedCallAction = commandDesk.actions.find(action => action.leadId === promoted.leadId);
+  assert.equal(persistedCallAction?.href, `/calls?lead=${promoted.leadId}`,
+    "The real command-center API must link a call-ready/follow-up action to the selected seller's live call form.");
+  assert.equal(persistedCallAction?.cta, "Open call brief");
+  detail = await offers.createOfferDraft(promoted.leadId, {
+    version: detail.lead.version, amount: 50000, earnestMoney: 500, closingDays: 30,
+    contingencies: "Synthetic exercise only.", assignmentIntent: true,
+    reason: "Synthetic source-refresh invalidation test.",
+  }, actor, now);
+  const sourceTestOfferId = detail.offers[0]!.id;
+  detail = await offers.authorizeOffer(promoted.leadId, sourceTestOfferId, {
+    version: detail.lead.version, maximumApprovedAcquisitionPrice: 50000,
+    authorityEvidenceId: sellerAuthority.id, expiresAt: future(48),
+    reason: "Synthetic owner review.", nextAction: "Synthetic exact terms.",
+    followUpAt: future(24),
+  }, actor, now);
+  detail = await offers.communicateOffer(promoted.leadId, sourceTestOfferId, {
+    version: detail.lead.version, amount: 50000, channel: "PHONE",
+    evidence: "Synthetic communication attestation; no external contact occurred.",
+    nextAction: "Prepare synthetic transaction review.", followUpAt: future(24),
+  }, { id: actor.id, role: "OWNER" }, now);
+  let sourceTestOperations = await transactions.createContract(promoted.leadId, {
+    version: detail.lead.version, offerId: sourceTestOfferId, closingAt: future(20 * 24),
+  }, { id: actor.id, role: "OWNER" }, now);
+  assert.equal(sourceTestOperations.contract?.status, "DRAFT");
+  sourceTestOperations = await transactions.preparePurchaseReviewDocument(promoted.leadId, {
+    version: sourceTestOperations.contract!.version,
+  }, { id: actor.id, role: "OWNER" }, now);
+  assert.equal(sourceTestOperations.contract?.documents?.[0]?.status, "PREPARED_FOR_REVIEW");
+  const sourceTestSnapshot = detail.analysisSnapshotId;
+  assert.ok(sourceTestSnapshot);
+
   const staleRefresh = await refreshPropertySourceEvidence([property.id], "system:property-source-exercise", new Date(now.getTime() + 7 * 60 * 60 * 1000));
   assert.equal(staleRefresh.checked, 3, "The stale refresh rechecks each connected exact-parcel evidence source.");
+  assert.ok(staleRefresh.changed > 0, "A changed source signal must be detected, not hidden by a fresh retrieval timestamp.");
+  detail = await leadDetail(promoted.leadId);
+  assert.equal(detail.analysis, null, "Changed public evidence invalidates pre-execution underwriting.");
+  assert.equal(detail.analysisSnapshotId, null);
+  assert.equal(detail.lead.stage, "ENRICHING");
+  assert.equal(detail.offers.find(item => item.id === sourceTestOfferId)?.status, "INVALIDATED");
+  const [staleContractRow] = await db.select().from(contractsTable)
+    .where(eq(contractsTable.leadId, promoted.leadId));
+  assert.equal(staleContractRow?.payload.status, "CANCELLED",
+    "A changed source abandons only the unexecuted draft, not an executed transaction.");
+  assert.ok(Array.isArray(staleContractRow?.payload.history));
+  assert.match(String((staleContractRow?.payload.history as Array<Record<string, unknown>>).at(-1)?.note), /No signature or external cancellation is asserted/);
+  sourceTestOperations = await dealOperations(promoted.leadId, new Date(now.getTime() + 7 * 60 * 60 * 1000));
+  assert.match(sourceTestOperations.nextAction, /Refresh evidence and underwriting/);
+  const sourceTestDocumentId = sourceTestOperations.contract!.documents![0]!.id;
+  const archivedWorksheet = await transactions.downloadPurchaseReviewDocument(promoted.leadId, sourceTestDocumentId,
+    { id: actor.id, role: "OWNER" }, new Date(now.getTime() + 7 * 60 * 60 * 1000));
+  assert.equal(archivedWorksheet.bytes.subarray(0, 5).toString(), "%PDF-",
+    "The superseded review copy remains available as an audit artifact, not current transaction authority.");
+  await assert.rejects(
+    transactions.executeContract(promoted.leadId, {
+      version: sourceTestOperations.contract!.version,
+      executedDocumentUrl: "https://example.com/synthetic-stale-document",
+      sellerSignedAt: new Date(now.getTime() + 7 * 60 * 60 * 1000).toISOString(),
+      acquisitionSignedAt: new Date(now.getTime() + 7 * 60 * 60 * 1000).toISOString(),
+      reviewNote: "Synthetic attempt to execute a stale, cancelled draft.",
+    }, { id: actor.id, role: "OWNER" }, new Date(now.getTime() + 7 * 60 * 60 * 1000)),
+    /terminal/,
+    "The superseded review copy and cancelled attempt cannot be treated as executed authority.",
+  );
+
+  // The complete transaction exercise verifies real signature-evidence gates.
+  // Here an isolated persisted-state fixture checks that this refresh branch
+  // cannot mutate a transaction already in its executed lifecycle.
+  const [savedAnalysis] = await db.select().from(analysesTable)
+    .where(eq(analysesTable.id, sourceTestSnapshot));
+  assert.ok(savedAnalysis);
+  const immutableAnalysis = (savedAnalysis.snapshot as { analysis: Record<string, unknown> }).analysis;
+  const [savedOffer] = await db.select().from(offersTable)
+    .where(eq(offersTable.id, sourceTestOfferId));
+  assert.ok(savedOffer);
+  const activeOfferPayload = { ...savedOffer.payload } as Record<string, unknown>;
+  delete activeOfferPayload.authorityEndedAt;
+  delete activeOfferPayload.withdrawalReason;
+  await db.update(offersTable).set({
+    status: "COMMUNICATED", payload: activeOfferPayload, updatedAt: new Date(now.getTime() + 8 * 3_600_000),
+  }).where(eq(offersTable.id, sourceTestOfferId));
+  const archivedContractPayload: Record<string, unknown> = { ...staleContractRow!.payload, status: "UNDER_CONTRACT" };
+  delete archivedContractPayload.cancelledAt;
+  await db.update(contractsTable).set({
+    payload: archivedContractPayload, version: staleContractRow!.version + 1,
+    updatedAt: new Date(now.getTime() + 8 * 3_600_000),
+  }).where(eq(contractsTable.id, staleContractRow!.id));
+  await db.update(leadsTable).set({
+    stage: "UNDER_CONTRACT", analysis: immutableAnalysis as typeof leadsTable.$inferSelect.analysis,
+    analysisSnapshotId: sourceTestSnapshot,
+    nextAction: "Synthetic executed-state boundary fixture; no real transaction is represented.",
+    updatedAt: new Date(now.getTime() + 8 * 3_600_000),
+  }).where(eq(leadsTable.id, promoted.leadId));
+  await db.update(propertySourceObservationsTable).set({
+    payload: {
+      ...refreshableObservation.payload,
+      signalId: `synthetic-executed-prior-signal:${randomUUID()}`,
+      evidenceRef: "https://example.com/synthetic-executed-prior-evidence",
+    },
+  }).where(eq(propertySourceObservationsTable.id, refreshableObservation.id));
+  const executedRefreshAt = new Date(now.getTime() + 8 * 3_600_000);
+  const executedRefresh = await refreshPropertySourceEvidence([property.id], "system:property-source-exercise", executedRefreshAt);
+  assert.ok(executedRefresh.changed > 0);
+  const [executedLeadRow] = await db.select().from(leadsTable).where(eq(leadsTable.id, promoted.leadId));
+  const [executedOfferRow] = await db.select().from(offersTable).where(eq(offersTable.id, sourceTestOfferId));
+  const [executedContractRow] = await db.select().from(contractsTable).where(eq(contractsTable.leadId, promoted.leadId));
+  assert.equal(executedLeadRow?.stage, "UNDER_CONTRACT");
+  assert.equal(executedLeadRow?.analysisSnapshotId, sourceTestSnapshot);
+  assert.deepEqual(executedLeadRow?.analysis, immutableAnalysis);
+  assert.match(executedLeadRow?.nextAction ?? "", /Executed economics and commitments remain unchanged/);
+  assert.equal(executedOfferRow?.status, "COMMUNICATED");
+  assert.equal(executedContractRow?.payload.status, "UNDER_CONTRACT");
+  assert.equal(executedContractRow?.payload.purchasePrice, 50000);
+  const sourceReviewJobs = await db.select().from(jobsTable).where(eq(jobsTable.leadId, promoted.leadId));
+  assert.ok(sourceReviewJobs.some(job => job.kind === "MATCH_BUYERS" && job.idempotencyKey.startsWith("source-evidence:")));
+
   logger.info({
     records: search.records.length,
     savedDiscoveryId: first.id,
@@ -407,7 +585,7 @@ try {
     qualifiedLeadId: promoted.leadId,
     buyerResearchCandidates: buyerResearch.records.length,
     staleRefresh: staleRefresh.checked,
-    checks: "real OPA and City L&I/vacancy source observation persistence; no lead on discovery; same-source and cross-source dedupe; AI hypothesis exclusion; synthetic provenance-backed qualification; human promotion; not call ready; source research/comps; pass retention; recurring stale-source refresh",
+    checks: "real OPA and City L&I/vacancy source observation persistence; no lead on discovery; same-source and cross-source dedupe; AI hypothesis exclusion; synthetic provenance-backed qualification; human promotion; source research/comps; pass retention; source-change invalidation of pre-execution underwriting/offers/drafts; preservation of executed terms with a persisted research-review action and buyer-rematch job",
   }, "Selective property qualification exercise PASSED (isolated schema; actual public source row; synthetic qualification evidence only)");
 } finally {
   await pool.end();

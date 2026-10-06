@@ -4,7 +4,7 @@ import { and, count, desc, eq, inArray, lte, ne, sql } from "drizzle-orm";
 import {
   db, propertyDiscoveriesTable, propertySourceObservationsTable, unmatchedPropertySourceObservationsTable,
   propertyQualificationCriteriaTable,
-  leadsTable, intelligenceTable,
+  leadsTable, intelligenceTable, contractsTable,
 } from "@workspace/db";
 import {
   AddPropertyRelevanceSignalBody, AddPropertyRelevanceSignalResponse,
@@ -26,7 +26,8 @@ import {
   type PropertySourceRefresh,
 } from "@workspace/property-sources";
 import { audit, createLead, move } from "./deal-store";
-import { allBuyerRecords } from "./operations-records";
+import { allBuyerRecords, queueJob } from "./operations-records";
+import { invalidateOffers } from "./offer-records";
 import { refreshEvidenceFromRegisteredSources } from "./property-source-connectors";
 
 type Tx = Parameters<Parameters<typeof db.transaction>[0]>[0];
@@ -921,13 +922,75 @@ export async function refreshPropertySourceEvidence(propertyIds: string[], actor
           });
         }
         const [lead] = await tx.select().from(leadsTable).where(eq(leadsTable.id, discovery.leadId)).for("update");
-        if (lead) {
-          const nextAction = signal
+        if (lead && !["CLOSED", "DEAD_DEAL"].includes(lead.stage)) {
+          const [contract] = await tx.select().from(contractsTable)
+            .where(eq(contractsTable.leadId, discovery.leadId)).for("update");
+          const contractStatus = String(contract?.payload.status ?? "");
+          const terminalTransaction = contractStatus === "CLOSED" ||
+            (contractStatus === "CANCELLED" && lead.stage === "DEAD_DEAL");
+          if (terminalTransaction) continue;
+
+          const executedTransaction = ["UNDER_CONTRACT", "CLOSING"].includes(contractStatus) ||
+            ["UNDER_CONTRACT", "BUYER_MATCHED", "BUYER_INTERESTED", "BUYER_COMMITTED", "CLOSING"].includes(lead.stage);
+          let nextAction = signal
             ? `Review updated ${evidence.sourceName} evidence and verify current condition/occupancy before the next seller action.`
             : `Recheck the ${evidence.sourceName} record and verify current condition/occupancy; a missing source result does not prove the issue is resolved.`;
+
+          if (sourceSignalChanged && executedTransaction) {
+            nextAction = `Review changed ${evidence.sourceName} evidence and assess its effect on the active transaction. Executed economics and commitments remain unchanged until a separately authorized, evidenced action.`;
+            await audit(tx, actor, "TRANSACTION_RESEARCH_REVIEW", lead.id,
+              `A linked public-source signal changed: ${evidence.sourceName}. Executed lifecycle and locked economics are preserved. ${nextAction}`);
+            lead.nextAction = nextAction;
+            await queueJob(tx, "MATCH_BUYERS", discovery.leadId,
+              `source-evidence:${discovery.leadId}:${evidence.sourceId}:${now.getTime()}`, actor);
+          } else if (sourceSignalChanged) {
+            await invalidateOffers(tx, discovery.leadId, actor,
+              `Linked public-source evidence changed (${evidence.sourceName}); refresh underwriting and obtain new owner approval.`, now);
+            if (contract && contractStatus === "DRAFT") {
+              const priorHistory = Array.isArray(contract.payload.history) ? contract.payload.history : [];
+              await tx.update(contractsTable).set({
+                payload: {
+                  ...contract.payload,
+                  status: "CANCELLED",
+                  cancelledAt: now.toISOString(),
+                  history: [...priorHistory, {
+                    kind: "CANCELLED_ATTEMPT",
+                    recordedAt: now.toISOString(),
+                    effectiveAt: now.toISOString(),
+                    recordedBy: actor,
+                    evidenceUrl: evidence.sourceUrl,
+                    note: `The unexecuted draft was abandoned after linked public-source evidence changed (${evidence.sourceName}). No signature or external cancellation is asserted.`,
+                    previousState: {
+                      status: contractStatus,
+                      offerId: contract.payload.offerId ?? null,
+                      purchasePrice: contract.payload.purchasePrice ?? null,
+                      attemptNumber: contract.payload.attemptNumber ?? 1,
+                    },
+                  }],
+                },
+                version: contract.version + 1,
+                updatedAt: now,
+              }).where(eq(contractsTable.id, contract.id));
+              await audit(tx, actor, "TRANSACTION_DRAFT_ABANDONED", discovery.leadId,
+                `Unexecuted draft attempt abandoned because ${evidence.sourceName} evidence changed. No signature or external cancellation is claimed; document history is retained.`);
+            }
+            nextAction = `Review the changed ${evidence.sourceName} evidence, refresh deterministic underwriting, and obtain new owner approval before another seller offer or transaction document.`;
+            await move(tx, lead, "ENRICHING",
+              `A linked public-source signal changed: ${evidence.sourceName}; prior underwriting and offer authority are stale.`,
+              nextAction, actor, now);
+          } else if (executedTransaction) {
+            await audit(tx, actor, "TRANSACTION_RESEARCH_REVIEW",
+              lead.id, `Linked ${evidence.sourceName} source metadata changed; review its transaction relevance. ${nextAction}`);
+            lead.nextAction = nextAction;
+          } else {
+            lead.nextAction = nextAction;
+          }
+
           await tx.update(leadsTable).set({
-            payload: { ...lead.payload, nextAction },
+            ...(sourceSignalChanged && !executedTransaction ? { analysis: null, analysisSnapshotId: null } : {}),
             version: lead.version + 1,
+            stage: lead.stage,
+            nextAction: lead.nextAction,
             updatedAt: now,
           }).where(eq(leadsTable.id, lead.id));
         }

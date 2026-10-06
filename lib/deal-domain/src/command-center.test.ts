@@ -50,6 +50,20 @@ test("seller contact gaps route directly to the editable lead record and transac
   assert.equal(dealActions([d],"OWNER",now).length,1);
   assert.equal(dealActions([d],"OWNER",now,new Set([d.lead.id])).length,0);
 });
+test("call-ready and seller follow-up actions open the selected seller's live call brief",() => {
+  const ready = deal("CALL_READY");
+  ready.workGuidance = buildDealWorkGuidance(ready,now);
+  assert.equal(ready.workGuidance?.href,"/calls?lead=synthetic-deal");
+  assert.equal(ready.workGuidance?.cta,"Open call brief");
+  const readyAction = dealActions([ready],"OPERATOR",now)[0];
+  assert.equal(readyAction?.href,"/calls?lead=synthetic-deal");
+
+  const followUp = deal("CONTACTED");
+  followUp.lead.followUpAt = "2026-10-04T10:00:00Z";
+  followUp.workGuidance = buildDealWorkGuidance(followUp,now);
+  assert.equal(followUp.workGuidance?.href,"/calls?lead=synthetic-deal");
+  assert.equal(followUp.workGuidance?.cta,"Log follow-up");
+});
 test("a draft offer is an owner-only approval action and does not imply authorization",() => {
   const d = deal("OFFER_READY");
   d.offers = [{effectiveStatus:"DRAFT",blockers:[]} as unknown as LeadDetail["offers"][number]];

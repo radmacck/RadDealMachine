@@ -124,8 +124,10 @@ export function buildDealWorkGuidance(
     return make({
       category,priority:overdue?100:category==="NEGOTIATION"?70:75,
       title:contactMissing?"Add a verified seller contact route":nextAction || "Record the seller's next step.",
-      href:`/deals/${lead.id}?work=${contactMissing?"record":"call"}`,
-      cta:contactMissing?"Open seller record":overdue?"Log follow-up":"Open seller call",
+      href:contactMissing
+        ? `/deals/${lead.id}?work=record`
+        : `/calls?lead=${encodeURIComponent(lead.id)}`,
+      cta:contactMissing?"Open seller record":overdue?"Log follow-up":"Open call brief",
       currentState:`The deal is in ${label(lead.stage)}.`,
       responsibleRole:"OPERATOR",
       dueLabel:dueAt?"Seller follow-up":"Set a follow-up during the conversation.",
