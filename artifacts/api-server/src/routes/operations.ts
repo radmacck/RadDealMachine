@@ -68,6 +68,24 @@ router.post("/deals/:id/contract",roles("OWNER","OPERATOR"),async(req,res)=>{
   const {id} = parse(schemas.CreateContractParams,req.params);
   res.status(201).json(schemas.CreateContractResponse.parse(await transactions.createContract(id,parse(schemas.CreateContractBody,req.body),actor(res))));
 });
+router.post("/deals/:id/contract/documents",roles("OWNER","OPERATOR"),async(req,res)=>{
+  const {id} = parse(schemas.PreparePurchaseReviewDocumentParams,req.params);
+  const result = await transactions.preparePurchaseReviewDocument(
+    id,parse(schemas.PreparePurchaseReviewDocumentBody,req.body),actor(res),
+  );
+  res.json(schemas.PreparePurchaseReviewDocumentResponse.parse(result));
+});
+router.get("/deals/:id/contract/documents/:documentId/file",roles("OWNER","OPERATOR"),async(req,res)=>{
+  const {id,documentId} = parse(schemas.DownloadPurchaseReviewDocumentParams,req.params);
+  const result = await transactions.downloadPurchaseReviewDocument(id,documentId,actor(res));
+  res.set({
+    "Content-Type":"application/pdf",
+    "Content-Disposition":`attachment; filename="${result.fileName}"`,
+    "Cache-Control":"no-store",
+    "Referrer-Policy":"no-referrer",
+    "X-Content-Type-Options":"nosniff",
+  }).send(result.bytes);
+});
 router.post("/deals/:id/contract/exception",roles("OWNER"),async(req,res)=>{
   const {id} = parse(schemas.RecordTransactionExceptionParams,req.params);
   res.json(schemas.RecordTransactionExceptionResponse.parse(await recordTransactionException(id,parse(schemas.RecordTransactionExceptionBody,req.body),actor(res))));

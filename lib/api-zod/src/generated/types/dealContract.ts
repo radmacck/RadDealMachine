@@ -9,6 +9,7 @@ import type { ClosingMilestone } from './closingMilestone';
 import type { CommitmentSnapshot } from './commitmentSnapshot';
 import type { DealContractStatus } from './dealContractStatus';
 import type { DestinationActivityEvent } from './destinationActivityEvent';
+import type { TransactionDocumentMetadata } from './transactionDocumentMetadata';
 import type { TransactionHistoryEntry } from './transactionHistoryEntry';
 
 export interface DealContract {
@@ -58,4 +59,5 @@ export interface DealContract {
   /** @nullable */
   closedAt?: string | null;
   createdAt: string;
+  documents?: TransactionDocumentMetadata[];
 }

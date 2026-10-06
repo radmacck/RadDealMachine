@@ -1152,6 +1152,11 @@ export interface ContractInput {
   closingAt: string;
 }
 
+export interface PrepareTransactionDocumentInput {
+  /** @minimum 1 */
+  version: number;
+}
+
 export interface ContractExecutionInput {
   /** @minimum 1 */
   version: number;
@@ -2057,6 +2062,49 @@ export const DealContractStatus = {
   CANCELLED: 'CANCELLED',
 } as const;
 
+export type TransactionDocumentMetadataKind = typeof TransactionDocumentMetadataKind[keyof typeof TransactionDocumentMetadataKind];
+
+
+export const TransactionDocumentMetadataKind = {
+  PURCHASE_TERMS_REVIEW: 'PURCHASE_TERMS_REVIEW',
+} as const;
+
+export type TransactionDocumentMetadataStatus = typeof TransactionDocumentMetadataStatus[keyof typeof TransactionDocumentMetadataStatus];
+
+
+export const TransactionDocumentMetadataStatus = {
+  PREPARED_FOR_REVIEW: 'PREPARED_FOR_REVIEW',
+} as const;
+
+export type TransactionDocumentMetadataContentType = typeof TransactionDocumentMetadataContentType[keyof typeof TransactionDocumentMetadataContentType];
+
+
+export const TransactionDocumentMetadataContentType = {
+  'application/pdf': 'application/pdf',
+} as const;
+
+export interface TransactionDocumentMetadata {
+  id: string;
+  kind: TransactionDocumentMetadataKind;
+  status: TransactionDocumentMetadataStatus;
+  /** @minimum 1 */
+  attemptNumber: number;
+  /** @minimum 1 */
+  sourceContractVersion: number;
+  sourceOfferId: string;
+  /** @pattern ^[a-f0-9]{64}$ */
+  snapshotHash: string;
+  /** @pattern ^[a-f0-9]{64}$ */
+  contentHash: string;
+  fileName: string;
+  contentType: TransactionDocumentMetadataContentType;
+  /** @minimum 1 */
+  sizeBytes: number;
+  generatedAt: string;
+  generatedBy: string;
+  downloadUrl: string;
+}
+
 export interface DealContract {
   id: string;
   leadId: string;
@@ -2104,6 +2152,7 @@ export interface DealContract {
   /** @nullable */
   closedAt?: string | null;
   createdAt: string;
+  documents?: TransactionDocumentMetadata[];
 }
 
 export interface DistributionAuthorizationInput {
@@ -2309,9 +2358,24 @@ export interface BuyerPortalDeal {
   events: BuyerPortalEvent[];
 }
 
+export type SellerOfferPortalIssueInputVerificationDeliveryMethod = typeof SellerOfferPortalIssueInputVerificationDeliveryMethod[keyof typeof SellerOfferPortalIssueInputVerificationDeliveryMethod];
+
+
+export const SellerOfferPortalIssueInputVerificationDeliveryMethod = {
+  PHONE: 'PHONE',
+  IN_PERSON: 'IN_PERSON',
+} as const;
+
 export interface SellerOfferPortalIssueInput {
   /** @minimum 1 */
   version: number;
+  identityEvidenceId: string;
+  verificationDeliveryMethod: SellerOfferPortalIssueInputVerificationDeliveryMethod;
+  /**
+     * @minLength 20
+     * @maxLength 2000
+     */
+  verificationNote: string;
 }
 
 export type SellerOfferPortalStatus = typeof SellerOfferPortalStatus[keyof typeof SellerOfferPortalStatus];
@@ -2321,6 +2385,14 @@ export const SellerOfferPortalStatus = {
   ACTIVE: 'ACTIVE',
   RESPONDED: 'RESPONDED',
   REVOKED: 'REVOKED',
+} as const;
+
+export type SellerOfferPortalSnapshotVerificationDeliveryMethod = typeof SellerOfferPortalSnapshotVerificationDeliveryMethod[keyof typeof SellerOfferPortalSnapshotVerificationDeliveryMethod];
+
+
+export const SellerOfferPortalSnapshotVerificationDeliveryMethod = {
+  PHONE: 'PHONE',
+  IN_PERSON: 'IN_PERSON',
 } as const;
 
 export interface SellerOfferPortalSnapshot {
@@ -2336,6 +2408,8 @@ export interface SellerOfferPortalSnapshot {
   approvedAt: string;
   expiresAt: string;
   preparedAt: string;
+  identityVerificationRequired: boolean;
+  verificationDeliveryMethod: SellerOfferPortalSnapshotVerificationDeliveryMethod;
 }
 
 export type SellerOfferPortalEventAction = typeof SellerOfferPortalEventAction[keyof typeof SellerOfferPortalEventAction];
@@ -2347,6 +2421,14 @@ export const SellerOfferPortalEventAction = {
   COUNTERED: 'COUNTERED',
 } as const;
 
+export type SellerOfferPortalEventIdentityVerification = typeof SellerOfferPortalEventIdentityVerification[keyof typeof SellerOfferPortalEventIdentityVerification];
+
+
+export const SellerOfferPortalEventIdentityVerification = {
+  VERIFIED_ONE_TIME_CODE: 'VERIFIED_ONE_TIME_CODE',
+  LEGACY_UNVERIFIED: 'LEGACY_UNVERIFIED',
+} as const;
+
 export interface SellerOfferPortalEvent {
   eventKey: string;
   action: SellerOfferPortalEventAction;
@@ -2354,6 +2436,9 @@ export interface SellerOfferPortalEvent {
   occurredAt: string;
   note: string;
   counterTerms: OfferTerms | null;
+  identityVerification: SellerOfferPortalEventIdentityVerification;
+  /** @nullable */
+  identityVerifiedAt: string | null;
 }
 
 export interface SellerOfferPortal {
@@ -2374,6 +2459,8 @@ export interface SellerOfferPortalIssueResponse {
      * @maxLength 50
      */
   token: string;
+  /** @pattern ^[0-9]{6}$ */
+  verificationCode: string;
 }
 
 export interface SellerOfferPortalControl {
@@ -2401,6 +2488,8 @@ export interface SellerOfferPortalResponseInput {
      * @maxLength 200
      */
   respondentName: string;
+  /** @pattern ^[0-9]{6}$ */
+  verificationCode: string;
   /** @maxLength 2000 */
   note?: string;
   counterTerms?: OfferTerms;

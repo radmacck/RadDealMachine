@@ -189,7 +189,9 @@ export function OffersPanel({ detail, onGoIntel }: { detail: LeadDetail; onGoInt
                 {['AUTHORIZED','COMMUNICATED'].includes(o.status) && <Button size="sm" variant="outline" onClick={() => open({ kind: 'withdraw', offer: o })} disabled={!isOwner} title={isOwner ? undefined : 'Owner only'} data-testid={`button-revoke-${o.id}`}>Revoke approval</Button>}
               </div>
               {st === 'DRAFT' && !isOwner && <p className="mt-1 text-xs text-muted-foreground">Waiting on owner authorization.</p>}
-              {(st === 'AUTHORIZED' || !!o.communicatedAt) && <SellerOfferLinkPanel lead={lead} offer={o} isOwner={isOwner} />}
+              {(st === 'AUTHORIZED' || !!o.communicatedAt) && <SellerOfferLinkPanel
+                lead={lead} offer={o} isOwner={isOwner} identityEvidence={authorityEvidence(detail.intelligence)}
+              />}
 
               {active?.kind === 'approve' && <div className="mt-3 border-t border-border pt-3"><fieldset disabled={!isOwner || st !== 'DRAFT'}><ApproveForm key={`a${epoch}`} offer={o} detail={detail} evid={evid} onGoIntel={onGoIntel} pending={approve.isPending} error={approve.error} onCancel={() => setMode(null)}
                 onSubmit={(data) => approve.mutate({ id: lead.id, offerId: o.id, data }, { onSuccess: (d) => ok(d, 'Offer authorized') })} /></fieldset>{st !== 'DRAFT' && <Button variant="ghost" onClick={() => setMode(null)}>Close unavailable approval</Button>}</div>}

@@ -33,9 +33,13 @@ export async function dealOperations(id: string, now = new Date()) {
     const detail = await leadDetail(id,tx,now), contract = await getContractRecord(id,tx);
     const matches = await evaluatedMatches(detail,contract,tx,now);
     const rows = await tx.select().from(jobsTable).where(eq(jobsTable.leadId,id)).orderBy(desc(jobsTable.createdAt)).limit(10);
+    const hasReviewDocument = !!contract?.documents?.some(document =>
+      document.kind==="PURCHASE_TERMS_REVIEW"&&document.attemptNumber===(contract.attemptNumber??1)&&document.sourceOfferId===contract.offerId);
     let nextAction = contract?.status==="CLOSED"?"Deal closed. Review recorded proceeds and preserve settlement evidence.":
       contract?.status==="CANCELLED"?(detail.lead.stage==="DEAD_DEAL"?"Contract cancelled. Retain evidence; owner may restart as a new reviewed attempt.":"Reopened for a new attempt. Refresh evidence and underwriting; a new approved communicated offer is required."):
-      contract?.status==="DRAFT"?"Review the external contract against these frozen approved terms, then record both signatures.":
+      contract?.status==="DRAFT"?(hasReviewDocument
+        ?"Review the saved fillable terms PDF; its download rechecks the current snapshot. Compare with an approved external agreement and record actual signatures. The worksheet itself is not a contract."
+        :"Prepare the fillable terms-review PDF from the authorized snapshot, then use an approved external agreement and record actual signatures. The worksheet is not execution evidence."):
       contract?.committedBuyerId?"Complete title, earnest money, assignment and funds evidence; review the closing deadline.":
       contract?`Review ${matches.filter(m=>m.eligible&&m.destinationKind==="BUYER").length} current acquisition buyers and ${matches.filter(m=>m.eligible&&m.destinationKind!=="BUYER").length} approved destinations. Record real interest; only an acquisition buyer can commit.`:
       "Finish seller conversation and owner-approved offer before preparing a contract.";

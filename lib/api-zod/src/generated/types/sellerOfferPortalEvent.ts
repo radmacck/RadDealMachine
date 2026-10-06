@@ -7,6 +7,7 @@
  */
 import type { OfferTerms } from './offerTerms';
 import type { SellerOfferPortalEventAction } from './sellerOfferPortalEventAction';
+import type { SellerOfferPortalEventIdentityVerification } from './sellerOfferPortalEventIdentityVerification';
 
 export interface SellerOfferPortalEvent {
   eventKey: string;
@@ -15,4 +16,7 @@ export interface SellerOfferPortalEvent {
   occurredAt: string;
   note: string;
   counterTerms: OfferTerms | null;
+  identityVerification: SellerOfferPortalEventIdentityVerification;
+  /** @nullable */
+  identityVerifiedAt: string | null;
 }

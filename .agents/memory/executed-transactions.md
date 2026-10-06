@@ -15,6 +15,12 @@ An executed agreement and an accepted buyer commitment are historical business e
 
 **How to apply:** Use evidenced owner-reviewed cancellation or amendments for changes to executed commitments. Pre-execution paperwork preparation must not itself invalidate the exact approval it is meant to implement.
 
+Without an owner-approved jurisdictional form, a generated PDF may only be a clearly labeled, fillable terms-review worksheet; it must not be presented as a purchase agreement or signature flow.
+
+**Why:** Legal clauses, missing seller/title details, and signature requirements cannot be safely inferred from a deal snapshot, and a prepared file is not external execution evidence.
+
+**How to apply:** Populate only authorized known terms, leave unknown legal fields blank, preserve the source snapshot and integrity hash, reject stale downloads, and require actual signature evidence through the existing execution gate.
+
 Actual external event time and software recording time are different. Late entry may establish what happened under already-existing authority; it must never create retroactive approval or reuse evidence contradicted before the event.
 
 **Why:** The user explicitly requires late-recorded events without weakening financial/provenance boundaries. Today's expiry does not erase a previously authorized signature, but an old snapshot is not permission to ignore intervening changes.

@@ -18,6 +18,7 @@ import { fmtDate, money } from '@/lib/format';
 type Action = SellerOfferPortalResponseInput['action'];
 type ResponseFields = {
   respondentName: string;
+  verificationCode: string;
   note: string;
   amount: string;
   earnestMoney: string;
@@ -26,7 +27,7 @@ type ResponseFields = {
   assignmentIntent: boolean;
 };
 const initialValues: ResponseFields = {
-  respondentName: '', note: '', amount: '', earnestMoney: '', closingDays: '30',
+  respondentName: '', verificationCode: '', note: '', amount: '', earnestMoney: '', closingDays: '30',
   contingencies: '', assignmentIntent: false,
 };
 const sellerTokenStorageKey = 'radical-deal-os:seller-offer-token';
@@ -38,6 +39,7 @@ function parseStoredResponse(raw: string): SellerOfferPortalResponseInput | null
     if (typeof value.eventKey !== 'string' || !/^[0-9a-f-]{36}$/i.test(value.eventKey)) return null;
     if (!['ACCEPTED', 'REJECTED', 'COUNTERED'].includes(String(value.action))) return null;
     if (typeof value.respondentName !== 'string' || !value.respondentName.trim()) return null;
+    if (value.verificationCode !== undefined && typeof value.verificationCode !== 'string') return null;
     if (value.note !== undefined && typeof value.note !== 'string') return null;
     if (value.action === 'COUNTERED') {
       const terms = value.counterTerms as Record<string, unknown> | undefined;
@@ -47,7 +49,7 @@ function parseStoredResponse(raw: string): SellerOfferPortalResponseInput | null
     } else if (value.counterTerms !== undefined) {
       return null;
     }
-    return value as unknown as SellerOfferPortalResponseInput;
+    return { ...value, verificationCode: '' } as unknown as SellerOfferPortalResponseInput;
   } catch {
     return null;
   }
@@ -106,8 +108,10 @@ export default function SellerOfferPage() {
     mutation: {
       onError: (cause) => {
         const status = (cause as Error & { status?: number }).status;
-        if (status === 404 || status === 409 || status === 410) void portalQuery.refetch();
-        if (status === 404 || status === 410) {
+        if (status === 404 || status === 409 || status === 410 || status === 429) void portalQuery.refetch();
+        setPendingResponse((pending) => pending ? { ...pending, verificationCode: '' } : null);
+        form.setValue('verificationCode', '');
+        if (status === 404 || status === 410 || status === 429) {
           try {
             if (portal) window.sessionStorage.removeItem(pendingResponseStorageKey(portal.id));
           } catch {
@@ -155,7 +159,8 @@ export default function SellerOfferPage() {
 
   const persistAndSend = (input: SellerOfferPortalResponseInput, portalId: string) => {
     try {
-      window.sessionStorage.setItem(pendingResponseStorageKey(portalId), JSON.stringify(input));
+      const { verificationCode: _code, ...retryIntent } = input;
+      window.sessionStorage.setItem(pendingResponseStorageKey(portalId), JSON.stringify(retryIntent));
     } catch {
       setLocalError('This browser cannot preserve a safe retry for this response, so nothing was sent. Enable tab storage and try again.');
       return;
@@ -179,7 +184,14 @@ export default function SellerOfferPage() {
   const sendResponse = (action: Action) => {
     if (!portal || !token || !sessionStorageReady) return;
     if (pendingResponse) {
-      if (pendingResponse.action === action) persistAndSend(pendingResponse, portal.id);
+      if (pendingResponse.action === action) void form.handleSubmit((values) => {
+        const verificationCode = values.verificationCode.trim();
+        if (!/^\d{6}$/.test(verificationCode)) {
+          form.setError('verificationCode', { type: 'validate', message: 'Enter the 6-digit code supplied separately by the deal owner.' });
+          return;
+        }
+        persistAndSend({ ...pendingResponse, verificationCode }, portal.id);
+      })();
       return;
     }
     void form.handleSubmit((values) => {
@@ -218,6 +230,7 @@ export default function SellerOfferPage() {
         eventKey: crypto.randomUUID(),
         action,
         respondentName,
+        verificationCode: values.verificationCode.trim(),
         note: values.note.trim() || undefined,
         ...(counterTerms ? { counterTerms } : {}),
       };
@@ -228,7 +241,7 @@ export default function SellerOfferPage() {
   const responseError = response.error as (Error & { status?: number }) | null;
   const responseErrorStatus = responseError?.status;
   const queryErrorStatus = (portalQuery.error as (Error & { status?: number }) | null)?.status;
-  const terminalResponseError = responseErrorStatus === 404 || responseErrorStatus === 409 || responseErrorStatus === 410;
+  const terminalResponseError = responseErrorStatus === 404 || responseErrorStatus === 409 || responseErrorStatus === 410 || responseErrorStatus === 429;
   const unavailableTitle = queryErrorStatus === 404 || queryErrorStatus === 410 ? 'This private link is no longer available' : 'Offer details could not be loaded';
 
   return <main className="min-h-[100dvh] bg-background px-4 py-6 text-foreground sm:px-6 sm:py-10" data-testid="page-seller-offer">
@@ -250,14 +263,15 @@ export default function SellerOfferPage() {
           title={portal.status === 'RESPONDED' ? 'A response is already recorded' : 'This offer is no longer current'}
           detail={portal.unavailableReason || (portal.status === 'RESPONDED' ? 'This private link has already recorded a response.' : 'The link may have expired, been revoked, or the offer is no longer current. Contact the deal owner for an update.')}
           tone={portal.status === 'RESPONDED' ? 'go' : 'stop'} />}
-        {terminalResponseError && <Notice title={responseErrorStatus === 409 ? 'This response can no longer be submitted' : 'This private link is no longer current'} detail={responseError?.message || 'The offer may have been responded to, expired, revoked, or replaced. Refreshing the current link state.'} tone="stop" />}
+        {terminalResponseError && <Notice title={responseErrorStatus === 429 ? 'Contact verification is locked' : responseErrorStatus === 409 ? 'This response can no longer be submitted' : 'This private link is no longer current'} detail={responseError?.message || 'The offer may have been responded to, expired, revoked, or replaced. Refreshing the current link state.'} tone="stop" />}
         {portal.status === 'ACTIVE' && portal.canRespond && !terminalResponseError && <>
           <section className="ledger overflow-hidden" data-testid="seller-offer-summary">
             <div className="border-b border-border border-t-4 border-t-signal px-5 py-5 sm:px-7">
               <p className="eyebrow">Offer for {portal.snapshot.sellerName}</p>
               <h1 className="mt-2 break-words font-serif text-3xl leading-tight sm:text-4xl">{portal.snapshot.propertyAddress}</h1>
               <p className="mt-2 text-sm text-muted-foreground">{portal.snapshot.city}, {portal.snapshot.state} {portal.snapshot.zip} · {portal.snapshot.county} County</p>
-              <p className="mt-3 inline-flex items-center gap-2 text-xs text-muted-foreground"><ShieldCheck className="h-4 w-4 text-signal" />Authorized by the owner · prepared {fmtDate(portal.snapshot.preparedAt)} · expires {fmtDate(portal.expiresAt)}</p>
+               <p className="mt-3 inline-flex items-center gap-2 text-xs text-muted-foreground"><ShieldCheck className="h-4 w-4 text-signal" />Authorized by the owner · prepared {fmtDate(portal.snapshot.preparedAt)} · expires {fmtDate(portal.expiresAt)}</p>
+               <p className="mt-2 text-xs text-muted-foreground">A one-time code is required and must be provided separately by the owner via {portal.snapshot.verificationDeliveryMethod === 'PHONE' ? 'phone' : 'in person'}. If you do not have it, contact the owner.</p>
             </div>
             <div className="grid grid-cols-2 gap-4 px-5 py-5 sm:grid-cols-4 sm:px-7">
               <div className="col-span-2"><p className="eyebrow">Offer amount</p><p className="mt-1 font-mono text-3xl font-semibold">{money(portal.snapshot.terms.amount)}</p></div>
@@ -269,15 +283,23 @@ export default function SellerOfferPage() {
           </section>
           <Form {...form}>
           <form className="ledger space-y-4 p-5 sm:p-7" data-testid="seller-response-form" noValidate onSubmit={(event) => event.preventDefault()}>
-            <div className="flex items-start gap-3"><FileCheck2 className="mt-0.5 h-5 w-5 shrink-0 text-signal" /><div><h2 className="font-serif text-2xl">Your stated response</h2><p className="mt-1 text-sm text-muted-foreground">Choose accept, reject, or offer different terms. Your response is recorded as self-reported intent only.</p></div></div>
-            <aside className="border border-signal/50 bg-signal/5 p-3 text-xs leading-relaxed" data-testid="notice-response-authority">
-              <div className="flex gap-2"><AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-signal" /><p><b>Important:</b> A response does not verify identity, change the communicated offer, authorize a counteroffer, create a contract, or sign documents. Owner authority and any required signatures remain separate steps.</p></div>
+            <div className="flex items-start gap-3"><FileCheck2 className="mt-0.5 h-5 w-5 shrink-0 text-signal" /><div><h2 className="font-serif text-2xl">Your stated response</h2><p className="mt-1 text-sm text-muted-foreground">Choose accept, reject, or offer different terms. The code verifies control of the contact route; your name and authority remain self-reported.</p></div></div>
+             <aside className="border border-signal/50 bg-signal/5 p-3 text-xs leading-relaxed" data-testid="notice-response-authority">
+               <div className="flex gap-2"><AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-signal" /><p><b>Important:</b> The code confirms control of the contact route the owner said they verified; the name remains self-reported and legal authority is not established. A response does not change the communicated offer, authorize counter terms, create a contract, or sign documents.</p></div>
             </aside>
             <div className="grid gap-3 sm:grid-cols-2">
               <div className="space-y-1.5">
                 <Label htmlFor="seller-respondent-name">Your name</Label>
                 <Input id="seller-respondent-name" {...form.register('respondentName', { required: 'Enter the name of the person responding.', maxLength: { value: 200, message: 'Use 200 characters or fewer.' } })} disabled={response.isPending || !!pendingResponse} autoComplete="name" data-testid="input-seller-respondent-name" />
                 {form.formState.errors.respondentName?.message && <p className="text-xs text-destructive" role="alert">{form.formState.errors.respondentName.message}</p>}
+              </div>
+              <div className="space-y-1.5">
+                <Label htmlFor="seller-verification-code">6-digit verification code</Label>
+                <Input id="seller-verification-code" type="password" inputMode="numeric" autoComplete="one-time-code" maxLength={6}
+                  {...form.register('verificationCode', { required: 'Enter the 6-digit code supplied separately by the deal owner.', pattern: { value: /^\d{6}$/, message: 'Enter exactly 6 digits.' } })}
+                  disabled={response.isPending} data-testid="input-seller-verification-code" />
+                {form.formState.errors.verificationCode?.message && <p className="text-xs text-destructive" role="alert">{form.formState.errors.verificationCode.message}</p>}
+                <p className="text-[11px] text-muted-foreground">Enter the code provided separately by the owner. It is not saved in browser storage.</p>
               </div>
               <div className="space-y-1.5">
                 <Label htmlFor="seller-response-note">Note (optional)</Label>
@@ -311,13 +333,13 @@ export default function SellerOfferPage() {
         {portal.events.length > 0 && <section className="ledger p-5" data-testid="seller-response-history">
           <h2 className="eyebrow mb-3">Recorded response history</h2>
           <ol className="space-y-3">{portal.events.map((event) => <li key={event.eventKey} className="border-l-2 border-signal pl-3 text-sm" data-testid={`seller-response-event-${event.eventKey}`}>
-            <p className="font-semibold">{event.action} · {fmtDate(event.occurredAt)}</p><p className="text-xs text-muted-foreground">Self-reported by {event.respondentName}</p>
+            <p className="font-semibold">{event.action} · {fmtDate(event.occurredAt)}</p><p className="text-xs text-muted-foreground">Respondent {event.respondentName} · {event.identityVerification === 'VERIFIED_ONE_TIME_CODE' ? 'contact code verified' : 'legacy response; contact not verified'}</p>
             {event.note && <p className="mt-1 whitespace-pre-wrap text-xs">{event.note}</p>}
             {event.counterTerms && <p className="mt-1 text-xs text-muted-foreground">Counter requested: {money(event.counterTerms.amount)} · {event.counterTerms.closingDays} day close. Subject to owner review; the approved offer remains unchanged.</p>}
           </li>)}</ol>
         </section>}
       </>}
-      <footer className="border-t border-border pt-4 text-center text-[11px] leading-relaxed text-muted-foreground">This portal records a response only. It does not transmit an offer, verify identity, confer authority, or execute an agreement. Contact the deal owner about documentation or next steps.</footer>
+      <footer className="border-t border-border pt-4 text-center text-[11px] leading-relaxed text-muted-foreground">This portal records a response only. A code confirms control of the owner-confirmed contact route, not legal identity or authority. It does not transmit an offer, create a contract, or execute an agreement. Contact the deal owner about documentation or next steps.</footer>
     </div>
   </main>;
 }

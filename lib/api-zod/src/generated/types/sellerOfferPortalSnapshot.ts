@@ -6,6 +6,7 @@
  * OpenAPI spec version: 1.0.0
  */
 import type { OfferTerms } from './offerTerms';
+import type { SellerOfferPortalSnapshotVerificationDeliveryMethod } from './sellerOfferPortalSnapshotVerificationDeliveryMethod';
 
 export interface SellerOfferPortalSnapshot {
   leadId: string;
@@ -20,4 +21,6 @@ export interface SellerOfferPortalSnapshot {
   approvedAt: string;
   expiresAt: string;
   preparedAt: string;
+  identityVerificationRequired: boolean;
+  verificationDeliveryMethod: SellerOfferPortalSnapshotVerificationDeliveryMethod;
 }

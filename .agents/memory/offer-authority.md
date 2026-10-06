@@ -20,3 +20,9 @@ A seller response closes that offer's response link; do not reopen the same comm
 **Why:** Reissuing the same terms after a recorded response can create contradictory seller intents against stale authority and weaken event idempotency.
 
 **How to apply:** Keep response events append-only. If the seller proposes different terms, preserve that proposal as intent only, then draft, review, authorize and communicate new exact terms before issuing another link.
+
+A one-time code sent through an owner-confirmed contact route proves control of that route only; it does not prove legal identity, ownership, or authority to bind every required seller.
+
+**Why:** The portal needs a practical contact-verification step without silently converting possession of a phone or in-person code into legal identity or signing authority.
+
+**How to apply:** Keep contact control, ownership/authority evidence, and actual signature evidence as separate checks. A portal acceptance remains seller intent, not an executed agreement.

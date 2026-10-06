@@ -13,8 +13,12 @@ export function buyerRecord(row: typeof buyersTable.$inferSelect, now = new Date
     verificationStatus:verificationStatus(candidate,now),...buyerQualification(candidate,now)};
 }
 export function contractRecord(row: typeof contractsTable.$inferSelect) {
+  const documents = Array.isArray(row.payload.documentArtifacts)
+    ? row.payload.documentArtifacts.filter((item):item is Record<string,unknown> => !!item&&typeof item==="object"&&!Array.isArray(item))
+      .map(({pdfBase64:_,...metadata})=>metadata)
+    : [];
   return GetDealOperationsResponse.shape.contract.options[0].parse({
-    ...row.payload,id:row.id,leadId:row.leadId,version:row.version,createdAt:row.createdAt.toISOString(),
+    ...row.payload,documents,id:row.id,leadId:row.leadId,version:row.version,createdAt:row.createdAt.toISOString(),
   });
 }
 export async function getBuyerRecord(id: string, database: Store = db, now = new Date()) {

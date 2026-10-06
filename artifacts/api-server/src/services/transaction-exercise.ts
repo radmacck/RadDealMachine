@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
 import { randomUUID } from "node:crypto";
+import { PDFDocument } from "pdf-lib";
 import { db,pool,contractsTable,jobsTable,matchesTable,buyersTable } from "@workspace/db";
 import { eq } from "drizzle-orm";
 import { logger } from "../lib/logger";
@@ -60,6 +61,43 @@ try {
   await assert.rejects(transactions.createContract(id,{version:detail.lead.version,offerId,closingAt:future(31)},operator,now),/approved closing/);
   let op = await transactions.createContract(id,{version:detail.lead.version,offerId,closingAt:future(20)},operator,now);
   assert.equal(op.contract?.status,"DRAFT"); assert.equal(op.contract?.purchasePrice,110000);
+  assert.match(op.nextAction,/Prepare the fillable terms-review PDF/);
+  await assert.rejects(
+    transactions.preparePurchaseReviewDocument(id,{version:op.contract!.version},{id:"synthetic-analyst",role:"ANALYST"},now),
+    (error:unknown)=>(error as {status?:number}).status===403,
+    "transaction PDFs are owner/operator-only",
+  );
+  op = await transactions.preparePurchaseReviewDocument(id,{version:op.contract!.version},operator,now);
+  const reviewDocument = op.contract?.documents?.[0];
+  assert.ok(reviewDocument);
+  assert.equal(reviewDocument.status,"PREPARED_FOR_REVIEW");
+  assert.equal(reviewDocument.kind,"PURCHASE_TERMS_REVIEW");
+  assert.equal(reviewDocument.sourceOfferId,offerId);
+  assert.equal(op.contract?.status,"DRAFT","preparing a review worksheet must never imply execution");
+  assert.equal(op.contract?.executedDocumentUrl??null,null);
+  assert.match(op.nextAction,/Review the saved fillable terms PDF/);
+  assert.equal((await seller.leadDetail(id)).offers.find(item=>item.id===offerId)?.effectiveStatus,"COMMUNICATED",
+    "preparing paperwork must not invalidate the exact communicated approval");
+  assert.match(reviewDocument.snapshotHash,/^[a-f0-9]{64}$/);
+  assert.match(reviewDocument.contentHash,/^[a-f0-9]{64}$/);
+  const reviewFile = await transactions.downloadPurchaseReviewDocument(id,reviewDocument.id,operator,now);
+  assert.equal(reviewFile.bytes.subarray(0,5).toString(),"%PDF-");
+  const parsedPdf = await PDFDocument.load(reviewFile.bytes);
+  const fillableNames = parsedPdf.getForm().getFields().map(field=>field.getName());
+  assert.ok(fillableNames.includes("seller_legal_name"));
+  assert.ok(fillableNames.includes("parcel_legal_description"));
+  assert.ok(fillableNames.includes("additional_terms_for_review"));
+  const [persistedContract] = await db.select().from(contractsTable).where(eq(contractsTable.leadId,id));
+  const persistedArtifacts = persistedContract?.payload.documentArtifacts as Array<Record<string,unknown>>|undefined;
+  assert.equal(persistedArtifacts?.length,1);
+  assert.equal(persistedArtifacts?.[0]?.contentHash,reviewDocument.contentHash);
+  assert.equal(typeof persistedArtifacts?.[0]?.pdfBase64,"string");
+  assert.equal(JSON.stringify(op.contract).includes(String(persistedArtifacts?.[0]?.pdfBase64)),false,
+    "the base64 PDF must never leak in ordinary deal API responses");
+  const versionAfterPdf = op.contract!.version;
+  op = await transactions.preparePurchaseReviewDocument(id,{version:versionAfterPdf},operator,now);
+  assert.equal(op.contract?.version,versionAfterPdf,"same authorized snapshot must be idempotent");
+  assert.equal(op.contract?.documents?.length,1);
   const execute = {version:op.contract!.version,executedDocumentUrl:"https://example.com/synthetic-contract",
     sellerSignedAt:now.toISOString(),acquisitionSignedAt:now.toISOString(),reviewNote:"Synthetic owner verification, not real signatures."};
   await assert.rejects(transactions.executeContract(id,execute,operator,now),e=>(e as {status:number}).status===403);
@@ -67,6 +105,7 @@ try {
   // Recording after approval expiry is allowed ONLY for historically valid signatures.
   op = await transactions.executeContract(id,execute,actor,new Date(now.getTime()+3*86400000));
   assert.equal(op.contract?.status,"UNDER_CONTRACT");
+  assert.equal(op.contract?.documents?.[0]?.id,reviewDocument.id,"contract updates must retain the immutable review artifact");
   assert.equal((await seller.leadDetail(id)).lead.stage,"UNDER_CONTRACT");
   detail = await seller.leadDetail(id);
   await assert.rejects(seller.recordCall(id,{version:detail.lead.version,outcome:"NOT_INTERESTED",notes:"Synthetic only.",nextAction:"Try to cancel.",followUpAt:future(1)},actor.id,now),/cannot cancel/);
@@ -242,6 +281,11 @@ try {
   op = await recordTransactionException(id,{...amend,buyerConsentEvidenceUrl:"https://example.com/synthetic-buyer-consent"},actor,now);
   assert.equal(op.contract?.closingAt,future(4)); assert.equal(op.contract?.purchasePrice,110000);
   assert.equal(op.contract?.history?.[0]?.previousState.closingAt,future(20));
+  await assert.rejects(
+    transactions.downloadPurchaseReviewDocument(id,reviewDocument.id,operator,now),
+    (error:unknown)=>(error as {status?:number}).status===409,
+    "a closing amendment must make a prior terms PDF unavailable for current use",
+  );
   op = await transactions.recordClosingMilestone(id,{version:op.contract!.version,kind:"ASSIGNMENT_SIGNED",
     evidenceUrl:"https://example.com/synthetic-old-assignment",note:"SYNTHETIC former buyer assignment."},actor,now);
   const oldBuyerId = buyer.id;

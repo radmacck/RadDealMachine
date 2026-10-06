@@ -14,4 +14,6 @@ export interface SellerOfferPortalIssueResponse {
      * @maxLength 50
      */
   token: string;
+  /** @pattern ^[0-9]{6}$ */
+  verificationCode: string;
 }

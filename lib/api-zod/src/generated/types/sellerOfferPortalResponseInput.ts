@@ -20,6 +20,8 @@ export interface SellerOfferPortalResponseInput {
      * @maxLength 200
      */
   respondentName: string;
+  /** @pattern ^[0-9]{6}$ */
+  verificationCode: string;
   /** @maxLength 2000 */
   note?: string;
   counterTerms?: OfferTerms;

@@ -1,22 +1,24 @@
 import { eq, and, lte, gt, desc, sql } from "drizzle-orm";
 import { isDeepStrictEqual } from "node:util";
+import { createHash, randomUUID } from "node:crypto";
 import {
   db, contractsTable, leadsTable, buyersTable, matchesTable, offersTable, analysesTable,
   intelligenceTable, distributionPacketsTable, distributionRecipientsTable,
 } from "@workspace/db";
 import type { z } from "zod";
 import {
-  CreateContractBody, RecordDestinationActivityBody as DestinationActivityBody, ExecuteContractBody, RecordBuyerResponseBody, RecordClosingMilestoneBody, RecordDealOutcomeBody,
+  CreateContractBody, PreparePurchaseReviewDocumentBody, RecordDestinationActivityBody as DestinationActivityBody, ExecuteContractBody, RecordBuyerResponseBody, RecordClosingMilestoneBody, RecordDealOutcomeBody,
   type DestinationActivityEvent,
 } from "@workspace/api-zod";
 import {
   assertOperationsRole, buyerReservations, evidenceUrl, pastInstant, wholeDollars, closingBlockers, matchBuyer, DomainError, DAY,
-  type OfferActor, type DealContract,
+  type OfferActor, type DealContract, type LeadDetail,
   evidenceReviewedAnalysis, type Analysis, type Lead, type UnderwritingInput, type Intelligence,
 } from "@workspace/deal-domain";
 import { lockedLead, leadDetail, move, audit } from "./deal-store";
 import { contractRecord, buyerRecord, queueJob, type Tx } from "./operations-records";
 import { dealOperations, refreshMatches } from "./matching-store";
+import { buildPurchaseReviewPdf, purchaseReviewSnapshotHash, type PurchaseReviewSnapshot } from "./transaction-documents";
 
 export async function lockedContract(tx: Tx, id: string, version: number) {
   const [row] = await tx.select().from(contractsTable).where(eq(contractsTable.leadId,id)).for("update");
@@ -27,8 +29,11 @@ export async function lockedContract(tx: Tx, id: string, version: number) {
   return {row,contract};
 }
 export async function save(tx: Tx,row: typeof contractsTable.$inferSelect, contract: DealContract, now: Date) {
-  const {id:_,leadId:__,version:___,createdAt:____,...payload} = contract;
-  await tx.update(contractsTable).set({payload,version:row.version+1,updatedAt:now}).where(eq(contractsTable.id,row.id));
+  const {id:_,leadId:__,version:___,createdAt:____,documents:_____,...payload} = contract;
+  await tx.update(contractsTable).set({
+    payload:{...payload,documentArtifacts:Array.isArray(row.payload.documentArtifacts)?row.payload.documentArtifacts:[]},
+    version:row.version+1,updatedAt:now,
+  }).where(eq(contractsTable.id,row.id));
 }
 export async function saveLead(tx: Tx,row: typeof leadsTable.$inferSelect, now: Date) {
   await tx.update(leadsTable).set({stage:row.stage,nextAction:row.nextAction,version:row.version+1,updatedAt:now}).where(eq(leadsTable.id,row.id));
@@ -50,10 +55,11 @@ export async function createContract(id: string,input: z.infer<typeof CreateCont
       earnestMoney:offer.earnestMoney,assignmentAllowed:offer.assignmentIntent,closingAt:parsed.closingAt,
       contingencies:offer.contingencies,milestones:[],attemptNumber:exists?Number(exists.payload.attemptNumber??1)+1:1,
       destinationActivityHistory:Array.isArray(exists?.payload.destinationActivityHistory)?exists.payload.destinationActivityHistory:[],
+      documentArtifacts:Array.isArray(exists?.payload.documentArtifacts)?exists.payload.documentArtifacts:[],
     };
     if (exists) {
       const responses = await tx.select().from(matchesTable).where(eq(matchesTable.leadId,id));
-      const {history:_,...previousState} = exists.payload;
+      const {history:_,documentArtifacts:_____,...previousState} = exists.payload;
       payload.history = [...(Array.isArray(exists.payload.history)?exists.payload.history:[]),{
         kind:"CANCELLED_ATTEMPT",recordedAt:now.toISOString(),effectiveAt:now.toISOString(),recordedBy:actor.id,
         evidenceUrl:String(exists.payload.outcomeEvidenceUrl??(Array.isArray(exists.payload.history)?exists.payload.history.at(-1)?.evidenceUrl:"")),
@@ -77,6 +83,94 @@ export async function createContract(id: string,input: z.infer<typeof CreateCont
   });
   return dealOperations(id,now);
 }
+
+function purchaseReviewSnapshot(lead: Lead,contract: DealContract,offer: LeadDetail["offers"][number]): PurchaseReviewSnapshot {
+  return {
+    leadId:lead.id,contractId:contract.id,offerId:offer.id,analysisSnapshotId:offer.analysisSnapshotId,
+    attemptNumber:contract.attemptNumber??1,propertyAddress:lead.address,sellerReportedName:lead.sellerName??null,
+    purchasePrice:contract.purchasePrice,earnestMoney:contract.earnestMoney,closingAt:contract.closingAt,
+    contingencies:contract.contingencies,assignmentAllowed:contract.assignmentAllowed,
+  };
+}
+
+function storedDocumentArtifacts(row: typeof contractsTable.$inferSelect): Array<Record<string,unknown>> {
+  return Array.isArray(row.payload.documentArtifacts)
+    ? row.payload.documentArtifacts.filter((item):item is Record<string,unknown> => !!item&&typeof item==="object"&&!Array.isArray(item))
+    : [];
+}
+
+export async function preparePurchaseReviewDocument(
+  id: string,input: z.infer<typeof PreparePurchaseReviewDocumentBody>,actor: OfferActor,now = new Date(),
+) {
+  assertOperationsRole(actor,["OWNER","OPERATOR"]);
+  const parsed = PreparePurchaseReviewDocumentBody.parse(input);
+  await db.transaction(async tx=>{
+    await lockedLead(tx,id);
+    const {row,contract} = await lockedContract(tx,id,parsed.version);
+    if (contract.status!=="DRAFT") throw new DomainError("Prepare this purchase review copy before recording external signatures.",409);
+    const detail = await leadDetail(id,tx,now);
+    const offer = detail.offers.find(item=>item.id===contract.offerId&&item.effectiveStatus==="COMMUNICATED");
+    if (!offer||!detail.analysis) throw new DomainError("A current, communicated owner-authorized offer is required to prepare transaction terms.",409);
+    if (offer.amount!==contract.purchasePrice||offer.earnestMoney!==contract.earnestMoney||
+      offer.contingencies!==contract.contingencies||offer.assignmentIntent!==contract.assignmentAllowed)
+      throw new DomainError("Transaction terms no longer match the exact communicated offer. Reconcile the amendment before preparing a PDF.",409);
+    const snapshot = purchaseReviewSnapshot(detail.lead,contract,offer);
+    const snapshotHash = purchaseReviewSnapshotHash(snapshot);
+    const previous = storedDocumentArtifacts(row);
+    if (previous.some(item=>item.kind==="PURCHASE_TERMS_REVIEW"&&item.snapshotHash===snapshotHash&&typeof item.pdfBase64==="string")) return;
+
+    const bytes = await buildPurchaseReviewPdf(snapshot,snapshotHash);
+    const idForDocument = randomUUID();
+    const fileName = `purchase-terms-review-${contract.attemptNumber??1}-${idForDocument.slice(0,8)}.pdf`;
+    const contentHash = createHash("sha256").update(bytes).digest("hex");
+    const artifact = {
+      id:idForDocument,kind:"PURCHASE_TERMS_REVIEW",status:"PREPARED_FOR_REVIEW",
+      attemptNumber:contract.attemptNumber??1,sourceContractVersion:row.version,sourceOfferId:offer.id,
+      snapshotHash,contentHash,fileName,contentType:"application/pdf",sizeBytes:bytes.byteLength,
+      generatedAt:now.toISOString(),generatedBy:actor.id,
+      downloadUrl:`/api/deals/${id}/contract/documents/${idForDocument}/file`,
+      pdfBase64:Buffer.from(bytes).toString("base64"),
+    };
+    await tx.update(contractsTable).set({
+      payload:{...row.payload,documentArtifacts:[...previous,artifact]},
+      version:row.version+1,updatedAt:now,
+    }).where(eq(contractsTable.id,row.id));
+    await audit(tx,actor.id,"TRANSACTION_REVIEW_PDF_PREPARED",id,
+      `Prepared ${idForDocument} from communicated offer ${offer.id}; terms snapshot ${snapshotHash}, PDF content ${contentHash}. Review copy only; no legal agreement or signature was created.`);
+  });
+  return dealOperations(id,now);
+}
+
+export async function downloadPurchaseReviewDocument(
+  id: string,documentId: string,actor: OfferActor,now = new Date(),
+): Promise<{fileName:string;bytes:Buffer}> {
+  assertOperationsRole(actor,["OWNER","OPERATOR"]);
+  return db.transaction(async tx=>{
+    const [row] = await tx.select().from(contractsTable).where(eq(contractsTable.leadId,id));
+    if (!row) throw new DomainError("Transaction not found.",404);
+    const contract = contractRecord(row);
+    const detail = await leadDetail(id,tx,now);
+    const artifact = storedDocumentArtifacts(row).find(item=>item.id===documentId);
+    if (!artifact||artifact.kind!=="PURCHASE_TERMS_REVIEW"||typeof artifact.pdfBase64!=="string")
+      throw new DomainError("Transaction review document not found.",404);
+    const offer = detail.offers.find(item=>item.id===String(artifact.sourceOfferId));
+    if (!offer) throw new DomainError("The source authorized offer is missing; document cannot be validated.",409);
+    if (contract.status==="DRAFT"&&offer.effectiveStatus!=="COMMUNICATED")
+      throw new DomainError("The source offer is stale or revoked. Prepare a new review copy only after current terms are authorized.",409);
+    if (offer.amount!==contract.purchasePrice||offer.earnestMoney!==contract.earnestMoney||
+      offer.contingencies!==contract.contingencies||offer.assignmentIntent!==contract.assignmentAllowed)
+      throw new DomainError("The source offer no longer matches the transaction terms. This review PDF is stale.",409);
+    const snapshot = purchaseReviewSnapshot(detail.lead,contract,offer);
+    if (purchaseReviewSnapshotHash(snapshot)!==artifact.snapshotHash)
+      throw new DomainError("This review PDF no longer matches the current transaction terms. Prepare a new copy.",409);
+    const bytes = Buffer.from(artifact.pdfBase64,"base64");
+    const contentHash = createHash("sha256").update(bytes).digest("hex");
+    if (contentHash!==artifact.contentHash||bytes.byteLength!==Number(artifact.sizeBytes))
+      throw new DomainError("Stored transaction PDF failed its integrity check.",409);
+    return {fileName:String(artifact.fileName),bytes};
+  },{isolationLevel:"repeatable read",accessMode:"read only"});
+}
+
 export async function executeContract(id: string,input: z.infer<typeof ExecuteContractBody>,actor: OfferActor,now = new Date()) {
   assertOperationsRole(actor,["OWNER"]);
   const parsed = ExecuteContractBody.parse(input);

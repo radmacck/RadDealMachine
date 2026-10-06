@@ -5,8 +5,16 @@
  * Radical Deal OS seller intake, underwriting, conversations and approved offers
  * OpenAPI spec version: 1.0.0
  */
+import type { SellerOfferPortalIssueInputVerificationDeliveryMethod } from './sellerOfferPortalIssueInputVerificationDeliveryMethod';
 
 export interface SellerOfferPortalIssueInput {
   /** @minimum 1 */
   version: number;
+  identityEvidenceId: string;
+  verificationDeliveryMethod: SellerOfferPortalIssueInputVerificationDeliveryMethod;
+  /**
+     * @minLength 20
+     * @maxLength 2000
+     */
+  verificationNote: string;
 }

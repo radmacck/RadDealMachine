@@ -1,4 +1,4 @@
-import { createHash, randomBytes } from "node:crypto";
+import { createHash, randomBytes, randomInt, timingSafeEqual } from "node:crypto";
 import { isDeepStrictEqual } from "node:util";
 import { and, desc, eq, inArray } from "drizzle-orm";
 import {
@@ -29,6 +29,17 @@ type PortalSnapshot = {
   approvedAt: string;
   expiresAt: string;
   preparedAt: string;
+  verification: {
+    salt: string;
+    codeHash: string;
+    failedAttempts: number;
+    lockedAt: string | null;
+    verifiedAt: string | null;
+    verifiedRespondentName?: string;
+    deliveryMethod: "PHONE" | "IN_PERSON";
+    identityEvidenceId: string;
+    verificationNote: string;
+  };
 };
 
 const tokenHash = (token: string | undefined) => {
@@ -49,6 +60,10 @@ function eventRecord(row: typeof sellerOfferPortalEventsTable.$inferSelect) {
     counterTerms: payload.counterTerms && typeof payload.counterTerms === "object"
       ? payload.counterTerms as OfferTerms
       : null,
+    identityVerification: payload.identityVerification === "VERIFIED_ONE_TIME_CODE"
+      ? "VERIFIED_ONE_TIME_CODE" as const
+      : "LEGACY_UNVERIFIED" as const,
+    identityVerifiedAt: typeof payload.identityVerifiedAt === "string" ? payload.identityVerifiedAt : null,
   };
 }
 
@@ -66,6 +81,10 @@ async function portalView(
   const events = eventRows.map(eventRecord);
   const detail = await leadDetail(portal.leadId, database, now);
   const offer = detail.offers.find((item) => item.id === portal.offerId);
+  const storedSnapshot = portal.snapshot as unknown as Partial<PortalSnapshot>;
+  const verification = storedSnapshot.verification;
+  const verificationReady = !!verification?.salt && /^[0-9a-f]{64}$/i.test(verification.codeHash ?? "")
+    && Number.isInteger(verification.failedAttempts) && !!verification.deliveryMethod;
   const activeContract = contractRows.length > 0;
   const isExpired = portal.expiresAt.getTime() <= now.getTime();
   const canRespond = portal.status === "ACTIVE"
@@ -73,6 +92,8 @@ async function portalView(
     && !isExpired
     && offer?.effectiveStatus === "COMMUNICATED"
     && !activeContract;
+    // Identity controls are enforced separately below; legacy links are intentionally non-actionable.
+  const identityCanRespond = canRespond && verificationReady && !verification?.lockedAt;
   const unavailableReason = portal.status === "REVOKED"
     ? "The owner revoked this link. Contact the deal owner for a current offer."
     : events.length
@@ -83,13 +104,32 @@ async function portalView(
           ? "This offer is no longer current. Contact the deal owner for the latest terms."
           : activeContract
             ? "A transaction record is already in progress. Contact the deal owner."
-            : null;
+          : !verificationReady
+            ? "This link was issued without seller-contact verification. Ask the deal owner for a new verified link."
+            : verification?.lockedAt
+              ? "Identity verification is locked after repeated incorrect codes. Contact the deal owner to rotate the link."
+              : null;
   return schemas.GetSellerOfferPortalResponse.parse({
     id: portal.id,
     status: portal.status,
-    snapshot: portal.snapshot,
+    snapshot: {
+      leadId: storedSnapshot.leadId,
+      offerId: storedSnapshot.offerId,
+      sellerName: storedSnapshot.sellerName,
+      propertyAddress: storedSnapshot.propertyAddress,
+      city: storedSnapshot.city,
+      state: storedSnapshot.state,
+      county: storedSnapshot.county,
+      zip: storedSnapshot.zip,
+      terms: storedSnapshot.terms,
+      approvedAt: storedSnapshot.approvedAt,
+      expiresAt: storedSnapshot.expiresAt,
+      preparedAt: storedSnapshot.preparedAt,
+      identityVerificationRequired: true,
+      verificationDeliveryMethod: verification?.deliveryMethod ?? "PHONE",
+    },
     expiresAt: portal.expiresAt.toISOString(),
-    canRespond,
+    canRespond: identityCanRespond,
     unavailableReason,
     events,
   });
@@ -117,6 +157,10 @@ export async function issueSellerOfferPortal(
   assertOperationsRole(actor, ["OWNER"]);
   const parsed = schemas.IssueSellerOfferPortalBody.parse(input);
   const token = randomBytes(32).toString("base64url");
+  const verificationCode = randomInt(0, 1_000_000).toString().padStart(6, "0");
+  const verificationSalt = randomBytes(16).toString("hex");
+  const verificationCodeHash = createHash("sha256")
+    .update(`${verificationSalt}:${verificationCode}`, "utf8").digest("hex");
   let portalId = "";
 
   await db.transaction(async (tx) => {
@@ -128,6 +172,23 @@ export async function issueSellerOfferPortal(
     }
     if (Date.parse(offer.expiresAt) <= now.getTime()) {
       throw new DomainError("This offer has expired. Create and authorize new exact terms before issuing a seller link.", 409);
+    }
+    if (!(detail.lead.sellerName ?? "").trim()) throw new DomainError("A verified seller name is required before issuing a private response link.", 409);
+    if (parsed.verificationDeliveryMethod === "PHONE" && !(detail.lead.sellerPhone ?? "").trim()) {
+      throw new DomainError("A seller phone number is required for phone-based code delivery. Use in-person delivery or verify a phone first.", 409);
+    }
+    const authorityCategories = new Set(["ownership", "seller_authority", "owner_authority"]);
+    const identityEvidence = detail.intelligence.find((item) => item.id === parsed.identityEvidenceId);
+    const evidenceAgeMs = identityEvidence ? now.getTime() - Date.parse(identityEvidence.capturedAt) : NaN;
+    if (!identityEvidence
+      || identityEvidence.classification !== "VERIFIED_FACTS"
+      || identityEvidence.sourceType !== "PUBLIC_RECORD"
+      || !authorityCategories.has(identityEvidence.category.trim().toLowerCase())
+      || !identityEvidence.verificationNote?.trim()
+      || !Number.isFinite(evidenceAgeMs)
+      || evidenceAgeMs < 0
+      || evidenceAgeMs > 30 * 86_400_000) {
+      throw new DomainError("Select current verified public-record ownership or seller-authority evidence before issuing a link.", 409);
     }
     const [contract] = await tx.select().from(contractsTable).where(eq(contractsTable.leadId, leadId));
     if (contract) throw new DomainError("A contract record already exists for this deal. Continue in the transaction workflow.", 409);
@@ -160,6 +221,16 @@ export async function issueSellerOfferPortal(
       approvedAt: offer.approvedAt!,
       expiresAt: offer.expiresAt,
       preparedAt: now.toISOString(),
+      verification: {
+        salt: verificationSalt,
+        codeHash: verificationCodeHash,
+        failedAttempts: 0,
+        lockedAt: null,
+        verifiedAt: null,
+        deliveryMethod: parsed.verificationDeliveryMethod,
+        identityEvidenceId: identityEvidence.id,
+        verificationNote: parsed.verificationNote.trim(),
+      },
     };
 
     await tx.update(sellerOfferPortalsTable).set({ status: "REVOKED", revokedAt: now })
@@ -178,7 +249,7 @@ export async function issueSellerOfferPortal(
     portalId = created.id;
     await tx.update(leadsTable).set({ version: lead.version + 1, updatedAt: now }).where(eq(leadsTable.id, leadId));
     await audit(tx, actor.id, "SELLER_OFFER_PORTAL_ISSUED", leadId,
-      `Issued a private seller-response link for communicated offer ${offerId}; exact terms are frozen, expires ${offer.expiresAt}. Any prior active link for this offer was revoked. Sharing is manual; no message was sent and no signature or contract was created.`);
+      `Issued a private seller-response link for communicated offer ${offerId}; exact terms are frozen, expires ${offer.expiresAt}. Owner identity evidence ${identityEvidence.id} was checked. A one-time code must be delivered separately by ${parsed.verificationDeliveryMethod}; owner attestation: ${parsed.verificationNote.trim()}. Any prior active link was revoked. No message was sent and no signature or contract was created.`);
   });
 
   const [portal] = await db.select().from(sellerOfferPortalsTable)
@@ -187,6 +258,7 @@ export async function issueSellerOfferPortal(
   return schemas.IssueSellerOfferPortalResponse.parse({
     portal: await portalView(db, portal, now),
     token,
+    verificationCode,
   });
 }
 
@@ -211,6 +283,7 @@ export async function respondToSellerOfferPortal(
   const respondentName = parsed.respondentName.trim();
   if (!respondentName) throw new DomainError("Enter the name of the person responding.", 400);
   const counterTerms = parsed.counterTerms ?? null;
+  const verificationCode = parsed.verificationCode;
   if (parsed.action === "COUNTERED" && !counterTerms) {
     throw new DomainError("A counter proposal must include all proposed commercial terms.", 400);
   }
@@ -222,6 +295,7 @@ export async function respondToSellerOfferPortal(
   }
   const canonical = { eventKey: parsed.eventKey, action: parsed.action, respondentName, note, counterTerms };
   let portalId = "";
+  let verificationError: DomainError | null = null;
 
   await db.transaction(async (tx) => {
     const [lookup] = await tx.select().from(sellerOfferPortalsTable)
@@ -254,12 +328,52 @@ export async function respondToSellerOfferPortal(
     }
     const [contract] = await tx.select().from(contractsTable).where(eq(contractsTable.leadId, portal.leadId));
     if (contract) throw new DomainError("A transaction record is already in progress. Contact the deal owner.", 409);
+    const snapshot = portal.snapshot as unknown as PortalSnapshot;
+    const verification = snapshot.verification;
+    if (!verification?.salt || !/^[0-9a-f]{64}$/i.test(verification.codeHash ?? "")) {
+      verificationError = new DomainError("This link has no seller-contact verification challenge. Contact the deal owner for a new link.", 409);
+      return;
+    }
+    if (verification.lockedAt || verification.failedAttempts >= 5) {
+      verificationError = new DomainError("Too many incorrect verification codes. Contact the deal owner to rotate the link.", 429);
+      return;
+    }
+    const submittedHash = createHash("sha256").update(`${verification.salt}:${verificationCode}`, "utf8").digest();
+    const expectedHash = Buffer.from(verification.codeHash, "hex");
+    const codeIsValid = expectedHash.length === submittedHash.length && timingSafeEqual(expectedHash, submittedHash);
+    if (!codeIsValid) {
+      const failedAttempts = verification.failedAttempts + 1;
+      const lockedAt = failedAttempts >= 5 ? now.toISOString() : null;
+      await tx.update(sellerOfferPortalsTable).set({
+        snapshot: { ...snapshot, verification: { ...verification, failedAttempts, lockedAt } },
+      }).where(eq(sellerOfferPortalsTable.id, portal.id));
+      await audit(tx, `seller-portal:${portal.id}`, "SELLER_OFFER_PORTAL_VERIFICATION_FAILED", portal.leadId,
+        `Seller contact-code verification failed for portal ${portal.id}; attempt ${failedAttempts} of 5. The submitted code was not stored.`);
+      verificationError = new DomainError(
+        lockedAt
+          ? "Verification failed five times. This link is locked; contact the deal owner."
+          : "The verification code is incorrect. Check the separate code from the deal owner and try again.",
+        lockedAt ? 429 : 401,
+      );
+      return;
+    }
+    const identityVerifiedAt = now.toISOString();
+    await tx.update(sellerOfferPortalsTable).set({
+      snapshot: {
+        ...snapshot,
+        verification: { ...verification, verifiedAt: identityVerifiedAt, verifiedRespondentName: respondentName },
+      },
+    }).where(eq(sellerOfferPortalsTable.id, portal.id));
 
     await tx.insert(sellerOfferPortalEventsTable).values({
       portalId: portal.id,
       eventKey: canonical.eventKey,
       kind: canonical.action,
-      payload: canonical,
+      payload: {
+        ...canonical,
+        identityVerification: "VERIFIED_ONE_TIME_CODE",
+        identityVerifiedAt,
+      },
       occurredAt: now,
       recordedAt: now,
     });
@@ -280,9 +394,10 @@ export async function respondToSellerOfferPortal(
       updatedAt: now,
     }).where(eq(leadsTable.id, portal.leadId));
     await audit(tx, actor, "SELLER_OFFER_PORTAL_RESPONSE", portal.leadId,
-      `${canonical.action} recorded for offer ${portal.offerId}; portal event ${canonical.eventKey}; typed name is self-reported, identity is not independently verified, and no contract or new commercial authority was created.`);
+      `${canonical.action} recorded for offer ${portal.offerId}; portal event ${canonical.eventKey}; one-time code verified control of the owner-confirmed ${verification.deliveryMethod} contact using ownership evidence ${verification.identityEvidenceId}. Respondent name remains self-reported; no legal authority, contract or new commercial authority was created.`);
   });
 
+  if (verificationError) throw verificationError;
   const [portal] = await db.select().from(sellerOfferPortalsTable)
     .where(eq(sellerOfferPortalsTable.id, portalId));
   if (!portal) throw new DomainError("This seller offer link is no longer active.", 410);

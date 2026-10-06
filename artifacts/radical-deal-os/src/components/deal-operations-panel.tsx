@@ -1,8 +1,8 @@
 import { useState } from 'react';
 import { Link } from 'wouter';
-import { RefreshCw } from 'lucide-react';
+import { Download, FileText, RefreshCw } from 'lucide-react';
 import {
-  getGetDealOperationsQueryKey, useCreateContract, useExecuteContract, useGetDealOperations, useRecordBuyerResponse, useRecordDestinationActivity,
+  getGetDealOperationsQueryKey, useCreateContract, useExecuteContract, useGetDealOperations, usePreparePurchaseReviewDocument, useRecordBuyerResponse, useRecordDestinationActivity,
   useRecordClosingMilestone, useRecordDealOutcome, useRecordTransactionException, useRefreshMatches,
   type BuyerMatch, type BuyerResponseInputStatus, type ClosingMilestoneInputKind, type DealContract, type DealOutcomeInputOutcome,
   type DestinationActivityEvent, type DestinationActivityInputKind, type TransactionExceptionInputKind, type LeadDetail,
@@ -53,6 +53,79 @@ function CreateContract({ detail, onDone }: { detail: LeadDetail; onDone: () => 
       <Button disabled={!(canCall || isOwner) || create.isPending} onClick={submit} data-testid="button-create-contract">{create.isPending ? 'Drafting...' : 'Draft contract record'}</Button>
     </div>
   );
+}
+
+function PurchaseReviewDocuments({ contract, onDone }: { contract: DealContract; onDone: () => void }) {
+  const { canCall } = useAccess();
+  const prepare = usePreparePurchaseReviewDocument();
+  const { toast } = useToast();
+  const [downloading, setDownloading] = useState<string | null>(null);
+  const [downloadError, setDownloadError] = useState<string | null>(null);
+  const documents = contract.documents ?? [];
+  const createReviewCopy = () => prepare.mutate(
+    { id: contract.leadId, data: { version: contract.version } },
+    {
+      onSuccess: () => {
+        onDone();
+        toast({ title: 'Review PDF prepared', description: 'The fillable PDF is saved as a terms snapshot. It is not a legal contract or signature.' });
+      },
+    },
+  );
+  const downloadReviewCopy = async (documentId: string, fileName: string, url: string) => {
+    setDownloading(documentId);
+    setDownloadError(null);
+    try {
+      const response = await fetch(url, { credentials: 'same-origin', headers: { Accept: 'application/pdf' } });
+      if (!response.ok) {
+        let message = `Download failed (${response.status}).`;
+        try {
+          const body = await response.json() as { message?: string; error?: string };
+          message = body.message || body.error || message;
+        } catch { /* keep the HTTP status message */ }
+        throw new Error(message);
+      }
+      const objectUrl = URL.createObjectURL(await response.blob());
+      const anchor = window.document.createElement('a');
+      anchor.href = objectUrl;
+      anchor.download = fileName;
+      anchor.click();
+      window.setTimeout(() => URL.revokeObjectURL(objectUrl), 1000);
+    } catch (error) {
+      setDownloadError(error instanceof Error ? error.message : 'Could not retrieve this review copy.');
+    } finally {
+      setDownloading(null);
+    }
+  };
+
+  return <section className="space-y-3 border-t border-border pt-4" data-testid="panel-purchase-review-documents">
+    <div className="flex items-start gap-3">
+      <FileText className="mt-0.5 h-4 w-4 shrink-0 text-signal" />
+      <div>
+        <h3 className="text-sm font-semibold">Purchase terms review PDF</h3>
+        <p className="mt-1 text-xs text-muted-foreground">Creates a persisted, fillable copy of the exact authorized terms, with unverified or missing legal details left blank. This worksheet is not a contract and cannot be signed here.</p>
+      </div>
+    </div>
+    {contract.status === 'DRAFT' && canCall && <Button size="sm" onClick={createReviewCopy} disabled={prepare.isPending} data-testid="button-prepare-purchase-review-pdf">
+      <FileText className="mr-2 h-4 w-4" />{prepare.isPending ? 'Preparing…' : 'Prepare fillable review PDF'}
+    </Button>}
+    {prepare.error && <ErrorNotice error={prepare.error} />}
+    {downloadError && <p className="text-xs text-destructive" role="alert" data-testid="text-review-pdf-download-error">{downloadError} The saved PDF remains in history; do not use a stale copy.</p>}
+    <p className="text-[11px] text-muted-foreground">Downloads are revalidated against the current terms snapshot. An amended or withdrawn offer cannot be downloaded as current.</p>
+    {documents.length === 0 ? <p className="text-xs text-muted-foreground">No PDF has been prepared for this transaction.</p> : (
+      <ul className="space-y-2" data-testid="list-purchase-review-documents">
+        {documents.map((document) => <li key={document.id} className="flex flex-wrap items-center justify-between gap-2 border border-border p-2" data-testid={`transaction-review-document-${document.id}`}>
+          <div>
+            <p className="text-xs font-semibold">{document.fileName} · review copy</p>
+            <p className="text-[11px] text-muted-foreground">Attempt {document.attemptNumber} · transaction version {document.sourceContractVersion} · generated {fmtDate(document.generatedAt)} · terms {document.snapshotHash.slice(0, 12)}…</p>
+          </div>
+          <Button type="button" size="sm" variant="outline" onClick={() => void downloadReviewCopy(document.id,document.fileName,document.downloadUrl)}
+            disabled={downloading!==null} data-testid={`button-download-transaction-review-document-${document.id}`}>
+            <Download className="mr-2 h-3.5 w-3.5" />{downloading===document.id?'Checking…':'Download'}
+          </Button>
+        </li>)}
+      </ul>
+    )}
+  </section>;
 }
 
 function ExecuteContract({ contract, onDone }: { contract: DealContract; onDone: () => void }) {
@@ -419,6 +492,7 @@ export function DealOperationsPanel({ detail }: { detail: LeadDetail }) {
               <div><dt className="eyebrow">Assignment</dt><dd>{c.assignmentAllowed ? 'Allowed' : 'Not allowed'}</dd></div>
               <div className="sm:col-span-2 lg:col-span-4"><dt className="eyebrow">Contingencies</dt><dd className="whitespace-pre-wrap">{c.contingencies}</dd></div>
             </dl>
+            <PurchaseReviewDocuments contract={c} onDone={done} />
             {c.status === 'DRAFT' && <ExecuteContract key={c.version} contract={c} onDone={done} />}
             {c.executedDocumentUrl && <p className="text-sm"><EvidenceLink url={c.executedDocumentUrl} label="Executed document" /> / seller signed {fmtDate(c.sellerSignedAt)} / our side signed {fmtDate(c.acquisitionSignedAt)}{c.reviewNote ? ` / ${c.reviewNote}` : ''}</p>}
           </div>
