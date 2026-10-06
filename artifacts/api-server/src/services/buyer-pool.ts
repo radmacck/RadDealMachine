@@ -1,12 +1,145 @@
 import { createHash, randomUUID } from "node:crypto";
+import { isDeepStrictEqual } from "node:util";
 import { eq, sql } from "drizzle-orm";
 import { db, buyersTable } from "@workspace/db";
 import { DiscoverBuyerBody, RequestBuyerQualificationBody } from "@workspace/api-zod";
 import { assertOperationsRole, DomainError, evidenceUrl, pastInstant, qualificationMaintenanceKind, type OfferActor, type Buyer } from "@workspace/deal-domain";
 import { searchPublicProperties } from "./property-source-store";
+import { searchRepeatedRecordedBuyers, type RepeatedTransferBuyer } from "@workspace/property-sources";
 import { audit } from "./deal-store";
 import { allBuyerRecords, buyerRecord, queueJob } from "./operations-records";
 type Prospect = ReturnType<typeof DiscoverBuyerBody.parse>;
+type SourceObservationInput = {
+  sourceId: string;
+  recordIdentities: string[];
+  activityCount: number;
+  eventAt: string | null;
+};
+
+const normalizeEntityName = (value: string) => value.toUpperCase().replace(/[^A-Z0-9]/g, "");
+const entityIdentity = (value: string) => createHash("sha256").update(`phila-public-entity:${normalizeEntityName(value)}`).digest("hex");
+const publicOwnerKey = (value: string) => createHash("sha256").update(`phila-opa-tax-owner:${value.trim().toUpperCase()}`).digest("hex");
+const SOURCE_POLICY_PROPERTY = "phila-property-sources-v2";
+const SOURCE_POLICY_BUYER = "phila-buyer-sources-v2";
+type BuyerSourceHistory = {
+  capturedAt:string;statement:string;confidence:number;recordIdentities:string[];
+  activityCount:number;eventAt:string|null;
+};
+
+function normalizeSourceObservation(value: unknown) {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return null;
+  const row = value as Record<string, unknown>;
+  if (typeof row.sourceId !== "string" || typeof row.source !== "string" ||
+    typeof row.sourceUrl !== "string" || typeof row.statement !== "string" ||
+    typeof row.firstObservedAt !== "string" || typeof row.lastObservedAt !== "string" ||
+    typeof row.capturedAt !== "string" || !Array.isArray(row.recordIdentities)) return null;
+  const history = Array.isArray(row.history) ? row.history.flatMap(item => {
+    if (!item || typeof item !== "object" || Array.isArray(item)) return [];
+    const entry = item as Record<string, unknown>;
+    if (typeof entry.capturedAt !== "string" || typeof entry.statement !== "string") return [];
+    return [{
+      capturedAt: entry.capturedAt,
+      statement: entry.statement,
+      confidence: typeof entry.confidence === "number" ? entry.confidence : 0,
+      recordIdentities: Array.isArray(entry.recordIdentities)
+        ? entry.recordIdentities.filter((id): id is string => typeof id === "string").slice(0, 100)
+        : [],
+      activityCount: typeof entry.activityCount === "number" ? entry.activityCount : 1,
+      eventAt: typeof entry.eventAt === "string" ? entry.eventAt : null,
+    }];
+  }).slice(-20) : [];
+  return {
+    sourceId: row.sourceId,
+    source: row.source,
+    sourceUrl: row.sourceUrl,
+    classification: "OBSERVED" as const,
+    statement: row.statement,
+    confidence: typeof row.confidence === "number" ? row.confidence : 0,
+    capturedAt: row.capturedAt,
+    firstObservedAt: row.firstObservedAt,
+    lastObservedAt: row.lastObservedAt,
+    seenCount: typeof row.seenCount === "number" ? row.seenCount : 1,
+    recordIdentities: row.recordIdentities.filter((id): id is string => typeof id === "string").slice(0, 100),
+    activityCount: typeof row.activityCount === "number" ? row.activityCount : 1,
+    eventAt: typeof row.eventAt === "string" ? row.eventAt : null,
+    history,
+  };
+}
+
+function observationContent(row: NonNullable<ReturnType<typeof normalizeSourceObservation>>) {
+  return {
+    source: row.source,
+    sourceUrl: row.sourceUrl,
+    statement: row.statement,
+    confidence: row.confidence,
+    recordIdentities: row.recordIdentities,
+    activityCount: row.activityCount,
+    eventAt: row.eventAt,
+  };
+}
+
+function sourceObservation(
+  p: Prospect,
+  context: SourceObservationInput | undefined,
+  identity: string,
+) {
+  const capturedAt = new Date(p.capturedAt).toISOString();
+  const ids = context?.recordIdentities ?? [];
+  if (context && (context.recordIdentities.length > 100 ||
+    context.recordIdentities.some(id => !id.trim() || id.length > 200) ||
+    !context.sourceId.trim() || context.sourceId.length > 300 ||
+    !Number.isInteger(context.activityCount) || context.activityCount < 1 ||
+    (context.eventAt && (!Number.isFinite(Date.parse(context.eventAt)) || Date.parse(context.eventAt) > Date.parse(capturedAt))))) {
+    throw new DomainError("Public buyer source observation failed its identity, count, or date checks.", 422);
+  }
+  return {
+    sourceId: context?.sourceId ?? `public-source:${identity}`,
+    source: p.source,
+    sourceUrl: p.sourceUrl,
+    classification: "OBSERVED" as const,
+    statement: p.source,
+    confidence: p.confidence,
+    capturedAt,
+    firstObservedAt: capturedAt,
+    lastObservedAt: capturedAt,
+    seenCount: 1,
+    recordIdentities: ids,
+    activityCount: context?.activityCount ?? 1,
+    eventAt: context?.eventAt ?? null,
+    history: [] as BuyerSourceHistory[],
+  };
+}
+
+function mergeSourceObservation(
+  prior: NonNullable<ReturnType<typeof normalizeSourceObservation>> | undefined,
+  incoming: ReturnType<typeof sourceObservation>,
+) {
+  if (!prior) return { observation: incoming, contentChanged: true, captureChanged: true };
+  const last = Date.parse(prior.lastObservedAt);
+  const captured = Date.parse(incoming.capturedAt);
+  if (Number.isFinite(last) && Number.isFinite(captured) && captured < last) {
+    return { observation: prior, contentChanged: false, captureChanged: false };
+  }
+  const captureChanged = Number.isFinite(captured) && captured > last;
+  const candidate = {
+    ...incoming,
+    firstObservedAt: prior.firstObservedAt,
+    lastObservedAt: captureChanged ? incoming.capturedAt : prior.lastObservedAt,
+    seenCount: prior.seenCount + (captureChanged ? 1 : 0),
+  };
+  const contentChanged = !isDeepStrictEqual(observationContent(prior), observationContent(candidate));
+  candidate.history = contentChanged
+    ? [...prior.history, {
+        capturedAt: prior.capturedAt,
+        statement: prior.statement,
+        confidence: prior.confidence,
+        recordIdentities: prior.recordIdentities,
+        activityCount: prior.activityCount,
+        eventAt: prior.eventAt,
+      }].slice(-20)
+    : prior.history;
+  return { observation: candidate, contentChanged, captureChanged };
+}
 export function qualificationTask(b: Pick<Buyer,"name"|"criteria"|"destinationKind">, kind:"QUALIFY"|"REVERIFY", now:Date) {
   const market = b.criteria?.cities.length ? ` in ${b.criteria.cities.join(", ")}` : "";
   const destination = b.destinationKind && b.destinationKind!=="BUYER";
@@ -15,18 +148,90 @@ export function qualificationTask(b: Pick<Buyer,"name"|"criteria"|"destinationKi
     preparedMessage:`We are updating our investor criteria. Are you currently ${destination?"accepting qualified deals":"buying"}${market}? If so, which states/counties/cities/ZIPs, property types, units, price and ARV ranges, size, beds/baths, rehab scope and strategies fit? Please confirm funding arrangements, closing speed/capacity and exclusions. ${destination?"Please also confirm any fee terms and who can act as the acquisition buyer.":"Current dated identity/funding evidence is required before approval."}`,
     dueAt:now.toISOString(),updatedAt:now.toISOString()};
 }
-export async function discoverBuyer(input: Prospect, actor: OfferActor, now = new Date(), sourceKey?:string) {
+export async function discoverBuyer(
+  input: Prospect,
+  actor: OfferActor,
+  now = new Date(),
+  sourceKey?:string,
+  observationContext?: SourceObservationInput,
+) {
   assertOperationsRole(actor,["OWNER","ANALYST"]);
   const p = DiscoverBuyerBody.parse(input);
   evidenceUrl(p.sourceUrl); pastInstant(p.capturedAt,now,"Discovery observation");
-  const key = sourceKey??createHash("sha256").update(`${p.sourceUrl}|${p.name.trim().toLowerCase()}`).digest("hex");
+  const normalizedName = normalizeEntityName(p.name);
+  const publicRecord = !!sourceKey || /^Philadelphia (?:official tax record|OPA|Real Estate Transfers)/i.test(p.source);
+  const key = sourceKey ?? (publicRecord
+    ? publicOwnerKey(p.name)
+    : createHash("sha256").update(`${p.sourceUrl}|${p.name.trim().toLowerCase()}`).digest("hex"));
+  const identity = publicRecord ? entityIdentity(p.name) : "";
+  const incoming = sourceObservation(p, observationContext, identity || key);
   return db.transaction(async tx=>{
-    await tx.execute(sql`select pg_advisory_xact_lock(hashtextextended(current_schema() || ${`prospect:${key}`},0))`);
-    const [existing] = await tx.select().from(buyersTable).where(sql`${buyersTable.payload}->>'discoveryKey' = ${key}`);
-    if (existing) return buyerRecord(existing,now);
+    await tx.execute(sql`select pg_advisory_xact_lock(hashtextextended(current_schema() || ${`prospect:${identity || key}`},0))`);
+    let [existing] = await tx.select().from(buyersTable).where(sql`${buyersTable.payload}->>'discoveryKey' = ${key}`).for("update");
+    if (!existing && identity) {
+      [existing] = await tx.select().from(buyersTable)
+        .where(sql`${buyersTable.payload}->>'discoveryIdentityKey' = ${identity}`).for("update");
+    }
+    if (!existing && identity && normalizedName) {
+      [existing] = await tx.select().from(buyersTable).where(sql`
+        ${buyersTable.payload}->>'discoveryKey' IS NOT NULL
+        AND regexp_replace(upper(coalesce(${buyersTable.payload}->>'name','')), '[^A-Z0-9]', '', 'g') = ${normalizedName}
+      `).for("update");
+    }
+    if (existing) {
+      const oldObservations = Array.isArray(existing.payload.sourceObservations)
+        ? existing.payload.sourceObservations.map(normalizeSourceObservation).filter((row): row is NonNullable<ReturnType<typeof normalizeSourceObservation>> => !!row)
+        : [];
+      if (!oldObservations.length && existing.payload.discoveryEvidence) {
+        const legacy = existing.payload.discoveryEvidence as Record<string, unknown>;
+        const parsed = normalizeSourceObservation({
+          sourceId: `legacy:${createHash("sha256").update(`${String(legacy.sourceUrl)}|${String(legacy.source)}`).digest("hex")}`,
+          source: legacy.source, sourceUrl: legacy.sourceUrl, statement: legacy.source,
+          confidence: legacy.confidence, classification: "OBSERVED",
+          capturedAt: legacy.capturedAt, firstObservedAt: legacy.capturedAt, lastObservedAt: legacy.capturedAt,
+          seenCount: 1, recordIdentities: [], activityCount: 1, eventAt: null,
+        });
+        if (parsed) oldObservations.push(parsed);
+      }
+      const prior = oldObservations.find(row => row.sourceId === incoming.sourceId);
+      const merged = mergeSourceObservation(prior, incoming);
+      const sourceObservations = prior
+        ? oldObservations.map(row => row.sourceId === incoming.sourceId ? merged.observation : row)
+        : [...oldObservations, merged.observation];
+      if (sourceObservations.length > 500) sourceObservations.splice(0, sourceObservations.length - 500);
+      const changed = !prior || merged.contentChanged || merged.captureChanged || !Array.isArray(existing.payload.sourceObservations);
+      if (changed) {
+        const [saved] = await tx.update(buyersTable).set({
+          payload: {
+            ...existing.payload,
+            discoveryKey: key,
+            ...(identity ? { discoveryIdentityKey: identity } : {}),
+            sourceObservations,
+            discoveryEvidence: {
+              classification: "OBSERVED",
+              source: p.source,
+              sourceUrl: p.sourceUrl,
+              capturedAt: p.capturedAt,
+              confidence: p.confidence,
+            },
+          },
+          version: existing.version + 1,
+          updatedAt: now,
+        }).where(eq(buyersTable.id, existing.id)).returning();
+        if (!saved) throw new Error("Buyer source observation update failed.");
+        if (!prior || merged.contentChanged) {
+          await audit(tx,actor.id,"BUYER_SOURCE_EVIDENCE_REFRESHED",saved.id,
+            `${p.source.split(".")[0]}; source-backed buyer discovery evidence changed. Buyer remains subject to current identity, intent, criteria and funding review; no approval or contact was inferred.`);
+        }
+        return buyerRecord(saved,now);
+      }
+      return buyerRecord(existing,now);
+    }
     const payload = {name:p.name.trim(),email:p.email??"",phone:p.phone??"",source:p.source,
       destinationKind:p.destinationKind??"BUYER",criteria:null,status:"PAUSED",currentBuyingStatus:"UNKNOWN",discoveryKey:key,
-      discoveryEvidence:{classification:"OBSERVED",source:p.source,sourceUrl:p.sourceUrl,capturedAt:p.capturedAt,confidence:p.confidence}};
+      ...(identity ? {discoveryIdentityKey:identity} : {}),
+      discoveryEvidence:{classification:"OBSERVED",source:p.source,sourceUrl:p.sourceUrl,capturedAt:p.capturedAt,confidence:p.confidence},
+      sourceObservations:[incoming]};
     const [row] = await tx.insert(buyersTable).values({payload:{...payload,qualificationTask:qualificationTask(payload,"QUALIFY",now)},createdAt:now,updatedAt:now}).returning();
     if (!row) throw new Error("Prospect insert failed.");
     await audit(tx,actor.id,"BUYER_DISCOVERED",row.id,"Observed source lead only; no contact permission, criteria, funding or current buying inferred. Qualification waits for evidence; no communication was sent.");
@@ -35,15 +240,50 @@ export async function discoverBuyer(input: Prospect, actor: OfferActor, now = ne
 }
 export async function discoverPublicBuyers(now = new Date()) {
   const feed = await searchPublicProperties(undefined,"buyer_candidates",now);
-  let reviewed = 0;
+  const byOwner = new Map<string, { name: string; records: Array<(typeof feed.records)[number]> }>();
   for (const record of feed.records) {
-    if (!record.recordedOwner || record.recordedOwner.length>200) continue;
-    const key = createHash("sha256").update(`phila-opa-tax-owner:${record.recordedOwner.trim().toUpperCase()}`).digest("hex");
-    await discoverBuyer({name:record.recordedOwner,source:`Philadelphia OPA corporate-owner record ${record.id}. Not current buying intent or seller/title verification.`,
-      sourceUrl:record.sourceUrl,capturedAt:record.capturedAt,confidence:0.55}, {id:"system:buyer-discovery",role:"ANALYST"},now,key);
-    reviewed++;
+    const owner = record.recordedOwner?.trim().replace(/\s+/g," ");
+    if (!owner || owner.length > 200) continue;
+    const key = normalizeEntityName(owner);
+    const group = byOwner.get(key) ?? { name: owner, records: [] };
+    group.records.push(record);
+    byOwner.set(key,group);
   }
-  return `${reviewed} actual public corporate-owner observations reviewed as unverified prospects. No criteria, contact, current intent, funding or approval inferred. Geography is Philadelphia only.`;
+  let ownerGroups = 0;
+  for (const group of byOwner.values()) {
+    const recordIds = [...new Set(group.records.map(record => record.id))].slice(0,100);
+    const eventAt = group.records.map(record=>record.lastSaleAt).filter((value):value is string=>!!value)
+      .sort((a,b)=>Date.parse(b)-Date.parse(a))[0]??null;
+    const sourceId = `phila-opa-owner:${entityIdentity(group.name)}`;
+    const p = {
+      name:group.name,
+      source:`Philadelphia OPA corporate tax-roll owner observed on ${recordIds.length} sampled parcel record${recordIds.length===1?"":"s"}. This is ownership-context research, not current buying intent, title verification, seller motivation or acquisition authority.`,
+      sourceUrl:group.records[0]!.sourceUrl,
+      capturedAt:now.toISOString(),
+      confidence:0.55,
+    };
+    await discoverBuyer(p,{id:"system:buyer-discovery",role:"ANALYST"},now,publicOwnerKey(group.name),{
+      sourceId,recordIdentities:recordIds,activityCount:recordIds.length,eventAt,
+    });
+    ownerGroups++;
+  }
+  const transferBuyers: RepeatedTransferBuyer[] = await searchRepeatedRecordedBuyers(now);
+  for (const buyer of transferBuyers) {
+    const sourceId = `phila-transfer-grantee:${entityIdentity(buyer.name)}`;
+    await discoverBuyer({
+      name:buyer.name,
+      source:buyer.source,
+      sourceUrl:buyer.sourceUrl,
+      capturedAt:buyer.capturedAt,
+      confidence:buyer.confidence,
+    },{id:"system:buyer-discovery",role:"ANALYST"},now,publicOwnerKey(buyer.name),{
+      sourceId,
+      recordIdentities:buyer.recordIdentities,
+      activityCount:buyer.activityCount,
+      eventAt:buyer.latestActivityAt,
+    });
+  }
+  return `Refreshed ${ownerGroups} bounded Philadelphia OPA corporate-owner groups and ${transferBuyers.length} repeated recorded-grantee groups. Source observations are deduplicated by entity and channel; every record remains unverified with UNKNOWN current buying status and is excluded from matching. No criteria, contact permission, funding, current intent or approval inferred.`;
 }
 export async function reviewBuyerPool(now = new Date()) {
   const rows = await allBuyerRecords(db,now);

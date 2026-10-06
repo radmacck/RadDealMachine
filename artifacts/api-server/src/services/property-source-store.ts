@@ -2,7 +2,10 @@ import { and, desc, eq, sql } from "drizzle-orm";
 import { db, intelligenceTable, leadsTable } from "@workspace/db";
 import { assertOperationsRole, DomainError, validateProvenance, type OfferActor, type IntelligenceInput, type Lead } from "@workspace/deal-domain";
 import { GetSourceResearchResponse, RefreshSourceResearchResponse, ImportPublicPropertyResponse, AddSourceCompsBody } from "@workspace/api-zod";
-import { PHILA_SOURCE, searchProperties, propertyById, propertyByAddress, nearbySales, type PublicProperty } from "@workspace/property-sources";
+import {
+  PHILA_PUBLIC_RECORD_SOURCES, PHILA_SOURCE, searchProperties, propertyById, propertyByAddress, nearbySales,
+  type PublicProperty,
+} from "@workspace/property-sources";
 import { audit, getAssumptions, leadDetail, lockedLead, saveUnderwriting } from "./deal-store";
 
 type Tx = Parameters<Parameters<typeof db.transaction>[0]>[0];
@@ -25,7 +28,7 @@ async function sourceRequest<T>(action: () => Promise<T>) {
     throw new DomainError(`Official property source: ${message}. No source success was recorded.`,409);
   }
 }
-export function listPropertySources() { return [PHILA_SOURCE]; }
+export function listPropertySources() { return [PHILA_SOURCE, ...PHILA_PUBLIC_RECORD_SOURCES]; }
 export async function searchPublicProperties(zip?: string, lane = "properties", now = new Date()) {
   return {source:PHILA_SOURCE,records:await sourceRequest(()=>searchProperties(zip,lane,now)),capturedAt:now.toISOString()};
 }

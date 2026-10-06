@@ -5,6 +5,7 @@ import type { LeadDetail } from "./types";
 import { analyzeDeal, DEFAULT_ASSUMPTIONS } from "./underwriting";
 import { qualificationMaintenanceKind } from "./buyer-qualification";
 import { buyerQualification, criteriaSignature } from "./buyer-qualification";
+import { evaluateCurrentBuyerDemand } from "./lead-qualification";
 const now = new Date("2026-10-04T12:00:00Z");
 const buyer: Buyer = {
   id:"synthetic-buyer",version:1,name:"SYNTHETIC BUYER",email:"synthetic@example.com",phone:"",source:"Synthetic test",status:"ACTIVE",
@@ -18,6 +19,27 @@ const buyer: Buyer = {
   buyingEvidenceUrl:"https://example.com/synthetic-buying",criteriaEvidenceUrl:"https://example.com/synthetic-criteria",
   verificationSource:"Synthetic reviewed response",confidence:0.9,
 };
+
+test("early buyer-demand fit counts only approved current buyers and cannot claim an underwritten deal match",()=>{
+  const subject = {
+    state:"TX",county:"Test County",city:"Test City",zip:"75001",propertyType:"SINGLE_FAMILY",
+    sqft:1000,beds:3,baths:2,
+  };
+  const aligned = evaluateCurrentBuyerDemand(subject,[buyer],now);
+  assert.equal(aligned.status,"ALIGNED_ON_KNOWN_FIELDS");
+  assert.equal(aligned.alignedBuyerCount,1);
+  assert.equal(aligned.priorityBonus,5);
+  assert.ok(aligned.missingInformation.some(item=>item.toLowerCase().includes("asking/acquisition price")));
+  assert.ok(aligned.evidence[0]!.reason.includes("not a deal-level match"));
+
+  const mismatch = {...buyer,id:"synthetic-city-mismatch",criteria:{...buyer.criteria!,cities:["Other City"]}};
+  const stale = {...buyer,id:"synthetic-stale-demand",validUntil:"2026-10-03T12:00:00Z"};
+  const excluded = evaluateCurrentBuyerDemand(subject,[mismatch,stale],now);
+  assert.equal(excluded.alignedBuyerCount,0);
+  assert.equal(excluded.currentQualifiedBuyerCount,1);
+  assert.equal(excluded.unqualifiedBuyerCount,1);
+  assert.equal(excluded.excludedForKnownCriteriaMismatch,1);
+});
 const contract: DealContract = {
   id:"synthetic-contract",leadId:"synthetic-deal",offerId:"synthetic-offer",version:1,status:"UNDER_CONTRACT",
   purchasePrice:100000,assignmentTarget:15000,earnestMoney:1000,assignmentAllowed:true,closingAt:"2026-10-18T12:00:00Z",

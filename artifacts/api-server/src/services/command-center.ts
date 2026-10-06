@@ -4,8 +4,103 @@ import { listLeads, leadDetail, callQueue } from "./deal-store";
 import { dealOperations } from "./matching-store";
 import { allBuyerRecords, jobRecord } from "./operations-records";
 import { db, jobsTable } from "@workspace/db";
-import { desc } from "drizzle-orm";
+import { and, count, desc, eq, ne } from "drizzle-orm";
 import { listPropertyDiscoveries } from "./property-discovery-store";
+
+const SCHEDULER_ACTOR = "system:scheduler";
+const FIVE_MINUTES = 5 * 60_000;
+const SIX_HOURS = 6 * 60 * 60_000;
+
+function nextScheduleBoundary(now: Date, cadenceMs: number) {
+  return new Date((Math.floor(now.getTime() / cadenceMs) + 1) * cadenceMs).toISOString();
+}
+
+function scheduledLane(
+  key: string,
+  label: string,
+  cadence: string,
+  cadenceMs: number,
+  row: typeof jobsTable.$inferSelect | undefined,
+  now: Date,
+  scope: string,
+) {
+  let state: "ACTIVE" | "RUNNING" | "QUEUED" | "ACTION_REQUIRED" | "OVERDUE" | "WAITING_FOR_FIRST_RUN" =
+    "WAITING_FOR_FIRST_RUN";
+  if (row?.state === "FAILED") state = "ACTION_REQUIRED";
+  else if (row?.state === "RUNNING") state = "RUNNING";
+  else if (row?.state === "QUEUED") state = "QUEUED";
+  else if (row?.state === "SUCCEEDED") {
+    state = now.getTime() - row.updatedAt.getTime() > cadenceMs + 60_000 ? "OVERDUE" : "ACTIVE";
+  }
+  return {
+    key,
+    label,
+    state,
+    cadence,
+    lastRunAt: row && ["SUCCEEDED", "FAILED"].includes(row.state) ? row.updatedAt.toISOString() : null,
+    nextRunAt: state === "ACTION_REQUIRED" || state === "OVERDUE"
+      ? new Date(now.getTime() + 15_000).toISOString()
+      : nextScheduleBoundary(now, cadenceMs),
+    result: row?.message ?? "No scheduled execution has been recorded yet.",
+    scope,
+    href: state === "ACTION_REQUIRED" || state === "OVERDUE" ? "/workers" : null,
+  };
+}
+
+function sourceDiscoveryLane(
+  key: string,
+  label: string,
+  policyRow: typeof jobsTable.$inferSelect | undefined,
+  schedulerRow: typeof jobsTable.$inferSelect | undefined,
+  expectedPolicy: string,
+  recurringConsentField: "recurringPropertyDiscovery" | "recurringDiscovery",
+  now: Date,
+) {
+  const policy = policyRow?.payload ?? {};
+  const termsCurrent = policy.termsReviewed === true && policy.sourcePolicyVersion === expectedPolicy;
+  const recurringEnabled = termsCurrent && policy[recurringConsentField] === true;
+  const runLane = scheduledLane(
+    key,
+    label,
+    "Every 6 hours when authorized",
+    SIX_HOURS,
+    schedulerRow,
+    now,
+    "Source retrieval, deduplication, provenance capture and relevance qualification only. No seller or buyer is contacted.",
+  );
+  if (!termsCurrent) return {
+    ...runLane,
+    state: "AWAITING_AUTHORIZATION" as const,
+    lastRunAt: policyRow?.state === "SUCCEEDED" ? policyRow.updatedAt.toISOString() : null,
+    nextRunAt: null,
+    result: policyRow?.message ?? "Recurring discovery is paused until current source terms are reviewed. The system does not infer or reuse expired consent.",
+    scope: "Review the current source terms and enable recurring discovery before this source runs automatically.",
+    href: "/sources",
+  };
+  if (!recurringEnabled) return {
+    ...runLane,
+    state: "ONE_TIME_ONLY" as const,
+    lastRunAt: policyRow?.state === "SUCCEEDED" ? policyRow.updatedAt.toISOString() : null,
+    nextRunAt: null,
+    result: policyRow?.message ?? "Source terms were reviewed, but recurring discovery was not enabled. Only explicitly submitted one-time runs are authorized.",
+    scope: "Enable recurring discovery in the source controls to schedule future runs.",
+    href: "/sources",
+  };
+  if (!schedulerRow) return {
+    ...runLane,
+    state: "ENABLED" as const,
+    lastRunAt: policyRow?.state === "SUCCEEDED" ? policyRow.updatedAt.toISOString() : null,
+    result: "Current terms and recurring permission are recorded. The first scheduled source run is pending.",
+    scope: "The worker will retrieve permitted records, retain raw observations, deduplicate, and qualify; it will not create a contact or offer.",
+    href: null,
+  };
+  return {
+    ...runLane,
+    state: runLane.state === "ACTIVE" ? "ACTIVE" as const : runLane.state,
+    result: schedulerRow.message,
+    scope: "The worker retrieves permitted records, retains raw observations, deduplicates, and qualifies. It does not contact owners or buyers.",
+  };
+}
 
 export async function commandCenter(role: string, now = new Date()) {
   const allPropertyDiscoveries = await listPropertyDiscoveries({
@@ -22,8 +117,111 @@ export async function commandCenter(role: string, now = new Date()) {
   const deals = await Promise.all(leads.map(l => leadDetail(l.id,undefined,now)));
   const calls = await callQueue(now);
   const operations = await Promise.all(leads.map(l=>dealOperations(l.id,now)));
-  const buyers = await allBuyerRecords(db,now);
-  const jobs = (await db.select().from(jobsTable).orderBy(desc(jobsTable.createdAt)).limit(30)).map(jobRecord);
+  const [buyers, jobRows, schedulerRows, propertyPolicyRows, buyerPolicyRows, jobStateCounts] = await Promise.all([
+    allBuyerRecords(db,now),
+    db.select().from(jobsTable).orderBy(desc(jobsTable.createdAt)).limit(30),
+    db.select().from(jobsTable).where(eq(jobsTable.requestedBy,SCHEDULER_ACTOR)).orderBy(desc(jobsTable.createdAt)).limit(200),
+    db.select().from(jobsTable).where(and(eq(jobsTable.kind,"DISCOVER_PROPERTIES"),ne(jobsTable.requestedBy,SCHEDULER_ACTOR))).orderBy(desc(jobsTable.createdAt)).limit(1),
+    db.select().from(jobsTable).where(and(eq(jobsTable.kind,"BUYER_DISCOVERY"),ne(jobsTable.requestedBy,SCHEDULER_ACTOR))).orderBy(desc(jobsTable.createdAt)).limit(1),
+    db.select({state:jobsTable.state,total:count()}).from(jobsTable).groupBy(jobsTable.state),
+  ]);
+  const jobs = jobRows.map(jobRecord);
+  const latestScheduled = (kind: string) => schedulerRows.find((job) => job.kind === kind);
+  const deadlinesLane = scheduledLane(
+    "deadlines",
+    "Follow-ups and transaction deadlines",
+    "Every 5 minutes",
+    FIVE_MINUTES,
+    latestScheduled("REVIEW_DEADLINES"),
+    now,
+    "Detects due follow-ups, stale evidence, buyer reverification and contractual deadlines; it records work but never sends a message or changes signed terms.",
+  );
+  const buyerVerificationLane = scheduledLane(
+    "buyer-verification",
+    "Buyer freshness and verification review",
+    "Every 5 minutes",
+    FIVE_MINUTES,
+    latestScheduled("REVIEW_BUYER_POOL"),
+    now,
+    "Flags stale or incomplete buyers and blocks matching eligibility until current evidence is reviewed.",
+  );
+  const matchingLane = scheduledLane(
+    "buyer-matching",
+    "Buyer matching for active transactions",
+    "Every 5 minutes",
+    FIVE_MINUTES,
+    latestScheduled("MATCH_BUYERS"),
+    now,
+    "Rechecks current criteria, verification, funding and capacity for active transactions. Match or interest is never treated as commitment.",
+  );
+  const handoffLane = scheduledLane(
+    "handoffs",
+    "External handoff and response review",
+    "Every 5 minutes",
+    FIVE_MINUTES,
+    latestScheduled("REVIEW_HANDOFFS"),
+    now,
+    "Reviews persisted handoff states and responses; a draft or queued handoff is not proof of external delivery.",
+  );
+  const propertyLane = sourceDiscoveryLane(
+    "property-discovery",
+    "Property discovery and qualification",
+    propertyPolicyRows[0],
+    latestScheduled("DISCOVER_PROPERTIES"),
+    "phila-property-sources-v3",
+    "recurringPropertyDiscovery",
+    now,
+  );
+  const buyerDiscovery = sourceDiscoveryLane(
+    "buyer-discovery",
+    "Buyer prospect discovery",
+    buyerPolicyRows[0],
+    latestScheduled("BUYER_DISCOVERY"),
+    "phila-buyer-sources-v2",
+    "recurringDiscovery",
+    now,
+  );
+  const underwritingLane = {
+    key: "underwriting",
+    label: "Evidence and deterministic underwriting",
+    state: "EVENT_DRIVEN" as const,
+    cadence: "When sourced evidence and reviewed inputs change",
+    lastRunAt: null,
+    nextRunAt: null,
+    result: "Property relevance is recalculated from source observations. ARV, condition-based repairs and MAO use reviewed evidence and configured rules; missing or stale inputs block offer authority.",
+    scope: "No condition, seller intent, comp or financial fact is invented. Human review remains required where evidence or authority is incomplete.",
+    href: "/leads",
+  };
+  const authorityLane = {
+    key: "human-authority",
+    label: "Calls, offers, signatures and funds",
+    state: "HUMAN_GATE" as const,
+    cadence: "Human-authorized action only",
+    lastRunAt: null,
+    nextRunAt: null,
+    result: "External communication, offer approval, execution, commitment and funds evidence are never inferred from a draft, match or prepared document.",
+    scope: "The system prepares grounded next steps and records actual outcomes; an authorized person performs and confirms outside actions.",
+    href: "/calls",
+  };
+  const lanes = [propertyLane,buyerDiscovery,underwritingLane,buyerVerificationLane,matchingLane,deadlinesLane,handoffLane,authorityLane];
+  const queuedJobs = Number(jobStateCounts.find((item) => item.state === "QUEUED")?.total ?? 0);
+  const runningJobs = Number(jobStateCounts.find((item) => item.state === "RUNNING")?.total ?? 0);
+  const failedJobs = Number(jobStateCounts.find((item) => item.state === "FAILED")?.total ?? 0);
+  const status = failedJobs > 0 || lanes.some((lane) => lane.state === "ACTION_REQUIRED")
+    ? "ACTION_REQUIRED"
+    : lanes.some((lane) => lane.state === "OVERDUE")
+      ? "DELAYED"
+      : lanes.some((lane) => lane.state === "ACTIVE" || lane.state === "RUNNING" || lane.state === "QUEUED" || lane.state === "ENABLED")
+        ? "CURRENT"
+        : "STARTING";
+  const automation = {
+    observedAt: now.toISOString(),
+    status,
+    queuedJobs,
+    runningJobs,
+    failedJobs,
+    lanes,
+  };
   const dealById = new Map(deals.map((deal) => [deal.lead.id, deal]));
   const transactionLeadIds = new Set(operations.filter((operation) => {
     const deal = dealById.get(operation.leadId);
@@ -196,7 +394,7 @@ export async function commandCenter(role: string, now = new Date()) {
     }
   }
   return GetCommandCenterResponse.parse({
-    generatedAt:now.toISOString(),deals,calls,operations,buyers,jobs,
+    generatedAt:now.toISOString(),deals,calls,operations,buyers,jobs,automation,
     actions:actions.sort((a,b)=>b.priority-a.priority||a.id.localeCompare(b.id)),
     opportunities:strongestOpportunities(deals),
     propertyDiscoveries,

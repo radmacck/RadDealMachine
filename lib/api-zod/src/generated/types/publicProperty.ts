@@ -5,6 +5,7 @@
  * Radical Deal OS seller intake, underwriting, conversations and approved offers
  * OpenAPI spec version: 1.0.0
  */
+import type { PropertyContactPath } from './propertyContactPath';
 import type { PublicPropertyClassification } from './publicPropertyClassification';
 import type { PublicPropertyPropertyType } from './publicPropertyPropertyType';
 
@@ -14,6 +15,7 @@ export interface PublicProperty {
   classification: PublicPropertyClassification;
   address: string;
   city: string;
+  county: string;
   state: string;
   zip: string;
   propertyType: PublicPropertyPropertyType;
@@ -40,6 +42,7 @@ export interface PublicProperty {
   lat: number | null;
   /** @nullable */
   lng: number | null;
+  contactPaths: PropertyContactPath[];
   sourceUrl: string;
   capturedAt: string;
 }

@@ -8,9 +8,11 @@
 import type { PropertyDiscovery } from './propertyDiscovery';
 import type { PropertyDiscoveryListCounts } from './propertyDiscoveryListCounts';
 import type { PropertyQualificationCriteria } from './propertyQualificationCriteria';
+import type { UnmatchedPropertySourceObservation } from './unmatchedPropertySourceObservation';
 
 export interface PropertyDiscoveryList {
   records: PropertyDiscovery[];
+  unmatchedSourceObservations: UnmatchedPropertySourceObservation[];
   counts: PropertyDiscoveryListCounts;
   criteria: PropertyQualificationCriteria;
 }

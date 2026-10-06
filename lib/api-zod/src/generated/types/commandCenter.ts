@@ -5,6 +5,7 @@
  * Radical Deal OS seller intake, underwriting, conversations and approved offers
  * OpenAPI spec version: 1.0.0
  */
+import type { AutomationOverview } from './automationOverview';
 import type { Buyer } from './buyer';
 import type { CallBrief } from './callBrief';
 import type { CommandAction } from './commandAction';
@@ -23,4 +24,5 @@ export interface CommandCenter {
   buyers: Buyer[];
   jobs: WorkerJob[];
   propertyDiscoveries: PropertyDiscoveryList;
+  automation: AutomationOverview;
 }

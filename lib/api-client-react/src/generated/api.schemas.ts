@@ -21,6 +21,8 @@ export const PropertySignalKey = {
   ENTITY_OWNER: 'ENTITY_OWNER',
   LONG_TERM_HOLD: 'LONG_TERM_HOLD',
   REPORTED_POOR_CONDITION: 'REPORTED_POOR_CONDITION',
+  OPEN_CODE_VIOLATION: 'OPEN_CODE_VIOLATION',
+  UNSAFE_BUILDING_RECORD: 'UNSAFE_BUILDING_RECORD',
   SELLER_MOTIVATION: 'SELLER_MOTIVATION',
   TAX_DELINQUENCY: 'TAX_DELINQUENCY',
   FORECLOSURE: 'FORECLOSURE',
@@ -107,6 +109,105 @@ export interface PropertyRelevanceSignal {
   scoreContribution: number;
 }
 
+export type PropertySourceObservationHistoryClassification = typeof PropertySourceObservationHistoryClassification[keyof typeof PropertySourceObservationHistoryClassification] | null;
+
+
+export const PropertySourceObservationHistoryClassification = {
+  VERIFIED: 'VERIFIED',
+  OBSERVED: 'OBSERVED',
+  INDICATED: 'INDICATED',
+  AI_HYPOTHESIS: 'AI_HYPOTHESIS',
+} as const;
+
+export interface PropertySourceObservationHistory {
+  observedAt: string;
+  state: string;
+  /** @minimum 0 */
+  recordCount: number;
+  recordIdentities: string[];
+  /** @nullable */
+  latestSourceEventAt: string | null;
+  classification: PropertySourceObservationHistoryClassification;
+  /**
+     * @minimum 0
+     * @maximum 1
+     * @nullable
+     */
+  confidence: number | null;
+  /** @nullable */
+  evidenceRef: string | null;
+}
+
+export interface PropertySourceObservation {
+  id: string;
+  sourceKey: string;
+  sourceId: string;
+  sourceName: string;
+  sourceUrl: string;
+  firstObservedAt: string;
+  lastObservedAt: string;
+  /** @minimum 1 */
+  seenCount: number;
+  state: string;
+  /** @minimum 0 */
+  recordCount: number;
+  recordIdentities: string[];
+  /** @nullable */
+  latestSourceEventAt: string | null;
+  classification: PropertyEvidenceClassification | null;
+  /**
+     * @minimum 0
+     * @maximum 1
+     * @nullable
+     */
+  confidence: number | null;
+  /** @nullable */
+  evidenceRef: string | null;
+  /** @maxItems 20 */
+  history: PropertySourceObservationHistory[];
+}
+
+export type UnmatchedPropertySourceObservationStatus = typeof UnmatchedPropertySourceObservationStatus[keyof typeof UnmatchedPropertySourceObservationStatus];
+
+
+export const UnmatchedPropertySourceObservationStatus = {
+  UNMATCHED: 'UNMATCHED',
+} as const;
+
+export interface UnmatchedPropertySourceObservation {
+  id: string;
+  marketKey: string;
+  /** @pattern ^\d{9}$ */
+  propertyId: string;
+  sourceKey: string;
+  sourceId: string;
+  sourceName: string;
+  sourceUrl: string;
+  status: UnmatchedPropertySourceObservationStatus;
+  firstObservedAt: string;
+  lastObservedAt: string;
+  /** @minimum 1 */
+  seenCount: number;
+  state: string;
+  /** @minimum 0 */
+  recordCount: number;
+  recordIdentities: string[];
+  /** @nullable */
+  latestSourceEventAt: string | null;
+  classification: PropertyEvidenceClassification | null;
+  /**
+     * @minimum 0
+     * @maximum 1
+     * @nullable
+     */
+  confidence: number | null;
+  /** @nullable */
+  evidenceRef: string | null;
+  /** @maxItems 20 */
+  history: PropertySourceObservationHistory[];
+  nextAction: string;
+}
+
 export type LeadPropertyQualificationStatus = typeof LeadPropertyQualificationStatus[keyof typeof LeadPropertyQualificationStatus];
 
 
@@ -178,7 +279,7 @@ export interface PropertyQualificationCriteriaInput {
   longHoldYears: number;
   /**
      * @minItems 1
-     * @maxItems 14
+     * @maxItems 16
      */
   signalRules: PropertySignalRule[];
 }
@@ -188,6 +289,53 @@ export type PropertyQualificationCriteria = PropertyQualificationCriteriaInput &
   /** @minimum 1 */
   version: number;
 };
+
+export interface BuyerDemandEvidence {
+  buyerId: string;
+  /** @minimum 1 */
+  buyerVersion: number;
+  criteriaEvidenceAt: string;
+  buyingEvidenceAt: string;
+  identityVerifiedAt: string;
+  validUntil: string;
+  /**
+     * @minimum 0
+     * @maximum 1
+     */
+  reviewerConfidence: number;
+  reason: string;
+}
+
+export type BuyerDemandFitStatus = typeof BuyerDemandFitStatus[keyof typeof BuyerDemandFitStatus];
+
+
+export const BuyerDemandFitStatus = {
+  ALIGNED_ON_KNOWN_FIELDS: 'ALIGNED_ON_KNOWN_FIELDS',
+  NO_VERIFIED_DEMAND: 'NO_VERIFIED_DEMAND',
+} as const;
+
+export interface BuyerDemandFit {
+  status: BuyerDemandFitStatus;
+  /** @minimum 0 */
+  alignedBuyerCount: number;
+  /** @minimum 0 */
+  currentQualifiedBuyerCount: number;
+  /** @minimum 0 */
+  unqualifiedBuyerCount: number;
+  /** @minimum 0 */
+  excludedForKnownCriteriaMismatch: number;
+  /**
+     * @minimum 0
+     * @maximum 15
+     */
+  priorityBonus: number;
+  reason: string;
+  missingInformation: string[];
+  evidence: BuyerDemandEvidence[];
+  /** @nullable */
+  snapshotComputedAt: string | null;
+  snapshotFresh: boolean;
+}
 
 export type PublicPropertyClassification = typeof PublicPropertyClassification[keyof typeof PublicPropertyClassification];
 
@@ -204,12 +352,69 @@ export const PublicPropertyPropertyType = {
   TOWNHOUSE: 'TOWNHOUSE',
 } as const;
 
+export type PropertyContactPathChannel = typeof PropertyContactPathChannel[keyof typeof PropertyContactPathChannel];
+
+
+export const PropertyContactPathChannel = {
+  POSTAL: 'POSTAL',
+} as const;
+
+export type PropertyContactPathClassification = typeof PropertyContactPathClassification[keyof typeof PropertyContactPathClassification];
+
+
+export const PropertyContactPathClassification = {
+  OBSERVED: 'OBSERVED',
+  VERIFIED: 'VERIFIED',
+} as const;
+
+export type PropertyContactPathFreshnessStatus = typeof PropertyContactPathFreshnessStatus[keyof typeof PropertyContactPathFreshnessStatus];
+
+
+export const PropertyContactPathFreshnessStatus = {
+  CURRENT: 'CURRENT',
+  STALE: 'STALE',
+} as const;
+
+export type PropertyContactPathPermissionStatus = typeof PropertyContactPathPermissionStatus[keyof typeof PropertyContactPathPermissionStatus];
+
+
+export const PropertyContactPathPermissionStatus = {
+  NOT_REVIEWED: 'NOT_REVIEWED',
+  PERMITTED: 'PERMITTED',
+  PROHIBITED: 'PROHIBITED',
+} as const;
+
+export interface PropertyContactPath {
+  id: string;
+  channel: PropertyContactPathChannel;
+  recipient: string;
+  addressLines: string[];
+  cityState: string;
+  /** @nullable */
+  postalCode: string | null;
+  classification: PropertyContactPathClassification;
+  /**
+     * @minimum 0
+     * @maximum 1
+     */
+  confidence: number;
+  sourceId: string;
+  sourceName: string;
+  sourceRecordId: string;
+  sourceUrl: string;
+  capturedAt: string;
+  freshUntilAt: string;
+  freshnessStatus: PropertyContactPathFreshnessStatus;
+  permissionStatus: PropertyContactPathPermissionStatus;
+}
+
 export interface PublicProperty {
   id: string;
   provider: string;
   classification: PublicPropertyClassification;
   address: string;
   city: string;
+  county: string;
   state: string;
   zip: string;
   propertyType: PublicPropertyPropertyType;
@@ -236,6 +441,7 @@ export interface PublicProperty {
   lat: number | null;
   /** @nullable */
   lng: number | null;
+  contactPaths: PropertyContactPath[];
   sourceUrl: string;
   capturedAt: string;
 }
@@ -251,6 +457,11 @@ export interface PropertyDiscovery {
   score: number;
   /**
      * @minimum 0
+     * @maximum 120
+     */
+  priorityScore: number;
+  /**
+     * @minimum 0
      * @maximum 1
      */
   confidence: number;
@@ -258,9 +469,11 @@ export interface PropertyDiscovery {
   version: number;
   property: PublicProperty;
   signals: PropertyRelevanceSignal[];
+  sourceObservations: PropertySourceObservation[];
   reason: string;
   missingInformation: string[];
   nextAction: string;
+  demandFit: BuyerDemandFit;
   /** @minimum 1 */
   sourceObservationCount: number;
   /** @minimum 1 */
@@ -290,6 +503,7 @@ export type PropertyDiscoveryListCounts = {
 
 export interface PropertyDiscoveryList {
   records: PropertyDiscovery[];
+  unmatchedSourceObservations: UnmatchedPropertySourceObservation[];
   counts: PropertyDiscoveryListCounts;
   criteria: PropertyQualificationCriteria;
 }
@@ -533,6 +747,55 @@ export interface BuyerDiscoveryEvidence {
      * @maximum 1
      */
   confidence: number;
+}
+
+export type BuyerSourceObservationClassification = typeof BuyerSourceObservationClassification[keyof typeof BuyerSourceObservationClassification];
+
+
+export const BuyerSourceObservationClassification = {
+  OBSERVED: 'OBSERVED',
+} as const;
+
+export interface BuyerSourceObservationHistory {
+  capturedAt: string;
+  statement: string;
+  /**
+     * @minimum 0
+     * @maximum 1
+     */
+  confidence: number;
+  /** @maxItems 100 */
+  recordIdentities: string[];
+  /** @minimum 1 */
+  activityCount: number;
+  /** @nullable */
+  eventAt: string | null;
+}
+
+export interface BuyerSourceObservation {
+  sourceId: string;
+  source: string;
+  sourceUrl: string;
+  classification: BuyerSourceObservationClassification;
+  statement: string;
+  /**
+     * @minimum 0
+     * @maximum 1
+     */
+  confidence: number;
+  capturedAt: string;
+  firstObservedAt: string;
+  lastObservedAt: string;
+  /** @minimum 1 */
+  seenCount: number;
+  /** @maxItems 100 */
+  recordIdentities: string[];
+  /** @minimum 1 */
+  activityCount: number;
+  /** @nullable */
+  eventAt: string | null;
+  /** @maxItems 20 */
+  history: BuyerSourceObservationHistory[];
 }
 
 export type BuyerVerificationHistoryVerifiedFundingTypesItem = typeof BuyerVerificationHistoryVerifiedFundingTypesItem[keyof typeof BuyerVerificationHistoryVerifiedFundingTypesItem];
@@ -956,6 +1219,7 @@ export type Buyer = BuyerInput & ({
   confidence?: number | null;
   qualificationBlockers?: string[];
   discoveryEvidence?: BuyerDiscoveryEvidence;
+  sourceObservations?: BuyerSourceObservation[];
   verificationHistory?: BuyerVerificationHistory[];
   qualificationTask?: BuyerQualificationTask | null;
   lastOutreachReplyAt?: string;
@@ -2710,6 +2974,60 @@ export interface CallBrief {
   authorizedOffer: Offer | null;
 }
 
+export type AutomationOverviewStatus = typeof AutomationOverviewStatus[keyof typeof AutomationOverviewStatus];
+
+
+export const AutomationOverviewStatus = {
+  CURRENT: 'CURRENT',
+  DELAYED: 'DELAYED',
+  ACTION_REQUIRED: 'ACTION_REQUIRED',
+  STARTING: 'STARTING',
+} as const;
+
+export type AutomationLaneState = typeof AutomationLaneState[keyof typeof AutomationLaneState];
+
+
+export const AutomationLaneState = {
+  ACTIVE: 'ACTIVE',
+  ENABLED: 'ENABLED',
+  RUNNING: 'RUNNING',
+  QUEUED: 'QUEUED',
+  ACTION_REQUIRED: 'ACTION_REQUIRED',
+  AWAITING_AUTHORIZATION: 'AWAITING_AUTHORIZATION',
+  ONE_TIME_ONLY: 'ONE_TIME_ONLY',
+  OVERDUE: 'OVERDUE',
+  WAITING_FOR_FIRST_RUN: 'WAITING_FOR_FIRST_RUN',
+  EVENT_DRIVEN: 'EVENT_DRIVEN',
+  HUMAN_GATE: 'HUMAN_GATE',
+} as const;
+
+export interface AutomationLane {
+  key: string;
+  label: string;
+  state: AutomationLaneState;
+  cadence: string;
+  /** @nullable */
+  lastRunAt: string | null;
+  /** @nullable */
+  nextRunAt: string | null;
+  result: string;
+  scope: string;
+  /** @nullable */
+  href: string | null;
+}
+
+export interface AutomationOverview {
+  observedAt: string;
+  status: AutomationOverviewStatus;
+  /** @minimum 0 */
+  queuedJobs: number;
+  /** @minimum 0 */
+  runningJobs: number;
+  /** @minimum 0 */
+  failedJobs: number;
+  lanes: AutomationLane[];
+}
+
 export interface CommandCenter {
   generatedAt: string;
   actions: CommandAction[];
@@ -2720,6 +3038,7 @@ export interface CommandCenter {
   buyers: Buyer[];
   jobs: WorkerJob[];
   propertyDiscoveries: PropertyDiscoveryList;
+  automation: AutomationOverview;
 }
 
 export interface HealthStatus {

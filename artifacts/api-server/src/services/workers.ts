@@ -10,7 +10,11 @@ import { listLeads, leadDetail } from "./deal-store";
 import { logger } from "../lib/logger";
 import { discoverPublicBuyers, reviewBuyerPool } from "./buyer-pool";
 import { discoverPublicProperties } from "./property-discovery-worker";
+import { refreshPropertyBuyerDemandAlignment } from "./property-discovery-store";
 import { reviewHandoffs } from "./handoffs";
+
+const PROPERTY_SOURCE_POLICY_VERSION = "phila-property-sources-v3";
+const BUYER_SOURCE_POLICY_VERSION = "phila-buyer-sources-v2";
 
 export async function listWorkerJobs() {
   return (await db.select().from(jobsTable).orderBy(desc(jobsTable.createdAt)).limit(100)).map(jobRecord);
@@ -27,9 +31,9 @@ export async function submitWorkerJob(input: z.infer<typeof SubmitWorkerJobBody>
     if (parsed.leadId) await tx.select({id:leadsTable.id}).from(leadsTable).where(eq(leadsTable.id,parsed.leadId)).for("update");
     return queueJob(tx,parsed.kind,parsed.leadId??null,`manual:${actor.id}:${parsed.idempotencyKey}`,actor.id,
       parsed.kind==="BUYER_DISCOVERY"
-        ?{termsReviewed:true,recurringDiscovery:parsed.recurringDiscovery===true}
+        ?{termsReviewed:true,recurringDiscovery:parsed.recurringDiscovery===true,sourcePolicyVersion:BUYER_SOURCE_POLICY_VERSION}
         :parsed.kind==="DISCOVER_PROPERTIES"
-          ?{termsReviewed:true,recurringPropertyDiscovery:parsed.recurringPropertyDiscovery===true}:{});
+          ?{termsReviewed:true,recurringPropertyDiscovery:parsed.recurringPropertyDiscovery===true,sourcePolicyVersion:PROPERTY_SOURCE_POLICY_VERSION}:{});
   });
 }
 export async function reviewDeadlines(now = new Date()) {
@@ -51,16 +55,18 @@ export async function runWorkerOnce(now = new Date(), schedule = false, onlyJobI
     await queueJob(db,"REVIEW_HANDOFFS",null,`scheduled:handoffs:${bucket}`,"system:scheduler");
     const [policy] = await db.select().from(jobsTable).where(and(eq(jobsTable.kind,"BUYER_DISCOVERY"),
       sql`${jobsTable.idempotencyKey} like 'manual:%'`)).orderBy(desc(jobsTable.createdAt)).limit(1);
-    if (policy?.payload.termsReviewed===true && policy.payload.recurringDiscovery===true) {
+    if (policy?.payload.termsReviewed===true && policy.payload.sourcePolicyVersion===BUYER_SOURCE_POLICY_VERSION &&
+      policy.payload.recurringDiscovery===true) {
       await queueJob(db,"BUYER_DISCOVERY",null,`scheduled:buyer-discovery:${Math.floor(now.getTime()/(6*3600000))}`,
-        "system:scheduler",{termsReviewed:true,recurringDiscovery:true});
+        "system:scheduler",{termsReviewed:true,recurringDiscovery:true,sourcePolicyVersion:BUYER_SOURCE_POLICY_VERSION});
     }
     const [propertyPolicy] = await db.select().from(jobsTable).where(and(eq(jobsTable.kind,"DISCOVER_PROPERTIES"),
       sql`${jobsTable.idempotencyKey} like 'manual:%'`)).orderBy(desc(jobsTable.createdAt)).limit(1);
-    if (propertyPolicy?.payload.termsReviewed===true && propertyPolicy.payload.recurringPropertyDiscovery===true) {
+    if (propertyPolicy?.payload.termsReviewed===true && propertyPolicy.payload.sourcePolicyVersion===PROPERTY_SOURCE_POLICY_VERSION &&
+      propertyPolicy.payload.recurringPropertyDiscovery===true) {
       await queueJob(db,"DISCOVER_PROPERTIES",null,
         `scheduled:property-discovery:${Math.floor(now.getTime()/(6*3600000))}`,
-        "system:scheduler",{termsReviewed:true,recurringPropertyDiscovery:true});
+        "system:scheduler",{termsReviewed:true,recurringPropertyDiscovery:true,sourcePolicyVersion:PROPERTY_SOURCE_POLICY_VERSION});
     }
     // Bootstrap existing reviewed deals once per snapshot, not a paid AI run every tick.
     const rows = await db.select().from(leadsTable);
@@ -105,10 +111,17 @@ export async function runWorkerOnce(now = new Date(), schedule = false, onlyJobI
         message = `Reviewed ${result.matches.length} buyers; ${result.matches.filter(m=>m.eligible).length} currently qualified for this exact deal.`;
       } else message = `Recomputed criteria, funding, verification and deadlines for ${await refreshAllMatches(now)} active signed transactions.`;
     } else if (row.kind==="REVIEW_DEADLINES") message = await reviewDeadlines(now);
-    else if (row.kind==="REVIEW_BUYER_POOL") message = await reviewBuyerPool(now);
+    else if (row.kind==="REVIEW_BUYER_POOL") {
+      const buyerReview = await reviewBuyerPool(now);
+      const demandRefresh = await refreshPropertyBuyerDemandAlignment(now);
+      message = `${buyerReview} ${demandRefresh.message}`;
+    }
     else if (row.kind==="REVIEW_HANDOFFS") message = await reviewHandoffs(now);
-    else if (row.kind==="BUYER_DISCOVERY"&&row.payload.termsReviewed===true) message = await discoverPublicBuyers(now);
-    else if (row.kind==="DISCOVER_PROPERTIES"&&row.payload.termsReviewed===true) message = await discoverPublicProperties(now);
+    else if (row.kind==="BUYER_DISCOVERY"&&row.payload.termsReviewed===true&&row.payload.sourcePolicyVersion===BUYER_SOURCE_POLICY_VERSION) message = await discoverPublicBuyers(now);
+    else if (row.kind==="DISCOVER_PROPERTIES"&&row.payload.termsReviewed===true&&row.payload.sourcePolicyVersion===PROPERTY_SOURCE_POLICY_VERSION) message = await discoverPublicProperties(now);
+    else if (row.kind==="BUYER_DISCOVERY"||row.kind==="DISCOVER_PROPERTIES") {
+      throw new Error("This public-source job was queued under an earlier terms review. Review the current connector terms and queue a new job; old consent was not extended to the added sources.");
+    }
     else if (row.kind==="ENRICH_PROPERTY"&&row.leadId) message = await enrichProperty(row.leadId,row.id,now);
     else if (row.kind==="PREPARE_BRIEF"&&row.leadId) message = await prepareSellerBrief(row.leadId,row.id,now);
     else throw new Error("No executor is registered for this worker kind.");

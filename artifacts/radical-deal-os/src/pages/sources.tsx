@@ -94,6 +94,7 @@ export default function Sources() {
     data: {
       version, key: signalKey, group: ({
         ENTITY_OWNER: 'OWNERSHIP_CONTEXT', LONG_TERM_HOLD: 'OWNERSHIP_CONTEXT', REPORTED_POOR_CONDITION: 'CONDITION',
+        OPEN_CODE_VIOLATION: 'CONDITION', UNSAFE_BUILDING_RECORD: 'DISTRESS',
         SELLER_MOTIVATION: 'MOTIVATION', TAX_DELINQUENCY: 'DISTRESS', FORECLOSURE: 'DISTRESS', PROBATE: 'DISTRESS',
         ABSENTEE_OWNER: 'OWNERSHIP_CONTEXT', STALE_LISTING: 'LISTING_PRESSURE', REPEATED_PRICE_REDUCTION: 'LISTING_PRESSURE',
         BELOW_MARKET: 'FINANCIAL_OPPORTUNITY', VACANCY: 'VACANCY', EQUITY_OPPORTUNITY: 'FINANCIAL_OPPORTUNITY',
@@ -158,18 +159,18 @@ export default function Sources() {
             <p className="font-mono text-xs">Capabilities: {s.capabilities.join(', ')}</p>
             <ul className="list-disc pl-4 text-xs text-muted-foreground">{s.limitations.map((l, i) => <li key={i}>{l}</li>)}</ul>
             <a className="text-xs underline" href={s.termsUrl} target="_blank" rel="noopener noreferrer" data-testid={`link-terms-${s.id}`}>Read source terms</a></div>))}
-        <p className="mt-2 text-xs text-muted-foreground">Records are public tax facts only. No asking price, seller identity or contact, availability, title authority, ARV, repairs, buyer intent or funding is inferred.</p>
+        <p className="mt-2 text-xs text-muted-foreground">Each source is an observation, not a verified seller, buyer, condition or opportunity. No tax delinquency is inferred from geographically aggregated tax balances; no asking price, contact permission, availability, title authority, repair cost, ARV, buyer intent or funding is inferred.</p>
       </section>
       <div className="flex flex-wrap items-end gap-3">
-        <div className="flex gap-2 text-sm">{([['properties', 'Properties'], ['buyer_candidates', 'Corporate-owner research']] as const).map(([v, l]) => (
-          <button key={v} type="button" onClick={() => setLane(v)} aria-pressed={lane === v} className={`border px-3 py-1.5 ${lane === v ? 'border-signal bg-card font-semibold' : 'border-border'}`} data-testid={`button-lane-${v}`}>{l}</button>))}</div>
+        <div className="flex gap-2 text-sm">{([['properties', 'Property records'], ['buyer_candidates', 'Buyer activity signals']] as const).map(([v, l]) => (
+          <button key={v} type="button" onClick={() => { setLane(v); setTerms(false); }} aria-pressed={lane === v} className={`border px-3 py-1.5 ${lane === v ? 'border-signal bg-card font-semibold' : 'border-border'}`} data-testid={`button-lane-${v}`}>{l}</button>))}</div>
         <form className="flex gap-2" onSubmit={(e) => { e.preventDefault(); if (zipOk) setZip(zipIn); }}>
           <Input className="w-32" inputMode="numeric" placeholder="ZIP (optional)" value={zipIn} onChange={(e) => setZipIn(e.target.value)} data-testid="input-source-zip" />
           <Button type="submit" variant="outline" disabled={!zipOk} data-testid="button-search-sources">Search</Button>
         </form>
       </div>
       {!zipOk && <p className="text-sm text-destructive">Only Philadelphia ZIP codes (191xx) are supported; leave blank to search the supported city.</p>}
-      <label className="ledger flex items-start gap-2 p-3 text-sm"><input type="checkbox" className="mt-1 h-4 w-4" checked={terms} onChange={(e) => setTerms(e.target.checked)} data-testid="check-import-terms" />I reviewed the source terms{src ? ` for ${src.name}` : ''} and understand the coverage and limits above. Required before saving a raw source observation.</label>
+      <label className="ledger flex items-start gap-2 p-3 text-sm"><input type="checkbox" className="mt-1 h-4 w-4" checked={terms} onChange={(e) => setTerms(e.target.checked)} data-testid="check-import-terms" /><span>I reviewed the terms linked above for the source(s) I am using and understand their limits. Saving a property runs exact-parcel L&amp;I/unsafe-building/vacancy checks; results remain source observations and do not automatically create an active lead.</span></label>
       <section className="ledger space-y-4 p-4" data-testid="panel-discovery-queue">
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div>
@@ -234,6 +235,48 @@ export default function Sources() {
             {saveCriteria.error && <ErrorNotice error={saveCriteria.error} />}
           </details>
         )}
+        {!!discoveries.data?.unmatchedSourceObservations.length && (
+          <section className="rounded border border-dashed p-3" data-testid="panel-unmatched-source-observations">
+            <div className="flex flex-wrap items-baseline justify-between gap-2">
+              <div>
+                <h3 className="font-semibold">Unmatched public-source records</h3>
+                <p className="text-sm text-muted-foreground">
+                  {discoveries.data.unmatchedSourceObservations.length} raw record(s) have no exact residential OPA match. They remain evidence only—not property candidates or leads.
+                </p>
+              </div>
+              <span className="tag tone-muted">Not in acquisition queue</span>
+            </div>
+            <div className="mt-3 space-y-2">
+              {discoveries.data.unmatchedSourceObservations.map((observation) => (
+                <article key={observation.id} className="rounded border bg-background p-3 text-sm" data-testid={`unmatched-source-${observation.id}`}>
+                  <div className="flex flex-wrap items-start justify-between gap-2">
+                    <div>
+                      <p className="font-medium">{observation.sourceName} · OPA account {observation.propertyId}</p>
+                      <p className="text-xs text-muted-foreground">
+                        {observation.recordCount} source record(s) · {observation.classification ?? 'Unclassified'} · confidence {observation.confidence === null ? 'not assigned' : `${Math.round(observation.confidence * 100)}%`}
+                      </p>
+                    </div>
+                    <a className="text-xs underline" href={observation.sourceUrl} target="_blank" rel="noopener noreferrer">Open public source</a>
+                  </div>
+                  <p className="mt-2 text-xs text-muted-foreground">
+                    Source record IDs: {observation.recordIdentities.length ? observation.recordIdentities.join(', ') : 'none supplied'} · first seen {new Date(observation.firstObservedAt).toLocaleDateString()} · last seen {new Date(observation.lastObservedAt).toLocaleDateString()} · seen {observation.seenCount} time(s)
+                  </p>
+                  <p className="mt-2 text-xs">{observation.nextAction} The system retries exact matching on the next discovery refresh.</p>
+                  {observation.history.length > 0 && (
+                    <details className="mt-2 text-xs">
+                      <summary className="cursor-pointer">Prior source observations ({observation.history.length})</summary>
+                      <ul className="mt-1 list-disc space-y-1 pl-4 text-muted-foreground">
+                        {observation.history.map((version, index) => (
+                          <li key={`${version.observedAt}-${index}`}>{new Date(version.observedAt).toLocaleString()} · {version.state} · {version.recordCount} record(s) · {version.classification ?? 'unclassified'}</li>
+                        ))}
+                      </ul>
+                    </details>
+                  )}
+                </article>
+              ))}
+            </div>
+          </section>
+        )}
         <div className="flex flex-wrap items-end justify-between gap-3">
           <label className="grid gap-1 text-xs">Show
             <select className="h-9 rounded border bg-background px-2 text-sm" value={statusFilter} onChange={(e) => setStatusFilter(e.target.value as PropertyDiscoveryStatus | 'ALL')} data-testid="select-discovery-status">
@@ -285,7 +328,7 @@ export default function Sources() {
                       <ul className="mt-1 space-y-1 text-sm">
                         {item.signals.map((signal) => <li key={signal.id}>
                           <b>{signal.key.replaceAll('_', ' ')}</b> · {signal.classification.replaceAll('_', ' ')} · {signal.group.replaceAll('_', ' ')} · +{signal.scoreContribution}
-                          <span className="block text-xs text-muted-foreground">{signal.statement} — {signal.source}{signal.evidenceRef ? ` · ${signal.evidenceRef}` : ''}</span>
+                          <span className="block text-xs text-muted-foreground">{signal.statement} — {signal.source}{signal.evidenceRef ? ` · ${signal.evidenceRef}` : ''} · confidence {signal.confidence} · captured {new Date(signal.capturedAt).toLocaleString()}{signal.sourceUrl && <> · <a className="underline" href={signal.sourceUrl} target="_blank" rel="noopener noreferrer">source record</a></>}</span>
                         </li>)}
                       </ul>
                     )}
@@ -295,7 +338,64 @@ export default function Sources() {
                     <p className="mt-1 text-xs">Observed: {item.property.propertyType}; recorded owner {item.property.recordedOwner ?? 'not present'}; source assessment {item.property.assessedValue == null ? 'not present' : `$${item.property.assessedValue.toLocaleString()}`} (not ARV).</p>
                     <ul className="mt-2 list-disc space-y-1 pl-4 text-xs text-muted-foreground">{item.missingInformation.slice(0, 5).map((missing) => <li key={missing}>{missing}</li>)}</ul>
                     {item.promotionBlockers.length > 0 && <p className="mt-2 text-xs text-destructive">Promotion blocked: {item.promotionBlockers.join(' ')}</p>}
+                    <div className="mt-3 border-t border-border pt-3" data-testid={`contact-path-${item.id}`}>
+                      <p className="text-xs font-semibold uppercase tracking-wide">Best available contact path</p>
+                      {item.property.contactPaths[0] ? (
+                        <>
+                          <p className="mt-1 text-sm">{item.property.contactPaths[0].recipient}<br />
+                            {item.property.contactPaths[0].addressLines.join(", ")}<br />
+                            {item.property.contactPaths[0].cityState} {item.property.contactPaths[0].postalCode ?? ""}
+                          </p>
+                          <p className="mt-1 text-xs text-muted-foreground">
+                            Postal route · {item.property.contactPaths[0].classification} · confidence {item.property.contactPaths[0].confidence} ·
+                            {" "}{item.property.contactPaths[0].freshnessStatus} through {new Date(item.property.contactPaths[0].freshUntilAt).toLocaleDateString()} ·
+                            {" "}contact permission {item.property.contactPaths[0].permissionStatus.replaceAll("_", " ").toLowerCase()}.
+                            {" "}This official source provides no phone or email.
+                          </p>
+                          <a className="text-xs underline" href={item.property.contactPaths[0].sourceUrl} target="_blank" rel="noopener noreferrer">
+                            {item.property.contactPaths[0].sourceName} record {item.property.contactPaths[0].sourceRecordId}
+                          </a>
+                        </>
+                      ) : <p className="mt-1 text-xs text-muted-foreground">No owner mailing route is present in this OPA record. This source provides no phone or email; do not infer contact permission.</p>}
+                    </div>
                   </div>
+                </div>
+                <div className="mt-3 rounded bg-muted/40 p-3" data-testid={`buyer-demand-${item.id}`}>
+                  <p className="text-xs font-semibold uppercase tracking-wide">Current buyer demand · early coverage, not a deal match</p>
+                  <p className="mt-1 text-sm">
+                    {item.demandFit.alignedBuyerCount} current approved buyer profile(s) align with known market/property fields
+                    {" "}({item.demandFit.currentQualifiedBuyerCount} current approved in the buyer network).
+                    {" "}Demand bonus +{item.demandFit.priorityBonus} affects discovery ranking only; seller qualification score and promotion gates are unchanged.
+                  </p>
+                  <p className="mt-1 text-xs text-muted-foreground">{item.demandFit.reason}</p>
+                  <ul className="mt-1 list-disc space-y-1 pl-4 text-xs text-muted-foreground">
+                    {item.demandFit.missingInformation.slice(0, 4).map((missing) => <li key={missing}>{missing}</li>)}
+                  </ul>
+                  <p className="mt-1 text-xs text-muted-foreground">
+                    {item.demandFit.snapshotFresh ? "Saved demand snapshot matches current buyer evidence." : "Live buyer evidence is used here; the saved ranking snapshot is waiting for the durable refresh worker."}
+                  </p>
+                </div>
+                <div className="mt-3 rounded bg-muted/40 p-3" data-testid={`source-observations-${item.id}`}>
+                  <p className="text-xs font-semibold uppercase tracking-wide">Source refresh trail</p>
+                  <ul className="mt-1 space-y-2 text-xs">
+                    {item.sourceObservations.map((observation) => (
+                      <li key={observation.id} className="border-t border-border pt-2">
+                        <b>{observation.sourceName}</b> · {observation.state.replaceAll('_', ' ').toLowerCase()} · {observation.recordCount} record(s) · {observation.seenCount} capture(s)
+                        {observation.classification && ` · ${observation.classification.replaceAll('_', ' ')}${observation.confidence != null ? ` · confidence ${observation.confidence}` : ''}`}
+                        <span className="block text-muted-foreground">IDs: {observation.recordIdentities.join(', ') || 'none returned'}{observation.latestSourceEventAt ? ` · latest source event ${new Date(observation.latestSourceEventAt).toLocaleDateString()}` : ''} · first {new Date(observation.firstObservedAt).toLocaleString()} · last {new Date(observation.lastObservedAt).toLocaleString()}</span>
+                        <a className="underline" href={observation.sourceUrl} target="_blank" rel="noopener noreferrer">Source page / terms</a>
+                        {!!observation.history.length && <details className="mt-1">
+                          <summary className="cursor-pointer text-muted-foreground">Prior source versions ({observation.history.length})</summary>
+                          <ul className="mt-1 space-y-1 pl-3">
+                            {observation.history.map((prior, index) => <li key={`${prior.observedAt}-${index}`}>
+                              {new Date(prior.observedAt).toLocaleString()} · {prior.state.replaceAll('_', ' ').toLowerCase()} · {prior.recordCount} record(s) · {prior.recordIdentities.join(', ') || 'no record IDs'}
+                              {prior.classification && ` · ${prior.classification.replaceAll('_', ' ')}${prior.confidence != null ? ` · confidence ${prior.confidence}` : ''}`}
+                            </li>)}
+                          </ul>
+                        </details>}
+                      </li>
+                    ))}
+                  </ul>
                 </div>
                 {canReviewDiscovery && !['QUALIFIED_LEAD', 'CALL_READY', 'DISQUALIFIED'].includes(item.status) && (
                   <details className="mt-3 rounded border p-3" open={openDiscoveryId === item.id} onToggle={(e) => { if ((e.currentTarget as HTMLDetailsElement).open) setOpenDiscoveryId(item.id); }}>
@@ -304,7 +404,7 @@ export default function Sources() {
                       <div className="grid gap-2 sm:grid-cols-2">
                         <label className="grid gap-1 text-xs">Signal
                           <select className="h-9 rounded border bg-background px-2 text-sm" value={signalKey} onChange={(e) => setSignalKey(e.target.value as PropertySignalKey)}>
-                            {(['SELLER_MOTIVATION', 'TAX_DELINQUENCY', 'FORECLOSURE', 'PROBATE', 'ABSENTEE_OWNER', 'STALE_LISTING', 'REPEATED_PRICE_REDUCTION', 'BELOW_MARKET', 'VACANCY', 'EQUITY_OPPORTUNITY', 'REPORTED_POOR_CONDITION', 'MARKET_FIT'] as PropertySignalKey[]).map((key) => <option key={key} value={key}>{key.replaceAll('_', ' ')}</option>)}
+                            {(['ENTITY_OWNER', 'LONG_TERM_HOLD', 'REPORTED_POOR_CONDITION', 'OPEN_CODE_VIOLATION', 'UNSAFE_BUILDING_RECORD', 'SELLER_MOTIVATION', 'TAX_DELINQUENCY', 'FORECLOSURE', 'PROBATE', 'ABSENTEE_OWNER', 'STALE_LISTING', 'REPEATED_PRICE_REDUCTION', 'BELOW_MARKET', 'VACANCY', 'EQUITY_OPPORTUNITY', 'MARKET_FIT'] as PropertySignalKey[]).map((key) => <option key={key} value={key}>{key.replaceAll('_', ' ')}</option>)}
                           </select>
                         </label>
                         <label className="grid gap-1 text-xs">Evidence source type

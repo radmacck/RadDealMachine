@@ -1,7 +1,12 @@
+import { buyerQualification } from "./buyer-qualification";
+import type { Buyer } from "./buyers";
+
 export const PROPERTY_SIGNAL_KEYS = [
   "ENTITY_OWNER",
   "LONG_TERM_HOLD",
   "REPORTED_POOR_CONDITION",
+  "OPEN_CODE_VIOLATION",
+  "UNSAFE_BUILDING_RECORD",
   "SELLER_MOTIVATION",
   "TAX_DELINQUENCY",
   "FORECLOSURE",
@@ -37,6 +42,8 @@ export const PROPERTY_SIGNAL_GROUP_BY_KEY: Record<PropertySignalKey, PropertySig
   ENTITY_OWNER: "OWNERSHIP_CONTEXT",
   LONG_TERM_HOLD: "OWNERSHIP_CONTEXT",
   REPORTED_POOR_CONDITION: "CONDITION",
+  OPEN_CODE_VIOLATION: "CONDITION",
+  UNSAFE_BUILDING_RECORD: "DISTRESS",
   SELLER_MOTIVATION: "MOTIVATION",
   TAX_DELINQUENCY: "DISTRESS",
   FORECLOSURE: "DISTRESS",
@@ -104,6 +111,8 @@ const defaultPoints: Record<PropertySignalKey, number> = {
   ENTITY_OWNER: 8,
   LONG_TERM_HOLD: 8,
   REPORTED_POOR_CONDITION: 12,
+  OPEN_CODE_VIOLATION: 18,
+  UNSAFE_BUILDING_RECORD: 40,
   SELLER_MOTIVATION: 35,
   TAX_DELINQUENCY: 35,
   FORECLOSURE: 40,
@@ -140,6 +149,9 @@ export function evaluatePropertyRelevance(
   criteria: PropertyQualificationCriteria,
 ): QualificationEvaluation {
   const rules = new Map(criteria.signalRules.map((rule) => [rule.key, rule]));
+  for (const [key, points] of Object.entries(defaultPoints) as Array<[PropertySignalKey, number]>) {
+    if (!rules.has(key)) rules.set(key, { key, points, enabled: true });
+  }
   const seenEvidence = new Set<string>();
   const scoredSignals = signals.map((signal) => {
     const rule = rules.get(signal.key);
@@ -203,5 +215,144 @@ export function evaluatePropertyRelevance(
     canPromote: status === "RELEVANT_CANDIDATE" && promotionBlockers.length === 0,
     promotionBlockers,
     scoredSignals,
+  };
+}
+
+export type BuyerDemandSubject = {
+  state: string;
+  county: string;
+  city: string;
+  zip: string;
+  propertyType: string;
+  sqft: number | null;
+  beds: number | null;
+  baths: number | null;
+};
+
+export type BuyerDemandEvidence = {
+  buyerId: string;
+  buyerVersion: number;
+  criteriaEvidenceAt: string;
+  buyingEvidenceAt: string;
+  identityVerifiedAt: string;
+  validUntil: string;
+  reviewerConfidence: number;
+  reason: string;
+};
+
+export type BuyerDemandFit = {
+  status: "ALIGNED_ON_KNOWN_FIELDS" | "NO_VERIFIED_DEMAND";
+  alignedBuyerCount: number;
+  currentQualifiedBuyerCount: number;
+  unqualifiedBuyerCount: number;
+  excludedForKnownCriteriaMismatch: number;
+  priorityBonus: number;
+  reason: string;
+  missingInformation: string[];
+  evidence: BuyerDemandEvidence[];
+  inputKey: string;
+};
+
+/**
+ * Early demand coverage is only a ranking signal. It is not a full deal match,
+ * does not satisfy seller qualification, and cannot authorize distribution.
+ */
+export function evaluateCurrentBuyerDemand(
+  subject: BuyerDemandSubject,
+  buyers: Buyer[],
+  now: Date,
+): BuyerDemandFit {
+  const normalized = (value: string) => value.trim().toLocaleLowerCase().replace(/\s+county$/, "");
+  const qualified = buyers.filter(buyer => buyerQualification(buyer, now).approvalStatus === "APPROVED");
+  const evidence: BuyerDemandEvidence[] = [];
+  let excludedForKnownCriteriaMismatch = 0;
+
+  for (const buyer of qualified) {
+    const criteria = buyer.criteria;
+    if (!criteria) {
+      excludedForKnownCriteriaMismatch++;
+      continue;
+    }
+    const mismatches: string[] = [];
+    if (!criteria.states.some(value => normalized(value) === normalized(subject.state))) {
+      mismatches.push("state");
+    }
+    const hasMarketRestriction = criteria.cities.length > 0 || criteria.zipCodes.length > 0;
+    if (hasMarketRestriction
+      && !criteria.cities.some(value => normalized(value) === normalized(subject.city))
+      && !criteria.zipCodes.some(value => value.trim() === subject.zip.trim().slice(0, 5))) {
+      mismatches.push("city/ZIP");
+    }
+    if (criteria.counties?.length && !criteria.counties.some(value => normalized(value) === normalized(subject.county))) {
+      mismatches.push("county");
+    }
+    if ((criteria.excludedCounties ?? []).some(value => normalized(value) === normalized(subject.county))) {
+      mismatches.push("excluded county");
+    }
+    if ((criteria.excludedCities ?? []).some(value => normalized(value) === normalized(subject.city))) {
+      mismatches.push("excluded city");
+    }
+    if ((criteria.excludedZipCodes ?? []).some(value => value.trim() === subject.zip.trim().slice(0, 5))) {
+      mismatches.push("excluded ZIP");
+    }
+    if (!criteria.propertyTypes.some(value => value === subject.propertyType)) {
+      mismatches.push("property type");
+    }
+    if (subject.sqft != null && (subject.sqft < criteria.minSqft || subject.sqft > criteria.maxSqft)) {
+      mismatches.push("square footage");
+    }
+    if (subject.beds != null && (subject.beds < criteria.minBeds ||
+      (criteria.maxBeds != null && subject.beds > criteria.maxBeds))) {
+      mismatches.push("bedrooms");
+    }
+    if (subject.baths != null && (subject.baths < (criteria.minBaths ?? 0) ||
+      (criteria.maxBaths != null && subject.baths > criteria.maxBaths))) {
+      mismatches.push("bathrooms");
+    }
+    if (mismatches.length) {
+      excludedForKnownCriteriaMismatch++;
+      continue;
+    }
+    evidence.push({
+      buyerId: buyer.id,
+      buyerVersion: buyer.version,
+      criteriaEvidenceAt: buyer.buyingEvidenceAt!,
+      buyingEvidenceAt: buyer.buyingEvidenceAt!,
+      identityVerifiedAt: buyer.verifiedAt!,
+      validUntil: buyer.validUntil!,
+      reviewerConfidence: buyer.confidence ?? 0,
+      reason: "Owner-approved current buyer; verified criteria cover the known property market, type, and any recorded size/bed/bath fields. This is not a deal-level match.",
+    });
+  }
+
+  const alignedBuyerCount = evidence.length;
+  const missingInformation = [
+    ...(subject.sqft == null ? ["Square footage is not reported by this property record."] : []),
+    ...(subject.beds == null ? ["Bedroom count is not reported by this property record."] : []),
+    ...(subject.baths == null ? ["Bathroom count is not reported by this property record."] : []),
+    "Unit count is not established by this source.",
+    "Asking/acquisition price, ARV, repairs, spread, and closing deadline are not available until underwriting and contract review.",
+    "Buyer demand coverage does not replace deal-level funding, capacity, deadline, or document checks.",
+  ];
+  const reason = alignedBuyerCount
+    ? `${alignedBuyerCount} owner-approved, current buyer profile(s) fit the known market and property attributes; price, condition, units, ARV, and deal-level capacity remain untested.`
+    : "No owner-approved, current buyer profile fits the known market and property attributes. This does not disqualify an otherwise strong seller opportunity.";
+  const inputKey = JSON.stringify({
+    currentQualifiedBuyerCount: qualified.length,
+    unqualifiedBuyerCount: buyers.length - qualified.length,
+    excludedForKnownCriteriaMismatch,
+    evidence,
+  });
+  return {
+    status: alignedBuyerCount ? "ALIGNED_ON_KNOWN_FIELDS" : "NO_VERIFIED_DEMAND",
+    alignedBuyerCount,
+    currentQualifiedBuyerCount: qualified.length,
+    unqualifiedBuyerCount: buyers.length - qualified.length,
+    excludedForKnownCriteriaMismatch,
+    priorityBonus: Math.min(15, alignedBuyerCount * 5),
+    reason,
+    missingInformation,
+    evidence,
+    inputKey,
   };
 }

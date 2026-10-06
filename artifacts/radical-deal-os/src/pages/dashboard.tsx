@@ -21,6 +21,26 @@ const TONE: Record<CommandAction['category'], string> = {
   CONTRACT: 'tone-ink', BUYER_MATCH: 'tone-go', BUYER_VERIFICATION: 'tone-warn', DEADLINE: 'tone-stop', CLOSING: 'tone-signal', WORKER: 'tone-muted',
   DISCOVERY_REVIEW: 'tone-warn',
 };
+const AUTOMATION_STATE_LABEL: Record<string, string> = {
+  ACTIVE: 'On schedule',
+  ENABLED: 'Authorized · first run pending',
+  RUNNING: 'Running',
+  QUEUED: 'Queued',
+  ACTION_REQUIRED: 'Needs attention',
+  AWAITING_AUTHORIZATION: 'Source terms needed',
+  ONE_TIME_ONLY: 'One-time only',
+  OVERDUE: 'Overdue',
+  WAITING_FOR_FIRST_RUN: 'No run recorded',
+  EVENT_DRIVEN: 'Evidence-triggered',
+  HUMAN_GATE: 'Human-authorized',
+};
+const AUTOMATION_STATE_TONE: Record<string, string> = {
+  ACTION_REQUIRED: 'fd-pill-coral',
+  AWAITING_AUTHORIZATION: 'fd-pill-coral',
+  ONE_TIME_ONLY: 'fd-pill-coral',
+  OVERDUE: 'fd-pill-coral',
+  WAITING_FOR_FIRST_RUN: 'fd-pill-coral',
+};
 
 export default function Dashboard() {
   const q = useGetCommandCenter({ query: { queryKey: getGetCommandCenterQueryKey(), refetchInterval: 15000 } });
@@ -43,6 +63,7 @@ export default function Dashboard() {
     d.opportunities.forEach((item) => leadAddressById.set(item.lead.id, item.lead.address));
   }
   const calls = d ? d.calls.filter((item) => matchesSearch(item.lead.sellerName, item.lead.address, item.objective)) : [];
+  const nextCall = calls[0];
   const deals = d ? d.deals.filter((item) => matchesSearch(item.lead.address, item.lead.nextAction, item.lead.stage)) : [];
   const contractRows = contracts.filter((operation) => matchesSearch(
     leadAddressById.get(operation.leadId), operation.contract?.status, operation.contract?.purchasePrice, operation.nextAction,
@@ -101,9 +122,72 @@ export default function Dashboard() {
             <div className="fd-metric"><span className="fd-metric-icon"><UsersRound size={17} /></span><span><div className="fd-metric-value">{qualified.length}</div><div className="fd-metric-label">Qualified acquisition buyers</div></span></div>
           </section>
 
+          <section className="fd-panel" data-testid="panel-call-next" aria-labelledby="call-next-title">
+            <div className="fd-section-head">
+              <div className="fd-section-title"><Headphones size={15} /><span id="call-next-title">CALL NEXT</span><small>{calls.length ? `${calls.length} ready` : 'No seller cleared to call'}</small></div>
+              <Link className="fd-text-link" href="/calls">Open call queue <ArrowRight size={12} style={{ verticalAlign: 'middle', marginLeft: 3 }} /></Link>
+            </div>
+            {!nextCall ? (
+              <div className="fd-empty" role="status">
+                No seller currently passes the call-readiness checks. Incomplete contact permission, identity, evidence, or underwriting stays out of the call queue; the system-selected action below shows what must happen next.
+              </div>
+            ) : (
+              <div className="fd-start-stack">
+                <article className="fd-start-card" data-testid={`call-next-${nextCall.lead.id}`}>
+                  <div className="fd-start-card-head">
+                    <div>
+                      <div className="fd-start-kicker">Highest-priority ready seller · ranked by due follow-up, urgency, and deal strength</div>
+                      <span className="fd-action-tag tone-signal">{nextCall.lead.stage.replaceAll('_', ' ')}</span>
+                      <h2>{nextCall.lead.sellerName} · {nextCall.lead.address}</h2>
+                      <p className="fd-row-meta">{nextCall.lead.city}, {nextCall.lead.state} · {nextCall.lead.sellerPhone || 'No phone route recorded'}</p>
+                    </div>
+                    <Link href={`/calls?lead=${nextCall.lead.id}`} className="fd-start-cta" data-testid={`call-next-cta-${nextCall.lead.id}`}>
+                      Open seller call brief<ArrowRight size={15} />
+                    </Link>
+                  </div>
+                  <div className="fd-start-facts">
+                    <div>
+                      <span className="fd-start-label">Seller situation</span>
+                      <p>{nextCall.lead.sellingReason?.trim() || nextCall.lead.sellerDescription?.trim() || 'Not recorded. Ask what outcome, timing, condition, and decision-makers matter to the seller.'}</p>
+                    </div>
+                    <div>
+                      <span className="fd-start-label">Best next action</span>
+                      <p>{nextCall.lead.nextAction}</p>
+                    </div>
+                  </div>
+                  <div className="fd-metrics" aria-label="Current deal economics">
+                    <div className="fd-metric"><span><div className="fd-metric-value">{money(nextCall.analysis.arv.expected)}</div><div className="fd-metric-label">ARV · expected</div></span></div>
+                    <div className="fd-metric"><span><div className="fd-metric-value">{nextCall.analysis.repairEstimate.total ? `${money(nextCall.analysis.repairEstimate.total.low)}–${money(nextCall.analysis.repairEstimate.total.high)}` : 'Needs condition evidence'}</div><div className="fd-metric-label">Repairs · condition-backed</div></span></div>
+                    <div className="fd-metric"><span><div className="fd-metric-value">{money(nextCall.analysis.mao)}</div><div className="fd-metric-label">Calculated MAO · not authority</div></span></div>
+                    <div className="fd-metric"><span><div className="fd-metric-value">{nextCall.authorizedOffer ? money(nextCall.authorizedOffer.amount) : 'Not authorized'}</div><div className="fd-metric-label">Exact seller offer authority</div></span></div>
+                  </div>
+                  <div className="fd-start-facts">
+                    <div>
+                      <span className="fd-start-label">Known evidence</span>
+                      <p>{nextCall.intelligence.length
+                        ? nextCall.intelligence.slice(0, 3).map((item) => `${item.classification} · ${item.statement} (${item.source})`).join(' · ')
+                        : 'No supplemental intelligence is recorded; use the questions below and do not assume seller motivation or property condition.'}</p>
+                    </div>
+                    <div className="fd-start-missing">
+                      <span className="fd-start-label">Questions to resolve</span>
+                      <p>{nextCall.questions.slice(0, 3).join(' · ')}</p>
+                    </div>
+                  </div>
+                  <details className="fd-work-guidance-detail">
+                    <summary>Review offer boundary and evidence limitations</summary>
+                    <p>{nextCall.boundaries}</p>
+                    {nextCall.analysis.blockers.length > 0 && <p>Underwriting blockers: {nextCall.analysis.blockers.join(' · ')}</p>}
+                    {nextCall.analysis.repairEstimate.blockers.length > 0 && <p>Repair estimate blockers: {nextCall.analysis.repairEstimate.blockers.join(' · ')}</p>}
+                    {nextCall.analysis.risks.length > 0 && <p>Risks: {nextCall.analysis.risks.join(' · ')}</p>}
+                  </details>
+                </article>
+              </div>
+            )}
+          </section>
+
           <section className="fd-actions-section" data-testid="panel-actions">
             <div className="fd-section-head">
-              <div className="fd-section-title"><Compass size={16} />Start here <small>{actions.length ? `1 of ${actions.length}` : 'no assigned task'}</small></div>
+              <div className="fd-section-title"><Compass size={16} />System-selected next action <small>{actions.length ? `1 of ${actions.length}` : 'no open human action'}</small></div>
             </div>
             {actions.length === 0 ? (
               <div className="fd-start-empty" role="status">
@@ -115,10 +199,9 @@ export default function Dashboard() {
                 ) : (
                   <>
                     <div>
-                      <b>No action is currently assigned to you.</b>
-                      <p>For acquisition work, the next valid system step is property discovery. Records stay as source observations until market criteria and evidence qualify them; they are not active leads by default.</p>
+                      <b>No human action is currently due.</b>
+                      <p>Background checks continue only within recorded source permissions. See the automation panel for the latest persisted runs, authorization gates, queue, and failures.</p>
                     </div>
-                    <Link className="fd-button fd-button-primary" href="/sources" data-testid="link-empty-discovery">Open property discovery <ArrowRight size={14} /></Link>
                   </>
                 )}
               </div>
@@ -198,6 +281,35 @@ export default function Dashboard() {
             </div>}
           </section>
 
+          <section className="fd-panel" data-testid="panel-automation">
+            <div className="fd-section-head">
+              <div className="fd-section-title"><Zap size={15} />Background system <small>Observed {ago(d.automation.observedAt)}</small></div>
+              <span className={`fd-pill ${d.automation.status === 'CURRENT' ? '' : 'fd-pill-coral'}`}>
+                {d.automation.status === 'CURRENT' ? 'Checks current' : d.automation.status === 'DELAYED' ? 'Checks delayed' : d.automation.status === 'ACTION_REQUIRED' ? 'Worker attention needed' : 'Starting'}
+              </span>
+            </div>
+            <p className="fd-row-copy">
+              {d.automation.queuedJobs} queued · {d.automation.runningJobs} running · {d.automation.failedJobs} failed. This status comes from persisted worker jobs; it does not imply an external call, delivery, signature, or funds movement.
+            </p>
+            <div className="fd-list">
+              {d.automation.lanes.map((lane) => (
+                <div key={lane.key} className="fd-worker-row" data-testid={`automation-${lane.key}`}>
+                  <span className={`fd-pill ${AUTOMATION_STATE_TONE[lane.state] ?? ''}`}>{AUTOMATION_STATE_LABEL[lane.state] ?? lane.state}</span>
+                  <span className="fd-worker-label">
+                    <b>{lane.label}</b>
+                    <span className="fd-row-meta"> · {lane.cadence}{lane.lastRunAt ? ` · last ${ago(lane.lastRunAt)}` : ''}{lane.nextRunAt ? ` · next ${fmtDate(lane.nextRunAt)}` : ''}</span>
+                    <details className="fd-work-guidance-detail">
+                      <summary>Scope and latest result</summary>
+                      <p>{lane.scope}</p>
+                      <p>{lane.result}</p>
+                    </details>
+                  </span>
+                  {lane.href && <Link href={lane.href} className="fd-text-link">{lane.state === 'ACTION_REQUIRED' || lane.state === 'OVERDUE' ? 'Review run' : lane.state === 'AWAITING_AUTHORIZATION' || lane.state === 'ONE_TIME_ONLY' ? 'Review source access' : 'Open'} <ArrowRight size={12} /></Link>}
+                </div>
+              ))}
+            </div>
+          </section>
+
           <section className="fd-opps" data-testid="panel-qualified-candidates">
             <div className="fd-section-head">
               <div className="fd-section-title"><Compass size={15} />Highest-relevance properties <small>{query ? `${candidateRows.length} / ${d.propertyDiscoveries.records.length}` : d.propertyDiscoveries.records.length}</small></div>
@@ -208,9 +320,15 @@ export default function Dashboard() {
             ) : (
               <div className="fd-opp-grid">{candidateRows.slice(0, 3).map((item) => (
                 <Link key={item.id} href={item.leadId ? `/leads/${item.leadId}` : `/sources?discovery=${item.id}`} className="fd-opp" data-testid={`link-candidate-${item.id}`}>
-                  <div className="fd-row-top"><div className="fd-row-name">{item.property.address}</div><span className="fd-stage">{item.score}/100 · {Math.round(item.confidence * 100)}%</span></div>
+                  <div className="fd-row-top"><div className="fd-row-name">{item.property.address}</div><span className="fd-stage">{item.score}/100 seller relevance · rank {item.priorityScore}</span></div>
                   <div className="fd-opp-info">{item.status.replaceAll('_', ' ')} · {item.signals.length} sourced signal(s) · {item.sourceObservationCount} observation(s)</div>
                   <div className="fd-row-copy"><b>Why selected:</b> {item.reason}</div>
+                  <div className="fd-row-copy"><b>Buyer demand:</b> {item.demandFit.alignedBuyerCount
+                    ? `${item.demandFit.alignedBuyerCount} currently approved buyer profile(s) align on known fields; this is not a deal match.`
+                    : 'No currently approved buyer profile aligns to known fields. A strong seller opportunity can still qualify independently.'}</div>
+                  <div className="fd-row-copy"><b>Best contact path:</b> {item.property.contactPaths[0]
+                    ? `${item.property.contactPaths[0].recipient} · ${item.property.contactPaths[0].addressLines.join(', ')} · ${item.property.contactPaths[0].cityState} ${item.property.contactPaths[0].postalCode ?? ''} · postal only; permission ${item.property.contactPaths[0].permissionStatus.toLowerCase().replaceAll('_', ' ')}`
+                    : 'No owner mailing route in this record; this source has no phone or email.'}</div>
                   <div className="fd-row-copy"><b>Missing:</b> {item.promotionBlockers[0] ?? item.missingInformation[0] ?? 'No qualification blocker; human review remains required.'}</div>
                   <div className="fd-row-copy"><b>Next:</b> {item.nextAction}</div>
                 </Link>

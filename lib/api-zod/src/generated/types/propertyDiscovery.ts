@@ -5,8 +5,10 @@
  * Radical Deal OS seller intake, underwriting, conversations and approved offers
  * OpenAPI spec version: 1.0.0
  */
+import type { BuyerDemandFit } from './buyerDemandFit';
 import type { PropertyDiscoveryStatus } from './propertyDiscoveryStatus';
 import type { PropertyRelevanceSignal } from './propertyRelevanceSignal';
+import type { PropertySourceObservation } from './propertySourceObservation';
 import type { PublicProperty } from './publicProperty';
 
 export interface PropertyDiscovery {
@@ -20,6 +22,11 @@ export interface PropertyDiscovery {
   score: number;
   /**
      * @minimum 0
+     * @maximum 120
+     */
+  priorityScore: number;
+  /**
+     * @minimum 0
      * @maximum 1
      */
   confidence: number;
@@ -27,9 +34,11 @@ export interface PropertyDiscovery {
   version: number;
   property: PublicProperty;
   signals: PropertyRelevanceSignal[];
+  sourceObservations: PropertySourceObservation[];
   reason: string;
   missingInformation: string[];
   nextAction: string;
+  demandFit: BuyerDemandFit;
   /** @minimum 1 */
   sourceObservationCount: number;
   /** @minimum 1 */

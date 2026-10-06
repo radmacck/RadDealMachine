@@ -10,6 +10,7 @@ import type { BuyerCurrentBuyingStatus } from './buyerCurrentBuyingStatus';
 import type { BuyerDiscoveryEvidence } from './buyerDiscoveryEvidence';
 import type { BuyerInput } from './buyerInput';
 import type { BuyerQualificationTask } from './buyerQualificationTask';
+import type { BuyerSourceObservation } from './buyerSourceObservation';
 import type { BuyerVerificationHistory } from './buyerVerificationHistory';
 import type { BuyerVerificationStatus } from './buyerVerificationStatus';
 import type { BuyerVerifiedFundingTypesItem } from './buyerVerifiedFundingTypesItem';
@@ -51,6 +52,7 @@ export type Buyer = BuyerInput & ({
   confidence?: number | null;
   qualificationBlockers?: string[];
   discoveryEvidence?: BuyerDiscoveryEvidence;
+  sourceObservations?: BuyerSourceObservation[];
   verificationHistory?: BuyerVerificationHistory[];
   qualificationTask?: BuyerQualificationTask | null;
   lastOutreachReplyAt?: string;

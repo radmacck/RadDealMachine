@@ -21,6 +21,7 @@ export async function createBuyer(input: z.infer<typeof CreateBuyerBody>, actor:
     if (!row) throw new Error("Buyer insert failed.");
     await audit(tx,actor.id,"BUYER_CREATED",row.id,"Criteria recorded. Identity and funding remain unverified.");
     await queueJob(tx,"MATCH_BUYERS",null,`buyer:${row.id}:${row.version}`,actor.id);
+    await queueJob(tx,"REVIEW_BUYER_POOL",null,`buyer-demand:${row.id}:${row.version}`,actor.id);
     return buyerRecord(row);
   });
 }
@@ -41,6 +42,7 @@ export async function updateBuyer(id: string, input: z.infer<typeof UpdateBuyerB
     if (!saved) throw new Error("Buyer update failed.");
     await audit(tx,actor.id,"BUYER_UPDATED",id,identityChanged?"Identity changed; verification invalidated. Matching queued.":"Criteria/status revised; matching queued.");
     await queueJob(tx,"MATCH_BUYERS",null,`buyer:${id}:${saved.version}`,actor.id);
+    await queueJob(tx,"REVIEW_BUYER_POOL",null,`buyer-demand:${id}:${saved.version}`,actor.id);
     return buyerRecord(saved);
   });
 }
@@ -78,6 +80,7 @@ export async function verifyBuyer(id: string, input: z.infer<typeof VerifyBuyerB
     if (!saved) throw new Error("Buyer verification failed.");
     await audit(tx,actor.id,"BUYER_VERIFIED",id,`Owner reviewed dated identity, criteria and current ${parsed.currentBuyingStatus} evidence; source ${parsed.verificationSource}; confidence ${parsed.confidence}. Review is not an automated bank/identity check. History preserved.`);
     await queueJob(tx,"MATCH_BUYERS",null,`buyer:${id}:${saved.version}`,actor.id);
+    await queueJob(tx,"REVIEW_BUYER_POOL",null,`buyer-demand:${id}:${saved.version}`,actor.id);
     return buyerRecord(saved,now);
   });
 }

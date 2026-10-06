@@ -1,6 +1,10 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { candidateSales, normalizeProperty, PHILA_SOURCE, propertyById, searchProperties } from "./index";
+import {
+  candidateSales, normalizeCorporateGrantee, normalizeProperty, PHILA_SOURCE, propertyById,
+  discoverPhiladelphiaViolationParcels, rankContactPaths, refreshPhiladelphiaEnforcementEvidence,
+  refreshPhiladelphiaVacancyEvidence, searchProperties,
+} from "./index";
 const now = new Date("2026-10-04T12:00:00Z");
 const raw = {
   parcel_number:"123456789",location:"123 SYNTHETIC TEST ST",category_code_description:"SINGLE FAMILY",
@@ -22,6 +26,29 @@ test("corporate tax owner is only an observed research candidate, never buyer ap
   assert.equal(p.entityCandidate,true);
   assert.equal("verificationStatus" in p,false); assert.equal("fundsAvailable" in p,false);
   assert.ok(PHILA_SOURCE.limitations.some(s=>s.includes("purchasing intent/funding")));
+});
+test("OPA mailing contact route is source-backed, freshness-bounded, and never treated as permission",()=>{
+  const property = normalizeProperty({
+    ...raw,
+    owner_2:"SYNTHETIC CO-OWNER",
+    mailing_care_of:"SYNTHETIC CONTACT",
+    mailing_address_1:"PO BOX 100",
+    mailing_address_2:"SUITE 2",
+    mailing_city_state:"Philadelphia PA",
+    mailing_zip:"19143",
+  },now);
+  assert.equal(property.county,"Philadelphia");
+  assert.equal(property.contactPaths.length,1);
+  const path = property.contactPaths[0]!;
+  assert.equal(path.channel,"POSTAL");
+  assert.equal(path.classification,"OBSERVED");
+  assert.equal(path.permissionStatus,"NOT_REVIEWED");
+  assert.equal(path.sourceId,PHILA_SOURCE.id);
+  assert.equal(path.sourceRecordId,raw.parcel_number);
+  assert.deepEqual(path.addressLines,["SYNTHETIC CONTACT","PO BOX 100","SUITE 2"]);
+  assert.equal(path.recipient,"SYNTHETIC LLC / SYNTHETIC CO-OWNER");
+  assert.equal(rankContactPaths([path],new Date(now.getTime()+31*24*60*60*1000))[0]!.freshnessStatus,"STALE");
+  assert.equal(normalizeProperty(raw,now).contactPaths.length,0);
 });
 test("unverified condition is not promoted by a favorable assessment condition code",()=>{
   const subject = normalizeProperty(raw,now);
@@ -47,4 +74,15 @@ test("malformed source values and arbitrary identifiers/ZIP SQL fragments fail e
   assert.throws(()=>normalizeProperty({...raw,number_of_bedrooms:-1},now));
   await assert.rejects(()=>propertyById("123' OR 1=1"),/Invalid official/);
   await assert.rejects(()=>searchProperties("19143' OR 1=1","properties"),/ZIP/);
+});
+test("supplemental City evidence requires bounded exact parcel identifiers before any network call",async()=>{
+  await assert.rejects(()=>refreshPhiladelphiaEnforcementEvidence(["12345678"],now),/exact nine-digit/);
+  await assert.rejects(()=>refreshPhiladelphiaVacancyEvidence(Array.from({length:41},()=> "123456789"),now),/at most 40/);
+  await assert.rejects(()=>discoverPhiladelphiaViolationParcels(now,21),/1–20 parcels/);
+});
+test("repeated recorded grantees reject ambiguous names rather than treating them as buyers",()=>{
+  assert.equal(normalizeCorporateGrantee("Example Property Holdings LLC"),"Example Property Holdings LLC");
+  assert.equal(normalizeCorporateGrantee("Jane Smith"),null);
+  assert.equal(normalizeCorporateGrantee("Example Holdings LLC AND Seller LLC"),null);
+  assert.equal(normalizeCorporateGrantee("Example Holdings LLC; Seller LLC"),null);
 });

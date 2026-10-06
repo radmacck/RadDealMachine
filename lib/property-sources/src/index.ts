@@ -1,23 +1,40 @@
 import { z } from "zod";
+export {
+  PHILA_LI_VIOLATIONS_SOURCE,
+  PHILA_PUBLIC_RECORD_SOURCES,
+  PHILA_TRANSFER_SOURCE,
+  PHILA_UNSAFE_BUILDINGS_SOURCE,
+  PHILA_VACANCY_SOURCE,
+  discoverPhiladelphiaViolationParcels,
+  normalizeCorporateGrantee,
+  refreshPhiladelphiaEnforcementEvidence,
+  refreshPhiladelphiaVacancyEvidence,
+  searchRepeatedRecordedBuyers,
+  type PropertySourceRefresh,
+  type RepeatedTransferBuyer,
+} from "./phila-public-records";
 
 export const PHILA_SOURCE = {
   id: "phila-opa",
   name: "Philadelphia Office of Property Assessment",
   coverage: "Philadelphia, PA only; single-family tax-record properties, including row houses.",
   termsUrl: "https://opendataphilly.org/datasets/philadelphia-properties-and-assessment-history",
-  capabilities: ["Property characteristics", "Tax-roll owner name", "Assessed value", "Reported latest sale", "Nearby sale candidates", "Corporate-owner research candidates"],
+  capabilities: ["Property characteristics", "Tax-roll owner name", "Tax-roll owner mailing address", "Assessed value", "Reported latest sale", "Nearby sale candidates", "Corporate-owner research candidates"],
   limitations: [
     "Tax records are not listings. Seller identity, availability, contact permission and asking price are unknown.",
+    "A tax-roll mailing address is an observed public-record postal route, not proof of current ownership, delivery, consent, or permission for phone/email contact.",
+    "This adapter does not return owner phone numbers or email addresses.",
     "Recorded tax owner is not title clearance or proof of signing authority.",
     "Assessment is not ARV. A reported sale is not verified as arm's-length or renovated.",
     "Condition codes are raw assessment codes, not a current inspection or repair estimate.",
     "Corporate-owner candidates are not verified buyers and purchasing intent/funding are unknown.",
-    "No delinquency, lien, foreclosure, listing history, photo, equity or nationwide coverage is asserted.",
+    "The City's real-estate-tax-balance dataset is aggregated by geography, not parcel; no individual tax-delinquency signal is inferred. No lien, foreclosure, listing history, photo, equity or nationwide coverage is asserted.",
     "The City supplies data as-is; nightly publication does not guarantee every record is current.",
   ],
 };
 
 const nullableNumber = z.number().finite().nonnegative().nullable();
+const optionalNullableText = z.string().max(500).nullable().optional();
 const rawSchema = z.object({
   parcel_number: z.string().regex(/^\d{9}$/),
   location: z.string().min(3).max(250),
@@ -28,6 +45,13 @@ const rawSchema = z.object({
   number_of_bathrooms: z.number().min(0).max(100).nullable(),
   zip_code: z.string().regex(/^191\d{2}/),
   owner_1: z.string().max(500).nullable(),
+  owner_2: optionalNullableText,
+  mailing_address_1: optionalNullableText,
+  mailing_address_2: optionalNullableText,
+  mailing_care_of: optionalNullableText,
+  mailing_city_state: optionalNullableText,
+  mailing_street: optionalNullableText,
+  mailing_zip: z.string().max(30).nullable().optional(),
   market_value: nullableNumber,
   sale_price: nullableNumber,
   sale_date: z.string().datetime({offset:true}).nullable(),
@@ -36,14 +60,76 @@ const rawSchema = z.object({
   lat: z.number().min(-90).max(90).nullable(),
   lng: z.number().min(-180).max(180).nullable(),
 });
+
+export type PropertyContactPath = {
+  id: string;
+  channel: "POSTAL";
+  recipient: string;
+  addressLines: string[];
+  cityState: string;
+  postalCode: string | null;
+  classification: "OBSERVED" | "VERIFIED";
+  confidence: number;
+  sourceId: string;
+  sourceName: string;
+  sourceRecordId: string;
+  sourceUrl: string;
+  capturedAt: string;
+  freshUntilAt: string;
+  freshnessStatus: "CURRENT" | "STALE";
+  permissionStatus: "NOT_REVIEWED" | "PERMITTED" | "PROHIBITED";
+};
+
+/** Sorts connector-supplied paths without converting public availability into contact permission. */
+export function rankContactPaths(paths: PropertyContactPath[], now = new Date()) {
+  return [...paths].map(path => ({
+    ...path,
+    freshnessStatus: Date.parse(path.freshUntilAt) > now.getTime() ? "CURRENT" as const : "STALE" as const,
+  })).sort((a, b) => {
+    const permitted = Number(b.permissionStatus === "PERMITTED") - Number(a.permissionStatus === "PERMITTED");
+    const fresh = Number(b.freshnessStatus === "CURRENT") - Number(a.freshnessStatus === "CURRENT");
+    return permitted || fresh || b.confidence - a.confidence || a.id.localeCompare(b.id);
+  });
+}
+
 export function normalizeProperty(value: unknown, now: Date) {
   const r = rawSchema.parse(value);
   if (r.category_code_description.trim().toUpperCase() !== "SINGLE FAMILY") throw new Error("Source property type is not supported by this adapter.");
   if (r.sale_date && !Number.isFinite(Date.parse(r.sale_date))) throw new Error("Source sale date is invalid.");
   if (!Number.isFinite(now.getTime())) throw new Error("Invalid capture time.");
+  const sourceUrl = `https://property.phila.gov/?p=${r.parcel_number}`;
+  const ownerNames = [r.owner_1, r.owner_2].map(owner => owner?.trim()).filter((owner): owner is string => !!owner);
+  const addressLines = [
+    r.mailing_care_of?.trim(),
+    r.mailing_address_1?.trim(),
+    r.mailing_address_2?.trim() || r.mailing_street?.trim(),
+  ].filter((line): line is string => !!line);
+  const uniqueAddressLines = addressLines.filter((line, index) =>
+    addressLines.findIndex(candidate => candidate.toUpperCase() === line.toUpperCase()) === index);
+  const cityState = r.mailing_city_state?.trim() ?? "";
+  const contactPaths: PropertyContactPath[] = ownerNames.length && uniqueAddressLines.length && cityState
+    ? rankContactPaths([{
+      id: `phila-opa:${r.parcel_number}:owner-mailing`,
+      channel: "POSTAL",
+      recipient: ownerNames.join(" / "),
+      addressLines: uniqueAddressLines,
+      cityState,
+      postalCode: r.mailing_zip?.trim() || null,
+      classification: "OBSERVED",
+      confidence: 0.7,
+      sourceId: PHILA_SOURCE.id,
+      sourceName: PHILA_SOURCE.name,
+      sourceRecordId: r.parcel_number,
+      sourceUrl,
+      capturedAt: now.toISOString(),
+      freshUntilAt: new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000).toISOString(),
+      freshnessStatus: "CURRENT",
+      permissionStatus: "NOT_REVIEWED",
+    }], now)
+    : [];
   return {
     id: r.parcel_number, provider: PHILA_SOURCE.id, classification: "OBSERVED" as const, address: r.location.trim(),
-    city: "Philadelphia", state: "PA", zip: r.zip_code.slice(0,5),
+    city: "Philadelphia", county: "Philadelphia", state: "PA", zip: r.zip_code.slice(0,5),
     propertyType: /^ROW\b/i.test(r.building_code_description ?? "") ? "TOWNHOUSE" as const : "SINGLE_FAMILY" as const,
     sqft: r.total_livable_area, beds: r.number_of_bedrooms, baths: r.number_of_bathrooms,
     recordedOwner: r.owner_1?.trim() || null,
@@ -52,7 +138,8 @@ export function normalizeProperty(value: unknown, now: Date) {
     lastSaleAt: r.sale_date?.slice(0,10) ?? null,
     interiorCondition: r.interior_condition, exteriorCondition: r.exterior_condition,
     lat: r.lat, lng: r.lng,
-    sourceUrl: `https://property.phila.gov/?p=${r.parcel_number}`,
+    contactPaths,
+    sourceUrl,
     capturedAt: now.toISOString(),
   };
 }
@@ -138,6 +225,12 @@ export async function propertyById(id: string, now = new Date()) {
   const rows = await query(`parcel_number='${id}'`,now);
   if (rows.length!==1) throw new Error(`Official parcel lookup returned ${rows.length} records; a unique subject was not established.`);
   return rows[0]!;
+}
+export async function propertiesByIds(ids: string[], now = new Date()) {
+  if (ids.length > 40 || ids.some(id => !/^\d{9}$/.test(id))) throw new Error("Batch property lookup accepts at most 40 exact nine-digit parcel identifiers.");
+  const parcelIds = [...new Set(ids)].sort();
+  if (!parcelIds.length) return [];
+  return query(`parcel_number IN (${parcelIds.map(id => `'${id}'`).join(",")})`, now);
 }
 export async function propertyByAddress(address: string, now = new Date()) {
   const key = address.toUpperCase().replace(/[^A-Z0-9]/g,"");

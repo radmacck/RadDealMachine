@@ -49,6 +49,12 @@ Use free/public/permitted sources and respect terms and rate limits. Never treat
 
 **How to apply:** Report implemented/running, tested, unverified and deferred functionality separately. A synthetic system exercise is not a real-deal exercise. GREEN requires automated tests, database-backed exercises, real-system exercises and objective verification.
 
+Verified buyer demand may prioritize seller research, but known-field alignment is not a deal match and cannot qualify a seller lead, change its principal next action, authorize an offer, or permit distribution. Only current, approved buyer evidence may contribute; disclose unknown deal inputs and keep full deal-level matching separate.
+
+**Why:** The user wants acquisition tailored to real current demand while preserving independent seller qualification, underwriting, and transaction authority.
+
+**How to apply:** Use buyer fit as a separately explained ranking signal before underwriting. Recompute it when buyer evidence changes. Require the existing full match and authorization gates before any buyer package or transaction action.
+
 The user's hard delivery window is October 4, 2026 at 10:45 AM through October 18, 2026 at 10:45 AM (timezone unspecified). Target real properties/deal flow by Week 2 and a real deal ready to close by Week 3.
 
 **Why:** These are explicit delivery constraints in the user's canonical product vision, not estimates or a guarantee of a seller/buyer agreement.

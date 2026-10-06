@@ -1,7 +1,9 @@
 import { createHash, randomUUID } from "node:crypto";
-import { and, count, desc, eq, inArray, sql } from "drizzle-orm";
+import { isDeepStrictEqual } from "node:util";
+import { and, count, desc, eq, inArray, lte, ne, sql } from "drizzle-orm";
 import {
-  db, propertyDiscoveriesTable, propertySourceObservationsTable, propertyQualificationCriteriaTable,
+  db, propertyDiscoveriesTable, propertySourceObservationsTable, unmatchedPropertySourceObservationsTable,
+  propertyQualificationCriteriaTable,
   leadsTable, intelligenceTable,
 } from "@workspace/db";
 import {
@@ -14,12 +16,19 @@ import {
 } from "@workspace/api-zod";
 import {
   DEFAULT_PROPERTY_QUALIFICATION_CRITERIA, DomainError, PROPERTY_SIGNAL_GROUP_BY_KEY,
-  evaluatePropertyRelevance, validateProvenance,
-  type EvidenceClassification, type IntelligenceInput, type PropertyQualificationCriteria, type PropertyRelevanceSignal,
+  evaluateCurrentBuyerDemand, evaluatePropertyRelevance, validateProvenance,
+  type BuyerDemandFit, type EvidenceClassification, type IntelligenceInput, type PropertyQualificationCriteria, type PropertyRelevanceSignal,
   type PropertySignalGroup, type PropertyDiscoveryStatus, type OfferActor,
 } from "@workspace/deal-domain";
-import { propertyById } from "@workspace/property-sources";
+import {
+  rankContactPaths,
+  propertyById,
+  refreshPhiladelphiaEnforcementEvidence,
+  refreshPhiladelphiaVacancyEvidence,
+  type PropertySourceRefresh,
+} from "@workspace/property-sources";
 import { audit, createLead, move } from "./deal-store";
+import { allBuyerRecords } from "./operations-records";
 
 type Tx = Parameters<Parameters<typeof db.transaction>[0]>[0];
 type Database = typeof db | Tx;
@@ -29,6 +38,7 @@ type DiscoveryPayload = {
   opaProperty?: PropertyRecord;
   signals: PropertyRelevanceSignal[];
   firstObservedAt: string;
+  demandAlignment?: { fit: BuyerDemandFit; computedAt: string };
   promotion?: { actor: string; at: string; reviewReason: string };
   disposition?: { actor: string; at: string; reason: string };
 };
@@ -118,13 +128,28 @@ function generatedOpaSignals(
 }
 
 function parsePayload(value: Record<string, unknown>): DiscoveryPayload {
-  const property = value.property as PropertyRecord;
+  const rawProperty = value.property as PropertyRecord;
+  const property = {
+    ...rawProperty,
+    county: typeof rawProperty.county === "string" ? rawProperty.county : "Philadelphia",
+    contactPaths: Array.isArray(rawProperty.contactPaths) ? rawProperty.contactPaths : [],
+  } as PropertyRecord;
   const signals = Array.isArray(value.signals) ? value.signals as PropertyRelevanceSignal[] : [];
   return {
     property,
-    ...(value.opaProperty ? { opaProperty: value.opaProperty as PropertyRecord } : {}),
+    ...(value.opaProperty ? {
+      opaProperty: {
+        ...(value.opaProperty as PropertyRecord),
+        county: typeof (value.opaProperty as PropertyRecord).county === "string"
+          ? (value.opaProperty as PropertyRecord).county : "Philadelphia",
+        contactPaths: Array.isArray((value.opaProperty as PropertyRecord).contactPaths)
+          ? (value.opaProperty as PropertyRecord).contactPaths : [],
+      } as PropertyRecord,
+    } : {}),
     signals,
     firstObservedAt: typeof value.firstObservedAt === "string" ? value.firstObservedAt : new Date().toISOString(),
+    ...(value.demandAlignment && typeof value.demandAlignment === "object"
+      ? { demandAlignment: value.demandAlignment as DiscoveryPayload["demandAlignment"] } : {}),
     ...(value.promotion ? { promotion: value.promotion as DiscoveryPayload["promotion"] } : {}),
     ...(value.disposition ? { disposition: value.disposition as DiscoveryPayload["disposition"] } : {}),
   };
@@ -133,9 +158,20 @@ function parsePayload(value: Record<string, unknown>): DiscoveryPayload {
 async function getCriteriaFrom(database: Database, marketKey: string) {
   const [row] = await database.select().from(propertyQualificationCriteriaTable)
     .where(eq(propertyQualificationCriteriaTable.marketKey, marketKey));
-  const criteria = row
-    ? { ...(row.criteria as Record<string, unknown>), marketKey, version: row.version }
-    : { ...DEFAULT_PROPERTY_QUALIFICATION_CRITERIA, marketKey, version: 1 };
+  const stored = row ? row.criteria as Record<string, unknown> : {};
+  const storedRules = Array.isArray(stored.signalRules) ? stored.signalRules : [];
+  const storedKeys = new Set(storedRules.flatMap(rule =>
+    rule && typeof rule === "object" && "key" in rule && typeof rule.key === "string" ? [rule.key] : []));
+  const criteria = {
+    ...(row ? stored : DEFAULT_PROPERTY_QUALIFICATION_CRITERIA),
+    marketKey,
+    version: row?.version ?? 1,
+    // Older saved market policies predate the new public-record signals. Add
+    // only missing defaults; preserve every operator-enabled/disabled choice.
+    signalRules: row
+      ? [...storedRules, ...DEFAULT_PROPERTY_QUALIFICATION_CRITERIA.signalRules.filter(rule => !storedKeys.has(rule.key))]
+      : DEFAULT_PROPERTY_QUALIFICATION_CRITERIA.signalRules,
+  };
   return GetPropertyDiscoveryCriteriaResponse.parse(criteria) as PropertyQualificationCriteria;
 }
 
@@ -157,9 +193,32 @@ async function toDiscoveryResponse(
   sourceObservationCount: number,
   relatedOwnerPropertyCount: number,
   database: Database = db,
+  knownSourceObservations?: Array<typeof propertySourceObservationsTable.$inferSelect>,
+  currentBuyers?: Awaited<ReturnType<typeof allBuyerRecords>>,
+  now = new Date(),
 ) {
   const payload = parsePayload(row.payload);
   const evaluation = evaluatePropertyRelevance(payload.signals, criteria);
+  const buyers = currentBuyers ?? await allBuyerRecords(database, now);
+  const evaluatedDemand = evaluateCurrentBuyerDemand({
+    state: payload.property.state,
+    county: payload.property.county,
+    city: payload.property.city,
+    zip: payload.property.zip,
+    propertyType: payload.property.propertyType,
+    sqft: payload.property.sqft,
+    beds: payload.property.beds,
+    baths: payload.property.baths,
+  }, buyers, now);
+  const demandFit = {
+    ...evaluatedDemand,
+    snapshotComputedAt: payload.demandAlignment?.computedAt ?? null,
+    snapshotFresh: payload.demandAlignment?.fit.inputKey === evaluatedDemand.inputKey,
+  };
+  const priorityScore = Math.min(120, evaluation.score + demandFit.priorityBonus);
+  const sourceRows = knownSourceObservations ?? await database.select().from(propertySourceObservationsTable)
+    .where(eq(propertySourceObservationsTable.discoveryId, row.id))
+    .orderBy(desc(propertySourceObservationsTable.lastObservedAt));
   const factBlockers = factCompletenessBlockers(payload.property);
   const status = row.status as PropertyDiscoveryStatus;
   const promotionBlockers = status === "QUALIFIED_LEAD" || status === "CALL_READY" || status === "DISQUALIFIED"
@@ -178,24 +237,78 @@ async function toDiscoveryResponse(
   const [linkedLead] = row.leadId
     ? await database.select({ nextAction: leadsTable.nextAction }).from(leadsTable).where(eq(leadsTable.id, row.leadId))
     : [];
+  const sourceObservations = sourceRows.map(sourceRow => {
+    const observation = sourcePayload(sourceRow.payload);
+    const recordIdentities = Array.isArray(observation.recordIdentities)
+      ? observation.recordIdentities.filter((value): value is string => typeof value === "string")
+      : typeof observation.recordIdentity === "string" ? [observation.recordIdentity] : [];
+    const classification = ["VERIFIED", "OBSERVED", "INDICATED", "AI_HYPOTHESIS"].includes(String(observation.classification))
+      ? observation.classification as EvidenceClassification : null;
+    const history = Array.isArray(observation.history) ? observation.history.flatMap(item => {
+      if (!item || typeof item !== "object" || Array.isArray(item)) return [];
+      const prior = sourcePayload(item);
+      if (typeof prior.observedAt !== "string" || !Number.isFinite(Date.parse(prior.observedAt))) return [];
+      const priorClassification = ["VERIFIED", "OBSERVED", "INDICATED", "AI_HYPOTHESIS"].includes(String(prior.classification))
+        ? prior.classification as EvidenceClassification : null;
+      return [{
+        observedAt: prior.observedAt,
+        state: typeof prior.state === "string" ? prior.state : "SOURCE_RECORD_OBSERVED",
+        recordCount: typeof prior.recordCount === "number" ? prior.recordCount : 0,
+        recordIdentities: Array.isArray(prior.recordIdentities)
+          ? prior.recordIdentities.filter((value): value is string => typeof value === "string")
+          : [],
+        latestSourceEventAt: typeof prior.latestSourceEventAt === "string" ? prior.latestSourceEventAt : null,
+        classification: priorClassification,
+        confidence: typeof prior.confidence === "number" ? prior.confidence : null,
+        evidenceRef: typeof prior.evidenceRef === "string" ? prior.evidenceRef : null,
+      }];
+    }).slice(-20) : [];
+    return {
+      id: sourceRow.id,
+      sourceKey: sourceRow.sourceKey,
+      sourceId: sourceRow.sourceId,
+      sourceName: typeof observation.sourceName === "string" ? observation.sourceName : sourceRow.sourceKey,
+      sourceUrl: sourceRow.sourceUrl,
+      firstObservedAt: iso(sourceRow.firstObservedAt),
+      lastObservedAt: iso(sourceRow.lastObservedAt),
+      seenCount: sourceRow.seenCount,
+      state: typeof observation.state === "string" ? observation.state : "SOURCE_RECORD_OBSERVED",
+      recordCount: typeof observation.recordCount === "number" ? observation.recordCount : recordIdentities.length,
+      recordIdentities,
+      latestSourceEventAt: typeof observation.latestSourceEventAt === "string" ? observation.latestSourceEventAt : null,
+      classification,
+      confidence: typeof observation.confidence === "number" ? observation.confidence : null,
+      evidenceRef: typeof observation.evidenceRef === "string" ? observation.evidenceRef : null,
+      history,
+    };
+  });
+  const baseNextAction = status === "DISQUALIFIED"
+    ? "Keep the source observation for audit; do not place it in active acquisition follow-up."
+    : status === "QUALIFIED_LEAD" || status === "CALL_READY"
+      ? linkedLead?.nextAction ?? "Open the linked lead and follow its persisted next action; call readiness remains gated by contact, authority, and underwriting evidence."
+      : canPromote
+        ? "Review the evidence and record why this opportunity should enter the acquisition queue."
+        : evaluation.nextAction;
   return RecordPublicPropertyDiscoveryResponse.parse({
     id: row.id,
     marketKey: row.marketKey,
     status,
     score: row.score,
+    priorityScore,
     confidence: row.confidence,
     version: row.version,
-    property: payload.property,
+    property: {
+      ...payload.property,
+      contactPaths: rankContactPaths(payload.property.contactPaths, now),
+    },
     signals: evaluation.scoredSignals.map(({ points, ...signal }) => ({ ...signal, scoreContribution: points })),
+    sourceObservations,
     reason,
     missingInformation: [...new Set(missingInformation)],
-    nextAction: status === "DISQUALIFIED"
-      ? "Keep the source observation for audit; do not place it in active acquisition follow-up."
-      : status === "QUALIFIED_LEAD" || status === "CALL_READY"
-        ? linkedLead?.nextAction ?? "Open the linked lead and follow its persisted next action; call readiness remains gated by contact, authority, and underwriting evidence."
-        : canPromote
-          ? "Review the evidence and record why this opportunity should enter the acquisition queue."
-          : evaluation.nextAction,
+    nextAction: demandFit.alignedBuyerCount && status !== "DISQUALIFIED"
+      ? `${baseNextAction} Current buyer demand aligns with ${demandFit.alignedBuyerCount} profile(s) on known fields only; price, condition, ARV, units, and deal-level capacity still require underwriting.`
+      : baseNextAction,
+    demandFit,
     sourceObservationCount,
     relatedOwnerPropertyCount,
     leadId: row.leadId,
@@ -209,7 +322,7 @@ async function toDiscoveryResponse(
 
 async function discoveryResponse(row: typeof propertyDiscoveriesTable.$inferSelect, database: Database = db) {
   const criteria = await getCriteriaFrom(database, row.marketKey);
-  const [observations] = await database.select({ total: count() }).from(propertySourceObservationsTable)
+  const sourceObservations = await database.select().from(propertySourceObservationsTable)
     .where(eq(propertySourceObservationsTable.discoveryId, row.id));
   const [owners] = row.ownerKey
     ? await database.select({ total: count() }).from(propertyDiscoveriesTable).where(and(
@@ -217,7 +330,7 @@ async function discoveryResponse(row: typeof propertyDiscoveriesTable.$inferSele
       eq(propertyDiscoveriesTable.ownerKey, row.ownerKey),
     ))
     : [{ total: 1 }];
-  return toDiscoveryResponse(row, criteria, observations?.total ?? 1, owners?.total ?? 1, database);
+  return toDiscoveryResponse(row, criteria, sourceObservations.length || 1, owners?.total ?? 1, database, sourceObservations);
 }
 
 export async function listPropertyDiscoveries(options: {
@@ -226,13 +339,14 @@ export async function listPropertyDiscoveries(options: {
   limit?: number;
 } = {}, database: Database = db) {
   const marketKey = options.marketKey || DEFAULT_PROPERTY_QUALIFICATION_CRITERIA.marketKey;
+  const requestedLimit = Math.max(1, Math.min(options.limit ?? 50, 100));
   const criteria = await getCriteriaFrom(database, marketKey);
   const conditions = [eq(propertyDiscoveriesTable.marketKey, marketKey)];
   if (options.status) conditions.push(eq(propertyDiscoveriesTable.status, options.status));
   const rows = await database.select().from(propertyDiscoveriesTable)
     .where(and(...conditions))
     .orderBy(desc(propertyDiscoveriesTable.score), desc(propertyDiscoveriesTable.updatedAt))
-    .limit(Math.max(1, Math.min(options.limit ?? 50, 100)));
+    .limit(100);
   const countsRows = await database.select({
     status: propertyDiscoveriesTable.status,
     total: count(),
@@ -259,6 +373,51 @@ export async function listPropertyDiscoveries(options: {
       .groupBy(propertySourceObservationsTable.discoveryId)
     : [];
   const observationCount = new Map(observations.map((item) => [item.discoveryId, item.total]));
+  const sourceRows = ids.length
+    ? await database.select().from(propertySourceObservationsTable)
+      .where(inArray(propertySourceObservationsTable.discoveryId, ids))
+      .orderBy(desc(propertySourceObservationsTable.lastObservedAt))
+    : [];
+  const sourceRowsByDiscovery = new Map<string, typeof sourceRows>();
+  for (const sourceRow of sourceRows) {
+    const records = sourceRowsByDiscovery.get(sourceRow.discoveryId) ?? [];
+    records.push(sourceRow);
+    sourceRowsByDiscovery.set(sourceRow.discoveryId, records);
+  }
+  const unmatchedRows = await database.select().from(unmatchedPropertySourceObservationsTable)
+    .where(and(
+      eq(unmatchedPropertySourceObservationsTable.marketKey, marketKey),
+      eq(unmatchedPropertySourceObservationsTable.status, "UNMATCHED"),
+    ))
+    .orderBy(desc(unmatchedPropertySourceObservationsTable.lastObservedAt))
+    .limit(100);
+  const unmatchedSourceObservations = unmatchedRows.map(row => {
+    const payload = sourcePayload(row.payload);
+    return {
+      id: row.id,
+      marketKey: row.marketKey,
+      propertyId: row.propertyId,
+      sourceKey: row.sourceKey,
+      sourceId: row.sourceId,
+      sourceName: typeof payload.sourceName === "string" ? payload.sourceName : "Public source record",
+      sourceUrl: row.sourceUrl,
+      status: "UNMATCHED" as const,
+      firstObservedAt: row.firstObservedAt.toISOString(),
+      lastObservedAt: row.lastObservedAt.toISOString(),
+      seenCount: row.seenCount,
+      state: typeof payload.state === "string" ? payload.state : "SOURCE_RECORD_OBSERVED",
+      recordCount: typeof payload.recordCount === "number" ? payload.recordCount : 0,
+      recordIdentities: Array.isArray(payload.recordIdentities)
+        ? payload.recordIdentities.filter((item): item is string => typeof item === "string")
+        : [],
+      latestSourceEventAt: typeof payload.latestSourceEventAt === "string" ? payload.latestSourceEventAt : null,
+      classification: typeof payload.classification === "string" ? payload.classification : null,
+      confidence: typeof payload.confidence === "number" ? payload.confidence : null,
+      evidenceRef: typeof payload.evidenceRef === "string" ? payload.evidenceRef : null,
+      history: Array.isArray(payload.history) ? payload.history.slice(-20) : [],
+      nextAction: "Find an exact residential OPA match or leave this source record unlinked. It is not an active lead.",
+    };
+  });
   const owners = await database.select({
     id: propertyDiscoveriesTable.id,
     ownerKey: propertyDiscoveriesTable.ownerKey,
@@ -268,13 +427,162 @@ export async function listPropertyDiscoveries(options: {
   for (const item of owners) {
     if (item.ownerKey) ownerCount.set(item.ownerKey, (ownerCount.get(item.ownerKey) ?? 0) + 1);
   }
+  const now = new Date();
+  const currentBuyers = await allBuyerRecords(database, now);
   const records = await Promise.all(rows.map((row) => toDiscoveryResponse(
     row,
     criteria,
     observationCount.get(row.id) ?? 1,
     row.ownerKey ? ownerCount.get(row.ownerKey) ?? 1 : 1,
+    database,
+    sourceRowsByDiscovery.get(row.id) ?? [],
+    currentBuyers,
+    now,
   )));
-  return ListPropertyDiscoveriesResponse.parse({ records, counts, criteria });
+  records.sort((a, b) => b.priorityScore - a.priorityScore || b.score - a.score ||
+    Date.parse(b.lastObservedAt) - Date.parse(a.lastObservedAt));
+  return ListPropertyDiscoveriesResponse.parse({
+    records: records.slice(0, requestedLimit), counts, criteria, unmatchedSourceObservations,
+  });
+}
+
+/**
+ * Retains raw official parcel-source records when the exact OPA account cannot
+ * be joined to a residential property yet. These rows never enter qualification.
+ */
+export async function persistUnmatchedPropertySourceObservations(
+  observations: PropertySourceRefresh[],
+  actor: string,
+  now = new Date(),
+) {
+  if (!observations.length) return { checked: 0, changed: 0 };
+  let changed = 0;
+  await db.transaction(async tx => {
+    for (const evidence of observations) {
+      checkAdapterEvidence(evidence, now);
+      const [prior] = await tx.select().from(unmatchedPropertySourceObservationsTable)
+        .where(eq(unmatchedPropertySourceObservationsTable.sourceKey, evidence.sourceKey))
+        .for("update");
+      const priorPayload = sourcePayload(prior?.payload);
+      const signal = evidence.signal;
+      const nextPayloadBase: Record<string, unknown> = {
+        ...evidence.payload,
+        sourceName: evidence.sourceName,
+        classification: signal?.classification ?? evidence.payload.classification ?? null,
+        confidence: signal?.confidence ?? null,
+        signalId: signal?.id ?? null,
+        evidenceRef: signal?.evidenceRef ?? evidence.payload.evidenceRef ?? null,
+      };
+      const materiallyChanged = prior
+        ? sourcePayloadChanged(priorPayload, nextPayloadBase)
+        : Number(nextPayloadBase.recordCount ?? 0) > 0 || !!signal;
+      const history = Array.isArray(priorPayload.history)
+        ? priorPayload.history.filter(item => item && typeof item === "object" && !Array.isArray(item))
+        : [];
+      if (prior && materiallyChanged) history.push(sourceHistorySnapshot(priorPayload, prior.lastObservedAt));
+      const payload = jsonRecord({ ...nextPayloadBase, history: history.slice(-20) });
+      if (prior) {
+        const sameCapture = prior.lastObservedAt.getTime() === now.getTime();
+        await tx.update(unmatchedPropertySourceObservationsTable).set({
+          sourceId: evidence.sourceId,
+          sourceUrl: evidence.sourceUrl,
+          status: prior.status,
+          linkedDiscoveryId: prior.linkedDiscoveryId,
+          lastObservedAt: now,
+          seenCount: prior.seenCount + (sameCapture ? 0 : 1),
+          payload,
+          updatedAt: now,
+        }).where(eq(unmatchedPropertySourceObservationsTable.id, prior.id));
+      } else {
+        await tx.insert(unmatchedPropertySourceObservationsTable).values({
+          marketKey: DEFAULT_PROPERTY_QUALIFICATION_CRITERIA.marketKey,
+          propertyId: evidence.propertyId,
+          sourceKey: evidence.sourceKey,
+          sourceId: evidence.sourceId,
+          sourceUrl: evidence.sourceUrl,
+          status: "UNMATCHED",
+          linkedDiscoveryId: null,
+          firstObservedAt: now,
+          lastObservedAt: now,
+          seenCount: 1,
+          payload,
+          createdAt: now,
+          updatedAt: now,
+        });
+      }
+      if (materiallyChanged) {
+        changed++;
+        await audit(tx, actor, "UNMATCHED_PROPERTY_SOURCE_RECORDED", evidence.sourceKey,
+          `${evidence.sourceName} source record for OPA parcel ${evidence.propertyId} was retained without a residential OPA match.`);
+      }
+    }
+  });
+  return { checked: observations.length, changed };
+}
+
+export async function linkUnmatchedPropertySourceObservations(
+  propertyDiscoveryIds: Map<string, string>,
+  actor: string,
+  now = new Date(),
+) {
+  if (!propertyDiscoveryIds.size) return { linked: 0 };
+  let linked = 0;
+  await db.transaction(async tx => {
+    const rows = await tx.select().from(unmatchedPropertySourceObservationsTable)
+      .where(and(
+        eq(unmatchedPropertySourceObservationsTable.status, "UNMATCHED"),
+        inArray(unmatchedPropertySourceObservationsTable.propertyId, [...propertyDiscoveryIds.keys()]),
+      ))
+      .for("update");
+    for (const row of rows) {
+      const discoveryId = propertyDiscoveryIds.get(row.propertyId);
+      if (!discoveryId) continue;
+      const [existingObservation] = await tx.select().from(propertySourceObservationsTable)
+        .where(eq(propertySourceObservationsTable.sourceKey, row.sourceKey))
+        .for("update");
+      if (existingObservation && existingObservation.discoveryId !== discoveryId) {
+        throw new DomainError("Unmatched source identity already belongs to another property; no evidence was transferred.", 409);
+      }
+      if (!existingObservation) {
+        await tx.insert(propertySourceObservationsTable).values({
+          discoveryId,
+          sourceKey: row.sourceKey,
+          sourceId: row.sourceId,
+          sourceUrl: row.sourceUrl,
+          firstObservedAt: row.firstObservedAt,
+          lastObservedAt: row.lastObservedAt,
+          seenCount: row.seenCount,
+          payload: row.payload,
+        });
+      }
+      await tx.update(unmatchedPropertySourceObservationsTable).set({
+        status: "LINKED",
+        linkedDiscoveryId: discoveryId,
+        updatedAt: now,
+      }).where(eq(unmatchedPropertySourceObservationsTable.id, row.id));
+      await audit(tx, actor, "PROPERTY_SOURCE_OBSERVATION_LINKED", row.id,
+        `Previously unmatched ${row.sourceId} source evidence was linked to exact OPA discovery ${discoveryId}; qualification was not changed by linking.`);
+      linked++;
+    }
+  });
+  return { linked };
+}
+
+export async function stalePropertySourceRefreshTargets(now = new Date(), limit = 40) {
+  const cutoff = new Date(now.getTime() - 6 * 60 * 60 * 1000);
+  const rows = await db.select({ payload: propertyDiscoveriesTable.payload }).from(propertyDiscoveriesTable)
+    .where(and(
+      eq(propertyDiscoveriesTable.marketKey, DEFAULT_PROPERTY_QUALIFICATION_CRITERIA.marketKey),
+      inArray(propertyDiscoveriesTable.status, ["RELEVANT_CANDIDATE", "QUALIFIED_LEAD", "CALL_READY"]),
+      lte(propertyDiscoveriesTable.updatedAt, cutoff),
+    ))
+    .orderBy(propertyDiscoveriesTable.updatedAt)
+    .limit(Math.max(1, Math.min(limit, 40)));
+  return [...new Set(rows.flatMap(row => {
+    const property = sourcePayload(row.payload.property);
+    const id = property.id;
+    return typeof id === "string" && /^\d{9}$/.test(id) ? [id] : [];
+  }))];
 }
 
 async function persistObservation(
@@ -386,6 +694,251 @@ export async function recordPropertyObservation(
   return RecordPublicPropertyDiscoveryResponse.parse(await discoveryResponse(saved));
 }
 
+/** Persist an explainable buyer-demand snapshot without promoting or disqualifying a seller property. */
+export async function refreshPropertyBuyerDemandAlignment(now = new Date()) {
+  const buyers = await allBuyerRecords(db, now);
+  let checked = 0;
+  let changed = 0;
+  let aligned = 0;
+  await db.transaction(async tx => {
+    const rows = await tx.select().from(propertyDiscoveriesTable)
+      .where(ne(propertyDiscoveriesTable.status, "DISQUALIFIED"));
+    for (const row of rows) {
+      const payload = parsePayload(row.payload);
+      const fit = evaluateCurrentBuyerDemand({
+        state: payload.property.state,
+        county: payload.property.county,
+        city: payload.property.city,
+        zip: payload.property.zip,
+        propertyType: payload.property.propertyType,
+        sqft: payload.property.sqft,
+        beds: payload.property.beds,
+        baths: payload.property.baths,
+      }, buyers, now);
+      checked++;
+      aligned += fit.alignedBuyerCount;
+      if (payload.demandAlignment?.fit.inputKey === fit.inputKey) continue;
+      const nextPayload: DiscoveryPayload = {
+        ...payload,
+        demandAlignment: { fit, computedAt: now.toISOString() },
+      };
+      const [saved] = await tx.update(propertyDiscoveriesTable).set({
+        payload: jsonRecord(nextPayload),
+        version: row.version + 1,
+        updatedAt: now,
+      }).where(and(
+        eq(propertyDiscoveriesTable.id, row.id),
+        eq(propertyDiscoveriesTable.version, row.version),
+      )).returning({ id: propertyDiscoveriesTable.id });
+      if (!saved) continue;
+      changed++;
+      await audit(tx, "system:buyer-demand-refresh", "PROPERTY_BUYER_DEMAND_REFRESHED", row.id,
+        `Current approved-buyer evidence recalculated against known property attributes. ${fit.alignedBuyerCount} buyer profile(s) align on known fields; this is not a deal match and did not change seller qualification.`);
+    }
+  });
+  return {
+    checked,
+    changed,
+    aligned,
+    message: `Buyer-demand alignment refreshed for ${checked} non-passed property records; ${aligned} known-field buyer/property alignments found. No lead qualification, buyer match, outreach, or distribution was created.`,
+  };
+}
+
+function sourcePayload(value: unknown): Record<string, unknown> {
+  return value && typeof value === "object" && !Array.isArray(value) ? value as Record<string, unknown> : {};
+}
+
+function sourcePayloadChanged(previous: Record<string, unknown>, next: Record<string, unknown>) {
+  const project = (payload: Record<string, unknown>) => ({
+    state: payload.state ?? null,
+    recordCount: payload.recordCount ?? null,
+    recordIdentities: payload.recordIdentities ?? [],
+    latestSourceEventAt: payload.latestSourceEventAt ?? null,
+    sourceUpdatedAt: payload.sourceUpdatedAt ?? null,
+    classification: payload.classification ?? null,
+    confidence: payload.confidence ?? null,
+    signalId: payload.signalId ?? null,
+    evidenceRef: payload.evidenceRef ?? null,
+  });
+  return !isDeepStrictEqual(project(previous), project(next));
+}
+
+function sourceHistorySnapshot(payload: Record<string, unknown>, observedAt: Date) {
+  return {
+    observedAt: observedAt.toISOString(),
+    state: typeof payload.state === "string" ? payload.state : "SOURCE_RECORD_OBSERVED",
+    recordCount: typeof payload.recordCount === "number" ? payload.recordCount : 0,
+    recordIdentities: Array.isArray(payload.recordIdentities)
+      ? payload.recordIdentities.filter((item): item is string => typeof item === "string")
+      : [],
+    latestSourceEventAt: typeof payload.latestSourceEventAt === "string" ? payload.latestSourceEventAt : null,
+    classification: typeof payload.classification === "string" ? payload.classification : null,
+    confidence: typeof payload.confidence === "number" ? payload.confidence : null,
+    evidenceRef: typeof payload.evidenceRef === "string" ? payload.evidenceRef : null,
+  };
+}
+
+function checkAdapterEvidence(evidence: PropertySourceRefresh, now: Date): PropertyRelevanceSignal | null {
+  if (!/^\d{9}$/.test(evidence.propertyId) || !evidence.sourceKey.trim() || !evidence.sourceId.trim()) {
+    throw new DomainError("Supplemental property evidence has no exact parcel/source identity.", 502);
+  }
+  let url: URL;
+  try { url = new URL(evidence.sourceUrl); } catch { throw new DomainError("Supplemental property evidence has an invalid source link.", 502); }
+  if (!["http:", "https:"].includes(url.protocol)) throw new DomainError("Supplemental property evidence link must use HTTP(S).", 502);
+  if (Date.parse(evidence.capturedAt) > now.getTime() + 60_000) throw new DomainError("Supplemental source capture time is in the future.", 502);
+  if (!evidence.signal) return null;
+  if (PROPERTY_SIGNAL_GROUP_BY_KEY[evidence.signal.key] !== evidence.signal.group ||
+    evidence.signal.sourceType !== "PUBLIC_RECORD" ||
+    !["OBSERVED", "INDICATED"].includes(evidence.signal.classification) ||
+    !Number.isFinite(evidence.signal.confidence) || evidence.signal.confidence < 0 || evidence.signal.confidence > 1) {
+    throw new DomainError("Supplemental property evidence failed the source classification/group checks.", 502);
+  }
+  return evidence.signal;
+}
+
+/**
+ * Refreshes exact-parcel City public evidence and keeps each connector's current
+ * positive or negative observation separately from the original OPA discovery.
+ * A source disappearance removes only that connector's old relevance signal;
+ * it is not interpreted as proof that a violation or vacancy has been resolved.
+ */
+export async function refreshPropertySourceEvidence(propertyIds: string[], actor: string, now = new Date()) {
+  const ids = [...new Set(propertyIds)];
+  if (!ids.length) return { checked: 0, changed: 0, signals: 0 };
+  const [enforcement, vacancy] = await Promise.all([
+    refreshPhiladelphiaEnforcementEvidence(ids, now),
+    refreshPhiladelphiaVacancyEvidence(ids, now),
+  ]);
+  const observations = [...enforcement, ...vacancy];
+  let changed = 0;
+  let signals = 0;
+  await db.transaction(async tx => {
+    for (const evidence of observations) {
+      const signal = checkAdapterEvidence(evidence, now);
+      const [discovery] = await tx.select().from(propertyDiscoveriesTable)
+        .where(sql`${propertyDiscoveriesTable.payload}->'property'->>'id' = ${evidence.propertyId}`)
+        .for("update");
+      if (!discovery) {
+        throw new DomainError(`Supplemental source ${evidence.sourceName} returned parcel ${evidence.propertyId} before its OPA discovery was persisted.`, 409);
+      }
+      const [prior] = await tx.select().from(propertySourceObservationsTable)
+        .where(eq(propertySourceObservationsTable.sourceKey, evidence.sourceKey));
+      if (prior && prior.discoveryId !== discovery.id) {
+        throw new DomainError("Supplemental source identity is already attached to another property; no facts were transferred.", 409);
+      }
+      const priorPayload = sourcePayload(prior?.payload);
+      const nextPayloadBase: Record<string, unknown> = {
+        ...evidence.payload,
+        sourceName: evidence.sourceName,
+        confidence: signal?.confidence ?? null,
+        signalId: signal?.id ?? null,
+        evidenceRef: signal?.evidenceRef ?? null,
+      };
+      const materiallyChanged = prior
+        ? sourcePayloadChanged(priorPayload, nextPayloadBase)
+        : (Number(nextPayloadBase.recordCount ?? 0) > 0 || !!signal);
+      const sourceSignalChanged = prior
+        ? priorPayload.signalId !== (signal?.id ?? null) ||
+          priorPayload.evidenceRef !== (signal?.evidenceRef ?? null) ||
+          priorPayload.state !== nextPayloadBase.state ||
+          priorPayload.recordCount !== nextPayloadBase.recordCount ||
+          priorPayload.classification !== nextPayloadBase.classification ||
+          priorPayload.confidence !== nextPayloadBase.confidence
+        : !!signal;
+      const history = Array.isArray(priorPayload.history)
+        ? priorPayload.history.filter(item => item && typeof item === "object" && !Array.isArray(item))
+        : [];
+      if (prior && materiallyChanged) history.push(sourceHistorySnapshot(priorPayload, prior.lastObservedAt));
+      const nextPayload = { ...nextPayloadBase, history: history.slice(-20) };
+      const payload = parsePayload(discovery.payload);
+      if (sourceSignalChanged) {
+        const oldSignalId = typeof priorPayload.signalId === "string" ? priorPayload.signalId : null;
+        payload.signals = payload.signals.filter(item => !oldSignalId || item.id !== oldSignalId);
+        if (signal) payload.signals = [...payload.signals.filter(item => item.id !== signal.id), signal];
+      }
+      const criteria = await getCriteriaFrom(tx, discovery.marketKey);
+      const evaluation = evaluatePropertyRelevance(payload.signals, criteria);
+      const terminal = ["QUALIFIED_LEAD", "CALL_READY", "DISQUALIFIED"].includes(discovery.status);
+      const status = terminal ? discovery.status : evaluation.status;
+      await tx.update(propertyDiscoveriesTable).set({
+        status,
+        score: evaluation.score,
+        confidence: evaluation.confidence,
+        payload: jsonRecord(payload),
+        version: materiallyChanged ? discovery.version + 1 : discovery.version,
+        updatedAt: now,
+      }).where(eq(propertyDiscoveriesTable.id, discovery.id));
+      if (prior) {
+        const sameCapture = prior.lastObservedAt.getTime() === now.getTime();
+        await tx.update(propertySourceObservationsTable).set({
+          sourceId: evidence.sourceId,
+          sourceUrl: evidence.sourceUrl,
+          lastObservedAt: now,
+          seenCount: prior.seenCount + (sameCapture ? 0 : 1),
+          payload: jsonRecord(nextPayload),
+        }).where(eq(propertySourceObservationsTable.id, prior.id));
+      } else {
+        await tx.insert(propertySourceObservationsTable).values({
+          discoveryId: discovery.id,
+          sourceKey: evidence.sourceKey,
+          sourceId: evidence.sourceId,
+          sourceUrl: evidence.sourceUrl,
+          firstObservedAt: now,
+          lastObservedAt: now,
+          seenCount: 1,
+          payload: jsonRecord(nextPayload),
+        });
+      }
+      if (signal) signals++;
+      if (sourceSignalChanged) changed++;
+      if (!materiallyChanged && !sourceSignalChanged) continue;
+      const statement = signal?.statement ??
+        `${evidence.sourceName} returned no current matching public record for OPA parcel ${evidence.propertyId}. This does not establish that a previously reported condition or vacancy has been resolved.`;
+      await audit(tx, actor, "PROPERTY_SOURCE_EVIDENCE_REFRESHED", discovery.id,
+        `${evidence.sourceName}: source record state or signal changed; prior versions remain in source history; qualification recalculated; no lead was automatically created or removed.`);
+      if (discovery.leadId) {
+        if (sourceSignalChanged) {
+          const classification = signal?.classification ?? "OBSERVED";
+          await tx.insert(intelligenceTable).values({
+            leadId: discovery.leadId,
+            createdBy: actor,
+            createdAt: now,
+            payload: {
+              classification,
+              category: "public_property_source_refresh",
+              sourceType: "PUBLIC_RECORD",
+              statement,
+              source: evidence.sourceName,
+              sourceUrl: evidence.sourceUrl,
+              confidence: signal?.confidence ?? 0.55,
+              capturedAt: evidence.capturedAt,
+              question: signal
+                ? "Is this public-record observation still accurate, and what does a current inspection or seller statement confirm?"
+                : "Does the current source record or a direct inspection establish the property's present condition or occupancy?",
+              action: signal
+                ? "Review the source record and verify current condition/occupancy before relying on it in negotiation."
+                : "Recheck the source and verify directly; do not assume the earlier condition or vacancy is resolved.",
+              evidenceRef: signal?.evidenceRef ?? priorPayload.evidenceRef ?? null,
+            },
+          });
+        }
+        const [lead] = await tx.select().from(leadsTable).where(eq(leadsTable.id, discovery.leadId)).for("update");
+        if (lead) {
+          const nextAction = signal
+            ? `Review updated ${evidence.sourceName} evidence and verify current condition/occupancy before the next seller action.`
+            : `Recheck the ${evidence.sourceName} record and verify current condition/occupancy; a missing source result does not prove the issue is resolved.`;
+          await tx.update(leadsTable).set({
+            payload: { ...lead.payload, nextAction },
+            version: lead.version + 1,
+            updatedAt: now,
+          }).where(eq(leadsTable.id, lead.id));
+        }
+      }
+    }
+  });
+  return { checked: observations.length, changed, signals };
+}
+
 export async function recordPublicPropertyDiscovery(recordId: string, termsReviewed: boolean, actor: OfferActor, now = new Date()) {
   requireSourceTerms(actor, termsReviewed);
   if (!/^\d{9}$/.test(recordId)) throw new DomainError("Invalid official parcel identifier.");
@@ -401,7 +954,15 @@ export async function recordPublicPropertyDiscovery(recordId: string, termsRevie
     await audit(tx, actor.id, "PROPERTY_DISCOVERED", row.id, "Philadelphia OPA source observation saved. Qualification remains separate from discovery.");
     return row;
   });
-  return RecordPublicPropertyDiscoveryResponse.parse(await discoveryResponse(saved));
+  try {
+    await refreshPropertySourceEvidence([property.id], actor.id, now);
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "Supplemental public-source refresh failed.";
+    throw new DomainError(`The OPA observation was saved, but supplemental L&I/vacancy evidence did not finish. No supplemental qualification change was recorded; retry the discovery worker. ${message}`, 502);
+  }
+  const [refreshed] = await db.select().from(propertyDiscoveriesTable).where(eq(propertyDiscoveriesTable.id, saved.id));
+  if (!refreshed) throw new DomainError("The saved property observation could not be reloaded after source refresh.", 500);
+  return RecordPublicPropertyDiscoveryResponse.parse(await discoveryResponse(refreshed));
 }
 
 function validateSignal(input: ReturnType<typeof AddPropertyRelevanceSignalBody.parse>, now: Date): PropertyRelevanceSignal {

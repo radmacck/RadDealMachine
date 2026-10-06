@@ -969,7 +969,7 @@ components:
         limitations: { type: array, items: { type: string } }
     PropertySignalKey:
       type: string
-      enum: [ENTITY_OWNER, LONG_TERM_HOLD, REPORTED_POOR_CONDITION, SELLER_MOTIVATION, TAX_DELINQUENCY, FORECLOSURE, PROBATE, ABSENTEE_OWNER, STALE_LISTING, REPEATED_PRICE_REDUCTION, BELOW_MARKET, VACANCY, EQUITY_OPPORTUNITY, MARKET_FIT]
+      enum: [ENTITY_OWNER, LONG_TERM_HOLD, REPORTED_POOR_CONDITION, OPEN_CODE_VIOLATION, UNSAFE_BUILDING_RECORD, SELLER_MOTIVATION, TAX_DELINQUENCY, FORECLOSURE, PROBATE, ABSENTEE_OWNER, STALE_LISTING, REPEATED_PRICE_REDUCTION, BELOW_MARKET, VACANCY, EQUITY_OPPORTUNITY, MARKET_FIT]
     PropertySignalGroup:
       type: string
       enum: [OWNERSHIP_CONTEXT, CONDITION, MOTIVATION, DISTRESS, LISTING_PRESSURE, VACANCY, FINANCIAL_OPPORTUNITY, MARKET_FIT]
@@ -998,6 +998,71 @@ components:
         capturedAt: { type: string, format: date-time }
         confidence: { type: number, minimum: 0, maximum: 1 }
         scoreContribution: { type: integer, minimum: 0, maximum: 100 }
+    PropertySourceObservation:
+      type: object
+      required: [id, sourceKey, sourceId, sourceName, sourceUrl, firstObservedAt, lastObservedAt, seenCount, state, recordCount, recordIdentities, latestSourceEventAt, classification, confidence, evidenceRef, history]
+      properties:
+        id: { type: string, format: uuid }
+        sourceKey: { type: string }
+        sourceId: { type: string }
+        sourceName: { type: string }
+        sourceUrl: { type: string, format: uri }
+        firstObservedAt: { type: string, format: date-time }
+        lastObservedAt: { type: string, format: date-time }
+        seenCount: { type: integer, minimum: 1 }
+        state: { type: string }
+        recordCount: { type: integer, minimum: 0 }
+        recordIdentities: { type: array, items: { type: string } }
+        latestSourceEventAt: { type: ["string", "null"], format: date-time }
+        classification:
+          anyOf:
+            - { $ref: "#/components/schemas/PropertyEvidenceClassification" }
+            - { type: "null" }
+        confidence: { type: ["number", "null"], minimum: 0, maximum: 1 }
+        evidenceRef: { type: ["string", "null"] }
+        history: { type: array, maxItems: 20, items: { $ref: "#/components/schemas/PropertySourceObservationHistory" } }
+    PropertySourceObservationHistory:
+      type: object
+      required: [observedAt, state, recordCount, recordIdentities, latestSourceEventAt, classification, confidence, evidenceRef]
+      properties:
+        observedAt: { type: string, format: date-time }
+        state: { type: string }
+        recordCount: { type: integer, minimum: 0 }
+        recordIdentities: { type: array, items: { type: string } }
+        latestSourceEventAt: { type: ["string", "null"], format: date-time }
+        classification:
+          anyOf:
+            - { type: string, enum: [VERIFIED, OBSERVED, INDICATED, AI_HYPOTHESIS] }
+            - { type: "null" }
+        confidence: { type: ["number", "null"], minimum: 0, maximum: 1 }
+        evidenceRef: { type: ["string", "null"] }
+    UnmatchedPropertySourceObservation:
+      type: object
+      required: [id, marketKey, propertyId, sourceKey, sourceId, sourceName, sourceUrl, status, firstObservedAt, lastObservedAt, seenCount, state, recordCount, recordIdentities, latestSourceEventAt, classification, confidence, evidenceRef, history, nextAction]
+      properties:
+        id: { type: string, format: uuid }
+        marketKey: { type: string }
+        propertyId: { type: string, pattern: '^\d{9}$' }
+        sourceKey: { type: string }
+        sourceId: { type: string }
+        sourceName: { type: string }
+        sourceUrl: { type: string, format: uri }
+        status: { type: string, enum: [UNMATCHED] }
+        firstObservedAt: { type: string, format: date-time }
+        lastObservedAt: { type: string, format: date-time }
+        seenCount: { type: integer, minimum: 1 }
+        state: { type: string }
+        recordCount: { type: integer, minimum: 0 }
+        recordIdentities: { type: array, items: { type: string } }
+        latestSourceEventAt: { type: ["string", "null"], format: date-time }
+        classification:
+          anyOf:
+            - { $ref: "#/components/schemas/PropertyEvidenceClassification" }
+            - { type: "null" }
+        confidence: { type: ["number", "null"], minimum: 0, maximum: 1 }
+        evidenceRef: { type: ["string", "null"] }
+        history: { type: array, maxItems: 20, items: { $ref: "#/components/schemas/PropertySourceObservationHistory" } }
+        nextAction: { type: string }
     LeadPropertyQualification:
       type: object
       required: [discoveryId, status, score, confidence, criteriaVersion, reviewReason, qualifiedBy, qualifiedAt, reason, signals, missingInformation, nextAction]
@@ -1030,7 +1095,7 @@ components:
         minimumIndependentSignalGroups: { type: integer, minimum: 2, maximum: 8 }
         requiredLeadGroupAnyOf: { type: array, minItems: 1, maxItems: 8, items: { $ref: "#/components/schemas/PropertySignalGroup" } }
         longHoldYears: { type: integer, minimum: 1, maximum: 100 }
-        signalRules: { type: array, minItems: 1, maxItems: 14, items: { $ref: "#/components/schemas/PropertySignalRule" } }
+        signalRules: { type: array, minItems: 1, maxItems: 16, items: { $ref: "#/components/schemas/PropertySignalRule" } }
     PropertyQualificationCriteria:
       allOf:
         - { $ref: "#/components/schemas/PropertyQualificationCriteriaInput" }
@@ -1039,21 +1104,51 @@ components:
           properties:
             marketKey: { type: string }
             version: { type: integer, minimum: 1 }
+    BuyerDemandEvidence:
+      type: object
+      required: [buyerId, buyerVersion, criteriaEvidenceAt, buyingEvidenceAt, identityVerifiedAt, validUntil, reviewerConfidence, reason]
+      properties:
+        buyerId: { type: string, format: uuid }
+        buyerVersion: { type: integer, minimum: 1 }
+        criteriaEvidenceAt: { type: string, format: date-time }
+        buyingEvidenceAt: { type: string, format: date-time }
+        identityVerifiedAt: { type: string, format: date-time }
+        validUntil: { type: string, format: date-time }
+        reviewerConfidence: { type: number, minimum: 0, maximum: 1 }
+        reason: { type: string }
+    BuyerDemandFit:
+      type: object
+      required: [status, alignedBuyerCount, currentQualifiedBuyerCount, unqualifiedBuyerCount, excludedForKnownCriteriaMismatch, priorityBonus, reason, missingInformation, evidence, snapshotComputedAt, snapshotFresh]
+      properties:
+        status: { type: string, enum: [ALIGNED_ON_KNOWN_FIELDS, NO_VERIFIED_DEMAND] }
+        alignedBuyerCount: { type: integer, minimum: 0 }
+        currentQualifiedBuyerCount: { type: integer, minimum: 0 }
+        unqualifiedBuyerCount: { type: integer, minimum: 0 }
+        excludedForKnownCriteriaMismatch: { type: integer, minimum: 0 }
+        priorityBonus: { type: integer, minimum: 0, maximum: 15 }
+        reason: { type: string }
+        missingInformation: { type: array, items: { type: string } }
+        evidence: { type: array, items: { $ref: "#/components/schemas/BuyerDemandEvidence" } }
+        snapshotComputedAt: { type: ["string", "null"], format: date-time }
+        snapshotFresh: { type: boolean }
     PropertyDiscovery:
       type: object
-      required: [id, marketKey, status, score, confidence, version, property, signals, reason, missingInformation, nextAction, sourceObservationCount, relatedOwnerPropertyCount, leadId, criteriaVersion, canPromote, promotionBlockers, firstObservedAt, lastObservedAt]
+      required: [id, marketKey, status, score, priorityScore, confidence, version, property, signals, sourceObservations, reason, missingInformation, nextAction, demandFit, sourceObservationCount, relatedOwnerPropertyCount, leadId, criteriaVersion, canPromote, promotionBlockers, firstObservedAt, lastObservedAt]
       properties:
         id: { type: string, format: uuid }
         marketKey: { type: string }
         status: { $ref: "#/components/schemas/PropertyDiscoveryStatus" }
         score: { type: integer, minimum: 0, maximum: 100 }
+        priorityScore: { type: integer, minimum: 0, maximum: 120 }
         confidence: { type: number, minimum: 0, maximum: 1 }
         version: { type: integer, minimum: 1 }
         property: { $ref: "#/components/schemas/PublicProperty" }
         signals: { type: array, items: { $ref: "#/components/schemas/PropertyRelevanceSignal" } }
+        sourceObservations: { type: array, items: { $ref: "#/components/schemas/PropertySourceObservation" } }
         reason: { type: string }
         missingInformation: { type: array, items: { type: string } }
         nextAction: { type: string }
+        demandFit: { $ref: "#/components/schemas/BuyerDemandFit" }
         sourceObservationCount: { type: integer, minimum: 1 }
         relatedOwnerPropertyCount: { type: integer, minimum: 1 }
         leadId: { type: ["string", "null"], format: uuid }
@@ -1064,9 +1159,10 @@ components:
         lastObservedAt: { type: string, format: date-time }
     PropertyDiscoveryList:
       type: object
-      required: [records, counts, criteria]
+      required: [records, counts, criteria, unmatchedSourceObservations]
       properties:
         records: { type: array, items: { $ref: "#/components/schemas/PropertyDiscovery" } }
+        unmatchedSourceObservations: { type: array, items: { $ref: "#/components/schemas/UnmatchedPropertySourceObservation" } }
         counts:
           type: object
           required: [DISCOVERED_PROPERTY, RELEVANT_CANDIDATE, QUALIFIED_LEAD, CALL_READY, DISQUALIFIED]
@@ -1110,15 +1206,36 @@ components:
       properties:
         discovery: { $ref: "#/components/schemas/PropertyDiscovery" }
         leadId: { type: string, format: uuid }
+    PropertyContactPath:
+      type: object
+      required: [id, channel, recipient, addressLines, cityState, postalCode, classification, confidence, sourceId, sourceName, sourceRecordId, sourceUrl, capturedAt, freshUntilAt, freshnessStatus, permissionStatus]
+      properties:
+        id: { type: string }
+        channel: { type: string, enum: [POSTAL] }
+        recipient: { type: string }
+        addressLines: { type: array, items: { type: string } }
+        cityState: { type: string }
+        postalCode: { type: ["string", "null"] }
+        classification: { type: string, enum: [OBSERVED, VERIFIED] }
+        confidence: { type: number, minimum: 0, maximum: 1 }
+        sourceId: { type: string }
+        sourceName: { type: string }
+        sourceRecordId: { type: string }
+        sourceUrl: { type: string, format: uri }
+        capturedAt: { type: string, format: date-time }
+        freshUntilAt: { type: string, format: date-time }
+        freshnessStatus: { type: string, enum: [CURRENT, STALE] }
+        permissionStatus: { type: string, enum: [NOT_REVIEWED, PERMITTED, PROHIBITED] }
     PublicProperty:
       type: object
-      required: [id, provider, classification, address, city, state, zip, propertyType, sqft, beds, baths, recordedOwner, entityCandidate, assessedValue, lastSalePrice, lastSaleAt, interiorCondition, exteriorCondition, lat, lng, sourceUrl, capturedAt]
+      required: [id, provider, classification, address, city, county, state, zip, propertyType, sqft, beds, baths, recordedOwner, entityCandidate, assessedValue, lastSalePrice, lastSaleAt, interiorCondition, exteriorCondition, lat, lng, contactPaths, sourceUrl, capturedAt]
       properties:
         id: { type: string }
         provider: { type: string }
         classification: { type: string, enum: [OBSERVED] }
         address: { type: string }
         city: { type: string }
+        county: { type: string }
         state: { type: string }
         zip: { type: string }
         propertyType: { type: string, enum: [SINGLE_FAMILY, TOWNHOUSE] }
@@ -1134,6 +1251,7 @@ components:
         exteriorCondition: { type: ["string", "null"] }
         lat: { type: ["number", "null"] }
         lng: { type: ["number", "null"] }
+        contactPaths: { type: array, items: { $ref: "#/components/schemas/PropertyContactPath" } }
         sourceUrl: { type: string }
         capturedAt: { type: string }
     PublicPropertySearch:
@@ -1222,6 +1340,34 @@ components:
         sourceUrl: { type: string }
         capturedAt: { type: string }
         confidence: { type: number, minimum: 0, maximum: 1 }
+    BuyerSourceObservation:
+      type: object
+      required: [sourceId, source, sourceUrl, classification, statement, confidence, capturedAt, firstObservedAt, lastObservedAt, seenCount, recordIdentities, activityCount, eventAt, history]
+      properties:
+        sourceId: { type: string }
+        source: { type: string }
+        sourceUrl: { type: string, format: uri }
+        classification: { type: string, enum: [OBSERVED] }
+        statement: { type: string }
+        confidence: { type: number, minimum: 0, maximum: 1 }
+        capturedAt: { type: string, format: date-time }
+        firstObservedAt: { type: string, format: date-time }
+        lastObservedAt: { type: string, format: date-time }
+        seenCount: { type: integer, minimum: 1 }
+        recordIdentities: { type: array, maxItems: 100, items: { type: string } }
+        activityCount: { type: integer, minimum: 1 }
+        eventAt: { type: [string, "null"] }
+        history: { type: array, maxItems: 20, items: { $ref: "#/components/schemas/BuyerSourceObservationHistory" } }
+    BuyerSourceObservationHistory:
+      type: object
+      required: [capturedAt, statement, confidence, recordIdentities, activityCount, eventAt]
+      properties:
+        capturedAt: { type: string, format: date-time }
+        statement: { type: string }
+        confidence: { type: number, minimum: 0, maximum: 1 }
+        recordIdentities: { type: array, maxItems: 100, items: { type: string } }
+        activityCount: { type: integer, minimum: 1 }
+        eventAt: { type: [string, "null"] }
     BuyerVerificationHistory:
       type: object
       required: [reviewedBy, reviewedAt, currentBuyingStatus, buyingEvidenceUrl, criteriaEvidenceUrl, verificationSource]
@@ -1340,6 +1486,7 @@ components:
             confidence: { type: [number, "null"] }
             qualificationBlockers: { type: array, items: { type: string } }
             discoveryEvidence: { $ref: "#/components/schemas/BuyerDiscoveryEvidence" }
+            sourceObservations: { type: array, items: { $ref: "#/components/schemas/BuyerSourceObservation" } }
             verificationHistory: { type: array, items: { $ref: "#/components/schemas/BuyerVerificationHistory" } }
             qualificationTask: { oneOf: [{ $ref: "#/components/schemas/BuyerQualificationTask" }, { type: "null" }] }
             lastOutreachReplyAt: { type: string }
@@ -1876,7 +2023,7 @@ components:
         completionRecord: { type: string }
     CommandCenter:
       type: object
-      required: [generatedAt, actions, opportunities, calls, deals, operations, buyers, jobs, propertyDiscoveries]
+      required: [generatedAt, actions, opportunities, calls, deals, operations, buyers, jobs, propertyDiscoveries, automation]
       properties:
         generatedAt: { type: string }
         actions: { type: array, items: { $ref: "#/components/schemas/CommandAction" } }
@@ -1887,6 +2034,30 @@ components:
         buyers: { type: array, items: { $ref: "#/components/schemas/Buyer" } }
         jobs: { type: array, items: { $ref: "#/components/schemas/WorkerJob" } }
         propertyDiscoveries: { $ref: "#/components/schemas/PropertyDiscoveryList" }
+        automation: { $ref: "#/components/schemas/AutomationOverview" }
+    AutomationOverview:
+      type: object
+      required: [observedAt, status, queuedJobs, runningJobs, failedJobs, lanes]
+      properties:
+        observedAt: { type: string, format: date-time }
+        status: { type: string, enum: [CURRENT, DELAYED, ACTION_REQUIRED, STARTING] }
+        queuedJobs: { type: integer, minimum: 0 }
+        runningJobs: { type: integer, minimum: 0 }
+        failedJobs: { type: integer, minimum: 0 }
+        lanes: { type: array, items: { $ref: "#/components/schemas/AutomationLane" } }
+    AutomationLane:
+      type: object
+      required: [key, label, state, cadence, lastRunAt, nextRunAt, result, scope, href]
+      properties:
+        key: { type: string }
+        label: { type: string }
+        state: { type: string, enum: [ACTIVE, ENABLED, RUNNING, QUEUED, ACTION_REQUIRED, AWAITING_AUTHORIZATION, ONE_TIME_ONLY, OVERDUE, WAITING_FOR_FIRST_RUN, EVENT_DRIVEN, HUMAN_GATE] }
+        cadence: { type: string }
+        lastRunAt: { type: ["string", "null"], format: date-time }
+        nextRunAt: { type: ["string", "null"], format: date-time }
+        result: { type: string }
+        scope: { type: string }
+        href: { type: ["string", "null"] }
     HealthStatus:
       type: object
       required: [status]

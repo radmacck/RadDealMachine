@@ -5,16 +5,23 @@
 import assert from "node:assert/strict";
 import { randomUUID } from "node:crypto";
 import { eq, sql } from "drizzle-orm";
-import { db, pool, jobsTable, leadsTable, intelligenceTable, propertySourceObservationsTable } from "@workspace/db";
+import {
+  db, pool, jobsTable, leadsTable, intelligenceTable, propertySourceObservationsTable,
+  unmatchedPropertySourceObservationsTable,
+} from "@workspace/db";
 import { DomainError } from "@workspace/deal-domain";
+import type { PropertySourceRefresh } from "@workspace/property-sources";
 import { logger } from "../lib/logger";
 import { commandCenter } from "./command-center";
 import {
   addPropertyRelevanceSignal, disqualifyPropertyDiscovery, listPropertyDiscoveries,
+  linkUnmatchedPropertySourceObservations, persistUnmatchedPropertySourceObservations,
   promotePropertyDiscovery, recordPropertyObservation, recordPublicPropertyDiscovery,
+  refreshPropertySourceEvidence, stalePropertySourceRefreshTargets,
 } from "./property-discovery-store";
 import { addSourceComps, getSourceResearch, importPublicProperty, refreshSourceResearch, searchPublicProperties } from "./property-source-store";
 import { callQueue, createLead, leadDetail } from "./deal-store";
+import { createBuyer, verifyBuyer } from "./buyer-store";
 import { runWorkerOnce, submitWorkerJob } from "./workers";
 
 const actor = { id: `synthetic-source:${randomUUID()}`, role: "OWNER" };
@@ -29,9 +36,81 @@ try {
   }, actor);
   const discoveryRun = await runWorkerOnce(now, false, discoveryJob.id);
   assert.equal(discoveryRun?.state, "SUCCEEDED", "The durable seller discovery job must complete from the official source.");
-  assert.match(discoveryRun?.message ?? "", /no active leads were created/i);
-  assert.ok((await db.select().from(propertySourceObservationsTable)).length > 0, "The worker must persist raw source observations.");
+  assert.match(discoveryRun?.message ?? "", /no active lead was created/i);
+  const unmatchedCountFromRun = Number(discoveryRun?.message?.match(/Retained (\d+) unmatched L&I source observations/)?.[1]);
+  assert.ok(Number.isInteger(unmatchedCountFromRun), "Worker outcome must report the count of unmatched source observations retained.");
+  const liveUnmatched = await db.select().from(unmatchedPropertySourceObservationsTable);
+  assert.equal(liveUnmatched.length, unmatchedCountFromRun, "Every real unmatched L&I parcel returned by the worker must be persisted without a property or lead.");
+  assert.ok(liveUnmatched.every(row => row.status === "UNMATCHED" && row.linkedDiscoveryId === null));
+  assert.ok(liveUnmatched.every(row => row.sourceKey.startsWith("phila-li-violations:") && row.propertyId.length === 9));
+  const liveDiscoveryList = await listPropertyDiscoveries({ marketKey: "PHILADELPHIA_PA" });
+  assert.ok(liveDiscoveryList.records.length > 0);
+  assert.ok(liveDiscoveryList.records.every(record => record.demandFit.snapshotFresh),
+    "The durable worker must persist demand snapshots that agree with the current buyer-evidence versions.");
+  assert.ok(liveDiscoveryList.records.every(record => record.priorityScore >= record.score),
+    "Demand ranking may add a separate priority bonus but cannot reduce seller relevance.");
+  assert.ok(liveDiscoveryList.records.every(record => Array.isArray(record.property.contactPaths)),
+    "The API response must preserve contact-path evidence, including an explicit empty list when OPA has no mailing route.");
+  assert.equal(liveDiscoveryList.unmatchedSourceObservations.length, liveUnmatched.length);
+  assert.ok(liveDiscoveryList.unmatchedSourceObservations.every(row => row.nextAction.includes("exact residential OPA match")));
+  const observedSources = await db.select().from(propertySourceObservationsTable);
+  assert.ok(observedSources.some(row => row.sourceKey.startsWith("phila-opa:")), "OPA raw observations must persist.");
+  assert.ok(observedSources.some(row => row.sourceKey.startsWith("phila-li-violations:")), "The L&I violations adapter must persist matched or explicit no-match observations.");
+  assert.ok(observedSources.some(row => row.sourceKey.startsWith("phila-li-unsafe:")), "The unsafe-building adapter must persist matched or explicit no-match observations.");
+  assert.ok(observedSources.some(row => row.sourceKey.startsWith("phila-vacancy-indicators:")), "The vacancy adapter must persist matched, stale, or explicit no-match observations.");
   assert.equal((await db.select().from(leadsTable)).length, 0, "Raw property discovery must never create active leads.");
+
+  const unmatchedFixture: PropertySourceRefresh = {
+    sourceKey: `synthetic-unmatched:${randomUUID()}`,
+    sourceId: `synthetic-public-record:${randomUUID()}`,
+    propertyId: "999999999",
+    sourceName: "SYNTHETIC isolated unmatched-source fixture",
+    sourceUrl: "https://example.com/synthetic-unmatched-source",
+    capturedAt: now.toISOString(),
+    payload: {
+      state: "SOURCE_RECORD_OBSERVED",
+      recordCount: 1,
+      recordIdentities: ["synthetic-record-1"],
+      latestSourceEventAt: now.toISOString(),
+      evidenceRef: "synthetic:unmatched-record-1",
+    },
+    signal: {
+      id: `synthetic-signal:${randomUUID()}`,
+      key: "OPEN_CODE_VIOLATION",
+      group: "CONDITION",
+      classification: "OBSERVED",
+      sourceType: "PUBLIC_RECORD",
+      statement: "SYNTHETIC fixture: public violation record; not a real parcel fact.",
+      source: "SYNTHETIC isolated source exercise",
+      sourceUrl: "https://example.com/synthetic-unmatched-source",
+      evidenceRef: "synthetic:unmatched-record-1",
+      capturedAt: now.toISOString(),
+      confidence: 0.6,
+    },
+  };
+  await persistUnmatchedPropertySourceObservations([unmatchedFixture], actor.id, now);
+  const changedUnmatchedFixture: PropertySourceRefresh = {
+    ...unmatchedFixture,
+    capturedAt: new Date(now.getTime() + 24 * 60 * 60 * 1000).toISOString(),
+    payload: {
+      state: "NO_CURRENT_MATCH",
+      recordCount: 0,
+      recordIdentities: [],
+      latestSourceEventAt: null,
+      evidenceRef: "synthetic:unmatched-record-1",
+    },
+    signal: null,
+  };
+  await persistUnmatchedPropertySourceObservations([changedUnmatchedFixture], actor.id, new Date(now.getTime() + 24 * 60 * 60 * 1000));
+  const unmatchedListAfterChange = await listPropertyDiscoveries({ marketKey: "PHILADELPHIA_PA" });
+  const retainedSyntheticSource = unmatchedListAfterChange.unmatchedSourceObservations.find(row => row.sourceKey === unmatchedFixture.sourceKey);
+  assert.ok(retainedSyntheticSource, "An unmatched raw source record remains available even without a matching property discovery.");
+  assert.equal(retainedSyntheticSource.status, "UNMATCHED");
+  assert.equal(retainedSyntheticSource.seenCount, 2);
+  assert.equal(retainedSyntheticSource.history.length, 1);
+  assert.equal(retainedSyntheticSource.history[0]?.state, "SOURCE_RECORD_OBSERVED");
+  assert.equal(retainedSyntheticSource.history[0]?.classification, "OBSERVED");
+  assert.equal((await db.select().from(leadsTable)).length, 0, "Persisting an unmatched source record must not create a lead.");
 
   await runWorkerOnce(new Date(now.getTime() + 1), true);
   const scheduledPropertyJobs = await db.select().from(jobsTable).where(eq(jobsTable.kind, "DISCOVER_PROPERTIES"));
@@ -54,28 +133,100 @@ try {
   const first = await recordPublicPropertyDiscovery(property.id, true, actor, now);
   assert.ok(["DISCOVERED_PROPERTY", "RELEVANT_CANDIDATE"].includes(first.status));
   assert.equal(first.leadId, null);
-  assert.equal(first.canPromote, false, "An OPA record alone must not become a qualified lead.");
-  assert.match(first.reason, /not a lead|signal/i);
+  assert.ok(first.sourceObservationCount >= 4, "A source-backed property keeps separate OPA, L&I, unsafe-building and vacancy observations.");
+  assert.match(first.reason, /not a lead|signal|candidate/i);
+  assert.ok(first.signals.every(signal => signal.source && signal.sourceUrl && signal.evidenceRef && signal.capturedAt));
   const matchedLeads = await db.select().from(leadsTable).where(sql`${leadsTable.payload}->>'address' = ${property.address}`);
   assert.equal(matchedLeads.length, 0, "Saving the source observation must not create a lead row.");
 
   const repeated = await recordPublicPropertyDiscovery(property.id, true, actor, now);
   assert.equal(repeated.id, first.id, "Repeated OPA parcel imports must deduplicate by property identity.");
-  assert.equal(repeated.sourceObservationCount, 1, "The same source record is updated in place rather than duplicated.");
+  assert.equal(repeated.sourceObservationCount, first.sourceObservationCount, "The same source connectors update in place rather than duplicating their observations.");
   const [repeatRow] = await db.select().from(propertySourceObservationsTable)
     .where(eq(propertySourceObservationsTable.sourceKey, `phila-opa:${property.id}`));
   assert.equal(repeatRow?.seenCount, 3, "The worker capture and two manual imports update one deduplicated source observation.");
+  const savedOpaPayload = repeatRow?.payload as { contactPaths?: unknown[] } | undefined;
+  assert.ok(Array.isArray(savedOpaPayload?.contactPaths), "The official OPA source observation persists contact-path evidence.");
+  for (const path of savedOpaPayload.contactPaths) {
+    assert.equal((path as { sourceId?: string }).sourceId, property.provider);
+    assert.equal((path as { classification?: string }).classification, "OBSERVED");
+    assert.equal((path as { permissionStatus?: string }).permissionStatus, "NOT_REVIEWED");
+  }
   const secondary = await recordPropertyObservation(
     { ...property, provider: "SYNTHETIC_SECONDARY_SOURCE", sourceUrl: "https://example.com/synthetic-record" },
     `synthetic-secondary:${property.id}`, actor.id, now,
   );
   assert.equal(secondary.id, first.id, "A second source with the same normalized property identity must attach to one discovery.");
-  assert.equal(secondary.sourceObservationCount, 2);
+  assert.equal(secondary.sourceObservationCount, first.sourceObservationCount + 1);
   assert.equal(secondary.leadId, null);
+
+  const demandBuyer = await createBuyer({
+    name: "SYNTHETIC BUYER DEMAND FIT TEST ONLY",
+    email: "synthetic-demand-fit@example.com",
+    phone: "",
+    source: "SYNTHETIC isolated demand-fit fixture; not a real buyer",
+    status: "ACTIVE",
+    criteria: {
+      states: ["PA"], cities: ["Philadelphia"], zipCodes: property.zip ? [property.zip] : [],
+      propertyTypes: [property.propertyType], maxPurchasePrice: 400000, maxRepairs: 100000,
+      minBeds: 1, minSqft: 500, maxSqft: 5000, closingDays: 10,
+      counties: ["Philadelphia"], excludedCounties: [], excludedCities: [], excludedZipCodes: [],
+      minPurchasePrice: 0, minUnits: 1, maxUnits: 4, minBaths: 1,
+      rehabTolerance: "HEAVY", strategies: ["FLIP"], fundingTypes: ["CASH"], maxConcurrentDeals: 2,
+    },
+  }, actor);
+  const verifiedDemandBuyer = await verifyBuyer(demandBuyer.id, {
+    version: demandBuyer.version,
+    identityEvidenceUrl: "https://example.com/synthetic-demand-identity",
+    fundingEvidenceUrl: "https://example.com/synthetic-demand-funds",
+    verificationNote: "SYNTHETIC fixture only; not evidence about a real buyer.",
+    availableFunds: 500000,
+    evidenceAt: now.toISOString(),
+    validUntil: new Date(now.getTime() + 10 * 86400000).toISOString(),
+    currentBuyingStatus: "BUYING",
+    buyingEvidenceAt: now.toISOString(),
+    buyingEvidenceUrl: "https://example.com/synthetic-current-buying",
+    criteriaEvidenceUrl: "https://example.com/synthetic-current-criteria",
+    verificationSource: "Synthetic isolated exercise response",
+    confidence: 0.9,
+    verifiedFundingTypes: ["CASH"],
+  }, actor, now);
+  assert.equal(verifiedDemandBuyer.approvalStatus, "APPROVED");
+  const [demandJob] = await db.select().from(jobsTable)
+    .where(eq(jobsTable.idempotencyKey, `buyer-demand:${demandBuyer.id}:${verifiedDemandBuyer.version}`));
+  assert.ok(demandJob, "Current buyer evidence must queue a durable demand refresh.");
+  const demandJobResult = await runWorkerOnce(now, false, demandJob.id);
+  assert.equal(demandJobResult?.state, "SUCCEEDED");
+  const demandUpdated = await listPropertyDiscoveries({ marketKey: "PHILADELPHIA_PA" });
+  const demandSubject = demandUpdated.records.find(record => record.id === secondary.id);
+  assert.ok(demandSubject);
+  assert.equal(demandSubject.status, secondary.status, "Demand matching cannot promote or alter seller qualification.");
+  assert.equal(demandSubject.leadId, null);
+  assert.equal(demandSubject.demandFit.alignedBuyerCount, 1);
+  assert.equal(demandSubject.demandFit.snapshotFresh, true);
+  assert.ok(demandSubject.priorityScore > demandSubject.score, "Verified current demand affects ranking independently of seller relevance.");
+  assert.ok(demandSubject.demandFit.missingInformation.length > 0, "Early demand fit must disclose missing deal-level underwriting inputs.");
+
+  const resolvableFixture: PropertySourceRefresh = {
+    ...unmatchedFixture,
+    sourceKey: `synthetic-unmatched-link:${randomUUID()}`,
+    sourceId: `synthetic-resolved-public-record:${randomUUID()}`,
+    propertyId: property.id,
+  };
+  await persistUnmatchedPropertySourceObservations([resolvableFixture], actor.id, now);
+  const linkResult = await linkUnmatchedPropertySourceObservations(new Map([[property.id, first.id]]), actor.id, now);
+  assert.equal(linkResult.linked, 1, "An exact OPA account match should move a prior raw observation into the property's source trail.");
+  const [linkedRawObservation] = await db.select().from(propertySourceObservationsTable)
+    .where(eq(propertySourceObservationsTable.sourceKey, resolvableFixture.sourceKey));
+  assert.equal(linkedRawObservation?.discoveryId, first.id);
+  const [linkedInboxRow] = await db.select().from(unmatchedPropertySourceObservationsTable)
+    .where(eq(unmatchedPropertySourceObservationsTable.sourceKey, resolvableFixture.sourceKey));
+  assert.equal(linkedInboxRow?.status, "LINKED");
+  assert.equal(linkedInboxRow?.linkedDiscoveryId, first.id);
 
   const beforeHypothesisScore = secondary.score;
   let discovery = await addPropertyRelevanceSignal(secondary.id, {
-    version: secondary.version,
+    version: demandSubject.version,
     key: "STALE_LISTING",
     group: "LISTING_PRESSURE",
     classification: "AI_HYPOTHESIS",
@@ -88,7 +239,7 @@ try {
     confidence: 0.9,
   }, actor, now);
   assert.equal(discovery.score, beforeHypothesisScore, "AI hypotheses must contribute zero qualification points.");
-  assert.equal(discovery.canPromote, false);
+   assert.equal(discovery.leadId, null, "A weak or AI-only signal cannot create or promote a lead.");
 
   const addSignal = async (signal: Record<string, unknown>) => {
     discovery = await addPropertyRelevanceSignal(discovery.id, { version: discovery.version, ...signal }, actor, now);
@@ -123,7 +274,9 @@ try {
   assert.equal(promoted.discovery.status, "QUALIFIED_LEAD");
   assert.equal(promoted.discovery.leadId, promoted.leadId);
   assert.equal(promoted.discovery.canPromote, false);
-  assert.equal(promoted.discovery.nextAction, "Verify seller identity and contact permission, then establish condition and underwriting inputs before any offer.");
+  const sellerNextAction = "Verify seller identity and contact permission, then establish condition and underwriting inputs before any offer.";
+  assert.ok(promoted.discovery.nextAction.startsWith(sellerNextAction));
+  assert.match(promoted.discovery.nextAction, /Current buyer demand aligns with 1 profile/);
   assert.ok(promoted.discovery.missingInformation.some((item) => /seller identity/i.test(item)));
   let detail = await leadDetail(promoted.leadId);
   assert.equal(detail.lead.stage, "ENRICHING");
@@ -132,11 +285,13 @@ try {
   assert.ok(detail.lead.propertyQualification?.reason);
   assert.ok((detail.lead.propertyQualification?.signals.length ?? 0) >= 3);
   assert.equal(detail.lead.propertyQualification?.nextAction, detail.lead.nextAction);
+  assert.equal(detail.lead.nextAction, sellerNextAction, "Demand notes must not replace the seller's principal next action.");
   const center = await commandCenter("OWNER", now);
   const qualifiedOpportunity = center.propertyDiscoveries.records.find((item) => item.id === first.id);
   assert.equal(qualifiedOpportunity?.status, "QUALIFIED_LEAD");
   assert.equal(qualifiedOpportunity?.reason, promoted.discovery.reason);
-  assert.equal(qualifiedOpportunity?.nextAction, detail.lead.nextAction);
+  assert.equal(qualifiedOpportunity?.nextAction, promoted.discovery.nextAction);
+  assert.equal(qualifiedOpportunity?.demandFit.alignedBuyerCount, 1);
   assert.equal(detail.lead.askingPrice, null);
   assert.equal(detail.lead.sellerName, "Seller not yet identified");
   assert.equal(detail.analysis, null);
@@ -180,12 +335,16 @@ try {
     reason: "SYNTHETIC exercise verifies that a weak unrelated property can be passed without deleting its raw source observation.",
   }, actor, now);
   assert.equal(passed.status, "DISQUALIFIED");
-  assert.equal(passed.sourceObservationCount, 1);
+  assert.ok(passed.sourceObservationCount >= 4);
   assert.equal(passed.leadId, null);
 
   const buyerResearch = await searchPublicProperties(undefined, "buyer_candidates");
   assert.ok(buyerResearch.records.length > 0);
   assert.ok(buyerResearch.records.every((record) => record.entityCandidate && record.classification === "OBSERVED"));
+  const staleTargets = await stalePropertySourceRefreshTargets(new Date(now.getTime() + 7 * 60 * 60 * 1000));
+  assert.ok(staleTargets.includes(property.id), "Previously qualified/candidate parcels become eligible for recurring source refresh after six hours.");
+  const staleRefresh = await refreshPropertySourceEvidence([property.id], "system:property-source-exercise", new Date(now.getTime() + 7 * 60 * 60 * 1000));
+  assert.equal(staleRefresh.checked, 3, "The stale refresh rechecks each connected exact-parcel evidence source.");
   logger.info({
     records: search.records.length,
     savedDiscoveryId: first.id,
@@ -193,7 +352,8 @@ try {
     crossSourceObservationCount: secondary.sourceObservationCount,
     qualifiedLeadId: promoted.leadId,
     buyerResearchCandidates: buyerResearch.records.length,
-    checks: "real OPA observation persistence; no lead on discovery; same-source and cross-source dedupe; AI hypothesis exclusion; synthetic provenance-backed qualification; human promotion; not call ready; source research/comps; passed observations retained",
+    staleRefresh: staleRefresh.checked,
+    checks: "real OPA and City L&I/vacancy source observation persistence; no lead on discovery; same-source and cross-source dedupe; AI hypothesis exclusion; synthetic provenance-backed qualification; human promotion; not call ready; source research/comps; pass retention; recurring stale-source refresh",
   }, "Selective property qualification exercise PASSED (isolated schema; actual public source row; synthetic qualification evidence only)");
 } finally {
   await pool.end();

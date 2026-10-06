@@ -36,7 +36,7 @@ export interface PropertyQualificationCriteriaInput {
   longHoldYears: number;
   /**
      * @minItems 1
-     * @maxItems 14
+     * @maxItems 16
      */
   signalRules: PropertySignalRule[];
 }

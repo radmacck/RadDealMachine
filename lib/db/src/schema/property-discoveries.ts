@@ -38,6 +38,27 @@ export const propertySourceObservationsTable = pgTable("re_property_source_obser
   index("re_property_source_observations_discovery_idx").on(t.discoveryId, t.lastObservedAt),
 ]);
 
+export const unmatchedPropertySourceObservationsTable = pgTable("re_property_source_unmatched", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  marketKey: text("market_key").notNull(),
+  propertyId: text("property_id").notNull(),
+  sourceKey: text("source_key").notNull(),
+  sourceId: text("source_id").notNull(),
+  sourceUrl: text("source_url").notNull(),
+  status: text("status").notNull().default("UNMATCHED"),
+  linkedDiscoveryId: uuid("linked_discovery_id").references(() => propertyDiscoveriesTable.id, { onDelete: "set null" }),
+  firstObservedAt: timestamp("first_observed_at", { withTimezone: true }).notNull(),
+  lastObservedAt: timestamp("last_observed_at", { withTimezone: true }).notNull(),
+  seenCount: integer("seen_count").notNull().default(1),
+  payload: jsonb("payload").$type<Record<string, unknown>>().notNull(),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+}, (t) => [
+  uniqueIndex("re_property_source_unmatched_source_uq").on(t.sourceKey),
+  index("re_property_source_unmatched_market_status_idx").on(t.marketKey, t.status, t.lastObservedAt),
+  index("re_property_source_unmatched_property_idx").on(t.propertyId),
+]);
+
 export const propertyQualificationCriteriaTable = pgTable("re_property_qualification_criteria", {
   id: uuid("id").primaryKey().defaultRandom(),
   marketKey: text("market_key").notNull(),

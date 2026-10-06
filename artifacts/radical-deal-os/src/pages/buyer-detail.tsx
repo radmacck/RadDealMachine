@@ -76,6 +76,27 @@ export default function BuyerDetail() {
         <p>{b.discoveryEvidence.source}</p><p className="font-mono text-xs text-muted-foreground">Captured {fmtDate(b.discoveryEvidence.capturedAt)} / source confidence {b.discoveryEvidence.confidence}</p>
         <EvidenceLink url={b.discoveryEvidence.sourceUrl} label="Original discovery source" />
       </section>}
+      {!!b.sourceObservations?.length && <section className="ledger p-4" data-testid="panel-buyer-source-observations">
+        <p className="eyebrow mb-1">Public-source history · not buyer approval</p>
+        <p className="mb-3 text-xs text-muted-foreground">These records explain why the entity was discovered. They do not establish current intent, identity, funding, criteria, or matching eligibility.</p>
+        <div className="space-y-3">{[...b.sourceObservations].sort((a,b)=>Date.parse(b.lastObservedAt)-Date.parse(a.lastObservedAt)).map((source)=>(
+          <article key={source.sourceId} className="border-t border-border pt-2 text-sm">
+            <p className="font-medium">{source.source}</p>
+            <p>{source.statement}</p>
+            <p className="mt-1 font-mono text-[11px] text-muted-foreground">Record IDs: {source.recordIdentities.length ? source.recordIdentities.join(', ') : 'none supplied'} / source activity count {source.activityCount}{source.eventAt ? ` / latest source event ${fmtDate(source.eventAt)}` : ''}</p>
+            <p className="font-mono text-[11px] text-muted-foreground">First observed {fmtDate(source.firstObservedAt)} / last observed {fmtDate(source.lastObservedAt)} / {source.seenCount} captures / confidence {source.confidence}</p>
+            <EvidenceLink url={source.sourceUrl} label="Source dataset and terms" />
+            {!!source.history.length && <details className="mt-2 text-xs">
+              <summary className="cursor-pointer text-muted-foreground">Prior source versions ({source.history.length})</summary>
+              <ul className="mt-1 space-y-1 pl-3">
+                {source.history.map((prior, index) => <li key={`${prior.capturedAt}-${index}`}>
+                  {fmtDate(prior.capturedAt)} · {prior.activityCount} public transaction(s) · {prior.recordIdentities.join(', ') || 'no record IDs'} · confidence {prior.confidence}{prior.eventAt ? ` · latest event ${fmtDate(prior.eventAt)}` : ''}
+                </li>)}
+              </ul>
+            </details>}
+          </article>
+        ))}</div>
+      </section>}
       <section className={`ledger border-l-4 p-4 ${isQualified(b) ? 'border-l-signal' : 'border-l-border'}`} data-testid="panel-buyer-qualification">
         <p className="eyebrow mb-2">Qualification</p>
         {b.verificationStatus === 'UNVERIFIED' && <p className="text-sm">Discovery is not approval. This profile is excluded from eligible matching until current buying, criteria and required evidence are reviewed.</p>}
