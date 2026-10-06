@@ -12,6 +12,7 @@ export interface WorkerJobInput {
   leadId?: string;
   termsReviewed?: boolean;
   recurringDiscovery?: boolean;
+  recurringPropertyDiscovery?: boolean;
   /**
      * @minLength 8
      * @maxLength 200

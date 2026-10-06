@@ -36,16 +36,44 @@ export async function commandCenter(role: string, now = new Date()) {
   if (["OWNER","OPERATOR","ANALYST"].includes(role)) {
     for (const candidate of propertyDiscoveries.records) {
       if (candidate.status !== "RELEVANT_CANDIDATE") continue;
+      const priority = 45 + Math.round(candidate.score / 5);
+      const title = `Review ${candidate.property.address}`;
+      const cta = candidate.canPromote ? "Review promotion" : "Review evidence";
+      const href = `/sources?discovery=${candidate.id}`;
+      const missingFacts = [...new Set([...candidate.promotionBlockers, ...candidate.missingInformation])];
+      const workGuidance: DealWorkGuidance = {
+        category: "DISCOVERY_REVIEW", priority, title, href, cta,
+        currentState: `Relevant candidate · ${candidate.score}/100 relevance · ${Math.round(candidate.confidence * 100)}% evidence confidence.`,
+        responsibleRole: role === "OWNER" ? "OWNER" : role === "OPERATOR" ? "OPERATOR" : "ANALYST",
+        dueAt: null,
+        dueLabel: "No review deadline is recorded.",
+        knownFacts: [
+          `${candidate.sourceObservationCount} source observation(s) are attached.`,
+          `${candidate.signals.length} provenance-backed signal(s) are recorded.`,
+          candidate.reason,
+        ],
+        missingFacts: missingFacts.length ? missingFacts : ["No additional information gap is reported; human review is still required."],
+        why: candidate.reason,
+        systemCanDo: "Deduplicate source records, apply the configured market criteria, rank the evidence, and retain the raw discovery. It cannot infer seller motivation or create an active lead from a property record.",
+        humanMustDo: candidate.canPromote
+          ? "Review each signal and its provenance, then promote to the acquisition queue or record a pass reason."
+          : candidate.nextAction,
+        requiredEvidence: missingFacts.length ? missingFacts : ["Review the existing signal provenance and choose promotion or pass."],
+        completionRecord: candidate.canPromote
+          ? "A reviewer records the promotion or pass decision; promotion creates a distinct qualified lead linked to this preserved discovery."
+          : "Add permitted source-backed evidence or record an explicit pass reason; the property remains a discovery until then.",
+      };
       actions.push({
         id: `DISCOVERY_REVIEW:${candidate.id}`,
         category: "DISCOVERY_REVIEW",
-        priority: 45 + Math.round(candidate.score / 5),
-        title: `Review ${candidate.property.address}`,
+        priority,
+        title,
         reason: `${candidate.score}/100 · ${Math.round(candidate.confidence * 100)}% evidence confidence. ${candidate.reason}`,
-        cta: candidate.canPromote ? "Review promotion" : "Review evidence",
+        cta,
         leadId: null,
-        href: `/sources?discovery=${candidate.id}`,
+        href,
         dueAt: null,
+        workGuidance,
       });
     }
   }
@@ -120,16 +148,51 @@ export async function commandCenter(role: string, now = new Date()) {
       leadId:op.leadId,href:workGuidance.href,dueAt:workGuidance.dueAt,workGuidance});
   }
   if (["OWNER","ANALYST"].includes(role)) for (const b of buyers.filter(b=>b.approvalStatus!=="APPROVED"&&b.currentBuyingStatus!=="NOT_BUYING")) {
-    actions.push({id:`BUYER_VERIFICATION:${b.id}`,category:"BUYER_VERIFICATION",priority:b.approvalStatus==="REVERIFICATION_REQUIRED"?92:60,
-      title:`${b.approvalStatus==="REVERIFICATION_REQUIRED"?"Reverify":"Qualify"} ${b.name}`,reason:(b.qualificationBlockers??[]).join("; ") || "Current buying and structured criteria require reviewed dated evidence; discovery is not approval.",
-      cta:"Review buyer evidence",leadId:null,href:`/buyers/${b.id}`,dueAt:b.validUntil??null});
+    const priority = b.approvalStatus==="REVERIFICATION_REQUIRED" ? 92 : 60;
+    const title = `${b.approvalStatus==="REVERIFICATION_REQUIRED"?"Reverify":"Qualify"} ${b.name}`;
+    const reason = (b.qualificationBlockers??[]).join("; ") || "Current buying and structured criteria require reviewed dated evidence; discovery is not approval.";
+    const href = `/buyers/${b.id}`;
+    const missingFacts = b.qualificationBlockers??[];
+    const workGuidance: DealWorkGuidance = {
+      category: "BUYER_VERIFICATION", priority, title, href, cta: "Review buyer evidence",
+      currentState: `Approval ${b.approvalStatus}; current buying status ${b.currentBuyingStatus}.`,
+      responsibleRole: role === "OWNER" ? "OWNER" : "ANALYST",
+      dueAt: b.validUntil ?? null,
+      dueLabel: b.validUntil ? "Buyer evidence valid through" : "No evidence expiry is recorded.",
+      knownFacts: [`Buyer record: ${b.name}.`, `Approval status: ${b.approvalStatus}.`, `Current buying status: ${b.currentBuyingStatus}.`],
+      missingFacts: missingFacts.length ? missingFacts : ["No structured blocker is reported; current dated evidence still requires review."],
+      why: reason,
+      systemCanDo: "Compare dated identity, buying and buy-box evidence with the recorded criteria, flag stale evidence, and block mismatched buyer matching.",
+      humanMustDo: "Review the source-linked buyer evidence and record a current verification or an explicit not-buying disposition.",
+      requiredEvidence: missingFacts.length ? missingFacts : ["Current, dated evidence that supports the recorded identity, buying status and criteria."],
+      completionRecord: "The verification decision, evidence references, expiry and approval history are persisted; only an approved current buyer can enter matching.",
+    };
+    actions.push({id:`BUYER_VERIFICATION:${b.id}`,category:"BUYER_VERIFICATION",priority,title,reason,
+      cta:"Review buyer evidence",leadId:null,href,dueAt:b.validUntil??null,workGuidance});
   }
   if (["OWNER","ANALYST"].includes(role)) {
     const representedDeals = new Set(actions.flatMap((action) => action.leadId ? [action.leadId] : []));
     for (const j of jobs.filter(j=>j.state==="FAILED")) {
       if (j.leadId && representedDeals.has(j.leadId)) continue;
-      actions.push({id:`WORKER:${j.id}`,category:"WORKER",priority:70,title:`Review failed ${j.kind.toLowerCase().replace(/_/g," ")} job`,
-        reason:j.message,cta:"Inspect worker activity",leadId:j.leadId,href:"/workers",dueAt:null});
+      const priority = 70;
+      const title = `Review failed ${j.kind.toLowerCase().replace(/_/g," ")} job`;
+      const href = "/workers";
+      const workGuidance: DealWorkGuidance = {
+        category: "WORKER", priority, title, href, cta: "Inspect worker activity",
+        currentState: `Failed after ${j.attempts} attempt(s).`,
+        responsibleRole: role === "OWNER" ? "OWNER" : "ANALYST",
+        dueAt: null,
+        dueLabel: "No retry deadline is recorded.",
+        knownFacts: [`Job type: ${j.kind}.`, `Attempts recorded: ${j.attempts}.`, `Last result: ${j.message}`],
+        missingFacts: ["A successful result for this job is not recorded."],
+        why: "A failed job did not complete its operation; do not treat its intended output as delivered.",
+        systemCanDo: "Persist the failure and expose a retry action. It does not send messages or infer successful work.",
+        humanMustDo: "Review the saved failure, resolve or understand the cited issue, then queue a fresh retry if it is safe.",
+        requiredEvidence: ["The source, input or provider issue is resolved or the retry is intentionally justified."],
+        completionRecord: "A retry is saved as a separate job with its own execution state, attempts and result.",
+      };
+      actions.push({id:`WORKER:${j.id}`,category:"WORKER",priority,title,
+        reason:j.message,cta:"Inspect worker activity",leadId:j.leadId,href,dueAt:null,workGuidance});
     }
   }
   return GetCommandCenterResponse.parse({

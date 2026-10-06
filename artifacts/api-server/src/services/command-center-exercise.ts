@@ -61,6 +61,13 @@ const candidateActions = analystView.actions.filter((action) => action.category 
 assert.equal(candidateActions.length, 1);
 assert.equal(candidateActions[0]?.href, `/sources?discovery=${candidate.id}`);
 assert.match(candidateActions[0]?.reason ?? "", /motivation|seller/i);
+assert.equal(candidateActions[0]?.workGuidance?.category, "DISCOVERY_REVIEW");
+assert.ok(candidateActions[0]?.workGuidance?.knownFacts.length);
+assert.ok(candidateActions[0]?.workGuidance?.missingFacts.length);
+assert.ok(candidateActions[0]?.workGuidance?.why);
+assert.ok(candidateActions[0]?.workGuidance?.systemCanDo);
+assert.ok(candidateActions[0]?.workGuidance?.humanMustDo);
+assert.ok(candidateActions[0]?.workGuidance?.completionRecord);
 assert.equal(analystView.propertyDiscoveries.records[0]?.id, candidate.id);
 const dealActions = analystView.actions.filter((action) => action.leadId === lead.id);
 assert.equal(dealActions.length,1,"one principal action is shown for the deal");
@@ -70,6 +77,8 @@ assert.equal(dealActions[0]?.workGuidance?.responsibleRole,"ANALYST");
 assert.equal(dealActions[0]?.workGuidance?.currentState,"The deal is in discovered.");
 assert.ok(dealActions[0]?.workGuidance?.missingFacts.length);
 assert.equal(analystView.deals[0]?.workGuidance?.humanMustDo,"Review the sourced property record.");
+assert.ok(analystView.actions.every((action) => action.workGuidance),
+  "Every action presented in the command center must include persisted next-step guidance.");
 
 const operatorView = await commandCenter("OPERATOR",now);
 assert.equal(operatorView.actions.filter((action) => action.leadId === lead.id).length,0,

@@ -737,7 +737,7 @@ export const RecordTransactionExceptionResponse = zod.object({
 }))),
   "allowedTransitions": zod.array(zod.enum(['DISCOVERED', 'ENRICHING', 'ANALYZED', 'STRONG', 'NEGOTIABLE', 'PASS', 'CALL_READY', 'CONTACTED', 'CONVERSATION', 'OFFER_READY', 'OFFER_SENT', 'NEGOTIATING', 'CONTRACT_PENDING', 'UNDER_CONTRACT', 'BUYER_MATCHED', 'BUYER_INTERESTED', 'BUYER_COMMITTED', 'CLOSING', 'CLOSED', 'DEAD_DEAL'])),
   "workGuidance": zod.union([zod.object({
-  "category": zod.enum(['RESEARCH', 'CALL', 'FOLLOW_UP', 'OFFER_APPROVAL', 'NEGOTIATION', 'CONTRACT', 'BUYER_MATCH', 'DEADLINE', 'CLOSING']),
+  "category": zod.enum(['RESEARCH', 'CALL', 'FOLLOW_UP', 'OFFER_APPROVAL', 'NEGOTIATION', 'CONTRACT', 'BUYER_MATCH', 'DEADLINE', 'CLOSING', 'DISCOVERY_REVIEW', 'BUYER_VERIFICATION', 'WORKER']),
   "priority": zod.number().int(),
   "title": zod.string(),
   "href": zod.string(),
@@ -803,8 +803,10 @@ export const RecordTransactionExceptionResponse = zod.object({
 })),
   "jobs": zod.array(zod.object({
   "id": zod.string(),
-  "kind": zod.enum(['MATCH_BUYERS', 'REVIEW_DEADLINES', 'ENRICH_PROPERTY', 'PREPARE_BRIEF', 'BUYER_DISCOVERY', 'REVIEW_BUYER_POOL', 'REVIEW_HANDOFFS', 'HUMAN_HANDOFF']),
+  "kind": zod.enum(['MATCH_BUYERS', 'REVIEW_DEADLINES', 'ENRICH_PROPERTY', 'PREPARE_BRIEF', 'BUYER_DISCOVERY', 'DISCOVER_PROPERTIES', 'REVIEW_BUYER_POOL', 'REVIEW_HANDOFFS', 'HUMAN_HANDOFF']),
+  "termsReviewed": zod.boolean().optional(),
   "recurringDiscovery": zod.boolean().optional(),
+  "recurringPropertyDiscovery": zod.boolean().optional(),
   "state": zod.enum(['QUEUED', 'RUNNING', 'SUCCEEDED', 'FAILED']),
   "leadId": zod.string().nullable(),
   "requestedBy": zod.string(),
@@ -1382,7 +1384,7 @@ export const IntakePropertyEvidenceResponse = zod.object({
 }))),
   "allowedTransitions": zod.array(zod.enum(['DISCOVERED', 'ENRICHING', 'ANALYZED', 'STRONG', 'NEGOTIABLE', 'PASS', 'CALL_READY', 'CONTACTED', 'CONVERSATION', 'OFFER_READY', 'OFFER_SENT', 'NEGOTIATING', 'CONTRACT_PENDING', 'UNDER_CONTRACT', 'BUYER_MATCHED', 'BUYER_INTERESTED', 'BUYER_COMMITTED', 'CLOSING', 'CLOSED', 'DEAD_DEAL'])),
   "workGuidance": zod.union([zod.object({
-  "category": zod.enum(['RESEARCH', 'CALL', 'FOLLOW_UP', 'OFFER_APPROVAL', 'NEGOTIATION', 'CONTRACT', 'BUYER_MATCH', 'DEADLINE', 'CLOSING']),
+  "category": zod.enum(['RESEARCH', 'CALL', 'FOLLOW_UP', 'OFFER_APPROVAL', 'NEGOTIATION', 'CONTRACT', 'BUYER_MATCH', 'DEADLINE', 'CLOSING', 'DISCOVERY_REVIEW', 'BUYER_VERIFICATION', 'WORKER']),
   "priority": zod.number().int(),
   "title": zod.string(),
   "href": zod.string(),
@@ -2142,7 +2144,7 @@ export const GetLeadResponse = zod.object({
 }))),
   "allowedTransitions": zod.array(zod.enum(['DISCOVERED', 'ENRICHING', 'ANALYZED', 'STRONG', 'NEGOTIABLE', 'PASS', 'CALL_READY', 'CONTACTED', 'CONVERSATION', 'OFFER_READY', 'OFFER_SENT', 'NEGOTIATING', 'CONTRACT_PENDING', 'UNDER_CONTRACT', 'BUYER_MATCHED', 'BUYER_INTERESTED', 'BUYER_COMMITTED', 'CLOSING', 'CLOSED', 'DEAD_DEAL'])),
   "workGuidance": zod.union([zod.object({
-  "category": zod.enum(['RESEARCH', 'CALL', 'FOLLOW_UP', 'OFFER_APPROVAL', 'NEGOTIATION', 'CONTRACT', 'BUYER_MATCH', 'DEADLINE', 'CLOSING']),
+  "category": zod.enum(['RESEARCH', 'CALL', 'FOLLOW_UP', 'OFFER_APPROVAL', 'NEGOTIATION', 'CONTRACT', 'BUYER_MATCH', 'DEADLINE', 'CLOSING', 'DISCOVERY_REVIEW', 'BUYER_VERIFICATION', 'WORKER']),
   "priority": zod.number().int(),
   "title": zod.string(),
   "href": zod.string(),
@@ -2885,7 +2887,7 @@ export const SaveUnderwritingResponse = zod.object({
 }))),
   "allowedTransitions": zod.array(zod.enum(['DISCOVERED', 'ENRICHING', 'ANALYZED', 'STRONG', 'NEGOTIABLE', 'PASS', 'CALL_READY', 'CONTACTED', 'CONVERSATION', 'OFFER_READY', 'OFFER_SENT', 'NEGOTIATING', 'CONTRACT_PENDING', 'UNDER_CONTRACT', 'BUYER_MATCHED', 'BUYER_INTERESTED', 'BUYER_COMMITTED', 'CLOSING', 'CLOSED', 'DEAD_DEAL'])),
   "workGuidance": zod.union([zod.object({
-  "category": zod.enum(['RESEARCH', 'CALL', 'FOLLOW_UP', 'OFFER_APPROVAL', 'NEGOTIATION', 'CONTRACT', 'BUYER_MATCH', 'DEADLINE', 'CLOSING']),
+  "category": zod.enum(['RESEARCH', 'CALL', 'FOLLOW_UP', 'OFFER_APPROVAL', 'NEGOTIATION', 'CONTRACT', 'BUYER_MATCH', 'DEADLINE', 'CLOSING', 'DISCOVERY_REVIEW', 'BUYER_VERIFICATION', 'WORKER']),
   "priority": zod.number().int(),
   "title": zod.string(),
   "href": zod.string(),
@@ -3309,7 +3311,7 @@ export const TransitionLeadResponse = zod.object({
 }))),
   "allowedTransitions": zod.array(zod.enum(['DISCOVERED', 'ENRICHING', 'ANALYZED', 'STRONG', 'NEGOTIABLE', 'PASS', 'CALL_READY', 'CONTACTED', 'CONVERSATION', 'OFFER_READY', 'OFFER_SENT', 'NEGOTIATING', 'CONTRACT_PENDING', 'UNDER_CONTRACT', 'BUYER_MATCHED', 'BUYER_INTERESTED', 'BUYER_COMMITTED', 'CLOSING', 'CLOSED', 'DEAD_DEAL'])),
   "workGuidance": zod.union([zod.object({
-  "category": zod.enum(['RESEARCH', 'CALL', 'FOLLOW_UP', 'OFFER_APPROVAL', 'NEGOTIATION', 'CONTRACT', 'BUYER_MATCH', 'DEADLINE', 'CLOSING']),
+  "category": zod.enum(['RESEARCH', 'CALL', 'FOLLOW_UP', 'OFFER_APPROVAL', 'NEGOTIATION', 'CONTRACT', 'BUYER_MATCH', 'DEADLINE', 'CLOSING', 'DISCOVERY_REVIEW', 'BUYER_VERIFICATION', 'WORKER']),
   "priority": zod.number().int(),
   "title": zod.string(),
   "href": zod.string(),
@@ -3732,7 +3734,7 @@ export const RecordCallResponse = zod.object({
 }))),
   "allowedTransitions": zod.array(zod.enum(['DISCOVERED', 'ENRICHING', 'ANALYZED', 'STRONG', 'NEGOTIABLE', 'PASS', 'CALL_READY', 'CONTACTED', 'CONVERSATION', 'OFFER_READY', 'OFFER_SENT', 'NEGOTIATING', 'CONTRACT_PENDING', 'UNDER_CONTRACT', 'BUYER_MATCHED', 'BUYER_INTERESTED', 'BUYER_COMMITTED', 'CLOSING', 'CLOSED', 'DEAD_DEAL'])),
   "workGuidance": zod.union([zod.object({
-  "category": zod.enum(['RESEARCH', 'CALL', 'FOLLOW_UP', 'OFFER_APPROVAL', 'NEGOTIATION', 'CONTRACT', 'BUYER_MATCH', 'DEADLINE', 'CLOSING']),
+  "category": zod.enum(['RESEARCH', 'CALL', 'FOLLOW_UP', 'OFFER_APPROVAL', 'NEGOTIATION', 'CONTRACT', 'BUYER_MATCH', 'DEADLINE', 'CLOSING', 'DISCOVERY_REVIEW', 'BUYER_VERIFICATION', 'WORKER']),
   "priority": zod.number().int(),
   "title": zod.string(),
   "href": zod.string(),
@@ -4167,7 +4169,7 @@ export const CreateOfferDraftResponse = zod.object({
 }))),
   "allowedTransitions": zod.array(zod.enum(['DISCOVERED', 'ENRICHING', 'ANALYZED', 'STRONG', 'NEGOTIABLE', 'PASS', 'CALL_READY', 'CONTACTED', 'CONVERSATION', 'OFFER_READY', 'OFFER_SENT', 'NEGOTIATING', 'CONTRACT_PENDING', 'UNDER_CONTRACT', 'BUYER_MATCHED', 'BUYER_INTERESTED', 'BUYER_COMMITTED', 'CLOSING', 'CLOSED', 'DEAD_DEAL'])),
   "workGuidance": zod.union([zod.object({
-  "category": zod.enum(['RESEARCH', 'CALL', 'FOLLOW_UP', 'OFFER_APPROVAL', 'NEGOTIATION', 'CONTRACT', 'BUYER_MATCH', 'DEADLINE', 'CLOSING']),
+  "category": zod.enum(['RESEARCH', 'CALL', 'FOLLOW_UP', 'OFFER_APPROVAL', 'NEGOTIATION', 'CONTRACT', 'BUYER_MATCH', 'DEADLINE', 'CLOSING', 'DISCOVERY_REVIEW', 'BUYER_VERIFICATION', 'WORKER']),
   "priority": zod.number().int(),
   "title": zod.string(),
   "href": zod.string(),
@@ -4597,7 +4599,7 @@ export const AuthorizeOfferResponse = zod.object({
 }))),
   "allowedTransitions": zod.array(zod.enum(['DISCOVERED', 'ENRICHING', 'ANALYZED', 'STRONG', 'NEGOTIABLE', 'PASS', 'CALL_READY', 'CONTACTED', 'CONVERSATION', 'OFFER_READY', 'OFFER_SENT', 'NEGOTIATING', 'CONTRACT_PENDING', 'UNDER_CONTRACT', 'BUYER_MATCHED', 'BUYER_INTERESTED', 'BUYER_COMMITTED', 'CLOSING', 'CLOSED', 'DEAD_DEAL'])),
   "workGuidance": zod.union([zod.object({
-  "category": zod.enum(['RESEARCH', 'CALL', 'FOLLOW_UP', 'OFFER_APPROVAL', 'NEGOTIATION', 'CONTRACT', 'BUYER_MATCH', 'DEADLINE', 'CLOSING']),
+  "category": zod.enum(['RESEARCH', 'CALL', 'FOLLOW_UP', 'OFFER_APPROVAL', 'NEGOTIATION', 'CONTRACT', 'BUYER_MATCH', 'DEADLINE', 'CLOSING', 'DISCOVERY_REVIEW', 'BUYER_VERIFICATION', 'WORKER']),
   "priority": zod.number().int(),
   "title": zod.string(),
   "href": zod.string(),
@@ -5026,7 +5028,7 @@ export const CommunicateOfferResponse = zod.object({
 }))),
   "allowedTransitions": zod.array(zod.enum(['DISCOVERED', 'ENRICHING', 'ANALYZED', 'STRONG', 'NEGOTIABLE', 'PASS', 'CALL_READY', 'CONTACTED', 'CONVERSATION', 'OFFER_READY', 'OFFER_SENT', 'NEGOTIATING', 'CONTRACT_PENDING', 'UNDER_CONTRACT', 'BUYER_MATCHED', 'BUYER_INTERESTED', 'BUYER_COMMITTED', 'CLOSING', 'CLOSED', 'DEAD_DEAL'])),
   "workGuidance": zod.union([zod.object({
-  "category": zod.enum(['RESEARCH', 'CALL', 'FOLLOW_UP', 'OFFER_APPROVAL', 'NEGOTIATION', 'CONTRACT', 'BUYER_MATCH', 'DEADLINE', 'CLOSING']),
+  "category": zod.enum(['RESEARCH', 'CALL', 'FOLLOW_UP', 'OFFER_APPROVAL', 'NEGOTIATION', 'CONTRACT', 'BUYER_MATCH', 'DEADLINE', 'CLOSING', 'DISCOVERY_REVIEW', 'BUYER_VERIFICATION', 'WORKER']),
   "priority": zod.number().int(),
   "title": zod.string(),
   "href": zod.string(),
@@ -5450,7 +5452,7 @@ export const WithdrawOfferResponse = zod.object({
 }))),
   "allowedTransitions": zod.array(zod.enum(['DISCOVERED', 'ENRICHING', 'ANALYZED', 'STRONG', 'NEGOTIABLE', 'PASS', 'CALL_READY', 'CONTACTED', 'CONVERSATION', 'OFFER_READY', 'OFFER_SENT', 'NEGOTIATING', 'CONTRACT_PENDING', 'UNDER_CONTRACT', 'BUYER_MATCHED', 'BUYER_INTERESTED', 'BUYER_COMMITTED', 'CLOSING', 'CLOSED', 'DEAD_DEAL'])),
   "workGuidance": zod.union([zod.object({
-  "category": zod.enum(['RESEARCH', 'CALL', 'FOLLOW_UP', 'OFFER_APPROVAL', 'NEGOTIATION', 'CONTRACT', 'BUYER_MATCH', 'DEADLINE', 'CLOSING']),
+  "category": zod.enum(['RESEARCH', 'CALL', 'FOLLOW_UP', 'OFFER_APPROVAL', 'NEGOTIATION', 'CONTRACT', 'BUYER_MATCH', 'DEADLINE', 'CLOSING', 'DISCOVERY_REVIEW', 'BUYER_VERIFICATION', 'WORKER']),
   "priority": zod.number().int(),
   "title": zod.string(),
   "href": zod.string(),
@@ -7121,7 +7123,7 @@ export const GetCommandCenterResponse = zod.object({
   "cta": zod.string(),
   "dueAt": zod.string().nullish(),
   "workGuidance": zod.union([zod.object({
-  "category": zod.enum(['RESEARCH', 'CALL', 'FOLLOW_UP', 'OFFER_APPROVAL', 'NEGOTIATION', 'CONTRACT', 'BUYER_MATCH', 'DEADLINE', 'CLOSING']),
+  "category": zod.enum(['RESEARCH', 'CALL', 'FOLLOW_UP', 'OFFER_APPROVAL', 'NEGOTIATION', 'CONTRACT', 'BUYER_MATCH', 'DEADLINE', 'CLOSING', 'DISCOVERY_REVIEW', 'BUYER_VERIFICATION', 'WORKER']),
   "priority": zod.number().int(),
   "title": zod.string(),
   "href": zod.string(),
@@ -7346,7 +7348,7 @@ export const GetCommandCenterResponse = zod.object({
 }))),
   "allowedTransitions": zod.array(zod.enum(['DISCOVERED', 'ENRICHING', 'ANALYZED', 'STRONG', 'NEGOTIABLE', 'PASS', 'CALL_READY', 'CONTACTED', 'CONVERSATION', 'OFFER_READY', 'OFFER_SENT', 'NEGOTIATING', 'CONTRACT_PENDING', 'UNDER_CONTRACT', 'BUYER_MATCHED', 'BUYER_INTERESTED', 'BUYER_COMMITTED', 'CLOSING', 'CLOSED', 'DEAD_DEAL'])),
   "workGuidance": zod.union([zod.object({
-  "category": zod.enum(['RESEARCH', 'CALL', 'FOLLOW_UP', 'OFFER_APPROVAL', 'NEGOTIATION', 'CONTRACT', 'BUYER_MATCH', 'DEADLINE', 'CLOSING']),
+  "category": zod.enum(['RESEARCH', 'CALL', 'FOLLOW_UP', 'OFFER_APPROVAL', 'NEGOTIATION', 'CONTRACT', 'BUYER_MATCH', 'DEADLINE', 'CLOSING', 'DISCOVERY_REVIEW', 'BUYER_VERIFICATION', 'WORKER']),
   "priority": zod.number().int(),
   "title": zod.string(),
   "href": zod.string(),
@@ -7729,7 +7731,7 @@ export const GetCommandCenterResponse = zod.object({
 }))),
   "allowedTransitions": zod.array(zod.enum(['DISCOVERED', 'ENRICHING', 'ANALYZED', 'STRONG', 'NEGOTIABLE', 'PASS', 'CALL_READY', 'CONTACTED', 'CONVERSATION', 'OFFER_READY', 'OFFER_SENT', 'NEGOTIATING', 'CONTRACT_PENDING', 'UNDER_CONTRACT', 'BUYER_MATCHED', 'BUYER_INTERESTED', 'BUYER_COMMITTED', 'CLOSING', 'CLOSED', 'DEAD_DEAL'])),
   "workGuidance": zod.union([zod.object({
-  "category": zod.enum(['RESEARCH', 'CALL', 'FOLLOW_UP', 'OFFER_APPROVAL', 'NEGOTIATION', 'CONTRACT', 'BUYER_MATCH', 'DEADLINE', 'CLOSING']),
+  "category": zod.enum(['RESEARCH', 'CALL', 'FOLLOW_UP', 'OFFER_APPROVAL', 'NEGOTIATION', 'CONTRACT', 'BUYER_MATCH', 'DEADLINE', 'CLOSING', 'DISCOVERY_REVIEW', 'BUYER_VERIFICATION', 'WORKER']),
   "priority": zod.number().int(),
   "title": zod.string(),
   "href": zod.string(),
@@ -8126,7 +8128,7 @@ export const GetCommandCenterResponse = zod.object({
 }))),
   "allowedTransitions": zod.array(zod.enum(['DISCOVERED', 'ENRICHING', 'ANALYZED', 'STRONG', 'NEGOTIABLE', 'PASS', 'CALL_READY', 'CONTACTED', 'CONVERSATION', 'OFFER_READY', 'OFFER_SENT', 'NEGOTIATING', 'CONTRACT_PENDING', 'UNDER_CONTRACT', 'BUYER_MATCHED', 'BUYER_INTERESTED', 'BUYER_COMMITTED', 'CLOSING', 'CLOSED', 'DEAD_DEAL'])),
   "workGuidance": zod.union([zod.object({
-  "category": zod.enum(['RESEARCH', 'CALL', 'FOLLOW_UP', 'OFFER_APPROVAL', 'NEGOTIATION', 'CONTRACT', 'BUYER_MATCH', 'DEADLINE', 'CLOSING']),
+  "category": zod.enum(['RESEARCH', 'CALL', 'FOLLOW_UP', 'OFFER_APPROVAL', 'NEGOTIATION', 'CONTRACT', 'BUYER_MATCH', 'DEADLINE', 'CLOSING', 'DISCOVERY_REVIEW', 'BUYER_VERIFICATION', 'WORKER']),
   "priority": zod.number().int(),
   "title": zod.string(),
   "href": zod.string(),
@@ -8192,8 +8194,10 @@ export const GetCommandCenterResponse = zod.object({
 })),
   "jobs": zod.array(zod.object({
   "id": zod.string(),
-  "kind": zod.enum(['MATCH_BUYERS', 'REVIEW_DEADLINES', 'ENRICH_PROPERTY', 'PREPARE_BRIEF', 'BUYER_DISCOVERY', 'REVIEW_BUYER_POOL', 'REVIEW_HANDOFFS', 'HUMAN_HANDOFF']),
+  "kind": zod.enum(['MATCH_BUYERS', 'REVIEW_DEADLINES', 'ENRICH_PROPERTY', 'PREPARE_BRIEF', 'BUYER_DISCOVERY', 'DISCOVER_PROPERTIES', 'REVIEW_BUYER_POOL', 'REVIEW_HANDOFFS', 'HUMAN_HANDOFF']),
+  "termsReviewed": zod.boolean().optional(),
   "recurringDiscovery": zod.boolean().optional(),
+  "recurringPropertyDiscovery": zod.boolean().optional(),
   "state": zod.enum(['QUEUED', 'RUNNING', 'SUCCEEDED', 'FAILED']),
   "leadId": zod.string().nullable(),
   "requestedBy": zod.string(),
@@ -8336,8 +8340,10 @@ export const GetCommandCenterResponse = zod.object({
 }))),
   "jobs": zod.array(zod.object({
   "id": zod.string(),
-  "kind": zod.enum(['MATCH_BUYERS', 'REVIEW_DEADLINES', 'ENRICH_PROPERTY', 'PREPARE_BRIEF', 'BUYER_DISCOVERY', 'REVIEW_BUYER_POOL', 'REVIEW_HANDOFFS', 'HUMAN_HANDOFF']),
+  "kind": zod.enum(['MATCH_BUYERS', 'REVIEW_DEADLINES', 'ENRICH_PROPERTY', 'PREPARE_BRIEF', 'BUYER_DISCOVERY', 'DISCOVER_PROPERTIES', 'REVIEW_BUYER_POOL', 'REVIEW_HANDOFFS', 'HUMAN_HANDOFF']),
+  "termsReviewed": zod.boolean().optional(),
   "recurringDiscovery": zod.boolean().optional(),
+  "recurringPropertyDiscovery": zod.boolean().optional(),
   "state": zod.enum(['QUEUED', 'RUNNING', 'SUCCEEDED', 'FAILED']),
   "leadId": zod.string().nullable(),
   "requestedBy": zod.string(),
@@ -10839,7 +10845,7 @@ export const GetDealOperationsResponse = zod.object({
 }))),
   "allowedTransitions": zod.array(zod.enum(['DISCOVERED', 'ENRICHING', 'ANALYZED', 'STRONG', 'NEGOTIABLE', 'PASS', 'CALL_READY', 'CONTACTED', 'CONVERSATION', 'OFFER_READY', 'OFFER_SENT', 'NEGOTIATING', 'CONTRACT_PENDING', 'UNDER_CONTRACT', 'BUYER_MATCHED', 'BUYER_INTERESTED', 'BUYER_COMMITTED', 'CLOSING', 'CLOSED', 'DEAD_DEAL'])),
   "workGuidance": zod.union([zod.object({
-  "category": zod.enum(['RESEARCH', 'CALL', 'FOLLOW_UP', 'OFFER_APPROVAL', 'NEGOTIATION', 'CONTRACT', 'BUYER_MATCH', 'DEADLINE', 'CLOSING']),
+  "category": zod.enum(['RESEARCH', 'CALL', 'FOLLOW_UP', 'OFFER_APPROVAL', 'NEGOTIATION', 'CONTRACT', 'BUYER_MATCH', 'DEADLINE', 'CLOSING', 'DISCOVERY_REVIEW', 'BUYER_VERIFICATION', 'WORKER']),
   "priority": zod.number().int(),
   "title": zod.string(),
   "href": zod.string(),
@@ -10905,8 +10911,10 @@ export const GetDealOperationsResponse = zod.object({
 })),
   "jobs": zod.array(zod.object({
   "id": zod.string(),
-  "kind": zod.enum(['MATCH_BUYERS', 'REVIEW_DEADLINES', 'ENRICH_PROPERTY', 'PREPARE_BRIEF', 'BUYER_DISCOVERY', 'REVIEW_BUYER_POOL', 'REVIEW_HANDOFFS', 'HUMAN_HANDOFF']),
+  "kind": zod.enum(['MATCH_BUYERS', 'REVIEW_DEADLINES', 'ENRICH_PROPERTY', 'PREPARE_BRIEF', 'BUYER_DISCOVERY', 'DISCOVER_PROPERTIES', 'REVIEW_BUYER_POOL', 'REVIEW_HANDOFFS', 'HUMAN_HANDOFF']),
+  "termsReviewed": zod.boolean().optional(),
   "recurringDiscovery": zod.boolean().optional(),
+  "recurringPropertyDiscovery": zod.boolean().optional(),
   "state": zod.enum(['QUEUED', 'RUNNING', 'SUCCEEDED', 'FAILED']),
   "leadId": zod.string().nullable(),
   "requestedBy": zod.string(),
@@ -11625,7 +11633,7 @@ export const RefreshMatchesResponse = zod.object({
 }))),
   "allowedTransitions": zod.array(zod.enum(['DISCOVERED', 'ENRICHING', 'ANALYZED', 'STRONG', 'NEGOTIABLE', 'PASS', 'CALL_READY', 'CONTACTED', 'CONVERSATION', 'OFFER_READY', 'OFFER_SENT', 'NEGOTIATING', 'CONTRACT_PENDING', 'UNDER_CONTRACT', 'BUYER_MATCHED', 'BUYER_INTERESTED', 'BUYER_COMMITTED', 'CLOSING', 'CLOSED', 'DEAD_DEAL'])),
   "workGuidance": zod.union([zod.object({
-  "category": zod.enum(['RESEARCH', 'CALL', 'FOLLOW_UP', 'OFFER_APPROVAL', 'NEGOTIATION', 'CONTRACT', 'BUYER_MATCH', 'DEADLINE', 'CLOSING']),
+  "category": zod.enum(['RESEARCH', 'CALL', 'FOLLOW_UP', 'OFFER_APPROVAL', 'NEGOTIATION', 'CONTRACT', 'BUYER_MATCH', 'DEADLINE', 'CLOSING', 'DISCOVERY_REVIEW', 'BUYER_VERIFICATION', 'WORKER']),
   "priority": zod.number().int(),
   "title": zod.string(),
   "href": zod.string(),
@@ -11691,8 +11699,10 @@ export const RefreshMatchesResponse = zod.object({
 })),
   "jobs": zod.array(zod.object({
   "id": zod.string(),
-  "kind": zod.enum(['MATCH_BUYERS', 'REVIEW_DEADLINES', 'ENRICH_PROPERTY', 'PREPARE_BRIEF', 'BUYER_DISCOVERY', 'REVIEW_BUYER_POOL', 'REVIEW_HANDOFFS', 'HUMAN_HANDOFF']),
+  "kind": zod.enum(['MATCH_BUYERS', 'REVIEW_DEADLINES', 'ENRICH_PROPERTY', 'PREPARE_BRIEF', 'BUYER_DISCOVERY', 'DISCOVER_PROPERTIES', 'REVIEW_BUYER_POOL', 'REVIEW_HANDOFFS', 'HUMAN_HANDOFF']),
+  "termsReviewed": zod.boolean().optional(),
   "recurringDiscovery": zod.boolean().optional(),
+  "recurringPropertyDiscovery": zod.boolean().optional(),
   "state": zod.enum(['QUEUED', 'RUNNING', 'SUCCEEDED', 'FAILED']),
   "leadId": zod.string().nullable(),
   "requestedBy": zod.string(),
@@ -12433,7 +12443,7 @@ export const RecordBuyerResponseResponse = zod.object({
 }))),
   "allowedTransitions": zod.array(zod.enum(['DISCOVERED', 'ENRICHING', 'ANALYZED', 'STRONG', 'NEGOTIABLE', 'PASS', 'CALL_READY', 'CONTACTED', 'CONVERSATION', 'OFFER_READY', 'OFFER_SENT', 'NEGOTIATING', 'CONTRACT_PENDING', 'UNDER_CONTRACT', 'BUYER_MATCHED', 'BUYER_INTERESTED', 'BUYER_COMMITTED', 'CLOSING', 'CLOSED', 'DEAD_DEAL'])),
   "workGuidance": zod.union([zod.object({
-  "category": zod.enum(['RESEARCH', 'CALL', 'FOLLOW_UP', 'OFFER_APPROVAL', 'NEGOTIATION', 'CONTRACT', 'BUYER_MATCH', 'DEADLINE', 'CLOSING']),
+  "category": zod.enum(['RESEARCH', 'CALL', 'FOLLOW_UP', 'OFFER_APPROVAL', 'NEGOTIATION', 'CONTRACT', 'BUYER_MATCH', 'DEADLINE', 'CLOSING', 'DISCOVERY_REVIEW', 'BUYER_VERIFICATION', 'WORKER']),
   "priority": zod.number().int(),
   "title": zod.string(),
   "href": zod.string(),
@@ -12499,8 +12509,10 @@ export const RecordBuyerResponseResponse = zod.object({
 })),
   "jobs": zod.array(zod.object({
   "id": zod.string(),
-  "kind": zod.enum(['MATCH_BUYERS', 'REVIEW_DEADLINES', 'ENRICH_PROPERTY', 'PREPARE_BRIEF', 'BUYER_DISCOVERY', 'REVIEW_BUYER_POOL', 'REVIEW_HANDOFFS', 'HUMAN_HANDOFF']),
+  "kind": zod.enum(['MATCH_BUYERS', 'REVIEW_DEADLINES', 'ENRICH_PROPERTY', 'PREPARE_BRIEF', 'BUYER_DISCOVERY', 'DISCOVER_PROPERTIES', 'REVIEW_BUYER_POOL', 'REVIEW_HANDOFFS', 'HUMAN_HANDOFF']),
+  "termsReviewed": zod.boolean().optional(),
   "recurringDiscovery": zod.boolean().optional(),
+  "recurringPropertyDiscovery": zod.boolean().optional(),
   "state": zod.enum(['QUEUED', 'RUNNING', 'SUCCEEDED', 'FAILED']),
   "leadId": zod.string().nullable(),
   "requestedBy": zod.string(),
@@ -13937,7 +13949,7 @@ export const RecordDestinationActivityResponse = zod.object({
 }))),
   "allowedTransitions": zod.array(zod.enum(['DISCOVERED', 'ENRICHING', 'ANALYZED', 'STRONG', 'NEGOTIABLE', 'PASS', 'CALL_READY', 'CONTACTED', 'CONVERSATION', 'OFFER_READY', 'OFFER_SENT', 'NEGOTIATING', 'CONTRACT_PENDING', 'UNDER_CONTRACT', 'BUYER_MATCHED', 'BUYER_INTERESTED', 'BUYER_COMMITTED', 'CLOSING', 'CLOSED', 'DEAD_DEAL'])),
   "workGuidance": zod.union([zod.object({
-  "category": zod.enum(['RESEARCH', 'CALL', 'FOLLOW_UP', 'OFFER_APPROVAL', 'NEGOTIATION', 'CONTRACT', 'BUYER_MATCH', 'DEADLINE', 'CLOSING']),
+  "category": zod.enum(['RESEARCH', 'CALL', 'FOLLOW_UP', 'OFFER_APPROVAL', 'NEGOTIATION', 'CONTRACT', 'BUYER_MATCH', 'DEADLINE', 'CLOSING', 'DISCOVERY_REVIEW', 'BUYER_VERIFICATION', 'WORKER']),
   "priority": zod.number().int(),
   "title": zod.string(),
   "href": zod.string(),
@@ -14003,8 +14015,10 @@ export const RecordDestinationActivityResponse = zod.object({
 })),
   "jobs": zod.array(zod.object({
   "id": zod.string(),
-  "kind": zod.enum(['MATCH_BUYERS', 'REVIEW_DEADLINES', 'ENRICH_PROPERTY', 'PREPARE_BRIEF', 'BUYER_DISCOVERY', 'REVIEW_BUYER_POOL', 'REVIEW_HANDOFFS', 'HUMAN_HANDOFF']),
+  "kind": zod.enum(['MATCH_BUYERS', 'REVIEW_DEADLINES', 'ENRICH_PROPERTY', 'PREPARE_BRIEF', 'BUYER_DISCOVERY', 'DISCOVER_PROPERTIES', 'REVIEW_BUYER_POOL', 'REVIEW_HANDOFFS', 'HUMAN_HANDOFF']),
+  "termsReviewed": zod.boolean().optional(),
   "recurringDiscovery": zod.boolean().optional(),
+  "recurringPropertyDiscovery": zod.boolean().optional(),
   "state": zod.enum(['QUEUED', 'RUNNING', 'SUCCEEDED', 'FAILED']),
   "leadId": zod.string().nullable(),
   "requestedBy": zod.string(),
@@ -14732,7 +14746,7 @@ export const CreateContractResponse = zod.object({
 }))),
   "allowedTransitions": zod.array(zod.enum(['DISCOVERED', 'ENRICHING', 'ANALYZED', 'STRONG', 'NEGOTIABLE', 'PASS', 'CALL_READY', 'CONTACTED', 'CONVERSATION', 'OFFER_READY', 'OFFER_SENT', 'NEGOTIATING', 'CONTRACT_PENDING', 'UNDER_CONTRACT', 'BUYER_MATCHED', 'BUYER_INTERESTED', 'BUYER_COMMITTED', 'CLOSING', 'CLOSED', 'DEAD_DEAL'])),
   "workGuidance": zod.union([zod.object({
-  "category": zod.enum(['RESEARCH', 'CALL', 'FOLLOW_UP', 'OFFER_APPROVAL', 'NEGOTIATION', 'CONTRACT', 'BUYER_MATCH', 'DEADLINE', 'CLOSING']),
+  "category": zod.enum(['RESEARCH', 'CALL', 'FOLLOW_UP', 'OFFER_APPROVAL', 'NEGOTIATION', 'CONTRACT', 'BUYER_MATCH', 'DEADLINE', 'CLOSING', 'DISCOVERY_REVIEW', 'BUYER_VERIFICATION', 'WORKER']),
   "priority": zod.number().int(),
   "title": zod.string(),
   "href": zod.string(),
@@ -14798,8 +14812,10 @@ export const CreateContractResponse = zod.object({
 })),
   "jobs": zod.array(zod.object({
   "id": zod.string(),
-  "kind": zod.enum(['MATCH_BUYERS', 'REVIEW_DEADLINES', 'ENRICH_PROPERTY', 'PREPARE_BRIEF', 'BUYER_DISCOVERY', 'REVIEW_BUYER_POOL', 'REVIEW_HANDOFFS', 'HUMAN_HANDOFF']),
+  "kind": zod.enum(['MATCH_BUYERS', 'REVIEW_DEADLINES', 'ENRICH_PROPERTY', 'PREPARE_BRIEF', 'BUYER_DISCOVERY', 'DISCOVER_PROPERTIES', 'REVIEW_BUYER_POOL', 'REVIEW_HANDOFFS', 'HUMAN_HANDOFF']),
+  "termsReviewed": zod.boolean().optional(),
   "recurringDiscovery": zod.boolean().optional(),
+  "recurringPropertyDiscovery": zod.boolean().optional(),
   "state": zod.enum(['QUEUED', 'RUNNING', 'SUCCEEDED', 'FAILED']),
   "leadId": zod.string().nullable(),
   "requestedBy": zod.string(),
@@ -15535,7 +15551,7 @@ export const ExecuteContractResponse = zod.object({
 }))),
   "allowedTransitions": zod.array(zod.enum(['DISCOVERED', 'ENRICHING', 'ANALYZED', 'STRONG', 'NEGOTIABLE', 'PASS', 'CALL_READY', 'CONTACTED', 'CONVERSATION', 'OFFER_READY', 'OFFER_SENT', 'NEGOTIATING', 'CONTRACT_PENDING', 'UNDER_CONTRACT', 'BUYER_MATCHED', 'BUYER_INTERESTED', 'BUYER_COMMITTED', 'CLOSING', 'CLOSED', 'DEAD_DEAL'])),
   "workGuidance": zod.union([zod.object({
-  "category": zod.enum(['RESEARCH', 'CALL', 'FOLLOW_UP', 'OFFER_APPROVAL', 'NEGOTIATION', 'CONTRACT', 'BUYER_MATCH', 'DEADLINE', 'CLOSING']),
+  "category": zod.enum(['RESEARCH', 'CALL', 'FOLLOW_UP', 'OFFER_APPROVAL', 'NEGOTIATION', 'CONTRACT', 'BUYER_MATCH', 'DEADLINE', 'CLOSING', 'DISCOVERY_REVIEW', 'BUYER_VERIFICATION', 'WORKER']),
   "priority": zod.number().int(),
   "title": zod.string(),
   "href": zod.string(),
@@ -15601,8 +15617,10 @@ export const ExecuteContractResponse = zod.object({
 })),
   "jobs": zod.array(zod.object({
   "id": zod.string(),
-  "kind": zod.enum(['MATCH_BUYERS', 'REVIEW_DEADLINES', 'ENRICH_PROPERTY', 'PREPARE_BRIEF', 'BUYER_DISCOVERY', 'REVIEW_BUYER_POOL', 'REVIEW_HANDOFFS', 'HUMAN_HANDOFF']),
+  "kind": zod.enum(['MATCH_BUYERS', 'REVIEW_DEADLINES', 'ENRICH_PROPERTY', 'PREPARE_BRIEF', 'BUYER_DISCOVERY', 'DISCOVER_PROPERTIES', 'REVIEW_BUYER_POOL', 'REVIEW_HANDOFFS', 'HUMAN_HANDOFF']),
+  "termsReviewed": zod.boolean().optional(),
   "recurringDiscovery": zod.boolean().optional(),
+  "recurringPropertyDiscovery": zod.boolean().optional(),
   "state": zod.enum(['QUEUED', 'RUNNING', 'SUCCEEDED', 'FAILED']),
   "leadId": zod.string().nullable(),
   "requestedBy": zod.string(),
@@ -16337,7 +16355,7 @@ export const RecordClosingMilestoneResponse = zod.object({
 }))),
   "allowedTransitions": zod.array(zod.enum(['DISCOVERED', 'ENRICHING', 'ANALYZED', 'STRONG', 'NEGOTIABLE', 'PASS', 'CALL_READY', 'CONTACTED', 'CONVERSATION', 'OFFER_READY', 'OFFER_SENT', 'NEGOTIATING', 'CONTRACT_PENDING', 'UNDER_CONTRACT', 'BUYER_MATCHED', 'BUYER_INTERESTED', 'BUYER_COMMITTED', 'CLOSING', 'CLOSED', 'DEAD_DEAL'])),
   "workGuidance": zod.union([zod.object({
-  "category": zod.enum(['RESEARCH', 'CALL', 'FOLLOW_UP', 'OFFER_APPROVAL', 'NEGOTIATION', 'CONTRACT', 'BUYER_MATCH', 'DEADLINE', 'CLOSING']),
+  "category": zod.enum(['RESEARCH', 'CALL', 'FOLLOW_UP', 'OFFER_APPROVAL', 'NEGOTIATION', 'CONTRACT', 'BUYER_MATCH', 'DEADLINE', 'CLOSING', 'DISCOVERY_REVIEW', 'BUYER_VERIFICATION', 'WORKER']),
   "priority": zod.number().int(),
   "title": zod.string(),
   "href": zod.string(),
@@ -16403,8 +16421,10 @@ export const RecordClosingMilestoneResponse = zod.object({
 })),
   "jobs": zod.array(zod.object({
   "id": zod.string(),
-  "kind": zod.enum(['MATCH_BUYERS', 'REVIEW_DEADLINES', 'ENRICH_PROPERTY', 'PREPARE_BRIEF', 'BUYER_DISCOVERY', 'REVIEW_BUYER_POOL', 'REVIEW_HANDOFFS', 'HUMAN_HANDOFF']),
+  "kind": zod.enum(['MATCH_BUYERS', 'REVIEW_DEADLINES', 'ENRICH_PROPERTY', 'PREPARE_BRIEF', 'BUYER_DISCOVERY', 'DISCOVER_PROPERTIES', 'REVIEW_BUYER_POOL', 'REVIEW_HANDOFFS', 'HUMAN_HANDOFF']),
+  "termsReviewed": zod.boolean().optional(),
   "recurringDiscovery": zod.boolean().optional(),
+  "recurringPropertyDiscovery": zod.boolean().optional(),
   "state": zod.enum(['QUEUED', 'RUNNING', 'SUCCEEDED', 'FAILED']),
   "leadId": zod.string().nullable(),
   "requestedBy": zod.string(),
@@ -17152,7 +17172,7 @@ export const RecordDealOutcomeResponse = zod.object({
 }))),
   "allowedTransitions": zod.array(zod.enum(['DISCOVERED', 'ENRICHING', 'ANALYZED', 'STRONG', 'NEGOTIABLE', 'PASS', 'CALL_READY', 'CONTACTED', 'CONVERSATION', 'OFFER_READY', 'OFFER_SENT', 'NEGOTIATING', 'CONTRACT_PENDING', 'UNDER_CONTRACT', 'BUYER_MATCHED', 'BUYER_INTERESTED', 'BUYER_COMMITTED', 'CLOSING', 'CLOSED', 'DEAD_DEAL'])),
   "workGuidance": zod.union([zod.object({
-  "category": zod.enum(['RESEARCH', 'CALL', 'FOLLOW_UP', 'OFFER_APPROVAL', 'NEGOTIATION', 'CONTRACT', 'BUYER_MATCH', 'DEADLINE', 'CLOSING']),
+  "category": zod.enum(['RESEARCH', 'CALL', 'FOLLOW_UP', 'OFFER_APPROVAL', 'NEGOTIATION', 'CONTRACT', 'BUYER_MATCH', 'DEADLINE', 'CLOSING', 'DISCOVERY_REVIEW', 'BUYER_VERIFICATION', 'WORKER']),
   "priority": zod.number().int(),
   "title": zod.string(),
   "href": zod.string(),
@@ -17218,8 +17238,10 @@ export const RecordDealOutcomeResponse = zod.object({
 })),
   "jobs": zod.array(zod.object({
   "id": zod.string(),
-  "kind": zod.enum(['MATCH_BUYERS', 'REVIEW_DEADLINES', 'ENRICH_PROPERTY', 'PREPARE_BRIEF', 'BUYER_DISCOVERY', 'REVIEW_BUYER_POOL', 'REVIEW_HANDOFFS', 'HUMAN_HANDOFF']),
+  "kind": zod.enum(['MATCH_BUYERS', 'REVIEW_DEADLINES', 'ENRICH_PROPERTY', 'PREPARE_BRIEF', 'BUYER_DISCOVERY', 'DISCOVER_PROPERTIES', 'REVIEW_BUYER_POOL', 'REVIEW_HANDOFFS', 'HUMAN_HANDOFF']),
+  "termsReviewed": zod.boolean().optional(),
   "recurringDiscovery": zod.boolean().optional(),
+  "recurringPropertyDiscovery": zod.boolean().optional(),
   "state": zod.enum(['QUEUED', 'RUNNING', 'SUCCEEDED', 'FAILED']),
   "leadId": zod.string().nullable(),
   "requestedBy": zod.string(),
@@ -17662,8 +17684,10 @@ export const RecordHandoffEventResponse = zod.object({
 
 export const ListWorkerJobsResponseItem = zod.object({
   "id": zod.string(),
-  "kind": zod.enum(['MATCH_BUYERS', 'REVIEW_DEADLINES', 'ENRICH_PROPERTY', 'PREPARE_BRIEF', 'BUYER_DISCOVERY', 'REVIEW_BUYER_POOL', 'REVIEW_HANDOFFS', 'HUMAN_HANDOFF']),
+  "kind": zod.enum(['MATCH_BUYERS', 'REVIEW_DEADLINES', 'ENRICH_PROPERTY', 'PREPARE_BRIEF', 'BUYER_DISCOVERY', 'DISCOVER_PROPERTIES', 'REVIEW_BUYER_POOL', 'REVIEW_HANDOFFS', 'HUMAN_HANDOFF']),
+  "termsReviewed": zod.boolean().optional(),
   "recurringDiscovery": zod.boolean().optional(),
+  "recurringPropertyDiscovery": zod.boolean().optional(),
   "state": zod.enum(['QUEUED', 'RUNNING', 'SUCCEEDED', 'FAILED']),
   "leadId": zod.string().nullable(),
   "requestedBy": zod.string(),
@@ -17681,17 +17705,20 @@ export const submitWorkerJobBodyIdempotencyKeyMax = 200;
 
 
 export const SubmitWorkerJobBody = zod.object({
-  "kind": zod.enum(['MATCH_BUYERS', 'REVIEW_DEADLINES', 'ENRICH_PROPERTY', 'PREPARE_BRIEF', 'BUYER_DISCOVERY', 'REVIEW_BUYER_POOL', 'REVIEW_HANDOFFS']),
+  "kind": zod.enum(['MATCH_BUYERS', 'REVIEW_DEADLINES', 'ENRICH_PROPERTY', 'PREPARE_BRIEF', 'BUYER_DISCOVERY', 'DISCOVER_PROPERTIES', 'REVIEW_BUYER_POOL', 'REVIEW_HANDOFFS']),
   "leadId": zod.string().optional(),
   "termsReviewed": zod.boolean().optional(),
   "recurringDiscovery": zod.boolean().optional(),
+  "recurringPropertyDiscovery": zod.boolean().optional(),
   "idempotencyKey": zod.string().min(submitWorkerJobBodyIdempotencyKeyMin).max(submitWorkerJobBodyIdempotencyKeyMax)
 })
 
 export const SubmitWorkerJobResponse = zod.object({
   "id": zod.string(),
-  "kind": zod.enum(['MATCH_BUYERS', 'REVIEW_DEADLINES', 'ENRICH_PROPERTY', 'PREPARE_BRIEF', 'BUYER_DISCOVERY', 'REVIEW_BUYER_POOL', 'REVIEW_HANDOFFS', 'HUMAN_HANDOFF']),
+  "kind": zod.enum(['MATCH_BUYERS', 'REVIEW_DEADLINES', 'ENRICH_PROPERTY', 'PREPARE_BRIEF', 'BUYER_DISCOVERY', 'DISCOVER_PROPERTIES', 'REVIEW_BUYER_POOL', 'REVIEW_HANDOFFS', 'HUMAN_HANDOFF']),
+  "termsReviewed": zod.boolean().optional(),
   "recurringDiscovery": zod.boolean().optional(),
+  "recurringPropertyDiscovery": zod.boolean().optional(),
   "state": zod.enum(['QUEUED', 'RUNNING', 'SUCCEEDED', 'FAILED']),
   "leadId": zod.string().nullable(),
   "requestedBy": zod.string(),
@@ -19034,7 +19061,7 @@ export const AddSourceCompsResponse = zod.object({
 }))),
   "allowedTransitions": zod.array(zod.enum(['DISCOVERED', 'ENRICHING', 'ANALYZED', 'STRONG', 'NEGOTIABLE', 'PASS', 'CALL_READY', 'CONTACTED', 'CONVERSATION', 'OFFER_READY', 'OFFER_SENT', 'NEGOTIATING', 'CONTRACT_PENDING', 'UNDER_CONTRACT', 'BUYER_MATCHED', 'BUYER_INTERESTED', 'BUYER_COMMITTED', 'CLOSING', 'CLOSED', 'DEAD_DEAL'])),
   "workGuidance": zod.union([zod.object({
-  "category": zod.enum(['RESEARCH', 'CALL', 'FOLLOW_UP', 'OFFER_APPROVAL', 'NEGOTIATION', 'CONTRACT', 'BUYER_MATCH', 'DEADLINE', 'CLOSING']),
+  "category": zod.enum(['RESEARCH', 'CALL', 'FOLLOW_UP', 'OFFER_APPROVAL', 'NEGOTIATION', 'CONTRACT', 'BUYER_MATCH', 'DEADLINE', 'CLOSING', 'DISCOVERY_REVIEW', 'BUYER_VERIFICATION', 'WORKER']),
   "priority": zod.number().int(),
   "title": zod.string(),
   "href": zod.string(),

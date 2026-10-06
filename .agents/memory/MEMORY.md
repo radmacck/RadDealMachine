@@ -6,3 +6,4 @@
 - [Executed transaction boundaries](executed-transactions.md) — supplemental reasoning and ordinary coordination cannot erase financial authority or external commitments.
 - [Isolated persistence exercises](isolated-service-exercises.md) — isolate every pooled connection and preserve relational constraints without mutating real workspace records.
 - [Durable execution identity](execution-identity.md) — semantic retry equality across JSONB; routine matching revisions must not replace unchanged outreach intent.
+- [App Storage resource limits](app-storage-resource-limits.md) — if managed storage setup is denied, do not silently substitute temporary files for persistent property media.

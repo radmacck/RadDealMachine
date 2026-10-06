@@ -16,6 +16,7 @@ const KIND: Record<WorkerJobInputKind, string> = {
   REVIEW_HANDOFFS:'Review overdue human handoffs',
   MATCH_BUYERS:'Match buyers to deals',REVIEW_DEADLINES:'Review contract deadlines',
   BUYER_DISCOVERY:'Discover corporate-owner buyer prospects',REVIEW_BUYER_POOL:'Review buyer pool freshness',
+  DISCOVER_PROPERTIES:'Discover Philadelphia property records',
   ENRICH_PROPERTY:'Check public address geography',PREPARE_BRIEF:'Prepare AI hypotheses and seller questions',
 };
 const STATE_TONE: Record<WorkerJob['state'], string> = { QUEUED: 'tone-muted', RUNNING: 'tone-warn', SUCCEEDED: 'tone-go', FAILED: 'tone-stop' };
@@ -172,8 +173,18 @@ export default function Workers() {
   const submit = useSubmitWorkerJob();
   const caps = useGetWorkerCapabilities({ query: { queryKey: getGetWorkerCapabilitiesQueryKey(), staleTime: 30_000 } });
 
-  const queue = (k: WorkerJobInputKind, lead: string | null, idem: string, retry = false) =>
-    submit.mutate({ data: { kind: k, idempotencyKey: idem, ...(lead ? { leadId: lead } : {}), ...(k === 'BUYER_DISCOVERY' ? { termsReviewed: terms, recurringDiscovery: recurring } : {}) } }, {
+  const queue = (k: WorkerJobInputKind, lead: string | null, idem: string, retry = false, prior?: WorkerJob) =>
+    submit.mutate({ data: {
+      kind: k, idempotencyKey: idem, ...(lead ? { leadId: lead } : {}),
+      ...(k === 'BUYER_DISCOVERY' ? {
+        termsReviewed: retry ? prior?.termsReviewed === true : terms,
+        recurringDiscovery: retry ? prior?.recurringDiscovery === true : recurring,
+      } : {}),
+      ...(k === 'DISCOVER_PROPERTIES' ? {
+        termsReviewed: retry ? prior?.termsReviewed === true : terms,
+        recurringPropertyDiscovery: retry ? prior?.recurringPropertyDiscovery === true : recurring,
+      } : {}),
+    } }, {
       onSuccess: () => { invalidate(lead ?? undefined); if (!retry) setKey(newKey()); toast({ title: retry ? 'Retry queued' : 'Job queued', description: KIND[k] }); },
     });
 
@@ -183,7 +194,7 @@ export default function Workers() {
       <div className="mb-6 grid gap-4 lg:grid-cols-[1fr_22rem]">
         <section className="ledger p-4" data-testid="panel-worker-scope">
           <p className="eyebrow mb-2">What runs today</p>
-          <p className="text-sm">Matching and deadline checks recur every five minutes. New intake queues a public Census address check. Reviewed underwriting and connected seller calls queue AI hypotheses, questions and human verification actions. Jobs persist, show attempts and results, and failed work can be retried.</p>
+          <p className="text-sm">Matching and deadline checks recur every five minutes. Reviewed Philadelphia property discovery can recur every six hours, storing raw records and qualified candidates without creating leads. New intake queues a public Census address check. Jobs persist, show attempts and results, and failed work can be retried.</p>
           <p className="mt-2 text-sm text-muted-foreground">OpenAI runs use Replit AI Integrations and are billed to your credits. Prepared briefs are capped at six jobs per deal per UTC day. Model output remains AI HYPOTHESIS, never verified facts or permission to quote.</p>
           <p className="mt-2 border-l-2 border-dashed border-border pl-3 text-sm text-muted-foreground" data-testid="text-unsupported">Official Philadelphia public-property and sale-candidate research is available in Sources. Corporate-owner discovery produces unverified prospects, not active buyers. Nationwide listing/comparable feeds, verified title ownership and restricted-site scraping are not connected. No job sends messages, signs documents or transfers funds.</p>
         </section>
@@ -195,9 +206,12 @@ export default function Workers() {
             {kind === 'BUYER_DISCOVERY' && <div className="space-y-2 text-sm">
               <label className="flex items-start gap-2"><input type="checkbox" className="mt-1 h-4 w-4" checked={terms} onChange={(e) => setTerms(e.target.checked)} data-testid="check-worker-terms" />I reviewed the source terms. Found prospects are unverified and never auto-approved.</label>
               <label className="flex items-start gap-2"><input type="checkbox" className="mt-1 h-4 w-4" checked={recurring} onChange={(e) => setRecurring(e.target.checked)} data-testid="check-worker-recurring" />Repeat every 6 hours. The latest manual run with this unchecked turns recurrence off.</label></div>}
+            {kind === 'DISCOVER_PROPERTIES' && <div className="space-y-2 text-sm">
+              <label className="flex items-start gap-2"><input type="checkbox" className="mt-1 h-4 w-4" checked={terms} onChange={(e) => setTerms(e.target.checked)} data-testid="check-property-source-terms" />I reviewed the Philadelphia OPA source terms. Records describe properties, not seller motivation or availability.</label>
+              <label className="flex items-start gap-2"><input type="checkbox" className="mt-1 h-4 w-4" checked={recurring} onChange={(e) => setRecurring(e.target.checked)} data-testid="check-property-recurring" />Repeat every 6 hours. The latest manual run with this unchecked turns recurrence off.</label></div>}
             {kind === 'REVIEW_BUYER_POOL' && <p className="text-xs text-muted-foreground">Also runs automatically on a recurring schedule.</p>}
             {submit.error != null && <ErrorNotice error={submit.error} />}
-            <Button disabled={!can || submit.isPending || (['ENRICH_PROPERTY','PREPARE_BRIEF'].includes(kind) && !leadId) || (kind === 'BUYER_DISCOVERY' && !terms)} onClick={() => queue(kind, ['BUYER_DISCOVERY','REVIEW_BUYER_POOL'].includes(kind) ? null : leadId || null, key)} data-testid="button-queue-job">{submit.isPending ? 'Queuing...' : 'Queue job'}</Button>
+            <Button disabled={!can || submit.isPending || (['ENRICH_PROPERTY','PREPARE_BRIEF'].includes(kind) && !leadId) || (['BUYER_DISCOVERY','DISCOVER_PROPERTIES'].includes(kind) && !terms)} onClick={() => queue(kind, ['BUYER_DISCOVERY','DISCOVER_PROPERTIES','REVIEW_BUYER_POOL'].includes(kind) ? null : leadId || null, key)} data-testid="button-queue-job">{submit.isPending ? 'Queuing...' : 'Queue job'}</Button>
           </div>
         </section>
       </div>
@@ -221,7 +235,7 @@ export default function Workers() {
               <p className="font-mono text-[11px] text-muted-foreground">{j.attempts} attempt{j.attempts === 1 ? '' : 's'} / by {j.requestedBy} / {fmtDate(j.createdAt)} / updated {ago(j.updatedAt)}</p></div>
             {j.leadId && <Link href={`/deals/${j.leadId}?work=transaction`} className="text-sm underline" data-testid={`link-job-deal-${j.id}`}>Open deal</Link>}
             {j.kind === 'HUMAN_HANDOFF' && <span className="text-xs text-muted-foreground">Output only</span>}
-            {j.state === 'FAILED' && j.kind !== 'HUMAN_HANDOFF' && <Button size="sm" variant="outline" disabled={!can || submit.isPending} onClick={() => queue(j.kind as WorkerJobInputKind, j.leadId, newKey(), true)} data-testid={`button-retry-job-${j.id}`}><RotateCw className="mr-1.5 h-3.5 w-3.5" />Queue retry</Button>}
+            {j.state === 'FAILED' && j.kind !== 'HUMAN_HANDOFF' && <Button size="sm" variant="outline" disabled={!can || submit.isPending} onClick={() => queue(j.kind as WorkerJobInputKind, j.leadId, newKey(), true, j)} data-testid={`button-retry-job-${j.id}`}><RotateCw className="mr-1.5 h-3.5 w-3.5" />Queue retry</Button>}
           </li>))}</ul>
       )}
     </div>

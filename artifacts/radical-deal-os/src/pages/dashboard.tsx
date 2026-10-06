@@ -125,13 +125,13 @@ export default function Dashboard() {
                           </div>
                           {action.workGuidance.knownFacts.length > 0 && <p><b>Known:</b> {action.workGuidance.knownFacts.join(' · ')}</p>}
                           {action.workGuidance.missingFacts.length > 0 && <p className="fd-work-guidance-missing"><b>Missing / blocked:</b> {action.workGuidance.missingFacts.join(' · ')}</p>}
+                          <p><b>Why this matters:</b> {action.workGuidance.why}</p>
+                          <p><b>Can happen now:</b> {action.workGuidance.systemCanDo}</p>
+                          <p><b>You must do:</b> {action.workGuidance.humanMustDo}</p>
+                          <p><b>What happens next:</b> {action.workGuidance.completionRecord}</p>
                           <details className="fd-work-guidance-detail">
-                            <summary>What the system can do, what you must do, and how it is recorded</summary>
-                            <p><b>Why this matters:</b> {action.workGuidance.why}</p>
-                            <p><b>System:</b> {action.workGuidance.systemCanDo}</p>
-                            <p><b>You:</b> {action.workGuidance.humanMustDo}</p>
+                            <summary>Evidence needed to complete this action</summary>
                             <p><b>Evidence to record:</b> {action.workGuidance.requiredEvidence.join(' · ')}</p>
-                            <p><b>Completion record:</b> {action.workGuidance.completionRecord}</p>
                           </details>
                         </div>
                       )}

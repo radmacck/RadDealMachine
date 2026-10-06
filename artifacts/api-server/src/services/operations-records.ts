@@ -30,9 +30,13 @@ export async function getContractRecord(id: string, database: Store = db) {
   return row?contractRecord(row):null;
 }
 export function jobRecord(row: typeof jobsTable.$inferSelect) {
-  return ListWorkerJobsResponse.element.parse({...row,recurringDiscovery:row.payload.recurringDiscovery===true,createdAt:row.createdAt.toISOString(),updatedAt:row.updatedAt.toISOString()});
+  return ListWorkerJobsResponse.element.parse({...row,
+    termsReviewed:row.payload.termsReviewed===true,
+    recurringDiscovery:row.payload.recurringDiscovery===true,
+    recurringPropertyDiscovery:row.payload.recurringPropertyDiscovery===true,
+    createdAt:row.createdAt.toISOString(),updatedAt:row.updatedAt.toISOString()});
 }
-export async function queueJob(tx: Store, kind: "MATCH_BUYERS"|"REVIEW_DEADLINES"|"ENRICH_PROPERTY"|"PREPARE_BRIEF"|"BUYER_DISCOVERY"|"REVIEW_BUYER_POOL"|"REVIEW_HANDOFFS", leadId: string|null, key: string, requestedBy: string, payload:Record<string,unknown> = {}) {
+export async function queueJob(tx: Store, kind: "MATCH_BUYERS"|"REVIEW_DEADLINES"|"ENRICH_PROPERTY"|"PREPARE_BRIEF"|"BUYER_DISCOVERY"|"DISCOVER_PROPERTIES"|"REVIEW_BUYER_POOL"|"REVIEW_HANDOFFS", leadId: string|null, key: string, requestedBy: string, payload:Record<string,unknown> = {}) {
   let budgetReached = false;
   if (kind==="PREPARE_BRIEF"&&leadId) {
     const since = new Date(); since.setUTCHours(0,0,0,0);

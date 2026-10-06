@@ -9,6 +9,7 @@ import { refreshMatches, refreshAllMatches } from "./matching-store";
 import { listLeads, leadDetail } from "./deal-store";
 import { logger } from "../lib/logger";
 import { discoverPublicBuyers, reviewBuyerPool } from "./buyer-pool";
+import { discoverPublicProperties } from "./property-discovery-worker";
 import { reviewHandoffs } from "./handoffs";
 
 export async function listWorkerJobs() {
@@ -19,11 +20,16 @@ export async function submitWorkerJob(input: z.infer<typeof SubmitWorkerJobBody>
   const parsed = SubmitWorkerJobBody.parse(input);
   if (["ENRICH_PROPERTY","PREPARE_BRIEF"].includes(parsed.kind)&&!parsed.leadId) throw new DomainError("Address checks and prepared briefs require one selected deal.");
   if (parsed.leadId) await leadDetail(parsed.leadId);
-  if (parsed.kind==="BUYER_DISCOVERY"&&(!parsed.termsReviewed||parsed.leadId)) throw new DomainError("Buyer discovery requires reviewed source terms and cannot target a seller lead.");
+  if (["BUYER_DISCOVERY","DISCOVER_PROPERTIES"].includes(parsed.kind)&&(!parsed.termsReviewed||parsed.leadId)) {
+    throw new DomainError("Public discovery requires reviewed source terms and cannot target a seller lead.");
+  }
   return db.transaction(async tx=>{
     if (parsed.leadId) await tx.select({id:leadsTable.id}).from(leadsTable).where(eq(leadsTable.id,parsed.leadId)).for("update");
     return queueJob(tx,parsed.kind,parsed.leadId??null,`manual:${actor.id}:${parsed.idempotencyKey}`,actor.id,
-      parsed.kind==="BUYER_DISCOVERY"?{termsReviewed:true,recurringDiscovery:parsed.recurringDiscovery===true}:{});
+      parsed.kind==="BUYER_DISCOVERY"
+        ?{termsReviewed:true,recurringDiscovery:parsed.recurringDiscovery===true}
+        :parsed.kind==="DISCOVER_PROPERTIES"
+          ?{termsReviewed:true,recurringPropertyDiscovery:parsed.recurringPropertyDiscovery===true}:{});
   });
 }
 export async function reviewDeadlines(now = new Date()) {
@@ -48,6 +54,13 @@ export async function runWorkerOnce(now = new Date(), schedule = false, onlyJobI
     if (policy?.payload.termsReviewed===true && policy.payload.recurringDiscovery===true) {
       await queueJob(db,"BUYER_DISCOVERY",null,`scheduled:buyer-discovery:${Math.floor(now.getTime()/(6*3600000))}`,
         "system:scheduler",{termsReviewed:true,recurringDiscovery:true});
+    }
+    const [propertyPolicy] = await db.select().from(jobsTable).where(and(eq(jobsTable.kind,"DISCOVER_PROPERTIES"),
+      sql`${jobsTable.idempotencyKey} like 'manual:%'`)).orderBy(desc(jobsTable.createdAt)).limit(1);
+    if (propertyPolicy?.payload.termsReviewed===true && propertyPolicy.payload.recurringPropertyDiscovery===true) {
+      await queueJob(db,"DISCOVER_PROPERTIES",null,
+        `scheduled:property-discovery:${Math.floor(now.getTime()/(6*3600000))}`,
+        "system:scheduler",{termsReviewed:true,recurringPropertyDiscovery:true});
     }
     // Bootstrap existing reviewed deals once per snapshot, not a paid AI run every tick.
     const rows = await db.select().from(leadsTable);
@@ -95,6 +108,7 @@ export async function runWorkerOnce(now = new Date(), schedule = false, onlyJobI
     else if (row.kind==="REVIEW_BUYER_POOL") message = await reviewBuyerPool(now);
     else if (row.kind==="REVIEW_HANDOFFS") message = await reviewHandoffs(now);
     else if (row.kind==="BUYER_DISCOVERY"&&row.payload.termsReviewed===true) message = await discoverPublicBuyers(now);
+    else if (row.kind==="DISCOVER_PROPERTIES"&&row.payload.termsReviewed===true) message = await discoverPublicProperties(now);
     else if (row.kind==="ENRICH_PROPERTY"&&row.leadId) message = await enrichProperty(row.leadId,row.id,now);
     else if (row.kind==="PREPARE_BRIEF"&&row.leadId) message = await prepareSellerBrief(row.leadId,row.id,now);
     else throw new Error("No executor is registered for this worker kind.");

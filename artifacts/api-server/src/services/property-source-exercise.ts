@@ -5,7 +5,7 @@
 import assert from "node:assert/strict";
 import { randomUUID } from "node:crypto";
 import { eq, sql } from "drizzle-orm";
-import { db, pool, leadsTable, intelligenceTable, propertySourceObservationsTable } from "@workspace/db";
+import { db, pool, jobsTable, leadsTable, intelligenceTable, propertySourceObservationsTable } from "@workspace/db";
 import { DomainError } from "@workspace/deal-domain";
 import { logger } from "../lib/logger";
 import { commandCenter } from "./command-center";
@@ -15,10 +15,32 @@ import {
 } from "./property-discovery-store";
 import { addSourceComps, getSourceResearch, importPublicProperty, refreshSourceResearch, searchPublicProperties } from "./property-source-store";
 import { callQueue, createLead, leadDetail } from "./deal-store";
+import { runWorkerOnce, submitWorkerJob } from "./workers";
 
 const actor = { id: `synthetic-source:${randomUUID()}`, role: "OWNER" };
 const now = new Date();
 try {
+  await assert.rejects(() => submitWorkerJob({
+    kind: "DISCOVER_PROPERTIES", idempotencyKey: "synthetic-property-no-terms",
+  }, actor), /reviewed source terms/i);
+  const discoveryJob = await submitWorkerJob({
+    kind: "DISCOVER_PROPERTIES", idempotencyKey: "synthetic-property-source-worker",
+    termsReviewed: true, recurringPropertyDiscovery: true,
+  }, actor);
+  const discoveryRun = await runWorkerOnce(now, false, discoveryJob.id);
+  assert.equal(discoveryRun?.state, "SUCCEEDED", "The durable seller discovery job must complete from the official source.");
+  assert.match(discoveryRun?.message ?? "", /no active leads were created/i);
+  assert.ok((await db.select().from(propertySourceObservationsTable)).length > 0, "The worker must persist raw source observations.");
+  assert.equal((await db.select().from(leadsTable)).length, 0, "Raw property discovery must never create active leads.");
+
+  await runWorkerOnce(new Date(now.getTime() + 1), true);
+  const scheduledPropertyJobs = await db.select().from(jobsTable).where(eq(jobsTable.kind, "DISCOVER_PROPERTIES"));
+  assert.equal(
+    scheduledPropertyJobs.filter((job) => job.idempotencyKey.startsWith("scheduled:property-discovery:")).length,
+    1,
+    "A reviewed recurring seller-discovery policy must enqueue one six-hour schedule job.",
+  );
+
   const search = await searchPublicProperties();
   assert.ok(search.records.length > 0, "Official provider must return actual records; no fixture fallback.");
   const property = search.records.find((record) =>
@@ -42,7 +64,7 @@ try {
   assert.equal(repeated.sourceObservationCount, 1, "The same source record is updated in place rather than duplicated.");
   const [repeatRow] = await db.select().from(propertySourceObservationsTable)
     .where(eq(propertySourceObservationsTable.sourceKey, `phila-opa:${property.id}`));
-  assert.equal(repeatRow?.seenCount, 2, "Repeated captures update the source observation's seen count.");
+  assert.equal(repeatRow?.seenCount, 3, "The worker capture and two manual imports update one deduplicated source observation.");
   const secondary = await recordPropertyObservation(
     { ...property, provider: "SYNTHETIC_SECONDARY_SOURCE", sourceUrl: "https://example.com/synthetic-record" },
     `synthetic-secondary:${property.id}`, actor.id, now,

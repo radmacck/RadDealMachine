@@ -1747,6 +1747,9 @@ export const DealWorkGuidanceCategory = {
   BUYER_MATCH: 'BUYER_MATCH',
   DEADLINE: 'DEADLINE',
   CLOSING: 'CLOSING',
+  DISCOVERY_REVIEW: 'DISCOVERY_REVIEW',
+  BUYER_VERIFICATION: 'BUYER_VERIFICATION',
+  WORKER: 'WORKER',
 } as const;
 
 export type DealWorkGuidanceResponsibleRole = typeof DealWorkGuidanceResponsibleRole[keyof typeof DealWorkGuidanceResponsibleRole];
@@ -2316,6 +2319,7 @@ export const WorkerJobInputKind = {
   ENRICH_PROPERTY: 'ENRICH_PROPERTY',
   PREPARE_BRIEF: 'PREPARE_BRIEF',
   BUYER_DISCOVERY: 'BUYER_DISCOVERY',
+  DISCOVER_PROPERTIES: 'DISCOVER_PROPERTIES',
   REVIEW_BUYER_POOL: 'REVIEW_BUYER_POOL',
   REVIEW_HANDOFFS: 'REVIEW_HANDOFFS',
 } as const;
@@ -2325,6 +2329,7 @@ export interface WorkerJobInput {
   leadId?: string;
   termsReviewed?: boolean;
   recurringDiscovery?: boolean;
+  recurringPropertyDiscovery?: boolean;
   /**
      * @minLength 8
      * @maxLength 200
@@ -2341,6 +2346,7 @@ export const WorkerJobKind = {
   ENRICH_PROPERTY: 'ENRICH_PROPERTY',
   PREPARE_BRIEF: 'PREPARE_BRIEF',
   BUYER_DISCOVERY: 'BUYER_DISCOVERY',
+  DISCOVER_PROPERTIES: 'DISCOVER_PROPERTIES',
   REVIEW_BUYER_POOL: 'REVIEW_BUYER_POOL',
   REVIEW_HANDOFFS: 'REVIEW_HANDOFFS',
   HUMAN_HANDOFF: 'HUMAN_HANDOFF',
@@ -2359,7 +2365,9 @@ export const WorkerJobState = {
 export interface WorkerJob {
   id: string;
   kind: WorkerJobKind;
+  termsReviewed?: boolean;
   recurringDiscovery?: boolean;
+  recurringPropertyDiscovery?: boolean;
   state: WorkerJobState;
   /** @nullable */
   leadId: string | null;
