@@ -357,6 +357,10 @@ export type PropertyContactPathChannel = typeof PropertyContactPathChannel[keyof
 
 export const PropertyContactPathChannel = {
   POSTAL: 'POSTAL',
+  PHONE: 'PHONE',
+  EMAIL: 'EMAIL',
+  WEB: 'WEB',
+  OTHER: 'OTHER',
 } as const;
 
 export type PropertyContactPathClassification = typeof PropertyContactPathClassification[keyof typeof PropertyContactPathClassification];
@@ -387,11 +391,18 @@ export const PropertyContactPathPermissionStatus = {
 export interface PropertyContactPath {
   id: string;
   channel: PropertyContactPathChannel;
-  recipient: string;
-  addressLines: string[];
-  cityState: string;
   /** @nullable */
-  postalCode: string | null;
+  recipient?: string | null;
+  /**
+     * @maxLength 2000
+     * @nullable
+     */
+  routeValue?: string | null;
+  addressLines?: string[];
+  /** @nullable */
+  cityState?: string | null;
+  /** @nullable */
+  postalCode?: string | null;
   classification: PropertyContactPathClassification;
   /**
      * @minimum 0
@@ -1678,6 +1689,15 @@ export const IntelligenceInputSourceType = {
   MODEL: 'MODEL',
 } as const;
 
+export type IntelligenceInputContactPermissionStatus = typeof IntelligenceInputContactPermissionStatus[keyof typeof IntelligenceInputContactPermissionStatus];
+
+
+export const IntelligenceInputContactPermissionStatus = {
+  NOT_REVIEWED: 'NOT_REVIEWED',
+  PERMITTED: 'PERMITTED',
+  PROHIBITED: 'PROHIBITED',
+} as const;
+
 export interface IntelligenceInput {
   classification: ProvenanceClass;
   /**
@@ -1706,6 +1726,9 @@ export interface IntelligenceInput {
   capturedAt: string;
   /** @maxLength 2000 */
   verificationNote?: string;
+  contactPermissionStatus?: IntelligenceInputContactPermissionStatus;
+  /** @maxLength 2000 */
+  contactPermissionEvidenceUrl?: string;
   /** @maxLength 2000 */
   question?: string;
   /** @maxLength 2000 */

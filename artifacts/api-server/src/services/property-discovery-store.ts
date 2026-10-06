@@ -282,6 +282,15 @@ async function toDiscoveryResponse(
       history,
     };
   });
+  const contactPathCandidates = [
+    ...payload.property.contactPaths,
+    ...sourceRows.flatMap(sourceRow => {
+      const observation = sourcePayload(sourceRow.payload);
+      return Array.isArray(observation.contactPaths)
+        ? observation.contactPaths as PropertyRecord["contactPaths"]
+        : [];
+    }),
+  ];
   const baseNextAction = status === "DISQUALIFIED"
     ? "Keep the source observation for audit; do not place it in active acquisition follow-up."
     : status === "QUALIFIED_LEAD" || status === "CALL_READY"
@@ -299,7 +308,10 @@ async function toDiscoveryResponse(
     version: row.version,
     property: {
       ...payload.property,
-      contactPaths: rankContactPaths(payload.property.contactPaths, now),
+      // Source observations remain individually persisted. Expose one ranked
+      // route per duplicate recipient/address while retaining each source
+      // observation and its history alongside the selected route.
+      contactPaths: rankContactPaths(contactPathCandidates, now),
     },
     signals: evaluation.scoredSignals.map(({ points, ...signal }) => ({ ...signal, scoreContribution: points })),
     sourceObservations,

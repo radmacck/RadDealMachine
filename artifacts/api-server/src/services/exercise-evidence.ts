@@ -10,10 +10,14 @@ export async function exerciseEvidence(id: string, input: UnderwritingInput, act
   const evidence = async (category: string, contact = false) => {
     const evidenceId = randomUUID();
     await db.insert(intelligenceTable).values({id:evidenceId,leadId:id,createdBy:actor,createdAt:now,payload:{
-      category,classification:contact?"INDICATED":"VERIFIED_FACTS",sourceType:contact?"SELLER":"INSPECTION",
+       category,classification:contact?"OBSERVED":"VERIFIED_FACTS",sourceType:contact?"SELLER":"INSPECTION",
       statement:`SYNTHETIC exercise evidence for ${category}; not a real document or business verification.`,
       source:"SYNTHETIC isolated service fixture",sourceUrl:"https://example.com/synthetic-evidence",
       verificationNote:"SYNTHETIC reviewed fixture, never an actual inspection or source verification.",
+       ...(contact?{
+         contactPermissionStatus:"PERMITTED",
+         contactPermissionEvidenceUrl:"https://example.com/synthetic-contact-permission",
+       }:{}),
       capturedAt:now.toISOString(),confidence:0.9,
     }});
     return evidenceId;

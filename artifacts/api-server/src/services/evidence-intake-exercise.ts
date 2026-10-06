@@ -6,7 +6,7 @@ import { DomainError, type IntelligenceInput, type UnderwritingInput } from "@wo
 import { searchProperties } from "@workspace/property-sources";
 import { recordPublicPropertyDiscovery } from "./property-discovery-store";
 import { intakePropertyEvidence } from "./evidence-intake";
-import { callQueue, createLead, leadDetail, transitionLeadForActor } from "./deal-store";
+import { callQueue, createLead, leadDetail, recordCall, transitionLeadForActor } from "./deal-store";
 const now = new Date();
 const actor = {id:`synthetic-packet:${randomUUID()}`,role:"OWNER"};
 assert.match(process.env.PGOPTIONS??"",/search_path=exercise_[a-f0-9]+/,"This exercise requires the isolated harness.");
@@ -19,6 +19,10 @@ try {
   assert.ok(["DISCOVERED_PROPERTY","RELEVANT_CANDIDATE"].includes(discovery.status));
   assert.equal(discovery.leadId,null);
   assert.equal(discovery.canPromote,false);
+   assert.ok(discovery.property.contactPaths.every(path =>
+     path.channel==="POSTAL"&&path.classification==="OBSERVED"&&path.permissionStatus==="NOT_REVIEWED"));
+   assert.ok(!("phone" in discovery.property)&&!("email" in discovery.property),
+     "The live OPA record contains no direct phone or email route.");
   const matchingLead = await db.select().from(leadsTable).where(sql`${leadsTable.payload}->>'address' = ${actual.address}`);
   assert.equal(matchingLead.length,0,"An OPA discovery must not create an active lead.");
   assert.ok(!(await callQueue(now)).some(b=>b.lead.address===actual.address));
@@ -55,9 +59,10 @@ try {
     "The synthetic linked qualification must be exposed on the lead before workflow transitions.");
   const entries: (IntelligenceInput&{key:string})[] = [];
   const evidence = (key: string, category: string, contact = false) => {
-    entries.push({key,category,classification:contact?"INDICATED":"VERIFIED_FACTS",sourceType:contact?"SELLER":"INSPECTION",
+    entries.push({key,category,classification:contact?"OBSERVED":"VERIFIED_FACTS",sourceType:contact?"SELLER":"INSPECTION",
       statement:"SYNTHETIC reviewed fixture; not a real property fact.",source:"SYNTHETIC exercise",sourceUrl:"https://example.com/synthetic",
-      capturedAt:now.toISOString(),confidence:0.9,verificationNote:"SYNTHETIC review of a fixture, not an actual inspection."});
+      capturedAt:now.toISOString(),confidence:0.9,verificationNote:"SYNTHETIC review of a fixture, not an actual inspection.",
+      ...(contact?{contactPermissionStatus:"PERMITTED" as const,contactPermissionEvidenceUrl:"https://example.com/synthetic-contact-permission"}:{})});
     return key;
   };
   const input: UnderwritingInput = {version:lead.version,conditionConfirmed:true,repairsComplete:true,
@@ -89,6 +94,9 @@ try {
   const expired = new Date(now.getTime()+31*86400000);
   assert.equal((await leadDetail(lead.id,undefined,expired)).analysis?.classification,"INCOMPLETE");
   assert.ok(!(await callQueue(expired)).some(b=>b.lead.id===lead.id));
+   await assert.rejects(recordCall(lead.id,{version:detail.lead.version,outcome:"NO_ANSWER",
+     notes:"SYNTHETIC stale-route guard exercise.",nextAction:"Refresh contact route evidence.",
+     followUpAt:new Date(expired.getTime()+86400000).toISOString()},actor.id,expired),/CALL READY evidence is stale or incomplete/);
   assert.ok((await db.select().from(intelligenceTable).where(eq(intelligenceTable.leadId,lead.id))).length>=entries.length);
   // Force a failure AFTER lead/evidence writes, at snapshot persistence. This
   // verifies an actual PostgreSQL rollback, not just input rejection.

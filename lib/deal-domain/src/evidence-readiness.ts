@@ -20,12 +20,30 @@ export function evidenceReadiness(lead: Lead, input: UnderwritingInput|null, ent
     if (mode==="SUBJECT" && !(["OBSERVED","VERIFIED_FACTS"].includes(e.classification)&&["PUBLIC_RECORD","INSPECTION"].includes(e.sourceType))) {
       blockers.push(`${label}: sourced public-record/inspection observation is required.`);
     }
+    if (mode==="CONTACT") {
+      if (!["OBSERVED","VERIFIED_FACTS"].includes(e.classification)) {
+        blockers.push(`${label}: the phone route must be observed or independently verified; an indication is insufficient.`);
+      }
+      if (!["PUBLIC_RECORD","PERMITTED_LISTING","PUBLIC_PAGE","SELLER","ANALYST"].includes(e.sourceType)) {
+        blockers.push(`${label}: the phone route needs an identifiable permitted source or seller-provided record.`);
+      }
+      if (!e.verificationNote?.trim()) blockers.push(`${label}: record how the route and source were reviewed.`);
+      if (e.sourceType!=="SELLER" && !/^https:\/\//i.test(e.sourceUrl??"")) {
+        blockers.push(`${label}: link the public/permitted source that supplied the phone route.`);
+      }
+      if (e.contactPermissionStatus!=="PERMITTED") {
+        blockers.push(`${label}: contact permission is not recorded as permitted.`);
+      }
+      if (!/^https:\/\//i.test(e.contactPermissionEvidenceUrl??"")) {
+        blockers.push(`${label}: link evidence for permission to use this contact route.`);
+      }
+    }
     if (mode!=="CONTACT" && !/^https?:\/\//i.test(e.sourceUrl??"")) blockers.push(`${label}: link the actual source document.`);
   };
   review(input.subjectEvidenceId,["subject_property","source_property_snapshot"],"Subject property",30,"SUBJECT");
   review(input.conditionEvidenceId,["subject_condition"],"Subject condition");
   if (lead.sellerPhone?.trim()) review(input.sellerContactEvidenceId,["seller_contact"],"Seller contact",30,"CONTACT");
-  else blockers.push("Seller contact: record an actual permitted seller phone route.");
+  else blockers.push("Seller contact: no direct phone route is recorded; a tax-roll mailing address is postal-only and is not CALL READY.");
   for (const c of input.comps.filter(c=>c.verified)) {
     review(c.saleEvidenceId,[`comp_sale:${c.id.toLowerCase()}`],`Comparable ${c.address} sale`,180);
     if (c.condition==="RENOVATED") review(c.conditionEvidenceId,[`comp_condition:${c.id.toLowerCase()}`],`Comparable ${c.address} renovation`,180);

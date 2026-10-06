@@ -13,11 +13,18 @@ import type { PropertyContactPathPermissionStatus } from './propertyContactPathP
 export interface PropertyContactPath {
   id: string;
   channel: PropertyContactPathChannel;
-  recipient: string;
-  addressLines: string[];
-  cityState: string;
   /** @nullable */
-  postalCode: string | null;
+  recipient?: string | null;
+  /**
+     * @maxLength 2000
+     * @nullable
+     */
+  routeValue?: string | null;
+  addressLines?: string[];
+  /** @nullable */
+  cityState?: string | null;
+  /** @nullable */
+  postalCode?: string | null;
   classification: PropertyContactPathClassification;
   /**
      * @minimum 0

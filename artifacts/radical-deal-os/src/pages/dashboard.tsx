@@ -332,7 +332,9 @@ export default function Dashboard() {
                     ? `${item.demandFit.alignedBuyerCount} currently approved buyer profile(s) align on known fields; this is not a deal match.`
                     : 'No currently approved buyer profile aligns to known fields. A strong seller opportunity can still qualify independently.'}</div>
                   <div className="fd-row-copy"><b>Best contact path:</b> {item.property.contactPaths[0]
-                    ? `${item.property.contactPaths[0].recipient} · ${item.property.contactPaths[0].addressLines.join(', ')} · ${item.property.contactPaths[0].cityState} ${item.property.contactPaths[0].postalCode ?? ''} · postal only; permission ${item.property.contactPaths[0].permissionStatus.toLowerCase().replaceAll('_', ' ')}`
+                    ? item.property.contactPaths[0].channel === 'POSTAL'
+                      ? `${[item.property.contactPaths[0].recipient, ...(item.property.contactPaths[0].addressLines ?? []), item.property.contactPaths[0].cityState, item.property.contactPaths[0].postalCode].filter(Boolean).join(' · ')} · postal route; permission ${item.property.contactPaths[0].permissionStatus.toLowerCase().replaceAll('_', ' ')}`
+                      : `${item.property.contactPaths[0].channel}: ${item.property.contactPaths[0].routeValue ?? 'route not supplied'} · permission ${item.property.contactPaths[0].permissionStatus.toLowerCase().replaceAll('_', ' ')}`
                     : 'No owner mailing route in this record; this source has no phone or email.'}</div>
                   <div className="fd-row-copy"><b>Missing:</b> {item.promotionBlockers[0] ?? item.missingInformation[0] ?? 'No qualification blocker; human review remains required.'}</div>
                   <div className="fd-row-copy"><b>Next:</b> {item.nextAction}</div>

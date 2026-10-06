@@ -1208,13 +1208,14 @@ components:
         leadId: { type: string, format: uuid }
     PropertyContactPath:
       type: object
-      required: [id, channel, recipient, addressLines, cityState, postalCode, classification, confidence, sourceId, sourceName, sourceRecordId, sourceUrl, capturedAt, freshUntilAt, freshnessStatus, permissionStatus]
+      required: [id, channel, classification, confidence, sourceId, sourceName, sourceRecordId, sourceUrl, capturedAt, freshUntilAt, freshnessStatus, permissionStatus]
       properties:
         id: { type: string }
-        channel: { type: string, enum: [POSTAL] }
-        recipient: { type: string }
+        channel: { type: string, enum: [POSTAL, PHONE, EMAIL, WEB, OTHER] }
+        recipient: { type: ["string", "null"] }
+        routeValue: { type: ["string", "null"], maxLength: 2000 }
         addressLines: { type: array, items: { type: string } }
-        cityState: { type: string }
+        cityState: { type: ["string", "null"] }
         postalCode: { type: ["string", "null"] }
         classification: { type: string, enum: [OBSERVED, VERIFIED] }
         confidence: { type: number, minimum: 0, maximum: 1 }
@@ -2146,6 +2147,8 @@ components:
         confidence: { type: number, minimum: 0, maximum: 1 }
         capturedAt: { type: string, format: date-time }
         verificationNote: { type: string, maxLength: 2000 }
+        contactPermissionStatus: { type: string, enum: [NOT_REVIEWED, PERMITTED, PROHIBITED] }
+        contactPermissionEvidenceUrl: { type: string, format: uri, maxLength: 2000 }
         question: { type: string, maxLength: 2000 }
         action: { type: string, maxLength: 2000 }
     Intelligence:

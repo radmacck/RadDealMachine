@@ -64,6 +64,13 @@ export default function LeadDetailPage() {
   const coordination = ['CONTRACT_PENDING','UNDER_CONTRACT','BUYER_MATCHED','BUYER_INTERESTED','BUYER_COMMITTED','CLOSING'].includes(lead.stage);
   const blockers = [...(d.analysis?.blockers ?? []), ...d.offers.filter((o) => o.effectiveStatus === 'DRAFT').flatMap((o) => o.blockers)];
   const authorized = d.offers.find((o) => o.effectiveStatus === 'AUTHORIZED' || o.effectiveStatus === 'COMMUNICATED');
+  const contactEvidenceBlocked = (d.analysis?.blockers ?? []).some((item) => item.toLowerCase().includes('seller contact'));
+  const sellerConversationStage = ['CALL_READY','CONTACTED','CONVERSATION','OFFER_READY','OFFER_SENT','NEGOTIATING'].includes(lead.stage);
+  const directCallReady = sellerConversationStage && !!lead.sellerPhone?.trim() && !!d.analysis &&
+    !contactEvidenceBlocked && (lead.stage !== 'CALL_READY' || d.analysis.blockers.length === 0);
+  const contactRouteHref = !lead.sellerPhone?.trim() && lead.propertyQualification?.discoveryId
+    ? `/sources?discovery=${encodeURIComponent(lead.propertyQualification.discoveryId)}`
+    : `/deals/${lead.id}?work=${lead.sellerPhone?.trim() ? 'intel' : 'record'}`;
   const patch = (fn: (o: LeadDetail) => LeadDetail) => qc.setQueryData<LeadDetail>(getGetLeadQueryKey(id), (o) => (o ? fn(o) : o));
 
   return (
@@ -173,7 +180,11 @@ export default function LeadDetailPage() {
         {([['intel', 'Evidence'], ['uw', 'Underwriting'], ['offers', 'Offers'], ['tx', 'Transaction'], ['stage', 'Lifecycle']] as const).map(([v, l]) => (
           <button key={v} type="button" onClick={() => setTab(v)} className={`border px-3 py-1.5 ${tab === v ? 'border-signal bg-card font-semibold' : 'border-border'}`} data-testid={`button-focus-${v}`}>{l}</button>))}
         {coordination ? <button type="button" onClick={() => setTab('calls')} className="inline-flex items-center gap-1.5 border border-signal px-3 py-1.5 font-semibold hover:bg-card" data-testid="link-call-seller"><PhoneCall className="h-3.5 w-3.5" />Log seller / closing follow-up</button> :
-          <Link href={`/calls?lead=${lead.id}`} className="inline-flex items-center gap-1.5 border border-signal px-3 py-1.5 font-semibold hover:bg-card" data-testid="link-call-seller"><PhoneCall className="h-3.5 w-3.5" />Call this seller</Link>}
+          directCallReady
+            ? <Link href={`/calls?lead=${lead.id}`} className="inline-flex items-center gap-1.5 border border-signal px-3 py-1.5 font-semibold hover:bg-card" data-testid="link-call-seller"><PhoneCall className="h-3.5 w-3.5" />Open call brief</Link>
+            : <Link href={contactRouteHref} className="inline-flex items-center gap-1.5 border border-warn px-3 py-1.5 font-semibold hover:bg-card" data-testid="link-call-seller">
+                Review best available contact route
+              </Link>}
       </div>
       <AnalysisPanel analysis={d.analysis} comps={d.underwriting?.comps} />
 

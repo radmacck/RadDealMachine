@@ -5,6 +5,7 @@
  * Radical Deal OS seller intake, underwriting, conversations and approved offers
  * OpenAPI spec version: 1.0.0
  */
+import type { IntelligenceInputContactPermissionStatus } from './intelligenceInputContactPermissionStatus';
 import type { IntelligenceInputSourceType } from './intelligenceInputSourceType';
 import type { ProvenanceClass } from './provenanceClass';
 
@@ -36,6 +37,9 @@ export interface IntelligenceInput {
   capturedAt: string;
   /** @maxLength 2000 */
   verificationNote?: string;
+  contactPermissionStatus?: IntelligenceInputContactPermissionStatus;
+  /** @maxLength 2000 */
+  contactPermissionEvidenceUrl?: string;
   /** @maxLength 2000 */
   question?: string;
   /** @maxLength 2000 */

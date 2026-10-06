@@ -5,6 +5,7 @@ import { evidenceUrl, pastInstant } from "./buyers";
 
 export type HumanHandoff = z.infer<typeof ListHandoffsResponse>[number];
 export type HandoffEventInput = z.infer<typeof RecordHandoffEventBody>;
+const ROUTE_REVIEW_MAX_AGE_MS = 30 * 24 * 60 * 60 * 1000;
 export function applyHandoffEvent(h: HumanHandoff, p: HandoffEventInput, actorId: string, now: Date): HumanHandoff {
   p = RecordHandoffEventBody.parse(p);
   const previous = h.events.find(e=>e.eventKey===p.eventKey);
@@ -38,6 +39,11 @@ export function applyHandoffEvent(h: HumanHandoff, p: HandoffEventInput, actorId
     const route = h.events.filter(e=>e.kind==="ROUTE_REVIEWED").at(-1);
     if (!route||route.channel!==p.channel||route.routeValue!==p.routeValue||route.permissionEvidenceUrl!==p.permissionEvidenceUrl)
       throw new DomainError("Review and persist the permitted recipient route before contacting; actual contact must match that review.",409);
+    if (actual-Date.parse(route.occurredAt)>ROUTE_REVIEW_MAX_AGE_MS)
+      throw new DomainError("The reviewed contact route is stale; record a fresh route review before outreach.",409);
+    const failedAfterReview = h.events.some(e=>e.kind==="FAILED"&&Date.parse(e.occurredAt)>Date.parse(route.occurredAt));
+    if (failedAfterReview)
+      throw new DomainError("The previously attempted route failed; review current route evidence before any retry.",409);
     state = "WAITING_REPLY"; nextAction = "Await an actual reply. No buying intent, funding verification or offer acceptance is inferred.";
   } else if (p.kind==="REPLIED"||p.kind==="NO_RESPONSE") {
     const replyAfterRetry = p.kind==="REPLIED"&&state==="WAITING_CONTACT"&&h.events.some(e=>e.kind==="CONTACTED");
@@ -49,7 +55,13 @@ export function applyHandoffEvent(h: HumanHandoff, p: HandoffEventInput, actorId
       : "Reply deadline elapsed; review the permitted route and retry human outreach. No automatic resend.";
     if (lateReply) nextAction = "Late actual reply retained against stopped outreach. No reactivation, approval or commercial authority implied; review dated evidence separately.";
   } else if (p.kind==="FAILED") {
-    state = "WAITING_CONTACT"; nextAction = "Review the documented failure and retry permitted human outreach. No successful contact inferred.";
+    if (!p.channel||!p.routeValue||!p.permissionEvidenceUrl)
+      throw new DomainError("A failed contact attempt must retain the exact channel, route and permission evidence.");
+    const route = h.events.filter(e=>e.kind==="ROUTE_REVIEWED").at(-1);
+    if (!route||route.channel!==p.channel||route.routeValue!==p.routeValue||route.permissionEvidenceUrl!==p.permissionEvidenceUrl)
+      throw new DomainError("A failed contact attempt must match the previously reviewed route.",409);
+    state = "WAITING_CONTACT";
+    nextAction = "Failed route and evidence retained. Verify or replace the route before another attempt. No successful contact was recorded.";
   } else {
     state = "CANCELLED"; nextAction = "Handoff stopped; event history retained. No buyer rejection or legal cancellation inferred.";
   }

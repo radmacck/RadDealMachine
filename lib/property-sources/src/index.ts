@@ -64,10 +64,11 @@ const rawSchema = z.object({
 
 export type PropertyContactPath = {
   id: string;
-  channel: "POSTAL";
-  recipient: string;
-  addressLines: string[];
-  cityState: string;
+  channel: "POSTAL" | "PHONE" | "EMAIL" | "WEB" | "OTHER";
+  recipient: string | null;
+  routeValue?: string | null;
+  addressLines?: string[];
+  cityState?: string | null;
   postalCode: string | null;
   classification: "OBSERVED" | "VERIFIED";
   confidence: number;
@@ -83,13 +84,59 @@ export type PropertyContactPath = {
 
 /** Sorts connector-supplied paths without converting public availability into contact permission. */
 export function rankContactPaths(paths: PropertyContactPath[], now = new Date()) {
-  return [...paths].map(path => ({
+  const normalize = (value: string) => value.normalize("NFKD").replace(/\p{Diacritic}/gu, "")
+    .replace(/[^\p{L}\p{N}]/gu, "").toUpperCase();
+  const routeKey = (path: PropertyContactPath) => {
+    if (path.channel === "POSTAL") {
+      return [path.channel, normalize(path.recipient ?? ""), ...(path.addressLines ?? []).map(normalize),
+        normalize(path.cityState ?? ""), normalize(path.postalCode ?? "")].join("|");
+    }
+    const value = path.routeValue?.trim() ?? "";
+    if (path.channel === "PHONE") return `${path.channel}|${value.replace(/\D/g, "")}`;
+    if (path.channel === "EMAIL") return `${path.channel}|${value.toLocaleLowerCase("en-US")}`;
+    if (path.channel === "WEB") {
+      try {
+        const url = new URL(value);
+        return `${path.channel}|${url.protocol.toLowerCase()}//${url.host.toLowerCase()}${url.pathname.replace(/\/+$/, "")}${url.search}`;
+      } catch {
+        return `${path.channel}|invalid|${path.id}`;
+      }
+    }
+    return `${path.channel}|${normalize(value)}`;
+  };
+  const freshness = (path: PropertyContactPath) =>
+    Number.isFinite(Date.parse(path.freshUntilAt)) && Date.parse(path.freshUntilAt) > now.getTime();
+  const permissionRank = (status: PropertyContactPath["permissionStatus"]) =>
+    status === "PERMITTED" ? 2 : status === "NOT_REVIEWED" ? 1 : 0;
+  const better = (a: PropertyContactPath, b: PropertyContactPath) => {
+    const permission = permissionRank(a.permissionStatus) - permissionRank(b.permissionStatus);
+    if (permission) return permission;
+    const current = Number(freshness(a)) - Number(freshness(b));
+    if (current) return current;
+    const verified = Number(a.classification === "VERIFIED") - Number(b.classification === "VERIFIED");
+    if (verified) return verified;
+    if (a.confidence !== b.confidence) return a.confidence - b.confidence;
+    const captured = Date.parse(a.capturedAt) - Date.parse(b.capturedAt);
+    if (Number.isFinite(captured) && captured) return captured;
+    return b.id.localeCompare(a.id);
+  };
+  const unique = new Map<string, PropertyContactPath>();
+  for (const path of paths) {
+    if (path.channel !== "POSTAL" && !path.routeValue?.trim()) continue;
+    if (path.channel === "POSTAL" && (!(path.addressLines?.length) || !path.cityState?.trim())) continue;
+    const key = routeKey(path);
+    const prior = unique.get(key);
+    if (!prior || better(path, prior) > 0) unique.set(key, path);
+  }
+  return [...unique.values()].map(path => ({
     ...path,
-    freshnessStatus: Date.parse(path.freshUntilAt) > now.getTime() ? "CURRENT" as const : "STALE" as const,
+    freshnessStatus: freshness(path) ? "CURRENT" as const : "STALE" as const,
   })).sort((a, b) => {
-    const permitted = Number(b.permissionStatus === "PERMITTED") - Number(a.permissionStatus === "PERMITTED");
+    const permitted = permissionRank(b.permissionStatus) - permissionRank(a.permissionStatus);
     const fresh = Number(b.freshnessStatus === "CURRENT") - Number(a.freshnessStatus === "CURRENT");
-    return permitted || fresh || b.confidence - a.confidence || a.id.localeCompare(b.id);
+    const verified = Number(b.classification === "VERIFIED") - Number(a.classification === "VERIFIED");
+    return permitted || fresh || verified || b.confidence - a.confidence ||
+      Date.parse(b.capturedAt) - Date.parse(a.capturedAt) || a.id.localeCompare(b.id);
   });
 }
 

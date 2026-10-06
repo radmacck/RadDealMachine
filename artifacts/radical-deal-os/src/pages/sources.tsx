@@ -31,7 +31,8 @@ export default function Sources() {
   const [zipIn, setZipIn] = useState('');
   const [zip, setZip] = useState('');
   const [terms, setTerms] = useState(false);
-  const [statusFilter, setStatusFilter] = useState<PropertyDiscoveryStatus | 'ALL'>('RELEVANT_CANDIDATE');
+  const [statusFilter, setStatusFilter] = useState<PropertyDiscoveryStatus | 'ALL'>(() =>
+    new URLSearchParams(window.location.search).get('discovery') ? 'ALL' : 'RELEVANT_CANDIDATE');
   const [openDiscoveryId, setOpenDiscoveryId] = useState(() => new URLSearchParams(window.location.search).get('discovery') ?? '');
   const [signalKey, setSignalKey] = useState<PropertySignalKey>('SELLER_MOTIVATION');
   const [signalClassification, setSignalClassification] = useState<PropertyEvidenceClassification>('INDICATED');
@@ -340,23 +341,26 @@ export default function Sources() {
                     {item.promotionBlockers.length > 0 && <p className="mt-2 text-xs text-destructive">Promotion blocked: {item.promotionBlockers.join(' ')}</p>}
                     <div className="mt-3 border-t border-border pt-3" data-testid={`contact-path-${item.id}`}>
                       <p className="text-xs font-semibold uppercase tracking-wide">Best available contact path</p>
-                      {item.property.contactPaths[0] ? (
-                        <>
-                          <p className="mt-1 text-sm">{item.property.contactPaths[0].recipient}<br />
-                            {item.property.contactPaths[0].addressLines.join(", ")}<br />
-                            {item.property.contactPaths[0].cityState} {item.property.contactPaths[0].postalCode ?? ""}
-                          </p>
+                      {item.property.contactPaths[0] ? (() => {
+                        const path = item.property.contactPaths[0]!;
+                        const route = path.channel === 'POSTAL'
+                          ? [path.recipient, ...(path.addressLines ?? []), path.cityState, path.postalCode].filter(Boolean).join(' · ')
+                          : path.routeValue ?? 'Route value not supplied';
+                        return <>
+                          <p className="mt-1 text-sm">{route}</p>
                           <p className="mt-1 text-xs text-muted-foreground">
-                            Postal route · {item.property.contactPaths[0].classification} · confidence {item.property.contactPaths[0].confidence} ·
-                            {" "}{item.property.contactPaths[0].freshnessStatus} through {new Date(item.property.contactPaths[0].freshUntilAt).toLocaleDateString()} ·
-                            {" "}contact permission {item.property.contactPaths[0].permissionStatus.replaceAll("_", " ").toLowerCase()}.
-                            {" "}This official source provides no phone or email.
+                            {path.channel} route · {path.classification} · confidence {path.confidence} ·
+                            {" "}{path.freshnessStatus} through {new Date(path.freshUntilAt).toLocaleDateString()} ·
+                            {" "}contact permission {path.permissionStatus.replaceAll("_", " ").toLowerCase()}.
+                            {path.channel === 'POSTAL'
+                              ? " This is a mailing route only; it cannot be used as a phone or email route and does not establish signing authority."
+                              : " Public availability does not establish signing authority or permission to contact."}
                           </p>
-                          <a className="text-xs underline" href={item.property.contactPaths[0].sourceUrl} target="_blank" rel="noopener noreferrer">
-                            {item.property.contactPaths[0].sourceName} record {item.property.contactPaths[0].sourceRecordId}
+                          <a className="text-xs underline" href={path.sourceUrl} target="_blank" rel="noopener noreferrer">
+                            {path.sourceName} record {path.sourceRecordId}
                           </a>
-                        </>
-                      ) : <p className="mt-1 text-xs text-muted-foreground">No owner mailing route is present in this OPA record. This source provides no phone or email; do not infer contact permission.</p>}
+                        </>;
+                      })() : <p className="mt-1 text-xs text-muted-foreground">No contact route is present in this source observation. Do not infer seller identity, signing authority, or contact permission.</p>}
                     </div>
                   </div>
                 </div>

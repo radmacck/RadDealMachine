@@ -83,6 +83,29 @@ try {
   await reviewHandoffs(later(6));
   assert.ok((await listHandoffs()).some(x=>x.subjectId===b.id&&x.state==="WAITING_CONTACT"));
 
+   // A failed route is durable, exact and cannot be retried until evidence is reviewed again.
+   const failedRouteBuyer = await discoverBuyer({name:"SYNTHETIC FAILED ROUTE",source:"SYNTHETIC fixture",
+     sourceUrl:"https://example.com/synthetic-failed-route",capturedAt:now.toISOString(),confidence:0.8},actor,now);
+   await native.execute({...command,id:`synthetic-failed-route:${failedRouteBuyer.id}`,subjectId:failedRouteBuyer.id});
+   let failedRouteHandoff = (await listHandoffs()).find(item=>item.subjectId===failedRouteBuyer.id)!;
+   failedRouteHandoff = await recordHandoffEvent(failedRouteHandoff.id,{...input,version:failedRouteHandoff.version,
+     eventKey:"synthetic-failed-route-review",kind:"ROUTE_REVIEWED",occurredAt:now.toISOString()},actor,now);
+   failedRouteHandoff = await recordHandoffEvent(failedRouteHandoff.id,{...input,version:failedRouteHandoff.version,
+     eventKey:"synthetic-failed-attempt",kind:"FAILED",occurredAt:later(1).toISOString(),
+     evidenceUrl:"https://example.com/synthetic-failed-attempt",
+     note:"SYNTHETIC route failure; no communication occurred."},actor,later(2));
+   assert.equal(failedRouteHandoff.events.at(-1)?.routeValue,"synthetic@example.com");
+   assert.equal(failedRouteHandoff.state,"WAITING_CONTACT");
+   await assert.rejects(recordHandoffEvent(failedRouteHandoff.id,{...input,version:failedRouteHandoff.version,
+     eventKey:"synthetic-blocked-route-retry",occurredAt:later(3).toISOString()},actor,later(4)),/route failed/);
+   failedRouteHandoff = await recordHandoffEvent(failedRouteHandoff.id,{...input,version:failedRouteHandoff.version,
+     eventKey:"synthetic-fresh-route-review",kind:"ROUTE_REVIEWED",occurredAt:later(5).toISOString()},actor,later(6));
+   failedRouteHandoff = await recordHandoffEvent(failedRouteHandoff.id,{...input,version:failedRouteHandoff.version,
+     eventKey:"synthetic-reviewed-route-contact",occurredAt:later(7).toISOString(),followUpAt:later(120).toISOString()},actor,later(8));
+   assert.equal(failedRouteHandoff.state,"WAITING_REPLY");
+   assert.equal(failedRouteHandoff.events.filter(event=>event.kind==="FAILED").length,1);
+   assert.equal(failedRouteHandoff.events.filter(event=>event.kind==="ROUTE_REVIEWED").length,2);
+
   // A second subject proves rollback after a persisted update, stale retirement,
   // due retry and restoration of worker leases without duplicating handoffs.
   const second = await discoverBuyer({name:"SYNTHETIC ROLLBACK ONLY",source:"SYNTHETIC fixture",

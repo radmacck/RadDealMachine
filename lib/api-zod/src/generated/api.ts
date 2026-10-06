@@ -262,6 +262,8 @@ export const recordTransactionExceptionResponseContractOneCommitmentSnapshotOneD
 
 export const recordTransactionExceptionResponseContractOneCommitmentSnapshotOneDetailIntelligenceItemOneVerificationNoteMax = 2000;
 
+export const recordTransactionExceptionResponseContractOneCommitmentSnapshotOneDetailIntelligenceItemOneContactPermissionEvidenceUrlMax = 2000;
+
 export const recordTransactionExceptionResponseContractOneCommitmentSnapshotOneDetailIntelligenceItemOneQuestionMax = 2000;
 
 export const recordTransactionExceptionResponseContractOneCommitmentSnapshotOneDetailIntelligenceItemOneActionMax = 2000;
@@ -703,6 +705,8 @@ export const RecordTransactionExceptionResponse = zod.object({
   "confidence": zod.number().min(recordTransactionExceptionResponseContractOneCommitmentSnapshotOneDetailIntelligenceItemOneConfidenceMin).max(recordTransactionExceptionResponseContractOneCommitmentSnapshotOneDetailIntelligenceItemOneConfidenceMax),
   "capturedAt": zod.string().datetime({"offset":true}),
   "verificationNote": zod.string().max(recordTransactionExceptionResponseContractOneCommitmentSnapshotOneDetailIntelligenceItemOneVerificationNoteMax).optional(),
+  "contactPermissionStatus": zod.enum(['NOT_REVIEWED', 'PERMITTED', 'PROHIBITED']).optional(),
+  "contactPermissionEvidenceUrl": zod.string().url().max(recordTransactionExceptionResponseContractOneCommitmentSnapshotOneDetailIntelligenceItemOneContactPermissionEvidenceUrlMax).optional(),
   "question": zod.string().max(recordTransactionExceptionResponseContractOneCommitmentSnapshotOneDetailIntelligenceItemOneQuestionMax).optional(),
   "action": zod.string().max(recordTransactionExceptionResponseContractOneCommitmentSnapshotOneDetailIntelligenceItemOneActionMax).optional()
 }).and(zod.object({
@@ -1079,6 +1083,8 @@ export const intakePropertyEvidenceBodyEntriesItemOneConfidenceMax = 1;
 
 export const intakePropertyEvidenceBodyEntriesItemOneVerificationNoteMax = 2000;
 
+export const intakePropertyEvidenceBodyEntriesItemOneContactPermissionEvidenceUrlMax = 2000;
+
 export const intakePropertyEvidenceBodyEntriesItemOneQuestionMax = 2000;
 
 export const intakePropertyEvidenceBodyEntriesItemOneActionMax = 2000;
@@ -1188,6 +1194,8 @@ export const IntakePropertyEvidenceBody = zod.object({
   "confidence": zod.number().min(intakePropertyEvidenceBodyEntriesItemOneConfidenceMin).max(intakePropertyEvidenceBodyEntriesItemOneConfidenceMax),
   "capturedAt": zod.string().datetime({"offset":true}),
   "verificationNote": zod.string().max(intakePropertyEvidenceBodyEntriesItemOneVerificationNoteMax).optional(),
+  "contactPermissionStatus": zod.enum(['NOT_REVIEWED', 'PERMITTED', 'PROHIBITED']).optional(),
+  "contactPermissionEvidenceUrl": zod.string().url().max(intakePropertyEvidenceBodyEntriesItemOneContactPermissionEvidenceUrlMax).optional(),
   "question": zod.string().max(intakePropertyEvidenceBodyEntriesItemOneQuestionMax).optional(),
   "action": zod.string().max(intakePropertyEvidenceBodyEntriesItemOneActionMax).optional()
 }).and(zod.object({
@@ -1325,6 +1333,8 @@ export const intakePropertyEvidenceResponseIntelligenceItemOneConfidenceMin = 0;
 export const intakePropertyEvidenceResponseIntelligenceItemOneConfidenceMax = 1;
 
 export const intakePropertyEvidenceResponseIntelligenceItemOneVerificationNoteMax = 2000;
+
+export const intakePropertyEvidenceResponseIntelligenceItemOneContactPermissionEvidenceUrlMax = 2000;
 
 export const intakePropertyEvidenceResponseIntelligenceItemOneQuestionMax = 2000;
 
@@ -1567,6 +1577,8 @@ export const IntakePropertyEvidenceResponse = zod.object({
   "confidence": zod.number().min(intakePropertyEvidenceResponseIntelligenceItemOneConfidenceMin).max(intakePropertyEvidenceResponseIntelligenceItemOneConfidenceMax),
   "capturedAt": zod.string().datetime({"offset":true}),
   "verificationNote": zod.string().max(intakePropertyEvidenceResponseIntelligenceItemOneVerificationNoteMax).optional(),
+  "contactPermissionStatus": zod.enum(['NOT_REVIEWED', 'PERMITTED', 'PROHIBITED']).optional(),
+  "contactPermissionEvidenceUrl": zod.string().url().max(intakePropertyEvidenceResponseIntelligenceItemOneContactPermissionEvidenceUrlMax).optional(),
   "question": zod.string().max(intakePropertyEvidenceResponseIntelligenceItemOneQuestionMax).optional(),
   "action": zod.string().max(intakePropertyEvidenceResponseIntelligenceItemOneActionMax).optional()
 }).and(zod.object({
@@ -2230,6 +2242,8 @@ export const getLeadResponseIntelligenceItemOneConfidenceMax = 1;
 
 export const getLeadResponseIntelligenceItemOneVerificationNoteMax = 2000;
 
+export const getLeadResponseIntelligenceItemOneContactPermissionEvidenceUrlMax = 2000;
+
 export const getLeadResponseIntelligenceItemOneQuestionMax = 2000;
 
 export const getLeadResponseIntelligenceItemOneActionMax = 2000;
@@ -2471,6 +2485,8 @@ export const GetLeadResponse = zod.object({
   "confidence": zod.number().min(getLeadResponseIntelligenceItemOneConfidenceMin).max(getLeadResponseIntelligenceItemOneConfidenceMax),
   "capturedAt": zod.string().datetime({"offset":true}),
   "verificationNote": zod.string().max(getLeadResponseIntelligenceItemOneVerificationNoteMax).optional(),
+  "contactPermissionStatus": zod.enum(['NOT_REVIEWED', 'PERMITTED', 'PROHIBITED']).optional(),
+  "contactPermissionEvidenceUrl": zod.string().url().max(getLeadResponseIntelligenceItemOneContactPermissionEvidenceUrlMax).optional(),
   "question": zod.string().max(getLeadResponseIntelligenceItemOneQuestionMax).optional(),
   "action": zod.string().max(getLeadResponseIntelligenceItemOneActionMax).optional()
 }).and(zod.object({
@@ -2911,6 +2927,8 @@ export const addIntelligenceBodyConfidenceMax = 1;
 
 export const addIntelligenceBodyVerificationNoteMax = 2000;
 
+export const addIntelligenceBodyContactPermissionEvidenceUrlMax = 2000;
+
 export const addIntelligenceBodyQuestionMax = 2000;
 
 export const addIntelligenceBodyActionMax = 2000;
@@ -2927,6 +2945,8 @@ export const AddIntelligenceBody = zod.object({
   "confidence": zod.number().min(addIntelligenceBodyConfidenceMin).max(addIntelligenceBodyConfidenceMax),
   "capturedAt": zod.string().datetime({"offset":true}),
   "verificationNote": zod.string().max(addIntelligenceBodyVerificationNoteMax).optional(),
+  "contactPermissionStatus": zod.enum(['NOT_REVIEWED', 'PERMITTED', 'PROHIBITED']).optional(),
+  "contactPermissionEvidenceUrl": zod.string().url().max(addIntelligenceBodyContactPermissionEvidenceUrlMax).optional(),
   "question": zod.string().max(addIntelligenceBodyQuestionMax).optional(),
   "action": zod.string().max(addIntelligenceBodyActionMax).optional()
 })
@@ -2944,6 +2964,8 @@ export const addIntelligenceResponseOneConfidenceMax = 1;
 
 export const addIntelligenceResponseOneVerificationNoteMax = 2000;
 
+export const addIntelligenceResponseOneContactPermissionEvidenceUrlMax = 2000;
+
 export const addIntelligenceResponseOneQuestionMax = 2000;
 
 export const addIntelligenceResponseOneActionMax = 2000;
@@ -2960,6 +2982,8 @@ export const AddIntelligenceResponse = zod.object({
   "confidence": zod.number().min(addIntelligenceResponseOneConfidenceMin).max(addIntelligenceResponseOneConfidenceMax),
   "capturedAt": zod.string().datetime({"offset":true}),
   "verificationNote": zod.string().max(addIntelligenceResponseOneVerificationNoteMax).optional(),
+  "contactPermissionStatus": zod.enum(['NOT_REVIEWED', 'PERMITTED', 'PROHIBITED']).optional(),
+  "contactPermissionEvidenceUrl": zod.string().url().max(addIntelligenceResponseOneContactPermissionEvidenceUrlMax).optional(),
   "question": zod.string().max(addIntelligenceResponseOneQuestionMax).optional(),
   "action": zod.string().max(addIntelligenceResponseOneActionMax).optional()
 }).and(zod.object({
@@ -3173,6 +3197,8 @@ export const saveUnderwritingResponseIntelligenceItemOneConfidenceMin = 0;
 export const saveUnderwritingResponseIntelligenceItemOneConfidenceMax = 1;
 
 export const saveUnderwritingResponseIntelligenceItemOneVerificationNoteMax = 2000;
+
+export const saveUnderwritingResponseIntelligenceItemOneContactPermissionEvidenceUrlMax = 2000;
 
 export const saveUnderwritingResponseIntelligenceItemOneQuestionMax = 2000;
 
@@ -3415,6 +3441,8 @@ export const SaveUnderwritingResponse = zod.object({
   "confidence": zod.number().min(saveUnderwritingResponseIntelligenceItemOneConfidenceMin).max(saveUnderwritingResponseIntelligenceItemOneConfidenceMax),
   "capturedAt": zod.string().datetime({"offset":true}),
   "verificationNote": zod.string().max(saveUnderwritingResponseIntelligenceItemOneVerificationNoteMax).optional(),
+  "contactPermissionStatus": zod.enum(['NOT_REVIEWED', 'PERMITTED', 'PROHIBITED']).optional(),
+  "contactPermissionEvidenceUrl": zod.string().url().max(saveUnderwritingResponseIntelligenceItemOneContactPermissionEvidenceUrlMax).optional(),
   "question": zod.string().max(saveUnderwritingResponseIntelligenceItemOneQuestionMax).optional(),
   "action": zod.string().max(saveUnderwritingResponseIntelligenceItemOneActionMax).optional()
 }).and(zod.object({
@@ -3742,6 +3770,8 @@ export const transitionLeadResponseIntelligenceItemOneConfidenceMax = 1;
 
 export const transitionLeadResponseIntelligenceItemOneVerificationNoteMax = 2000;
 
+export const transitionLeadResponseIntelligenceItemOneContactPermissionEvidenceUrlMax = 2000;
+
 export const transitionLeadResponseIntelligenceItemOneQuestionMax = 2000;
 
 export const transitionLeadResponseIntelligenceItemOneActionMax = 2000;
@@ -3983,6 +4013,8 @@ export const TransitionLeadResponse = zod.object({
   "confidence": zod.number().min(transitionLeadResponseIntelligenceItemOneConfidenceMin).max(transitionLeadResponseIntelligenceItemOneConfidenceMax),
   "capturedAt": zod.string().datetime({"offset":true}),
   "verificationNote": zod.string().max(transitionLeadResponseIntelligenceItemOneVerificationNoteMax).optional(),
+  "contactPermissionStatus": zod.enum(['NOT_REVIEWED', 'PERMITTED', 'PROHIBITED']).optional(),
+  "contactPermissionEvidenceUrl": zod.string().url().max(transitionLeadResponseIntelligenceItemOneContactPermissionEvidenceUrlMax).optional(),
   "question": zod.string().max(transitionLeadResponseIntelligenceItemOneQuestionMax).optional(),
   "action": zod.string().max(transitionLeadResponseIntelligenceItemOneActionMax).optional()
 }).and(zod.object({
@@ -4309,6 +4341,8 @@ export const recordCallResponseIntelligenceItemOneConfidenceMax = 1;
 
 export const recordCallResponseIntelligenceItemOneVerificationNoteMax = 2000;
 
+export const recordCallResponseIntelligenceItemOneContactPermissionEvidenceUrlMax = 2000;
+
 export const recordCallResponseIntelligenceItemOneQuestionMax = 2000;
 
 export const recordCallResponseIntelligenceItemOneActionMax = 2000;
@@ -4550,6 +4584,8 @@ export const RecordCallResponse = zod.object({
   "confidence": zod.number().min(recordCallResponseIntelligenceItemOneConfidenceMin).max(recordCallResponseIntelligenceItemOneConfidenceMax),
   "capturedAt": zod.string().datetime({"offset":true}),
   "verificationNote": zod.string().max(recordCallResponseIntelligenceItemOneVerificationNoteMax).optional(),
+  "contactPermissionStatus": zod.enum(['NOT_REVIEWED', 'PERMITTED', 'PROHIBITED']).optional(),
+  "contactPermissionEvidenceUrl": zod.string().url().max(recordCallResponseIntelligenceItemOneContactPermissionEvidenceUrlMax).optional(),
   "question": zod.string().max(recordCallResponseIntelligenceItemOneQuestionMax).optional(),
   "action": zod.string().max(recordCallResponseIntelligenceItemOneActionMax).optional()
 }).and(zod.object({
@@ -4888,6 +4924,8 @@ export const createOfferDraftResponseIntelligenceItemOneConfidenceMax = 1;
 
 export const createOfferDraftResponseIntelligenceItemOneVerificationNoteMax = 2000;
 
+export const createOfferDraftResponseIntelligenceItemOneContactPermissionEvidenceUrlMax = 2000;
+
 export const createOfferDraftResponseIntelligenceItemOneQuestionMax = 2000;
 
 export const createOfferDraftResponseIntelligenceItemOneActionMax = 2000;
@@ -5129,6 +5167,8 @@ export const CreateOfferDraftResponse = zod.object({
   "confidence": zod.number().min(createOfferDraftResponseIntelligenceItemOneConfidenceMin).max(createOfferDraftResponseIntelligenceItemOneConfidenceMax),
   "capturedAt": zod.string().datetime({"offset":true}),
   "verificationNote": zod.string().max(createOfferDraftResponseIntelligenceItemOneVerificationNoteMax).optional(),
+  "contactPermissionStatus": zod.enum(['NOT_REVIEWED', 'PERMITTED', 'PROHIBITED']).optional(),
+  "contactPermissionEvidenceUrl": zod.string().url().max(createOfferDraftResponseIntelligenceItemOneContactPermissionEvidenceUrlMax).optional(),
   "question": zod.string().max(createOfferDraftResponseIntelligenceItemOneQuestionMax).optional(),
   "action": zod.string().max(createOfferDraftResponseIntelligenceItemOneActionMax).optional()
 }).and(zod.object({
@@ -5462,6 +5502,8 @@ export const authorizeOfferResponseIntelligenceItemOneConfidenceMax = 1;
 
 export const authorizeOfferResponseIntelligenceItemOneVerificationNoteMax = 2000;
 
+export const authorizeOfferResponseIntelligenceItemOneContactPermissionEvidenceUrlMax = 2000;
+
 export const authorizeOfferResponseIntelligenceItemOneQuestionMax = 2000;
 
 export const authorizeOfferResponseIntelligenceItemOneActionMax = 2000;
@@ -5703,6 +5745,8 @@ export const AuthorizeOfferResponse = zod.object({
   "confidence": zod.number().min(authorizeOfferResponseIntelligenceItemOneConfidenceMin).max(authorizeOfferResponseIntelligenceItemOneConfidenceMax),
   "capturedAt": zod.string().datetime({"offset":true}),
   "verificationNote": zod.string().max(authorizeOfferResponseIntelligenceItemOneVerificationNoteMax).optional(),
+  "contactPermissionStatus": zod.enum(['NOT_REVIEWED', 'PERMITTED', 'PROHIBITED']).optional(),
+  "contactPermissionEvidenceUrl": zod.string().url().max(authorizeOfferResponseIntelligenceItemOneContactPermissionEvidenceUrlMax).optional(),
   "question": zod.string().max(authorizeOfferResponseIntelligenceItemOneQuestionMax).optional(),
   "action": zod.string().max(authorizeOfferResponseIntelligenceItemOneActionMax).optional()
 }).and(zod.object({
@@ -6035,6 +6079,8 @@ export const communicateOfferResponseIntelligenceItemOneConfidenceMax = 1;
 
 export const communicateOfferResponseIntelligenceItemOneVerificationNoteMax = 2000;
 
+export const communicateOfferResponseIntelligenceItemOneContactPermissionEvidenceUrlMax = 2000;
+
 export const communicateOfferResponseIntelligenceItemOneQuestionMax = 2000;
 
 export const communicateOfferResponseIntelligenceItemOneActionMax = 2000;
@@ -6276,6 +6322,8 @@ export const CommunicateOfferResponse = zod.object({
   "confidence": zod.number().min(communicateOfferResponseIntelligenceItemOneConfidenceMin).max(communicateOfferResponseIntelligenceItemOneConfidenceMax),
   "capturedAt": zod.string().datetime({"offset":true}),
   "verificationNote": zod.string().max(communicateOfferResponseIntelligenceItemOneVerificationNoteMax).optional(),
+  "contactPermissionStatus": zod.enum(['NOT_REVIEWED', 'PERMITTED', 'PROHIBITED']).optional(),
+  "contactPermissionEvidenceUrl": zod.string().url().max(communicateOfferResponseIntelligenceItemOneContactPermissionEvidenceUrlMax).optional(),
   "question": zod.string().max(communicateOfferResponseIntelligenceItemOneQuestionMax).optional(),
   "action": zod.string().max(communicateOfferResponseIntelligenceItemOneActionMax).optional()
 }).and(zod.object({
@@ -6603,6 +6651,8 @@ export const withdrawOfferResponseIntelligenceItemOneConfidenceMax = 1;
 
 export const withdrawOfferResponseIntelligenceItemOneVerificationNoteMax = 2000;
 
+export const withdrawOfferResponseIntelligenceItemOneContactPermissionEvidenceUrlMax = 2000;
+
 export const withdrawOfferResponseIntelligenceItemOneQuestionMax = 2000;
 
 export const withdrawOfferResponseIntelligenceItemOneActionMax = 2000;
@@ -6844,6 +6894,8 @@ export const WithdrawOfferResponse = zod.object({
   "confidence": zod.number().min(withdrawOfferResponseIntelligenceItemOneConfidenceMin).max(withdrawOfferResponseIntelligenceItemOneConfidenceMax),
   "capturedAt": zod.string().datetime({"offset":true}),
   "verificationNote": zod.string().max(withdrawOfferResponseIntelligenceItemOneVerificationNoteMax).optional(),
+  "contactPermissionStatus": zod.enum(['NOT_REVIEWED', 'PERMITTED', 'PROHIBITED']).optional(),
+  "contactPermissionEvidenceUrl": zod.string().url().max(withdrawOfferResponseIntelligenceItemOneContactPermissionEvidenceUrlMax).optional(),
   "question": zod.string().max(withdrawOfferResponseIntelligenceItemOneQuestionMax).optional(),
   "action": zod.string().max(withdrawOfferResponseIntelligenceItemOneActionMax).optional()
 }).and(zod.object({
@@ -7325,6 +7377,8 @@ export const getCallQueueResponseIntelligenceItemOneConfidenceMax = 1;
 
 export const getCallQueueResponseIntelligenceItemOneVerificationNoteMax = 2000;
 
+export const getCallQueueResponseIntelligenceItemOneContactPermissionEvidenceUrlMax = 2000;
+
 export const getCallQueueResponseIntelligenceItemOneQuestionMax = 2000;
 
 export const getCallQueueResponseIntelligenceItemOneActionMax = 2000;
@@ -7495,6 +7549,8 @@ export const GetCallQueueResponseItem = zod.object({
   "confidence": zod.number().min(getCallQueueResponseIntelligenceItemOneConfidenceMin).max(getCallQueueResponseIntelligenceItemOneConfidenceMax),
   "capturedAt": zod.string().datetime({"offset":true}),
   "verificationNote": zod.string().max(getCallQueueResponseIntelligenceItemOneVerificationNoteMax).optional(),
+  "contactPermissionStatus": zod.enum(['NOT_REVIEWED', 'PERMITTED', 'PROHIBITED']).optional(),
+  "contactPermissionEvidenceUrl": zod.string().url().max(getCallQueueResponseIntelligenceItemOneContactPermissionEvidenceUrlMax).optional(),
   "question": zod.string().max(getCallQueueResponseIntelligenceItemOneQuestionMax).optional(),
   "action": zod.string().max(getCallQueueResponseIntelligenceItemOneActionMax).optional()
 }).and(zod.object({
@@ -8045,6 +8101,8 @@ export const getCommandCenterResponseOpportunitiesItemIntelligenceItemOneConfide
 
 export const getCommandCenterResponseOpportunitiesItemIntelligenceItemOneVerificationNoteMax = 2000;
 
+export const getCommandCenterResponseOpportunitiesItemIntelligenceItemOneContactPermissionEvidenceUrlMax = 2000;
+
 export const getCommandCenterResponseOpportunitiesItemIntelligenceItemOneQuestionMax = 2000;
 
 export const getCommandCenterResponseOpportunitiesItemIntelligenceItemOneActionMax = 2000;
@@ -8282,6 +8340,8 @@ export const getCommandCenterResponseCallsItemIntelligenceItemOneConfidenceMax =
 
 export const getCommandCenterResponseCallsItemIntelligenceItemOneVerificationNoteMax = 2000;
 
+export const getCommandCenterResponseCallsItemIntelligenceItemOneContactPermissionEvidenceUrlMax = 2000;
+
 export const getCommandCenterResponseCallsItemIntelligenceItemOneQuestionMax = 2000;
 
 export const getCommandCenterResponseCallsItemIntelligenceItemOneActionMax = 2000;
@@ -8446,6 +8506,8 @@ export const getCommandCenterResponseDealsItemIntelligenceItemOneConfidenceMin =
 export const getCommandCenterResponseDealsItemIntelligenceItemOneConfidenceMax = 1;
 
 export const getCommandCenterResponseDealsItemIntelligenceItemOneVerificationNoteMax = 2000;
+
+export const getCommandCenterResponseDealsItemIntelligenceItemOneContactPermissionEvidenceUrlMax = 2000;
 
 export const getCommandCenterResponseDealsItemIntelligenceItemOneQuestionMax = 2000;
 
@@ -8846,6 +8908,8 @@ export const getCommandCenterResponseOperationsItemContractOneCommitmentSnapshot
 
 export const getCommandCenterResponseOperationsItemContractOneCommitmentSnapshotOneDetailIntelligenceItemOneVerificationNoteMax = 2000;
 
+export const getCommandCenterResponseOperationsItemContractOneCommitmentSnapshotOneDetailIntelligenceItemOneContactPermissionEvidenceUrlMax = 2000;
+
 export const getCommandCenterResponseOperationsItemContractOneCommitmentSnapshotOneDetailIntelligenceItemOneQuestionMax = 2000;
 
 export const getCommandCenterResponseOperationsItemContractOneCommitmentSnapshotOneDetailIntelligenceItemOneActionMax = 2000;
@@ -9194,6 +9258,8 @@ export const getCommandCenterResponsePropertyDiscoveriesRecordsItemConfidenceMin
 export const getCommandCenterResponsePropertyDiscoveriesRecordsItemConfidenceMax = 1;
 
 
+export const getCommandCenterResponsePropertyDiscoveriesRecordsItemPropertyContactPathsItemRouteValueMax = 2000;
+
 export const getCommandCenterResponsePropertyDiscoveriesRecordsItemPropertyContactPathsItemConfidenceMin = 0;
 export const getCommandCenterResponsePropertyDiscoveriesRecordsItemPropertyContactPathsItemConfidenceMax = 1;
 
@@ -9381,6 +9447,8 @@ export const GetCommandCenterResponse = zod.object({
   "confidence": zod.number().min(getCommandCenterResponseOpportunitiesItemIntelligenceItemOneConfidenceMin).max(getCommandCenterResponseOpportunitiesItemIntelligenceItemOneConfidenceMax),
   "capturedAt": zod.string().datetime({"offset":true}),
   "verificationNote": zod.string().max(getCommandCenterResponseOpportunitiesItemIntelligenceItemOneVerificationNoteMax).optional(),
+  "contactPermissionStatus": zod.enum(['NOT_REVIEWED', 'PERMITTED', 'PROHIBITED']).optional(),
+  "contactPermissionEvidenceUrl": zod.string().url().max(getCommandCenterResponseOpportunitiesItemIntelligenceItemOneContactPermissionEvidenceUrlMax).optional(),
   "question": zod.string().max(getCommandCenterResponseOpportunitiesItemIntelligenceItemOneQuestionMax).optional(),
   "action": zod.string().max(getCommandCenterResponseOpportunitiesItemIntelligenceItemOneActionMax).optional()
 }).and(zod.object({
@@ -9688,6 +9756,8 @@ export const GetCommandCenterResponse = zod.object({
   "confidence": zod.number().min(getCommandCenterResponseCallsItemIntelligenceItemOneConfidenceMin).max(getCommandCenterResponseCallsItemIntelligenceItemOneConfidenceMax),
   "capturedAt": zod.string().datetime({"offset":true}),
   "verificationNote": zod.string().max(getCommandCenterResponseCallsItemIntelligenceItemOneVerificationNoteMax).optional(),
+  "contactPermissionStatus": zod.enum(['NOT_REVIEWED', 'PERMITTED', 'PROHIBITED']).optional(),
+  "contactPermissionEvidenceUrl": zod.string().url().max(getCommandCenterResponseCallsItemIntelligenceItemOneContactPermissionEvidenceUrlMax).optional(),
   "question": zod.string().max(getCommandCenterResponseCallsItemIntelligenceItemOneQuestionMax).optional(),
   "action": zod.string().max(getCommandCenterResponseCallsItemIntelligenceItemOneActionMax).optional()
 }).and(zod.object({
@@ -9891,6 +9961,8 @@ export const GetCommandCenterResponse = zod.object({
   "confidence": zod.number().min(getCommandCenterResponseDealsItemIntelligenceItemOneConfidenceMin).max(getCommandCenterResponseDealsItemIntelligenceItemOneConfidenceMax),
   "capturedAt": zod.string().datetime({"offset":true}),
   "verificationNote": zod.string().max(getCommandCenterResponseDealsItemIntelligenceItemOneVerificationNoteMax).optional(),
+  "contactPermissionStatus": zod.enum(['NOT_REVIEWED', 'PERMITTED', 'PROHIBITED']).optional(),
+  "contactPermissionEvidenceUrl": zod.string().url().max(getCommandCenterResponseDealsItemIntelligenceItemOneContactPermissionEvidenceUrlMax).optional(),
   "question": zod.string().max(getCommandCenterResponseDealsItemIntelligenceItemOneQuestionMax).optional(),
   "action": zod.string().max(getCommandCenterResponseDealsItemIntelligenceItemOneActionMax).optional()
 }).and(zod.object({
@@ -10392,6 +10464,8 @@ export const GetCommandCenterResponse = zod.object({
   "confidence": zod.number().min(getCommandCenterResponseOperationsItemContractOneCommitmentSnapshotOneDetailIntelligenceItemOneConfidenceMin).max(getCommandCenterResponseOperationsItemContractOneCommitmentSnapshotOneDetailIntelligenceItemOneConfidenceMax),
   "capturedAt": zod.string().datetime({"offset":true}),
   "verificationNote": zod.string().max(getCommandCenterResponseOperationsItemContractOneCommitmentSnapshotOneDetailIntelligenceItemOneVerificationNoteMax).optional(),
+  "contactPermissionStatus": zod.enum(['NOT_REVIEWED', 'PERMITTED', 'PROHIBITED']).optional(),
+  "contactPermissionEvidenceUrl": zod.string().url().max(getCommandCenterResponseOperationsItemContractOneCommitmentSnapshotOneDetailIntelligenceItemOneContactPermissionEvidenceUrlMax).optional(),
   "question": zod.string().max(getCommandCenterResponseOperationsItemContractOneCommitmentSnapshotOneDetailIntelligenceItemOneQuestionMax).optional(),
   "action": zod.string().max(getCommandCenterResponseOperationsItemContractOneCommitmentSnapshotOneDetailIntelligenceItemOneActionMax).optional()
 }).and(zod.object({
@@ -10909,11 +10983,12 @@ export const GetCommandCenterResponse = zod.object({
   "lng": zod.number().nullable(),
   "contactPaths": zod.array(zod.object({
   "id": zod.string(),
-  "channel": zod.enum(['POSTAL']),
-  "recipient": zod.string(),
-  "addressLines": zod.array(zod.string()),
-  "cityState": zod.string(),
-  "postalCode": zod.string().nullable(),
+  "channel": zod.enum(['POSTAL', 'PHONE', 'EMAIL', 'WEB', 'OTHER']),
+  "recipient": zod.string().nullish(),
+  "routeValue": zod.string().max(getCommandCenterResponsePropertyDiscoveriesRecordsItemPropertyContactPathsItemRouteValueMax).nullish(),
+  "addressLines": zod.array(zod.string()).optional(),
+  "cityState": zod.string().nullish(),
+  "postalCode": zod.string().nullish(),
   "classification": zod.enum(['OBSERVED', 'VERIFIED']),
   "confidence": zod.number().min(getCommandCenterResponsePropertyDiscoveriesRecordsItemPropertyContactPathsItemConfidenceMin).max(getCommandCenterResponsePropertyDiscoveriesRecordsItemPropertyContactPathsItemConfidenceMax),
   "sourceId": zod.string(),
@@ -13202,6 +13277,8 @@ export const getDealOperationsResponseContractOneCommitmentSnapshotOneDetailInte
 
 export const getDealOperationsResponseContractOneCommitmentSnapshotOneDetailIntelligenceItemOneVerificationNoteMax = 2000;
 
+export const getDealOperationsResponseContractOneCommitmentSnapshotOneDetailIntelligenceItemOneContactPermissionEvidenceUrlMax = 2000;
+
 export const getDealOperationsResponseContractOneCommitmentSnapshotOneDetailIntelligenceItemOneQuestionMax = 2000;
 
 export const getDealOperationsResponseContractOneCommitmentSnapshotOneDetailIntelligenceItemOneActionMax = 2000;
@@ -13643,6 +13720,8 @@ export const GetDealOperationsResponse = zod.object({
   "confidence": zod.number().min(getDealOperationsResponseContractOneCommitmentSnapshotOneDetailIntelligenceItemOneConfidenceMin).max(getDealOperationsResponseContractOneCommitmentSnapshotOneDetailIntelligenceItemOneConfidenceMax),
   "capturedAt": zod.string().datetime({"offset":true}),
   "verificationNote": zod.string().max(getDealOperationsResponseContractOneCommitmentSnapshotOneDetailIntelligenceItemOneVerificationNoteMax).optional(),
+  "contactPermissionStatus": zod.enum(['NOT_REVIEWED', 'PERMITTED', 'PROHIBITED']).optional(),
+  "contactPermissionEvidenceUrl": zod.string().url().max(getDealOperationsResponseContractOneCommitmentSnapshotOneDetailIntelligenceItemOneContactPermissionEvidenceUrlMax).optional(),
   "question": zod.string().max(getDealOperationsResponseContractOneCommitmentSnapshotOneDetailIntelligenceItemOneQuestionMax).optional(),
   "action": zod.string().max(getDealOperationsResponseContractOneCommitmentSnapshotOneDetailIntelligenceItemOneActionMax).optional()
 }).and(zod.object({
@@ -14193,6 +14272,8 @@ export const refreshMatchesResponseContractOneCommitmentSnapshotOneDetailIntelli
 
 export const refreshMatchesResponseContractOneCommitmentSnapshotOneDetailIntelligenceItemOneVerificationNoteMax = 2000;
 
+export const refreshMatchesResponseContractOneCommitmentSnapshotOneDetailIntelligenceItemOneContactPermissionEvidenceUrlMax = 2000;
+
 export const refreshMatchesResponseContractOneCommitmentSnapshotOneDetailIntelligenceItemOneQuestionMax = 2000;
 
 export const refreshMatchesResponseContractOneCommitmentSnapshotOneDetailIntelligenceItemOneActionMax = 2000;
@@ -14634,6 +14715,8 @@ export const RefreshMatchesResponse = zod.object({
   "confidence": zod.number().min(refreshMatchesResponseContractOneCommitmentSnapshotOneDetailIntelligenceItemOneConfidenceMin).max(refreshMatchesResponseContractOneCommitmentSnapshotOneDetailIntelligenceItemOneConfidenceMax),
   "capturedAt": zod.string().datetime({"offset":true}),
   "verificationNote": zod.string().max(refreshMatchesResponseContractOneCommitmentSnapshotOneDetailIntelligenceItemOneVerificationNoteMax).optional(),
+  "contactPermissionStatus": zod.enum(['NOT_REVIEWED', 'PERMITTED', 'PROHIBITED']).optional(),
+  "contactPermissionEvidenceUrl": zod.string().url().max(refreshMatchesResponseContractOneCommitmentSnapshotOneDetailIntelligenceItemOneContactPermissionEvidenceUrlMax).optional(),
   "question": zod.string().max(refreshMatchesResponseContractOneCommitmentSnapshotOneDetailIntelligenceItemOneQuestionMax).optional(),
   "action": zod.string().max(refreshMatchesResponseContractOneCommitmentSnapshotOneDetailIntelligenceItemOneActionMax).optional()
 }).and(zod.object({
@@ -15206,6 +15289,8 @@ export const recordBuyerResponseResponseContractOneCommitmentSnapshotOneDetailIn
 
 export const recordBuyerResponseResponseContractOneCommitmentSnapshotOneDetailIntelligenceItemOneVerificationNoteMax = 2000;
 
+export const recordBuyerResponseResponseContractOneCommitmentSnapshotOneDetailIntelligenceItemOneContactPermissionEvidenceUrlMax = 2000;
+
 export const recordBuyerResponseResponseContractOneCommitmentSnapshotOneDetailIntelligenceItemOneQuestionMax = 2000;
 
 export const recordBuyerResponseResponseContractOneCommitmentSnapshotOneDetailIntelligenceItemOneActionMax = 2000;
@@ -15647,6 +15732,8 @@ export const RecordBuyerResponseResponse = zod.object({
   "confidence": zod.number().min(recordBuyerResponseResponseContractOneCommitmentSnapshotOneDetailIntelligenceItemOneConfidenceMin).max(recordBuyerResponseResponseContractOneCommitmentSnapshotOneDetailIntelligenceItemOneConfidenceMax),
   "capturedAt": zod.string().datetime({"offset":true}),
   "verificationNote": zod.string().max(recordBuyerResponseResponseContractOneCommitmentSnapshotOneDetailIntelligenceItemOneVerificationNoteMax).optional(),
+  "contactPermissionStatus": zod.enum(['NOT_REVIEWED', 'PERMITTED', 'PROHIBITED']).optional(),
+  "contactPermissionEvidenceUrl": zod.string().url().max(recordBuyerResponseResponseContractOneCommitmentSnapshotOneDetailIntelligenceItemOneContactPermissionEvidenceUrlMax).optional(),
   "question": zod.string().max(recordBuyerResponseResponseContractOneCommitmentSnapshotOneDetailIntelligenceItemOneQuestionMax).optional(),
   "action": zod.string().max(recordBuyerResponseResponseContractOneCommitmentSnapshotOneDetailIntelligenceItemOneActionMax).optional()
 }).and(zod.object({
@@ -16925,6 +17012,8 @@ export const recordDestinationActivityResponseContractOneCommitmentSnapshotOneDe
 
 export const recordDestinationActivityResponseContractOneCommitmentSnapshotOneDetailIntelligenceItemOneVerificationNoteMax = 2000;
 
+export const recordDestinationActivityResponseContractOneCommitmentSnapshotOneDetailIntelligenceItemOneContactPermissionEvidenceUrlMax = 2000;
+
 export const recordDestinationActivityResponseContractOneCommitmentSnapshotOneDetailIntelligenceItemOneQuestionMax = 2000;
 
 export const recordDestinationActivityResponseContractOneCommitmentSnapshotOneDetailIntelligenceItemOneActionMax = 2000;
@@ -17366,6 +17455,8 @@ export const RecordDestinationActivityResponse = zod.object({
   "confidence": zod.number().min(recordDestinationActivityResponseContractOneCommitmentSnapshotOneDetailIntelligenceItemOneConfidenceMin).max(recordDestinationActivityResponseContractOneCommitmentSnapshotOneDetailIntelligenceItemOneConfidenceMax),
   "capturedAt": zod.string().datetime({"offset":true}),
   "verificationNote": zod.string().max(recordDestinationActivityResponseContractOneCommitmentSnapshotOneDetailIntelligenceItemOneVerificationNoteMax).optional(),
+  "contactPermissionStatus": zod.enum(['NOT_REVIEWED', 'PERMITTED', 'PROHIBITED']).optional(),
+  "contactPermissionEvidenceUrl": zod.string().url().max(recordDestinationActivityResponseContractOneCommitmentSnapshotOneDetailIntelligenceItemOneContactPermissionEvidenceUrlMax).optional(),
   "question": zod.string().max(recordDestinationActivityResponseContractOneCommitmentSnapshotOneDetailIntelligenceItemOneQuestionMax).optional(),
   "action": zod.string().max(recordDestinationActivityResponseContractOneCommitmentSnapshotOneDetailIntelligenceItemOneActionMax).optional()
 }).and(zod.object({
@@ -17925,6 +18016,8 @@ export const createContractResponseContractOneCommitmentSnapshotOneDetailIntelli
 
 export const createContractResponseContractOneCommitmentSnapshotOneDetailIntelligenceItemOneVerificationNoteMax = 2000;
 
+export const createContractResponseContractOneCommitmentSnapshotOneDetailIntelligenceItemOneContactPermissionEvidenceUrlMax = 2000;
+
 export const createContractResponseContractOneCommitmentSnapshotOneDetailIntelligenceItemOneQuestionMax = 2000;
 
 export const createContractResponseContractOneCommitmentSnapshotOneDetailIntelligenceItemOneActionMax = 2000;
@@ -18366,6 +18459,8 @@ export const CreateContractResponse = zod.object({
   "confidence": zod.number().min(createContractResponseContractOneCommitmentSnapshotOneDetailIntelligenceItemOneConfidenceMin).max(createContractResponseContractOneCommitmentSnapshotOneDetailIntelligenceItemOneConfidenceMax),
   "capturedAt": zod.string().datetime({"offset":true}),
   "verificationNote": zod.string().max(createContractResponseContractOneCommitmentSnapshotOneDetailIntelligenceItemOneVerificationNoteMax).optional(),
+  "contactPermissionStatus": zod.enum(['NOT_REVIEWED', 'PERMITTED', 'PROHIBITED']).optional(),
+  "contactPermissionEvidenceUrl": zod.string().url().max(createContractResponseContractOneCommitmentSnapshotOneDetailIntelligenceItemOneContactPermissionEvidenceUrlMax).optional(),
   "question": zod.string().max(createContractResponseContractOneCommitmentSnapshotOneDetailIntelligenceItemOneQuestionMax).optional(),
   "action": zod.string().max(createContractResponseContractOneCommitmentSnapshotOneDetailIntelligenceItemOneActionMax).optional()
 }).and(zod.object({
@@ -18923,6 +19018,8 @@ export const preparePurchaseReviewDocumentResponseContractOneCommitmentSnapshotO
 
 export const preparePurchaseReviewDocumentResponseContractOneCommitmentSnapshotOneDetailIntelligenceItemOneVerificationNoteMax = 2000;
 
+export const preparePurchaseReviewDocumentResponseContractOneCommitmentSnapshotOneDetailIntelligenceItemOneContactPermissionEvidenceUrlMax = 2000;
+
 export const preparePurchaseReviewDocumentResponseContractOneCommitmentSnapshotOneDetailIntelligenceItemOneQuestionMax = 2000;
 
 export const preparePurchaseReviewDocumentResponseContractOneCommitmentSnapshotOneDetailIntelligenceItemOneActionMax = 2000;
@@ -19364,6 +19461,8 @@ export const PreparePurchaseReviewDocumentResponse = zod.object({
   "confidence": zod.number().min(preparePurchaseReviewDocumentResponseContractOneCommitmentSnapshotOneDetailIntelligenceItemOneConfidenceMin).max(preparePurchaseReviewDocumentResponseContractOneCommitmentSnapshotOneDetailIntelligenceItemOneConfidenceMax),
   "capturedAt": zod.string().datetime({"offset":true}),
   "verificationNote": zod.string().max(preparePurchaseReviewDocumentResponseContractOneCommitmentSnapshotOneDetailIntelligenceItemOneVerificationNoteMax).optional(),
+  "contactPermissionStatus": zod.enum(['NOT_REVIEWED', 'PERMITTED', 'PROHIBITED']).optional(),
+  "contactPermissionEvidenceUrl": zod.string().url().max(preparePurchaseReviewDocumentResponseContractOneCommitmentSnapshotOneDetailIntelligenceItemOneContactPermissionEvidenceUrlMax).optional(),
   "question": zod.string().max(preparePurchaseReviewDocumentResponseContractOneCommitmentSnapshotOneDetailIntelligenceItemOneQuestionMax).optional(),
   "action": zod.string().max(preparePurchaseReviewDocumentResponseContractOneCommitmentSnapshotOneDetailIntelligenceItemOneActionMax).optional()
 }).and(zod.object({
@@ -19939,6 +20038,8 @@ export const executeContractResponseContractOneCommitmentSnapshotOneDetailIntell
 
 export const executeContractResponseContractOneCommitmentSnapshotOneDetailIntelligenceItemOneVerificationNoteMax = 2000;
 
+export const executeContractResponseContractOneCommitmentSnapshotOneDetailIntelligenceItemOneContactPermissionEvidenceUrlMax = 2000;
+
 export const executeContractResponseContractOneCommitmentSnapshotOneDetailIntelligenceItemOneQuestionMax = 2000;
 
 export const executeContractResponseContractOneCommitmentSnapshotOneDetailIntelligenceItemOneActionMax = 2000;
@@ -20380,6 +20481,8 @@ export const ExecuteContractResponse = zod.object({
   "confidence": zod.number().min(executeContractResponseContractOneCommitmentSnapshotOneDetailIntelligenceItemOneConfidenceMin).max(executeContractResponseContractOneCommitmentSnapshotOneDetailIntelligenceItemOneConfidenceMax),
   "capturedAt": zod.string().datetime({"offset":true}),
   "verificationNote": zod.string().max(executeContractResponseContractOneCommitmentSnapshotOneDetailIntelligenceItemOneVerificationNoteMax).optional(),
+  "contactPermissionStatus": zod.enum(['NOT_REVIEWED', 'PERMITTED', 'PROHIBITED']).optional(),
+  "contactPermissionEvidenceUrl": zod.string().url().max(executeContractResponseContractOneCommitmentSnapshotOneDetailIntelligenceItemOneContactPermissionEvidenceUrlMax).optional(),
   "question": zod.string().max(executeContractResponseContractOneCommitmentSnapshotOneDetailIntelligenceItemOneQuestionMax).optional(),
   "action": zod.string().max(executeContractResponseContractOneCommitmentSnapshotOneDetailIntelligenceItemOneActionMax).optional()
 }).and(zod.object({
@@ -20946,6 +21049,8 @@ export const recordClosingMilestoneResponseContractOneCommitmentSnapshotOneDetai
 
 export const recordClosingMilestoneResponseContractOneCommitmentSnapshotOneDetailIntelligenceItemOneVerificationNoteMax = 2000;
 
+export const recordClosingMilestoneResponseContractOneCommitmentSnapshotOneDetailIntelligenceItemOneContactPermissionEvidenceUrlMax = 2000;
+
 export const recordClosingMilestoneResponseContractOneCommitmentSnapshotOneDetailIntelligenceItemOneQuestionMax = 2000;
 
 export const recordClosingMilestoneResponseContractOneCommitmentSnapshotOneDetailIntelligenceItemOneActionMax = 2000;
@@ -21387,6 +21492,8 @@ export const RecordClosingMilestoneResponse = zod.object({
   "confidence": zod.number().min(recordClosingMilestoneResponseContractOneCommitmentSnapshotOneDetailIntelligenceItemOneConfidenceMin).max(recordClosingMilestoneResponseContractOneCommitmentSnapshotOneDetailIntelligenceItemOneConfidenceMax),
   "capturedAt": zod.string().datetime({"offset":true}),
   "verificationNote": zod.string().max(recordClosingMilestoneResponseContractOneCommitmentSnapshotOneDetailIntelligenceItemOneVerificationNoteMax).optional(),
+  "contactPermissionStatus": zod.enum(['NOT_REVIEWED', 'PERMITTED', 'PROHIBITED']).optional(),
+  "contactPermissionEvidenceUrl": zod.string().url().max(recordClosingMilestoneResponseContractOneCommitmentSnapshotOneDetailIntelligenceItemOneContactPermissionEvidenceUrlMax).optional(),
   "question": zod.string().max(recordClosingMilestoneResponseContractOneCommitmentSnapshotOneDetailIntelligenceItemOneQuestionMax).optional(),
   "action": zod.string().max(recordClosingMilestoneResponseContractOneCommitmentSnapshotOneDetailIntelligenceItemOneActionMax).optional()
 }).and(zod.object({
@@ -21966,6 +22073,8 @@ export const recordDealOutcomeResponseContractOneCommitmentSnapshotOneDetailInte
 
 export const recordDealOutcomeResponseContractOneCommitmentSnapshotOneDetailIntelligenceItemOneVerificationNoteMax = 2000;
 
+export const recordDealOutcomeResponseContractOneCommitmentSnapshotOneDetailIntelligenceItemOneContactPermissionEvidenceUrlMax = 2000;
+
 export const recordDealOutcomeResponseContractOneCommitmentSnapshotOneDetailIntelligenceItemOneQuestionMax = 2000;
 
 export const recordDealOutcomeResponseContractOneCommitmentSnapshotOneDetailIntelligenceItemOneActionMax = 2000;
@@ -22407,6 +22516,8 @@ export const RecordDealOutcomeResponse = zod.object({
   "confidence": zod.number().min(recordDealOutcomeResponseContractOneCommitmentSnapshotOneDetailIntelligenceItemOneConfidenceMin).max(recordDealOutcomeResponseContractOneCommitmentSnapshotOneDetailIntelligenceItemOneConfidenceMax),
   "capturedAt": zod.string().datetime({"offset":true}),
   "verificationNote": zod.string().max(recordDealOutcomeResponseContractOneCommitmentSnapshotOneDetailIntelligenceItemOneVerificationNoteMax).optional(),
+  "contactPermissionStatus": zod.enum(['NOT_REVIEWED', 'PERMITTED', 'PROHIBITED']).optional(),
+  "contactPermissionEvidenceUrl": zod.string().url().max(recordDealOutcomeResponseContractOneCommitmentSnapshotOneDetailIntelligenceItemOneContactPermissionEvidenceUrlMax).optional(),
   "question": zod.string().max(recordDealOutcomeResponseContractOneCommitmentSnapshotOneDetailIntelligenceItemOneQuestionMax).optional(),
   "action": zod.string().max(recordDealOutcomeResponseContractOneCommitmentSnapshotOneDetailIntelligenceItemOneActionMax).optional()
 }).and(zod.object({
@@ -23258,6 +23369,8 @@ export const SearchPublicPropertiesQueryParams = zod.object({
   "lane": zod.enum(['properties', 'buyer_candidates']).optional()
 })
 
+export const searchPublicPropertiesResponseRecordsItemContactPathsItemRouteValueMax = 2000;
+
 export const searchPublicPropertiesResponseRecordsItemContactPathsItemConfidenceMin = 0;
 export const searchPublicPropertiesResponseRecordsItemContactPathsItemConfidenceMax = 1;
 
@@ -23296,11 +23409,12 @@ export const SearchPublicPropertiesResponse = zod.object({
   "lng": zod.number().nullable(),
   "contactPaths": zod.array(zod.object({
   "id": zod.string(),
-  "channel": zod.enum(['POSTAL']),
-  "recipient": zod.string(),
-  "addressLines": zod.array(zod.string()),
-  "cityState": zod.string(),
-  "postalCode": zod.string().nullable(),
+  "channel": zod.enum(['POSTAL', 'PHONE', 'EMAIL', 'WEB', 'OTHER']),
+  "recipient": zod.string().nullish(),
+  "routeValue": zod.string().max(searchPublicPropertiesResponseRecordsItemContactPathsItemRouteValueMax).nullish(),
+  "addressLines": zod.array(zod.string()).optional(),
+  "cityState": zod.string().nullish(),
+  "postalCode": zod.string().nullish(),
   "classification": zod.enum(['OBSERVED', 'VERIFIED']),
   "confidence": zod.number().min(searchPublicPropertiesResponseRecordsItemContactPathsItemConfidenceMin).max(searchPublicPropertiesResponseRecordsItemContactPathsItemConfidenceMax),
   "sourceId": zod.string(),
@@ -23357,6 +23471,8 @@ export const listPropertyDiscoveriesResponseRecordsItemPriorityScoreMax = 120;
 export const listPropertyDiscoveriesResponseRecordsItemConfidenceMin = 0;
 export const listPropertyDiscoveriesResponseRecordsItemConfidenceMax = 1;
 
+
+export const listPropertyDiscoveriesResponseRecordsItemPropertyContactPathsItemRouteValueMax = 2000;
 
 export const listPropertyDiscoveriesResponseRecordsItemPropertyContactPathsItemConfidenceMin = 0;
 export const listPropertyDiscoveriesResponseRecordsItemPropertyContactPathsItemConfidenceMax = 1;
@@ -23474,11 +23590,12 @@ export const ListPropertyDiscoveriesResponse = zod.object({
   "lng": zod.number().nullable(),
   "contactPaths": zod.array(zod.object({
   "id": zod.string(),
-  "channel": zod.enum(['POSTAL']),
-  "recipient": zod.string(),
-  "addressLines": zod.array(zod.string()),
-  "cityState": zod.string(),
-  "postalCode": zod.string().nullable(),
+  "channel": zod.enum(['POSTAL', 'PHONE', 'EMAIL', 'WEB', 'OTHER']),
+  "recipient": zod.string().nullish(),
+  "routeValue": zod.string().max(listPropertyDiscoveriesResponseRecordsItemPropertyContactPathsItemRouteValueMax).nullish(),
+  "addressLines": zod.array(zod.string()).optional(),
+  "cityState": zod.string().nullish(),
+  "postalCode": zod.string().nullish(),
   "classification": zod.enum(['OBSERVED', 'VERIFIED']),
   "confidence": zod.number().min(listPropertyDiscoveriesResponseRecordsItemPropertyContactPathsItemConfidenceMin).max(listPropertyDiscoveriesResponseRecordsItemPropertyContactPathsItemConfidenceMax),
   "sourceId": zod.string(),
@@ -23645,6 +23762,8 @@ export const recordPublicPropertyDiscoveryResponseConfidenceMin = 0;
 export const recordPublicPropertyDiscoveryResponseConfidenceMax = 1;
 
 
+export const recordPublicPropertyDiscoveryResponsePropertyContactPathsItemRouteValueMax = 2000;
+
 export const recordPublicPropertyDiscoveryResponsePropertyContactPathsItemConfidenceMin = 0;
 export const recordPublicPropertyDiscoveryResponsePropertyContactPathsItemConfidenceMax = 1;
 
@@ -23719,11 +23838,12 @@ export const RecordPublicPropertyDiscoveryResponse = zod.object({
   "lng": zod.number().nullable(),
   "contactPaths": zod.array(zod.object({
   "id": zod.string(),
-  "channel": zod.enum(['POSTAL']),
-  "recipient": zod.string(),
-  "addressLines": zod.array(zod.string()),
-  "cityState": zod.string(),
-  "postalCode": zod.string().nullable(),
+  "channel": zod.enum(['POSTAL', 'PHONE', 'EMAIL', 'WEB', 'OTHER']),
+  "recipient": zod.string().nullish(),
+  "routeValue": zod.string().max(recordPublicPropertyDiscoveryResponsePropertyContactPathsItemRouteValueMax).nullish(),
+  "addressLines": zod.array(zod.string()).optional(),
+  "cityState": zod.string().nullish(),
+  "postalCode": zod.string().nullish(),
   "classification": zod.enum(['OBSERVED', 'VERIFIED']),
   "confidence": zod.number().min(recordPublicPropertyDiscoveryResponsePropertyContactPathsItemConfidenceMin).max(recordPublicPropertyDiscoveryResponsePropertyContactPathsItemConfidenceMax),
   "sourceId": zod.string(),
@@ -23980,6 +24100,8 @@ export const addPropertyRelevanceSignalResponseConfidenceMin = 0;
 export const addPropertyRelevanceSignalResponseConfidenceMax = 1;
 
 
+export const addPropertyRelevanceSignalResponsePropertyContactPathsItemRouteValueMax = 2000;
+
 export const addPropertyRelevanceSignalResponsePropertyContactPathsItemConfidenceMin = 0;
 export const addPropertyRelevanceSignalResponsePropertyContactPathsItemConfidenceMax = 1;
 
@@ -24054,11 +24176,12 @@ export const AddPropertyRelevanceSignalResponse = zod.object({
   "lng": zod.number().nullable(),
   "contactPaths": zod.array(zod.object({
   "id": zod.string(),
-  "channel": zod.enum(['POSTAL']),
-  "recipient": zod.string(),
-  "addressLines": zod.array(zod.string()),
-  "cityState": zod.string(),
-  "postalCode": zod.string().nullable(),
+  "channel": zod.enum(['POSTAL', 'PHONE', 'EMAIL', 'WEB', 'OTHER']),
+  "recipient": zod.string().nullish(),
+  "routeValue": zod.string().max(addPropertyRelevanceSignalResponsePropertyContactPathsItemRouteValueMax).nullish(),
+  "addressLines": zod.array(zod.string()).optional(),
+  "cityState": zod.string().nullish(),
+  "postalCode": zod.string().nullish(),
   "classification": zod.enum(['OBSERVED', 'VERIFIED']),
   "confidence": zod.number().min(addPropertyRelevanceSignalResponsePropertyContactPathsItemConfidenceMin).max(addPropertyRelevanceSignalResponsePropertyContactPathsItemConfidenceMax),
   "sourceId": zod.string(),
@@ -24175,6 +24298,8 @@ export const promotePropertyDiscoveryResponseDiscoveryConfidenceMin = 0;
 export const promotePropertyDiscoveryResponseDiscoveryConfidenceMax = 1;
 
 
+export const promotePropertyDiscoveryResponseDiscoveryPropertyContactPathsItemRouteValueMax = 2000;
+
 export const promotePropertyDiscoveryResponseDiscoveryPropertyContactPathsItemConfidenceMin = 0;
 export const promotePropertyDiscoveryResponseDiscoveryPropertyContactPathsItemConfidenceMax = 1;
 
@@ -24250,11 +24375,12 @@ export const PromotePropertyDiscoveryResponse = zod.object({
   "lng": zod.number().nullable(),
   "contactPaths": zod.array(zod.object({
   "id": zod.string(),
-  "channel": zod.enum(['POSTAL']),
-  "recipient": zod.string(),
-  "addressLines": zod.array(zod.string()),
-  "cityState": zod.string(),
-  "postalCode": zod.string().nullable(),
+  "channel": zod.enum(['POSTAL', 'PHONE', 'EMAIL', 'WEB', 'OTHER']),
+  "recipient": zod.string().nullish(),
+  "routeValue": zod.string().max(promotePropertyDiscoveryResponseDiscoveryPropertyContactPathsItemRouteValueMax).nullish(),
+  "addressLines": zod.array(zod.string()).optional(),
+  "cityState": zod.string().nullish(),
+  "postalCode": zod.string().nullish(),
   "classification": zod.enum(['OBSERVED', 'VERIFIED']),
   "confidence": zod.number().min(promotePropertyDiscoveryResponseDiscoveryPropertyContactPathsItemConfidenceMin).max(promotePropertyDiscoveryResponseDiscoveryPropertyContactPathsItemConfidenceMax),
   "sourceId": zod.string(),
@@ -24373,6 +24499,8 @@ export const disqualifyPropertyDiscoveryResponseConfidenceMin = 0;
 export const disqualifyPropertyDiscoveryResponseConfidenceMax = 1;
 
 
+export const disqualifyPropertyDiscoveryResponsePropertyContactPathsItemRouteValueMax = 2000;
+
 export const disqualifyPropertyDiscoveryResponsePropertyContactPathsItemConfidenceMin = 0;
 export const disqualifyPropertyDiscoveryResponsePropertyContactPathsItemConfidenceMax = 1;
 
@@ -24447,11 +24575,12 @@ export const DisqualifyPropertyDiscoveryResponse = zod.object({
   "lng": zod.number().nullable(),
   "contactPaths": zod.array(zod.object({
   "id": zod.string(),
-  "channel": zod.enum(['POSTAL']),
-  "recipient": zod.string(),
-  "addressLines": zod.array(zod.string()),
-  "cityState": zod.string(),
-  "postalCode": zod.string().nullable(),
+  "channel": zod.enum(['POSTAL', 'PHONE', 'EMAIL', 'WEB', 'OTHER']),
+  "recipient": zod.string().nullish(),
+  "routeValue": zod.string().max(disqualifyPropertyDiscoveryResponsePropertyContactPathsItemRouteValueMax).nullish(),
+  "addressLines": zod.array(zod.string()).optional(),
+  "cityState": zod.string().nullish(),
+  "postalCode": zod.string().nullish(),
   "classification": zod.enum(['OBSERVED', 'VERIFIED']),
   "confidence": zod.number().min(disqualifyPropertyDiscoveryResponsePropertyContactPathsItemConfidenceMin).max(disqualifyPropertyDiscoveryResponsePropertyContactPathsItemConfidenceMax),
   "sourceId": zod.string(),
@@ -24547,8 +24676,12 @@ export const GetSourceResearchParams = zod.object({
   "id": zod.coerce.string()
 })
 
+export const getSourceResearchResponseResearchOneSubjectContactPathsItemRouteValueMax = 2000;
+
 export const getSourceResearchResponseResearchOneSubjectContactPathsItemConfidenceMin = 0;
 export const getSourceResearchResponseResearchOneSubjectContactPathsItemConfidenceMax = 1;
+
+export const getSourceResearchResponseResearchOneCandidatesItemRecordContactPathsItemRouteValueMax = 2000;
 
 export const getSourceResearchResponseResearchOneCandidatesItemRecordContactPathsItemConfidenceMin = 0;
 export const getSourceResearchResponseResearchOneCandidatesItemRecordContactPathsItemConfidenceMax = 1;
@@ -24606,11 +24739,12 @@ export const GetSourceResearchResponse = zod.object({
   "lng": zod.number().nullable(),
   "contactPaths": zod.array(zod.object({
   "id": zod.string(),
-  "channel": zod.enum(['POSTAL']),
-  "recipient": zod.string(),
-  "addressLines": zod.array(zod.string()),
-  "cityState": zod.string(),
-  "postalCode": zod.string().nullable(),
+  "channel": zod.enum(['POSTAL', 'PHONE', 'EMAIL', 'WEB', 'OTHER']),
+  "recipient": zod.string().nullish(),
+  "routeValue": zod.string().max(getSourceResearchResponseResearchOneSubjectContactPathsItemRouteValueMax).nullish(),
+  "addressLines": zod.array(zod.string()).optional(),
+  "cityState": zod.string().nullish(),
+  "postalCode": zod.string().nullish(),
   "classification": zod.enum(['OBSERVED', 'VERIFIED']),
   "confidence": zod.number().min(getSourceResearchResponseResearchOneSubjectContactPathsItemConfidenceMin).max(getSourceResearchResponseResearchOneSubjectContactPathsItemConfidenceMax),
   "sourceId": zod.string(),
@@ -24650,11 +24784,12 @@ export const GetSourceResearchResponse = zod.object({
   "lng": zod.number().nullable(),
   "contactPaths": zod.array(zod.object({
   "id": zod.string(),
-  "channel": zod.enum(['POSTAL']),
-  "recipient": zod.string(),
-  "addressLines": zod.array(zod.string()),
-  "cityState": zod.string(),
-  "postalCode": zod.string().nullable(),
+  "channel": zod.enum(['POSTAL', 'PHONE', 'EMAIL', 'WEB', 'OTHER']),
+  "recipient": zod.string().nullish(),
+  "routeValue": zod.string().max(getSourceResearchResponseResearchOneCandidatesItemRecordContactPathsItemRouteValueMax).nullish(),
+  "addressLines": zod.array(zod.string()).optional(),
+  "cityState": zod.string().nullish(),
+  "postalCode": zod.string().nullish(),
   "classification": zod.enum(['OBSERVED', 'VERIFIED']),
   "confidence": zod.number().min(getSourceResearchResponseResearchOneCandidatesItemRecordContactPathsItemConfidenceMin).max(getSourceResearchResponseResearchOneCandidatesItemRecordContactPathsItemConfidenceMax),
   "sourceId": zod.string(),
@@ -24704,8 +24839,12 @@ export const RefreshSourceResearchBody = zod.object({
   "version": zod.number().int().min(1)
 }))
 
+export const refreshSourceResearchResponseSubjectContactPathsItemRouteValueMax = 2000;
+
 export const refreshSourceResearchResponseSubjectContactPathsItemConfidenceMin = 0;
 export const refreshSourceResearchResponseSubjectContactPathsItemConfidenceMax = 1;
+
+export const refreshSourceResearchResponseCandidatesItemRecordContactPathsItemRouteValueMax = 2000;
 
 export const refreshSourceResearchResponseCandidatesItemRecordContactPathsItemConfidenceMin = 0;
 export const refreshSourceResearchResponseCandidatesItemRecordContactPathsItemConfidenceMax = 1;
@@ -24762,11 +24901,12 @@ export const RefreshSourceResearchResponse = zod.object({
   "lng": zod.number().nullable(),
   "contactPaths": zod.array(zod.object({
   "id": zod.string(),
-  "channel": zod.enum(['POSTAL']),
-  "recipient": zod.string(),
-  "addressLines": zod.array(zod.string()),
-  "cityState": zod.string(),
-  "postalCode": zod.string().nullable(),
+  "channel": zod.enum(['POSTAL', 'PHONE', 'EMAIL', 'WEB', 'OTHER']),
+  "recipient": zod.string().nullish(),
+  "routeValue": zod.string().max(refreshSourceResearchResponseSubjectContactPathsItemRouteValueMax).nullish(),
+  "addressLines": zod.array(zod.string()).optional(),
+  "cityState": zod.string().nullish(),
+  "postalCode": zod.string().nullish(),
   "classification": zod.enum(['OBSERVED', 'VERIFIED']),
   "confidence": zod.number().min(refreshSourceResearchResponseSubjectContactPathsItemConfidenceMin).max(refreshSourceResearchResponseSubjectContactPathsItemConfidenceMax),
   "sourceId": zod.string(),
@@ -24806,11 +24946,12 @@ export const RefreshSourceResearchResponse = zod.object({
   "lng": zod.number().nullable(),
   "contactPaths": zod.array(zod.object({
   "id": zod.string(),
-  "channel": zod.enum(['POSTAL']),
-  "recipient": zod.string(),
-  "addressLines": zod.array(zod.string()),
-  "cityState": zod.string(),
-  "postalCode": zod.string().nullable(),
+  "channel": zod.enum(['POSTAL', 'PHONE', 'EMAIL', 'WEB', 'OTHER']),
+  "recipient": zod.string().nullish(),
+  "routeValue": zod.string().max(refreshSourceResearchResponseCandidatesItemRecordContactPathsItemRouteValueMax).nullish(),
+  "addressLines": zod.array(zod.string()).optional(),
+  "cityState": zod.string().nullish(),
+  "postalCode": zod.string().nullish(),
   "classification": zod.enum(['OBSERVED', 'VERIFIED']),
   "confidence": zod.number().min(refreshSourceResearchResponseCandidatesItemRecordContactPathsItemConfidenceMin).max(refreshSourceResearchResponseCandidatesItemRecordContactPathsItemConfidenceMax),
   "sourceId": zod.string(),
@@ -24924,6 +25065,8 @@ export const addSourceCompsResponseIntelligenceItemOneConfidenceMin = 0;
 export const addSourceCompsResponseIntelligenceItemOneConfidenceMax = 1;
 
 export const addSourceCompsResponseIntelligenceItemOneVerificationNoteMax = 2000;
+
+export const addSourceCompsResponseIntelligenceItemOneContactPermissionEvidenceUrlMax = 2000;
 
 export const addSourceCompsResponseIntelligenceItemOneQuestionMax = 2000;
 
@@ -25166,6 +25309,8 @@ export const AddSourceCompsResponse = zod.object({
   "confidence": zod.number().min(addSourceCompsResponseIntelligenceItemOneConfidenceMin).max(addSourceCompsResponseIntelligenceItemOneConfidenceMax),
   "capturedAt": zod.string().datetime({"offset":true}),
   "verificationNote": zod.string().max(addSourceCompsResponseIntelligenceItemOneVerificationNoteMax).optional(),
+  "contactPermissionStatus": zod.enum(['NOT_REVIEWED', 'PERMITTED', 'PROHIBITED']).optional(),
+  "contactPermissionEvidenceUrl": zod.string().url().max(addSourceCompsResponseIntelligenceItemOneContactPermissionEvidenceUrlMax).optional(),
   "question": zod.string().max(addSourceCompsResponseIntelligenceItemOneQuestionMax).optional(),
   "action": zod.string().max(addSourceCompsResponseIntelligenceItemOneActionMax).optional()
 }).and(zod.object({

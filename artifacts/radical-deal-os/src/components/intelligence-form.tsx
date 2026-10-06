@@ -7,10 +7,11 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { ErrorNotice } from '@/components/state-views';
 import type { IntelligenceInput, IntelligenceInputSourceType, ProvenanceClass } from '@workspace/api-client-react';
 import { fromLocalInput, num, toLocalInput } from '@/lib/format';
+import type { IntelligenceInputContactPermissionStatus } from '@workspace/api-client-react';
 
 const ALLOWED: Record<ProvenanceClass, IntelligenceInputSourceType[]> = {
   VERIFIED_FACTS: ['PUBLIC_RECORD', 'INSPECTION'],
-  OBSERVED: ['PERMITTED_LISTING', 'PUBLIC_PAGE', 'ANALYST', 'INSPECTION'],
+  OBSERVED: ['PUBLIC_RECORD', 'PERMITTED_LISTING', 'SELLER', 'PUBLIC_PAGE', 'ANALYST', 'INSPECTION'],
   INDICATED: ['SELLER', 'ANALYST', 'PUBLIC_PAGE', 'PERMITTED_LISTING'],
   AI_HYPOTHESIS: ['MODEL', 'ANALYST'],
 };
@@ -30,6 +31,8 @@ export function IntelligenceForm({
   const [conf, setConf] = useState(initialClass === 'VERIFIED_FACTS' ? '95' : '60');
   const [captured, setCaptured] = useState(toLocalInput(new Date().toISOString()));
   const [note, setNote] = useState('');
+  const [contactPermissionStatus, setContactPermissionStatus] = useState<IntelligenceInputContactPermissionStatus>('NOT_REVIEWED');
+  const [contactPermissionEvidenceUrl, setContactPermissionEvidenceUrl] = useState('');
   const [question, setQuestion] = useState('');
   const [action, setAction] = useState('');
   const [local, setLocal] = useState<string | null>(null);
@@ -44,6 +47,10 @@ export function IntelligenceForm({
     if (!category.trim() || !statement.trim() || !source.trim()) return setLocal('Category, statement and source are required.');
     if (Number.isNaN(c) || c < 0 || c > 1) return setLocal('Confidence must be between 0 and 100.');
     if (cls === 'VERIFIED_FACTS' && !note.trim()) return setLocal('A verified fact needs a verification note.');
+    if (category.trim().toLowerCase() === 'seller_contact' && contactPermissionStatus === 'PERMITTED' &&
+      !/^https:\/\//i.test(contactPermissionEvidenceUrl.trim())) {
+      return setLocal('A permitted contact route needs a source link documenting permission.');
+    }
     if (cls === 'AI_HYPOTHESIS' && (!question.trim() || !action.trim())) return setLocal('A hypothesis needs a question to ask and an action to take.');
     if (cls === 'AI_HYPOTHESIS' && c >= 1) return setLocal('A hypothesis must have confidence below 100%.');
     const at = fromLocalInput(captured);
@@ -53,6 +60,10 @@ export function IntelligenceForm({
       classification: cls, category: category.trim(), statement: statement.trim(), source: source.trim(),
       sourceUrl: sourceUrl.trim() || undefined, sourceType, confidence: c, capturedAt: at,
       verificationNote: cls === 'VERIFIED_FACTS' ? note.trim() : undefined,
+      ...(category.trim().toLowerCase() === 'seller_contact' ? {
+        contactPermissionStatus,
+        contactPermissionEvidenceUrl: contactPermissionEvidenceUrl.trim(),
+      } : {}),
       question: cls === 'AI_HYPOTHESIS' ? question.trim() : undefined,
       action: cls === 'AI_HYPOTHESIS' ? action.trim() : undefined,
     });
@@ -89,6 +100,29 @@ export function IntelligenceForm({
       </div>
       {cls === 'VERIFIED_FACTS' && (
         <div className="space-y-1.5"><Label>Verification note</Label><Textarea rows={2} value={note} onChange={(e) => setNote(e.target.value)} placeholder="How exactly was this checked?" data-testid="input-intel-note" /></div>
+      )}
+      {category.trim().toLowerCase() === 'seller_contact' && (
+        <div className="grid gap-3 rounded border border-warn p-3 sm:grid-cols-2" data-testid="seller-contact-permission">
+          <div className="space-y-1.5">
+            <Label>Contact permission status</Label>
+            <Select value={contactPermissionStatus} onValueChange={(value) => setContactPermissionStatus(value as IntelligenceInputContactPermissionStatus)}>
+              <SelectTrigger data-testid="select-contact-permission"><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="NOT_REVIEWED">Not reviewed</SelectItem>
+                <SelectItem value="PERMITTED">Permitted — evidence required</SelectItem>
+                <SelectItem value="PROHIBITED">Prohibited</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="space-y-1.5">
+            <Label>Permission evidence URL (required if permitted)</Label>
+            <Input value={contactPermissionEvidenceUrl} onChange={(event) => setContactPermissionEvidenceUrl(event.target.value)}
+              placeholder="https://…" data-testid="input-contact-permission-evidence" />
+          </div>
+          <p className="text-xs text-muted-foreground sm:col-span-2">
+            Public availability is not permission. Keep unreviewed or prohibited routes in the evidence history, but only a permitted route with its evidence can make a lead CALL READY.
+          </p>
+        </div>
       )}
       {cls === 'AI_HYPOTHESIS' && (
         <div className="grid gap-3 sm:grid-cols-2">

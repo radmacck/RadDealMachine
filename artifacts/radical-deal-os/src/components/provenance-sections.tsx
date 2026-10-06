@@ -28,6 +28,15 @@ function Item({ it }: { it: Intelligence }) {
         <span className="ml-2">captured {fmtDate(it.capturedAt, false)}</span>
       </p>
       {it.verificationNote && <p className="mt-1 text-xs"><b>Verification:</b> {it.verificationNote}</p>}
+      {it.category.trim().toLowerCase() === 'seller_contact' && (
+        <p className="mt-1 text-xs" data-testid={`contact-permission-${it.id}`}>
+          <b>Contact permission:</b> {(it.contactPermissionStatus ?? 'NOT_REVIEWED').replaceAll('_', ' ').toLowerCase()}.
+          {it.contactPermissionEvidenceUrl
+            ? <> Permission evidence <a href={it.contactPermissionEvidenceUrl} target="_blank" rel="noreferrer" className="underline">link</a>.</>
+            : ' No permission evidence link is recorded.'}
+          {' '}Public availability alone does not establish permission.
+        </p>
+      )}
       {it.question && <p className="mt-1 text-xs"><b>Ask:</b> {it.question}</p>}
       {it.action && <p className="text-xs"><b>Do:</b> {it.action}</p>}
     </li>

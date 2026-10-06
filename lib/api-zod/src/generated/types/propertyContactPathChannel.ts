@@ -11,4 +11,8 @@ export type PropertyContactPathChannel = typeof PropertyContactPathChannel[keyof
 
 export const PropertyContactPathChannel = {
   POSTAL: 'POSTAL',
+  PHONE: 'PHONE',
+  EMAIL: 'EMAIL',
+  WEB: 'WEB',
+  OTHER: 'OTHER',
 } as const;

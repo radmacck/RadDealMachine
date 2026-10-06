@@ -87,13 +87,19 @@ export function buildDealWorkGuidance(
       return `${item.classification.replaceAll("_"," ").toLowerCase()} ${item.sourceType.replaceAll("_"," ").toLowerCase()} evidence — ${item.category}: ${statement}`;
     });
     const phoneMissing = blockers.some((item) => item.toLowerCase().includes("phone"));
+    const contactEvidenceBlocked = blockers.some((item) => item.toLowerCase().includes("seller contact"));
     const canMarkCallReady = allowedTransitions.includes("CALL_READY") && blockers.length === 0;
-    const work = phoneMissing ? "record" : !analysis ? "source" : canMarkCallReady ? "stage" : "uw";
+    const work = phoneMissing ? "record" : contactEvidenceBlocked ? "intel" : !analysis ? "source" : canMarkCallReady ? "stage" : "uw";
+    const discoveryHref = phoneMissing && lead.propertyQualification?.discoveryId
+      ? `/sources?discovery=${encodeURIComponent(lead.propertyQualification.discoveryId)}`
+      : `/deals/${lead.id}?work=${work}`;
     return make({
       category:"RESEARCH",priority:overdue?100:analysis?.classification==="PASS"?20:80,
       title:nextAction || "Record the next research step.",
-      href:`/deals/${lead.id}?work=${work}`,
-      cta:phoneMissing?"Add seller contact":"Open research",
+      href:discoveryHref,
+      cta:phoneMissing
+        ? lead.propertyQualification?.discoveryId ? "Review best contact route" : "Add seller contact"
+        : contactEvidenceBlocked ? "Review contact evidence" : "Open research",
       currentState:`The deal is in ${label(lead.stage)}.`,
       responsibleRole:"ANALYST",
       dueLabel:dueAt?"Scheduled follow-up":"No follow-up date recorded.",
@@ -114,33 +120,50 @@ export function buildDealWorkGuidance(
   }
 
   if (sellerStages.has(lead.stage)) {
-    const missingFacts: string[] = [];
-    if (!lead.sellerPhone?.trim()) missingFacts.push("A seller phone number is not recorded.");
+    const contactEvidenceBlockers = (analysis?.blockers ?? []).filter(item => item.toLowerCase().includes("seller contact"));
+    const noPhone = !lead.sellerPhone?.trim();
+    const contactMissing = noPhone || contactEvidenceBlockers.length > 0;
+    const missingFacts: string[] = [...contactEvidenceBlockers];
+    if (noPhone) missingFacts.push(lead.propertyQualification?.discoveryId
+      ? "No direct phone route is recorded. The linked OPA observation may contain a postal route only; it does not provide phone or email."
+      : "No direct seller phone route is recorded.");
     if (["CONTACTED","CONVERSATION","NEGOTIATING"].includes(lead.stage) && !dueAt) {
       missingFacts.push("No future seller follow-up is recorded.");
     }
-    const contactMissing = !lead.sellerPhone?.trim();
     const category = overdue ? "FOLLOW_UP" : lead.stage === "NEGOTIATING" ? "NEGOTIATION" : "CALL";
     return make({
       category,priority:overdue?100:category==="NEGOTIATION"?70:75,
-      title:contactMissing?"Add a verified seller contact route":nextAction || "Record the seller's next step.",
+      title:contactMissing
+        ? noPhone ? "Review the best available seller contact route" : "Refresh seller phone evidence before calling"
+        : nextAction || "Record the seller's next step.",
       href:contactMissing
-        ? `/deals/${lead.id}?work=record`
+        ? noPhone && lead.propertyQualification?.discoveryId
+          ? `/sources?discovery=${encodeURIComponent(lead.propertyQualification.discoveryId)}`
+          : `/deals/${lead.id}?work=${noPhone ? "record" : "intel"}`
         : `/calls?lead=${encodeURIComponent(lead.id)}`,
-      cta:contactMissing?"Open seller record":overdue?"Log follow-up":"Open call brief",
+      cta:contactMissing?noPhone?"Review best contact route":"Review contact evidence":overdue?"Log follow-up":"Open call brief",
       currentState:`The deal is in ${label(lead.stage)}.`,
       responsibleRole:"OPERATOR",
       dueLabel:dueAt?"Seller follow-up":"Set a follow-up during the conversation.",
       knownFacts:[
-        lead.sellerPhone?.trim()?"A seller phone route is recorded.":"No seller phone route is recorded.",
+        lead.sellerPhone?.trim()?"A seller phone route is recorded; confirm the current source and permission before contact."
+          : lead.propertyQualification?.discoveryId
+            ? "No direct phone route is recorded. The linked property-source record is the best available route."
+            : "No direct seller phone route is recorded.",
         `${calls.length} seller call record${calls.length===1?"":"s"} saved.`,
       ],
       missingFacts,
       why:"Seller outreach and follow-up must be recorded; a call does not change signed terms or authorize a new price.",
       systemCanDo:"The system can prepare the call brief and preserve offer boundaries. It cannot place the call or choose a seller term.",
-      humanMustDo:contactMissing?"Add a verified, permitted contact route before outreach.":nextAction || "Record the actual conversation and the next follow-up.",
+      humanMustDo:contactMissing
+        ? noPhone
+          ? "Review the source-backed route and its freshness/permission. Obtain a phone route from a permitted source or the seller before placing a call."
+          : "Refresh the phone source and contact evidence; do not call using stale or unsupported details."
+        : nextAction || "Review route permission, make the actual call, and record the conversation and next follow-up.",
       requiredEvidence:contactMissing
-        ? ["A verified, permitted seller contact route."]
+        ? noPhone
+          ? ["A current phone route from a permitted source or seller-provided contact.","Evidence that the phone route belongs to the intended seller; public ownership alone does not establish identity or signing authority."]
+          : ["Current observed/verified phone-route evidence from a permitted source.","Review contact permission before making the call."]
         : ["Actual call outcome and notes.","The next action and a future follow-up date when the conversation remains open."],
       completionRecord:"The call record stores its outcome, notes, actor, time, next action, and follow-up date.",
       dueAt,

@@ -51,6 +51,35 @@ test("OPA mailing contact route is source-backed, freshness-bounded, and never t
   assert.equal(rankContactPaths([path],new Date(now.getTime()+31*24*60*60*1000))[0]!.freshnessStatus,"STALE");
   assert.equal(normalizeProperty(raw,now).contactPaths.length,0);
 });
+test("contact route ranking collapses duplicate source observations and keeps the strongest permitted current provenance",()=>{
+  const first=normalizeProperty({
+    ...raw,mailing_address_1:"100 ROUTE TEST AVE",mailing_city_state:"Philadelphia PA",mailing_zip:"19143",
+  },now).contactPaths[0]!;
+  const duplicate={...first,id:"other-source-copy",sourceId:"permitted-directory",
+    sourceName:"Permitted directory",sourceRecordId:"directory-123",sourceUrl:"https://example.com/record",
+    permissionStatus:"PERMITTED" as const,classification:"VERIFIED" as const,confidence:0.8};
+  const separate={...first,id:"other-address",addressLines:["200 SECOND ROUTE ST"]};
+  const phone={...first,id:"phone-1",channel:"PHONE" as const,routeValue:"(215) 555-0100",addressLines:[],cityState:null,postalCode:null};
+  const duplicatePhone={...phone,id:"phone-2",sourceId:"other-directory",routeValue:"215-555-0100",
+    sourceName:"Other directory",sourceRecordId:"phone-456",sourceUrl:"https://example.com/phone"};
+  const prohibitedPhone={...phone,id:"phone-0",permissionStatus:"PROHIBITED" as const};
+  const email={...first,id:"email-1",channel:"EMAIL" as const,routeValue:"first.last@example.com",addressLines:[],cityState:null,postalCode:null};
+  const similarButDifferentEmail={...email,id:"email-2",routeValue:"firstlast@example.com"};
+  const ranked=rankContactPaths([first,duplicate,separate,phone,duplicatePhone,prohibitedPhone,email,similarButDifferentEmail],now);
+  assert.equal(ranked.length,5,"Duplicate postal/phone routes collapse, while distinct routes remain visible.");
+  assert.equal(ranked[0]?.id,"other-source-copy");
+  assert.equal(ranked[0]?.sourceUrl,"https://example.com/record");
+  assert.equal(ranked[0]?.permissionStatus,"PERMITTED");
+  assert.equal(ranked[0]?.freshnessStatus,"CURRENT");
+  assert.ok(ranked.some(path=>path.channel==="PHONE"&&path.id==="phone-1"));
+  assert.equal(ranked.filter(path=>path.channel==="PHONE").length,1);
+  assert.equal(ranked.filter(path=>path.channel==="EMAIL").length,2,
+    "Email normalization must not merge different mailboxes.");
+  assert.equal(ranked.find(path=>path.channel==="PHONE")?.id,"phone-1");
+  assert.equal(ranked.find(path=>path.channel==="PHONE")?.permissionStatus,"NOT_REVIEWED",
+    "A prohibited duplicate cannot outrank an unreviewed copy of the same route.");
+  assert.equal(rankContactPaths([first],new Date(now.getTime()+31*86400000))[0]?.freshnessStatus,"STALE");
+});
 test("unverified condition is not promoted by a favorable assessment condition code",()=>{
   const subject = normalizeProperty(raw,now);
   const candidate = normalizeProperty({...raw,parcel_number:"223456789",location:"125 SYNTHETIC TEST ST",lat:39.9501},now);

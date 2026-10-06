@@ -9,7 +9,7 @@ const STEPS = [
   'Add one object per documented source to entries, each with a unique key plus classification, category, statement, source, sourceType, confidence, capturedAt.',
   'Reference entries from underwriting using their key, or an existing intelligence id from this deal.',
   'Required categories: subject_property, subject_condition, seller_contact, comp_sale:<comp id>, comp_condition:<comp id>, repair_scope:<lower-case repair category>.',
-  'Subject: OBSERVED PUBLIC_RECORD with sourceUrl. Contact: INDICATED SELLER, or OBSERVED/VERIFIED non-model. All others: VERIFIED_FACTS public record or inspection, sourceUrl, verificationNote.',
+  'Subject: OBSERVED PUBLIC_RECORD with sourceUrl. Seller contact: current OBSERVED/VERIFIED non-model phone route, source provenance, verificationNote, contactPermissionStatus=PERMITTED, and contactPermissionEvidenceUrl. A public mailing address is not CALL READY. All other underwriting evidence: VERIFIED_FACTS public record or inspection with sourceUrl and verificationNote.',
   'Capture age limits: 30 days for subject, contact, condition and repair; 180 days for comps; never future dated.',
 ];
 

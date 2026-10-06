@@ -59,6 +59,30 @@ test("contact needs permission/route/future follow-up and actual past event",()=
     {followUpAt:"2026-10-05T11:59:00Z"},{evidenceUrl:"javascript:bad"}])
     assert.throws(()=>applyHandoffEvent(reviewed(),{...contact(),...override},"actor",now));
 });
+test("failed contact evidence is tied to the reviewed route and blocks retry until re-review",()=>{
+  const route=reviewed();
+  const failed=applyHandoffEvent(route,{...contact(),kind:"FAILED",eventKey:"synthetic-failed-route",
+    evidenceUrl:"https://example.com/failed-attempt",note:"SYNTHETIC route failed; no contact occurred."},"actor",now);
+  assert.equal(failed.state,"WAITING_CONTACT");
+  assert.equal(failed.events.at(-1)?.routeValue,"synthetic@example.com");
+  assert.match(failed.nextAction,/Verify or replace the route/);
+  assert.throws(()=>applyHandoffEvent(failed,{...contact(),version:failed.version,eventKey:"synthetic-retry"},
+    "actor",now),/route failed/);
+  const reviewedAgain=applyHandoffEvent(failed,{...contact(),version:failed.version,kind:"ROUTE_REVIEWED",
+    eventKey:"synthetic-route-refreshed",occurredAt:now.toISOString()},"actor",now);
+  assert.equal(applyHandoffEvent(reviewedAgain,{...contact(),version:reviewedAgain.version,
+    eventKey:"synthetic-reviewed-retry",occurredAt:"2026-10-05T13:00:00Z"},"actor",
+    new Date("2026-10-05T14:00:00Z")).state,"WAITING_REPLY");
+});
+test("contact cannot use a route review older than thirty days",()=>{
+  const old=new Date("2026-08-01T12:00:00Z");
+  const oldInitial={...initial,createdAt:"2026-07-31T10:00:00Z",updatedAt:"2026-07-31T10:00:00Z",
+    dueAt:"2026-07-31T12:00:00Z"};
+  const stale=applyHandoffEvent(oldInitial,{...contact(),version:1,kind:"ROUTE_REVIEWED",
+    eventKey:"synthetic-old-route",occurredAt:old.toISOString()},"actor",old);
+  assert.throws(()=>applyHandoffEvent(stale,{...contact(),version:stale.version,
+    occurredAt:now.toISOString()},"actor",now),/route is stale/);
+});
 test("no uncontacted reply and no early no-response; replies do not carry qualification/approval",()=>{
   const reply = {...contact(),kind:"REPLIED" as const,eventKey:"synthetic-reply",note:"SYNTHETIC actual response"};
   assert.throws(()=>applyHandoffEvent(reviewed(),reply,"actor",now),/actual recorded contact/);

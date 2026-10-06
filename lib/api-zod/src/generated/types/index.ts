@@ -121,6 +121,7 @@ export * from './humanHandoffState';
 export * from './humanHandoffSubjectType';
 export * from './intelligence';
 export * from './intelligenceInput';
+export * from './intelligenceInputContactPermissionStatus';
 export * from './intelligenceInputSourceType';
 export * from './lead';
 export * from './leadDetail';

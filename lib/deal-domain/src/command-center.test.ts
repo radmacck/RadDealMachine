@@ -50,6 +50,16 @@ test("seller contact gaps route directly to the editable lead record and transac
   assert.equal(dealActions([d],"OWNER",now).length,1);
   assert.equal(dealActions([d],"OWNER",now,new Set([d.lead.id])).length,0);
 });
+test("source-backed discovery contact gaps link to the discovery and explain postal-only limitation",()=>{
+  const d=deal("CALL_READY");
+  d.lead.sellerPhone="";
+  d.lead.propertyQualification={discoveryId:"synthetic-discovery"} as NonNullable<LeadDetail["lead"]["propertyQualification"]>;
+  d.workGuidance=buildDealWorkGuidance(d,now);
+  assert.equal(d.workGuidance?.href,"/sources?discovery=synthetic-discovery");
+  assert.equal(d.workGuidance?.cta,"Review best contact route");
+  assert.ok(d.workGuidance?.humanMustDo.includes("Obtain a phone route"));
+  assert.ok(d.workGuidance?.missingFacts.some(fact=>fact.includes("postal route only")));
+});
 test("call-ready and seller follow-up actions open the selected seller's live call brief",() => {
   const ready = deal("CALL_READY");
   ready.workGuidance = buildDealWorkGuidance(ready,now);

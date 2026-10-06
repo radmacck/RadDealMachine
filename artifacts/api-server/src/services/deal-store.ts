@@ -376,6 +376,12 @@ export async function recordCall(id: string, input: CallInput, actor: string, no
     const row = await lockedLead(tx,id,input.version);
     const executed = ["UNDER_CONTRACT","BUYER_MATCHED","BUYER_INTERESTED","BUYER_COMMITTED","CLOSING"].includes(row.stage);
     if (!["CALL_READY","CONTACTED","CONVERSATION","OFFER_READY","OFFER_SENT","NEGOTIATING","CONTRACT_PENDING"].includes(row.stage)&&!executed) throw new DomainError("Calls can only be recorded for call-ready or active seller/closing conversations.");
+    if (row.stage === "CALL_READY") {
+      const current = await leadDetail(id,tx,now);
+      if (!current.analysis || current.analysis.blockers.length) {
+        throw new DomainError("CALL READY evidence is stale or incomplete. Refresh the seller phone source and underwriting before recording outreach.",409);
+      }
+    }
     if (executed&&input.outcome==="NOT_INTERESTED") throw new DomainError("A phone response cannot cancel an executed contract. Record the conversation with a follow-up and use the owner-reviewed external cancellation evidence workflow.",409);
     const followUpAt = followupDate(input.followUpAt,now);
     if (input.outcome !== "NOT_INTERESTED" && !followUpAt) throw new DomainError("Set a future follow-up so the seller conversation does not become a dead end.");
@@ -407,7 +413,11 @@ export async function callQueue(now = new Date()) {
   const briefs = await Promise.all(rows.map(async row => {
     const detail = await leadDetail(row.id,db,now);
     const approved = detail.offers.find(o => ["AUTHORIZED","COMMUNICATED"].includes(o.effectiveStatus)) ?? null;
-    return detail.analysis ? buildCallBrief(detail.lead,detail.intelligence,detail.analysis,approved,now) : null;
+    if (!detail.analysis) return null;
+    const contactBlocked = detail.analysis.blockers.some(blocker => blocker.toLowerCase().includes("seller contact"));
+    if (contactBlocked) return null;
+    if (detail.lead.stage === "CALL_READY" && detail.analysis.blockers.length > 0) return null;
+    return buildCallBrief(detail.lead,detail.intelligence,detail.analysis,approved,now);
   }));
   return prioritizeCallQueue(briefs.filter((b): b is NonNullable<typeof b> => b != null),now);
 }
