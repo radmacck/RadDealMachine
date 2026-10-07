@@ -8,6 +8,7 @@ import {
 } from "@workspace/property-sources";
 import { audit, getAssumptions, leadDetail, lockedLead, saveUnderwriting } from "./deal-store";
 import { getPropertySourceConnector, listPropertySourceDescriptors } from "./property-source-connectors";
+import { NOT_CONNECTED_PROPERTY_SOURCE_CAPABILITIES } from "./property-source-availability";
 
 type Tx = Parameters<Parameters<typeof db.transaction>[0]>[0];
 type Research = ReturnType<typeof RefreshSourceResearchResponse.parse>;
@@ -30,6 +31,12 @@ async function sourceRequest<T>(action: () => Promise<T>) {
   }
 }
 export function listPropertySources() { return listPropertySourceDescriptors(); }
+export function getPropertySourceCoverage() {
+  return {
+    registeredSources: listPropertySourceDescriptors(),
+    notConnectedProviders: NOT_CONNECTED_PROPERTY_SOURCE_CAPABILITIES,
+  };
+}
 export async function searchPublicProperties(zip?: string, lane = "properties", now = new Date()) {
   const connector = getPropertySourceConnector(PHILA_SOURCE.id);
   if (!connector?.searchProperties) throw new DomainError("The Philadelphia OPA search adapter is not registered.", 503);

@@ -2,12 +2,13 @@ import { useEffect, useState } from 'react';
 import { Copy } from 'lucide-react';
 import { Link, useParams } from 'wouter';
 import { ArrowLeft } from 'lucide-react';
-import { getGetBuyerQueryKey, useGetBuyer, useUpdateBuyer, useVerifyBuyer, useRequestBuyerQualification, type Buyer } from '@workspace/api-client-react';
+import { getGetBuyerQueryKey, useGetBuyer, useUpdateBuyer, useVerifyBuyer, useRequestBuyerQualification, useCreateBuyerQualificationPortalInvite, type Buyer } from '@workspace/api-client-react';
 import { ErrorNotice, RowsSkeleton } from '@/components/state-views';
 import { BuyerForm } from '@/components/buyer-form';
 import { BuyerVerificationForm } from '@/components/buyer-verification-form';
 import { ApprovalTag, VerificationTag, isQualified } from '@/components/buyer-status';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import { EvidenceLink } from '@/components/field-row';
 import { useAccess } from '@/hooks/use-access';
 import { useInvalidateWork } from '@/hooks/use-invalidate';
@@ -24,7 +25,10 @@ export default function BuyerDetail() {
   const update = useUpdateBuyer();
   const verify = useVerifyBuyer();
   const requestEvidence = useRequestBuyerQualification();
+  const createProfileLink = useCreateBuyerQualificationPortalInvite();
   const [requestNote, setRequestNote] = useState('');
+  const [qualificationLink, setQualificationLink] = useState('');
+  const [qualificationLinkExpiresAt, setQualificationLinkExpiresAt] = useState('');
   const [formBuyer,setFormBuyer] = useState<Buyer|null>(null);
   useEffect(()=>{if(q.data && formBuyer?.id!==q.data.id) setFormBuyer(q.data);},[q.data,formBuyer?.id]);
 
@@ -49,6 +53,44 @@ export default function BuyerDetail() {
         {(b.destinationKind ?? 'BUYER') !== 'BUYER' && <p className="mt-1 text-xs text-muted-foreground" data-testid="text-destination-fee-boundary">Any fee shown on this profile is a quote/reference only, not a received payment. Record evidenced terms and actual receipt, dispute, or waiver in the deal&apos;s destination activity history.</p>}
         {(b.qualificationBlockers ?? []).length > 0 && <ul className="mt-2 list-disc pl-4 text-sm" data-testid="list-blockers">{b.qualificationBlockers!.map((x, i) => <li key={i}>{x}</li>)}</ul>}
         {(b.qualificationBlockers ?? []).length === 0 && b.approvalStatus !== 'APPROVED' && <p className="mt-2 text-sm text-muted-foreground">No blockers listed; record verification to approve.</p>}
+        {isOwner && <div className="mt-3 border-t border-border pt-3" data-testid="panel-buyer-profile-link">
+          <p className="text-sm font-medium">Get current criteria from the buyer</p>
+          <p className="mt-1 text-xs text-muted-foreground">Create a one-time link, then share it yourself through a permitted channel. Creating or copying it does not send a message. A response is self-reported and pauses matching approval until you review dated evidence.</p>
+          <Button size="sm" variant="outline" className="mt-2" disabled={createProfileLink.isPending}
+            onClick={() => createProfileLink.mutate({ id, data: { version: b.version } }, {
+              onSuccess: (invite) => {
+                const base = new URL(import.meta.env.BASE_URL, window.location.origin);
+                const basePath = base.pathname.endsWith('/') ? base.pathname : `${base.pathname}/`;
+                const target = new URL(`${basePath}portal/buyer-qualification`, window.location.origin);
+                target.hash = `t=${invite.token}`;
+                setQualificationLink(target.toString());
+                setQualificationLinkExpiresAt(invite.expiresAt);
+                setFormBuyer({ ...b, version: b.version + 1 });
+                setEpoch((e) => e + 1);
+                invalidate();
+                toast({ title: 'Private buyer link created', description: 'It expires in 14 days. No message was sent.' });
+              },
+            })}>{createProfileLink.isPending ? 'Creating link…' : 'Create buyer response link'}</Button>
+          {createProfileLink.isError && <div className="mt-2"><ErrorNotice error={createProfileLink.error} /></div>}
+          {qualificationLink && <div className="mt-3 space-y-2">
+            <p className="text-xs">Expires {fmtDate(qualificationLinkExpiresAt)}. This link is shown once here; creating another replaces it.</p>
+            <div className="flex flex-wrap gap-2">
+              <Input readOnly value={qualificationLink} aria-label="Private buyer response link" data-testid="input-buyer-qualification-link" />
+              <Button size="sm" variant="outline" onClick={async () => {
+                if (!navigator.clipboard?.writeText) {
+                  toast({ title: 'Copy unavailable', description: 'Select and copy the link field manually.', variant: 'destructive' });
+                  return;
+                }
+                try {
+                  await navigator.clipboard.writeText(qualificationLink);
+                  toast({ title: 'Link copied', description: 'It was not sent.' });
+                } catch {
+                  toast({ title: 'Copy failed', description: 'Select and copy the link manually.', variant: 'destructive' });
+                }
+              }} data-testid="button-copy-buyer-qualification-link"><Copy className="mr-1.5 h-3.5 w-3.5" />Copy link</Button>
+            </div>
+          </div>}
+        </div>}
         {b.qualificationTask && b.qualificationTask.state!=='COMPLETED' && <div className="mt-3 border-t border-border pt-3" data-testid="panel-task">
           <p className="text-sm"><span className="tag tone-muted mr-2">{b.qualificationTask.kind}</span><span className="tag tone-warn mr-2">{b.qualificationTask.state.replace(/_/g, ' ')}</span>{b.qualificationTask.reason}</p>
           <p className="mt-1 font-mono text-[11px] text-muted-foreground">Due {fmtDate(b.qualificationTask.dueAt)} / updated {fmtDate(b.qualificationTask.updatedAt)}</p>
@@ -75,6 +117,12 @@ export default function BuyerDetail() {
       {b.lastOutreachReplyAt && <section className="border border-border p-3 text-sm" data-testid="panel-latest-outreach-reply">
         Latest actual outreach reply: {fmtDate(b.lastOutreachReplyAt)}. A reply is not buyer approval; current buying evidence must account for this date.
         {b.lastOutreachReplyEvidenceUrl && <a className="ml-2 underline" href={b.lastOutreachReplyEvidenceUrl} target="_blank" rel="noopener noreferrer">Review reply evidence</a>}
+      </section>}
+      {b.qualificationPortalSelfReport && <section className="ledger border-l-4 border-l-signal p-4" data-testid="panel-buyer-self-report">
+        <p className="eyebrow mb-2">Buyer self-report · INDICATED · not verified</p>
+        <p className="text-sm">Received {fmtDate(b.qualificationPortalSelfReport.receivedAt)} through invitation {b.qualificationPortalSelfReport.invitationId}. The link does not prove who responded or grant contact permission.</p>
+        <p className="mt-2 text-sm">Declared current buying status: {b.qualificationPortalSelfReport.currentBuyingStatus.replace(/_/g, ' ')}. Owner review of current identity, activity, criteria and funding evidence is required. Matching approval was cleared.</p>
+        {!!b.qualificationPortalSelfReport.note && <p className="mt-2 whitespace-pre-wrap text-sm">{b.qualificationPortalSelfReport.note}</p>}
       </section>}
 
       {b.discoveryEvidence && <section className="ledger p-4 text-sm" data-testid="panel-discovery-evidence">

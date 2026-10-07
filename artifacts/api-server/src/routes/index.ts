@@ -5,11 +5,13 @@ import operationsRouter from "./operations";
 import propertySourcesRouter from "./property-sources";
 import { internalDistributionRouter, publicBuyerPortalRouter } from "./distribution";
 import { internalSellerOfferPortalRouter, publicSellerOfferPortalRouter } from "./seller-offer-portals";
+import publicBuyerQualificationPortalRouter from "./buyer-qualification-portal";
 
 const router: IRouter = Router();
 
 router.use(healthRouter);
 router.use(publicBuyerPortalRouter);
+router.use(publicBuyerQualificationPortalRouter);
 router.use(publicSellerOfferPortalRouter);
 router.use(dealsRouter);
 router.use(operationsRouter);

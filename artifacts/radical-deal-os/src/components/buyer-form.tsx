@@ -21,8 +21,9 @@ function Toggles<T extends string>({ items, value, onChange, disabled, tid }: { 
   })}</div>;
 }
 
-export function BuyerForm({ buyer, disabled, pending, error, submitLabel, onSubmit, onCancel }: {
+export function BuyerForm({ buyer, disabled, pending, error, submitLabel, onSubmit, onCancel, criteriaOnly = false }: {
   buyer?: Partial<Buyer>; disabled?: boolean; pending: boolean; error: unknown; submitLabel: string;
+  criteriaOnly?: boolean;
   onSubmit: (d: BuyerInput) => void; onCancel?: () => void;
 }) {
   const c = buyer?.criteria ?? undefined;
@@ -34,7 +35,7 @@ export function BuyerForm({ buyer, disabled, pending, error, submitLabel, onSubm
   const [dest, setDest] = useState<BuyerInputDestinationKind>(buyer?.destinationKind ?? 'BUYER');
   const [fee, setFee] = useState(s(buyer?.qualifiedDealFee));
   const [feeSrc, setFeeSrc] = useState(buyer?.feeTermsSource ?? '');
-  const [noCrit, setNoCrit] = useState(!!buyer && !buyer.criteria);
+  const [noCrit, setNoCrit] = useState(!criteriaOnly && !!buyer && !buyer.criteria);
   const [f, setF] = useState<Record<string, string>>({
     states: j(c?.states), counties: j(c?.counties), cities: j(c?.cities), zips: j(c?.zipCodes),
     exCounties: j(c?.excludedCounties), exCities: j(c?.excludedCities), exZips: j(c?.excludedZipCodes),
@@ -54,7 +55,7 @@ export function BuyerForm({ buyer, disabled, pending, error, submitLabel, onSubm
   const nul = (k: string) => (f[k].trim() === '' ? null : Number(f[k]));
 
   const submit = () => {
-    if (!name.trim() || !source.trim()) return setLocal('Name and source are required.');
+    if (!criteriaOnly && (!name.trim() || !source.trim())) return setLocal('Name and source are required.');
     const feeN = fee.trim() === '' ? null : Number(fee);
     if (feeN != null && (!Number.isFinite(feeN) || feeN < 0)) return setLocal('Quoted fee must be zero or more.');
     const base = { name: name.trim(), email: email.trim(), phone: phone.trim(), source: source.trim(), status, destinationKind: dest, qualifiedDealFee: feeN, feeTermsSource: feeSrc.trim() };
@@ -87,7 +88,7 @@ export function BuyerForm({ buyer, disabled, pending, error, submitLabel, onSubm
 
   return (
     <div className="space-y-4" data-testid="form-buyer">
-      <div className="grid gap-3 sm:grid-cols-2">
+      {!criteriaOnly && <div className="grid gap-3 sm:grid-cols-2">
         <Field label="Name"><Input value={name} disabled={disabled} onChange={(e) => setName(e.target.value)} data-testid="input-buyer-name" /></Field>
         <Field label="Source" hint="Where this record came from."><Input value={source} disabled={disabled} onChange={(e) => setSource(e.target.value)} data-testid="input-buyer-source" /></Field>
         <Field label="Email"><Input type="email" value={email} disabled={disabled} onChange={(e) => setEmail(e.target.value)} data-testid="input-buyer-email" /></Field>
@@ -96,10 +97,12 @@ export function BuyerForm({ buyer, disabled, pending, error, submitLabel, onSubm
         <Field label="Destination" hint="Only an actual buyer can commit to a deal."><select className={SELECT} value={dest} disabled={disabled} onChange={(e) => setDest(e.target.value as BuyerInputDestinationKind)} data-testid="select-buyer-destination"><option value="BUYER">Buyer</option><option value="DEAL_FINDER">Deal finder</option><option value="GURU">Guru</option></select></Field>
         <Field label="Quoted qualified-deal fee" hint="Profile quote only; actual receipts are recorded on each deal. Blank if none quoted"><Input inputMode="decimal" value={fee} disabled={disabled} onChange={(e) => setFee(e.target.value)} data-testid="input-buyer-fee" /></Field>
         <Field label="Fee terms source" hint="Source for the quote, not proof of payment"><Input value={feeSrc} disabled={disabled} onChange={(e) => setFeeSrc(e.target.value)} data-testid="input-buyer-fee-source" /></Field>
-      </div>
+      </div>}
       <div>
         <p className="eyebrow mb-2">Buy box</p>
-        <label className="mb-3 flex items-center gap-2 text-sm"><input type="checkbox" className="h-4 w-4" checked={noCrit} disabled={disabled} onChange={(e) => setNoCrit(e.target.checked)} data-testid="check-no-criteria" />Criteria not collected yet. Nothing is assumed and the buyer cannot be approved.</label>
+        {criteriaOnly
+          ? <p className="mb-3 text-sm text-muted-foreground">Confirm or correct the profile already on file. This response is self-reported and will not approve you for deal matching.</p>
+          : <label className="mb-3 flex items-center gap-2 text-sm"><input type="checkbox" className="h-4 w-4" checked={noCrit} disabled={disabled} onChange={(e) => setNoCrit(e.target.checked)} data-testid="check-no-criteria" />Criteria not collected yet. Nothing is assumed and the buyer cannot be approved.</label>}
         <div className="grid gap-3 sm:grid-cols-3">
           <Field label="States" hint="Two letters, comma separated">{inp('states', 'states')}</Field>
           <Field label="Counties">{inp('counties', 'counties')}</Field>

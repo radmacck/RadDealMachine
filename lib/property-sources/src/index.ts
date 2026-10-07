@@ -176,7 +176,7 @@ export function normalizeProperty(value: unknown, now: Date) {
     }], now)
     : [];
   return {
-    id: r.parcel_number, provider: PHILA_SOURCE.id, classification: "OBSERVED" as const, address: r.location.trim(),
+    id: r.parcel_number, parcelId: r.parcel_number, provider: PHILA_SOURCE.id, classification: "OBSERVED" as const, address: r.location.trim(),
     city: "Philadelphia", county: "Philadelphia", state: "PA", zip: r.zip_code.slice(0,5),
     propertyType: /^ROW\b/i.test(r.building_code_description ?? "") ? "TOWNHOUSE" as const : "SINGLE_FAMILY" as const,
     sqft: r.total_livable_area, beds: r.number_of_bedrooms, baths: r.number_of_bathrooms,

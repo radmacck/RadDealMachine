@@ -197,6 +197,71 @@ export const recordTransactionExceptionResponseContractOneCommitmentSnapshotOneB
 export const recordTransactionExceptionResponseContractOneCommitmentSnapshotOneBuyerTwoVerificationHistoryItemCriteriaOneMinCapRateMin = 0;
 export const recordTransactionExceptionResponseContractOneCommitmentSnapshotOneBuyerTwoVerificationHistoryItemCriteriaOneMinCapRateMax = 1;
 
+export const recordTransactionExceptionResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaStatesItemMin = 2;
+export const recordTransactionExceptionResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaStatesItemMax = 2;
+
+
+
+export const recordTransactionExceptionResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaZipCodesItemRegExp = new RegExp('^\\d{5}$');
+
+export const recordTransactionExceptionResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMaxPurchasePriceExclusiveMin = 0;
+export const recordTransactionExceptionResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMaxPurchasePriceMax = 1000000000;
+
+export const recordTransactionExceptionResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMaxRepairsMin = 0;
+export const recordTransactionExceptionResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMaxRepairsMax = 1000000000;
+
+export const recordTransactionExceptionResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMinBedsMin = 0;
+export const recordTransactionExceptionResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMinBedsMax = 100;
+
+export const recordTransactionExceptionResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMinSqftMin = 0;
+export const recordTransactionExceptionResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMinSqftMax = 1000000;
+
+export const recordTransactionExceptionResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMaxSqftExclusiveMin = 0;
+export const recordTransactionExceptionResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMaxSqftMax = 1000000;
+
+export const recordTransactionExceptionResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaClosingDaysMax = 365;
+
+export const recordTransactionExceptionResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaCountiesItemMax = 200;
+
+export const recordTransactionExceptionResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaExcludedCountiesItemMax = 200;
+
+export const recordTransactionExceptionResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaExcludedCitiesItemMax = 200;
+
+export const recordTransactionExceptionResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaExcludedZipCodesItemRegExp = new RegExp('^\\d{5}$');
+export const recordTransactionExceptionResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMinPurchasePriceMin = 0;
+export const recordTransactionExceptionResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMinPurchasePriceMax = 1000000000;
+
+export const recordTransactionExceptionResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMinArvMin = 0;
+export const recordTransactionExceptionResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMinArvMax = 1000000000;
+
+export const recordTransactionExceptionResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMaxArvMin = 0;
+export const recordTransactionExceptionResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMaxArvMax = 1000000000;
+
+export const recordTransactionExceptionResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMinUnitsMin = 0;
+export const recordTransactionExceptionResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMinUnitsMax = 10000;
+
+export const recordTransactionExceptionResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMaxUnitsMin = 0;
+export const recordTransactionExceptionResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMaxUnitsMax = 10000;
+
+export const recordTransactionExceptionResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMinBathsMin = 0;
+export const recordTransactionExceptionResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMinBathsMax = 100;
+
+export const recordTransactionExceptionResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMaxBedsMin = 0;
+export const recordTransactionExceptionResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMaxBedsMax = 100;
+
+export const recordTransactionExceptionResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMaxBathsMin = 0;
+export const recordTransactionExceptionResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMaxBathsMax = 100;
+
+
+
+export const recordTransactionExceptionResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMaxConcurrentDealsMax = 1000;
+
+export const recordTransactionExceptionResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMinSpreadMin = 0;
+export const recordTransactionExceptionResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMinSpreadMax = 1000000000;
+
+export const recordTransactionExceptionResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMinCapRateMin = 0;
+export const recordTransactionExceptionResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMinCapRateMax = 1;
+
 export const recordTransactionExceptionResponseContractOneCommitmentSnapshotOneDetailLeadOneAddressMin = 3;
 export const recordTransactionExceptionResponseContractOneCommitmentSnapshotOneDetailLeadOneAddressMax = 250;
 
@@ -676,6 +741,49 @@ export const RecordTransactionExceptionResponse = zod.object({
   "dueAt": zod.string(),
   "updatedAt": zod.string()
 }),zod.null()]).optional(),
+  "qualificationPortalSelfReport": zod.object({
+  "responseId": zod.string().uuid(),
+  "currentBuyingStatus": zod.enum(['BUYING', 'NOT_BUYING']),
+  "criteria": zod.object({
+  "states": zod.array(zod.string().min(recordTransactionExceptionResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaStatesItemMin).max(recordTransactionExceptionResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaStatesItemMax)).min(1),
+  "cities": zod.array(zod.string().min(1)),
+  "zipCodes": zod.array(zod.string().regex(recordTransactionExceptionResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaZipCodesItemRegExp)),
+  "propertyTypes": zod.array(zod.enum(['SINGLE_FAMILY', 'MULTIFAMILY', 'CONDO', 'TOWNHOUSE', 'LAND', 'OTHER'])).min(1),
+  "maxPurchasePrice": zod.number().gt(recordTransactionExceptionResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMaxPurchasePriceExclusiveMin).max(recordTransactionExceptionResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMaxPurchasePriceMax),
+  "maxRepairs": zod.number().min(recordTransactionExceptionResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMaxRepairsMin).max(recordTransactionExceptionResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMaxRepairsMax),
+  "minBeds": zod.number().int().min(recordTransactionExceptionResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMinBedsMin).max(recordTransactionExceptionResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMinBedsMax),
+  "minSqft": zod.number().min(recordTransactionExceptionResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMinSqftMin).max(recordTransactionExceptionResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMinSqftMax),
+  "maxSqft": zod.number().gt(recordTransactionExceptionResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMaxSqftExclusiveMin).max(recordTransactionExceptionResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMaxSqftMax),
+  "closingDays": zod.number().int().min(1).max(recordTransactionExceptionResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaClosingDaysMax),
+  "counties": zod.array(zod.string().min(1).max(recordTransactionExceptionResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaCountiesItemMax)).optional(),
+  "excludedCounties": zod.array(zod.string().min(1).max(recordTransactionExceptionResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaExcludedCountiesItemMax)).optional(),
+  "excludedCities": zod.array(zod.string().min(1).max(recordTransactionExceptionResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaExcludedCitiesItemMax)).optional(),
+  "excludedZipCodes": zod.array(zod.string().regex(recordTransactionExceptionResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaExcludedZipCodesItemRegExp)).optional(),
+  "minPurchasePrice": zod.number().min(recordTransactionExceptionResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMinPurchasePriceMin).max(recordTransactionExceptionResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMinPurchasePriceMax).optional(),
+  "minArv": zod.number().min(recordTransactionExceptionResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMinArvMin).max(recordTransactionExceptionResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMinArvMax).nullish(),
+  "maxArv": zod.number().min(recordTransactionExceptionResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMaxArvMin).max(recordTransactionExceptionResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMaxArvMax).nullish(),
+  "minUnits": zod.number().int().min(recordTransactionExceptionResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMinUnitsMin).max(recordTransactionExceptionResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMinUnitsMax).optional(),
+  "maxUnits": zod.number().int().min(recordTransactionExceptionResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMaxUnitsMin).max(recordTransactionExceptionResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMaxUnitsMax).optional(),
+  "minBaths": zod.number().min(recordTransactionExceptionResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMinBathsMin).max(recordTransactionExceptionResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMinBathsMax).optional(),
+  "maxBeds": zod.number().int().min(recordTransactionExceptionResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMaxBedsMin).max(recordTransactionExceptionResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMaxBedsMax).nullish(),
+  "maxBaths": zod.number().min(recordTransactionExceptionResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMaxBathsMin).max(recordTransactionExceptionResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMaxBathsMax).nullish(),
+  "rehabTolerance": zod.enum(['NONE', 'LIGHT', 'MODERATE', 'HEAVY', 'ANY']).optional(),
+  "strategies": zod.array(zod.enum(['FLIP', 'RENTAL', 'BRRRR', 'WHOLESALE', 'DEVELOPMENT', 'OTHER'])).min(1).optional(),
+  "fundingTypes": zod.array(zod.enum(['CASH', 'HARD_MONEY', 'PRIVATE_LENDING', 'CONVENTIONAL', 'OTHER'])).min(1).optional(),
+  "maxConcurrentDeals": zod.number().int().min(1).max(recordTransactionExceptionResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMaxConcurrentDealsMax).optional(),
+  "minSpread": zod.number().min(recordTransactionExceptionResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMinSpreadMin).max(recordTransactionExceptionResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMinSpreadMax).nullish(),
+  "minCapRate": zod.number().min(recordTransactionExceptionResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMinCapRateMin).max(recordTransactionExceptionResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMinCapRateMax).nullish()
+}),
+  "confirmedCurrent": zod.literal(true),
+  "note": zod.string(),
+  "receivedAt": zod.string().datetime({"offset":true}),
+  "invitationId": zod.string().uuid(),
+  "source": zod.enum(['PRIVATE_BUYER_QUALIFICATION_PORTAL']),
+  "classification": zod.enum(['INDICATED']),
+  "identityVerified": zod.literal(false),
+  "contactPermissionVerified": zod.literal(false),
+  "ownerReviewRequired": zod.literal(true)
+}).optional(),
   "lastOutreachReplyAt": zod.string().optional(),
   "lastOutreachReplyEvidenceUrl": zod.string().optional(),
   "createdAt": zod.string(),
@@ -9692,6 +9800,71 @@ export const getCommandCenterResponseOperationsItemContractOneCommitmentSnapshot
 export const getCommandCenterResponseOperationsItemContractOneCommitmentSnapshotOneBuyerTwoVerificationHistoryItemCriteriaOneMinCapRateMin = 0;
 export const getCommandCenterResponseOperationsItemContractOneCommitmentSnapshotOneBuyerTwoVerificationHistoryItemCriteriaOneMinCapRateMax = 1;
 
+export const getCommandCenterResponseOperationsItemContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaStatesItemMin = 2;
+export const getCommandCenterResponseOperationsItemContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaStatesItemMax = 2;
+
+
+
+export const getCommandCenterResponseOperationsItemContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaZipCodesItemRegExp = new RegExp('^\\d{5}$');
+
+export const getCommandCenterResponseOperationsItemContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMaxPurchasePriceExclusiveMin = 0;
+export const getCommandCenterResponseOperationsItemContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMaxPurchasePriceMax = 1000000000;
+
+export const getCommandCenterResponseOperationsItemContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMaxRepairsMin = 0;
+export const getCommandCenterResponseOperationsItemContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMaxRepairsMax = 1000000000;
+
+export const getCommandCenterResponseOperationsItemContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMinBedsMin = 0;
+export const getCommandCenterResponseOperationsItemContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMinBedsMax = 100;
+
+export const getCommandCenterResponseOperationsItemContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMinSqftMin = 0;
+export const getCommandCenterResponseOperationsItemContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMinSqftMax = 1000000;
+
+export const getCommandCenterResponseOperationsItemContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMaxSqftExclusiveMin = 0;
+export const getCommandCenterResponseOperationsItemContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMaxSqftMax = 1000000;
+
+export const getCommandCenterResponseOperationsItemContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaClosingDaysMax = 365;
+
+export const getCommandCenterResponseOperationsItemContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaCountiesItemMax = 200;
+
+export const getCommandCenterResponseOperationsItemContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaExcludedCountiesItemMax = 200;
+
+export const getCommandCenterResponseOperationsItemContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaExcludedCitiesItemMax = 200;
+
+export const getCommandCenterResponseOperationsItemContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaExcludedZipCodesItemRegExp = new RegExp('^\\d{5}$');
+export const getCommandCenterResponseOperationsItemContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMinPurchasePriceMin = 0;
+export const getCommandCenterResponseOperationsItemContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMinPurchasePriceMax = 1000000000;
+
+export const getCommandCenterResponseOperationsItemContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMinArvMin = 0;
+export const getCommandCenterResponseOperationsItemContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMinArvMax = 1000000000;
+
+export const getCommandCenterResponseOperationsItemContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMaxArvMin = 0;
+export const getCommandCenterResponseOperationsItemContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMaxArvMax = 1000000000;
+
+export const getCommandCenterResponseOperationsItemContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMinUnitsMin = 0;
+export const getCommandCenterResponseOperationsItemContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMinUnitsMax = 10000;
+
+export const getCommandCenterResponseOperationsItemContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMaxUnitsMin = 0;
+export const getCommandCenterResponseOperationsItemContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMaxUnitsMax = 10000;
+
+export const getCommandCenterResponseOperationsItemContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMinBathsMin = 0;
+export const getCommandCenterResponseOperationsItemContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMinBathsMax = 100;
+
+export const getCommandCenterResponseOperationsItemContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMaxBedsMin = 0;
+export const getCommandCenterResponseOperationsItemContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMaxBedsMax = 100;
+
+export const getCommandCenterResponseOperationsItemContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMaxBathsMin = 0;
+export const getCommandCenterResponseOperationsItemContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMaxBathsMax = 100;
+
+
+
+export const getCommandCenterResponseOperationsItemContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMaxConcurrentDealsMax = 1000;
+
+export const getCommandCenterResponseOperationsItemContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMinSpreadMin = 0;
+export const getCommandCenterResponseOperationsItemContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMinSpreadMax = 1000000000;
+
+export const getCommandCenterResponseOperationsItemContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMinCapRateMin = 0;
+export const getCommandCenterResponseOperationsItemContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMinCapRateMax = 1;
+
 export const getCommandCenterResponseOperationsItemContractOneCommitmentSnapshotOneDetailLeadOneAddressMin = 3;
 export const getCommandCenterResponseOperationsItemContractOneCommitmentSnapshotOneDetailLeadOneAddressMax = 250;
 
@@ -10129,6 +10302,71 @@ export const getCommandCenterResponseBuyersItemTwoVerificationHistoryItemCriteri
 
 export const getCommandCenterResponseBuyersItemTwoVerificationHistoryItemCriteriaOneMinCapRateMin = 0;
 export const getCommandCenterResponseBuyersItemTwoVerificationHistoryItemCriteriaOneMinCapRateMax = 1;
+
+export const getCommandCenterResponseBuyersItemTwoQualificationPortalSelfReportCriteriaStatesItemMin = 2;
+export const getCommandCenterResponseBuyersItemTwoQualificationPortalSelfReportCriteriaStatesItemMax = 2;
+
+
+
+export const getCommandCenterResponseBuyersItemTwoQualificationPortalSelfReportCriteriaZipCodesItemRegExp = new RegExp('^\\d{5}$');
+
+export const getCommandCenterResponseBuyersItemTwoQualificationPortalSelfReportCriteriaMaxPurchasePriceExclusiveMin = 0;
+export const getCommandCenterResponseBuyersItemTwoQualificationPortalSelfReportCriteriaMaxPurchasePriceMax = 1000000000;
+
+export const getCommandCenterResponseBuyersItemTwoQualificationPortalSelfReportCriteriaMaxRepairsMin = 0;
+export const getCommandCenterResponseBuyersItemTwoQualificationPortalSelfReportCriteriaMaxRepairsMax = 1000000000;
+
+export const getCommandCenterResponseBuyersItemTwoQualificationPortalSelfReportCriteriaMinBedsMin = 0;
+export const getCommandCenterResponseBuyersItemTwoQualificationPortalSelfReportCriteriaMinBedsMax = 100;
+
+export const getCommandCenterResponseBuyersItemTwoQualificationPortalSelfReportCriteriaMinSqftMin = 0;
+export const getCommandCenterResponseBuyersItemTwoQualificationPortalSelfReportCriteriaMinSqftMax = 1000000;
+
+export const getCommandCenterResponseBuyersItemTwoQualificationPortalSelfReportCriteriaMaxSqftExclusiveMin = 0;
+export const getCommandCenterResponseBuyersItemTwoQualificationPortalSelfReportCriteriaMaxSqftMax = 1000000;
+
+export const getCommandCenterResponseBuyersItemTwoQualificationPortalSelfReportCriteriaClosingDaysMax = 365;
+
+export const getCommandCenterResponseBuyersItemTwoQualificationPortalSelfReportCriteriaCountiesItemMax = 200;
+
+export const getCommandCenterResponseBuyersItemTwoQualificationPortalSelfReportCriteriaExcludedCountiesItemMax = 200;
+
+export const getCommandCenterResponseBuyersItemTwoQualificationPortalSelfReportCriteriaExcludedCitiesItemMax = 200;
+
+export const getCommandCenterResponseBuyersItemTwoQualificationPortalSelfReportCriteriaExcludedZipCodesItemRegExp = new RegExp('^\\d{5}$');
+export const getCommandCenterResponseBuyersItemTwoQualificationPortalSelfReportCriteriaMinPurchasePriceMin = 0;
+export const getCommandCenterResponseBuyersItemTwoQualificationPortalSelfReportCriteriaMinPurchasePriceMax = 1000000000;
+
+export const getCommandCenterResponseBuyersItemTwoQualificationPortalSelfReportCriteriaMinArvMin = 0;
+export const getCommandCenterResponseBuyersItemTwoQualificationPortalSelfReportCriteriaMinArvMax = 1000000000;
+
+export const getCommandCenterResponseBuyersItemTwoQualificationPortalSelfReportCriteriaMaxArvMin = 0;
+export const getCommandCenterResponseBuyersItemTwoQualificationPortalSelfReportCriteriaMaxArvMax = 1000000000;
+
+export const getCommandCenterResponseBuyersItemTwoQualificationPortalSelfReportCriteriaMinUnitsMin = 0;
+export const getCommandCenterResponseBuyersItemTwoQualificationPortalSelfReportCriteriaMinUnitsMax = 10000;
+
+export const getCommandCenterResponseBuyersItemTwoQualificationPortalSelfReportCriteriaMaxUnitsMin = 0;
+export const getCommandCenterResponseBuyersItemTwoQualificationPortalSelfReportCriteriaMaxUnitsMax = 10000;
+
+export const getCommandCenterResponseBuyersItemTwoQualificationPortalSelfReportCriteriaMinBathsMin = 0;
+export const getCommandCenterResponseBuyersItemTwoQualificationPortalSelfReportCriteriaMinBathsMax = 100;
+
+export const getCommandCenterResponseBuyersItemTwoQualificationPortalSelfReportCriteriaMaxBedsMin = 0;
+export const getCommandCenterResponseBuyersItemTwoQualificationPortalSelfReportCriteriaMaxBedsMax = 100;
+
+export const getCommandCenterResponseBuyersItemTwoQualificationPortalSelfReportCriteriaMaxBathsMin = 0;
+export const getCommandCenterResponseBuyersItemTwoQualificationPortalSelfReportCriteriaMaxBathsMax = 100;
+
+
+
+export const getCommandCenterResponseBuyersItemTwoQualificationPortalSelfReportCriteriaMaxConcurrentDealsMax = 1000;
+
+export const getCommandCenterResponseBuyersItemTwoQualificationPortalSelfReportCriteriaMinSpreadMin = 0;
+export const getCommandCenterResponseBuyersItemTwoQualificationPortalSelfReportCriteriaMinSpreadMax = 1000000000;
+
+export const getCommandCenterResponseBuyersItemTwoQualificationPortalSelfReportCriteriaMinCapRateMin = 0;
+export const getCommandCenterResponseBuyersItemTwoQualificationPortalSelfReportCriteriaMinCapRateMax = 1;
 
 export const getCommandCenterResponsePropertyDiscoveriesRecordsItemScoreMin = 0;
 export const getCommandCenterResponsePropertyDiscoveriesRecordsItemScoreMax = 100;
@@ -11416,6 +11654,49 @@ export const GetCommandCenterResponse = zod.object({
   "dueAt": zod.string(),
   "updatedAt": zod.string()
 }),zod.null()]).optional(),
+  "qualificationPortalSelfReport": zod.object({
+  "responseId": zod.string().uuid(),
+  "currentBuyingStatus": zod.enum(['BUYING', 'NOT_BUYING']),
+  "criteria": zod.object({
+  "states": zod.array(zod.string().min(getCommandCenterResponseOperationsItemContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaStatesItemMin).max(getCommandCenterResponseOperationsItemContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaStatesItemMax)).min(1),
+  "cities": zod.array(zod.string().min(1)),
+  "zipCodes": zod.array(zod.string().regex(getCommandCenterResponseOperationsItemContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaZipCodesItemRegExp)),
+  "propertyTypes": zod.array(zod.enum(['SINGLE_FAMILY', 'MULTIFAMILY', 'CONDO', 'TOWNHOUSE', 'LAND', 'OTHER'])).min(1),
+  "maxPurchasePrice": zod.number().gt(getCommandCenterResponseOperationsItemContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMaxPurchasePriceExclusiveMin).max(getCommandCenterResponseOperationsItemContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMaxPurchasePriceMax),
+  "maxRepairs": zod.number().min(getCommandCenterResponseOperationsItemContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMaxRepairsMin).max(getCommandCenterResponseOperationsItemContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMaxRepairsMax),
+  "minBeds": zod.number().int().min(getCommandCenterResponseOperationsItemContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMinBedsMin).max(getCommandCenterResponseOperationsItemContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMinBedsMax),
+  "minSqft": zod.number().min(getCommandCenterResponseOperationsItemContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMinSqftMin).max(getCommandCenterResponseOperationsItemContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMinSqftMax),
+  "maxSqft": zod.number().gt(getCommandCenterResponseOperationsItemContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMaxSqftExclusiveMin).max(getCommandCenterResponseOperationsItemContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMaxSqftMax),
+  "closingDays": zod.number().int().min(1).max(getCommandCenterResponseOperationsItemContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaClosingDaysMax),
+  "counties": zod.array(zod.string().min(1).max(getCommandCenterResponseOperationsItemContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaCountiesItemMax)).optional(),
+  "excludedCounties": zod.array(zod.string().min(1).max(getCommandCenterResponseOperationsItemContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaExcludedCountiesItemMax)).optional(),
+  "excludedCities": zod.array(zod.string().min(1).max(getCommandCenterResponseOperationsItemContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaExcludedCitiesItemMax)).optional(),
+  "excludedZipCodes": zod.array(zod.string().regex(getCommandCenterResponseOperationsItemContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaExcludedZipCodesItemRegExp)).optional(),
+  "minPurchasePrice": zod.number().min(getCommandCenterResponseOperationsItemContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMinPurchasePriceMin).max(getCommandCenterResponseOperationsItemContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMinPurchasePriceMax).optional(),
+  "minArv": zod.number().min(getCommandCenterResponseOperationsItemContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMinArvMin).max(getCommandCenterResponseOperationsItemContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMinArvMax).nullish(),
+  "maxArv": zod.number().min(getCommandCenterResponseOperationsItemContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMaxArvMin).max(getCommandCenterResponseOperationsItemContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMaxArvMax).nullish(),
+  "minUnits": zod.number().int().min(getCommandCenterResponseOperationsItemContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMinUnitsMin).max(getCommandCenterResponseOperationsItemContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMinUnitsMax).optional(),
+  "maxUnits": zod.number().int().min(getCommandCenterResponseOperationsItemContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMaxUnitsMin).max(getCommandCenterResponseOperationsItemContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMaxUnitsMax).optional(),
+  "minBaths": zod.number().min(getCommandCenterResponseOperationsItemContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMinBathsMin).max(getCommandCenterResponseOperationsItemContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMinBathsMax).optional(),
+  "maxBeds": zod.number().int().min(getCommandCenterResponseOperationsItemContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMaxBedsMin).max(getCommandCenterResponseOperationsItemContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMaxBedsMax).nullish(),
+  "maxBaths": zod.number().min(getCommandCenterResponseOperationsItemContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMaxBathsMin).max(getCommandCenterResponseOperationsItemContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMaxBathsMax).nullish(),
+  "rehabTolerance": zod.enum(['NONE', 'LIGHT', 'MODERATE', 'HEAVY', 'ANY']).optional(),
+  "strategies": zod.array(zod.enum(['FLIP', 'RENTAL', 'BRRRR', 'WHOLESALE', 'DEVELOPMENT', 'OTHER'])).min(1).optional(),
+  "fundingTypes": zod.array(zod.enum(['CASH', 'HARD_MONEY', 'PRIVATE_LENDING', 'CONVENTIONAL', 'OTHER'])).min(1).optional(),
+  "maxConcurrentDeals": zod.number().int().min(1).max(getCommandCenterResponseOperationsItemContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMaxConcurrentDealsMax).optional(),
+  "minSpread": zod.number().min(getCommandCenterResponseOperationsItemContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMinSpreadMin).max(getCommandCenterResponseOperationsItemContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMinSpreadMax).nullish(),
+  "minCapRate": zod.number().min(getCommandCenterResponseOperationsItemContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMinCapRateMin).max(getCommandCenterResponseOperationsItemContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMinCapRateMax).nullish()
+}),
+  "confirmedCurrent": zod.literal(true),
+  "note": zod.string(),
+  "receivedAt": zod.string().datetime({"offset":true}),
+  "invitationId": zod.string().uuid(),
+  "source": zod.enum(['PRIVATE_BUYER_QUALIFICATION_PORTAL']),
+  "classification": zod.enum(['INDICATED']),
+  "identityVerified": zod.literal(false),
+  "contactPermissionVerified": zod.literal(false),
+  "ownerReviewRequired": zod.literal(true)
+}).optional(),
   "lastOutreachReplyAt": zod.string().optional(),
   "lastOutreachReplyEvidenceUrl": zod.string().optional(),
   "createdAt": zod.string(),
@@ -12032,6 +12313,49 @@ export const GetCommandCenterResponse = zod.object({
   "dueAt": zod.string(),
   "updatedAt": zod.string()
 }),zod.null()]).optional(),
+  "qualificationPortalSelfReport": zod.object({
+  "responseId": zod.string().uuid(),
+  "currentBuyingStatus": zod.enum(['BUYING', 'NOT_BUYING']),
+  "criteria": zod.object({
+  "states": zod.array(zod.string().min(getCommandCenterResponseBuyersItemTwoQualificationPortalSelfReportCriteriaStatesItemMin).max(getCommandCenterResponseBuyersItemTwoQualificationPortalSelfReportCriteriaStatesItemMax)).min(1),
+  "cities": zod.array(zod.string().min(1)),
+  "zipCodes": zod.array(zod.string().regex(getCommandCenterResponseBuyersItemTwoQualificationPortalSelfReportCriteriaZipCodesItemRegExp)),
+  "propertyTypes": zod.array(zod.enum(['SINGLE_FAMILY', 'MULTIFAMILY', 'CONDO', 'TOWNHOUSE', 'LAND', 'OTHER'])).min(1),
+  "maxPurchasePrice": zod.number().gt(getCommandCenterResponseBuyersItemTwoQualificationPortalSelfReportCriteriaMaxPurchasePriceExclusiveMin).max(getCommandCenterResponseBuyersItemTwoQualificationPortalSelfReportCriteriaMaxPurchasePriceMax),
+  "maxRepairs": zod.number().min(getCommandCenterResponseBuyersItemTwoQualificationPortalSelfReportCriteriaMaxRepairsMin).max(getCommandCenterResponseBuyersItemTwoQualificationPortalSelfReportCriteriaMaxRepairsMax),
+  "minBeds": zod.number().int().min(getCommandCenterResponseBuyersItemTwoQualificationPortalSelfReportCriteriaMinBedsMin).max(getCommandCenterResponseBuyersItemTwoQualificationPortalSelfReportCriteriaMinBedsMax),
+  "minSqft": zod.number().min(getCommandCenterResponseBuyersItemTwoQualificationPortalSelfReportCriteriaMinSqftMin).max(getCommandCenterResponseBuyersItemTwoQualificationPortalSelfReportCriteriaMinSqftMax),
+  "maxSqft": zod.number().gt(getCommandCenterResponseBuyersItemTwoQualificationPortalSelfReportCriteriaMaxSqftExclusiveMin).max(getCommandCenterResponseBuyersItemTwoQualificationPortalSelfReportCriteriaMaxSqftMax),
+  "closingDays": zod.number().int().min(1).max(getCommandCenterResponseBuyersItemTwoQualificationPortalSelfReportCriteriaClosingDaysMax),
+  "counties": zod.array(zod.string().min(1).max(getCommandCenterResponseBuyersItemTwoQualificationPortalSelfReportCriteriaCountiesItemMax)).optional(),
+  "excludedCounties": zod.array(zod.string().min(1).max(getCommandCenterResponseBuyersItemTwoQualificationPortalSelfReportCriteriaExcludedCountiesItemMax)).optional(),
+  "excludedCities": zod.array(zod.string().min(1).max(getCommandCenterResponseBuyersItemTwoQualificationPortalSelfReportCriteriaExcludedCitiesItemMax)).optional(),
+  "excludedZipCodes": zod.array(zod.string().regex(getCommandCenterResponseBuyersItemTwoQualificationPortalSelfReportCriteriaExcludedZipCodesItemRegExp)).optional(),
+  "minPurchasePrice": zod.number().min(getCommandCenterResponseBuyersItemTwoQualificationPortalSelfReportCriteriaMinPurchasePriceMin).max(getCommandCenterResponseBuyersItemTwoQualificationPortalSelfReportCriteriaMinPurchasePriceMax).optional(),
+  "minArv": zod.number().min(getCommandCenterResponseBuyersItemTwoQualificationPortalSelfReportCriteriaMinArvMin).max(getCommandCenterResponseBuyersItemTwoQualificationPortalSelfReportCriteriaMinArvMax).nullish(),
+  "maxArv": zod.number().min(getCommandCenterResponseBuyersItemTwoQualificationPortalSelfReportCriteriaMaxArvMin).max(getCommandCenterResponseBuyersItemTwoQualificationPortalSelfReportCriteriaMaxArvMax).nullish(),
+  "minUnits": zod.number().int().min(getCommandCenterResponseBuyersItemTwoQualificationPortalSelfReportCriteriaMinUnitsMin).max(getCommandCenterResponseBuyersItemTwoQualificationPortalSelfReportCriteriaMinUnitsMax).optional(),
+  "maxUnits": zod.number().int().min(getCommandCenterResponseBuyersItemTwoQualificationPortalSelfReportCriteriaMaxUnitsMin).max(getCommandCenterResponseBuyersItemTwoQualificationPortalSelfReportCriteriaMaxUnitsMax).optional(),
+  "minBaths": zod.number().min(getCommandCenterResponseBuyersItemTwoQualificationPortalSelfReportCriteriaMinBathsMin).max(getCommandCenterResponseBuyersItemTwoQualificationPortalSelfReportCriteriaMinBathsMax).optional(),
+  "maxBeds": zod.number().int().min(getCommandCenterResponseBuyersItemTwoQualificationPortalSelfReportCriteriaMaxBedsMin).max(getCommandCenterResponseBuyersItemTwoQualificationPortalSelfReportCriteriaMaxBedsMax).nullish(),
+  "maxBaths": zod.number().min(getCommandCenterResponseBuyersItemTwoQualificationPortalSelfReportCriteriaMaxBathsMin).max(getCommandCenterResponseBuyersItemTwoQualificationPortalSelfReportCriteriaMaxBathsMax).nullish(),
+  "rehabTolerance": zod.enum(['NONE', 'LIGHT', 'MODERATE', 'HEAVY', 'ANY']).optional(),
+  "strategies": zod.array(zod.enum(['FLIP', 'RENTAL', 'BRRRR', 'WHOLESALE', 'DEVELOPMENT', 'OTHER'])).min(1).optional(),
+  "fundingTypes": zod.array(zod.enum(['CASH', 'HARD_MONEY', 'PRIVATE_LENDING', 'CONVENTIONAL', 'OTHER'])).min(1).optional(),
+  "maxConcurrentDeals": zod.number().int().min(1).max(getCommandCenterResponseBuyersItemTwoQualificationPortalSelfReportCriteriaMaxConcurrentDealsMax).optional(),
+  "minSpread": zod.number().min(getCommandCenterResponseBuyersItemTwoQualificationPortalSelfReportCriteriaMinSpreadMin).max(getCommandCenterResponseBuyersItemTwoQualificationPortalSelfReportCriteriaMinSpreadMax).nullish(),
+  "minCapRate": zod.number().min(getCommandCenterResponseBuyersItemTwoQualificationPortalSelfReportCriteriaMinCapRateMin).max(getCommandCenterResponseBuyersItemTwoQualificationPortalSelfReportCriteriaMinCapRateMax).nullish()
+}),
+  "confirmedCurrent": zod.literal(true),
+  "note": zod.string(),
+  "receivedAt": zod.string().datetime({"offset":true}),
+  "invitationId": zod.string().uuid(),
+  "source": zod.enum(['PRIVATE_BUYER_QUALIFICATION_PORTAL']),
+  "classification": zod.enum(['INDICATED']),
+  "identityVerified": zod.literal(false),
+  "contactPermissionVerified": zod.literal(false),
+  "ownerReviewRequired": zod.literal(true)
+}).optional(),
   "lastOutreachReplyAt": zod.string().optional(),
   "lastOutreachReplyEvidenceUrl": zod.string().optional(),
   "createdAt": zod.string(),
@@ -12062,6 +12386,7 @@ export const GetCommandCenterResponse = zod.object({
   "version": zod.number().int().min(1),
   "property": zod.object({
   "id": zod.string(),
+  "parcelId": zod.string().nullish(),
   "provider": zod.string(),
   "classification": zod.enum(['OBSERVED']),
   "address": zod.string(),
@@ -12415,6 +12740,71 @@ export const listBuyersResponseTwoVerificationHistoryItemCriteriaOneMinSpreadMax
 export const listBuyersResponseTwoVerificationHistoryItemCriteriaOneMinCapRateMin = 0;
 export const listBuyersResponseTwoVerificationHistoryItemCriteriaOneMinCapRateMax = 1;
 
+export const listBuyersResponseTwoQualificationPortalSelfReportCriteriaStatesItemMin = 2;
+export const listBuyersResponseTwoQualificationPortalSelfReportCriteriaStatesItemMax = 2;
+
+
+
+export const listBuyersResponseTwoQualificationPortalSelfReportCriteriaZipCodesItemRegExp = new RegExp('^\\d{5}$');
+
+export const listBuyersResponseTwoQualificationPortalSelfReportCriteriaMaxPurchasePriceExclusiveMin = 0;
+export const listBuyersResponseTwoQualificationPortalSelfReportCriteriaMaxPurchasePriceMax = 1000000000;
+
+export const listBuyersResponseTwoQualificationPortalSelfReportCriteriaMaxRepairsMin = 0;
+export const listBuyersResponseTwoQualificationPortalSelfReportCriteriaMaxRepairsMax = 1000000000;
+
+export const listBuyersResponseTwoQualificationPortalSelfReportCriteriaMinBedsMin = 0;
+export const listBuyersResponseTwoQualificationPortalSelfReportCriteriaMinBedsMax = 100;
+
+export const listBuyersResponseTwoQualificationPortalSelfReportCriteriaMinSqftMin = 0;
+export const listBuyersResponseTwoQualificationPortalSelfReportCriteriaMinSqftMax = 1000000;
+
+export const listBuyersResponseTwoQualificationPortalSelfReportCriteriaMaxSqftExclusiveMin = 0;
+export const listBuyersResponseTwoQualificationPortalSelfReportCriteriaMaxSqftMax = 1000000;
+
+export const listBuyersResponseTwoQualificationPortalSelfReportCriteriaClosingDaysMax = 365;
+
+export const listBuyersResponseTwoQualificationPortalSelfReportCriteriaCountiesItemMax = 200;
+
+export const listBuyersResponseTwoQualificationPortalSelfReportCriteriaExcludedCountiesItemMax = 200;
+
+export const listBuyersResponseTwoQualificationPortalSelfReportCriteriaExcludedCitiesItemMax = 200;
+
+export const listBuyersResponseTwoQualificationPortalSelfReportCriteriaExcludedZipCodesItemRegExp = new RegExp('^\\d{5}$');
+export const listBuyersResponseTwoQualificationPortalSelfReportCriteriaMinPurchasePriceMin = 0;
+export const listBuyersResponseTwoQualificationPortalSelfReportCriteriaMinPurchasePriceMax = 1000000000;
+
+export const listBuyersResponseTwoQualificationPortalSelfReportCriteriaMinArvMin = 0;
+export const listBuyersResponseTwoQualificationPortalSelfReportCriteriaMinArvMax = 1000000000;
+
+export const listBuyersResponseTwoQualificationPortalSelfReportCriteriaMaxArvMin = 0;
+export const listBuyersResponseTwoQualificationPortalSelfReportCriteriaMaxArvMax = 1000000000;
+
+export const listBuyersResponseTwoQualificationPortalSelfReportCriteriaMinUnitsMin = 0;
+export const listBuyersResponseTwoQualificationPortalSelfReportCriteriaMinUnitsMax = 10000;
+
+export const listBuyersResponseTwoQualificationPortalSelfReportCriteriaMaxUnitsMin = 0;
+export const listBuyersResponseTwoQualificationPortalSelfReportCriteriaMaxUnitsMax = 10000;
+
+export const listBuyersResponseTwoQualificationPortalSelfReportCriteriaMinBathsMin = 0;
+export const listBuyersResponseTwoQualificationPortalSelfReportCriteriaMinBathsMax = 100;
+
+export const listBuyersResponseTwoQualificationPortalSelfReportCriteriaMaxBedsMin = 0;
+export const listBuyersResponseTwoQualificationPortalSelfReportCriteriaMaxBedsMax = 100;
+
+export const listBuyersResponseTwoQualificationPortalSelfReportCriteriaMaxBathsMin = 0;
+export const listBuyersResponseTwoQualificationPortalSelfReportCriteriaMaxBathsMax = 100;
+
+
+
+export const listBuyersResponseTwoQualificationPortalSelfReportCriteriaMaxConcurrentDealsMax = 1000;
+
+export const listBuyersResponseTwoQualificationPortalSelfReportCriteriaMinSpreadMin = 0;
+export const listBuyersResponseTwoQualificationPortalSelfReportCriteriaMinSpreadMax = 1000000000;
+
+export const listBuyersResponseTwoQualificationPortalSelfReportCriteriaMinCapRateMin = 0;
+export const listBuyersResponseTwoQualificationPortalSelfReportCriteriaMinCapRateMax = 1;
+
 
 
 export const ListBuyersResponseItem = zod.object({
@@ -12575,6 +12965,49 @@ export const ListBuyersResponseItem = zod.object({
   "dueAt": zod.string(),
   "updatedAt": zod.string()
 }),zod.null()]).optional(),
+  "qualificationPortalSelfReport": zod.object({
+  "responseId": zod.string().uuid(),
+  "currentBuyingStatus": zod.enum(['BUYING', 'NOT_BUYING']),
+  "criteria": zod.object({
+  "states": zod.array(zod.string().min(listBuyersResponseTwoQualificationPortalSelfReportCriteriaStatesItemMin).max(listBuyersResponseTwoQualificationPortalSelfReportCriteriaStatesItemMax)).min(1),
+  "cities": zod.array(zod.string().min(1)),
+  "zipCodes": zod.array(zod.string().regex(listBuyersResponseTwoQualificationPortalSelfReportCriteriaZipCodesItemRegExp)),
+  "propertyTypes": zod.array(zod.enum(['SINGLE_FAMILY', 'MULTIFAMILY', 'CONDO', 'TOWNHOUSE', 'LAND', 'OTHER'])).min(1),
+  "maxPurchasePrice": zod.number().gt(listBuyersResponseTwoQualificationPortalSelfReportCriteriaMaxPurchasePriceExclusiveMin).max(listBuyersResponseTwoQualificationPortalSelfReportCriteriaMaxPurchasePriceMax),
+  "maxRepairs": zod.number().min(listBuyersResponseTwoQualificationPortalSelfReportCriteriaMaxRepairsMin).max(listBuyersResponseTwoQualificationPortalSelfReportCriteriaMaxRepairsMax),
+  "minBeds": zod.number().int().min(listBuyersResponseTwoQualificationPortalSelfReportCriteriaMinBedsMin).max(listBuyersResponseTwoQualificationPortalSelfReportCriteriaMinBedsMax),
+  "minSqft": zod.number().min(listBuyersResponseTwoQualificationPortalSelfReportCriteriaMinSqftMin).max(listBuyersResponseTwoQualificationPortalSelfReportCriteriaMinSqftMax),
+  "maxSqft": zod.number().gt(listBuyersResponseTwoQualificationPortalSelfReportCriteriaMaxSqftExclusiveMin).max(listBuyersResponseTwoQualificationPortalSelfReportCriteriaMaxSqftMax),
+  "closingDays": zod.number().int().min(1).max(listBuyersResponseTwoQualificationPortalSelfReportCriteriaClosingDaysMax),
+  "counties": zod.array(zod.string().min(1).max(listBuyersResponseTwoQualificationPortalSelfReportCriteriaCountiesItemMax)).optional(),
+  "excludedCounties": zod.array(zod.string().min(1).max(listBuyersResponseTwoQualificationPortalSelfReportCriteriaExcludedCountiesItemMax)).optional(),
+  "excludedCities": zod.array(zod.string().min(1).max(listBuyersResponseTwoQualificationPortalSelfReportCriteriaExcludedCitiesItemMax)).optional(),
+  "excludedZipCodes": zod.array(zod.string().regex(listBuyersResponseTwoQualificationPortalSelfReportCriteriaExcludedZipCodesItemRegExp)).optional(),
+  "minPurchasePrice": zod.number().min(listBuyersResponseTwoQualificationPortalSelfReportCriteriaMinPurchasePriceMin).max(listBuyersResponseTwoQualificationPortalSelfReportCriteriaMinPurchasePriceMax).optional(),
+  "minArv": zod.number().min(listBuyersResponseTwoQualificationPortalSelfReportCriteriaMinArvMin).max(listBuyersResponseTwoQualificationPortalSelfReportCriteriaMinArvMax).nullish(),
+  "maxArv": zod.number().min(listBuyersResponseTwoQualificationPortalSelfReportCriteriaMaxArvMin).max(listBuyersResponseTwoQualificationPortalSelfReportCriteriaMaxArvMax).nullish(),
+  "minUnits": zod.number().int().min(listBuyersResponseTwoQualificationPortalSelfReportCriteriaMinUnitsMin).max(listBuyersResponseTwoQualificationPortalSelfReportCriteriaMinUnitsMax).optional(),
+  "maxUnits": zod.number().int().min(listBuyersResponseTwoQualificationPortalSelfReportCriteriaMaxUnitsMin).max(listBuyersResponseTwoQualificationPortalSelfReportCriteriaMaxUnitsMax).optional(),
+  "minBaths": zod.number().min(listBuyersResponseTwoQualificationPortalSelfReportCriteriaMinBathsMin).max(listBuyersResponseTwoQualificationPortalSelfReportCriteriaMinBathsMax).optional(),
+  "maxBeds": zod.number().int().min(listBuyersResponseTwoQualificationPortalSelfReportCriteriaMaxBedsMin).max(listBuyersResponseTwoQualificationPortalSelfReportCriteriaMaxBedsMax).nullish(),
+  "maxBaths": zod.number().min(listBuyersResponseTwoQualificationPortalSelfReportCriteriaMaxBathsMin).max(listBuyersResponseTwoQualificationPortalSelfReportCriteriaMaxBathsMax).nullish(),
+  "rehabTolerance": zod.enum(['NONE', 'LIGHT', 'MODERATE', 'HEAVY', 'ANY']).optional(),
+  "strategies": zod.array(zod.enum(['FLIP', 'RENTAL', 'BRRRR', 'WHOLESALE', 'DEVELOPMENT', 'OTHER'])).min(1).optional(),
+  "fundingTypes": zod.array(zod.enum(['CASH', 'HARD_MONEY', 'PRIVATE_LENDING', 'CONVENTIONAL', 'OTHER'])).min(1).optional(),
+  "maxConcurrentDeals": zod.number().int().min(1).max(listBuyersResponseTwoQualificationPortalSelfReportCriteriaMaxConcurrentDealsMax).optional(),
+  "minSpread": zod.number().min(listBuyersResponseTwoQualificationPortalSelfReportCriteriaMinSpreadMin).max(listBuyersResponseTwoQualificationPortalSelfReportCriteriaMinSpreadMax).nullish(),
+  "minCapRate": zod.number().min(listBuyersResponseTwoQualificationPortalSelfReportCriteriaMinCapRateMin).max(listBuyersResponseTwoQualificationPortalSelfReportCriteriaMinCapRateMax).nullish()
+}),
+  "confirmedCurrent": zod.literal(true),
+  "note": zod.string(),
+  "receivedAt": zod.string().datetime({"offset":true}),
+  "invitationId": zod.string().uuid(),
+  "source": zod.enum(['PRIVATE_BUYER_QUALIFICATION_PORTAL']),
+  "classification": zod.enum(['INDICATED']),
+  "identityVerified": zod.literal(false),
+  "contactPermissionVerified": zod.literal(false),
+  "ownerReviewRequired": zod.literal(true)
+}).optional(),
   "lastOutreachReplyAt": zod.string().optional(),
   "lastOutreachReplyEvidenceUrl": zod.string().optional(),
   "createdAt": zod.string(),
@@ -12865,6 +13298,71 @@ export const createBuyerResponseTwoVerificationHistoryItemCriteriaOneMinSpreadMa
 export const createBuyerResponseTwoVerificationHistoryItemCriteriaOneMinCapRateMin = 0;
 export const createBuyerResponseTwoVerificationHistoryItemCriteriaOneMinCapRateMax = 1;
 
+export const createBuyerResponseTwoQualificationPortalSelfReportCriteriaStatesItemMin = 2;
+export const createBuyerResponseTwoQualificationPortalSelfReportCriteriaStatesItemMax = 2;
+
+
+
+export const createBuyerResponseTwoQualificationPortalSelfReportCriteriaZipCodesItemRegExp = new RegExp('^\\d{5}$');
+
+export const createBuyerResponseTwoQualificationPortalSelfReportCriteriaMaxPurchasePriceExclusiveMin = 0;
+export const createBuyerResponseTwoQualificationPortalSelfReportCriteriaMaxPurchasePriceMax = 1000000000;
+
+export const createBuyerResponseTwoQualificationPortalSelfReportCriteriaMaxRepairsMin = 0;
+export const createBuyerResponseTwoQualificationPortalSelfReportCriteriaMaxRepairsMax = 1000000000;
+
+export const createBuyerResponseTwoQualificationPortalSelfReportCriteriaMinBedsMin = 0;
+export const createBuyerResponseTwoQualificationPortalSelfReportCriteriaMinBedsMax = 100;
+
+export const createBuyerResponseTwoQualificationPortalSelfReportCriteriaMinSqftMin = 0;
+export const createBuyerResponseTwoQualificationPortalSelfReportCriteriaMinSqftMax = 1000000;
+
+export const createBuyerResponseTwoQualificationPortalSelfReportCriteriaMaxSqftExclusiveMin = 0;
+export const createBuyerResponseTwoQualificationPortalSelfReportCriteriaMaxSqftMax = 1000000;
+
+export const createBuyerResponseTwoQualificationPortalSelfReportCriteriaClosingDaysMax = 365;
+
+export const createBuyerResponseTwoQualificationPortalSelfReportCriteriaCountiesItemMax = 200;
+
+export const createBuyerResponseTwoQualificationPortalSelfReportCriteriaExcludedCountiesItemMax = 200;
+
+export const createBuyerResponseTwoQualificationPortalSelfReportCriteriaExcludedCitiesItemMax = 200;
+
+export const createBuyerResponseTwoQualificationPortalSelfReportCriteriaExcludedZipCodesItemRegExp = new RegExp('^\\d{5}$');
+export const createBuyerResponseTwoQualificationPortalSelfReportCriteriaMinPurchasePriceMin = 0;
+export const createBuyerResponseTwoQualificationPortalSelfReportCriteriaMinPurchasePriceMax = 1000000000;
+
+export const createBuyerResponseTwoQualificationPortalSelfReportCriteriaMinArvMin = 0;
+export const createBuyerResponseTwoQualificationPortalSelfReportCriteriaMinArvMax = 1000000000;
+
+export const createBuyerResponseTwoQualificationPortalSelfReportCriteriaMaxArvMin = 0;
+export const createBuyerResponseTwoQualificationPortalSelfReportCriteriaMaxArvMax = 1000000000;
+
+export const createBuyerResponseTwoQualificationPortalSelfReportCriteriaMinUnitsMin = 0;
+export const createBuyerResponseTwoQualificationPortalSelfReportCriteriaMinUnitsMax = 10000;
+
+export const createBuyerResponseTwoQualificationPortalSelfReportCriteriaMaxUnitsMin = 0;
+export const createBuyerResponseTwoQualificationPortalSelfReportCriteriaMaxUnitsMax = 10000;
+
+export const createBuyerResponseTwoQualificationPortalSelfReportCriteriaMinBathsMin = 0;
+export const createBuyerResponseTwoQualificationPortalSelfReportCriteriaMinBathsMax = 100;
+
+export const createBuyerResponseTwoQualificationPortalSelfReportCriteriaMaxBedsMin = 0;
+export const createBuyerResponseTwoQualificationPortalSelfReportCriteriaMaxBedsMax = 100;
+
+export const createBuyerResponseTwoQualificationPortalSelfReportCriteriaMaxBathsMin = 0;
+export const createBuyerResponseTwoQualificationPortalSelfReportCriteriaMaxBathsMax = 100;
+
+
+
+export const createBuyerResponseTwoQualificationPortalSelfReportCriteriaMaxConcurrentDealsMax = 1000;
+
+export const createBuyerResponseTwoQualificationPortalSelfReportCriteriaMinSpreadMin = 0;
+export const createBuyerResponseTwoQualificationPortalSelfReportCriteriaMinSpreadMax = 1000000000;
+
+export const createBuyerResponseTwoQualificationPortalSelfReportCriteriaMinCapRateMin = 0;
+export const createBuyerResponseTwoQualificationPortalSelfReportCriteriaMinCapRateMax = 1;
+
 
 
 export const CreateBuyerResponse = zod.object({
@@ -13025,6 +13523,49 @@ export const CreateBuyerResponse = zod.object({
   "dueAt": zod.string(),
   "updatedAt": zod.string()
 }),zod.null()]).optional(),
+  "qualificationPortalSelfReport": zod.object({
+  "responseId": zod.string().uuid(),
+  "currentBuyingStatus": zod.enum(['BUYING', 'NOT_BUYING']),
+  "criteria": zod.object({
+  "states": zod.array(zod.string().min(createBuyerResponseTwoQualificationPortalSelfReportCriteriaStatesItemMin).max(createBuyerResponseTwoQualificationPortalSelfReportCriteriaStatesItemMax)).min(1),
+  "cities": zod.array(zod.string().min(1)),
+  "zipCodes": zod.array(zod.string().regex(createBuyerResponseTwoQualificationPortalSelfReportCriteriaZipCodesItemRegExp)),
+  "propertyTypes": zod.array(zod.enum(['SINGLE_FAMILY', 'MULTIFAMILY', 'CONDO', 'TOWNHOUSE', 'LAND', 'OTHER'])).min(1),
+  "maxPurchasePrice": zod.number().gt(createBuyerResponseTwoQualificationPortalSelfReportCriteriaMaxPurchasePriceExclusiveMin).max(createBuyerResponseTwoQualificationPortalSelfReportCriteriaMaxPurchasePriceMax),
+  "maxRepairs": zod.number().min(createBuyerResponseTwoQualificationPortalSelfReportCriteriaMaxRepairsMin).max(createBuyerResponseTwoQualificationPortalSelfReportCriteriaMaxRepairsMax),
+  "minBeds": zod.number().int().min(createBuyerResponseTwoQualificationPortalSelfReportCriteriaMinBedsMin).max(createBuyerResponseTwoQualificationPortalSelfReportCriteriaMinBedsMax),
+  "minSqft": zod.number().min(createBuyerResponseTwoQualificationPortalSelfReportCriteriaMinSqftMin).max(createBuyerResponseTwoQualificationPortalSelfReportCriteriaMinSqftMax),
+  "maxSqft": zod.number().gt(createBuyerResponseTwoQualificationPortalSelfReportCriteriaMaxSqftExclusiveMin).max(createBuyerResponseTwoQualificationPortalSelfReportCriteriaMaxSqftMax),
+  "closingDays": zod.number().int().min(1).max(createBuyerResponseTwoQualificationPortalSelfReportCriteriaClosingDaysMax),
+  "counties": zod.array(zod.string().min(1).max(createBuyerResponseTwoQualificationPortalSelfReportCriteriaCountiesItemMax)).optional(),
+  "excludedCounties": zod.array(zod.string().min(1).max(createBuyerResponseTwoQualificationPortalSelfReportCriteriaExcludedCountiesItemMax)).optional(),
+  "excludedCities": zod.array(zod.string().min(1).max(createBuyerResponseTwoQualificationPortalSelfReportCriteriaExcludedCitiesItemMax)).optional(),
+  "excludedZipCodes": zod.array(zod.string().regex(createBuyerResponseTwoQualificationPortalSelfReportCriteriaExcludedZipCodesItemRegExp)).optional(),
+  "minPurchasePrice": zod.number().min(createBuyerResponseTwoQualificationPortalSelfReportCriteriaMinPurchasePriceMin).max(createBuyerResponseTwoQualificationPortalSelfReportCriteriaMinPurchasePriceMax).optional(),
+  "minArv": zod.number().min(createBuyerResponseTwoQualificationPortalSelfReportCriteriaMinArvMin).max(createBuyerResponseTwoQualificationPortalSelfReportCriteriaMinArvMax).nullish(),
+  "maxArv": zod.number().min(createBuyerResponseTwoQualificationPortalSelfReportCriteriaMaxArvMin).max(createBuyerResponseTwoQualificationPortalSelfReportCriteriaMaxArvMax).nullish(),
+  "minUnits": zod.number().int().min(createBuyerResponseTwoQualificationPortalSelfReportCriteriaMinUnitsMin).max(createBuyerResponseTwoQualificationPortalSelfReportCriteriaMinUnitsMax).optional(),
+  "maxUnits": zod.number().int().min(createBuyerResponseTwoQualificationPortalSelfReportCriteriaMaxUnitsMin).max(createBuyerResponseTwoQualificationPortalSelfReportCriteriaMaxUnitsMax).optional(),
+  "minBaths": zod.number().min(createBuyerResponseTwoQualificationPortalSelfReportCriteriaMinBathsMin).max(createBuyerResponseTwoQualificationPortalSelfReportCriteriaMinBathsMax).optional(),
+  "maxBeds": zod.number().int().min(createBuyerResponseTwoQualificationPortalSelfReportCriteriaMaxBedsMin).max(createBuyerResponseTwoQualificationPortalSelfReportCriteriaMaxBedsMax).nullish(),
+  "maxBaths": zod.number().min(createBuyerResponseTwoQualificationPortalSelfReportCriteriaMaxBathsMin).max(createBuyerResponseTwoQualificationPortalSelfReportCriteriaMaxBathsMax).nullish(),
+  "rehabTolerance": zod.enum(['NONE', 'LIGHT', 'MODERATE', 'HEAVY', 'ANY']).optional(),
+  "strategies": zod.array(zod.enum(['FLIP', 'RENTAL', 'BRRRR', 'WHOLESALE', 'DEVELOPMENT', 'OTHER'])).min(1).optional(),
+  "fundingTypes": zod.array(zod.enum(['CASH', 'HARD_MONEY', 'PRIVATE_LENDING', 'CONVENTIONAL', 'OTHER'])).min(1).optional(),
+  "maxConcurrentDeals": zod.number().int().min(1).max(createBuyerResponseTwoQualificationPortalSelfReportCriteriaMaxConcurrentDealsMax).optional(),
+  "minSpread": zod.number().min(createBuyerResponseTwoQualificationPortalSelfReportCriteriaMinSpreadMin).max(createBuyerResponseTwoQualificationPortalSelfReportCriteriaMinSpreadMax).nullish(),
+  "minCapRate": zod.number().min(createBuyerResponseTwoQualificationPortalSelfReportCriteriaMinCapRateMin).max(createBuyerResponseTwoQualificationPortalSelfReportCriteriaMinCapRateMax).nullish()
+}),
+  "confirmedCurrent": zod.literal(true),
+  "note": zod.string(),
+  "receivedAt": zod.string().datetime({"offset":true}),
+  "invitationId": zod.string().uuid(),
+  "source": zod.enum(['PRIVATE_BUYER_QUALIFICATION_PORTAL']),
+  "classification": zod.enum(['INDICATED']),
+  "identityVerified": zod.literal(false),
+  "contactPermissionVerified": zod.literal(false),
+  "ownerReviewRequired": zod.literal(true)
+}).optional(),
   "lastOutreachReplyAt": zod.string().optional(),
   "lastOutreachReplyEvidenceUrl": zod.string().optional(),
   "createdAt": zod.string(),
@@ -13197,6 +13738,71 @@ export const getBuyerResponseTwoVerificationHistoryItemCriteriaOneMinSpreadMax =
 export const getBuyerResponseTwoVerificationHistoryItemCriteriaOneMinCapRateMin = 0;
 export const getBuyerResponseTwoVerificationHistoryItemCriteriaOneMinCapRateMax = 1;
 
+export const getBuyerResponseTwoQualificationPortalSelfReportCriteriaStatesItemMin = 2;
+export const getBuyerResponseTwoQualificationPortalSelfReportCriteriaStatesItemMax = 2;
+
+
+
+export const getBuyerResponseTwoQualificationPortalSelfReportCriteriaZipCodesItemRegExp = new RegExp('^\\d{5}$');
+
+export const getBuyerResponseTwoQualificationPortalSelfReportCriteriaMaxPurchasePriceExclusiveMin = 0;
+export const getBuyerResponseTwoQualificationPortalSelfReportCriteriaMaxPurchasePriceMax = 1000000000;
+
+export const getBuyerResponseTwoQualificationPortalSelfReportCriteriaMaxRepairsMin = 0;
+export const getBuyerResponseTwoQualificationPortalSelfReportCriteriaMaxRepairsMax = 1000000000;
+
+export const getBuyerResponseTwoQualificationPortalSelfReportCriteriaMinBedsMin = 0;
+export const getBuyerResponseTwoQualificationPortalSelfReportCriteriaMinBedsMax = 100;
+
+export const getBuyerResponseTwoQualificationPortalSelfReportCriteriaMinSqftMin = 0;
+export const getBuyerResponseTwoQualificationPortalSelfReportCriteriaMinSqftMax = 1000000;
+
+export const getBuyerResponseTwoQualificationPortalSelfReportCriteriaMaxSqftExclusiveMin = 0;
+export const getBuyerResponseTwoQualificationPortalSelfReportCriteriaMaxSqftMax = 1000000;
+
+export const getBuyerResponseTwoQualificationPortalSelfReportCriteriaClosingDaysMax = 365;
+
+export const getBuyerResponseTwoQualificationPortalSelfReportCriteriaCountiesItemMax = 200;
+
+export const getBuyerResponseTwoQualificationPortalSelfReportCriteriaExcludedCountiesItemMax = 200;
+
+export const getBuyerResponseTwoQualificationPortalSelfReportCriteriaExcludedCitiesItemMax = 200;
+
+export const getBuyerResponseTwoQualificationPortalSelfReportCriteriaExcludedZipCodesItemRegExp = new RegExp('^\\d{5}$');
+export const getBuyerResponseTwoQualificationPortalSelfReportCriteriaMinPurchasePriceMin = 0;
+export const getBuyerResponseTwoQualificationPortalSelfReportCriteriaMinPurchasePriceMax = 1000000000;
+
+export const getBuyerResponseTwoQualificationPortalSelfReportCriteriaMinArvMin = 0;
+export const getBuyerResponseTwoQualificationPortalSelfReportCriteriaMinArvMax = 1000000000;
+
+export const getBuyerResponseTwoQualificationPortalSelfReportCriteriaMaxArvMin = 0;
+export const getBuyerResponseTwoQualificationPortalSelfReportCriteriaMaxArvMax = 1000000000;
+
+export const getBuyerResponseTwoQualificationPortalSelfReportCriteriaMinUnitsMin = 0;
+export const getBuyerResponseTwoQualificationPortalSelfReportCriteriaMinUnitsMax = 10000;
+
+export const getBuyerResponseTwoQualificationPortalSelfReportCriteriaMaxUnitsMin = 0;
+export const getBuyerResponseTwoQualificationPortalSelfReportCriteriaMaxUnitsMax = 10000;
+
+export const getBuyerResponseTwoQualificationPortalSelfReportCriteriaMinBathsMin = 0;
+export const getBuyerResponseTwoQualificationPortalSelfReportCriteriaMinBathsMax = 100;
+
+export const getBuyerResponseTwoQualificationPortalSelfReportCriteriaMaxBedsMin = 0;
+export const getBuyerResponseTwoQualificationPortalSelfReportCriteriaMaxBedsMax = 100;
+
+export const getBuyerResponseTwoQualificationPortalSelfReportCriteriaMaxBathsMin = 0;
+export const getBuyerResponseTwoQualificationPortalSelfReportCriteriaMaxBathsMax = 100;
+
+
+
+export const getBuyerResponseTwoQualificationPortalSelfReportCriteriaMaxConcurrentDealsMax = 1000;
+
+export const getBuyerResponseTwoQualificationPortalSelfReportCriteriaMinSpreadMin = 0;
+export const getBuyerResponseTwoQualificationPortalSelfReportCriteriaMinSpreadMax = 1000000000;
+
+export const getBuyerResponseTwoQualificationPortalSelfReportCriteriaMinCapRateMin = 0;
+export const getBuyerResponseTwoQualificationPortalSelfReportCriteriaMinCapRateMax = 1;
+
 
 
 export const GetBuyerResponse = zod.object({
@@ -13357,6 +13963,49 @@ export const GetBuyerResponse = zod.object({
   "dueAt": zod.string(),
   "updatedAt": zod.string()
 }),zod.null()]).optional(),
+  "qualificationPortalSelfReport": zod.object({
+  "responseId": zod.string().uuid(),
+  "currentBuyingStatus": zod.enum(['BUYING', 'NOT_BUYING']),
+  "criteria": zod.object({
+  "states": zod.array(zod.string().min(getBuyerResponseTwoQualificationPortalSelfReportCriteriaStatesItemMin).max(getBuyerResponseTwoQualificationPortalSelfReportCriteriaStatesItemMax)).min(1),
+  "cities": zod.array(zod.string().min(1)),
+  "zipCodes": zod.array(zod.string().regex(getBuyerResponseTwoQualificationPortalSelfReportCriteriaZipCodesItemRegExp)),
+  "propertyTypes": zod.array(zod.enum(['SINGLE_FAMILY', 'MULTIFAMILY', 'CONDO', 'TOWNHOUSE', 'LAND', 'OTHER'])).min(1),
+  "maxPurchasePrice": zod.number().gt(getBuyerResponseTwoQualificationPortalSelfReportCriteriaMaxPurchasePriceExclusiveMin).max(getBuyerResponseTwoQualificationPortalSelfReportCriteriaMaxPurchasePriceMax),
+  "maxRepairs": zod.number().min(getBuyerResponseTwoQualificationPortalSelfReportCriteriaMaxRepairsMin).max(getBuyerResponseTwoQualificationPortalSelfReportCriteriaMaxRepairsMax),
+  "minBeds": zod.number().int().min(getBuyerResponseTwoQualificationPortalSelfReportCriteriaMinBedsMin).max(getBuyerResponseTwoQualificationPortalSelfReportCriteriaMinBedsMax),
+  "minSqft": zod.number().min(getBuyerResponseTwoQualificationPortalSelfReportCriteriaMinSqftMin).max(getBuyerResponseTwoQualificationPortalSelfReportCriteriaMinSqftMax),
+  "maxSqft": zod.number().gt(getBuyerResponseTwoQualificationPortalSelfReportCriteriaMaxSqftExclusiveMin).max(getBuyerResponseTwoQualificationPortalSelfReportCriteriaMaxSqftMax),
+  "closingDays": zod.number().int().min(1).max(getBuyerResponseTwoQualificationPortalSelfReportCriteriaClosingDaysMax),
+  "counties": zod.array(zod.string().min(1).max(getBuyerResponseTwoQualificationPortalSelfReportCriteriaCountiesItemMax)).optional(),
+  "excludedCounties": zod.array(zod.string().min(1).max(getBuyerResponseTwoQualificationPortalSelfReportCriteriaExcludedCountiesItemMax)).optional(),
+  "excludedCities": zod.array(zod.string().min(1).max(getBuyerResponseTwoQualificationPortalSelfReportCriteriaExcludedCitiesItemMax)).optional(),
+  "excludedZipCodes": zod.array(zod.string().regex(getBuyerResponseTwoQualificationPortalSelfReportCriteriaExcludedZipCodesItemRegExp)).optional(),
+  "minPurchasePrice": zod.number().min(getBuyerResponseTwoQualificationPortalSelfReportCriteriaMinPurchasePriceMin).max(getBuyerResponseTwoQualificationPortalSelfReportCriteriaMinPurchasePriceMax).optional(),
+  "minArv": zod.number().min(getBuyerResponseTwoQualificationPortalSelfReportCriteriaMinArvMin).max(getBuyerResponseTwoQualificationPortalSelfReportCriteriaMinArvMax).nullish(),
+  "maxArv": zod.number().min(getBuyerResponseTwoQualificationPortalSelfReportCriteriaMaxArvMin).max(getBuyerResponseTwoQualificationPortalSelfReportCriteriaMaxArvMax).nullish(),
+  "minUnits": zod.number().int().min(getBuyerResponseTwoQualificationPortalSelfReportCriteriaMinUnitsMin).max(getBuyerResponseTwoQualificationPortalSelfReportCriteriaMinUnitsMax).optional(),
+  "maxUnits": zod.number().int().min(getBuyerResponseTwoQualificationPortalSelfReportCriteriaMaxUnitsMin).max(getBuyerResponseTwoQualificationPortalSelfReportCriteriaMaxUnitsMax).optional(),
+  "minBaths": zod.number().min(getBuyerResponseTwoQualificationPortalSelfReportCriteriaMinBathsMin).max(getBuyerResponseTwoQualificationPortalSelfReportCriteriaMinBathsMax).optional(),
+  "maxBeds": zod.number().int().min(getBuyerResponseTwoQualificationPortalSelfReportCriteriaMaxBedsMin).max(getBuyerResponseTwoQualificationPortalSelfReportCriteriaMaxBedsMax).nullish(),
+  "maxBaths": zod.number().min(getBuyerResponseTwoQualificationPortalSelfReportCriteriaMaxBathsMin).max(getBuyerResponseTwoQualificationPortalSelfReportCriteriaMaxBathsMax).nullish(),
+  "rehabTolerance": zod.enum(['NONE', 'LIGHT', 'MODERATE', 'HEAVY', 'ANY']).optional(),
+  "strategies": zod.array(zod.enum(['FLIP', 'RENTAL', 'BRRRR', 'WHOLESALE', 'DEVELOPMENT', 'OTHER'])).min(1).optional(),
+  "fundingTypes": zod.array(zod.enum(['CASH', 'HARD_MONEY', 'PRIVATE_LENDING', 'CONVENTIONAL', 'OTHER'])).min(1).optional(),
+  "maxConcurrentDeals": zod.number().int().min(1).max(getBuyerResponseTwoQualificationPortalSelfReportCriteriaMaxConcurrentDealsMax).optional(),
+  "minSpread": zod.number().min(getBuyerResponseTwoQualificationPortalSelfReportCriteriaMinSpreadMin).max(getBuyerResponseTwoQualificationPortalSelfReportCriteriaMinSpreadMax).nullish(),
+  "minCapRate": zod.number().min(getBuyerResponseTwoQualificationPortalSelfReportCriteriaMinCapRateMin).max(getBuyerResponseTwoQualificationPortalSelfReportCriteriaMinCapRateMax).nullish()
+}),
+  "confirmedCurrent": zod.literal(true),
+  "note": zod.string(),
+  "receivedAt": zod.string().datetime({"offset":true}),
+  "invitationId": zod.string().uuid(),
+  "source": zod.enum(['PRIVATE_BUYER_QUALIFICATION_PORTAL']),
+  "classification": zod.enum(['INDICATED']),
+  "identityVerified": zod.literal(false),
+  "contactPermissionVerified": zod.literal(false),
+  "ownerReviewRequired": zod.literal(true)
+}).optional(),
   "lastOutreachReplyAt": zod.string().optional(),
   "lastOutreachReplyEvidenceUrl": zod.string().optional(),
   "createdAt": zod.string(),
@@ -13653,6 +14302,71 @@ export const updateBuyerResponseTwoVerificationHistoryItemCriteriaOneMinSpreadMa
 export const updateBuyerResponseTwoVerificationHistoryItemCriteriaOneMinCapRateMin = 0;
 export const updateBuyerResponseTwoVerificationHistoryItemCriteriaOneMinCapRateMax = 1;
 
+export const updateBuyerResponseTwoQualificationPortalSelfReportCriteriaStatesItemMin = 2;
+export const updateBuyerResponseTwoQualificationPortalSelfReportCriteriaStatesItemMax = 2;
+
+
+
+export const updateBuyerResponseTwoQualificationPortalSelfReportCriteriaZipCodesItemRegExp = new RegExp('^\\d{5}$');
+
+export const updateBuyerResponseTwoQualificationPortalSelfReportCriteriaMaxPurchasePriceExclusiveMin = 0;
+export const updateBuyerResponseTwoQualificationPortalSelfReportCriteriaMaxPurchasePriceMax = 1000000000;
+
+export const updateBuyerResponseTwoQualificationPortalSelfReportCriteriaMaxRepairsMin = 0;
+export const updateBuyerResponseTwoQualificationPortalSelfReportCriteriaMaxRepairsMax = 1000000000;
+
+export const updateBuyerResponseTwoQualificationPortalSelfReportCriteriaMinBedsMin = 0;
+export const updateBuyerResponseTwoQualificationPortalSelfReportCriteriaMinBedsMax = 100;
+
+export const updateBuyerResponseTwoQualificationPortalSelfReportCriteriaMinSqftMin = 0;
+export const updateBuyerResponseTwoQualificationPortalSelfReportCriteriaMinSqftMax = 1000000;
+
+export const updateBuyerResponseTwoQualificationPortalSelfReportCriteriaMaxSqftExclusiveMin = 0;
+export const updateBuyerResponseTwoQualificationPortalSelfReportCriteriaMaxSqftMax = 1000000;
+
+export const updateBuyerResponseTwoQualificationPortalSelfReportCriteriaClosingDaysMax = 365;
+
+export const updateBuyerResponseTwoQualificationPortalSelfReportCriteriaCountiesItemMax = 200;
+
+export const updateBuyerResponseTwoQualificationPortalSelfReportCriteriaExcludedCountiesItemMax = 200;
+
+export const updateBuyerResponseTwoQualificationPortalSelfReportCriteriaExcludedCitiesItemMax = 200;
+
+export const updateBuyerResponseTwoQualificationPortalSelfReportCriteriaExcludedZipCodesItemRegExp = new RegExp('^\\d{5}$');
+export const updateBuyerResponseTwoQualificationPortalSelfReportCriteriaMinPurchasePriceMin = 0;
+export const updateBuyerResponseTwoQualificationPortalSelfReportCriteriaMinPurchasePriceMax = 1000000000;
+
+export const updateBuyerResponseTwoQualificationPortalSelfReportCriteriaMinArvMin = 0;
+export const updateBuyerResponseTwoQualificationPortalSelfReportCriteriaMinArvMax = 1000000000;
+
+export const updateBuyerResponseTwoQualificationPortalSelfReportCriteriaMaxArvMin = 0;
+export const updateBuyerResponseTwoQualificationPortalSelfReportCriteriaMaxArvMax = 1000000000;
+
+export const updateBuyerResponseTwoQualificationPortalSelfReportCriteriaMinUnitsMin = 0;
+export const updateBuyerResponseTwoQualificationPortalSelfReportCriteriaMinUnitsMax = 10000;
+
+export const updateBuyerResponseTwoQualificationPortalSelfReportCriteriaMaxUnitsMin = 0;
+export const updateBuyerResponseTwoQualificationPortalSelfReportCriteriaMaxUnitsMax = 10000;
+
+export const updateBuyerResponseTwoQualificationPortalSelfReportCriteriaMinBathsMin = 0;
+export const updateBuyerResponseTwoQualificationPortalSelfReportCriteriaMinBathsMax = 100;
+
+export const updateBuyerResponseTwoQualificationPortalSelfReportCriteriaMaxBedsMin = 0;
+export const updateBuyerResponseTwoQualificationPortalSelfReportCriteriaMaxBedsMax = 100;
+
+export const updateBuyerResponseTwoQualificationPortalSelfReportCriteriaMaxBathsMin = 0;
+export const updateBuyerResponseTwoQualificationPortalSelfReportCriteriaMaxBathsMax = 100;
+
+
+
+export const updateBuyerResponseTwoQualificationPortalSelfReportCriteriaMaxConcurrentDealsMax = 1000;
+
+export const updateBuyerResponseTwoQualificationPortalSelfReportCriteriaMinSpreadMin = 0;
+export const updateBuyerResponseTwoQualificationPortalSelfReportCriteriaMinSpreadMax = 1000000000;
+
+export const updateBuyerResponseTwoQualificationPortalSelfReportCriteriaMinCapRateMin = 0;
+export const updateBuyerResponseTwoQualificationPortalSelfReportCriteriaMinCapRateMax = 1;
+
 
 
 export const UpdateBuyerResponse = zod.object({
@@ -13813,6 +14527,49 @@ export const UpdateBuyerResponse = zod.object({
   "dueAt": zod.string(),
   "updatedAt": zod.string()
 }),zod.null()]).optional(),
+  "qualificationPortalSelfReport": zod.object({
+  "responseId": zod.string().uuid(),
+  "currentBuyingStatus": zod.enum(['BUYING', 'NOT_BUYING']),
+  "criteria": zod.object({
+  "states": zod.array(zod.string().min(updateBuyerResponseTwoQualificationPortalSelfReportCriteriaStatesItemMin).max(updateBuyerResponseTwoQualificationPortalSelfReportCriteriaStatesItemMax)).min(1),
+  "cities": zod.array(zod.string().min(1)),
+  "zipCodes": zod.array(zod.string().regex(updateBuyerResponseTwoQualificationPortalSelfReportCriteriaZipCodesItemRegExp)),
+  "propertyTypes": zod.array(zod.enum(['SINGLE_FAMILY', 'MULTIFAMILY', 'CONDO', 'TOWNHOUSE', 'LAND', 'OTHER'])).min(1),
+  "maxPurchasePrice": zod.number().gt(updateBuyerResponseTwoQualificationPortalSelfReportCriteriaMaxPurchasePriceExclusiveMin).max(updateBuyerResponseTwoQualificationPortalSelfReportCriteriaMaxPurchasePriceMax),
+  "maxRepairs": zod.number().min(updateBuyerResponseTwoQualificationPortalSelfReportCriteriaMaxRepairsMin).max(updateBuyerResponseTwoQualificationPortalSelfReportCriteriaMaxRepairsMax),
+  "minBeds": zod.number().int().min(updateBuyerResponseTwoQualificationPortalSelfReportCriteriaMinBedsMin).max(updateBuyerResponseTwoQualificationPortalSelfReportCriteriaMinBedsMax),
+  "minSqft": zod.number().min(updateBuyerResponseTwoQualificationPortalSelfReportCriteriaMinSqftMin).max(updateBuyerResponseTwoQualificationPortalSelfReportCriteriaMinSqftMax),
+  "maxSqft": zod.number().gt(updateBuyerResponseTwoQualificationPortalSelfReportCriteriaMaxSqftExclusiveMin).max(updateBuyerResponseTwoQualificationPortalSelfReportCriteriaMaxSqftMax),
+  "closingDays": zod.number().int().min(1).max(updateBuyerResponseTwoQualificationPortalSelfReportCriteriaClosingDaysMax),
+  "counties": zod.array(zod.string().min(1).max(updateBuyerResponseTwoQualificationPortalSelfReportCriteriaCountiesItemMax)).optional(),
+  "excludedCounties": zod.array(zod.string().min(1).max(updateBuyerResponseTwoQualificationPortalSelfReportCriteriaExcludedCountiesItemMax)).optional(),
+  "excludedCities": zod.array(zod.string().min(1).max(updateBuyerResponseTwoQualificationPortalSelfReportCriteriaExcludedCitiesItemMax)).optional(),
+  "excludedZipCodes": zod.array(zod.string().regex(updateBuyerResponseTwoQualificationPortalSelfReportCriteriaExcludedZipCodesItemRegExp)).optional(),
+  "minPurchasePrice": zod.number().min(updateBuyerResponseTwoQualificationPortalSelfReportCriteriaMinPurchasePriceMin).max(updateBuyerResponseTwoQualificationPortalSelfReportCriteriaMinPurchasePriceMax).optional(),
+  "minArv": zod.number().min(updateBuyerResponseTwoQualificationPortalSelfReportCriteriaMinArvMin).max(updateBuyerResponseTwoQualificationPortalSelfReportCriteriaMinArvMax).nullish(),
+  "maxArv": zod.number().min(updateBuyerResponseTwoQualificationPortalSelfReportCriteriaMaxArvMin).max(updateBuyerResponseTwoQualificationPortalSelfReportCriteriaMaxArvMax).nullish(),
+  "minUnits": zod.number().int().min(updateBuyerResponseTwoQualificationPortalSelfReportCriteriaMinUnitsMin).max(updateBuyerResponseTwoQualificationPortalSelfReportCriteriaMinUnitsMax).optional(),
+  "maxUnits": zod.number().int().min(updateBuyerResponseTwoQualificationPortalSelfReportCriteriaMaxUnitsMin).max(updateBuyerResponseTwoQualificationPortalSelfReportCriteriaMaxUnitsMax).optional(),
+  "minBaths": zod.number().min(updateBuyerResponseTwoQualificationPortalSelfReportCriteriaMinBathsMin).max(updateBuyerResponseTwoQualificationPortalSelfReportCriteriaMinBathsMax).optional(),
+  "maxBeds": zod.number().int().min(updateBuyerResponseTwoQualificationPortalSelfReportCriteriaMaxBedsMin).max(updateBuyerResponseTwoQualificationPortalSelfReportCriteriaMaxBedsMax).nullish(),
+  "maxBaths": zod.number().min(updateBuyerResponseTwoQualificationPortalSelfReportCriteriaMaxBathsMin).max(updateBuyerResponseTwoQualificationPortalSelfReportCriteriaMaxBathsMax).nullish(),
+  "rehabTolerance": zod.enum(['NONE', 'LIGHT', 'MODERATE', 'HEAVY', 'ANY']).optional(),
+  "strategies": zod.array(zod.enum(['FLIP', 'RENTAL', 'BRRRR', 'WHOLESALE', 'DEVELOPMENT', 'OTHER'])).min(1).optional(),
+  "fundingTypes": zod.array(zod.enum(['CASH', 'HARD_MONEY', 'PRIVATE_LENDING', 'CONVENTIONAL', 'OTHER'])).min(1).optional(),
+  "maxConcurrentDeals": zod.number().int().min(1).max(updateBuyerResponseTwoQualificationPortalSelfReportCriteriaMaxConcurrentDealsMax).optional(),
+  "minSpread": zod.number().min(updateBuyerResponseTwoQualificationPortalSelfReportCriteriaMinSpreadMin).max(updateBuyerResponseTwoQualificationPortalSelfReportCriteriaMinSpreadMax).nullish(),
+  "minCapRate": zod.number().min(updateBuyerResponseTwoQualificationPortalSelfReportCriteriaMinCapRateMin).max(updateBuyerResponseTwoQualificationPortalSelfReportCriteriaMinCapRateMax).nullish()
+}),
+  "confirmedCurrent": zod.literal(true),
+  "note": zod.string(),
+  "receivedAt": zod.string().datetime({"offset":true}),
+  "invitationId": zod.string().uuid(),
+  "source": zod.enum(['PRIVATE_BUYER_QUALIFICATION_PORTAL']),
+  "classification": zod.enum(['INDICATED']),
+  "identityVerified": zod.literal(false),
+  "contactPermissionVerified": zod.literal(false),
+  "ownerReviewRequired": zod.literal(true)
+}).optional(),
   "lastOutreachReplyAt": zod.string().optional(),
   "lastOutreachReplyEvidenceUrl": zod.string().optional(),
   "createdAt": zod.string(),
@@ -14030,6 +14787,71 @@ export const verifyBuyerResponseTwoVerificationHistoryItemCriteriaOneMinSpreadMa
 export const verifyBuyerResponseTwoVerificationHistoryItemCriteriaOneMinCapRateMin = 0;
 export const verifyBuyerResponseTwoVerificationHistoryItemCriteriaOneMinCapRateMax = 1;
 
+export const verifyBuyerResponseTwoQualificationPortalSelfReportCriteriaStatesItemMin = 2;
+export const verifyBuyerResponseTwoQualificationPortalSelfReportCriteriaStatesItemMax = 2;
+
+
+
+export const verifyBuyerResponseTwoQualificationPortalSelfReportCriteriaZipCodesItemRegExp = new RegExp('^\\d{5}$');
+
+export const verifyBuyerResponseTwoQualificationPortalSelfReportCriteriaMaxPurchasePriceExclusiveMin = 0;
+export const verifyBuyerResponseTwoQualificationPortalSelfReportCriteriaMaxPurchasePriceMax = 1000000000;
+
+export const verifyBuyerResponseTwoQualificationPortalSelfReportCriteriaMaxRepairsMin = 0;
+export const verifyBuyerResponseTwoQualificationPortalSelfReportCriteriaMaxRepairsMax = 1000000000;
+
+export const verifyBuyerResponseTwoQualificationPortalSelfReportCriteriaMinBedsMin = 0;
+export const verifyBuyerResponseTwoQualificationPortalSelfReportCriteriaMinBedsMax = 100;
+
+export const verifyBuyerResponseTwoQualificationPortalSelfReportCriteriaMinSqftMin = 0;
+export const verifyBuyerResponseTwoQualificationPortalSelfReportCriteriaMinSqftMax = 1000000;
+
+export const verifyBuyerResponseTwoQualificationPortalSelfReportCriteriaMaxSqftExclusiveMin = 0;
+export const verifyBuyerResponseTwoQualificationPortalSelfReportCriteriaMaxSqftMax = 1000000;
+
+export const verifyBuyerResponseTwoQualificationPortalSelfReportCriteriaClosingDaysMax = 365;
+
+export const verifyBuyerResponseTwoQualificationPortalSelfReportCriteriaCountiesItemMax = 200;
+
+export const verifyBuyerResponseTwoQualificationPortalSelfReportCriteriaExcludedCountiesItemMax = 200;
+
+export const verifyBuyerResponseTwoQualificationPortalSelfReportCriteriaExcludedCitiesItemMax = 200;
+
+export const verifyBuyerResponseTwoQualificationPortalSelfReportCriteriaExcludedZipCodesItemRegExp = new RegExp('^\\d{5}$');
+export const verifyBuyerResponseTwoQualificationPortalSelfReportCriteriaMinPurchasePriceMin = 0;
+export const verifyBuyerResponseTwoQualificationPortalSelfReportCriteriaMinPurchasePriceMax = 1000000000;
+
+export const verifyBuyerResponseTwoQualificationPortalSelfReportCriteriaMinArvMin = 0;
+export const verifyBuyerResponseTwoQualificationPortalSelfReportCriteriaMinArvMax = 1000000000;
+
+export const verifyBuyerResponseTwoQualificationPortalSelfReportCriteriaMaxArvMin = 0;
+export const verifyBuyerResponseTwoQualificationPortalSelfReportCriteriaMaxArvMax = 1000000000;
+
+export const verifyBuyerResponseTwoQualificationPortalSelfReportCriteriaMinUnitsMin = 0;
+export const verifyBuyerResponseTwoQualificationPortalSelfReportCriteriaMinUnitsMax = 10000;
+
+export const verifyBuyerResponseTwoQualificationPortalSelfReportCriteriaMaxUnitsMin = 0;
+export const verifyBuyerResponseTwoQualificationPortalSelfReportCriteriaMaxUnitsMax = 10000;
+
+export const verifyBuyerResponseTwoQualificationPortalSelfReportCriteriaMinBathsMin = 0;
+export const verifyBuyerResponseTwoQualificationPortalSelfReportCriteriaMinBathsMax = 100;
+
+export const verifyBuyerResponseTwoQualificationPortalSelfReportCriteriaMaxBedsMin = 0;
+export const verifyBuyerResponseTwoQualificationPortalSelfReportCriteriaMaxBedsMax = 100;
+
+export const verifyBuyerResponseTwoQualificationPortalSelfReportCriteriaMaxBathsMin = 0;
+export const verifyBuyerResponseTwoQualificationPortalSelfReportCriteriaMaxBathsMax = 100;
+
+
+
+export const verifyBuyerResponseTwoQualificationPortalSelfReportCriteriaMaxConcurrentDealsMax = 1000;
+
+export const verifyBuyerResponseTwoQualificationPortalSelfReportCriteriaMinSpreadMin = 0;
+export const verifyBuyerResponseTwoQualificationPortalSelfReportCriteriaMinSpreadMax = 1000000000;
+
+export const verifyBuyerResponseTwoQualificationPortalSelfReportCriteriaMinCapRateMin = 0;
+export const verifyBuyerResponseTwoQualificationPortalSelfReportCriteriaMinCapRateMax = 1;
+
 
 
 export const VerifyBuyerResponse = zod.object({
@@ -14190,11 +15012,78 @@ export const VerifyBuyerResponse = zod.object({
   "dueAt": zod.string(),
   "updatedAt": zod.string()
 }),zod.null()]).optional(),
+  "qualificationPortalSelfReport": zod.object({
+  "responseId": zod.string().uuid(),
+  "currentBuyingStatus": zod.enum(['BUYING', 'NOT_BUYING']),
+  "criteria": zod.object({
+  "states": zod.array(zod.string().min(verifyBuyerResponseTwoQualificationPortalSelfReportCriteriaStatesItemMin).max(verifyBuyerResponseTwoQualificationPortalSelfReportCriteriaStatesItemMax)).min(1),
+  "cities": zod.array(zod.string().min(1)),
+  "zipCodes": zod.array(zod.string().regex(verifyBuyerResponseTwoQualificationPortalSelfReportCriteriaZipCodesItemRegExp)),
+  "propertyTypes": zod.array(zod.enum(['SINGLE_FAMILY', 'MULTIFAMILY', 'CONDO', 'TOWNHOUSE', 'LAND', 'OTHER'])).min(1),
+  "maxPurchasePrice": zod.number().gt(verifyBuyerResponseTwoQualificationPortalSelfReportCriteriaMaxPurchasePriceExclusiveMin).max(verifyBuyerResponseTwoQualificationPortalSelfReportCriteriaMaxPurchasePriceMax),
+  "maxRepairs": zod.number().min(verifyBuyerResponseTwoQualificationPortalSelfReportCriteriaMaxRepairsMin).max(verifyBuyerResponseTwoQualificationPortalSelfReportCriteriaMaxRepairsMax),
+  "minBeds": zod.number().int().min(verifyBuyerResponseTwoQualificationPortalSelfReportCriteriaMinBedsMin).max(verifyBuyerResponseTwoQualificationPortalSelfReportCriteriaMinBedsMax),
+  "minSqft": zod.number().min(verifyBuyerResponseTwoQualificationPortalSelfReportCriteriaMinSqftMin).max(verifyBuyerResponseTwoQualificationPortalSelfReportCriteriaMinSqftMax),
+  "maxSqft": zod.number().gt(verifyBuyerResponseTwoQualificationPortalSelfReportCriteriaMaxSqftExclusiveMin).max(verifyBuyerResponseTwoQualificationPortalSelfReportCriteriaMaxSqftMax),
+  "closingDays": zod.number().int().min(1).max(verifyBuyerResponseTwoQualificationPortalSelfReportCriteriaClosingDaysMax),
+  "counties": zod.array(zod.string().min(1).max(verifyBuyerResponseTwoQualificationPortalSelfReportCriteriaCountiesItemMax)).optional(),
+  "excludedCounties": zod.array(zod.string().min(1).max(verifyBuyerResponseTwoQualificationPortalSelfReportCriteriaExcludedCountiesItemMax)).optional(),
+  "excludedCities": zod.array(zod.string().min(1).max(verifyBuyerResponseTwoQualificationPortalSelfReportCriteriaExcludedCitiesItemMax)).optional(),
+  "excludedZipCodes": zod.array(zod.string().regex(verifyBuyerResponseTwoQualificationPortalSelfReportCriteriaExcludedZipCodesItemRegExp)).optional(),
+  "minPurchasePrice": zod.number().min(verifyBuyerResponseTwoQualificationPortalSelfReportCriteriaMinPurchasePriceMin).max(verifyBuyerResponseTwoQualificationPortalSelfReportCriteriaMinPurchasePriceMax).optional(),
+  "minArv": zod.number().min(verifyBuyerResponseTwoQualificationPortalSelfReportCriteriaMinArvMin).max(verifyBuyerResponseTwoQualificationPortalSelfReportCriteriaMinArvMax).nullish(),
+  "maxArv": zod.number().min(verifyBuyerResponseTwoQualificationPortalSelfReportCriteriaMaxArvMin).max(verifyBuyerResponseTwoQualificationPortalSelfReportCriteriaMaxArvMax).nullish(),
+  "minUnits": zod.number().int().min(verifyBuyerResponseTwoQualificationPortalSelfReportCriteriaMinUnitsMin).max(verifyBuyerResponseTwoQualificationPortalSelfReportCriteriaMinUnitsMax).optional(),
+  "maxUnits": zod.number().int().min(verifyBuyerResponseTwoQualificationPortalSelfReportCriteriaMaxUnitsMin).max(verifyBuyerResponseTwoQualificationPortalSelfReportCriteriaMaxUnitsMax).optional(),
+  "minBaths": zod.number().min(verifyBuyerResponseTwoQualificationPortalSelfReportCriteriaMinBathsMin).max(verifyBuyerResponseTwoQualificationPortalSelfReportCriteriaMinBathsMax).optional(),
+  "maxBeds": zod.number().int().min(verifyBuyerResponseTwoQualificationPortalSelfReportCriteriaMaxBedsMin).max(verifyBuyerResponseTwoQualificationPortalSelfReportCriteriaMaxBedsMax).nullish(),
+  "maxBaths": zod.number().min(verifyBuyerResponseTwoQualificationPortalSelfReportCriteriaMaxBathsMin).max(verifyBuyerResponseTwoQualificationPortalSelfReportCriteriaMaxBathsMax).nullish(),
+  "rehabTolerance": zod.enum(['NONE', 'LIGHT', 'MODERATE', 'HEAVY', 'ANY']).optional(),
+  "strategies": zod.array(zod.enum(['FLIP', 'RENTAL', 'BRRRR', 'WHOLESALE', 'DEVELOPMENT', 'OTHER'])).min(1).optional(),
+  "fundingTypes": zod.array(zod.enum(['CASH', 'HARD_MONEY', 'PRIVATE_LENDING', 'CONVENTIONAL', 'OTHER'])).min(1).optional(),
+  "maxConcurrentDeals": zod.number().int().min(1).max(verifyBuyerResponseTwoQualificationPortalSelfReportCriteriaMaxConcurrentDealsMax).optional(),
+  "minSpread": zod.number().min(verifyBuyerResponseTwoQualificationPortalSelfReportCriteriaMinSpreadMin).max(verifyBuyerResponseTwoQualificationPortalSelfReportCriteriaMinSpreadMax).nullish(),
+  "minCapRate": zod.number().min(verifyBuyerResponseTwoQualificationPortalSelfReportCriteriaMinCapRateMin).max(verifyBuyerResponseTwoQualificationPortalSelfReportCriteriaMinCapRateMax).nullish()
+}),
+  "confirmedCurrent": zod.literal(true),
+  "note": zod.string(),
+  "receivedAt": zod.string().datetime({"offset":true}),
+  "invitationId": zod.string().uuid(),
+  "source": zod.enum(['PRIVATE_BUYER_QUALIFICATION_PORTAL']),
+  "classification": zod.enum(['INDICATED']),
+  "identityVerified": zod.literal(false),
+  "contactPermissionVerified": zod.literal(false),
+  "ownerReviewRequired": zod.literal(true)
+}).optional(),
   "lastOutreachReplyAt": zod.string().optional(),
   "lastOutreachReplyEvidenceUrl": zod.string().optional(),
   "createdAt": zod.string(),
   "updatedAt": zod.string()
 }))
+
+
+export const CreateBuyerQualificationPortalInviteParams = zod.object({
+  "id": zod.coerce.string().uuid()
+})
+
+
+
+
+export const CreateBuyerQualificationPortalInviteBody = zod.object({
+  "version": zod.number().int().min(1)
+})
+
+export const createBuyerQualificationPortalInviteResponseTokenMin = 40;
+export const createBuyerQualificationPortalInviteResponseTokenMax = 50;
+
+
+
+export const CreateBuyerQualificationPortalInviteResponse = zod.object({
+  "invitationId": zod.string().uuid(),
+  "token": zod.string().min(createBuyerQualificationPortalInviteResponseTokenMin).max(createBuyerQualificationPortalInviteResponseTokenMax),
+  "expiresAt": zod.string().datetime({"offset":true}),
+  "notSent": zod.literal(true)
+})
 
 
 export const GetDealOperationsParams = zod.object({
@@ -14362,6 +15251,71 @@ export const getDealOperationsResponseContractOneCommitmentSnapshotOneBuyerTwoVe
 
 export const getDealOperationsResponseContractOneCommitmentSnapshotOneBuyerTwoVerificationHistoryItemCriteriaOneMinCapRateMin = 0;
 export const getDealOperationsResponseContractOneCommitmentSnapshotOneBuyerTwoVerificationHistoryItemCriteriaOneMinCapRateMax = 1;
+
+export const getDealOperationsResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaStatesItemMin = 2;
+export const getDealOperationsResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaStatesItemMax = 2;
+
+
+
+export const getDealOperationsResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaZipCodesItemRegExp = new RegExp('^\\d{5}$');
+
+export const getDealOperationsResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMaxPurchasePriceExclusiveMin = 0;
+export const getDealOperationsResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMaxPurchasePriceMax = 1000000000;
+
+export const getDealOperationsResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMaxRepairsMin = 0;
+export const getDealOperationsResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMaxRepairsMax = 1000000000;
+
+export const getDealOperationsResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMinBedsMin = 0;
+export const getDealOperationsResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMinBedsMax = 100;
+
+export const getDealOperationsResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMinSqftMin = 0;
+export const getDealOperationsResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMinSqftMax = 1000000;
+
+export const getDealOperationsResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMaxSqftExclusiveMin = 0;
+export const getDealOperationsResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMaxSqftMax = 1000000;
+
+export const getDealOperationsResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaClosingDaysMax = 365;
+
+export const getDealOperationsResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaCountiesItemMax = 200;
+
+export const getDealOperationsResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaExcludedCountiesItemMax = 200;
+
+export const getDealOperationsResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaExcludedCitiesItemMax = 200;
+
+export const getDealOperationsResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaExcludedZipCodesItemRegExp = new RegExp('^\\d{5}$');
+export const getDealOperationsResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMinPurchasePriceMin = 0;
+export const getDealOperationsResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMinPurchasePriceMax = 1000000000;
+
+export const getDealOperationsResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMinArvMin = 0;
+export const getDealOperationsResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMinArvMax = 1000000000;
+
+export const getDealOperationsResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMaxArvMin = 0;
+export const getDealOperationsResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMaxArvMax = 1000000000;
+
+export const getDealOperationsResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMinUnitsMin = 0;
+export const getDealOperationsResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMinUnitsMax = 10000;
+
+export const getDealOperationsResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMaxUnitsMin = 0;
+export const getDealOperationsResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMaxUnitsMax = 10000;
+
+export const getDealOperationsResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMinBathsMin = 0;
+export const getDealOperationsResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMinBathsMax = 100;
+
+export const getDealOperationsResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMaxBedsMin = 0;
+export const getDealOperationsResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMaxBedsMax = 100;
+
+export const getDealOperationsResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMaxBathsMin = 0;
+export const getDealOperationsResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMaxBathsMax = 100;
+
+
+
+export const getDealOperationsResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMaxConcurrentDealsMax = 1000;
+
+export const getDealOperationsResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMinSpreadMin = 0;
+export const getDealOperationsResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMinSpreadMax = 1000000000;
+
+export const getDealOperationsResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMinCapRateMin = 0;
+export const getDealOperationsResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMinCapRateMax = 1;
 
 export const getDealOperationsResponseContractOneCommitmentSnapshotOneDetailLeadOneAddressMin = 3;
 export const getDealOperationsResponseContractOneCommitmentSnapshotOneDetailLeadOneAddressMax = 250;
@@ -14842,6 +15796,49 @@ export const GetDealOperationsResponse = zod.object({
   "dueAt": zod.string(),
   "updatedAt": zod.string()
 }),zod.null()]).optional(),
+  "qualificationPortalSelfReport": zod.object({
+  "responseId": zod.string().uuid(),
+  "currentBuyingStatus": zod.enum(['BUYING', 'NOT_BUYING']),
+  "criteria": zod.object({
+  "states": zod.array(zod.string().min(getDealOperationsResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaStatesItemMin).max(getDealOperationsResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaStatesItemMax)).min(1),
+  "cities": zod.array(zod.string().min(1)),
+  "zipCodes": zod.array(zod.string().regex(getDealOperationsResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaZipCodesItemRegExp)),
+  "propertyTypes": zod.array(zod.enum(['SINGLE_FAMILY', 'MULTIFAMILY', 'CONDO', 'TOWNHOUSE', 'LAND', 'OTHER'])).min(1),
+  "maxPurchasePrice": zod.number().gt(getDealOperationsResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMaxPurchasePriceExclusiveMin).max(getDealOperationsResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMaxPurchasePriceMax),
+  "maxRepairs": zod.number().min(getDealOperationsResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMaxRepairsMin).max(getDealOperationsResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMaxRepairsMax),
+  "minBeds": zod.number().int().min(getDealOperationsResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMinBedsMin).max(getDealOperationsResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMinBedsMax),
+  "minSqft": zod.number().min(getDealOperationsResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMinSqftMin).max(getDealOperationsResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMinSqftMax),
+  "maxSqft": zod.number().gt(getDealOperationsResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMaxSqftExclusiveMin).max(getDealOperationsResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMaxSqftMax),
+  "closingDays": zod.number().int().min(1).max(getDealOperationsResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaClosingDaysMax),
+  "counties": zod.array(zod.string().min(1).max(getDealOperationsResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaCountiesItemMax)).optional(),
+  "excludedCounties": zod.array(zod.string().min(1).max(getDealOperationsResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaExcludedCountiesItemMax)).optional(),
+  "excludedCities": zod.array(zod.string().min(1).max(getDealOperationsResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaExcludedCitiesItemMax)).optional(),
+  "excludedZipCodes": zod.array(zod.string().regex(getDealOperationsResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaExcludedZipCodesItemRegExp)).optional(),
+  "minPurchasePrice": zod.number().min(getDealOperationsResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMinPurchasePriceMin).max(getDealOperationsResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMinPurchasePriceMax).optional(),
+  "minArv": zod.number().min(getDealOperationsResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMinArvMin).max(getDealOperationsResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMinArvMax).nullish(),
+  "maxArv": zod.number().min(getDealOperationsResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMaxArvMin).max(getDealOperationsResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMaxArvMax).nullish(),
+  "minUnits": zod.number().int().min(getDealOperationsResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMinUnitsMin).max(getDealOperationsResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMinUnitsMax).optional(),
+  "maxUnits": zod.number().int().min(getDealOperationsResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMaxUnitsMin).max(getDealOperationsResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMaxUnitsMax).optional(),
+  "minBaths": zod.number().min(getDealOperationsResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMinBathsMin).max(getDealOperationsResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMinBathsMax).optional(),
+  "maxBeds": zod.number().int().min(getDealOperationsResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMaxBedsMin).max(getDealOperationsResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMaxBedsMax).nullish(),
+  "maxBaths": zod.number().min(getDealOperationsResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMaxBathsMin).max(getDealOperationsResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMaxBathsMax).nullish(),
+  "rehabTolerance": zod.enum(['NONE', 'LIGHT', 'MODERATE', 'HEAVY', 'ANY']).optional(),
+  "strategies": zod.array(zod.enum(['FLIP', 'RENTAL', 'BRRRR', 'WHOLESALE', 'DEVELOPMENT', 'OTHER'])).min(1).optional(),
+  "fundingTypes": zod.array(zod.enum(['CASH', 'HARD_MONEY', 'PRIVATE_LENDING', 'CONVENTIONAL', 'OTHER'])).min(1).optional(),
+  "maxConcurrentDeals": zod.number().int().min(1).max(getDealOperationsResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMaxConcurrentDealsMax).optional(),
+  "minSpread": zod.number().min(getDealOperationsResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMinSpreadMin).max(getDealOperationsResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMinSpreadMax).nullish(),
+  "minCapRate": zod.number().min(getDealOperationsResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMinCapRateMin).max(getDealOperationsResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMinCapRateMax).nullish()
+}),
+  "confirmedCurrent": zod.literal(true),
+  "note": zod.string(),
+  "receivedAt": zod.string().datetime({"offset":true}),
+  "invitationId": zod.string().uuid(),
+  "source": zod.enum(['PRIVATE_BUYER_QUALIFICATION_PORTAL']),
+  "classification": zod.enum(['INDICATED']),
+  "identityVerified": zod.literal(false),
+  "contactPermissionVerified": zod.literal(false),
+  "ownerReviewRequired": zod.literal(true)
+}).optional(),
   "lastOutreachReplyAt": zod.string().optional(),
   "lastOutreachReplyEvidenceUrl": zod.string().optional(),
   "createdAt": zod.string(),
@@ -15468,6 +16465,71 @@ export const refreshMatchesResponseContractOneCommitmentSnapshotOneBuyerTwoVerif
 export const refreshMatchesResponseContractOneCommitmentSnapshotOneBuyerTwoVerificationHistoryItemCriteriaOneMinCapRateMin = 0;
 export const refreshMatchesResponseContractOneCommitmentSnapshotOneBuyerTwoVerificationHistoryItemCriteriaOneMinCapRateMax = 1;
 
+export const refreshMatchesResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaStatesItemMin = 2;
+export const refreshMatchesResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaStatesItemMax = 2;
+
+
+
+export const refreshMatchesResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaZipCodesItemRegExp = new RegExp('^\\d{5}$');
+
+export const refreshMatchesResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMaxPurchasePriceExclusiveMin = 0;
+export const refreshMatchesResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMaxPurchasePriceMax = 1000000000;
+
+export const refreshMatchesResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMaxRepairsMin = 0;
+export const refreshMatchesResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMaxRepairsMax = 1000000000;
+
+export const refreshMatchesResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMinBedsMin = 0;
+export const refreshMatchesResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMinBedsMax = 100;
+
+export const refreshMatchesResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMinSqftMin = 0;
+export const refreshMatchesResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMinSqftMax = 1000000;
+
+export const refreshMatchesResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMaxSqftExclusiveMin = 0;
+export const refreshMatchesResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMaxSqftMax = 1000000;
+
+export const refreshMatchesResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaClosingDaysMax = 365;
+
+export const refreshMatchesResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaCountiesItemMax = 200;
+
+export const refreshMatchesResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaExcludedCountiesItemMax = 200;
+
+export const refreshMatchesResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaExcludedCitiesItemMax = 200;
+
+export const refreshMatchesResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaExcludedZipCodesItemRegExp = new RegExp('^\\d{5}$');
+export const refreshMatchesResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMinPurchasePriceMin = 0;
+export const refreshMatchesResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMinPurchasePriceMax = 1000000000;
+
+export const refreshMatchesResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMinArvMin = 0;
+export const refreshMatchesResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMinArvMax = 1000000000;
+
+export const refreshMatchesResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMaxArvMin = 0;
+export const refreshMatchesResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMaxArvMax = 1000000000;
+
+export const refreshMatchesResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMinUnitsMin = 0;
+export const refreshMatchesResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMinUnitsMax = 10000;
+
+export const refreshMatchesResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMaxUnitsMin = 0;
+export const refreshMatchesResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMaxUnitsMax = 10000;
+
+export const refreshMatchesResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMinBathsMin = 0;
+export const refreshMatchesResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMinBathsMax = 100;
+
+export const refreshMatchesResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMaxBedsMin = 0;
+export const refreshMatchesResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMaxBedsMax = 100;
+
+export const refreshMatchesResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMaxBathsMin = 0;
+export const refreshMatchesResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMaxBathsMax = 100;
+
+
+
+export const refreshMatchesResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMaxConcurrentDealsMax = 1000;
+
+export const refreshMatchesResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMinSpreadMin = 0;
+export const refreshMatchesResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMinSpreadMax = 1000000000;
+
+export const refreshMatchesResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMinCapRateMin = 0;
+export const refreshMatchesResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMinCapRateMax = 1;
+
 export const refreshMatchesResponseContractOneCommitmentSnapshotOneDetailLeadOneAddressMin = 3;
 export const refreshMatchesResponseContractOneCommitmentSnapshotOneDetailLeadOneAddressMax = 250;
 
@@ -15947,6 +17009,49 @@ export const RefreshMatchesResponse = zod.object({
   "dueAt": zod.string(),
   "updatedAt": zod.string()
 }),zod.null()]).optional(),
+  "qualificationPortalSelfReport": zod.object({
+  "responseId": zod.string().uuid(),
+  "currentBuyingStatus": zod.enum(['BUYING', 'NOT_BUYING']),
+  "criteria": zod.object({
+  "states": zod.array(zod.string().min(refreshMatchesResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaStatesItemMin).max(refreshMatchesResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaStatesItemMax)).min(1),
+  "cities": zod.array(zod.string().min(1)),
+  "zipCodes": zod.array(zod.string().regex(refreshMatchesResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaZipCodesItemRegExp)),
+  "propertyTypes": zod.array(zod.enum(['SINGLE_FAMILY', 'MULTIFAMILY', 'CONDO', 'TOWNHOUSE', 'LAND', 'OTHER'])).min(1),
+  "maxPurchasePrice": zod.number().gt(refreshMatchesResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMaxPurchasePriceExclusiveMin).max(refreshMatchesResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMaxPurchasePriceMax),
+  "maxRepairs": zod.number().min(refreshMatchesResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMaxRepairsMin).max(refreshMatchesResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMaxRepairsMax),
+  "minBeds": zod.number().int().min(refreshMatchesResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMinBedsMin).max(refreshMatchesResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMinBedsMax),
+  "minSqft": zod.number().min(refreshMatchesResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMinSqftMin).max(refreshMatchesResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMinSqftMax),
+  "maxSqft": zod.number().gt(refreshMatchesResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMaxSqftExclusiveMin).max(refreshMatchesResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMaxSqftMax),
+  "closingDays": zod.number().int().min(1).max(refreshMatchesResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaClosingDaysMax),
+  "counties": zod.array(zod.string().min(1).max(refreshMatchesResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaCountiesItemMax)).optional(),
+  "excludedCounties": zod.array(zod.string().min(1).max(refreshMatchesResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaExcludedCountiesItemMax)).optional(),
+  "excludedCities": zod.array(zod.string().min(1).max(refreshMatchesResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaExcludedCitiesItemMax)).optional(),
+  "excludedZipCodes": zod.array(zod.string().regex(refreshMatchesResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaExcludedZipCodesItemRegExp)).optional(),
+  "minPurchasePrice": zod.number().min(refreshMatchesResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMinPurchasePriceMin).max(refreshMatchesResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMinPurchasePriceMax).optional(),
+  "minArv": zod.number().min(refreshMatchesResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMinArvMin).max(refreshMatchesResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMinArvMax).nullish(),
+  "maxArv": zod.number().min(refreshMatchesResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMaxArvMin).max(refreshMatchesResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMaxArvMax).nullish(),
+  "minUnits": zod.number().int().min(refreshMatchesResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMinUnitsMin).max(refreshMatchesResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMinUnitsMax).optional(),
+  "maxUnits": zod.number().int().min(refreshMatchesResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMaxUnitsMin).max(refreshMatchesResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMaxUnitsMax).optional(),
+  "minBaths": zod.number().min(refreshMatchesResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMinBathsMin).max(refreshMatchesResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMinBathsMax).optional(),
+  "maxBeds": zod.number().int().min(refreshMatchesResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMaxBedsMin).max(refreshMatchesResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMaxBedsMax).nullish(),
+  "maxBaths": zod.number().min(refreshMatchesResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMaxBathsMin).max(refreshMatchesResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMaxBathsMax).nullish(),
+  "rehabTolerance": zod.enum(['NONE', 'LIGHT', 'MODERATE', 'HEAVY', 'ANY']).optional(),
+  "strategies": zod.array(zod.enum(['FLIP', 'RENTAL', 'BRRRR', 'WHOLESALE', 'DEVELOPMENT', 'OTHER'])).min(1).optional(),
+  "fundingTypes": zod.array(zod.enum(['CASH', 'HARD_MONEY', 'PRIVATE_LENDING', 'CONVENTIONAL', 'OTHER'])).min(1).optional(),
+  "maxConcurrentDeals": zod.number().int().min(1).max(refreshMatchesResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMaxConcurrentDealsMax).optional(),
+  "minSpread": zod.number().min(refreshMatchesResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMinSpreadMin).max(refreshMatchesResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMinSpreadMax).nullish(),
+  "minCapRate": zod.number().min(refreshMatchesResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMinCapRateMin).max(refreshMatchesResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMinCapRateMax).nullish()
+}),
+  "confirmedCurrent": zod.literal(true),
+  "note": zod.string(),
+  "receivedAt": zod.string().datetime({"offset":true}),
+  "invitationId": zod.string().uuid(),
+  "source": zod.enum(['PRIVATE_BUYER_QUALIFICATION_PORTAL']),
+  "classification": zod.enum(['INDICATED']),
+  "identityVerified": zod.literal(false),
+  "contactPermissionVerified": zod.literal(false),
+  "ownerReviewRequired": zod.literal(true)
+}).optional(),
   "lastOutreachReplyAt": zod.string().optional(),
   "lastOutreachReplyEvidenceUrl": zod.string().optional(),
   "createdAt": zod.string(),
@@ -16595,6 +17700,71 @@ export const recordBuyerResponseResponseContractOneCommitmentSnapshotOneBuyerTwo
 export const recordBuyerResponseResponseContractOneCommitmentSnapshotOneBuyerTwoVerificationHistoryItemCriteriaOneMinCapRateMin = 0;
 export const recordBuyerResponseResponseContractOneCommitmentSnapshotOneBuyerTwoVerificationHistoryItemCriteriaOneMinCapRateMax = 1;
 
+export const recordBuyerResponseResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaStatesItemMin = 2;
+export const recordBuyerResponseResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaStatesItemMax = 2;
+
+
+
+export const recordBuyerResponseResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaZipCodesItemRegExp = new RegExp('^\\d{5}$');
+
+export const recordBuyerResponseResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMaxPurchasePriceExclusiveMin = 0;
+export const recordBuyerResponseResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMaxPurchasePriceMax = 1000000000;
+
+export const recordBuyerResponseResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMaxRepairsMin = 0;
+export const recordBuyerResponseResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMaxRepairsMax = 1000000000;
+
+export const recordBuyerResponseResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMinBedsMin = 0;
+export const recordBuyerResponseResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMinBedsMax = 100;
+
+export const recordBuyerResponseResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMinSqftMin = 0;
+export const recordBuyerResponseResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMinSqftMax = 1000000;
+
+export const recordBuyerResponseResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMaxSqftExclusiveMin = 0;
+export const recordBuyerResponseResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMaxSqftMax = 1000000;
+
+export const recordBuyerResponseResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaClosingDaysMax = 365;
+
+export const recordBuyerResponseResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaCountiesItemMax = 200;
+
+export const recordBuyerResponseResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaExcludedCountiesItemMax = 200;
+
+export const recordBuyerResponseResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaExcludedCitiesItemMax = 200;
+
+export const recordBuyerResponseResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaExcludedZipCodesItemRegExp = new RegExp('^\\d{5}$');
+export const recordBuyerResponseResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMinPurchasePriceMin = 0;
+export const recordBuyerResponseResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMinPurchasePriceMax = 1000000000;
+
+export const recordBuyerResponseResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMinArvMin = 0;
+export const recordBuyerResponseResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMinArvMax = 1000000000;
+
+export const recordBuyerResponseResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMaxArvMin = 0;
+export const recordBuyerResponseResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMaxArvMax = 1000000000;
+
+export const recordBuyerResponseResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMinUnitsMin = 0;
+export const recordBuyerResponseResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMinUnitsMax = 10000;
+
+export const recordBuyerResponseResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMaxUnitsMin = 0;
+export const recordBuyerResponseResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMaxUnitsMax = 10000;
+
+export const recordBuyerResponseResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMinBathsMin = 0;
+export const recordBuyerResponseResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMinBathsMax = 100;
+
+export const recordBuyerResponseResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMaxBedsMin = 0;
+export const recordBuyerResponseResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMaxBedsMax = 100;
+
+export const recordBuyerResponseResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMaxBathsMin = 0;
+export const recordBuyerResponseResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMaxBathsMax = 100;
+
+
+
+export const recordBuyerResponseResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMaxConcurrentDealsMax = 1000;
+
+export const recordBuyerResponseResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMinSpreadMin = 0;
+export const recordBuyerResponseResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMinSpreadMax = 1000000000;
+
+export const recordBuyerResponseResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMinCapRateMin = 0;
+export const recordBuyerResponseResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMinCapRateMax = 1;
+
 export const recordBuyerResponseResponseContractOneCommitmentSnapshotOneDetailLeadOneAddressMin = 3;
 export const recordBuyerResponseResponseContractOneCommitmentSnapshotOneDetailLeadOneAddressMax = 250;
 
@@ -17074,6 +18244,49 @@ export const RecordBuyerResponseResponse = zod.object({
   "dueAt": zod.string(),
   "updatedAt": zod.string()
 }),zod.null()]).optional(),
+  "qualificationPortalSelfReport": zod.object({
+  "responseId": zod.string().uuid(),
+  "currentBuyingStatus": zod.enum(['BUYING', 'NOT_BUYING']),
+  "criteria": zod.object({
+  "states": zod.array(zod.string().min(recordBuyerResponseResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaStatesItemMin).max(recordBuyerResponseResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaStatesItemMax)).min(1),
+  "cities": zod.array(zod.string().min(1)),
+  "zipCodes": zod.array(zod.string().regex(recordBuyerResponseResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaZipCodesItemRegExp)),
+  "propertyTypes": zod.array(zod.enum(['SINGLE_FAMILY', 'MULTIFAMILY', 'CONDO', 'TOWNHOUSE', 'LAND', 'OTHER'])).min(1),
+  "maxPurchasePrice": zod.number().gt(recordBuyerResponseResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMaxPurchasePriceExclusiveMin).max(recordBuyerResponseResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMaxPurchasePriceMax),
+  "maxRepairs": zod.number().min(recordBuyerResponseResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMaxRepairsMin).max(recordBuyerResponseResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMaxRepairsMax),
+  "minBeds": zod.number().int().min(recordBuyerResponseResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMinBedsMin).max(recordBuyerResponseResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMinBedsMax),
+  "minSqft": zod.number().min(recordBuyerResponseResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMinSqftMin).max(recordBuyerResponseResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMinSqftMax),
+  "maxSqft": zod.number().gt(recordBuyerResponseResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMaxSqftExclusiveMin).max(recordBuyerResponseResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMaxSqftMax),
+  "closingDays": zod.number().int().min(1).max(recordBuyerResponseResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaClosingDaysMax),
+  "counties": zod.array(zod.string().min(1).max(recordBuyerResponseResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaCountiesItemMax)).optional(),
+  "excludedCounties": zod.array(zod.string().min(1).max(recordBuyerResponseResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaExcludedCountiesItemMax)).optional(),
+  "excludedCities": zod.array(zod.string().min(1).max(recordBuyerResponseResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaExcludedCitiesItemMax)).optional(),
+  "excludedZipCodes": zod.array(zod.string().regex(recordBuyerResponseResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaExcludedZipCodesItemRegExp)).optional(),
+  "minPurchasePrice": zod.number().min(recordBuyerResponseResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMinPurchasePriceMin).max(recordBuyerResponseResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMinPurchasePriceMax).optional(),
+  "minArv": zod.number().min(recordBuyerResponseResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMinArvMin).max(recordBuyerResponseResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMinArvMax).nullish(),
+  "maxArv": zod.number().min(recordBuyerResponseResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMaxArvMin).max(recordBuyerResponseResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMaxArvMax).nullish(),
+  "minUnits": zod.number().int().min(recordBuyerResponseResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMinUnitsMin).max(recordBuyerResponseResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMinUnitsMax).optional(),
+  "maxUnits": zod.number().int().min(recordBuyerResponseResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMaxUnitsMin).max(recordBuyerResponseResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMaxUnitsMax).optional(),
+  "minBaths": zod.number().min(recordBuyerResponseResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMinBathsMin).max(recordBuyerResponseResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMinBathsMax).optional(),
+  "maxBeds": zod.number().int().min(recordBuyerResponseResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMaxBedsMin).max(recordBuyerResponseResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMaxBedsMax).nullish(),
+  "maxBaths": zod.number().min(recordBuyerResponseResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMaxBathsMin).max(recordBuyerResponseResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMaxBathsMax).nullish(),
+  "rehabTolerance": zod.enum(['NONE', 'LIGHT', 'MODERATE', 'HEAVY', 'ANY']).optional(),
+  "strategies": zod.array(zod.enum(['FLIP', 'RENTAL', 'BRRRR', 'WHOLESALE', 'DEVELOPMENT', 'OTHER'])).min(1).optional(),
+  "fundingTypes": zod.array(zod.enum(['CASH', 'HARD_MONEY', 'PRIVATE_LENDING', 'CONVENTIONAL', 'OTHER'])).min(1).optional(),
+  "maxConcurrentDeals": zod.number().int().min(1).max(recordBuyerResponseResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMaxConcurrentDealsMax).optional(),
+  "minSpread": zod.number().min(recordBuyerResponseResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMinSpreadMin).max(recordBuyerResponseResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMinSpreadMax).nullish(),
+  "minCapRate": zod.number().min(recordBuyerResponseResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMinCapRateMin).max(recordBuyerResponseResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMinCapRateMax).nullish()
+}),
+  "confirmedCurrent": zod.literal(true),
+  "note": zod.string(),
+  "receivedAt": zod.string().datetime({"offset":true}),
+  "invitationId": zod.string().uuid(),
+  "source": zod.enum(['PRIVATE_BUYER_QUALIFICATION_PORTAL']),
+  "classification": zod.enum(['INDICATED']),
+  "identityVerified": zod.literal(false),
+  "contactPermissionVerified": zod.literal(false),
+  "ownerReviewRequired": zod.literal(true)
+}).optional(),
   "lastOutreachReplyAt": zod.string().optional(),
   "lastOutreachReplyEvidenceUrl": zod.string().optional(),
   "createdAt": zod.string(),
@@ -18304,6 +19517,241 @@ export const RespondToBuyerPortalDealResponse = zod.object({
 })
 
 
+export const getBuyerQualificationPortalHeaderXQualificationPortalTokenMin = 40;
+export const getBuyerQualificationPortalHeaderXQualificationPortalTokenMax = 50;
+
+
+
+export const GetBuyerQualificationPortalHeader = zod.object({
+  "X-Qualification-Portal-Token": zod.string().min(getBuyerQualificationPortalHeaderXQualificationPortalTokenMin).max(getBuyerQualificationPortalHeaderXQualificationPortalTokenMax)
+})
+
+export const getBuyerQualificationPortalResponseCriteriaOneStatesItemMin = 2;
+export const getBuyerQualificationPortalResponseCriteriaOneStatesItemMax = 2;
+
+
+
+export const getBuyerQualificationPortalResponseCriteriaOneZipCodesItemRegExp = new RegExp('^\\d{5}$');
+
+export const getBuyerQualificationPortalResponseCriteriaOneMaxPurchasePriceExclusiveMin = 0;
+export const getBuyerQualificationPortalResponseCriteriaOneMaxPurchasePriceMax = 1000000000;
+
+export const getBuyerQualificationPortalResponseCriteriaOneMaxRepairsMin = 0;
+export const getBuyerQualificationPortalResponseCriteriaOneMaxRepairsMax = 1000000000;
+
+export const getBuyerQualificationPortalResponseCriteriaOneMinBedsMin = 0;
+export const getBuyerQualificationPortalResponseCriteriaOneMinBedsMax = 100;
+
+export const getBuyerQualificationPortalResponseCriteriaOneMinSqftMin = 0;
+export const getBuyerQualificationPortalResponseCriteriaOneMinSqftMax = 1000000;
+
+export const getBuyerQualificationPortalResponseCriteriaOneMaxSqftExclusiveMin = 0;
+export const getBuyerQualificationPortalResponseCriteriaOneMaxSqftMax = 1000000;
+
+export const getBuyerQualificationPortalResponseCriteriaOneClosingDaysMax = 365;
+
+export const getBuyerQualificationPortalResponseCriteriaOneCountiesItemMax = 200;
+
+export const getBuyerQualificationPortalResponseCriteriaOneExcludedCountiesItemMax = 200;
+
+export const getBuyerQualificationPortalResponseCriteriaOneExcludedCitiesItemMax = 200;
+
+export const getBuyerQualificationPortalResponseCriteriaOneExcludedZipCodesItemRegExp = new RegExp('^\\d{5}$');
+export const getBuyerQualificationPortalResponseCriteriaOneMinPurchasePriceMin = 0;
+export const getBuyerQualificationPortalResponseCriteriaOneMinPurchasePriceMax = 1000000000;
+
+export const getBuyerQualificationPortalResponseCriteriaOneMinArvMin = 0;
+export const getBuyerQualificationPortalResponseCriteriaOneMinArvMax = 1000000000;
+
+export const getBuyerQualificationPortalResponseCriteriaOneMaxArvMin = 0;
+export const getBuyerQualificationPortalResponseCriteriaOneMaxArvMax = 1000000000;
+
+export const getBuyerQualificationPortalResponseCriteriaOneMinUnitsMin = 0;
+export const getBuyerQualificationPortalResponseCriteriaOneMinUnitsMax = 10000;
+
+export const getBuyerQualificationPortalResponseCriteriaOneMaxUnitsMin = 0;
+export const getBuyerQualificationPortalResponseCriteriaOneMaxUnitsMax = 10000;
+
+export const getBuyerQualificationPortalResponseCriteriaOneMinBathsMin = 0;
+export const getBuyerQualificationPortalResponseCriteriaOneMinBathsMax = 100;
+
+export const getBuyerQualificationPortalResponseCriteriaOneMaxBedsMin = 0;
+export const getBuyerQualificationPortalResponseCriteriaOneMaxBedsMax = 100;
+
+export const getBuyerQualificationPortalResponseCriteriaOneMaxBathsMin = 0;
+export const getBuyerQualificationPortalResponseCriteriaOneMaxBathsMax = 100;
+
+
+
+export const getBuyerQualificationPortalResponseCriteriaOneMaxConcurrentDealsMax = 1000;
+
+export const getBuyerQualificationPortalResponseCriteriaOneMinSpreadMin = 0;
+export const getBuyerQualificationPortalResponseCriteriaOneMinSpreadMax = 1000000000;
+
+export const getBuyerQualificationPortalResponseCriteriaOneMinCapRateMin = 0;
+export const getBuyerQualificationPortalResponseCriteriaOneMinCapRateMax = 1;
+
+
+
+export const GetBuyerQualificationPortalResponse = zod.object({
+  "invitationId": zod.string().uuid(),
+  "buyerName": zod.string(),
+  "criteria": zod.union([zod.object({
+  "states": zod.array(zod.string().min(getBuyerQualificationPortalResponseCriteriaOneStatesItemMin).max(getBuyerQualificationPortalResponseCriteriaOneStatesItemMax)).min(1),
+  "cities": zod.array(zod.string().min(1)),
+  "zipCodes": zod.array(zod.string().regex(getBuyerQualificationPortalResponseCriteriaOneZipCodesItemRegExp)),
+  "propertyTypes": zod.array(zod.enum(['SINGLE_FAMILY', 'MULTIFAMILY', 'CONDO', 'TOWNHOUSE', 'LAND', 'OTHER'])).min(1),
+  "maxPurchasePrice": zod.number().gt(getBuyerQualificationPortalResponseCriteriaOneMaxPurchasePriceExclusiveMin).max(getBuyerQualificationPortalResponseCriteriaOneMaxPurchasePriceMax),
+  "maxRepairs": zod.number().min(getBuyerQualificationPortalResponseCriteriaOneMaxRepairsMin).max(getBuyerQualificationPortalResponseCriteriaOneMaxRepairsMax),
+  "minBeds": zod.number().int().min(getBuyerQualificationPortalResponseCriteriaOneMinBedsMin).max(getBuyerQualificationPortalResponseCriteriaOneMinBedsMax),
+  "minSqft": zod.number().min(getBuyerQualificationPortalResponseCriteriaOneMinSqftMin).max(getBuyerQualificationPortalResponseCriteriaOneMinSqftMax),
+  "maxSqft": zod.number().gt(getBuyerQualificationPortalResponseCriteriaOneMaxSqftExclusiveMin).max(getBuyerQualificationPortalResponseCriteriaOneMaxSqftMax),
+  "closingDays": zod.number().int().min(1).max(getBuyerQualificationPortalResponseCriteriaOneClosingDaysMax),
+  "counties": zod.array(zod.string().min(1).max(getBuyerQualificationPortalResponseCriteriaOneCountiesItemMax)).optional(),
+  "excludedCounties": zod.array(zod.string().min(1).max(getBuyerQualificationPortalResponseCriteriaOneExcludedCountiesItemMax)).optional(),
+  "excludedCities": zod.array(zod.string().min(1).max(getBuyerQualificationPortalResponseCriteriaOneExcludedCitiesItemMax)).optional(),
+  "excludedZipCodes": zod.array(zod.string().regex(getBuyerQualificationPortalResponseCriteriaOneExcludedZipCodesItemRegExp)).optional(),
+  "minPurchasePrice": zod.number().min(getBuyerQualificationPortalResponseCriteriaOneMinPurchasePriceMin).max(getBuyerQualificationPortalResponseCriteriaOneMinPurchasePriceMax).optional(),
+  "minArv": zod.number().min(getBuyerQualificationPortalResponseCriteriaOneMinArvMin).max(getBuyerQualificationPortalResponseCriteriaOneMinArvMax).nullish(),
+  "maxArv": zod.number().min(getBuyerQualificationPortalResponseCriteriaOneMaxArvMin).max(getBuyerQualificationPortalResponseCriteriaOneMaxArvMax).nullish(),
+  "minUnits": zod.number().int().min(getBuyerQualificationPortalResponseCriteriaOneMinUnitsMin).max(getBuyerQualificationPortalResponseCriteriaOneMinUnitsMax).optional(),
+  "maxUnits": zod.number().int().min(getBuyerQualificationPortalResponseCriteriaOneMaxUnitsMin).max(getBuyerQualificationPortalResponseCriteriaOneMaxUnitsMax).optional(),
+  "minBaths": zod.number().min(getBuyerQualificationPortalResponseCriteriaOneMinBathsMin).max(getBuyerQualificationPortalResponseCriteriaOneMinBathsMax).optional(),
+  "maxBeds": zod.number().int().min(getBuyerQualificationPortalResponseCriteriaOneMaxBedsMin).max(getBuyerQualificationPortalResponseCriteriaOneMaxBedsMax).nullish(),
+  "maxBaths": zod.number().min(getBuyerQualificationPortalResponseCriteriaOneMaxBathsMin).max(getBuyerQualificationPortalResponseCriteriaOneMaxBathsMax).nullish(),
+  "rehabTolerance": zod.enum(['NONE', 'LIGHT', 'MODERATE', 'HEAVY', 'ANY']).optional(),
+  "strategies": zod.array(zod.enum(['FLIP', 'RENTAL', 'BRRRR', 'WHOLESALE', 'DEVELOPMENT', 'OTHER'])).min(1).optional(),
+  "fundingTypes": zod.array(zod.enum(['CASH', 'HARD_MONEY', 'PRIVATE_LENDING', 'CONVENTIONAL', 'OTHER'])).min(1).optional(),
+  "maxConcurrentDeals": zod.number().int().min(1).max(getBuyerQualificationPortalResponseCriteriaOneMaxConcurrentDealsMax).optional(),
+  "minSpread": zod.number().min(getBuyerQualificationPortalResponseCriteriaOneMinSpreadMin).max(getBuyerQualificationPortalResponseCriteriaOneMinSpreadMax).nullish(),
+  "minCapRate": zod.number().min(getBuyerQualificationPortalResponseCriteriaOneMinCapRateMin).max(getBuyerQualificationPortalResponseCriteriaOneMinCapRateMax).nullish()
+}),zod.null()]),
+  "expiresAt": zod.string().datetime({"offset":true})
+})
+
+
+export const respondToBuyerQualificationPortalHeaderXQualificationPortalTokenMin = 40;
+export const respondToBuyerQualificationPortalHeaderXQualificationPortalTokenMax = 50;
+
+
+
+export const RespondToBuyerQualificationPortalHeader = zod.object({
+  "X-Qualification-Portal-Token": zod.string().min(respondToBuyerQualificationPortalHeaderXQualificationPortalTokenMin).max(respondToBuyerQualificationPortalHeaderXQualificationPortalTokenMax)
+})
+
+export const respondToBuyerQualificationPortalBodyCriteriaStatesItemMin = 2;
+export const respondToBuyerQualificationPortalBodyCriteriaStatesItemMax = 2;
+
+
+
+export const respondToBuyerQualificationPortalBodyCriteriaZipCodesItemRegExp = new RegExp('^\\d{5}$');
+
+export const respondToBuyerQualificationPortalBodyCriteriaMaxPurchasePriceExclusiveMin = 0;
+export const respondToBuyerQualificationPortalBodyCriteriaMaxPurchasePriceMax = 1000000000;
+
+export const respondToBuyerQualificationPortalBodyCriteriaMaxRepairsMin = 0;
+export const respondToBuyerQualificationPortalBodyCriteriaMaxRepairsMax = 1000000000;
+
+export const respondToBuyerQualificationPortalBodyCriteriaMinBedsMin = 0;
+export const respondToBuyerQualificationPortalBodyCriteriaMinBedsMax = 100;
+
+export const respondToBuyerQualificationPortalBodyCriteriaMinSqftMin = 0;
+export const respondToBuyerQualificationPortalBodyCriteriaMinSqftMax = 1000000;
+
+export const respondToBuyerQualificationPortalBodyCriteriaMaxSqftExclusiveMin = 0;
+export const respondToBuyerQualificationPortalBodyCriteriaMaxSqftMax = 1000000;
+
+export const respondToBuyerQualificationPortalBodyCriteriaClosingDaysMax = 365;
+
+export const respondToBuyerQualificationPortalBodyCriteriaCountiesItemMax = 200;
+
+export const respondToBuyerQualificationPortalBodyCriteriaExcludedCountiesItemMax = 200;
+
+export const respondToBuyerQualificationPortalBodyCriteriaExcludedCitiesItemMax = 200;
+
+export const respondToBuyerQualificationPortalBodyCriteriaExcludedZipCodesItemRegExp = new RegExp('^\\d{5}$');
+export const respondToBuyerQualificationPortalBodyCriteriaMinPurchasePriceMin = 0;
+export const respondToBuyerQualificationPortalBodyCriteriaMinPurchasePriceMax = 1000000000;
+
+export const respondToBuyerQualificationPortalBodyCriteriaMinArvMin = 0;
+export const respondToBuyerQualificationPortalBodyCriteriaMinArvMax = 1000000000;
+
+export const respondToBuyerQualificationPortalBodyCriteriaMaxArvMin = 0;
+export const respondToBuyerQualificationPortalBodyCriteriaMaxArvMax = 1000000000;
+
+export const respondToBuyerQualificationPortalBodyCriteriaMinUnitsMin = 0;
+export const respondToBuyerQualificationPortalBodyCriteriaMinUnitsMax = 10000;
+
+export const respondToBuyerQualificationPortalBodyCriteriaMaxUnitsMin = 0;
+export const respondToBuyerQualificationPortalBodyCriteriaMaxUnitsMax = 10000;
+
+export const respondToBuyerQualificationPortalBodyCriteriaMinBathsMin = 0;
+export const respondToBuyerQualificationPortalBodyCriteriaMinBathsMax = 100;
+
+export const respondToBuyerQualificationPortalBodyCriteriaMaxBedsMin = 0;
+export const respondToBuyerQualificationPortalBodyCriteriaMaxBedsMax = 100;
+
+export const respondToBuyerQualificationPortalBodyCriteriaMaxBathsMin = 0;
+export const respondToBuyerQualificationPortalBodyCriteriaMaxBathsMax = 100;
+
+
+
+export const respondToBuyerQualificationPortalBodyCriteriaMaxConcurrentDealsMax = 1000;
+
+export const respondToBuyerQualificationPortalBodyCriteriaMinSpreadMin = 0;
+export const respondToBuyerQualificationPortalBodyCriteriaMinSpreadMax = 1000000000;
+
+export const respondToBuyerQualificationPortalBodyCriteriaMinCapRateMin = 0;
+export const respondToBuyerQualificationPortalBodyCriteriaMinCapRateMax = 1;
+
+export const respondToBuyerQualificationPortalBodyNoteMax = 2000;
+
+
+
+export const RespondToBuyerQualificationPortalBody = zod.object({
+  "responseId": zod.string().uuid(),
+  "currentBuyingStatus": zod.enum(['BUYING', 'NOT_BUYING']),
+  "criteria": zod.object({
+  "states": zod.array(zod.string().min(respondToBuyerQualificationPortalBodyCriteriaStatesItemMin).max(respondToBuyerQualificationPortalBodyCriteriaStatesItemMax)).min(1),
+  "cities": zod.array(zod.string().min(1)),
+  "zipCodes": zod.array(zod.string().regex(respondToBuyerQualificationPortalBodyCriteriaZipCodesItemRegExp)),
+  "propertyTypes": zod.array(zod.enum(['SINGLE_FAMILY', 'MULTIFAMILY', 'CONDO', 'TOWNHOUSE', 'LAND', 'OTHER'])).min(1),
+  "maxPurchasePrice": zod.number().gt(respondToBuyerQualificationPortalBodyCriteriaMaxPurchasePriceExclusiveMin).max(respondToBuyerQualificationPortalBodyCriteriaMaxPurchasePriceMax),
+  "maxRepairs": zod.number().min(respondToBuyerQualificationPortalBodyCriteriaMaxRepairsMin).max(respondToBuyerQualificationPortalBodyCriteriaMaxRepairsMax),
+  "minBeds": zod.number().int().min(respondToBuyerQualificationPortalBodyCriteriaMinBedsMin).max(respondToBuyerQualificationPortalBodyCriteriaMinBedsMax),
+  "minSqft": zod.number().min(respondToBuyerQualificationPortalBodyCriteriaMinSqftMin).max(respondToBuyerQualificationPortalBodyCriteriaMinSqftMax),
+  "maxSqft": zod.number().gt(respondToBuyerQualificationPortalBodyCriteriaMaxSqftExclusiveMin).max(respondToBuyerQualificationPortalBodyCriteriaMaxSqftMax),
+  "closingDays": zod.number().int().min(1).max(respondToBuyerQualificationPortalBodyCriteriaClosingDaysMax),
+  "counties": zod.array(zod.string().min(1).max(respondToBuyerQualificationPortalBodyCriteriaCountiesItemMax)).optional(),
+  "excludedCounties": zod.array(zod.string().min(1).max(respondToBuyerQualificationPortalBodyCriteriaExcludedCountiesItemMax)).optional(),
+  "excludedCities": zod.array(zod.string().min(1).max(respondToBuyerQualificationPortalBodyCriteriaExcludedCitiesItemMax)).optional(),
+  "excludedZipCodes": zod.array(zod.string().regex(respondToBuyerQualificationPortalBodyCriteriaExcludedZipCodesItemRegExp)).optional(),
+  "minPurchasePrice": zod.number().min(respondToBuyerQualificationPortalBodyCriteriaMinPurchasePriceMin).max(respondToBuyerQualificationPortalBodyCriteriaMinPurchasePriceMax).optional(),
+  "minArv": zod.number().min(respondToBuyerQualificationPortalBodyCriteriaMinArvMin).max(respondToBuyerQualificationPortalBodyCriteriaMinArvMax).nullish(),
+  "maxArv": zod.number().min(respondToBuyerQualificationPortalBodyCriteriaMaxArvMin).max(respondToBuyerQualificationPortalBodyCriteriaMaxArvMax).nullish(),
+  "minUnits": zod.number().int().min(respondToBuyerQualificationPortalBodyCriteriaMinUnitsMin).max(respondToBuyerQualificationPortalBodyCriteriaMinUnitsMax).optional(),
+  "maxUnits": zod.number().int().min(respondToBuyerQualificationPortalBodyCriteriaMaxUnitsMin).max(respondToBuyerQualificationPortalBodyCriteriaMaxUnitsMax).optional(),
+  "minBaths": zod.number().min(respondToBuyerQualificationPortalBodyCriteriaMinBathsMin).max(respondToBuyerQualificationPortalBodyCriteriaMinBathsMax).optional(),
+  "maxBeds": zod.number().int().min(respondToBuyerQualificationPortalBodyCriteriaMaxBedsMin).max(respondToBuyerQualificationPortalBodyCriteriaMaxBedsMax).nullish(),
+  "maxBaths": zod.number().min(respondToBuyerQualificationPortalBodyCriteriaMaxBathsMin).max(respondToBuyerQualificationPortalBodyCriteriaMaxBathsMax).nullish(),
+  "rehabTolerance": zod.enum(['NONE', 'LIGHT', 'MODERATE', 'HEAVY', 'ANY']).optional(),
+  "strategies": zod.array(zod.enum(['FLIP', 'RENTAL', 'BRRRR', 'WHOLESALE', 'DEVELOPMENT', 'OTHER'])).min(1).optional(),
+  "fundingTypes": zod.array(zod.enum(['CASH', 'HARD_MONEY', 'PRIVATE_LENDING', 'CONVENTIONAL', 'OTHER'])).min(1).optional(),
+  "maxConcurrentDeals": zod.number().int().min(1).max(respondToBuyerQualificationPortalBodyCriteriaMaxConcurrentDealsMax).optional(),
+  "minSpread": zod.number().min(respondToBuyerQualificationPortalBodyCriteriaMinSpreadMin).max(respondToBuyerQualificationPortalBodyCriteriaMinSpreadMax).nullish(),
+  "minCapRate": zod.number().min(respondToBuyerQualificationPortalBodyCriteriaMinCapRateMin).max(respondToBuyerQualificationPortalBodyCriteriaMinCapRateMax).nullish()
+}),
+  "confirmedCurrent": zod.literal(true),
+  "note": zod.string().max(respondToBuyerQualificationPortalBodyNoteMax).optional()
+})
+
+export const RespondToBuyerQualificationPortalResponse = zod.object({
+  "status": zod.enum(['RECEIVED_PENDING_OWNER_REVIEW']),
+  "receivedAt": zod.string().datetime({"offset":true}),
+  "ownerReviewRequired": zod.literal(true)
+})
+
+
 export const getSellerOfferPortalHeaderXSellerOfferTokenMin = 40;
 export const getSellerOfferPortalHeaderXSellerOfferTokenMax = 50;
 
@@ -18703,6 +20151,71 @@ export const recordDestinationActivityResponseContractOneCommitmentSnapshotOneBu
 
 export const recordDestinationActivityResponseContractOneCommitmentSnapshotOneBuyerTwoVerificationHistoryItemCriteriaOneMinCapRateMin = 0;
 export const recordDestinationActivityResponseContractOneCommitmentSnapshotOneBuyerTwoVerificationHistoryItemCriteriaOneMinCapRateMax = 1;
+
+export const recordDestinationActivityResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaStatesItemMin = 2;
+export const recordDestinationActivityResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaStatesItemMax = 2;
+
+
+
+export const recordDestinationActivityResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaZipCodesItemRegExp = new RegExp('^\\d{5}$');
+
+export const recordDestinationActivityResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMaxPurchasePriceExclusiveMin = 0;
+export const recordDestinationActivityResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMaxPurchasePriceMax = 1000000000;
+
+export const recordDestinationActivityResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMaxRepairsMin = 0;
+export const recordDestinationActivityResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMaxRepairsMax = 1000000000;
+
+export const recordDestinationActivityResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMinBedsMin = 0;
+export const recordDestinationActivityResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMinBedsMax = 100;
+
+export const recordDestinationActivityResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMinSqftMin = 0;
+export const recordDestinationActivityResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMinSqftMax = 1000000;
+
+export const recordDestinationActivityResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMaxSqftExclusiveMin = 0;
+export const recordDestinationActivityResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMaxSqftMax = 1000000;
+
+export const recordDestinationActivityResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaClosingDaysMax = 365;
+
+export const recordDestinationActivityResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaCountiesItemMax = 200;
+
+export const recordDestinationActivityResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaExcludedCountiesItemMax = 200;
+
+export const recordDestinationActivityResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaExcludedCitiesItemMax = 200;
+
+export const recordDestinationActivityResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaExcludedZipCodesItemRegExp = new RegExp('^\\d{5}$');
+export const recordDestinationActivityResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMinPurchasePriceMin = 0;
+export const recordDestinationActivityResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMinPurchasePriceMax = 1000000000;
+
+export const recordDestinationActivityResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMinArvMin = 0;
+export const recordDestinationActivityResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMinArvMax = 1000000000;
+
+export const recordDestinationActivityResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMaxArvMin = 0;
+export const recordDestinationActivityResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMaxArvMax = 1000000000;
+
+export const recordDestinationActivityResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMinUnitsMin = 0;
+export const recordDestinationActivityResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMinUnitsMax = 10000;
+
+export const recordDestinationActivityResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMaxUnitsMin = 0;
+export const recordDestinationActivityResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMaxUnitsMax = 10000;
+
+export const recordDestinationActivityResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMinBathsMin = 0;
+export const recordDestinationActivityResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMinBathsMax = 100;
+
+export const recordDestinationActivityResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMaxBedsMin = 0;
+export const recordDestinationActivityResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMaxBedsMax = 100;
+
+export const recordDestinationActivityResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMaxBathsMin = 0;
+export const recordDestinationActivityResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMaxBathsMax = 100;
+
+
+
+export const recordDestinationActivityResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMaxConcurrentDealsMax = 1000;
+
+export const recordDestinationActivityResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMinSpreadMin = 0;
+export const recordDestinationActivityResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMinSpreadMax = 1000000000;
+
+export const recordDestinationActivityResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMinCapRateMin = 0;
+export const recordDestinationActivityResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMinCapRateMax = 1;
 
 export const recordDestinationActivityResponseContractOneCommitmentSnapshotOneDetailLeadOneAddressMin = 3;
 export const recordDestinationActivityResponseContractOneCommitmentSnapshotOneDetailLeadOneAddressMax = 250;
@@ -19183,6 +20696,49 @@ export const RecordDestinationActivityResponse = zod.object({
   "dueAt": zod.string(),
   "updatedAt": zod.string()
 }),zod.null()]).optional(),
+  "qualificationPortalSelfReport": zod.object({
+  "responseId": zod.string().uuid(),
+  "currentBuyingStatus": zod.enum(['BUYING', 'NOT_BUYING']),
+  "criteria": zod.object({
+  "states": zod.array(zod.string().min(recordDestinationActivityResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaStatesItemMin).max(recordDestinationActivityResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaStatesItemMax)).min(1),
+  "cities": zod.array(zod.string().min(1)),
+  "zipCodes": zod.array(zod.string().regex(recordDestinationActivityResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaZipCodesItemRegExp)),
+  "propertyTypes": zod.array(zod.enum(['SINGLE_FAMILY', 'MULTIFAMILY', 'CONDO', 'TOWNHOUSE', 'LAND', 'OTHER'])).min(1),
+  "maxPurchasePrice": zod.number().gt(recordDestinationActivityResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMaxPurchasePriceExclusiveMin).max(recordDestinationActivityResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMaxPurchasePriceMax),
+  "maxRepairs": zod.number().min(recordDestinationActivityResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMaxRepairsMin).max(recordDestinationActivityResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMaxRepairsMax),
+  "minBeds": zod.number().int().min(recordDestinationActivityResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMinBedsMin).max(recordDestinationActivityResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMinBedsMax),
+  "minSqft": zod.number().min(recordDestinationActivityResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMinSqftMin).max(recordDestinationActivityResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMinSqftMax),
+  "maxSqft": zod.number().gt(recordDestinationActivityResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMaxSqftExclusiveMin).max(recordDestinationActivityResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMaxSqftMax),
+  "closingDays": zod.number().int().min(1).max(recordDestinationActivityResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaClosingDaysMax),
+  "counties": zod.array(zod.string().min(1).max(recordDestinationActivityResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaCountiesItemMax)).optional(),
+  "excludedCounties": zod.array(zod.string().min(1).max(recordDestinationActivityResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaExcludedCountiesItemMax)).optional(),
+  "excludedCities": zod.array(zod.string().min(1).max(recordDestinationActivityResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaExcludedCitiesItemMax)).optional(),
+  "excludedZipCodes": zod.array(zod.string().regex(recordDestinationActivityResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaExcludedZipCodesItemRegExp)).optional(),
+  "minPurchasePrice": zod.number().min(recordDestinationActivityResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMinPurchasePriceMin).max(recordDestinationActivityResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMinPurchasePriceMax).optional(),
+  "minArv": zod.number().min(recordDestinationActivityResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMinArvMin).max(recordDestinationActivityResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMinArvMax).nullish(),
+  "maxArv": zod.number().min(recordDestinationActivityResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMaxArvMin).max(recordDestinationActivityResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMaxArvMax).nullish(),
+  "minUnits": zod.number().int().min(recordDestinationActivityResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMinUnitsMin).max(recordDestinationActivityResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMinUnitsMax).optional(),
+  "maxUnits": zod.number().int().min(recordDestinationActivityResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMaxUnitsMin).max(recordDestinationActivityResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMaxUnitsMax).optional(),
+  "minBaths": zod.number().min(recordDestinationActivityResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMinBathsMin).max(recordDestinationActivityResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMinBathsMax).optional(),
+  "maxBeds": zod.number().int().min(recordDestinationActivityResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMaxBedsMin).max(recordDestinationActivityResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMaxBedsMax).nullish(),
+  "maxBaths": zod.number().min(recordDestinationActivityResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMaxBathsMin).max(recordDestinationActivityResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMaxBathsMax).nullish(),
+  "rehabTolerance": zod.enum(['NONE', 'LIGHT', 'MODERATE', 'HEAVY', 'ANY']).optional(),
+  "strategies": zod.array(zod.enum(['FLIP', 'RENTAL', 'BRRRR', 'WHOLESALE', 'DEVELOPMENT', 'OTHER'])).min(1).optional(),
+  "fundingTypes": zod.array(zod.enum(['CASH', 'HARD_MONEY', 'PRIVATE_LENDING', 'CONVENTIONAL', 'OTHER'])).min(1).optional(),
+  "maxConcurrentDeals": zod.number().int().min(1).max(recordDestinationActivityResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMaxConcurrentDealsMax).optional(),
+  "minSpread": zod.number().min(recordDestinationActivityResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMinSpreadMin).max(recordDestinationActivityResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMinSpreadMax).nullish(),
+  "minCapRate": zod.number().min(recordDestinationActivityResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMinCapRateMin).max(recordDestinationActivityResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMinCapRateMax).nullish()
+}),
+  "confirmedCurrent": zod.literal(true),
+  "note": zod.string(),
+  "receivedAt": zod.string().datetime({"offset":true}),
+  "invitationId": zod.string().uuid(),
+  "source": zod.enum(['PRIVATE_BUYER_QUALIFICATION_PORTAL']),
+  "classification": zod.enum(['INDICATED']),
+  "identityVerified": zod.literal(false),
+  "contactPermissionVerified": zod.literal(false),
+  "ownerReviewRequired": zod.literal(true)
+}).optional(),
   "lastOutreachReplyAt": zod.string().optional(),
   "lastOutreachReplyEvidenceUrl": zod.string().optional(),
   "createdAt": zod.string(),
@@ -19818,6 +21374,71 @@ export const createContractResponseContractOneCommitmentSnapshotOneBuyerTwoVerif
 export const createContractResponseContractOneCommitmentSnapshotOneBuyerTwoVerificationHistoryItemCriteriaOneMinCapRateMin = 0;
 export const createContractResponseContractOneCommitmentSnapshotOneBuyerTwoVerificationHistoryItemCriteriaOneMinCapRateMax = 1;
 
+export const createContractResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaStatesItemMin = 2;
+export const createContractResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaStatesItemMax = 2;
+
+
+
+export const createContractResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaZipCodesItemRegExp = new RegExp('^\\d{5}$');
+
+export const createContractResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMaxPurchasePriceExclusiveMin = 0;
+export const createContractResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMaxPurchasePriceMax = 1000000000;
+
+export const createContractResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMaxRepairsMin = 0;
+export const createContractResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMaxRepairsMax = 1000000000;
+
+export const createContractResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMinBedsMin = 0;
+export const createContractResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMinBedsMax = 100;
+
+export const createContractResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMinSqftMin = 0;
+export const createContractResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMinSqftMax = 1000000;
+
+export const createContractResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMaxSqftExclusiveMin = 0;
+export const createContractResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMaxSqftMax = 1000000;
+
+export const createContractResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaClosingDaysMax = 365;
+
+export const createContractResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaCountiesItemMax = 200;
+
+export const createContractResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaExcludedCountiesItemMax = 200;
+
+export const createContractResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaExcludedCitiesItemMax = 200;
+
+export const createContractResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaExcludedZipCodesItemRegExp = new RegExp('^\\d{5}$');
+export const createContractResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMinPurchasePriceMin = 0;
+export const createContractResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMinPurchasePriceMax = 1000000000;
+
+export const createContractResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMinArvMin = 0;
+export const createContractResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMinArvMax = 1000000000;
+
+export const createContractResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMaxArvMin = 0;
+export const createContractResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMaxArvMax = 1000000000;
+
+export const createContractResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMinUnitsMin = 0;
+export const createContractResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMinUnitsMax = 10000;
+
+export const createContractResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMaxUnitsMin = 0;
+export const createContractResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMaxUnitsMax = 10000;
+
+export const createContractResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMinBathsMin = 0;
+export const createContractResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMinBathsMax = 100;
+
+export const createContractResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMaxBedsMin = 0;
+export const createContractResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMaxBedsMax = 100;
+
+export const createContractResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMaxBathsMin = 0;
+export const createContractResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMaxBathsMax = 100;
+
+
+
+export const createContractResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMaxConcurrentDealsMax = 1000;
+
+export const createContractResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMinSpreadMin = 0;
+export const createContractResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMinSpreadMax = 1000000000;
+
+export const createContractResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMinCapRateMin = 0;
+export const createContractResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMinCapRateMax = 1;
+
 export const createContractResponseContractOneCommitmentSnapshotOneDetailLeadOneAddressMin = 3;
 export const createContractResponseContractOneCommitmentSnapshotOneDetailLeadOneAddressMax = 250;
 
@@ -20297,6 +21918,49 @@ export const CreateContractResponse = zod.object({
   "dueAt": zod.string(),
   "updatedAt": zod.string()
 }),zod.null()]).optional(),
+  "qualificationPortalSelfReport": zod.object({
+  "responseId": zod.string().uuid(),
+  "currentBuyingStatus": zod.enum(['BUYING', 'NOT_BUYING']),
+  "criteria": zod.object({
+  "states": zod.array(zod.string().min(createContractResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaStatesItemMin).max(createContractResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaStatesItemMax)).min(1),
+  "cities": zod.array(zod.string().min(1)),
+  "zipCodes": zod.array(zod.string().regex(createContractResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaZipCodesItemRegExp)),
+  "propertyTypes": zod.array(zod.enum(['SINGLE_FAMILY', 'MULTIFAMILY', 'CONDO', 'TOWNHOUSE', 'LAND', 'OTHER'])).min(1),
+  "maxPurchasePrice": zod.number().gt(createContractResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMaxPurchasePriceExclusiveMin).max(createContractResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMaxPurchasePriceMax),
+  "maxRepairs": zod.number().min(createContractResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMaxRepairsMin).max(createContractResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMaxRepairsMax),
+  "minBeds": zod.number().int().min(createContractResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMinBedsMin).max(createContractResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMinBedsMax),
+  "minSqft": zod.number().min(createContractResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMinSqftMin).max(createContractResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMinSqftMax),
+  "maxSqft": zod.number().gt(createContractResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMaxSqftExclusiveMin).max(createContractResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMaxSqftMax),
+  "closingDays": zod.number().int().min(1).max(createContractResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaClosingDaysMax),
+  "counties": zod.array(zod.string().min(1).max(createContractResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaCountiesItemMax)).optional(),
+  "excludedCounties": zod.array(zod.string().min(1).max(createContractResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaExcludedCountiesItemMax)).optional(),
+  "excludedCities": zod.array(zod.string().min(1).max(createContractResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaExcludedCitiesItemMax)).optional(),
+  "excludedZipCodes": zod.array(zod.string().regex(createContractResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaExcludedZipCodesItemRegExp)).optional(),
+  "minPurchasePrice": zod.number().min(createContractResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMinPurchasePriceMin).max(createContractResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMinPurchasePriceMax).optional(),
+  "minArv": zod.number().min(createContractResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMinArvMin).max(createContractResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMinArvMax).nullish(),
+  "maxArv": zod.number().min(createContractResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMaxArvMin).max(createContractResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMaxArvMax).nullish(),
+  "minUnits": zod.number().int().min(createContractResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMinUnitsMin).max(createContractResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMinUnitsMax).optional(),
+  "maxUnits": zod.number().int().min(createContractResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMaxUnitsMin).max(createContractResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMaxUnitsMax).optional(),
+  "minBaths": zod.number().min(createContractResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMinBathsMin).max(createContractResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMinBathsMax).optional(),
+  "maxBeds": zod.number().int().min(createContractResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMaxBedsMin).max(createContractResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMaxBedsMax).nullish(),
+  "maxBaths": zod.number().min(createContractResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMaxBathsMin).max(createContractResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMaxBathsMax).nullish(),
+  "rehabTolerance": zod.enum(['NONE', 'LIGHT', 'MODERATE', 'HEAVY', 'ANY']).optional(),
+  "strategies": zod.array(zod.enum(['FLIP', 'RENTAL', 'BRRRR', 'WHOLESALE', 'DEVELOPMENT', 'OTHER'])).min(1).optional(),
+  "fundingTypes": zod.array(zod.enum(['CASH', 'HARD_MONEY', 'PRIVATE_LENDING', 'CONVENTIONAL', 'OTHER'])).min(1).optional(),
+  "maxConcurrentDeals": zod.number().int().min(1).max(createContractResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMaxConcurrentDealsMax).optional(),
+  "minSpread": zod.number().min(createContractResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMinSpreadMin).max(createContractResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMinSpreadMax).nullish(),
+  "minCapRate": zod.number().min(createContractResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMinCapRateMin).max(createContractResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMinCapRateMax).nullish()
+}),
+  "confirmedCurrent": zod.literal(true),
+  "note": zod.string(),
+  "receivedAt": zod.string().datetime({"offset":true}),
+  "invitationId": zod.string().uuid(),
+  "source": zod.enum(['PRIVATE_BUYER_QUALIFICATION_PORTAL']),
+  "classification": zod.enum(['INDICATED']),
+  "identityVerified": zod.literal(false),
+  "contactPermissionVerified": zod.literal(false),
+  "ownerReviewRequired": zod.literal(true)
+}).optional(),
   "lastOutreachReplyAt": zod.string().optional(),
   "lastOutreachReplyEvidenceUrl": zod.string().optional(),
   "createdAt": zod.string(),
@@ -20930,6 +22594,71 @@ export const preparePurchaseReviewDocumentResponseContractOneCommitmentSnapshotO
 export const preparePurchaseReviewDocumentResponseContractOneCommitmentSnapshotOneBuyerTwoVerificationHistoryItemCriteriaOneMinCapRateMin = 0;
 export const preparePurchaseReviewDocumentResponseContractOneCommitmentSnapshotOneBuyerTwoVerificationHistoryItemCriteriaOneMinCapRateMax = 1;
 
+export const preparePurchaseReviewDocumentResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaStatesItemMin = 2;
+export const preparePurchaseReviewDocumentResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaStatesItemMax = 2;
+
+
+
+export const preparePurchaseReviewDocumentResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaZipCodesItemRegExp = new RegExp('^\\d{5}$');
+
+export const preparePurchaseReviewDocumentResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMaxPurchasePriceExclusiveMin = 0;
+export const preparePurchaseReviewDocumentResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMaxPurchasePriceMax = 1000000000;
+
+export const preparePurchaseReviewDocumentResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMaxRepairsMin = 0;
+export const preparePurchaseReviewDocumentResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMaxRepairsMax = 1000000000;
+
+export const preparePurchaseReviewDocumentResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMinBedsMin = 0;
+export const preparePurchaseReviewDocumentResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMinBedsMax = 100;
+
+export const preparePurchaseReviewDocumentResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMinSqftMin = 0;
+export const preparePurchaseReviewDocumentResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMinSqftMax = 1000000;
+
+export const preparePurchaseReviewDocumentResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMaxSqftExclusiveMin = 0;
+export const preparePurchaseReviewDocumentResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMaxSqftMax = 1000000;
+
+export const preparePurchaseReviewDocumentResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaClosingDaysMax = 365;
+
+export const preparePurchaseReviewDocumentResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaCountiesItemMax = 200;
+
+export const preparePurchaseReviewDocumentResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaExcludedCountiesItemMax = 200;
+
+export const preparePurchaseReviewDocumentResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaExcludedCitiesItemMax = 200;
+
+export const preparePurchaseReviewDocumentResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaExcludedZipCodesItemRegExp = new RegExp('^\\d{5}$');
+export const preparePurchaseReviewDocumentResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMinPurchasePriceMin = 0;
+export const preparePurchaseReviewDocumentResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMinPurchasePriceMax = 1000000000;
+
+export const preparePurchaseReviewDocumentResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMinArvMin = 0;
+export const preparePurchaseReviewDocumentResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMinArvMax = 1000000000;
+
+export const preparePurchaseReviewDocumentResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMaxArvMin = 0;
+export const preparePurchaseReviewDocumentResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMaxArvMax = 1000000000;
+
+export const preparePurchaseReviewDocumentResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMinUnitsMin = 0;
+export const preparePurchaseReviewDocumentResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMinUnitsMax = 10000;
+
+export const preparePurchaseReviewDocumentResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMaxUnitsMin = 0;
+export const preparePurchaseReviewDocumentResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMaxUnitsMax = 10000;
+
+export const preparePurchaseReviewDocumentResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMinBathsMin = 0;
+export const preparePurchaseReviewDocumentResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMinBathsMax = 100;
+
+export const preparePurchaseReviewDocumentResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMaxBedsMin = 0;
+export const preparePurchaseReviewDocumentResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMaxBedsMax = 100;
+
+export const preparePurchaseReviewDocumentResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMaxBathsMin = 0;
+export const preparePurchaseReviewDocumentResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMaxBathsMax = 100;
+
+
+
+export const preparePurchaseReviewDocumentResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMaxConcurrentDealsMax = 1000;
+
+export const preparePurchaseReviewDocumentResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMinSpreadMin = 0;
+export const preparePurchaseReviewDocumentResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMinSpreadMax = 1000000000;
+
+export const preparePurchaseReviewDocumentResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMinCapRateMin = 0;
+export const preparePurchaseReviewDocumentResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMinCapRateMax = 1;
+
 export const preparePurchaseReviewDocumentResponseContractOneCommitmentSnapshotOneDetailLeadOneAddressMin = 3;
 export const preparePurchaseReviewDocumentResponseContractOneCommitmentSnapshotOneDetailLeadOneAddressMax = 250;
 
@@ -21409,6 +23138,49 @@ export const PreparePurchaseReviewDocumentResponse = zod.object({
   "dueAt": zod.string(),
   "updatedAt": zod.string()
 }),zod.null()]).optional(),
+  "qualificationPortalSelfReport": zod.object({
+  "responseId": zod.string().uuid(),
+  "currentBuyingStatus": zod.enum(['BUYING', 'NOT_BUYING']),
+  "criteria": zod.object({
+  "states": zod.array(zod.string().min(preparePurchaseReviewDocumentResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaStatesItemMin).max(preparePurchaseReviewDocumentResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaStatesItemMax)).min(1),
+  "cities": zod.array(zod.string().min(1)),
+  "zipCodes": zod.array(zod.string().regex(preparePurchaseReviewDocumentResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaZipCodesItemRegExp)),
+  "propertyTypes": zod.array(zod.enum(['SINGLE_FAMILY', 'MULTIFAMILY', 'CONDO', 'TOWNHOUSE', 'LAND', 'OTHER'])).min(1),
+  "maxPurchasePrice": zod.number().gt(preparePurchaseReviewDocumentResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMaxPurchasePriceExclusiveMin).max(preparePurchaseReviewDocumentResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMaxPurchasePriceMax),
+  "maxRepairs": zod.number().min(preparePurchaseReviewDocumentResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMaxRepairsMin).max(preparePurchaseReviewDocumentResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMaxRepairsMax),
+  "minBeds": zod.number().int().min(preparePurchaseReviewDocumentResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMinBedsMin).max(preparePurchaseReviewDocumentResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMinBedsMax),
+  "minSqft": zod.number().min(preparePurchaseReviewDocumentResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMinSqftMin).max(preparePurchaseReviewDocumentResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMinSqftMax),
+  "maxSqft": zod.number().gt(preparePurchaseReviewDocumentResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMaxSqftExclusiveMin).max(preparePurchaseReviewDocumentResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMaxSqftMax),
+  "closingDays": zod.number().int().min(1).max(preparePurchaseReviewDocumentResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaClosingDaysMax),
+  "counties": zod.array(zod.string().min(1).max(preparePurchaseReviewDocumentResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaCountiesItemMax)).optional(),
+  "excludedCounties": zod.array(zod.string().min(1).max(preparePurchaseReviewDocumentResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaExcludedCountiesItemMax)).optional(),
+  "excludedCities": zod.array(zod.string().min(1).max(preparePurchaseReviewDocumentResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaExcludedCitiesItemMax)).optional(),
+  "excludedZipCodes": zod.array(zod.string().regex(preparePurchaseReviewDocumentResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaExcludedZipCodesItemRegExp)).optional(),
+  "minPurchasePrice": zod.number().min(preparePurchaseReviewDocumentResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMinPurchasePriceMin).max(preparePurchaseReviewDocumentResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMinPurchasePriceMax).optional(),
+  "minArv": zod.number().min(preparePurchaseReviewDocumentResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMinArvMin).max(preparePurchaseReviewDocumentResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMinArvMax).nullish(),
+  "maxArv": zod.number().min(preparePurchaseReviewDocumentResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMaxArvMin).max(preparePurchaseReviewDocumentResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMaxArvMax).nullish(),
+  "minUnits": zod.number().int().min(preparePurchaseReviewDocumentResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMinUnitsMin).max(preparePurchaseReviewDocumentResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMinUnitsMax).optional(),
+  "maxUnits": zod.number().int().min(preparePurchaseReviewDocumentResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMaxUnitsMin).max(preparePurchaseReviewDocumentResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMaxUnitsMax).optional(),
+  "minBaths": zod.number().min(preparePurchaseReviewDocumentResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMinBathsMin).max(preparePurchaseReviewDocumentResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMinBathsMax).optional(),
+  "maxBeds": zod.number().int().min(preparePurchaseReviewDocumentResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMaxBedsMin).max(preparePurchaseReviewDocumentResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMaxBedsMax).nullish(),
+  "maxBaths": zod.number().min(preparePurchaseReviewDocumentResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMaxBathsMin).max(preparePurchaseReviewDocumentResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMaxBathsMax).nullish(),
+  "rehabTolerance": zod.enum(['NONE', 'LIGHT', 'MODERATE', 'HEAVY', 'ANY']).optional(),
+  "strategies": zod.array(zod.enum(['FLIP', 'RENTAL', 'BRRRR', 'WHOLESALE', 'DEVELOPMENT', 'OTHER'])).min(1).optional(),
+  "fundingTypes": zod.array(zod.enum(['CASH', 'HARD_MONEY', 'PRIVATE_LENDING', 'CONVENTIONAL', 'OTHER'])).min(1).optional(),
+  "maxConcurrentDeals": zod.number().int().min(1).max(preparePurchaseReviewDocumentResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMaxConcurrentDealsMax).optional(),
+  "minSpread": zod.number().min(preparePurchaseReviewDocumentResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMinSpreadMin).max(preparePurchaseReviewDocumentResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMinSpreadMax).nullish(),
+  "minCapRate": zod.number().min(preparePurchaseReviewDocumentResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMinCapRateMin).max(preparePurchaseReviewDocumentResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMinCapRateMax).nullish()
+}),
+  "confirmedCurrent": zod.literal(true),
+  "note": zod.string(),
+  "receivedAt": zod.string().datetime({"offset":true}),
+  "invitationId": zod.string().uuid(),
+  "source": zod.enum(['PRIVATE_BUYER_QUALIFICATION_PORTAL']),
+  "classification": zod.enum(['INDICATED']),
+  "identityVerified": zod.literal(false),
+  "contactPermissionVerified": zod.literal(false),
+  "ownerReviewRequired": zod.literal(true)
+}).optional(),
   "lastOutreachReplyAt": zod.string().optional(),
   "lastOutreachReplyEvidenceUrl": zod.string().optional(),
   "createdAt": zod.string(),
@@ -22048,6 +23820,71 @@ export const transitionTransactionDocumentResponseContractOneCommitmentSnapshotO
 export const transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneBuyerTwoVerificationHistoryItemCriteriaOneMinCapRateMin = 0;
 export const transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneBuyerTwoVerificationHistoryItemCriteriaOneMinCapRateMax = 1;
 
+export const transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaStatesItemMin = 2;
+export const transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaStatesItemMax = 2;
+
+
+
+export const transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaZipCodesItemRegExp = new RegExp('^\\d{5}$');
+
+export const transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMaxPurchasePriceExclusiveMin = 0;
+export const transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMaxPurchasePriceMax = 1000000000;
+
+export const transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMaxRepairsMin = 0;
+export const transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMaxRepairsMax = 1000000000;
+
+export const transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMinBedsMin = 0;
+export const transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMinBedsMax = 100;
+
+export const transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMinSqftMin = 0;
+export const transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMinSqftMax = 1000000;
+
+export const transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMaxSqftExclusiveMin = 0;
+export const transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMaxSqftMax = 1000000;
+
+export const transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaClosingDaysMax = 365;
+
+export const transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaCountiesItemMax = 200;
+
+export const transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaExcludedCountiesItemMax = 200;
+
+export const transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaExcludedCitiesItemMax = 200;
+
+export const transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaExcludedZipCodesItemRegExp = new RegExp('^\\d{5}$');
+export const transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMinPurchasePriceMin = 0;
+export const transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMinPurchasePriceMax = 1000000000;
+
+export const transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMinArvMin = 0;
+export const transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMinArvMax = 1000000000;
+
+export const transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMaxArvMin = 0;
+export const transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMaxArvMax = 1000000000;
+
+export const transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMinUnitsMin = 0;
+export const transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMinUnitsMax = 10000;
+
+export const transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMaxUnitsMin = 0;
+export const transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMaxUnitsMax = 10000;
+
+export const transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMinBathsMin = 0;
+export const transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMinBathsMax = 100;
+
+export const transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMaxBedsMin = 0;
+export const transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMaxBedsMax = 100;
+
+export const transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMaxBathsMin = 0;
+export const transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMaxBathsMax = 100;
+
+
+
+export const transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMaxConcurrentDealsMax = 1000;
+
+export const transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMinSpreadMin = 0;
+export const transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMinSpreadMax = 1000000000;
+
+export const transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMinCapRateMin = 0;
+export const transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMinCapRateMax = 1;
+
 export const transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneDetailLeadOneAddressMin = 3;
 export const transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneDetailLeadOneAddressMax = 250;
 
@@ -22527,6 +24364,49 @@ export const TransitionTransactionDocumentResponse = zod.object({
   "dueAt": zod.string(),
   "updatedAt": zod.string()
 }),zod.null()]).optional(),
+  "qualificationPortalSelfReport": zod.object({
+  "responseId": zod.string().uuid(),
+  "currentBuyingStatus": zod.enum(['BUYING', 'NOT_BUYING']),
+  "criteria": zod.object({
+  "states": zod.array(zod.string().min(transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaStatesItemMin).max(transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaStatesItemMax)).min(1),
+  "cities": zod.array(zod.string().min(1)),
+  "zipCodes": zod.array(zod.string().regex(transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaZipCodesItemRegExp)),
+  "propertyTypes": zod.array(zod.enum(['SINGLE_FAMILY', 'MULTIFAMILY', 'CONDO', 'TOWNHOUSE', 'LAND', 'OTHER'])).min(1),
+  "maxPurchasePrice": zod.number().gt(transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMaxPurchasePriceExclusiveMin).max(transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMaxPurchasePriceMax),
+  "maxRepairs": zod.number().min(transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMaxRepairsMin).max(transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMaxRepairsMax),
+  "minBeds": zod.number().int().min(transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMinBedsMin).max(transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMinBedsMax),
+  "minSqft": zod.number().min(transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMinSqftMin).max(transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMinSqftMax),
+  "maxSqft": zod.number().gt(transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMaxSqftExclusiveMin).max(transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMaxSqftMax),
+  "closingDays": zod.number().int().min(1).max(transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaClosingDaysMax),
+  "counties": zod.array(zod.string().min(1).max(transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaCountiesItemMax)).optional(),
+  "excludedCounties": zod.array(zod.string().min(1).max(transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaExcludedCountiesItemMax)).optional(),
+  "excludedCities": zod.array(zod.string().min(1).max(transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaExcludedCitiesItemMax)).optional(),
+  "excludedZipCodes": zod.array(zod.string().regex(transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaExcludedZipCodesItemRegExp)).optional(),
+  "minPurchasePrice": zod.number().min(transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMinPurchasePriceMin).max(transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMinPurchasePriceMax).optional(),
+  "minArv": zod.number().min(transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMinArvMin).max(transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMinArvMax).nullish(),
+  "maxArv": zod.number().min(transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMaxArvMin).max(transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMaxArvMax).nullish(),
+  "minUnits": zod.number().int().min(transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMinUnitsMin).max(transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMinUnitsMax).optional(),
+  "maxUnits": zod.number().int().min(transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMaxUnitsMin).max(transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMaxUnitsMax).optional(),
+  "minBaths": zod.number().min(transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMinBathsMin).max(transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMinBathsMax).optional(),
+  "maxBeds": zod.number().int().min(transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMaxBedsMin).max(transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMaxBedsMax).nullish(),
+  "maxBaths": zod.number().min(transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMaxBathsMin).max(transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMaxBathsMax).nullish(),
+  "rehabTolerance": zod.enum(['NONE', 'LIGHT', 'MODERATE', 'HEAVY', 'ANY']).optional(),
+  "strategies": zod.array(zod.enum(['FLIP', 'RENTAL', 'BRRRR', 'WHOLESALE', 'DEVELOPMENT', 'OTHER'])).min(1).optional(),
+  "fundingTypes": zod.array(zod.enum(['CASH', 'HARD_MONEY', 'PRIVATE_LENDING', 'CONVENTIONAL', 'OTHER'])).min(1).optional(),
+  "maxConcurrentDeals": zod.number().int().min(1).max(transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMaxConcurrentDealsMax).optional(),
+  "minSpread": zod.number().min(transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMinSpreadMin).max(transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMinSpreadMax).nullish(),
+  "minCapRate": zod.number().min(transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMinCapRateMin).max(transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMinCapRateMax).nullish()
+}),
+  "confirmedCurrent": zod.literal(true),
+  "note": zod.string(),
+  "receivedAt": zod.string().datetime({"offset":true}),
+  "invitationId": zod.string().uuid(),
+  "source": zod.enum(['PRIVATE_BUYER_QUALIFICATION_PORTAL']),
+  "classification": zod.enum(['INDICATED']),
+  "identityVerified": zod.literal(false),
+  "contactPermissionVerified": zod.literal(false),
+  "ownerReviewRequired": zod.literal(true)
+}).optional(),
   "lastOutreachReplyAt": zod.string().optional(),
   "lastOutreachReplyEvidenceUrl": zod.string().optional(),
   "createdAt": zod.string(),
@@ -23214,6 +25094,71 @@ export const executeContractResponseContractOneCommitmentSnapshotOneBuyerTwoVeri
 export const executeContractResponseContractOneCommitmentSnapshotOneBuyerTwoVerificationHistoryItemCriteriaOneMinCapRateMin = 0;
 export const executeContractResponseContractOneCommitmentSnapshotOneBuyerTwoVerificationHistoryItemCriteriaOneMinCapRateMax = 1;
 
+export const executeContractResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaStatesItemMin = 2;
+export const executeContractResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaStatesItemMax = 2;
+
+
+
+export const executeContractResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaZipCodesItemRegExp = new RegExp('^\\d{5}$');
+
+export const executeContractResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMaxPurchasePriceExclusiveMin = 0;
+export const executeContractResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMaxPurchasePriceMax = 1000000000;
+
+export const executeContractResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMaxRepairsMin = 0;
+export const executeContractResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMaxRepairsMax = 1000000000;
+
+export const executeContractResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMinBedsMin = 0;
+export const executeContractResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMinBedsMax = 100;
+
+export const executeContractResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMinSqftMin = 0;
+export const executeContractResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMinSqftMax = 1000000;
+
+export const executeContractResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMaxSqftExclusiveMin = 0;
+export const executeContractResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMaxSqftMax = 1000000;
+
+export const executeContractResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaClosingDaysMax = 365;
+
+export const executeContractResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaCountiesItemMax = 200;
+
+export const executeContractResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaExcludedCountiesItemMax = 200;
+
+export const executeContractResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaExcludedCitiesItemMax = 200;
+
+export const executeContractResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaExcludedZipCodesItemRegExp = new RegExp('^\\d{5}$');
+export const executeContractResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMinPurchasePriceMin = 0;
+export const executeContractResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMinPurchasePriceMax = 1000000000;
+
+export const executeContractResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMinArvMin = 0;
+export const executeContractResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMinArvMax = 1000000000;
+
+export const executeContractResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMaxArvMin = 0;
+export const executeContractResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMaxArvMax = 1000000000;
+
+export const executeContractResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMinUnitsMin = 0;
+export const executeContractResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMinUnitsMax = 10000;
+
+export const executeContractResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMaxUnitsMin = 0;
+export const executeContractResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMaxUnitsMax = 10000;
+
+export const executeContractResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMinBathsMin = 0;
+export const executeContractResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMinBathsMax = 100;
+
+export const executeContractResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMaxBedsMin = 0;
+export const executeContractResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMaxBedsMax = 100;
+
+export const executeContractResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMaxBathsMin = 0;
+export const executeContractResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMaxBathsMax = 100;
+
+
+
+export const executeContractResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMaxConcurrentDealsMax = 1000;
+
+export const executeContractResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMinSpreadMin = 0;
+export const executeContractResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMinSpreadMax = 1000000000;
+
+export const executeContractResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMinCapRateMin = 0;
+export const executeContractResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMinCapRateMax = 1;
+
 export const executeContractResponseContractOneCommitmentSnapshotOneDetailLeadOneAddressMin = 3;
 export const executeContractResponseContractOneCommitmentSnapshotOneDetailLeadOneAddressMax = 250;
 
@@ -23693,6 +25638,49 @@ export const ExecuteContractResponse = zod.object({
   "dueAt": zod.string(),
   "updatedAt": zod.string()
 }),zod.null()]).optional(),
+  "qualificationPortalSelfReport": zod.object({
+  "responseId": zod.string().uuid(),
+  "currentBuyingStatus": zod.enum(['BUYING', 'NOT_BUYING']),
+  "criteria": zod.object({
+  "states": zod.array(zod.string().min(executeContractResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaStatesItemMin).max(executeContractResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaStatesItemMax)).min(1),
+  "cities": zod.array(zod.string().min(1)),
+  "zipCodes": zod.array(zod.string().regex(executeContractResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaZipCodesItemRegExp)),
+  "propertyTypes": zod.array(zod.enum(['SINGLE_FAMILY', 'MULTIFAMILY', 'CONDO', 'TOWNHOUSE', 'LAND', 'OTHER'])).min(1),
+  "maxPurchasePrice": zod.number().gt(executeContractResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMaxPurchasePriceExclusiveMin).max(executeContractResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMaxPurchasePriceMax),
+  "maxRepairs": zod.number().min(executeContractResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMaxRepairsMin).max(executeContractResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMaxRepairsMax),
+  "minBeds": zod.number().int().min(executeContractResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMinBedsMin).max(executeContractResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMinBedsMax),
+  "minSqft": zod.number().min(executeContractResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMinSqftMin).max(executeContractResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMinSqftMax),
+  "maxSqft": zod.number().gt(executeContractResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMaxSqftExclusiveMin).max(executeContractResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMaxSqftMax),
+  "closingDays": zod.number().int().min(1).max(executeContractResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaClosingDaysMax),
+  "counties": zod.array(zod.string().min(1).max(executeContractResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaCountiesItemMax)).optional(),
+  "excludedCounties": zod.array(zod.string().min(1).max(executeContractResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaExcludedCountiesItemMax)).optional(),
+  "excludedCities": zod.array(zod.string().min(1).max(executeContractResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaExcludedCitiesItemMax)).optional(),
+  "excludedZipCodes": zod.array(zod.string().regex(executeContractResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaExcludedZipCodesItemRegExp)).optional(),
+  "minPurchasePrice": zod.number().min(executeContractResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMinPurchasePriceMin).max(executeContractResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMinPurchasePriceMax).optional(),
+  "minArv": zod.number().min(executeContractResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMinArvMin).max(executeContractResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMinArvMax).nullish(),
+  "maxArv": zod.number().min(executeContractResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMaxArvMin).max(executeContractResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMaxArvMax).nullish(),
+  "minUnits": zod.number().int().min(executeContractResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMinUnitsMin).max(executeContractResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMinUnitsMax).optional(),
+  "maxUnits": zod.number().int().min(executeContractResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMaxUnitsMin).max(executeContractResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMaxUnitsMax).optional(),
+  "minBaths": zod.number().min(executeContractResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMinBathsMin).max(executeContractResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMinBathsMax).optional(),
+  "maxBeds": zod.number().int().min(executeContractResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMaxBedsMin).max(executeContractResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMaxBedsMax).nullish(),
+  "maxBaths": zod.number().min(executeContractResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMaxBathsMin).max(executeContractResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMaxBathsMax).nullish(),
+  "rehabTolerance": zod.enum(['NONE', 'LIGHT', 'MODERATE', 'HEAVY', 'ANY']).optional(),
+  "strategies": zod.array(zod.enum(['FLIP', 'RENTAL', 'BRRRR', 'WHOLESALE', 'DEVELOPMENT', 'OTHER'])).min(1).optional(),
+  "fundingTypes": zod.array(zod.enum(['CASH', 'HARD_MONEY', 'PRIVATE_LENDING', 'CONVENTIONAL', 'OTHER'])).min(1).optional(),
+  "maxConcurrentDeals": zod.number().int().min(1).max(executeContractResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMaxConcurrentDealsMax).optional(),
+  "minSpread": zod.number().min(executeContractResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMinSpreadMin).max(executeContractResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMinSpreadMax).nullish(),
+  "minCapRate": zod.number().min(executeContractResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMinCapRateMin).max(executeContractResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMinCapRateMax).nullish()
+}),
+  "confirmedCurrent": zod.literal(true),
+  "note": zod.string(),
+  "receivedAt": zod.string().datetime({"offset":true}),
+  "invitationId": zod.string().uuid(),
+  "source": zod.enum(['PRIVATE_BUYER_QUALIFICATION_PORTAL']),
+  "classification": zod.enum(['INDICATED']),
+  "identityVerified": zod.literal(false),
+  "contactPermissionVerified": zod.literal(false),
+  "ownerReviewRequired": zod.literal(true)
+}).optional(),
   "lastOutreachReplyAt": zod.string().optional(),
   "lastOutreachReplyEvidenceUrl": zod.string().optional(),
   "createdAt": zod.string(),
@@ -24350,6 +26338,71 @@ export const recordClosingMilestoneResponseContractOneCommitmentSnapshotOneBuyer
 export const recordClosingMilestoneResponseContractOneCommitmentSnapshotOneBuyerTwoVerificationHistoryItemCriteriaOneMinCapRateMin = 0;
 export const recordClosingMilestoneResponseContractOneCommitmentSnapshotOneBuyerTwoVerificationHistoryItemCriteriaOneMinCapRateMax = 1;
 
+export const recordClosingMilestoneResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaStatesItemMin = 2;
+export const recordClosingMilestoneResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaStatesItemMax = 2;
+
+
+
+export const recordClosingMilestoneResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaZipCodesItemRegExp = new RegExp('^\\d{5}$');
+
+export const recordClosingMilestoneResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMaxPurchasePriceExclusiveMin = 0;
+export const recordClosingMilestoneResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMaxPurchasePriceMax = 1000000000;
+
+export const recordClosingMilestoneResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMaxRepairsMin = 0;
+export const recordClosingMilestoneResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMaxRepairsMax = 1000000000;
+
+export const recordClosingMilestoneResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMinBedsMin = 0;
+export const recordClosingMilestoneResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMinBedsMax = 100;
+
+export const recordClosingMilestoneResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMinSqftMin = 0;
+export const recordClosingMilestoneResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMinSqftMax = 1000000;
+
+export const recordClosingMilestoneResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMaxSqftExclusiveMin = 0;
+export const recordClosingMilestoneResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMaxSqftMax = 1000000;
+
+export const recordClosingMilestoneResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaClosingDaysMax = 365;
+
+export const recordClosingMilestoneResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaCountiesItemMax = 200;
+
+export const recordClosingMilestoneResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaExcludedCountiesItemMax = 200;
+
+export const recordClosingMilestoneResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaExcludedCitiesItemMax = 200;
+
+export const recordClosingMilestoneResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaExcludedZipCodesItemRegExp = new RegExp('^\\d{5}$');
+export const recordClosingMilestoneResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMinPurchasePriceMin = 0;
+export const recordClosingMilestoneResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMinPurchasePriceMax = 1000000000;
+
+export const recordClosingMilestoneResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMinArvMin = 0;
+export const recordClosingMilestoneResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMinArvMax = 1000000000;
+
+export const recordClosingMilestoneResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMaxArvMin = 0;
+export const recordClosingMilestoneResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMaxArvMax = 1000000000;
+
+export const recordClosingMilestoneResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMinUnitsMin = 0;
+export const recordClosingMilestoneResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMinUnitsMax = 10000;
+
+export const recordClosingMilestoneResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMaxUnitsMin = 0;
+export const recordClosingMilestoneResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMaxUnitsMax = 10000;
+
+export const recordClosingMilestoneResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMinBathsMin = 0;
+export const recordClosingMilestoneResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMinBathsMax = 100;
+
+export const recordClosingMilestoneResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMaxBedsMin = 0;
+export const recordClosingMilestoneResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMaxBedsMax = 100;
+
+export const recordClosingMilestoneResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMaxBathsMin = 0;
+export const recordClosingMilestoneResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMaxBathsMax = 100;
+
+
+
+export const recordClosingMilestoneResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMaxConcurrentDealsMax = 1000;
+
+export const recordClosingMilestoneResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMinSpreadMin = 0;
+export const recordClosingMilestoneResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMinSpreadMax = 1000000000;
+
+export const recordClosingMilestoneResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMinCapRateMin = 0;
+export const recordClosingMilestoneResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMinCapRateMax = 1;
+
 export const recordClosingMilestoneResponseContractOneCommitmentSnapshotOneDetailLeadOneAddressMin = 3;
 export const recordClosingMilestoneResponseContractOneCommitmentSnapshotOneDetailLeadOneAddressMax = 250;
 
@@ -24829,6 +26882,49 @@ export const RecordClosingMilestoneResponse = zod.object({
   "dueAt": zod.string(),
   "updatedAt": zod.string()
 }),zod.null()]).optional(),
+  "qualificationPortalSelfReport": zod.object({
+  "responseId": zod.string().uuid(),
+  "currentBuyingStatus": zod.enum(['BUYING', 'NOT_BUYING']),
+  "criteria": zod.object({
+  "states": zod.array(zod.string().min(recordClosingMilestoneResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaStatesItemMin).max(recordClosingMilestoneResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaStatesItemMax)).min(1),
+  "cities": zod.array(zod.string().min(1)),
+  "zipCodes": zod.array(zod.string().regex(recordClosingMilestoneResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaZipCodesItemRegExp)),
+  "propertyTypes": zod.array(zod.enum(['SINGLE_FAMILY', 'MULTIFAMILY', 'CONDO', 'TOWNHOUSE', 'LAND', 'OTHER'])).min(1),
+  "maxPurchasePrice": zod.number().gt(recordClosingMilestoneResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMaxPurchasePriceExclusiveMin).max(recordClosingMilestoneResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMaxPurchasePriceMax),
+  "maxRepairs": zod.number().min(recordClosingMilestoneResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMaxRepairsMin).max(recordClosingMilestoneResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMaxRepairsMax),
+  "minBeds": zod.number().int().min(recordClosingMilestoneResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMinBedsMin).max(recordClosingMilestoneResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMinBedsMax),
+  "minSqft": zod.number().min(recordClosingMilestoneResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMinSqftMin).max(recordClosingMilestoneResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMinSqftMax),
+  "maxSqft": zod.number().gt(recordClosingMilestoneResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMaxSqftExclusiveMin).max(recordClosingMilestoneResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMaxSqftMax),
+  "closingDays": zod.number().int().min(1).max(recordClosingMilestoneResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaClosingDaysMax),
+  "counties": zod.array(zod.string().min(1).max(recordClosingMilestoneResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaCountiesItemMax)).optional(),
+  "excludedCounties": zod.array(zod.string().min(1).max(recordClosingMilestoneResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaExcludedCountiesItemMax)).optional(),
+  "excludedCities": zod.array(zod.string().min(1).max(recordClosingMilestoneResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaExcludedCitiesItemMax)).optional(),
+  "excludedZipCodes": zod.array(zod.string().regex(recordClosingMilestoneResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaExcludedZipCodesItemRegExp)).optional(),
+  "minPurchasePrice": zod.number().min(recordClosingMilestoneResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMinPurchasePriceMin).max(recordClosingMilestoneResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMinPurchasePriceMax).optional(),
+  "minArv": zod.number().min(recordClosingMilestoneResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMinArvMin).max(recordClosingMilestoneResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMinArvMax).nullish(),
+  "maxArv": zod.number().min(recordClosingMilestoneResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMaxArvMin).max(recordClosingMilestoneResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMaxArvMax).nullish(),
+  "minUnits": zod.number().int().min(recordClosingMilestoneResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMinUnitsMin).max(recordClosingMilestoneResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMinUnitsMax).optional(),
+  "maxUnits": zod.number().int().min(recordClosingMilestoneResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMaxUnitsMin).max(recordClosingMilestoneResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMaxUnitsMax).optional(),
+  "minBaths": zod.number().min(recordClosingMilestoneResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMinBathsMin).max(recordClosingMilestoneResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMinBathsMax).optional(),
+  "maxBeds": zod.number().int().min(recordClosingMilestoneResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMaxBedsMin).max(recordClosingMilestoneResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMaxBedsMax).nullish(),
+  "maxBaths": zod.number().min(recordClosingMilestoneResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMaxBathsMin).max(recordClosingMilestoneResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMaxBathsMax).nullish(),
+  "rehabTolerance": zod.enum(['NONE', 'LIGHT', 'MODERATE', 'HEAVY', 'ANY']).optional(),
+  "strategies": zod.array(zod.enum(['FLIP', 'RENTAL', 'BRRRR', 'WHOLESALE', 'DEVELOPMENT', 'OTHER'])).min(1).optional(),
+  "fundingTypes": zod.array(zod.enum(['CASH', 'HARD_MONEY', 'PRIVATE_LENDING', 'CONVENTIONAL', 'OTHER'])).min(1).optional(),
+  "maxConcurrentDeals": zod.number().int().min(1).max(recordClosingMilestoneResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMaxConcurrentDealsMax).optional(),
+  "minSpread": zod.number().min(recordClosingMilestoneResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMinSpreadMin).max(recordClosingMilestoneResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMinSpreadMax).nullish(),
+  "minCapRate": zod.number().min(recordClosingMilestoneResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMinCapRateMin).max(recordClosingMilestoneResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMinCapRateMax).nullish()
+}),
+  "confirmedCurrent": zod.literal(true),
+  "note": zod.string(),
+  "receivedAt": zod.string().datetime({"offset":true}),
+  "invitationId": zod.string().uuid(),
+  "source": zod.enum(['PRIVATE_BUYER_QUALIFICATION_PORTAL']),
+  "classification": zod.enum(['INDICATED']),
+  "identityVerified": zod.literal(false),
+  "contactPermissionVerified": zod.literal(false),
+  "ownerReviewRequired": zod.literal(true)
+}).optional(),
   "lastOutreachReplyAt": zod.string().optional(),
   "lastOutreachReplyEvidenceUrl": zod.string().optional(),
   "createdAt": zod.string(),
@@ -25484,6 +27580,71 @@ export const recordDealOutcomeResponseContractOneCommitmentSnapshotOneBuyerTwoVe
 export const recordDealOutcomeResponseContractOneCommitmentSnapshotOneBuyerTwoVerificationHistoryItemCriteriaOneMinCapRateMin = 0;
 export const recordDealOutcomeResponseContractOneCommitmentSnapshotOneBuyerTwoVerificationHistoryItemCriteriaOneMinCapRateMax = 1;
 
+export const recordDealOutcomeResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaStatesItemMin = 2;
+export const recordDealOutcomeResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaStatesItemMax = 2;
+
+
+
+export const recordDealOutcomeResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaZipCodesItemRegExp = new RegExp('^\\d{5}$');
+
+export const recordDealOutcomeResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMaxPurchasePriceExclusiveMin = 0;
+export const recordDealOutcomeResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMaxPurchasePriceMax = 1000000000;
+
+export const recordDealOutcomeResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMaxRepairsMin = 0;
+export const recordDealOutcomeResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMaxRepairsMax = 1000000000;
+
+export const recordDealOutcomeResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMinBedsMin = 0;
+export const recordDealOutcomeResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMinBedsMax = 100;
+
+export const recordDealOutcomeResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMinSqftMin = 0;
+export const recordDealOutcomeResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMinSqftMax = 1000000;
+
+export const recordDealOutcomeResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMaxSqftExclusiveMin = 0;
+export const recordDealOutcomeResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMaxSqftMax = 1000000;
+
+export const recordDealOutcomeResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaClosingDaysMax = 365;
+
+export const recordDealOutcomeResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaCountiesItemMax = 200;
+
+export const recordDealOutcomeResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaExcludedCountiesItemMax = 200;
+
+export const recordDealOutcomeResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaExcludedCitiesItemMax = 200;
+
+export const recordDealOutcomeResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaExcludedZipCodesItemRegExp = new RegExp('^\\d{5}$');
+export const recordDealOutcomeResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMinPurchasePriceMin = 0;
+export const recordDealOutcomeResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMinPurchasePriceMax = 1000000000;
+
+export const recordDealOutcomeResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMinArvMin = 0;
+export const recordDealOutcomeResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMinArvMax = 1000000000;
+
+export const recordDealOutcomeResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMaxArvMin = 0;
+export const recordDealOutcomeResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMaxArvMax = 1000000000;
+
+export const recordDealOutcomeResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMinUnitsMin = 0;
+export const recordDealOutcomeResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMinUnitsMax = 10000;
+
+export const recordDealOutcomeResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMaxUnitsMin = 0;
+export const recordDealOutcomeResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMaxUnitsMax = 10000;
+
+export const recordDealOutcomeResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMinBathsMin = 0;
+export const recordDealOutcomeResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMinBathsMax = 100;
+
+export const recordDealOutcomeResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMaxBedsMin = 0;
+export const recordDealOutcomeResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMaxBedsMax = 100;
+
+export const recordDealOutcomeResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMaxBathsMin = 0;
+export const recordDealOutcomeResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMaxBathsMax = 100;
+
+
+
+export const recordDealOutcomeResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMaxConcurrentDealsMax = 1000;
+
+export const recordDealOutcomeResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMinSpreadMin = 0;
+export const recordDealOutcomeResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMinSpreadMax = 1000000000;
+
+export const recordDealOutcomeResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMinCapRateMin = 0;
+export const recordDealOutcomeResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMinCapRateMax = 1;
+
 export const recordDealOutcomeResponseContractOneCommitmentSnapshotOneDetailLeadOneAddressMin = 3;
 export const recordDealOutcomeResponseContractOneCommitmentSnapshotOneDetailLeadOneAddressMax = 250;
 
@@ -25963,6 +28124,49 @@ export const RecordDealOutcomeResponse = zod.object({
   "dueAt": zod.string(),
   "updatedAt": zod.string()
 }),zod.null()]).optional(),
+  "qualificationPortalSelfReport": zod.object({
+  "responseId": zod.string().uuid(),
+  "currentBuyingStatus": zod.enum(['BUYING', 'NOT_BUYING']),
+  "criteria": zod.object({
+  "states": zod.array(zod.string().min(recordDealOutcomeResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaStatesItemMin).max(recordDealOutcomeResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaStatesItemMax)).min(1),
+  "cities": zod.array(zod.string().min(1)),
+  "zipCodes": zod.array(zod.string().regex(recordDealOutcomeResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaZipCodesItemRegExp)),
+  "propertyTypes": zod.array(zod.enum(['SINGLE_FAMILY', 'MULTIFAMILY', 'CONDO', 'TOWNHOUSE', 'LAND', 'OTHER'])).min(1),
+  "maxPurchasePrice": zod.number().gt(recordDealOutcomeResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMaxPurchasePriceExclusiveMin).max(recordDealOutcomeResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMaxPurchasePriceMax),
+  "maxRepairs": zod.number().min(recordDealOutcomeResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMaxRepairsMin).max(recordDealOutcomeResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMaxRepairsMax),
+  "minBeds": zod.number().int().min(recordDealOutcomeResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMinBedsMin).max(recordDealOutcomeResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMinBedsMax),
+  "minSqft": zod.number().min(recordDealOutcomeResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMinSqftMin).max(recordDealOutcomeResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMinSqftMax),
+  "maxSqft": zod.number().gt(recordDealOutcomeResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMaxSqftExclusiveMin).max(recordDealOutcomeResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMaxSqftMax),
+  "closingDays": zod.number().int().min(1).max(recordDealOutcomeResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaClosingDaysMax),
+  "counties": zod.array(zod.string().min(1).max(recordDealOutcomeResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaCountiesItemMax)).optional(),
+  "excludedCounties": zod.array(zod.string().min(1).max(recordDealOutcomeResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaExcludedCountiesItemMax)).optional(),
+  "excludedCities": zod.array(zod.string().min(1).max(recordDealOutcomeResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaExcludedCitiesItemMax)).optional(),
+  "excludedZipCodes": zod.array(zod.string().regex(recordDealOutcomeResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaExcludedZipCodesItemRegExp)).optional(),
+  "minPurchasePrice": zod.number().min(recordDealOutcomeResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMinPurchasePriceMin).max(recordDealOutcomeResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMinPurchasePriceMax).optional(),
+  "minArv": zod.number().min(recordDealOutcomeResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMinArvMin).max(recordDealOutcomeResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMinArvMax).nullish(),
+  "maxArv": zod.number().min(recordDealOutcomeResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMaxArvMin).max(recordDealOutcomeResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMaxArvMax).nullish(),
+  "minUnits": zod.number().int().min(recordDealOutcomeResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMinUnitsMin).max(recordDealOutcomeResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMinUnitsMax).optional(),
+  "maxUnits": zod.number().int().min(recordDealOutcomeResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMaxUnitsMin).max(recordDealOutcomeResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMaxUnitsMax).optional(),
+  "minBaths": zod.number().min(recordDealOutcomeResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMinBathsMin).max(recordDealOutcomeResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMinBathsMax).optional(),
+  "maxBeds": zod.number().int().min(recordDealOutcomeResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMaxBedsMin).max(recordDealOutcomeResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMaxBedsMax).nullish(),
+  "maxBaths": zod.number().min(recordDealOutcomeResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMaxBathsMin).max(recordDealOutcomeResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMaxBathsMax).nullish(),
+  "rehabTolerance": zod.enum(['NONE', 'LIGHT', 'MODERATE', 'HEAVY', 'ANY']).optional(),
+  "strategies": zod.array(zod.enum(['FLIP', 'RENTAL', 'BRRRR', 'WHOLESALE', 'DEVELOPMENT', 'OTHER'])).min(1).optional(),
+  "fundingTypes": zod.array(zod.enum(['CASH', 'HARD_MONEY', 'PRIVATE_LENDING', 'CONVENTIONAL', 'OTHER'])).min(1).optional(),
+  "maxConcurrentDeals": zod.number().int().min(1).max(recordDealOutcomeResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMaxConcurrentDealsMax).optional(),
+  "minSpread": zod.number().min(recordDealOutcomeResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMinSpreadMin).max(recordDealOutcomeResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMinSpreadMax).nullish(),
+  "minCapRate": zod.number().min(recordDealOutcomeResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMinCapRateMin).max(recordDealOutcomeResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaMinCapRateMax).nullish()
+}),
+  "confirmedCurrent": zod.literal(true),
+  "note": zod.string(),
+  "receivedAt": zod.string().datetime({"offset":true}),
+  "invitationId": zod.string().uuid(),
+  "source": zod.enum(['PRIVATE_BUYER_QUALIFICATION_PORTAL']),
+  "classification": zod.enum(['INDICATED']),
+  "identityVerified": zod.literal(false),
+  "contactPermissionVerified": zod.literal(false),
+  "ownerReviewRequired": zod.literal(true)
+}).optional(),
   "lastOutreachReplyAt": zod.string().optional(),
   "lastOutreachReplyEvidenceUrl": zod.string().optional(),
   "createdAt": zod.string(),
@@ -26599,6 +28803,71 @@ export const requestBuyerQualificationResponseTwoVerificationHistoryItemCriteria
 export const requestBuyerQualificationResponseTwoVerificationHistoryItemCriteriaOneMinCapRateMin = 0;
 export const requestBuyerQualificationResponseTwoVerificationHistoryItemCriteriaOneMinCapRateMax = 1;
 
+export const requestBuyerQualificationResponseTwoQualificationPortalSelfReportCriteriaStatesItemMin = 2;
+export const requestBuyerQualificationResponseTwoQualificationPortalSelfReportCriteriaStatesItemMax = 2;
+
+
+
+export const requestBuyerQualificationResponseTwoQualificationPortalSelfReportCriteriaZipCodesItemRegExp = new RegExp('^\\d{5}$');
+
+export const requestBuyerQualificationResponseTwoQualificationPortalSelfReportCriteriaMaxPurchasePriceExclusiveMin = 0;
+export const requestBuyerQualificationResponseTwoQualificationPortalSelfReportCriteriaMaxPurchasePriceMax = 1000000000;
+
+export const requestBuyerQualificationResponseTwoQualificationPortalSelfReportCriteriaMaxRepairsMin = 0;
+export const requestBuyerQualificationResponseTwoQualificationPortalSelfReportCriteriaMaxRepairsMax = 1000000000;
+
+export const requestBuyerQualificationResponseTwoQualificationPortalSelfReportCriteriaMinBedsMin = 0;
+export const requestBuyerQualificationResponseTwoQualificationPortalSelfReportCriteriaMinBedsMax = 100;
+
+export const requestBuyerQualificationResponseTwoQualificationPortalSelfReportCriteriaMinSqftMin = 0;
+export const requestBuyerQualificationResponseTwoQualificationPortalSelfReportCriteriaMinSqftMax = 1000000;
+
+export const requestBuyerQualificationResponseTwoQualificationPortalSelfReportCriteriaMaxSqftExclusiveMin = 0;
+export const requestBuyerQualificationResponseTwoQualificationPortalSelfReportCriteriaMaxSqftMax = 1000000;
+
+export const requestBuyerQualificationResponseTwoQualificationPortalSelfReportCriteriaClosingDaysMax = 365;
+
+export const requestBuyerQualificationResponseTwoQualificationPortalSelfReportCriteriaCountiesItemMax = 200;
+
+export const requestBuyerQualificationResponseTwoQualificationPortalSelfReportCriteriaExcludedCountiesItemMax = 200;
+
+export const requestBuyerQualificationResponseTwoQualificationPortalSelfReportCriteriaExcludedCitiesItemMax = 200;
+
+export const requestBuyerQualificationResponseTwoQualificationPortalSelfReportCriteriaExcludedZipCodesItemRegExp = new RegExp('^\\d{5}$');
+export const requestBuyerQualificationResponseTwoQualificationPortalSelfReportCriteriaMinPurchasePriceMin = 0;
+export const requestBuyerQualificationResponseTwoQualificationPortalSelfReportCriteriaMinPurchasePriceMax = 1000000000;
+
+export const requestBuyerQualificationResponseTwoQualificationPortalSelfReportCriteriaMinArvMin = 0;
+export const requestBuyerQualificationResponseTwoQualificationPortalSelfReportCriteriaMinArvMax = 1000000000;
+
+export const requestBuyerQualificationResponseTwoQualificationPortalSelfReportCriteriaMaxArvMin = 0;
+export const requestBuyerQualificationResponseTwoQualificationPortalSelfReportCriteriaMaxArvMax = 1000000000;
+
+export const requestBuyerQualificationResponseTwoQualificationPortalSelfReportCriteriaMinUnitsMin = 0;
+export const requestBuyerQualificationResponseTwoQualificationPortalSelfReportCriteriaMinUnitsMax = 10000;
+
+export const requestBuyerQualificationResponseTwoQualificationPortalSelfReportCriteriaMaxUnitsMin = 0;
+export const requestBuyerQualificationResponseTwoQualificationPortalSelfReportCriteriaMaxUnitsMax = 10000;
+
+export const requestBuyerQualificationResponseTwoQualificationPortalSelfReportCriteriaMinBathsMin = 0;
+export const requestBuyerQualificationResponseTwoQualificationPortalSelfReportCriteriaMinBathsMax = 100;
+
+export const requestBuyerQualificationResponseTwoQualificationPortalSelfReportCriteriaMaxBedsMin = 0;
+export const requestBuyerQualificationResponseTwoQualificationPortalSelfReportCriteriaMaxBedsMax = 100;
+
+export const requestBuyerQualificationResponseTwoQualificationPortalSelfReportCriteriaMaxBathsMin = 0;
+export const requestBuyerQualificationResponseTwoQualificationPortalSelfReportCriteriaMaxBathsMax = 100;
+
+
+
+export const requestBuyerQualificationResponseTwoQualificationPortalSelfReportCriteriaMaxConcurrentDealsMax = 1000;
+
+export const requestBuyerQualificationResponseTwoQualificationPortalSelfReportCriteriaMinSpreadMin = 0;
+export const requestBuyerQualificationResponseTwoQualificationPortalSelfReportCriteriaMinSpreadMax = 1000000000;
+
+export const requestBuyerQualificationResponseTwoQualificationPortalSelfReportCriteriaMinCapRateMin = 0;
+export const requestBuyerQualificationResponseTwoQualificationPortalSelfReportCriteriaMinCapRateMax = 1;
+
 
 
 export const RequestBuyerQualificationResponse = zod.object({
@@ -26759,6 +29028,49 @@ export const RequestBuyerQualificationResponse = zod.object({
   "dueAt": zod.string(),
   "updatedAt": zod.string()
 }),zod.null()]).optional(),
+  "qualificationPortalSelfReport": zod.object({
+  "responseId": zod.string().uuid(),
+  "currentBuyingStatus": zod.enum(['BUYING', 'NOT_BUYING']),
+  "criteria": zod.object({
+  "states": zod.array(zod.string().min(requestBuyerQualificationResponseTwoQualificationPortalSelfReportCriteriaStatesItemMin).max(requestBuyerQualificationResponseTwoQualificationPortalSelfReportCriteriaStatesItemMax)).min(1),
+  "cities": zod.array(zod.string().min(1)),
+  "zipCodes": zod.array(zod.string().regex(requestBuyerQualificationResponseTwoQualificationPortalSelfReportCriteriaZipCodesItemRegExp)),
+  "propertyTypes": zod.array(zod.enum(['SINGLE_FAMILY', 'MULTIFAMILY', 'CONDO', 'TOWNHOUSE', 'LAND', 'OTHER'])).min(1),
+  "maxPurchasePrice": zod.number().gt(requestBuyerQualificationResponseTwoQualificationPortalSelfReportCriteriaMaxPurchasePriceExclusiveMin).max(requestBuyerQualificationResponseTwoQualificationPortalSelfReportCriteriaMaxPurchasePriceMax),
+  "maxRepairs": zod.number().min(requestBuyerQualificationResponseTwoQualificationPortalSelfReportCriteriaMaxRepairsMin).max(requestBuyerQualificationResponseTwoQualificationPortalSelfReportCriteriaMaxRepairsMax),
+  "minBeds": zod.number().int().min(requestBuyerQualificationResponseTwoQualificationPortalSelfReportCriteriaMinBedsMin).max(requestBuyerQualificationResponseTwoQualificationPortalSelfReportCriteriaMinBedsMax),
+  "minSqft": zod.number().min(requestBuyerQualificationResponseTwoQualificationPortalSelfReportCriteriaMinSqftMin).max(requestBuyerQualificationResponseTwoQualificationPortalSelfReportCriteriaMinSqftMax),
+  "maxSqft": zod.number().gt(requestBuyerQualificationResponseTwoQualificationPortalSelfReportCriteriaMaxSqftExclusiveMin).max(requestBuyerQualificationResponseTwoQualificationPortalSelfReportCriteriaMaxSqftMax),
+  "closingDays": zod.number().int().min(1).max(requestBuyerQualificationResponseTwoQualificationPortalSelfReportCriteriaClosingDaysMax),
+  "counties": zod.array(zod.string().min(1).max(requestBuyerQualificationResponseTwoQualificationPortalSelfReportCriteriaCountiesItemMax)).optional(),
+  "excludedCounties": zod.array(zod.string().min(1).max(requestBuyerQualificationResponseTwoQualificationPortalSelfReportCriteriaExcludedCountiesItemMax)).optional(),
+  "excludedCities": zod.array(zod.string().min(1).max(requestBuyerQualificationResponseTwoQualificationPortalSelfReportCriteriaExcludedCitiesItemMax)).optional(),
+  "excludedZipCodes": zod.array(zod.string().regex(requestBuyerQualificationResponseTwoQualificationPortalSelfReportCriteriaExcludedZipCodesItemRegExp)).optional(),
+  "minPurchasePrice": zod.number().min(requestBuyerQualificationResponseTwoQualificationPortalSelfReportCriteriaMinPurchasePriceMin).max(requestBuyerQualificationResponseTwoQualificationPortalSelfReportCriteriaMinPurchasePriceMax).optional(),
+  "minArv": zod.number().min(requestBuyerQualificationResponseTwoQualificationPortalSelfReportCriteriaMinArvMin).max(requestBuyerQualificationResponseTwoQualificationPortalSelfReportCriteriaMinArvMax).nullish(),
+  "maxArv": zod.number().min(requestBuyerQualificationResponseTwoQualificationPortalSelfReportCriteriaMaxArvMin).max(requestBuyerQualificationResponseTwoQualificationPortalSelfReportCriteriaMaxArvMax).nullish(),
+  "minUnits": zod.number().int().min(requestBuyerQualificationResponseTwoQualificationPortalSelfReportCriteriaMinUnitsMin).max(requestBuyerQualificationResponseTwoQualificationPortalSelfReportCriteriaMinUnitsMax).optional(),
+  "maxUnits": zod.number().int().min(requestBuyerQualificationResponseTwoQualificationPortalSelfReportCriteriaMaxUnitsMin).max(requestBuyerQualificationResponseTwoQualificationPortalSelfReportCriteriaMaxUnitsMax).optional(),
+  "minBaths": zod.number().min(requestBuyerQualificationResponseTwoQualificationPortalSelfReportCriteriaMinBathsMin).max(requestBuyerQualificationResponseTwoQualificationPortalSelfReportCriteriaMinBathsMax).optional(),
+  "maxBeds": zod.number().int().min(requestBuyerQualificationResponseTwoQualificationPortalSelfReportCriteriaMaxBedsMin).max(requestBuyerQualificationResponseTwoQualificationPortalSelfReportCriteriaMaxBedsMax).nullish(),
+  "maxBaths": zod.number().min(requestBuyerQualificationResponseTwoQualificationPortalSelfReportCriteriaMaxBathsMin).max(requestBuyerQualificationResponseTwoQualificationPortalSelfReportCriteriaMaxBathsMax).nullish(),
+  "rehabTolerance": zod.enum(['NONE', 'LIGHT', 'MODERATE', 'HEAVY', 'ANY']).optional(),
+  "strategies": zod.array(zod.enum(['FLIP', 'RENTAL', 'BRRRR', 'WHOLESALE', 'DEVELOPMENT', 'OTHER'])).min(1).optional(),
+  "fundingTypes": zod.array(zod.enum(['CASH', 'HARD_MONEY', 'PRIVATE_LENDING', 'CONVENTIONAL', 'OTHER'])).min(1).optional(),
+  "maxConcurrentDeals": zod.number().int().min(1).max(requestBuyerQualificationResponseTwoQualificationPortalSelfReportCriteriaMaxConcurrentDealsMax).optional(),
+  "minSpread": zod.number().min(requestBuyerQualificationResponseTwoQualificationPortalSelfReportCriteriaMinSpreadMin).max(requestBuyerQualificationResponseTwoQualificationPortalSelfReportCriteriaMinSpreadMax).nullish(),
+  "minCapRate": zod.number().min(requestBuyerQualificationResponseTwoQualificationPortalSelfReportCriteriaMinCapRateMin).max(requestBuyerQualificationResponseTwoQualificationPortalSelfReportCriteriaMinCapRateMax).nullish()
+}),
+  "confirmedCurrent": zod.literal(true),
+  "note": zod.string(),
+  "receivedAt": zod.string().datetime({"offset":true}),
+  "invitationId": zod.string().uuid(),
+  "source": zod.enum(['PRIVATE_BUYER_QUALIFICATION_PORTAL']),
+  "classification": zod.enum(['INDICATED']),
+  "identityVerified": zod.literal(false),
+  "contactPermissionVerified": zod.literal(false),
+  "ownerReviewRequired": zod.literal(true)
+}).optional(),
   "lastOutreachReplyAt": zod.string().optional(),
   "lastOutreachReplyEvidenceUrl": zod.string().optional(),
   "createdAt": zod.string(),
@@ -26957,6 +29269,27 @@ export const ListPropertySourcesResponseItem = zod.object({
 export const ListPropertySourcesResponse = zod.array(ListPropertySourcesResponseItem)
 
 
+export const GetPropertySourceCoverageResponse = zod.object({
+  "registeredSources": zod.array(zod.object({
+  "id": zod.string(),
+  "name": zod.string(),
+  "coverage": zod.string(),
+  "termsUrl": zod.string(),
+  "capabilities": zod.array(zod.string()),
+  "limitations": zod.array(zod.string())
+})),
+  "notConnectedProviders": zod.array(zod.object({
+  "id": zod.string(),
+  "name": zod.string(),
+  "category": zod.string(),
+  "coverage": zod.string(),
+  "status": zod.enum(['NOT_CONNECTED']),
+  "reason": zod.string(),
+  "nextAction": zod.string()
+}))
+})
+
+
 export const searchPublicPropertiesQueryZipRegExp = new RegExp('^191\\d{2}$');
 
 
@@ -26983,6 +29316,7 @@ export const SearchPublicPropertiesResponse = zod.object({
 }),
   "records": zod.array(zod.object({
   "id": zod.string(),
+  "parcelId": zod.string().nullish(),
   "provider": zod.string(),
   "classification": zod.enum(['OBSERVED']),
   "address": zod.string(),
@@ -27164,6 +29498,7 @@ export const ListPropertyDiscoveriesResponse = zod.object({
   "version": zod.number().int().min(1),
   "property": zod.object({
   "id": zod.string(),
+  "parcelId": zod.string().nullish(),
   "provider": zod.string(),
   "classification": zod.enum(['OBSERVED']),
   "address": zod.string(),
@@ -27412,6 +29747,7 @@ export const RecordPublicPropertyDiscoveryResponse = zod.object({
   "version": zod.number().int().min(1),
   "property": zod.object({
   "id": zod.string(),
+  "parcelId": zod.string().nullish(),
   "provider": zod.string(),
   "classification": zod.enum(['OBSERVED']),
   "address": zod.string(),
@@ -27750,6 +30086,7 @@ export const AddPropertyRelevanceSignalResponse = zod.object({
   "version": zod.number().int().min(1),
   "property": zod.object({
   "id": zod.string(),
+  "parcelId": zod.string().nullish(),
   "provider": zod.string(),
   "classification": zod.enum(['OBSERVED']),
   "address": zod.string(),
@@ -27949,6 +30286,7 @@ export const PromotePropertyDiscoveryResponse = zod.object({
   "version": zod.number().int().min(1),
   "property": zod.object({
   "id": zod.string(),
+  "parcelId": zod.string().nullish(),
   "provider": zod.string(),
   "classification": zod.enum(['OBSERVED']),
   "address": zod.string(),
@@ -28149,6 +30487,7 @@ export const DisqualifyPropertyDiscoveryResponse = zod.object({
   "version": zod.number().int().min(1),
   "property": zod.object({
   "id": zod.string(),
+  "parcelId": zod.string().nullish(),
   "provider": zod.string(),
   "classification": zod.enum(['OBSERVED']),
   "address": zod.string(),
@@ -28313,6 +30652,7 @@ export const GetSourceResearchResponse = zod.object({
 }),
   "subject": zod.object({
   "id": zod.string(),
+  "parcelId": zod.string().nullish(),
   "provider": zod.string(),
   "classification": zod.enum(['OBSERVED']),
   "address": zod.string(),
@@ -28358,6 +30698,7 @@ export const GetSourceResearchResponse = zod.object({
   "candidates": zod.array(zod.object({
   "record": zod.object({
   "id": zod.string(),
+  "parcelId": zod.string().nullish(),
   "provider": zod.string(),
   "classification": zod.enum(['OBSERVED']),
   "address": zod.string(),
@@ -28475,6 +30816,7 @@ export const RefreshSourceResearchResponse = zod.object({
 }),
   "subject": zod.object({
   "id": zod.string(),
+  "parcelId": zod.string().nullish(),
   "provider": zod.string(),
   "classification": zod.enum(['OBSERVED']),
   "address": zod.string(),
@@ -28520,6 +30862,7 @@ export const RefreshSourceResearchResponse = zod.object({
   "candidates": zod.array(zod.object({
   "record": zod.object({
   "id": zod.string(),
+  "parcelId": zod.string().nullish(),
   "provider": zod.string(),
   "classification": zod.enum(['OBSERVED']),
   "address": zod.string(),
@@ -29403,6 +31746,71 @@ export const discoverBuyerResponseTwoVerificationHistoryItemCriteriaOneMinSpread
 export const discoverBuyerResponseTwoVerificationHistoryItemCriteriaOneMinCapRateMin = 0;
 export const discoverBuyerResponseTwoVerificationHistoryItemCriteriaOneMinCapRateMax = 1;
 
+export const discoverBuyerResponseTwoQualificationPortalSelfReportCriteriaStatesItemMin = 2;
+export const discoverBuyerResponseTwoQualificationPortalSelfReportCriteriaStatesItemMax = 2;
+
+
+
+export const discoverBuyerResponseTwoQualificationPortalSelfReportCriteriaZipCodesItemRegExp = new RegExp('^\\d{5}$');
+
+export const discoverBuyerResponseTwoQualificationPortalSelfReportCriteriaMaxPurchasePriceExclusiveMin = 0;
+export const discoverBuyerResponseTwoQualificationPortalSelfReportCriteriaMaxPurchasePriceMax = 1000000000;
+
+export const discoverBuyerResponseTwoQualificationPortalSelfReportCriteriaMaxRepairsMin = 0;
+export const discoverBuyerResponseTwoQualificationPortalSelfReportCriteriaMaxRepairsMax = 1000000000;
+
+export const discoverBuyerResponseTwoQualificationPortalSelfReportCriteriaMinBedsMin = 0;
+export const discoverBuyerResponseTwoQualificationPortalSelfReportCriteriaMinBedsMax = 100;
+
+export const discoverBuyerResponseTwoQualificationPortalSelfReportCriteriaMinSqftMin = 0;
+export const discoverBuyerResponseTwoQualificationPortalSelfReportCriteriaMinSqftMax = 1000000;
+
+export const discoverBuyerResponseTwoQualificationPortalSelfReportCriteriaMaxSqftExclusiveMin = 0;
+export const discoverBuyerResponseTwoQualificationPortalSelfReportCriteriaMaxSqftMax = 1000000;
+
+export const discoverBuyerResponseTwoQualificationPortalSelfReportCriteriaClosingDaysMax = 365;
+
+export const discoverBuyerResponseTwoQualificationPortalSelfReportCriteriaCountiesItemMax = 200;
+
+export const discoverBuyerResponseTwoQualificationPortalSelfReportCriteriaExcludedCountiesItemMax = 200;
+
+export const discoverBuyerResponseTwoQualificationPortalSelfReportCriteriaExcludedCitiesItemMax = 200;
+
+export const discoverBuyerResponseTwoQualificationPortalSelfReportCriteriaExcludedZipCodesItemRegExp = new RegExp('^\\d{5}$');
+export const discoverBuyerResponseTwoQualificationPortalSelfReportCriteriaMinPurchasePriceMin = 0;
+export const discoverBuyerResponseTwoQualificationPortalSelfReportCriteriaMinPurchasePriceMax = 1000000000;
+
+export const discoverBuyerResponseTwoQualificationPortalSelfReportCriteriaMinArvMin = 0;
+export const discoverBuyerResponseTwoQualificationPortalSelfReportCriteriaMinArvMax = 1000000000;
+
+export const discoverBuyerResponseTwoQualificationPortalSelfReportCriteriaMaxArvMin = 0;
+export const discoverBuyerResponseTwoQualificationPortalSelfReportCriteriaMaxArvMax = 1000000000;
+
+export const discoverBuyerResponseTwoQualificationPortalSelfReportCriteriaMinUnitsMin = 0;
+export const discoverBuyerResponseTwoQualificationPortalSelfReportCriteriaMinUnitsMax = 10000;
+
+export const discoverBuyerResponseTwoQualificationPortalSelfReportCriteriaMaxUnitsMin = 0;
+export const discoverBuyerResponseTwoQualificationPortalSelfReportCriteriaMaxUnitsMax = 10000;
+
+export const discoverBuyerResponseTwoQualificationPortalSelfReportCriteriaMinBathsMin = 0;
+export const discoverBuyerResponseTwoQualificationPortalSelfReportCriteriaMinBathsMax = 100;
+
+export const discoverBuyerResponseTwoQualificationPortalSelfReportCriteriaMaxBedsMin = 0;
+export const discoverBuyerResponseTwoQualificationPortalSelfReportCriteriaMaxBedsMax = 100;
+
+export const discoverBuyerResponseTwoQualificationPortalSelfReportCriteriaMaxBathsMin = 0;
+export const discoverBuyerResponseTwoQualificationPortalSelfReportCriteriaMaxBathsMax = 100;
+
+
+
+export const discoverBuyerResponseTwoQualificationPortalSelfReportCriteriaMaxConcurrentDealsMax = 1000;
+
+export const discoverBuyerResponseTwoQualificationPortalSelfReportCriteriaMinSpreadMin = 0;
+export const discoverBuyerResponseTwoQualificationPortalSelfReportCriteriaMinSpreadMax = 1000000000;
+
+export const discoverBuyerResponseTwoQualificationPortalSelfReportCriteriaMinCapRateMin = 0;
+export const discoverBuyerResponseTwoQualificationPortalSelfReportCriteriaMinCapRateMax = 1;
+
 
 
 export const DiscoverBuyerResponse = zod.object({
@@ -29563,6 +31971,49 @@ export const DiscoverBuyerResponse = zod.object({
   "dueAt": zod.string(),
   "updatedAt": zod.string()
 }),zod.null()]).optional(),
+  "qualificationPortalSelfReport": zod.object({
+  "responseId": zod.string().uuid(),
+  "currentBuyingStatus": zod.enum(['BUYING', 'NOT_BUYING']),
+  "criteria": zod.object({
+  "states": zod.array(zod.string().min(discoverBuyerResponseTwoQualificationPortalSelfReportCriteriaStatesItemMin).max(discoverBuyerResponseTwoQualificationPortalSelfReportCriteriaStatesItemMax)).min(1),
+  "cities": zod.array(zod.string().min(1)),
+  "zipCodes": zod.array(zod.string().regex(discoverBuyerResponseTwoQualificationPortalSelfReportCriteriaZipCodesItemRegExp)),
+  "propertyTypes": zod.array(zod.enum(['SINGLE_FAMILY', 'MULTIFAMILY', 'CONDO', 'TOWNHOUSE', 'LAND', 'OTHER'])).min(1),
+  "maxPurchasePrice": zod.number().gt(discoverBuyerResponseTwoQualificationPortalSelfReportCriteriaMaxPurchasePriceExclusiveMin).max(discoverBuyerResponseTwoQualificationPortalSelfReportCriteriaMaxPurchasePriceMax),
+  "maxRepairs": zod.number().min(discoverBuyerResponseTwoQualificationPortalSelfReportCriteriaMaxRepairsMin).max(discoverBuyerResponseTwoQualificationPortalSelfReportCriteriaMaxRepairsMax),
+  "minBeds": zod.number().int().min(discoverBuyerResponseTwoQualificationPortalSelfReportCriteriaMinBedsMin).max(discoverBuyerResponseTwoQualificationPortalSelfReportCriteriaMinBedsMax),
+  "minSqft": zod.number().min(discoverBuyerResponseTwoQualificationPortalSelfReportCriteriaMinSqftMin).max(discoverBuyerResponseTwoQualificationPortalSelfReportCriteriaMinSqftMax),
+  "maxSqft": zod.number().gt(discoverBuyerResponseTwoQualificationPortalSelfReportCriteriaMaxSqftExclusiveMin).max(discoverBuyerResponseTwoQualificationPortalSelfReportCriteriaMaxSqftMax),
+  "closingDays": zod.number().int().min(1).max(discoverBuyerResponseTwoQualificationPortalSelfReportCriteriaClosingDaysMax),
+  "counties": zod.array(zod.string().min(1).max(discoverBuyerResponseTwoQualificationPortalSelfReportCriteriaCountiesItemMax)).optional(),
+  "excludedCounties": zod.array(zod.string().min(1).max(discoverBuyerResponseTwoQualificationPortalSelfReportCriteriaExcludedCountiesItemMax)).optional(),
+  "excludedCities": zod.array(zod.string().min(1).max(discoverBuyerResponseTwoQualificationPortalSelfReportCriteriaExcludedCitiesItemMax)).optional(),
+  "excludedZipCodes": zod.array(zod.string().regex(discoverBuyerResponseTwoQualificationPortalSelfReportCriteriaExcludedZipCodesItemRegExp)).optional(),
+  "minPurchasePrice": zod.number().min(discoverBuyerResponseTwoQualificationPortalSelfReportCriteriaMinPurchasePriceMin).max(discoverBuyerResponseTwoQualificationPortalSelfReportCriteriaMinPurchasePriceMax).optional(),
+  "minArv": zod.number().min(discoverBuyerResponseTwoQualificationPortalSelfReportCriteriaMinArvMin).max(discoverBuyerResponseTwoQualificationPortalSelfReportCriteriaMinArvMax).nullish(),
+  "maxArv": zod.number().min(discoverBuyerResponseTwoQualificationPortalSelfReportCriteriaMaxArvMin).max(discoverBuyerResponseTwoQualificationPortalSelfReportCriteriaMaxArvMax).nullish(),
+  "minUnits": zod.number().int().min(discoverBuyerResponseTwoQualificationPortalSelfReportCriteriaMinUnitsMin).max(discoverBuyerResponseTwoQualificationPortalSelfReportCriteriaMinUnitsMax).optional(),
+  "maxUnits": zod.number().int().min(discoverBuyerResponseTwoQualificationPortalSelfReportCriteriaMaxUnitsMin).max(discoverBuyerResponseTwoQualificationPortalSelfReportCriteriaMaxUnitsMax).optional(),
+  "minBaths": zod.number().min(discoverBuyerResponseTwoQualificationPortalSelfReportCriteriaMinBathsMin).max(discoverBuyerResponseTwoQualificationPortalSelfReportCriteriaMinBathsMax).optional(),
+  "maxBeds": zod.number().int().min(discoverBuyerResponseTwoQualificationPortalSelfReportCriteriaMaxBedsMin).max(discoverBuyerResponseTwoQualificationPortalSelfReportCriteriaMaxBedsMax).nullish(),
+  "maxBaths": zod.number().min(discoverBuyerResponseTwoQualificationPortalSelfReportCriteriaMaxBathsMin).max(discoverBuyerResponseTwoQualificationPortalSelfReportCriteriaMaxBathsMax).nullish(),
+  "rehabTolerance": zod.enum(['NONE', 'LIGHT', 'MODERATE', 'HEAVY', 'ANY']).optional(),
+  "strategies": zod.array(zod.enum(['FLIP', 'RENTAL', 'BRRRR', 'WHOLESALE', 'DEVELOPMENT', 'OTHER'])).min(1).optional(),
+  "fundingTypes": zod.array(zod.enum(['CASH', 'HARD_MONEY', 'PRIVATE_LENDING', 'CONVENTIONAL', 'OTHER'])).min(1).optional(),
+  "maxConcurrentDeals": zod.number().int().min(1).max(discoverBuyerResponseTwoQualificationPortalSelfReportCriteriaMaxConcurrentDealsMax).optional(),
+  "minSpread": zod.number().min(discoverBuyerResponseTwoQualificationPortalSelfReportCriteriaMinSpreadMin).max(discoverBuyerResponseTwoQualificationPortalSelfReportCriteriaMinSpreadMax).nullish(),
+  "minCapRate": zod.number().min(discoverBuyerResponseTwoQualificationPortalSelfReportCriteriaMinCapRateMin).max(discoverBuyerResponseTwoQualificationPortalSelfReportCriteriaMinCapRateMax).nullish()
+}),
+  "confirmedCurrent": zod.literal(true),
+  "note": zod.string(),
+  "receivedAt": zod.string().datetime({"offset":true}),
+  "invitationId": zod.string().uuid(),
+  "source": zod.enum(['PRIVATE_BUYER_QUALIFICATION_PORTAL']),
+  "classification": zod.enum(['INDICATED']),
+  "identityVerified": zod.literal(false),
+  "contactPermissionVerified": zod.literal(false),
+  "ownerReviewRequired": zod.literal(true)
+}).optional(),
   "lastOutreachReplyAt": zod.string().optional(),
   "lastOutreachReplyEvidenceUrl": zod.string().optional(),
   "createdAt": zod.string(),

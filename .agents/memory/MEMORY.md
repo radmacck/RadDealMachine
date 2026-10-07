@@ -1,4 +1,5 @@
 - [Canonical build direction](build-direction.md) — reuse-first two-sided engine; preserve approved canvas flows, verified vertical slices, and the Oct 4–18 delivery window.
+- [Buyer verification boundary](buyer-verification.md) — self-reports are indicated only; current matching approval requires owner-reviewed dated evidence.
 - [Domain interoperability](domain-interoperability.md) — wire dates stay strings; calendar dates differ from timestamps across reusable adapters.
 - [Offer authority boundaries](offer-authority.md) — a ceiling is not permission to vary commercial terms; preserve prior communication when approval changes.
 - [Destination activity boundaries](destination-activity.md) — referral events stay independent of buyer authority and closing; profile fee quotes never imply receipt.

@@ -5,6 +5,23 @@
  * Radical Deal OS seller intake, underwriting, conversations and approved offers
  * OpenAPI spec version: 1.0.0
  */
+export type UnconnectedPropertySourceCapabilityStatus = typeof UnconnectedPropertySourceCapabilityStatus[keyof typeof UnconnectedPropertySourceCapabilityStatus];
+
+
+export const UnconnectedPropertySourceCapabilityStatus = {
+  NOT_CONNECTED: 'NOT_CONNECTED',
+} as const;
+
+export interface UnconnectedPropertySourceCapability {
+  id: string;
+  name: string;
+  category: string;
+  coverage: string;
+  status: UnconnectedPropertySourceCapabilityStatus;
+  reason: string;
+  nextAction: string;
+}
+
 export interface PropertySource {
   id: string;
   name: string;
@@ -12,6 +29,11 @@ export interface PropertySource {
   termsUrl: string;
   capabilities: string[];
   limitations: string[];
+}
+
+export interface PropertySourceCoverageResponse {
+  registeredSources: PropertySource[];
+  notConnectedProviders: UnconnectedPropertySourceCapability[];
 }
 
 export type PropertySignalKey = typeof PropertySignalKey[keyof typeof PropertySignalKey];
@@ -421,6 +443,8 @@ export interface PropertyContactPath {
 
 export interface PublicProperty {
   id: string;
+  /** @nullable */
+  parcelId?: string | null;
   provider: string;
   classification: PublicPropertyClassification;
   address: string;
@@ -795,102 +819,21 @@ export interface BuyerQualificationRequest {
   note: string;
 }
 
-export type BuyerDiscoveryEvidenceClassification = typeof BuyerDiscoveryEvidenceClassification[keyof typeof BuyerDiscoveryEvidenceClassification];
-
-
-export const BuyerDiscoveryEvidenceClassification = {
-  OBSERVED: 'OBSERVED',
-} as const;
-
-export interface BuyerDiscoveryEvidence {
-  classification: BuyerDiscoveryEvidenceClassification;
-  source: string;
-  sourceUrl: string;
-  capturedAt: string;
-  /**
-     * @minimum 0
-     * @maximum 1
-     */
-  confidence: number;
+export interface BuyerQualificationPortalInviteInput {
+  /** @minimum 1 */
+  version: number;
 }
 
-export type BuyerSourceObservationClassification = typeof BuyerSourceObservationClassification[keyof typeof BuyerSourceObservationClassification];
-
-
-export const BuyerSourceObservationClassification = {
-  OBSERVED: 'OBSERVED',
-} as const;
-
-export interface BuyerSourceObservationHistory {
-  capturedAt: string;
-  statement: string;
+export interface BuyerQualificationPortalInvite {
+  invitationId: string;
   /**
-     * @minimum 0
-     * @maximum 1
+     * @minLength 40
+     * @maxLength 50
      */
-  confidence: number;
-  /** @maxItems 100 */
-  recordIdentities: string[];
-  /** @minimum 1 */
-  activityCount: number;
-  /** @nullable */
-  eventAt: string | null;
+  token: string;
+  expiresAt: string;
+  notSent: true;
 }
-
-export interface BuyerSourceObservation {
-  sourceId: string;
-  source: string;
-  sourceUrl: string;
-  classification: BuyerSourceObservationClassification;
-  statement: string;
-  /**
-     * @minimum 0
-     * @maximum 1
-     */
-  confidence: number;
-  capturedAt: string;
-  firstObservedAt: string;
-  lastObservedAt: string;
-  /** @minimum 1 */
-  seenCount: number;
-  /** @maxItems 100 */
-  recordIdentities: string[];
-  /** @minimum 1 */
-  activityCount: number;
-  /** @nullable */
-  eventAt: string | null;
-  /** @maxItems 20 */
-  history: BuyerSourceObservationHistory[];
-}
-
-export type BuyerVerificationHistoryVerifiedFundingTypesItem = typeof BuyerVerificationHistoryVerifiedFundingTypesItem[keyof typeof BuyerVerificationHistoryVerifiedFundingTypesItem];
-
-
-export const BuyerVerificationHistoryVerifiedFundingTypesItem = {
-  CASH: 'CASH',
-  HARD_MONEY: 'HARD_MONEY',
-  PRIVATE_LENDING: 'PRIVATE_LENDING',
-  CONVENTIONAL: 'CONVENTIONAL',
-  OTHER: 'OTHER',
-} as const;
-
-export type BuyerVerificationHistoryCurrentBuyingStatus = typeof BuyerVerificationHistoryCurrentBuyingStatus[keyof typeof BuyerVerificationHistoryCurrentBuyingStatus];
-
-
-export const BuyerVerificationHistoryCurrentBuyingStatus = {
-  BUYING: 'BUYING',
-  PAUSED: 'PAUSED',
-  NOT_BUYING: 'NOT_BUYING',
-} as const;
-
-export type BuyerVerificationHistoryDestinationKind = typeof BuyerVerificationHistoryDestinationKind[keyof typeof BuyerVerificationHistoryDestinationKind];
-
-
-export const BuyerVerificationHistoryDestinationKind = {
-  BUYER: 'BUYER',
-  DEAL_FINDER: 'DEAL_FINDER',
-  GURU: 'GURU',
-} as const;
 
 export type BuyerCriteriaPropertyTypesItem = typeof BuyerCriteriaPropertyTypesItem[keyof typeof BuyerCriteriaPropertyTypesItem];
 
@@ -1065,6 +1008,177 @@ export interface BuyerCriteria {
      */
   minCapRate?: number | null;
 }
+
+export interface BuyerQualificationPortal {
+  invitationId: string;
+  buyerName: string;
+  criteria: BuyerCriteria | null;
+  expiresAt: string;
+}
+
+export type BuyerQualificationPortalResponseInputCurrentBuyingStatus = typeof BuyerQualificationPortalResponseInputCurrentBuyingStatus[keyof typeof BuyerQualificationPortalResponseInputCurrentBuyingStatus];
+
+
+export const BuyerQualificationPortalResponseInputCurrentBuyingStatus = {
+  BUYING: 'BUYING',
+  NOT_BUYING: 'NOT_BUYING',
+} as const;
+
+export interface BuyerQualificationPortalResponseInput {
+  responseId: string;
+  currentBuyingStatus: BuyerQualificationPortalResponseInputCurrentBuyingStatus;
+  criteria: BuyerCriteria;
+  confirmedCurrent: true;
+  /** @maxLength 2000 */
+  note?: string;
+}
+
+export type BuyerQualificationPortalResponseStatus = typeof BuyerQualificationPortalResponseStatus[keyof typeof BuyerQualificationPortalResponseStatus];
+
+
+export const BuyerQualificationPortalResponseStatus = {
+  RECEIVED_PENDING_OWNER_REVIEW: 'RECEIVED_PENDING_OWNER_REVIEW',
+} as const;
+
+export interface BuyerQualificationPortalResponse {
+  status: BuyerQualificationPortalResponseStatus;
+  receivedAt: string;
+  ownerReviewRequired: true;
+}
+
+export type BuyerQualificationPortalSelfReportCurrentBuyingStatus = typeof BuyerQualificationPortalSelfReportCurrentBuyingStatus[keyof typeof BuyerQualificationPortalSelfReportCurrentBuyingStatus];
+
+
+export const BuyerQualificationPortalSelfReportCurrentBuyingStatus = {
+  BUYING: 'BUYING',
+  NOT_BUYING: 'NOT_BUYING',
+} as const;
+
+export type BuyerQualificationPortalSelfReportSource = typeof BuyerQualificationPortalSelfReportSource[keyof typeof BuyerQualificationPortalSelfReportSource];
+
+
+export const BuyerQualificationPortalSelfReportSource = {
+  PRIVATE_BUYER_QUALIFICATION_PORTAL: 'PRIVATE_BUYER_QUALIFICATION_PORTAL',
+} as const;
+
+export type BuyerQualificationPortalSelfReportClassification = typeof BuyerQualificationPortalSelfReportClassification[keyof typeof BuyerQualificationPortalSelfReportClassification];
+
+
+export const BuyerQualificationPortalSelfReportClassification = {
+  INDICATED: 'INDICATED',
+} as const;
+
+export interface BuyerQualificationPortalSelfReport {
+  responseId: string;
+  currentBuyingStatus: BuyerQualificationPortalSelfReportCurrentBuyingStatus;
+  criteria: BuyerCriteria;
+  confirmedCurrent: true;
+  note: string;
+  receivedAt: string;
+  invitationId: string;
+  source: BuyerQualificationPortalSelfReportSource;
+  classification: BuyerQualificationPortalSelfReportClassification;
+  identityVerified: false;
+  contactPermissionVerified: false;
+  ownerReviewRequired: true;
+}
+
+export type BuyerDiscoveryEvidenceClassification = typeof BuyerDiscoveryEvidenceClassification[keyof typeof BuyerDiscoveryEvidenceClassification];
+
+
+export const BuyerDiscoveryEvidenceClassification = {
+  OBSERVED: 'OBSERVED',
+} as const;
+
+export interface BuyerDiscoveryEvidence {
+  classification: BuyerDiscoveryEvidenceClassification;
+  source: string;
+  sourceUrl: string;
+  capturedAt: string;
+  /**
+     * @minimum 0
+     * @maximum 1
+     */
+  confidence: number;
+}
+
+export type BuyerSourceObservationClassification = typeof BuyerSourceObservationClassification[keyof typeof BuyerSourceObservationClassification];
+
+
+export const BuyerSourceObservationClassification = {
+  OBSERVED: 'OBSERVED',
+} as const;
+
+export interface BuyerSourceObservationHistory {
+  capturedAt: string;
+  statement: string;
+  /**
+     * @minimum 0
+     * @maximum 1
+     */
+  confidence: number;
+  /** @maxItems 100 */
+  recordIdentities: string[];
+  /** @minimum 1 */
+  activityCount: number;
+  /** @nullable */
+  eventAt: string | null;
+}
+
+export interface BuyerSourceObservation {
+  sourceId: string;
+  source: string;
+  sourceUrl: string;
+  classification: BuyerSourceObservationClassification;
+  statement: string;
+  /**
+     * @minimum 0
+     * @maximum 1
+     */
+  confidence: number;
+  capturedAt: string;
+  firstObservedAt: string;
+  lastObservedAt: string;
+  /** @minimum 1 */
+  seenCount: number;
+  /** @maxItems 100 */
+  recordIdentities: string[];
+  /** @minimum 1 */
+  activityCount: number;
+  /** @nullable */
+  eventAt: string | null;
+  /** @maxItems 20 */
+  history: BuyerSourceObservationHistory[];
+}
+
+export type BuyerVerificationHistoryVerifiedFundingTypesItem = typeof BuyerVerificationHistoryVerifiedFundingTypesItem[keyof typeof BuyerVerificationHistoryVerifiedFundingTypesItem];
+
+
+export const BuyerVerificationHistoryVerifiedFundingTypesItem = {
+  CASH: 'CASH',
+  HARD_MONEY: 'HARD_MONEY',
+  PRIVATE_LENDING: 'PRIVATE_LENDING',
+  CONVENTIONAL: 'CONVENTIONAL',
+  OTHER: 'OTHER',
+} as const;
+
+export type BuyerVerificationHistoryCurrentBuyingStatus = typeof BuyerVerificationHistoryCurrentBuyingStatus[keyof typeof BuyerVerificationHistoryCurrentBuyingStatus];
+
+
+export const BuyerVerificationHistoryCurrentBuyingStatus = {
+  BUYING: 'BUYING',
+  PAUSED: 'PAUSED',
+  NOT_BUYING: 'NOT_BUYING',
+} as const;
+
+export type BuyerVerificationHistoryDestinationKind = typeof BuyerVerificationHistoryDestinationKind[keyof typeof BuyerVerificationHistoryDestinationKind];
+
+
+export const BuyerVerificationHistoryDestinationKind = {
+  BUYER: 'BUYER',
+  DEAL_FINDER: 'DEAL_FINDER',
+  GURU: 'GURU',
+} as const;
 
 export interface BuyerVerificationHistory {
   verifiedFundingTypes?: BuyerVerificationHistoryVerifiedFundingTypesItem[];
@@ -1287,6 +1401,7 @@ export type Buyer = BuyerInput & ({
   sourceObservations?: BuyerSourceObservation[];
   verificationHistory?: BuyerVerificationHistory[];
   qualificationTask?: BuyerQualificationTask | null;
+  qualificationPortalSelfReport?: BuyerQualificationPortalSelfReport;
   lastOutreachReplyAt?: string;
   lastOutreachReplyEvidenceUrl?: string;
   createdAt: string;

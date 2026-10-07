@@ -4,7 +4,7 @@ import { useQueryClient } from '@tanstack/react-query';
 import {
   getGetCommandCenterQueryKey, getListPropertyDiscoveriesQueryKey, getSearchPublicPropertiesQueryKey,
   useAddPropertyRelevanceSignal, useDisqualifyPropertyDiscovery, useDiscoverBuyer, useListPropertyDiscoveries,
-  useListPropertySources, usePromotePropertyDiscovery, useRecordPublicPropertyDiscovery,
+  useGetPropertySourceCoverage, usePromotePropertyDiscovery, useRecordPublicPropertyDiscovery,
   useSavePropertyDiscoveryCriteria, useSearchPublicProperties,
   type PropertyEvidenceClassification, type PropertyEvidenceSourceType, type PropertySignalKey,
   type PropertyDiscoveryStatus, type PropertySignalGroup, type PublicProperty, type SearchPublicPropertiesParams,
@@ -50,7 +50,7 @@ export default function Sources() {
   const [longHoldYears, setLongHoldYears] = useState('10');
   const [requiredGroups, setRequiredGroups] = useState<PropertySignalGroup[]>([]);
   const [signalRules, setSignalRules] = useState<Array<{ key: PropertySignalKey; points: number; enabled: boolean }>>([]);
-  const sources = useListPropertySources();
+  const sourceCoverage = useGetPropertySourceCoverage();
   const params: SearchPublicPropertiesParams = { lane, ...(zip ? { zip } : {}) };
   const search = useSearchPublicProperties(params, { query: { queryKey: getSearchPublicPropertiesQueryKey(params), staleTime: 30_000 } });
   const discoveryParams = { marketKey: 'PHILADELPHIA_PA', limit: 100, ...(statusFilter !== 'ALL' ? { status: statusFilter } : {}) };
@@ -61,7 +61,7 @@ export default function Sources() {
   const passDiscovery = useDisqualifyPropertyDiscovery();
   const saveCriteria = useSavePropertyDiscoveryCriteria();
   const discover = useDiscoverBuyer();
-  const src = search.data?.source ?? sources.data?.[0];
+  const src = search.data?.source ?? sourceCoverage.data?.registeredSources[0];
   const criterion = discoveries.data?.criteria;
   useEffect(() => {
     if (criterion) {
@@ -152,14 +152,32 @@ export default function Sources() {
     <div className="space-y-5">
       <PageHeader eyebrow="Discovery" title="Sources" />
       <section className="ledger p-4 text-sm" data-testid="panel-sources">
-        {sources.isLoading && <RowsSkeleton rows={1} />}
-        {sources.isError && <ErrorNotice error={sources.error} onRetry={() => sources.refetch()} />}
-        {sources.data?.length === 0 && <p>No sources are supported.</p>}
-        {sources.data?.map((s) => (
+        {sourceCoverage.isLoading && <RowsSkeleton rows={1} />}
+        {sourceCoverage.isError && <ErrorNotice error={sourceCoverage.error} onRetry={() => sourceCoverage.refetch()} />}
+        {sourceCoverage.data?.registeredSources.length === 0 && <p>No property source adapters are registered.</p>}
+        <h2 className="font-semibold">Connected source adapters</h2>
+        <p className="mb-3 text-xs text-muted-foreground">These adapters are wired to real source operations; an individual run can still fail and its result is reported separately.</p>
+        {sourceCoverage.data?.registeredSources.map((s) => (
           <div key={s.id} className="mb-2"><p className="font-semibold">{s.name}</p><p className="text-muted-foreground">{s.coverage}</p>
             <p className="font-mono text-xs">Capabilities: {s.capabilities.join(', ')}</p>
             <ul className="list-disc pl-4 text-xs text-muted-foreground">{s.limitations.map((l, i) => <li key={i}>{l}</li>)}</ul>
             <a className="text-xs underline" href={s.termsUrl} target="_blank" rel="noopener noreferrer" data-testid={`link-terms-${s.id}`}>Read source terms</a></div>))}
+        <div className="mt-4 border-t pt-3" data-testid="panel-unconnected-source-capabilities">
+          <h2 className="font-semibold">Not connected — not polled</h2>
+          <p className="mb-3 text-xs text-muted-foreground">These are explicit coverage gaps, not active feeds or connector promises. No collection is attempted until a permitted access route is verified.</p>
+          {sourceCoverage.data?.notConnectedProviders.map((provider) => (
+            <article key={provider.id} className="mb-3 rounded border p-3" data-testid={`unconnected-source-${provider.id}`}>
+              <div className="flex flex-wrap items-center gap-2">
+                <h3 className="font-medium">{provider.name}</h3>
+                <span className="tag tone-muted">{provider.status.replaceAll('_', ' ')}</span>
+                <span className="text-xs text-muted-foreground">{provider.category.replaceAll('_', ' ')}</span>
+              </div>
+              <p className="mt-1 text-xs text-muted-foreground">{provider.coverage}</p>
+              <p className="mt-1 text-xs">{provider.reason}</p>
+              <p className="mt-1 text-xs text-muted-foreground">Next: {provider.nextAction}</p>
+            </article>
+          ))}
+        </div>
         <p className="mt-2 text-xs text-muted-foreground">Each source is an observation, not a verified seller, buyer, condition or opportunity. No tax delinquency is inferred from geographically aggregated tax balances; no asking price, contact permission, availability, title authority, repair cost, ARV, buyer intent or funding is inferred.</p>
       </section>
       <div className="flex flex-wrap items-end gap-3">

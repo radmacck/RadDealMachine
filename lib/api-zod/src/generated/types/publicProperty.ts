@@ -11,6 +11,8 @@ import type { PublicPropertyPropertyType } from './publicPropertyPropertyType';
 
 export interface PublicProperty {
   id: string;
+  /** @nullable */
+  parcelId?: string | null;
   provider: string;
   classification: PublicPropertyClassification;
   address: string;

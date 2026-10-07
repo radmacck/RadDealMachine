@@ -28,6 +28,11 @@ import type {
   BuyerPortalDeal,
   BuyerPortalIntentInput,
   BuyerProspectInput,
+  BuyerQualificationPortal,
+  BuyerQualificationPortalInvite,
+  BuyerQualificationPortalInviteInput,
+  BuyerQualificationPortalResponse,
+  BuyerQualificationPortalResponseInput,
   BuyerQualificationRequest,
   BuyerResponseInput,
   BuyerUpdate,
@@ -76,6 +81,7 @@ import type {
   PropertyQualificationCriteriaInput,
   PropertyRelevanceSignalInput,
   PropertySource,
+  PropertySourceCoverageResponse,
   PublicPropertySearch,
   ReleaseDistributionAcceptanceInput,
   SearchPublicPropertiesParams,
@@ -2619,6 +2625,89 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
       return useMutation(getVerifyBuyerMutationOptions(options));
     }
 
+export const getCreateBuyerQualificationPortalInviteUrl = (id: string,) => {
+
+
+
+
+  return `/api/buyers/${id}/qualification-portal`
+}
+
+export const createBuyerQualificationPortalInvite = async (id: string,
+    buyerQualificationPortalInviteInput: BuyerQualificationPortalInviteInput, options?: Parameters<typeof customFetch>[1]): Promise<BuyerQualificationPortalInvite> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return customFetch<BuyerQualificationPortalInvite>(getCreateBuyerQualificationPortalInviteUrl(id),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(buyerQualificationPortalInviteInput)
+  }
+);}
+
+
+
+
+
+export const getCreateBuyerQualificationPortalInviteMutationKey = () => ['createBuyerQualificationPortalInvite'] as const;
+
+export const getCreateBuyerQualificationPortalInviteMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createBuyerQualificationPortalInvite>>, TError,CreateBuyerQualificationPortalInviteMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof createBuyerQualificationPortalInvite>>, TError,CreateBuyerQualificationPortalInviteMutationVariables, TContext> => {
+
+const mutationKey = getCreateBuyerQualificationPortalInviteMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof createBuyerQualificationPortalInvite>>, CreateBuyerQualificationPortalInviteMutationVariables> = (props) => {
+          const {id,data} = props ?? {};
+
+          return  createBuyerQualificationPortalInvite(id,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type CreateBuyerQualificationPortalInviteMutationResult = NonNullable<Awaited<ReturnType<typeof createBuyerQualificationPortalInvite>>>
+    export type CreateBuyerQualificationPortalInviteMutationBody = BodyType<BuyerQualificationPortalInviteInput>
+    export type CreateBuyerQualificationPortalInviteMutationError = ErrorType<unknown>
+    export type CreateBuyerQualificationPortalInviteMutationVariables = {id: string;data: BodyType<BuyerQualificationPortalInviteInput>}
+
+    export const useCreateBuyerQualificationPortalInvite = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createBuyerQualificationPortalInvite>>, TError,CreateBuyerQualificationPortalInviteMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof createBuyerQualificationPortalInvite>>,
+        TError,
+        CreateBuyerQualificationPortalInviteMutationVariables,
+        TContext
+      > => {
+      return useMutation(getCreateBuyerQualificationPortalInviteMutationOptions(options));
+    }
+
 export const getGetDealOperationsUrl = (id: string,) => {
 
 
@@ -3314,6 +3403,159 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
         TContext
       > => {
       return useMutation(getRespondToBuyerPortalDealMutationOptions(options));
+    }
+
+export const getGetBuyerQualificationPortalUrl = () => {
+
+
+
+
+  return `/api/portal/buyer-qualification`
+}
+
+export const getBuyerQualificationPortal = async ( options?: Parameters<typeof customFetch>[1]): Promise<BuyerQualificationPortal> => {
+
+  return customFetch<BuyerQualificationPortal>(getGetBuyerQualificationPortalUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetBuyerQualificationPortalQueryKey = () => {
+    return [
+    `/api/portal/buyer-qualification`
+    ] as const;
+    }
+
+
+export const getGetBuyerQualificationPortalQueryOptions = <TData = Awaited<ReturnType<typeof getBuyerQualificationPortal>>, TError = ErrorType<unknown>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getBuyerQualificationPortal>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetBuyerQualificationPortalQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getBuyerQualificationPortal>>> = ({ signal }) => getBuyerQualificationPortal({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getBuyerQualificationPortal>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetBuyerQualificationPortalQueryResult = NonNullable<Awaited<ReturnType<typeof getBuyerQualificationPortal>>>
+export type GetBuyerQualificationPortalQueryError = ErrorType<unknown>
+
+
+
+export function useGetBuyerQualificationPortal<TData = Awaited<ReturnType<typeof getBuyerQualificationPortal>>, TError = ErrorType<unknown>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getBuyerQualificationPortal>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetBuyerQualificationPortalQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getRespondToBuyerQualificationPortalUrl = () => {
+
+
+
+
+  return `/api/portal/buyer-qualification/response`
+}
+
+export const respondToBuyerQualificationPortal = async (buyerQualificationPortalResponseInput: BuyerQualificationPortalResponseInput, options?: Parameters<typeof customFetch>[1]): Promise<BuyerQualificationPortalResponse> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return customFetch<BuyerQualificationPortalResponse>(getRespondToBuyerQualificationPortalUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(buyerQualificationPortalResponseInput)
+  }
+);}
+
+
+
+
+
+export const getRespondToBuyerQualificationPortalMutationKey = () => ['respondToBuyerQualificationPortal'] as const;
+
+export const getRespondToBuyerQualificationPortalMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof respondToBuyerQualificationPortal>>, TError,RespondToBuyerQualificationPortalMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof respondToBuyerQualificationPortal>>, TError,RespondToBuyerQualificationPortalMutationVariables, TContext> => {
+
+const mutationKey = getRespondToBuyerQualificationPortalMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof respondToBuyerQualificationPortal>>, RespondToBuyerQualificationPortalMutationVariables> = (props) => {
+          const {data} = props ?? {};
+
+          return  respondToBuyerQualificationPortal(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type RespondToBuyerQualificationPortalMutationResult = NonNullable<Awaited<ReturnType<typeof respondToBuyerQualificationPortal>>>
+    export type RespondToBuyerQualificationPortalMutationBody = BodyType<BuyerQualificationPortalResponseInput>
+    export type RespondToBuyerQualificationPortalMutationError = ErrorType<unknown>
+    export type RespondToBuyerQualificationPortalMutationVariables = {data: BodyType<BuyerQualificationPortalResponseInput>}
+
+    export const useRespondToBuyerQualificationPortal = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof respondToBuyerQualificationPortal>>, TError,RespondToBuyerQualificationPortalMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof respondToBuyerQualificationPortal>>,
+        TError,
+        RespondToBuyerQualificationPortalMutationVariables,
+        TContext
+      > => {
+      return useMutation(getRespondToBuyerQualificationPortalMutationOptions(options));
     }
 
 export const getGetSellerOfferPortalUrl = () => {
@@ -4657,6 +4899,77 @@ export function useListPropertySources<TData = Awaited<ReturnType<typeof listPro
  ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
 
   const queryOptions = getListPropertySourcesQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getGetPropertySourceCoverageUrl = () => {
+
+
+
+
+  return `/api/property-source-coverage`
+}
+
+export const getPropertySourceCoverage = async ( options?: Parameters<typeof customFetch>[1]): Promise<PropertySourceCoverageResponse> => {
+
+  return customFetch<PropertySourceCoverageResponse>(getGetPropertySourceCoverageUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetPropertySourceCoverageQueryKey = () => {
+    return [
+    `/api/property-source-coverage`
+    ] as const;
+    }
+
+
+export const getGetPropertySourceCoverageQueryOptions = <TData = Awaited<ReturnType<typeof getPropertySourceCoverage>>, TError = ErrorType<unknown>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getPropertySourceCoverage>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetPropertySourceCoverageQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getPropertySourceCoverage>>> = ({ signal }) => getPropertySourceCoverage({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getPropertySourceCoverage>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetPropertySourceCoverageQueryResult = NonNullable<Awaited<ReturnType<typeof getPropertySourceCoverage>>>
+export type GetPropertySourceCoverageQueryError = ErrorType<unknown>
+
+
+
+export function useGetPropertySourceCoverage<TData = Awaited<ReturnType<typeof getPropertySourceCoverage>>, TError = ErrorType<unknown>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getPropertySourceCoverage>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetPropertySourceCoverageQueryOptions(options)
 
   const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
 

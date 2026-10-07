@@ -9,6 +9,7 @@ import type { BuyerApprovalStatus } from './buyerApprovalStatus';
 import type { BuyerCurrentBuyingStatus } from './buyerCurrentBuyingStatus';
 import type { BuyerDiscoveryEvidence } from './buyerDiscoveryEvidence';
 import type { BuyerInput } from './buyerInput';
+import type { BuyerQualificationPortalSelfReport } from './buyerQualificationPortalSelfReport';
 import type { BuyerQualificationTask } from './buyerQualificationTask';
 import type { BuyerSourceObservation } from './buyerSourceObservation';
 import type { BuyerVerificationHistory } from './buyerVerificationHistory';
@@ -55,6 +56,7 @@ export type Buyer = BuyerInput & ({
   sourceObservations?: BuyerSourceObservation[];
   verificationHistory?: BuyerVerificationHistory[];
   qualificationTask?: BuyerQualificationTask | null;
+  qualificationPortalSelfReport?: BuyerQualificationPortalSelfReport;
   lastOutreachReplyAt?: string;
   lastOutreachReplyEvidenceUrl?: string;
   createdAt: string;

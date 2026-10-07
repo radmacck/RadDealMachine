@@ -411,6 +411,22 @@ paths:
           content:
             application/json:
               schema: { $ref: "#/components/schemas/Buyer" }
+  /buyers/{id}/qualification-portal:
+    parameters:
+      - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
+    post:
+      operationId: createBuyerQualificationPortalInvite
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/BuyerQualificationPortalInviteInput" }
+      responses:
+        "201":
+          description: Owner-created expiring capability link; no message is sent
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/BuyerQualificationPortalInvite" }
   /deals/{id}/operations:
     parameters:
       - { name: id, in: path, required: true, schema: { type: string } }
@@ -536,6 +552,33 @@ paths:
           content:
             application/json:
               schema: { $ref: "#/components/schemas/BuyerPortalDeal" }
+  /portal/buyer-qualification:
+    get:
+      operationId: getBuyerQualificationPortal
+      parameters:
+        - { name: X-Qualification-Portal-Token, in: header, required: true, schema: { type: string, minLength: 40, maxLength: 50 } }
+      responses:
+        "200":
+          description: Minimal prefilled buyer criteria for a private, expiring self-report link
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/BuyerQualificationPortal" }
+  /portal/buyer-qualification/response:
+    post:
+      operationId: respondToBuyerQualificationPortal
+      parameters:
+        - { name: X-Qualification-Portal-Token, in: header, required: true, schema: { type: string, minLength: 40, maxLength: 50 } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/BuyerQualificationPortalResponseInput" }
+      responses:
+        "200":
+          description: Self-reported buyer criteria retained as unverified evidence pending owner review
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/BuyerQualificationPortalResponse" }
   /portal/seller-offer:
     get:
       operationId: getSellerOfferPortal
@@ -778,6 +821,15 @@ paths:
           content:
             application/json:
               schema: { type: array, items: { $ref: "#/components/schemas/PropertySource" } }
+  /property-source-coverage:
+    get:
+      operationId: getPropertySourceCoverage
+      responses:
+        "200":
+          description: Registered adapters and explicitly unconnected source capabilities
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/PropertySourceCoverageResponse" }
   /property-sources/phila-opa/records:
     get:
       operationId: searchPublicProperties
@@ -988,6 +1040,23 @@ paths:
                     nextAction: { type: string }
 components:
   schemas:
+    UnconnectedPropertySourceCapability:
+      type: object
+      required: [id, name, category, coverage, status, reason, nextAction]
+      properties:
+        id: { type: string }
+        name: { type: string }
+        category: { type: string }
+        coverage: { type: string }
+        status: { type: string, enum: [NOT_CONNECTED] }
+        reason: { type: string }
+        nextAction: { type: string }
+    PropertySourceCoverageResponse:
+      type: object
+      required: [registeredSources, notConnectedProviders]
+      properties:
+        registeredSources: { type: array, items: { $ref: "#/components/schemas/PropertySource" } }
+        notConnectedProviders: { type: array, items: { $ref: "#/components/schemas/UnconnectedPropertySourceCapability" } }
     PropertySource:
       type: object
       required: [id, name, coverage, termsUrl, capabilities, limitations]
@@ -1263,6 +1332,7 @@ components:
       required: [id, provider, classification, address, city, county, state, zip, propertyType, sqft, beds, baths, recordedOwner, entityCandidate, assessedValue, lastSalePrice, lastSaleAt, interiorCondition, exteriorCondition, lat, lng, contactPaths, sourceUrl, capturedAt]
       properties:
         id: { type: string }
+        parcelId: { type: [string, "null"] }
         provider: { type: string }
         classification: { type: string, enum: [OBSERVED] }
         address: { type: string }
@@ -1376,6 +1446,59 @@ components:
       properties:
         version: { type: integer, minimum: 1 }
         note: { type: string, minLength: 3, maxLength: 2000 }
+    BuyerQualificationPortalInviteInput:
+      type: object
+      required: [version]
+      properties:
+        version: { type: integer, minimum: 1 }
+    BuyerQualificationPortalInvite:
+      type: object
+      required: [invitationId, token, expiresAt, notSent]
+      properties:
+        invitationId: { type: string, format: uuid }
+        token: { type: string, minLength: 40, maxLength: 50 }
+        expiresAt: { type: string, format: date-time }
+        notSent: { type: boolean, enum: [true] }
+    BuyerQualificationPortal:
+      type: object
+      required: [invitationId, buyerName, criteria, expiresAt]
+      properties:
+        invitationId: { type: string, format: uuid }
+        buyerName: { type: string }
+        criteria: { oneOf: [{ $ref: "#/components/schemas/BuyerCriteria" }, { type: "null" }] }
+        expiresAt: { type: string, format: date-time }
+    BuyerQualificationPortalResponseInput:
+      type: object
+      required: [responseId, currentBuyingStatus, criteria, confirmedCurrent]
+      properties:
+        responseId: { type: string, format: uuid }
+        currentBuyingStatus: { type: string, enum: [BUYING, NOT_BUYING] }
+        criteria: { $ref: "#/components/schemas/BuyerCriteria" }
+        confirmedCurrent: { type: boolean, enum: [true] }
+        note: { type: string, maxLength: 2000 }
+    BuyerQualificationPortalResponse:
+      type: object
+      required: [status, receivedAt, ownerReviewRequired]
+      properties:
+        status: { type: string, enum: [RECEIVED_PENDING_OWNER_REVIEW] }
+        receivedAt: { type: string, format: date-time }
+        ownerReviewRequired: { type: boolean, enum: [true] }
+    BuyerQualificationPortalSelfReport:
+      type: object
+      required: [responseId, currentBuyingStatus, criteria, confirmedCurrent, note, receivedAt, invitationId, source, classification, identityVerified, contactPermissionVerified, ownerReviewRequired]
+      properties:
+        responseId: { type: string, format: uuid }
+        currentBuyingStatus: { type: string, enum: [BUYING, NOT_BUYING] }
+        criteria: { $ref: "#/components/schemas/BuyerCriteria" }
+        confirmedCurrent: { type: boolean, enum: [true] }
+        note: { type: string }
+        receivedAt: { type: string, format: date-time }
+        invitationId: { type: string, format: uuid }
+        source: { type: string, enum: [PRIVATE_BUYER_QUALIFICATION_PORTAL] }
+        classification: { type: string, enum: [INDICATED] }
+        identityVerified: { type: boolean, enum: [false] }
+        contactPermissionVerified: { type: boolean, enum: [false] }
+        ownerReviewRequired: { type: boolean, enum: [true] }
     BuyerDiscoveryEvidence:
       type: object
       required: [classification, source, sourceUrl, capturedAt, confidence]
@@ -1534,6 +1657,7 @@ components:
             sourceObservations: { type: array, items: { $ref: "#/components/schemas/BuyerSourceObservation" } }
             verificationHistory: { type: array, items: { $ref: "#/components/schemas/BuyerVerificationHistory" } }
             qualificationTask: { oneOf: [{ $ref: "#/components/schemas/BuyerQualificationTask" }, { type: "null" }] }
+            qualificationPortalSelfReport: { $ref: "#/components/schemas/BuyerQualificationPortalSelfReport" }
             lastOutreachReplyAt: { type: string }
             lastOutreachReplyEvidenceUrl: { type: string }
             createdAt: { type: string }

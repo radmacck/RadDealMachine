@@ -19,6 +19,7 @@ if (!lead) throw new Error("Could not create isolated command-center fixture.");
 
 const discovery = await recordPropertyObservation({
   id: "SYNTHETIC-COMMAND-DISCOVERY",
+  parcelId: "SYNTHETIC-COMMAND-PARCEL",
   provider: "SYNTHETIC command-center source",
   classification: "OBSERVED",
   address: "101 SYNTHETIC AVENUE",

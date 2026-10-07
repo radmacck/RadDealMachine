@@ -17,6 +17,7 @@ function parse<T extends z.ZodType>(schema:T,value:unknown): z.infer<T> {
   return result.data;
 }
 router.get("/property-sources",(_req,res)=>res.json(contract.ListPropertySourcesResponse.parse(sources.listPropertySources())));
+router.get("/property-source-coverage",(_req,res)=>res.json(contract.GetPropertySourceCoverageResponse.parse(sources.getPropertySourceCoverage())));
 router.get("/property-sources/phila-opa/records",async(req,res)=>{
   const p = parse(contract.SearchPublicPropertiesQueryParams,req.query);
   res.json(contract.SearchPublicPropertiesResponse.parse(await sources.searchPublicProperties(p.zip,p.lane??"properties")));

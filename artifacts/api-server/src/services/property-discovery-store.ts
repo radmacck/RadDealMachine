@@ -53,9 +53,22 @@ function marketKeyFor(property: PropertyRecord) {
   return `${property.city.trim().toUpperCase().replace(/[^A-Z0-9]+/g, "_")}_${property.state.trim().toUpperCase()}`;
 }
 
-function propertyIdentity(property: PropertyRecord) {
+function addressPropertyIdentity(property: PropertyRecord) {
   const postal = property.zip.trim().slice(0, 5);
   return sha(`${property.state.toUpperCase()}|${property.city.toUpperCase()}|${postal}|${normalAddress(property.address)}`);
+}
+
+function propertyIdentity(property: PropertyRecord) {
+  const parcelId = typeof property.parcelId === "string" ? property.parcelId.trim() : "";
+  const legacyOpaParcelId = property.provider === "phila-opa" && /^\d{9}$/.test(property.id) ? property.id : "";
+  const exactParcelId = parcelId || legacyOpaParcelId;
+  if (!exactParcelId) return addressPropertyIdentity(property);
+  return sha([
+    "PARCEL",
+    property.state.trim().toUpperCase(),
+    property.county.trim().toUpperCase(),
+    exactParcelId.toUpperCase().replace(/\s+/g, ""),
+  ].join("|"));
 }
 
 function ownerIdentity(property: PropertyRecord) {
@@ -605,16 +618,40 @@ async function persistObservation(
 ) {
   const marketKey = marketKeyFor(property);
   const identityKey = propertyIdentity(property);
+  const legacyAddressKey = addressPropertyIdentity(property);
   await database.execute(sql`select pg_advisory_xact_lock(hashtextextended(current_schema() || ${identityKey},0))`);
   const criteria = await getCriteriaFrom(database, marketKey);
   const isOpa = sourceKey.startsWith("phila-opa:");
   const generated = isOpa ? generatedOpaSignals(property, criteria, now.toISOString()) : [];
-  const [existing] = await database.select().from(propertyDiscoveriesTable)
+  const [canonicalExisting] = await database.select().from(propertyDiscoveriesTable)
     .where(eq(propertyDiscoveriesTable.identityKey, identityKey)).for("update");
+  const [observationForSource] = await database.select().from(propertySourceObservationsTable)
+    .where(eq(propertySourceObservationsTable.sourceKey, sourceKey));
+  let existing = canonicalExisting;
+  if (!existing && observationForSource) {
+    [existing] = await database.select().from(propertyDiscoveriesTable)
+      .where(eq(propertyDiscoveriesTable.id, observationForSource.discoveryId)).for("update");
+  }
+  if (!existing && property.parcelId) {
+    const [opaAnchor] = await database.select({ discoveryId: propertySourceObservationsTable.discoveryId })
+      .from(propertySourceObservationsTable)
+      .where(and(
+        eq(propertySourceObservationsTable.sourceId, property.parcelId),
+        sql`${propertySourceObservationsTable.payload}->>'provider' = 'phila-opa'`,
+      ))
+      .limit(1);
+    if (opaAnchor) {
+      [existing] = await database.select().from(propertyDiscoveriesTable)
+        .where(eq(propertyDiscoveriesTable.id, opaAnchor.discoveryId)).for("update");
+    }
+  }
+  if (!existing && legacyAddressKey !== identityKey) {
+    [existing] = await database.select().from(propertyDiscoveriesTable)
+      .where(eq(propertyDiscoveriesTable.identityKey, legacyAddressKey)).for("update");
+  }
   let discoveryId: string;
   let payload: DiscoveryPayload;
-  let existingObservation = await database.select().from(propertySourceObservationsTable)
-    .where(eq(propertySourceObservationsTable.sourceKey, sourceKey));
+  const existingObservation = observationForSource ? [observationForSource] : [];
   if (existingObservation[0] && existingObservation[0].discoveryId !== existing?.id) {
     throw new DomainError("This source record is already attached to a different property identity; resolve the source identity before retrying.", 409);
   }
@@ -636,6 +673,7 @@ async function persistObservation(
       ? existing.status
       : evaluation.status;
     await database.update(propertyDiscoveriesTable).set({
+      identityKey,
       ownerKey: isOpa ? ownerIdentity(property) : existing.ownerKey ?? ownerIdentity(property),
       status: nextStatus,
       score: evaluation.score,

@@ -9,7 +9,7 @@ import {
   db, pool, jobsTable, leadsTable, intelligenceTable, analysesTable, offersTable, contractsTable, propertySourceObservationsTable,
   unmatchedPropertySourceObservationsTable,
 } from "@workspace/db";
-import { ListPropertySourcesResponse } from "@workspace/api-zod";
+import { GetPropertySourceCoverageResponse, ListPropertySourcesResponse } from "@workspace/api-zod";
 import { DomainError } from "@workspace/deal-domain";
 import type { PropertySourceRefresh } from "@workspace/property-sources";
 import { logger } from "../lib/logger";
@@ -20,7 +20,7 @@ import {
   promotePropertyDiscovery, recordPropertyObservation, recordPublicPropertyDiscovery,
   refreshPropertySourceEvidence, stalePropertySourceRefreshTargets,
 } from "./property-discovery-store";
-import { addSourceComps, getSourceResearch, importPublicProperty, listPropertySources, refreshSourceResearch, searchPublicProperties } from "./property-source-store";
+import { addSourceComps, getPropertySourceCoverage, getSourceResearch, importPublicProperty, listPropertySources, refreshSourceResearch, searchPublicProperties } from "./property-source-store";
 import { addIntelligence, callQueue, createLead, leadDetail, updateLead, saveUnderwriting, transitionLead, recordCall } from "./deal-store";
 import { createBuyer, verifyBuyer } from "./buyer-store";
 import * as offers from "./offer-store";
@@ -44,6 +44,16 @@ try {
   assert.equal(new Set(listedSources.map(source => source.id)).size,
     listedSources.length, "The public source catalog must deduplicate source descriptors and conform to the API contract.");
   assert.ok(listedSources.length >= 5, "The public catalog must enumerate the live OPA, L&I, unsafe-building, vacancy, and deed-record sources.");
+  const sourceCoverage = GetPropertySourceCoverageResponse.parse(getPropertySourceCoverage());
+  assert.deepEqual(sourceCoverage.registeredSources.map(source => source.id).sort(), listedSources.map(source => source.id).sort());
+  assert.ok(sourceCoverage.notConnectedProviders.some(provider =>
+    provider.id === "zillow-listings-fsbo" && provider.status === "NOT_CONNECTED" && /has not queried/i.test(provider.reason)));
+  assert.ok(sourceCoverage.notConnectedProviders.some(provider => provider.id === "redfin-listings"));
+  assert.ok(sourceCoverage.notConnectedProviders.some(provider =>
+    provider.id === "parcel-tax-delinquency" && /geographically aggregated/i.test(provider.reason)));
+  assert.ok(sourceCoverage.notConnectedProviders.every(provider =>
+    provider.reason.length > 0 && provider.nextAction.length > 0),
+  "Unavailable source capabilities must have an explicit reason and a safe activation path, not connector-shaped placeholders.");
   assert.ok(registeredConnectors.some(connector => connector.id === "phila-opa" &&
     connector.searchProperties && connector.propertyById && connector.discoverProperties));
   assert.ok(registeredConnectors.some(connector => connector.id === "phila-li-enforcement" &&
@@ -211,12 +221,28 @@ try {
     assert.equal((path as { permissionStatus?: string }).permissionStatus, "NOT_REVIEWED");
   }
   const secondary = await recordPropertyObservation(
-    { ...property, provider: "SYNTHETIC_SECONDARY_SOURCE", sourceUrl: "https://example.com/synthetic-record" },
+    {
+      ...property,
+      id: `external-record-${property.id}`,
+      provider: "SYNTHETIC_SECONDARY_SOURCE",
+      address: `${property.address} (source formatting variation)`,
+      sourceUrl: "https://example.com/synthetic-record",
+    },
     `synthetic-secondary:${property.id}`, actor.id, now,
   );
-  assert.equal(secondary.id, first.id, "A second source with the same normalized property identity must attach to one discovery.");
+  assert.equal(secondary.id, first.id, "A second source with the exact jurisdiction-scoped parcel ID must attach to one discovery despite an address-format variation.");
   assert.equal(secondary.sourceObservationCount, first.sourceObservationCount + 1);
   assert.equal(secondary.leadId, null);
+  const sameAddressDifferentParcel = await recordPropertyObservation({
+    ...property,
+    id: "different-parcel-record",
+    parcelId: `SYNTHETIC-PARCEL-${randomUUID()}`,
+    provider: "SYNTHETIC_SECONDARY_SOURCE",
+    sourceUrl: "https://example.com/synthetic-distinct-parcel",
+  }, `synthetic-different-parcel:${property.id}`, actor.id, now);
+  assert.notEqual(sameAddressDifferentParcel.id, first.id,
+    "Different exact parcel IDs at the same normalized street address remain separate until a source proves parcel identity.");
+  assert.equal(sameAddressDifferentParcel.leadId, null);
 
   const demandBuyer = await createBuyer({
     name: "SYNTHETIC BUYER DEMAND FIT TEST ONLY",

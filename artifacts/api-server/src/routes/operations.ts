@@ -5,6 +5,7 @@ import { DomainError, WORKER_CAPABILITIES, type OfferActor } from "@workspace/de
 import * as poolOperations from "../services/buyer-pool";
 import { authenticated, membership, roles } from "../middlewares/access";
 import * as buyers from "../services/buyer-store";
+import * as buyerQualificationPortal from "../services/buyer-qualification-portal";
 import { allBuyerRecords, getBuyerRecord } from "../services/operations-records";
 import { dealOperations, refreshMatches } from "../services/matching-store";
 import * as transactions from "../services/transaction-store";
@@ -46,6 +47,13 @@ router.patch("/buyers/:id",roles("OWNER","ANALYST"),async(req,res)=>{
 router.post("/buyers/:id/verification",roles("OWNER"),async(req,res)=>{
   const {id} = parse(schemas.VerifyBuyerParams,req.params);
   res.json(schemas.VerifyBuyerResponse.parse(await buyers.verifyBuyer(id,parse(schemas.VerifyBuyerBody,req.body),actor(res))));
+});
+router.post("/buyers/:id/qualification-portal",roles("OWNER"),async(req,res)=>{
+  const {id} = parse(schemas.CreateBuyerQualificationPortalInviteParams,req.params);
+  const result = await buyerQualificationPortal.createBuyerQualificationPortalInvite(
+    id,parse(schemas.CreateBuyerQualificationPortalInviteBody,req.body),actor(res),
+  );
+  res.status(201).json(schemas.CreateBuyerQualificationPortalInviteResponse.parse(result));
 });
 router.post("/buyers/:id/qualification",roles("OWNER","ANALYST"),async(req,res)=>{
   const {id} = parse(schemas.RequestBuyerQualificationParams,req.params);
