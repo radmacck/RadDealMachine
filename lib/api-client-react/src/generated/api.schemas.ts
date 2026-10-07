@@ -1824,6 +1824,113 @@ export interface RepairEstimate {
   blockers: string[];
 }
 
+export type PreliminaryRepairEstimateStatus = typeof PreliminaryRepairEstimateStatus[keyof typeof PreliminaryRepairEstimateStatus];
+
+
+export const PreliminaryRepairEstimateStatus = {
+  NOT_USED: 'NOT_USED',
+  CALCULATED: 'CALCULATED',
+  BLOCKED: 'BLOCKED',
+} as const;
+
+export type ConditionRepairHypothesisSeverity = typeof ConditionRepairHypothesisSeverity[keyof typeof ConditionRepairHypothesisSeverity];
+
+
+export const ConditionRepairHypothesisSeverity = {
+  COSMETIC: 'COSMETIC',
+  MODERATE: 'MODERATE',
+  MAJOR: 'MAJOR',
+  REPLACEMENT: 'REPLACEMENT',
+} as const;
+
+export type ConditionRepairHypothesisEpistemicStatus = typeof ConditionRepairHypothesisEpistemicStatus[keyof typeof ConditionRepairHypothesisEpistemicStatus];
+
+
+export const ConditionRepairHypothesisEpistemicStatus = {
+  AI_HYPOTHESIS: 'AI_HYPOTHESIS',
+} as const;
+
+export type ConditionRepairHypothesisConfidenceMethod = typeof ConditionRepairHypothesisConfidenceMethod[keyof typeof ConditionRepairHypothesisConfidenceMethod];
+
+
+export const ConditionRepairHypothesisConfidenceMethod = {
+  EXPLICIT_PHRASE_RULE_UNCALIBRATED: 'EXPLICIT_PHRASE_RULE_UNCALIBRATED',
+} as const;
+
+export interface ConditionRepairHypothesis {
+  id: string;
+  evidenceId: string;
+  category: string;
+  severity: ConditionRepairHypothesisSeverity;
+  statement: string;
+  evidenceClassification: ProvenanceClass;
+  epistemicStatus: ConditionRepairHypothesisEpistemicStatus;
+  /**
+     * @minimum 0
+     * @maximum 1
+     */
+  sourceConfidence: number;
+  /**
+     * @minimum 0
+     * @maximum 0.5
+     */
+  confidence: number;
+  confidenceMethod: ConditionRepairHypothesisConfidenceMethod;
+  source: string;
+  sourceUrl: string;
+  ruleId: string;
+  question: string;
+  action: string;
+}
+
+export type PreliminaryRepairLineSeverity = typeof PreliminaryRepairLineSeverity[keyof typeof PreliminaryRepairLineSeverity];
+
+
+export const PreliminaryRepairLineSeverity = {
+  COSMETIC: 'COSMETIC',
+  MODERATE: 'MODERATE',
+  MAJOR: 'MAJOR',
+  REPLACEMENT: 'REPLACEMENT',
+} as const;
+
+export interface PreliminaryRepairLine {
+  category: string;
+  severity: PreliminaryRepairLineSeverity;
+  /** @minimum 0 */
+  low: number;
+  /** @minimum 0 */
+  expected: number;
+  /** @minimum 0 */
+  high: number;
+  /**
+     * @minimum 0
+     * @maximum 0.5
+     */
+  confidence: number;
+  rateCardId: string;
+  /** @minimum 1 */
+  rateCardVersion: number;
+  /** @minItems 1 */
+  hypothesisIds: string[];
+  source: string;
+  sourceUrl: string;
+}
+
+export interface PreliminaryRepairEstimate {
+  status: PreliminaryRepairEstimateStatus;
+  marketKey: string;
+  /** @minimum 0 */
+  catalogVersion: number;
+  calculatedAt: string;
+  /** @maxItems 100 */
+  hypotheses: ConditionRepairHypothesis[];
+  /** @maxItems 50 */
+  lines: PreliminaryRepairLine[];
+  total: Range | null;
+  blockers: string[];
+  sourceWarnings: string[];
+}
+
 export type RepairRateCardSeverity = typeof RepairRateCardSeverity[keyof typeof RepairRateCardSeverity];
 
 
@@ -1992,6 +2099,7 @@ export interface Analysis {
   arv: Range;
   repairs: Range;
   repairEstimate: RepairEstimate;
+  preliminaryRepairEstimate: PreliminaryRepairEstimate;
   mao: number;
   openingLow: number;
   openingHigh: number;
@@ -2382,6 +2490,9 @@ export interface TransactionDocumentMetadata {
   /** @pattern ^[a-f0-9]{64}$ */
   snapshotHash: string;
   /** @pattern ^[a-f0-9]{64}$ */
+  economicsSnapshotHash?: string;
+  sourceAnalysisSnapshotId?: string;
+  /** @pattern ^[a-f0-9]{64}$ */
   contentHash: string;
   fileName: string;
   contentType: TransactionDocumentMetadataContentType;
@@ -2489,10 +2600,21 @@ export type DistributionPacketSnapshotProperty = {
   askingPrice?: number | null;
 };
 
+export type DistributionPacketSnapshotEconomicsVersion = typeof DistributionPacketSnapshotEconomicsVersion[keyof typeof DistributionPacketSnapshotEconomicsVersion];
+
+
+export const DistributionPacketSnapshotEconomicsVersion = {
+  'deal-economics/1': 'deal-economics/1',
+} as const;
+
 export type DistributionPacketSnapshotEconomics = {
   acquisitionPrice: number;
   authorizedAssignmentFee: number;
   buyerPrice: number;
+  sourceAnalysisSnapshotId: string;
+  version: DistributionPacketSnapshotEconomicsVersion;
+  /** @pattern ^[a-f0-9]{64}$ */
+  economicsSnapshotHash: string;
 };
 
 export type DistributionPacketSnapshotUnderwritingGrossProfitPotential = {
@@ -2509,6 +2631,72 @@ export type DistributionPacketSnapshotUnderwriting = {
   calculatedAt: string;
 };
 
+export type DistributionPacketSnapshotEvidenceStatus = typeof DistributionPacketSnapshotEvidenceStatus[keyof typeof DistributionPacketSnapshotEvidenceStatus];
+
+
+export const DistributionPacketSnapshotEvidenceStatus = {
+  FROZEN_ANALYSIS_SNAPSHOT: 'FROZEN_ANALYSIS_SNAPSHOT',
+} as const;
+
+export type DistributionPacketSnapshotEvidenceComparablesItem = {
+  id: string;
+  included: boolean;
+  reasons: string[];
+  source: string;
+  soldAt: string;
+  verified: boolean;
+  /** @nullable */
+  saleEvidenceId: string | null;
+  /** @nullable */
+  conditionEvidenceId: string | null;
+};
+
+export type DistributionPacketSnapshotEvidenceRepairsStatus = typeof DistributionPacketSnapshotEvidenceRepairsStatus[keyof typeof DistributionPacketSnapshotEvidenceRepairsStatus];
+
+
+export const DistributionPacketSnapshotEvidenceRepairsStatus = {
+  INSPECTION_RATE_CATALOG: 'INSPECTION_RATE_CATALOG',
+  SOURCE_REVIEWED_INPUT: 'SOURCE_REVIEWED_INPUT',
+} as const;
+
+export type DistributionPacketSnapshotEvidenceRepairsLinesItem = {
+  category: string;
+  /** @minimum 0 */
+  low: number;
+  /** @minimum 0 */
+  expected: number;
+  /** @minimum 0 */
+  high: number;
+  /**
+     * @minimum 0
+     * @maximum 1
+     */
+  confidence: number;
+  source: string;
+  /** @nullable */
+  evidenceId: string | null;
+  /** @nullable */
+  sourceUrl?: string | null;
+  /** @nullable */
+  rateCardId?: string | null;
+  /** @nullable */
+  rateCardVersion?: number | null;
+};
+
+export type DistributionPacketSnapshotEvidenceRepairs = {
+  status: DistributionPacketSnapshotEvidenceRepairsStatus;
+  lines: DistributionPacketSnapshotEvidenceRepairsLinesItem[];
+};
+
+export type DistributionPacketSnapshotEvidence = {
+  status: DistributionPacketSnapshotEvidenceStatus;
+  sourceAnalysisSnapshotId: string;
+  analysisEngineVersion: string;
+  calculatedAt: string;
+  comparables: DistributionPacketSnapshotEvidenceComparablesItem[];
+  repairs: DistributionPacketSnapshotEvidenceRepairs;
+};
+
 export type DistributionPacketSnapshotMediaItem = { [key: string]: unknown };
 
 export interface DistributionPacketSnapshot {
@@ -2516,6 +2704,7 @@ export interface DistributionPacketSnapshot {
   property: DistributionPacketSnapshotProperty;
   economics: DistributionPacketSnapshotEconomics;
   underwriting: DistributionPacketSnapshotUnderwriting;
+  evidence: DistributionPacketSnapshotEvidence;
   closeBy: string;
   contingencies: string;
   media: DistributionPacketSnapshotMediaItem[];

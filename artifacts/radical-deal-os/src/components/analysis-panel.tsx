@@ -87,6 +87,60 @@ export function AnalysisPanel({ analysis, comps, full = true }: { analysis: Anal
           )}
         </section>
       )}
+      {(a.preliminaryRepairEstimate.hypotheses.length > 0 || a.preliminaryRepairEstimate.sourceWarnings.length > 0) && (
+        <section className="mt-4 border border-amber-500/40 bg-amber-500/5 p-3" data-testid="preliminary-condition-estimate">
+          <div className="flex flex-wrap items-baseline justify-between gap-2">
+            <p className="font-semibold">Condition clues · AI HYPOTHESIS only</p>
+            <p className="font-mono text-xs text-muted-foreground">
+              {a.preliminaryRepairEstimate.marketKey} · rate catalog v{a.preliminaryRepairEstimate.catalogVersion}
+            </p>
+          </div>
+          <p className="mt-1 text-xs text-muted-foreground">
+            Deterministic phrase rules read current, linked listing/public remarks. The scenarios are uncalibrated, not inspected scope, and never feed repair totals, MAO, an offer, or authorization.
+          </p>
+          {a.preliminaryRepairEstimate.status === 'CALCULATED' && a.preliminaryRepairEstimate.total && (
+            <p className="mt-2 font-mono text-sm" data-testid="text-preliminary-repair-total">
+              Indicative category-rate scenario: {money(a.preliminaryRepairEstimate.total.low)} / {money(a.preliminaryRepairEstimate.total.expected)} / {money(a.preliminaryRepairEstimate.total.high)}
+            </p>
+          )}
+          {a.preliminaryRepairEstimate.status === 'BLOCKED' && (
+            <p className="mt-2 text-sm text-destructive">
+              No complete preliminary total: missing rate cards are not replaced with assumed costs. Inspection scope remains required for underwriting.
+            </p>
+          )}
+          {a.preliminaryRepairEstimate.hypotheses.length > 0 && (
+            <ul className="mt-2 space-y-2">
+              {a.preliminaryRepairEstimate.hypotheses.map((item) => {
+                const estimate = a.preliminaryRepairEstimate.lines.find((line) => line.hypothesisIds.includes(item.id));
+                return (
+                  <li key={item.id} className="border-t border-border/60 pt-2 text-sm">
+                    <div className="flex flex-wrap justify-between gap-2">
+                      <span className="font-medium">{item.category} · {item.severity} · AI HYPOTHESIS</span>
+                      {estimate && <span className="font-mono text-xs">{money(estimate.low)} / {money(estimate.expected)} / {money(estimate.high)} · lump-sum rate scenario</span>}
+                    </div>
+                    <p className="mt-1">{item.statement}</p>
+                    <p className="text-xs text-muted-foreground">
+                      Source status {item.evidenceClassification} · source confidence {pct(item.sourceConfidence)} · rule score {pct(item.confidence)} (uncalibrated)
+                    </p>
+                    <p className="text-xs"><span className="font-semibold">Ask:</span> {item.question} <span className="font-semibold">Next:</span> {item.action}</p>
+                    <a className="text-xs underline underline-offset-2" href={item.sourceUrl} target="_blank" rel="noreferrer">{item.source}</a>
+                  </li>
+                );
+              })}
+            </ul>
+          )}
+          {a.preliminaryRepairEstimate.blockers.length > 0 && (
+            <ul className="mt-2 list-disc pl-5 text-xs text-destructive">
+              {a.preliminaryRepairEstimate.blockers.map((item, index) => <li key={index}>{item}</li>)}
+            </ul>
+          )}
+          {a.preliminaryRepairEstimate.sourceWarnings.length > 0 && (
+            <ul className="mt-2 list-disc pl-5 text-xs text-muted-foreground">
+              {a.preliminaryRepairEstimate.sourceWarnings.map((item, index) => <li key={index}>{item}</li>)}
+            </ul>
+          )}
+        </section>
+      )}
       {(a.blockers.length > 0 || a.risks.length > 0) && (
         <div className="mt-4 grid gap-3 md:grid-cols-2">
           {a.blockers.length > 0 && (

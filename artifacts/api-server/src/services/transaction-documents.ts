@@ -6,6 +6,7 @@ export type PurchaseReviewSnapshot = {
   contractId: string;
   offerId: string;
   analysisSnapshotId: string;
+  economicsSnapshotHash: string;
   attemptNumber: number;
   propertyAddress: string;
   sellerReportedName: string | null;
@@ -107,6 +108,7 @@ export async function buildPurchaseReviewPdf(snapshot: PurchaseReviewSnapshot, s
     x: 44, y: 53, size: 7.5, font: regular, color: ink, maxWidth: 524,
   });
   page.drawText(`Terms snapshot SHA-256: ${snapshotHash}`, { x: 44, y: 33, size: 6.5, font: regular, color: muted });
+  page.drawText(`Underwriting economics SHA-256: ${snapshot.economicsSnapshotHash}`, { x: 44, y: 22, size: 6.5, font: regular, color: muted });
 
   form.updateFieldAppearances(regular);
   return pdf.save();

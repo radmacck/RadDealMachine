@@ -7,7 +7,7 @@ import {
 } from "@workspace/db";
 import {
   type Analysis, type DealContract, type Lead, type OfferActor,
-  DomainError, assertOperationsRole, buyerReservations, matchBuyer, wholeDollars, DAY,
+  type UnderwritingInput, DomainError, assertOperationsRole, buyerReservations, matchBuyer, wholeDollars, DAY,
 } from "@workspace/deal-domain";
 import {
   AuthorizeDealDistributionBody, ShareDistributionRecipientsBody,
@@ -17,11 +17,12 @@ import {
 import type { z } from "zod";
 import { lockedLead, leadDetail, move, audit } from "./deal-store";
 import { allBuyerRecords, buyerRecord, contractRecord, type Store, type Tx } from "./operations-records";
+import { lockDealEconomics } from "./locked-economics";
 
 type Intent = z.infer<typeof RespondToBuyerPortalDealBody>;
 type Packet = typeof distributionPacketsTable.$inferSelect;
 type Recipient = typeof distributionRecipientsTable.$inferSelect;
-type OriginalSnapshot = { lead: Lead; analysis: Analysis };
+type OriginalSnapshot = { lead: Lead; input: UnderwritingInput; analysis: Analysis };
 
 const packetStatus = (value: string) => ["ACTIVE", "FIRST_ACCEPTED", "CLOSED", "REVOKED"].includes(value);
 const recipientStatus = (value: string) => ["INVITED", "INTERESTED", "ACCEPTED", "DECLINED", "COMMITTED", "EXPIRED"].includes(value);
@@ -34,13 +35,39 @@ function validateToken(token: string | undefined) {
   return hashToken(token);
 }
 
-function buildPacket(original: OriginalSnapshot, contract: DealContract, now: Date): DistributionPacketSnapshot {
+function buildPacket(original: OriginalSnapshot, contract: DealContract, sourceAnalysisSnapshotId: string, now: Date): DistributionPacketSnapshot {
   const analysis = original.analysis;
   const acquisitionPrice = contract.purchasePrice;
-  const authorizedAssignmentFee = contract.assignmentTarget;
-  const buyerPrice = Math.round((acquisitionPrice + authorizedAssignmentFee) * 100) / 100;
-  wholeDollars(buyerPrice, "Authorized buyer price");
-  const gross = (arv: number, repairs: number) => Math.round((arv - buyerPrice - repairs) * 100) / 100;
+  const economics = lockDealEconomics(sourceAnalysisSnapshotId,contract.offerId,analysis,acquisitionPrice);
+  if (economics.authorizedAssignmentFee!==contract.assignmentTarget)
+    throw new DomainError("Executed assignment fee does not match the original deterministic underwriting snapshot.",409);
+  wholeDollars(economics.buyerPrice, "Authorized buyer price");
+  const decisions = new Map(analysis.compDecisions.map(decision=>[decision.id,decision]));
+  const comparableEvidence = original.input.comps.map(comp=>{
+    const decision = decisions.get(comp.id);
+    return {
+      id:comp.id,included:decision?.included===true,reasons:decision?.reasons??["No saved comp decision."],
+      source:comp.source,soldAt:comp.soldAt,verified:comp.verified,
+      saleEvidenceId:comp.saleEvidenceId??null,conditionEvidenceId:comp.conditionEvidenceId??null,
+    };
+  });
+  const repairEvidence = analysis.repairEstimate.status==="CALCULATED"
+    ? {
+      status:"INSPECTION_RATE_CATALOG" as const,
+      lines:analysis.repairEstimate.lines.map(line=>({
+        category:line.category,low:line.low,expected:line.expected,high:line.high,confidence:line.confidence,
+        source:line.source,evidenceId:line.evidenceId,sourceUrl:line.sourceUrl??null,
+        rateCardId:line.rateCardId??null,rateCardVersion:line.rateCardVersion??null,
+      })),
+    }
+    : {
+      status:"SOURCE_REVIEWED_INPUT" as const,
+      lines:original.input.repairs.map(repair=>({
+        category:repair.category,low:repair.low,expected:repair.expected,high:repair.high,confidence:repair.confidence,
+        source:repair.source,evidenceId:repair.evidenceId??null,sourceUrl:null,rateCardId:null,rateCardVersion:null,
+      })),
+    };
+  const gross = (arv: number, repairs: number) => Math.round((arv - economics.buyerPrice - repairs) * 100) / 100;
   return {
     location: {
       city: original.lead.city,
@@ -56,7 +83,7 @@ function buildPacket(original: OriginalSnapshot, contract: DealContract, now: Da
       units: original.lead.units,
       askingPrice: original.lead.askingPrice ?? null,
     },
-    economics: { acquisitionPrice, authorizedAssignmentFee, buyerPrice },
+    economics,
     underwriting: {
       arv: analysis.arv,
       repairs: analysis.repairs,
@@ -67,6 +94,14 @@ function buildPacket(original: OriginalSnapshot, contract: DealContract, now: Da
       },
       formula: "ARV − buyer price − repairs; estimates are scenario bounds, not a promise of resale value or profit.",
       calculatedAt: analysis.calculatedAt,
+    },
+    evidence: {
+      status:"FROZEN_ANALYSIS_SNAPSHOT",
+      sourceAnalysisSnapshotId,
+      analysisEngineVersion:analysis.engineVersion,
+      calculatedAt:analysis.calculatedAt,
+      comparables:comparableEvidence,
+      repairs:repairEvidence,
     },
     closeBy: contract.closingAt,
     contingencies: contract.contingencies,
@@ -162,7 +197,7 @@ export async function authorizeDealDistribution(
       original.analysis.assumptions.assignmentTarget !== contract.assignmentTarget) {
       throw new DomainError("The executed assignment target does not match its immutable underwriting snapshot.", 409);
     }
-    const snapshot = buildPacket(original, contract, now);
+    const snapshot = buildPacket(original, contract, analysisRow.id, now);
     const [created] = await tx.insert(distributionPacketsTable).values({
       leadId, contractId: contractRow.id, attemptNumber,
       snapshot: snapshot as unknown as Record<string, unknown>,

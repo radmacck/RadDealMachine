@@ -100,6 +100,11 @@ export async function leadDetail(id: string, database: typeof db | Tx = db, now 
       status:"NOT_USED" as const,marketKey:repairMarketKey(lead.city,lead.state),catalogVersion:0,
       calculatedAt:storedAnalysis.calculatedAt,lines:[],total:null,blockers:[],
     },
+    preliminaryRepairEstimate:storedAnalysis.preliminaryRepairEstimate ?? {
+      status:"NOT_USED" as const,marketKey:repairMarketKey(lead.city,lead.state),catalogVersion:0,
+      calculatedAt:storedAnalysis.calculatedAt,hypotheses:[],lines:[],total:null,blockers:[],
+      sourceWarnings:["Legacy analysis predates source-linked condition hypotheses; no repair clue was inferred."],
+    },
   } : null;
   const analysis = evidenceReviewedAnalysis(legacySafeAnalysis,lead,row.underwriting as UnderwritingInput|null,intelligence,now);
   const offers = await offersForLead(database,id,{

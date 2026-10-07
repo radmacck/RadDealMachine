@@ -5,9 +5,14 @@
  * Radical Deal OS seller intake, underwriting, conversations and approved offers
  * OpenAPI spec version: 1.0.0
  */
+import type { DistributionPacketSnapshotEconomicsVersion } from './distributionPacketSnapshotEconomicsVersion';
 
 export type DistributionPacketSnapshotEconomics = {
   acquisitionPrice: number;
   authorizedAssignmentFee: number;
   buyerPrice: number;
+  sourceAnalysisSnapshotId: string;
+  version: DistributionPacketSnapshotEconomicsVersion;
+  /** @pattern ^[a-f0-9]{64}$ */
+  economicsSnapshotHash: string;
 };

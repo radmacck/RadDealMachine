@@ -2,6 +2,7 @@ import { DomainError, type Analysis, type Assumptions, type Lead, type Underwrit
 import { CreateLeadResponse, SaveUnderwritingBody, UpdateAssumptionsBody } from "@workspace/api-zod";
 import type { Intelligence } from "./types";
 import { estimateRepairScope, repairsFromEstimate, validateRepairRateCards } from "./repair-estimation";
+import { estimateConditionRepairHypotheses } from "./repair-hypotheses";
 
 export const ENGINE_VERSION = "deterministic-underwriting/1.1";
 export const DEFAULT_ASSUMPTIONS: Assumptions = {
@@ -51,6 +52,7 @@ export function analyzeDeal(lead: Lead, input: UnderwritingInput, assumptions: A
   const seenIds = new Set<string>();
   const seenAddresses = new Set<string>();
   const repairEstimate = estimateRepairScope(lead,input.repairObservations ?? [],assumptions,intelligence,now);
+  const preliminaryRepairEstimate = estimateConditionRepairHypotheses(lead,intelligence,assumptions,now);
   const resolvedRepairs = (input.repairObservations?.length ?? 0) > 0
     ? repairsFromEstimate(repairEstimate)
     : input.repairs;
@@ -114,6 +116,12 @@ export function analyzeDeal(lead: Lead, input: UnderwritingInput, assumptions: A
   if (Math.min(arv.confidence, repairs.confidence) < assumptions.minConfidence) blockers.push("ARV or repair confidence is below the configured threshold");
   if (arv.expected && (arv.high - arv.low) / arv.expected > 0.25) risks.push("Wide comp dispersion: ARV spread exceeds 25%");
   if (compDecisions.some(c => !c.included)) risks.push("One or more comps were rejected; review comp decisions");
+  if (preliminaryRepairEstimate.hypotheses.length) {
+    risks.push("Current source remarks produced AI HYPOTHESIS condition signals. Preliminary rate scenarios are not verified scope and never feed repairs, MAO or authorization.");
+  }
+  if (preliminaryRepairEstimate.sourceWarnings.length) {
+    risks.push("Some condition remarks were excluded from preliminary repair scenarios because their provenance or freshness was insufficient.");
+  }
   if (lead.askingPrice == null) risks.push("Asking price unknown: establish seller expectation during the conversation");
   if (now.getTime() - Date.parse(lead.createdAt) > 30 * 86_400_000) risks.push("Lead is over 30 days old; reconfirm motivation and availability");
   const costs = assumptions.acquisitionCost + assumptions.holdingMonthly * assumptions.holdingMonths;
@@ -134,7 +142,7 @@ export function analyzeDeal(lead: Lead, input: UnderwritingInput, assumptions: A
   return {
     engineVersion: ENGINE_VERSION,
     calculatedAt: now.toISOString(),
-    classification, arv, repairs, repairEstimate, mao,
+    classification, arv, repairs, repairEstimate, preliminaryRepairEstimate, mao,
     openingLow: money(mao * assumptions.openingLowPct),
     openingHigh: money(mao * assumptions.openingHighPct),
     maximumApprovedAcquisitionPrice: null,

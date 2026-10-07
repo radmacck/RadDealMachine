@@ -73,6 +73,8 @@ try {
   assert.equal(reviewDocument.status,"PREPARED_FOR_REVIEW");
   assert.equal(reviewDocument.kind,"PURCHASE_TERMS_REVIEW");
   assert.equal(reviewDocument.sourceOfferId,offerId);
+  assert.equal(reviewDocument.sourceAnalysisSnapshotId,approvedSnapshot);
+  assert.match(reviewDocument.economicsSnapshotHash??"",/^[a-f0-9]{64}$/);
   assert.equal(op.contract?.status,"DRAFT","preparing a review worksheet must never imply execution");
   assert.equal(op.contract?.executedDocumentUrl??null,null);
   assert.match(op.nextAction,/Review the saved fillable terms PDF/);
@@ -173,11 +175,27 @@ try {
   competitor = await buyers.verifyBuyer(competitor.id,{...verificationInput,version:competitor.version},actor,now);
   op = await refreshMatches(id,now);
   assert.equal(op.matches.find(m=>m.buyerId===competitor.id)?.eligible,true);
+  const lockedAnalysis=(await seller.leadDetail(id,undefined,now)).analysis;
+  assert.ok(lockedAnalysis,"The exact approved analysis remains available before buyer distribution.");
+  assert.equal(lockedAnalysis.assumptions.assignmentTarget,15000);
     const distribution = await authorizeDealDistribution(id,{version:op.contract!.version,
       reason:"Synthetic owner authorization for isolated distribution exercise."},actor,now);
     assert.ok(distribution.packetId);
+    assert.equal(op.contract?.purchasePrice,110000);
+    assert.equal(op.contract?.assignmentTarget,15000);
     const expectedBuyerPrice=op.contract!.purchasePrice+op.contract!.assignmentTarget;
     assert.equal(distribution.packet?.economics.buyerPrice,expectedBuyerPrice);
+    assert.equal(distribution.packet?.economics.authorizedAssignmentFee,15000);
+    assert.equal(distribution.packet?.economics.buyerPrice,125000);
+    assert.deepEqual(distribution.packet?.underwriting.arv,lockedAnalysis.arv);
+    assert.deepEqual(distribution.packet?.underwriting.repairs,lockedAnalysis.repairs);
+     assert.equal(distribution.packet?.economics.economicsSnapshotHash,reviewDocument.economicsSnapshotHash,
+       "The buyer packet and prepared transaction worksheet must carry the same locked economics hash.");
+     assert.equal(distribution.packet?.economics.sourceAnalysisSnapshotId,reviewDocument.sourceAnalysisSnapshotId);
+     assert.equal(distribution.packet?.evidence.sourceAnalysisSnapshotId,reviewDocument.sourceAnalysisSnapshotId);
+     assert.equal(distribution.packet?.evidence.comparables.filter(comp=>comp.included).length,3);
+     const syntheticRepairEvidenceId=(uw as {repairs:Array<{evidenceId?:string}>}).repairs[0]?.evidenceId;
+     assert.ok(distribution.packet?.evidence.repairs.lines.some(line=>line.evidenceId===syntheticRepairEvidenceId));
     const shared = await shareDistributionRecipients(distribution.packetId!,{version:distribution.version,buyerIds:[buyer.id,competitor.id]},operator,now);
     assert.equal(shared.links.length,2);
     const portalToken = shared.links.find(link=>link.buyerId===buyer.id)!.token;
@@ -479,6 +497,67 @@ try {
   assert.ok(restarted.contract?.history?.some(h=>h.kind==="CANCELLED_ATTEMPT"&&h.previousState.outcomeEvidenceUrl==="https://example.com/synthetic-cancel"));
   assert.equal((await db.select().from(contractsTable).where(eq(contractsTable.leadId,nextId))).length,1);
   assert.equal((await seller.leadDetail(nextId)).offers.length,2);
+  async function verifyPreExecutionRevisionInvalidation() {
+    const staleLead = await seller.createLead({address:"SYNTHETIC PRE-EXEC REVISION",city:"Synthetic City",state:"TX",county:"Synthetic County",zip:"75001",
+      propertyType:"SINGLE_FAMILY",sqft:1000,beds:3,baths:2,units:1,askingPrice:100000,sellerName:"SYNTHETIC ONLY",sellerPhone:"000-000-0000",
+      source:"SYNTHETIC stale-document exercise"},actor.id,now);
+    const staleId = staleLead.id;
+    let staleDetail = await seller.leadDetail(staleId);
+    const staleAuthority = await seller.addIntelligence(staleId,{classification:"VERIFIED_FACTS",category:"ownership",
+      statement:"SYNTHETIC owner authority evidence fixture",source:"SYNTHETIC public record",sourceType:"PUBLIC_RECORD",
+      sourceUrl:"https://example.com/synthetic-preexec-owner",confidence:0.9,capturedAt:now.toISOString(),
+      verificationNote:"SYNTHETIC isolated test data only."},actor.id,now);
+    staleDetail = await seller.leadDetail(staleId);
+    const staleBase = {
+      version:staleDetail.lead.version,
+      comps:[290000,300000,310000].map((salePrice,index)=>({id:`preexec-comp-${randomUUID()}`,
+        address:`SYNTHETIC PREEXEC COMP ${index}`,sqft:1000,salePrice,
+        soldAt:new Date(now.getTime()-10*86400000).toISOString().slice(0,10),distanceMiles:0.5,
+        propertyType:"SINGLE_FAMILY" as const,condition:"RENOVATED" as const,
+        source:"SYNTHETIC stale-document comp",verified:true})),
+      repairs:[{category:"Synthetic repairs",low:10000,expected:20000,high:30000,confidence:0.8,source:"SYNTHETIC inspection"}],
+      repairsComplete:true,conditionConfirmed:true,
+    };
+    const staleUnderwriting = await exerciseEvidence(staleId,staleBase,actor.id,now);
+    staleDetail = await seller.saveUnderwriting(staleId,staleUnderwriting,actor.id,now);
+    staleDetail = await seller.transitionLead(staleId,{version:staleDetail.lead.version,to:"CALL_READY",
+      reason:"SYNTHETIC complete source fixture.",nextAction:"Synthetic call."},actor.id,now);
+    staleDetail = await seller.recordCall(staleId,{version:staleDetail.lead.version,outcome:"CONNECTED",notes:"SYNTHETIC only.",
+      nextAction:"Review terms.",followUpAt:future(1)},actor.id,now);
+    staleDetail = await offers.createOfferDraft(staleId,{version:staleDetail.lead.version,amount:110000,earnestMoney:1000,
+      closingDays:30,contingencies:"SYNTHETIC review",assignmentIntent:true,reason:"SYNTHETIC revision test"},actor,now);
+    const staleOfferId = staleDetail.offers[0]!.id;
+    staleDetail = await offers.authorizeOffer(staleId,staleOfferId,{version:staleDetail.lead.version,
+      maximumApprovedAcquisitionPrice:120000,authorityEvidenceId:staleAuthority.id,expiresAt:future(2),
+      reason:"SYNTHETIC approval only.",nextAction:"Record communication.",followUpAt:future(1)},actor,now);
+    staleDetail = await offers.communicateOffer(staleId,staleOfferId,{version:staleDetail.lead.version,amount:110000,
+      channel:"PHONE",evidence:"SYNTHETIC communication fixture; no call occurred.",
+      nextAction:"Prepare review copy.",followUpAt:future(1)},operator,now);
+    let staleOps = await transactions.createContract(staleId,{version:staleDetail.lead.version,
+      offerId:staleOfferId,closingAt:future(20)},operator,now);
+    staleOps = await transactions.preparePurchaseReviewDocument(staleId,{version:staleOps.contract!.version},operator,now);
+    const prepared = staleOps.contract!.documents![0]!;
+    assert.equal(prepared.status,"PREPARED_FOR_REVIEW");
+    assert.equal(staleOps.contract?.status,"DRAFT");
+
+    await seller.addIntelligence(staleId,{classification:"OBSERVED",category:"subject_condition",
+      statement:"SYNTHETIC material change: newly documented condition evidence.",source:"SYNTHETIC inspection update",
+      sourceType:"INSPECTION",sourceUrl:"https://example.com/synthetic-preexec-condition",
+      confidence:0.8,capturedAt:now.toISOString()},actor.id,now);
+    const changed = await seller.leadDetail(staleId);
+    assert.equal(changed.analysis,null,"Material new evidence invalidates the saved analysis.");
+    assert.equal(changed.offers.find(item=>item.id===staleOfferId)?.effectiveStatus,"INVALIDATED");
+    await assert.rejects(transactions.downloadPurchaseReviewDocument(staleId,prepared.id,operator,now),
+      /source offer is stale or revoked/);
+    staleOps = await dealOperations(staleId,now);
+    assert.equal(staleOps.contract?.status,"DRAFT");
+    assert.equal(staleOps.contract?.documents?.[0]?.status,"PREPARED_FOR_REVIEW",
+      "Stale prepared bytes remain historical review artifacts, not current or signed documents.");
+    assert.equal(staleOps.contract?.sellerSignedAt??null,null);
+    assert.equal(staleOps.contract?.acquisitionSignedAt??null,null);
+    assert.equal(staleOps.contract?.executedDocumentUrl??null,null);
+  }
+  await verifyPreExecutionRevisionInvalidation();
   logger.info("Cancellation/restart PASSED: owner-only, fresh underwriting/approval/communication, distinct attempt, original cancellation/signatures/terms/buyer history retained; CLOSED cannot reopen.");
-   logger.info({checks:"approved terms → draft → historically authorized late execution → matching; append-only deal-finder submission, exact terms, and post-close fee receipt/dispute/waiver isolated from buyer commitment and closing; leases; owner/buyer-consented amendment; evidenced release archives old assignment → verified replacement → commitment; refreshed research preserves lifecycle; four milestones; late evidenced settlement preserves actual/recorded times; reconciliation and terminal guards"},"Full lifecycle persistence exercise PASSED (isolated synthetic schema)");
+   logger.info({checks:"condition phrase hypotheses remain separate from MAO; immutable economics hash shared across PDF and redacted buyer packet; material pre-execution evidence change makes saved analysis/offers/PDF unavailable; approved terms → draft → historically authorized late execution → matching; append-only deal-finder submission, exact terms, and post-close fee receipt/dispute/waiver isolated from buyer commitment and closing; leases; owner/buyer-consented amendment; evidenced release archives old assignment → verified replacement → commitment; refreshed research preserves lifecycle; four milestones; late evidenced settlement preserves actual/recorded times; reconciliation and terminal guards"},"Full lifecycle persistence exercise PASSED (isolated synthetic schema)");
 } finally { await pool.end(); }

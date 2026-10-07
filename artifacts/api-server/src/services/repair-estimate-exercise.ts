@@ -33,6 +33,13 @@ async function exercise() {
       source:"SYNTHETIC inspection fixture",sourceType:"INSPECTION",sourceUrl:`https://example.invalid/inspection/${id}`,
       confidence:0.9,capturedAt:inspectionDate,verificationNote:"Synthetic exercise evidence only; not a real inspection.",
     },actor,now);
+    const listingClue=await store.addIntelligence(id,{
+      classification:"OBSERVED",category:"listing_remarks",
+      statement:"SYNTHETIC listing remarks say the roof leaks; this is not an inspection finding.",
+      source:"SYNTHETIC permitted listing fixture",sourceType:"PERMITTED_LISTING",
+      sourceUrl:`https://example.invalid/listing/${id}`,confidence:0.8,
+      capturedAt:inspectionDate,
+    },actor,now);
     const policy=await store.getAssumptions();
     const card:RepairRateCard={
       id:`synthetic-rate-${id}`,version:1,marketKey:"PHILADELPHIA-PA",category:"Roof",severity:"MODERATE",unit:"SQFT",
@@ -40,7 +47,13 @@ async function exercise() {
       sourceUrl:`https://example.invalid/rates/${id}`,capturedOn:now.toISOString().slice(0,10),
       validThrough:new Date(now.getTime()+30*86_400_000).toISOString().slice(0,10),active:true,
     };
-    await store.saveAssumptions({...policy,repairRates:[card]},actor);
+    const preliminaryCard:RepairRateCard={
+      id:`synthetic-preliminary-rate-${id}`,version:1,marketKey:"PHILADELPHIA-PA",category:"Roof",severity:"MODERATE",unit:"LUMP_SUM",
+      lowRate:1000,expectedRate:2000,highRate:3000,confidence:0.75,source:"SYNTHETIC preliminary scenario rate",
+      sourceUrl:`https://example.invalid/preliminary-rates/${id}`,capturedOn:now.toISOString().slice(0,10),
+      validThrough:new Date(now.getTime()+30*86_400_000).toISOString().slice(0,10),active:true,
+    };
+    await store.saveAssumptions({...policy,repairRates:[card,preliminaryCard]},actor);
     const loadedPolicy=await store.getAssumptions();
     assert.equal(loadedPolicy.repairRateCatalogVersion,policy.repairRateCatalogVersion+1);
 
@@ -60,6 +73,12 @@ async function exercise() {
     const detail=await store.saveUnderwriting(id,underwriting,actor,now);
     assert.equal(detail.analysis?.repairEstimate.status,"CALCULATED");
     assert.deepEqual(detail.analysis?.repairs,{low:400,expected:600,high:800,confidence:0.85});
+    assert.equal(detail.analysis?.preliminaryRepairEstimate.status,"CALCULATED");
+    assert.deepEqual(detail.analysis?.preliminaryRepairEstimate.total,{low:1000,expected:2000,high:3000,confidence:0.4});
+    assert.equal(detail.analysis?.preliminaryRepairEstimate.hypotheses[0]?.epistemicStatus,"AI_HYPOTHESIS");
+    assert.equal(detail.analysis?.preliminaryRepairEstimate.hypotheses[0]?.evidenceId,listingClue.id);
+    assert.notEqual(detail.analysis?.repairs.expected,detail.analysis?.preliminaryRepairEstimate.total?.expected,
+      "Preliminary phrase-derived ranges remain separate from inspection-based underwriting repairs.");
     assert.equal(detail.underwriting?.repairEstimate?.catalogVersion,loadedPolicy.repairRateCatalogVersion);
     assert.equal(detail.underwriting?.repairs[0]?.source,`Cost catalog ${card.id} v1: ${card.source}`);
     assert.equal(detail.underwriting?.repairs[0]?.evidenceId,inspected.id);
@@ -69,6 +88,8 @@ async function exercise() {
     const snapshots=await db.select().from(analysesTable).where(eq(analysesTable.leadId,id));
     assert.equal(snapshots.length,1);
     assert.equal((snapshots[0]?.snapshot as {input:UnderwritingInput}).input.repairEstimate?.status,"CALCULATED");
+    assert.equal((snapshots[0]?.snapshot as {analysis:{preliminaryRepairEstimate:{hypotheses:Array<{evidenceId:string}>}}})
+      .analysis.preliminaryRepairEstimate.hypotheses[0]?.evidenceId,listingClue.id);
 
     await assert.rejects(
       store.saveAssumptions({...loadedPolicy,repairRates:[{...card,expectedRate:7}]},actor),
@@ -77,7 +98,7 @@ async function exercise() {
     assert.deepEqual(await store.getAssumptions(),loadedPolicy);
     const events=await db.select().from(auditTable).where(eq(auditTable.entityId,"workspace"));
     assert.ok(events.some(event=>event.action==="ASSUMPTIONS_CHANGED"));
-    logger.info({checks:"source-backed rate provenance, exact multiplication, evidence-bound estimate, versioned persisted snapshot, immutable rate history, audit"},"Repair estimator persistence exercise PASSED (synthetic isolated data)");
+    logger.info({checks:"inspection-sourced repairs and separately labeled listing-condition hypotheses, exact current-rate multiplication, non-propagation into MAO, provenance-bound persisted snapshot, immutable rate history, audit"},"Repair estimator persistence exercise PASSED (synthetic isolated data)");
   } finally {
     if(id) {
       await db.transaction(async tx=>{

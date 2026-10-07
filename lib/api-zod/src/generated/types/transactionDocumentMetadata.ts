@@ -21,6 +21,9 @@ export interface TransactionDocumentMetadata {
   /** @pattern ^[a-f0-9]{64}$ */
   snapshotHash: string;
   /** @pattern ^[a-f0-9]{64}$ */
+  economicsSnapshotHash?: string;
+  sourceAnalysisSnapshotId?: string;
+  /** @pattern ^[a-f0-9]{64}$ */
   contentHash: string;
   fileName: string;
   contentType: TransactionDocumentMetadataContentType;

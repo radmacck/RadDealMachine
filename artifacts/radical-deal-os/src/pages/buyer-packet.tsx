@@ -233,6 +233,9 @@ export default function BuyerPacketPage() {
                 <div className="flex justify-between gap-3"><dt>Authorized assignment fee</dt><dd className="font-mono">{money(packet.economics.authorizedAssignmentFee)}</dd></div>
                 <div className="flex justify-between gap-3 border-t border-border pt-1 font-semibold"><dt>Buyer price</dt><dd className="font-mono">{money(packet.economics.buyerPrice)}</dd></div>
               </dl>
+              <p className="mt-2 break-all font-mono text-[10px] text-muted-foreground">
+                Immutable {packet.economics.version} · snapshot {packet.economics.economicsSnapshotHash}
+              </p>
               <p className="mt-2 whitespace-pre-wrap text-xs text-muted-foreground">Seller-contract contingencies: {packet.contingencies}</p>
             </div>
             <div><h2 className="eyebrow mb-2">Underwriting snapshot</h2>
@@ -244,6 +247,44 @@ export default function BuyerPacketPage() {
               <p className="mt-1 text-xs text-muted-foreground">Snapshot as of {fmtDate(packet.underwriting.calculatedAt)}.</p>
             </div>
           </div>
+          <details className="border-t border-border pt-4" data-testid="packet-provenance">
+            <summary className="cursor-pointer text-sm font-semibold">
+              Underwriting evidence · {packet.evidence.comparables.length} comps, {packet.evidence.repairs.lines.length} repair lines
+            </summary>
+            <p className="mt-2 text-xs text-muted-foreground">
+              Frozen source snapshot {packet.evidence.sourceAnalysisSnapshotId} · {packet.evidence.analysisEngineVersion} · {fmtDate(packet.evidence.calculatedAt)}
+            </p>
+            <div className="mt-3">
+              <p className="eyebrow mb-1">Comparable decisions</p>
+              <ul className="space-y-1 text-xs">
+                {packet.evidence.comparables.map((comp) => (
+                  <li key={comp.id} className="border-t border-border/60 pt-1">
+                    <span className={comp.included ? 'font-semibold text-signal' : 'font-semibold text-destructive'}>
+                      {comp.included ? 'Included' : 'Excluded'}
+                    </span>
+                    {' · '}{comp.source} · sold {fmtDate(comp.soldAt)} · {comp.verified ? 'source-verified' : 'not source-verified'}
+                    <span className="block break-all text-muted-foreground">
+                      sale evidence {comp.saleEvidenceId ?? 'not linked'} · condition evidence {comp.conditionEvidenceId ?? 'not linked'}
+                      {comp.reasons.length > 0 ? ` · ${comp.reasons.join('; ')}` : ''}
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+            <div className="mt-3">
+              <p className="eyebrow mb-1">Repair provenance · {packet.evidence.repairs.status.replace(/_/g, ' ').toLowerCase()}</p>
+              {packet.evidence.repairs.lines.length === 0
+                ? <p className="text-xs text-muted-foreground">No repair evidence lines were included in this snapshot.</p>
+                : <ul className="space-y-1 text-xs">
+                  {packet.evidence.repairs.lines.map((repair, index) => (
+                    <li key={`${repair.category}-${index}`} className="border-t border-border/60 pt-1">
+                      {repair.category} · {money(repair.low)} / {money(repair.expected)} / {money(repair.high)} · {repair.source} · evidence {repair.evidenceId ?? 'not linked'}
+                      {repair.sourceUrl && <> · <a className="underline" href={repair.sourceUrl} target="_blank" rel="noreferrer">source</a></>}
+                    </li>
+                  ))}
+                </ul>}
+            </div>
+          </details>
           <div className="border-t border-border pt-4">
             <h2 className="eyebrow mb-2">Property media</h2>
             {packet.media.length ? <div className="grid grid-cols-2 gap-2">{packet.media.map((media, index) =>

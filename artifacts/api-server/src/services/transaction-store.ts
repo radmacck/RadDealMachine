@@ -19,6 +19,7 @@ import { lockedLead, leadDetail, move, audit } from "./deal-store";
 import { contractRecord, buyerRecord, queueJob, type Tx } from "./operations-records";
 import { dealOperations, refreshMatches } from "./matching-store";
 import { buildPurchaseReviewPdf, purchaseReviewSnapshotHash, type PurchaseReviewSnapshot } from "./transaction-documents";
+import { lockDealEconomics } from "./locked-economics";
 
 export async function lockedContract(tx: Tx, id: string, version: number) {
   const [row] = await tx.select().from(contractsTable).where(eq(contractsTable.leadId,id)).for("update");
@@ -84,9 +85,16 @@ export async function createContract(id: string,input: z.infer<typeof CreateCont
   return dealOperations(id,now);
 }
 
-function purchaseReviewSnapshot(lead: Lead,contract: DealContract,offer: LeadDetail["offers"][number]): PurchaseReviewSnapshot {
+function purchaseReviewSnapshot(
+  lead: Lead,
+  contract: DealContract,
+  offer: LeadDetail["offers"][number],
+  economicsSnapshotHash: string,
+  analysisSnapshotId: string,
+): PurchaseReviewSnapshot {
   return {
-    leadId:lead.id,contractId:contract.id,offerId:offer.id,analysisSnapshotId:offer.analysisSnapshotId,
+    leadId:lead.id,contractId:contract.id,offerId:offer.id,analysisSnapshotId,
+    economicsSnapshotHash,
     attemptNumber:contract.attemptNumber??1,propertyAddress:lead.address,sellerReportedName:lead.sellerName??null,
     purchasePrice:contract.purchasePrice,earnestMoney:contract.earnestMoney,closingAt:contract.closingAt,
     contingencies:contract.contingencies,assignmentAllowed:contract.assignmentAllowed,
@@ -111,10 +119,20 @@ export async function preparePurchaseReviewDocument(
     const detail = await leadDetail(id,tx,now);
     const offer = detail.offers.find(item=>item.id===contract.offerId&&item.effectiveStatus==="COMMUNICATED");
     if (!offer||!detail.analysis) throw new DomainError("A current, communicated owner-authorized offer is required to prepare transaction terms.",409);
+    if (!detail.analysisSnapshotId||detail.analysisSnapshotId!==offer.analysisSnapshotId)
+      throw new DomainError("The current underwriting snapshot no longer matches the communicated offer.",409);
     if (offer.amount!==contract.purchasePrice||offer.earnestMoney!==contract.earnestMoney||
       offer.contingencies!==contract.contingencies||offer.assignmentIntent!==contract.assignmentAllowed)
       throw new DomainError("Transaction terms no longer match the exact communicated offer. Reconcile the amendment before preparing a PDF.",409);
-    const snapshot = purchaseReviewSnapshot(detail.lead,contract,offer);
+    const [analysisRow] = await tx.select().from(analysesTable)
+      .where(and(eq(analysesTable.id,offer.analysisSnapshotId),eq(analysesTable.leadId,id)));
+    const original = analysisRow?.snapshot as {lead:Lead;analysis:Analysis}|undefined;
+    if (!analysisRow||!original?.lead||!original.analysis)
+      throw new DomainError("The immutable underwriting source for this communicated offer is missing.",409);
+    const lockedEconomics = lockDealEconomics(analysisRow.id,offer.id,original.analysis,contract.purchasePrice);
+    if (lockedEconomics.authorizedAssignmentFee!==contract.assignmentTarget)
+      throw new DomainError("The transaction assignment fee no longer matches its underwriting snapshot.",409);
+    const snapshot = purchaseReviewSnapshot(original.lead,contract,offer,lockedEconomics.economicsSnapshotHash,analysisRow.id);
     const snapshotHash = purchaseReviewSnapshotHash(snapshot);
     const previous = storedDocumentArtifacts(row);
     if (previous.some(item=>item.kind==="PURCHASE_TERMS_REVIEW"&&item.snapshotHash===snapshotHash&&typeof item.pdfBase64==="string")) return;
@@ -126,7 +144,8 @@ export async function preparePurchaseReviewDocument(
     const artifact = {
       id:idForDocument,kind:"PURCHASE_TERMS_REVIEW",status:"PREPARED_FOR_REVIEW",
       attemptNumber:contract.attemptNumber??1,sourceContractVersion:row.version,sourceOfferId:offer.id,
-      snapshotHash,contentHash,fileName,contentType:"application/pdf",sizeBytes:bytes.byteLength,
+      snapshotHash,economicsSnapshotHash:lockedEconomics.economicsSnapshotHash,sourceAnalysisSnapshotId:analysisRow.id,
+      contentHash,fileName,contentType:"application/pdf",sizeBytes:bytes.byteLength,
       generatedAt:now.toISOString(),generatedBy:actor.id,
       downloadUrl:`/api/deals/${id}/contract/documents/${idForDocument}/file`,
       pdfBase64:Buffer.from(bytes).toString("base64"),
@@ -136,7 +155,7 @@ export async function preparePurchaseReviewDocument(
       version:row.version+1,updatedAt:now,
     }).where(eq(contractsTable.id,row.id));
     await audit(tx,actor.id,"TRANSACTION_REVIEW_PDF_PREPARED",id,
-      `Prepared ${idForDocument} from communicated offer ${offer.id}; terms snapshot ${snapshotHash}, PDF content ${contentHash}. Review copy only; no legal agreement or signature was created.`);
+      `Prepared ${idForDocument} from communicated offer ${offer.id}; economics ${lockedEconomics.economicsSnapshotHash}, terms ${snapshotHash}, PDF content ${contentHash}. Review copy only; no legal agreement or signature was created.`);
   });
   return dealOperations(id,now);
 }
@@ -160,7 +179,17 @@ export async function downloadPurchaseReviewDocument(
     if (offer.amount!==contract.purchasePrice||offer.earnestMoney!==contract.earnestMoney||
       offer.contingencies!==contract.contingencies||offer.assignmentIntent!==contract.assignmentAllowed)
       throw new DomainError("The source offer no longer matches the transaction terms. This review PDF is stale.",409);
-    const snapshot = purchaseReviewSnapshot(detail.lead,contract,offer);
+    const [analysisRow] = await tx.select().from(analysesTable)
+      .where(and(eq(analysesTable.id,offer.analysisSnapshotId),eq(analysesTable.leadId,id)));
+    const original = analysisRow?.snapshot as {lead:Lead;analysis:Analysis}|undefined;
+    if (!analysisRow||!original?.lead||!original.analysis)
+      throw new DomainError("The immutable underwriting source for this review PDF is missing.",409);
+    const lockedEconomics = lockDealEconomics(analysisRow.id,offer.id,original.analysis,contract.purchasePrice);
+    if (lockedEconomics.authorizedAssignmentFee!==contract.assignmentTarget ||
+      artifact.economicsSnapshotHash!==lockedEconomics.economicsSnapshotHash ||
+      artifact.sourceAnalysisSnapshotId!==analysisRow.id)
+      throw new DomainError("This review PDF no longer matches its authorized underwriting economics snapshot.",409);
+    const snapshot = purchaseReviewSnapshot(original.lead,contract,offer,lockedEconomics.economicsSnapshotHash,analysisRow.id);
     if (purchaseReviewSnapshotHash(snapshot)!==artifact.snapshotHash)
       throw new DomainError("This review PDF no longer matches the current transaction terms. Prepare a new copy.",409);
     const bytes = Buffer.from(artifact.pdfBase64,"base64");

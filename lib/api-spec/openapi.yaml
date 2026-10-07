@@ -1694,6 +1694,8 @@ components:
         sourceContractVersion: { type: integer, minimum: 1 }
         sourceOfferId: { type: string, format: uuid }
         snapshotHash: { type: string, pattern: "^[a-f0-9]{64}$" }
+        economicsSnapshotHash: { type: string, pattern: "^[a-f0-9]{64}$" }
+        sourceAnalysisSnapshotId: { type: string, format: uuid }
         contentHash: { type: string, pattern: "^[a-f0-9]{64}$" }
         fileName: { type: string }
         contentType: { type: string, enum: [application/pdf] }
@@ -1721,7 +1723,7 @@ components:
         reason: { type: string, minLength: 3, maxLength: 2000 }
     DistributionPacketSnapshot:
       type: object
-      required: [location, property, economics, underwriting, closeBy, contingencies, media, mediaNotice, disclosure]
+      required: [location, property, economics, underwriting, evidence, closeBy, contingencies, media, mediaNotice, disclosure]
       properties:
         location:
           type: object
@@ -1743,11 +1745,14 @@ components:
             askingPrice: { type: ["number", "null"] }
         economics:
           type: object
-          required: [acquisitionPrice, authorizedAssignmentFee, buyerPrice]
+          required: [acquisitionPrice, authorizedAssignmentFee, buyerPrice, sourceAnalysisSnapshotId, version, economicsSnapshotHash]
           properties:
             acquisitionPrice: { type: number }
             authorizedAssignmentFee: { type: number }
             buyerPrice: { type: number }
+            sourceAnalysisSnapshotId: { type: string, format: uuid }
+            version: { type: string, enum: [deal-economics/1] }
+            economicsSnapshotHash: { type: string, pattern: "^[a-f0-9]{64}$" }
         underwriting:
           type: object
           required: [arv, repairs, grossProfitPotential, formula, calculatedAt]
@@ -1763,6 +1768,49 @@ components:
                 caveat: { type: string }
             formula: { type: string }
             calculatedAt: { type: string }
+        evidence:
+          type: object
+          required: [status, sourceAnalysisSnapshotId, analysisEngineVersion, calculatedAt, comparables, repairs]
+          properties:
+            status: { type: string, enum: [FROZEN_ANALYSIS_SNAPSHOT] }
+            sourceAnalysisSnapshotId: { type: string, format: uuid }
+            analysisEngineVersion: { type: string }
+            calculatedAt: { type: string, format: date-time }
+            comparables:
+              type: array
+              items:
+                type: object
+                required: [id, included, reasons, source, soldAt, verified, saleEvidenceId, conditionEvidenceId]
+                properties:
+                  id: { type: string }
+                  included: { type: boolean }
+                  reasons: { type: array, items: { type: string } }
+                  source: { type: string }
+                  soldAt: { type: string, format: date }
+                  verified: { type: boolean }
+                  saleEvidenceId: { type: ["string", "null"] }
+                  conditionEvidenceId: { type: ["string", "null"] }
+            repairs:
+              type: object
+              required: [status, lines]
+              properties:
+                status: { type: string, enum: [INSPECTION_RATE_CATALOG, SOURCE_REVIEWED_INPUT] }
+                lines:
+                  type: array
+                  items:
+                    type: object
+                    required: [category, low, expected, high, confidence, source, evidenceId]
+                    properties:
+                      category: { type: string }
+                      low: { type: number, minimum: 0 }
+                      expected: { type: number, minimum: 0 }
+                      high: { type: number, minimum: 0 }
+                      confidence: { type: number, minimum: 0, maximum: 1 }
+                      source: { type: string }
+                      evidenceId: { type: ["string", "null"] }
+                      sourceUrl: { type: ["string", "null"], format: uri }
+                      rateCardId: { type: ["string", "null"] }
+                      rateCardVersion: { type: ["integer", "null"] }
         closeBy: { type: string }
         contingencies: { type: string }
         media: { type: array, items: { type: object, additionalProperties: true } }
@@ -2247,6 +2295,56 @@ components:
             - { $ref: "#/components/schemas/Range" }
             - { type: "null" }
         blockers: { type: array, items: { type: string } }
+    ConditionRepairHypothesis:
+      type: object
+      required: [id, evidenceId, category, severity, statement, evidenceClassification, epistemicStatus, sourceConfidence, confidence, confidenceMethod, source, sourceUrl, ruleId, question, action]
+      properties:
+        id: { type: string }
+        evidenceId: { type: string }
+        category: { type: string }
+        severity: { type: string, enum: [COSMETIC, MODERATE, MAJOR, REPLACEMENT] }
+        statement: { type: string }
+        evidenceClassification: { $ref: "#/components/schemas/ProvenanceClass" }
+        epistemicStatus: { type: string, enum: [AI_HYPOTHESIS] }
+        sourceConfidence: { type: number, minimum: 0, maximum: 1 }
+        confidence: { type: number, minimum: 0, maximum: 0.5 }
+        confidenceMethod: { type: string, enum: [EXPLICIT_PHRASE_RULE_UNCALIBRATED] }
+        source: { type: string }
+        sourceUrl: { type: string, format: uri }
+        ruleId: { type: string }
+        question: { type: string }
+        action: { type: string }
+    PreliminaryRepairLine:
+      type: object
+      required: [category, severity, low, expected, high, confidence, rateCardId, rateCardVersion, hypothesisIds, source, sourceUrl]
+      properties:
+        category: { type: string }
+        severity: { type: string, enum: [COSMETIC, MODERATE, MAJOR, REPLACEMENT] }
+        low: { type: number, minimum: 0 }
+        expected: { type: number, minimum: 0 }
+        high: { type: number, minimum: 0 }
+        confidence: { type: number, minimum: 0, maximum: 0.5 }
+        rateCardId: { type: string }
+        rateCardVersion: { type: integer, minimum: 1 }
+        hypothesisIds: { type: array, minItems: 1, items: { type: string } }
+        source: { type: string }
+        sourceUrl: { type: string, format: uri }
+    PreliminaryRepairEstimate:
+      type: object
+      required: [status, marketKey, catalogVersion, calculatedAt, hypotheses, lines, total, blockers, sourceWarnings]
+      properties:
+        status: { type: string, enum: [NOT_USED, CALCULATED, BLOCKED] }
+        marketKey: { type: string }
+        catalogVersion: { type: integer, minimum: 0 }
+        calculatedAt: { type: string, format: date-time }
+        hypotheses: { type: array, maxItems: 100, items: { $ref: "#/components/schemas/ConditionRepairHypothesis" } }
+        lines: { type: array, maxItems: 50, items: { $ref: "#/components/schemas/PreliminaryRepairLine" } }
+        total:
+          oneOf:
+            - { $ref: "#/components/schemas/Range" }
+            - { type: "null" }
+        blockers: { type: array, items: { type: string } }
+        sourceWarnings: { type: array, items: { type: string } }
     Assumptions:
       type: object
       required: [arvMultiplier, sellingCostPct, acquisitionCost, holdingMonthly, holdingMonths, assignmentTarget, contingencyPct, strongMargin, openingLowPct, openingHighPct, maxCompAgeDays, maxDistanceMiles, maxSqftDifferencePct, minComps, minConfidence, approvalRequired, repairRateCatalogVersion, repairRates]
@@ -2318,7 +2416,7 @@ components:
         reasons: { type: array, items: { type: string } }
     Analysis:
       type: object
-      required: [engineVersion, calculatedAt, classification, arv, repairs, repairEstimate, mao, openingLow, openingHigh, maximumApprovedAcquisitionPrice, spreadAtAsking, assumptions, risks, blockers, compDecisions, formula]
+      required: [engineVersion, calculatedAt, classification, arv, repairs, repairEstimate, preliminaryRepairEstimate, mao, openingLow, openingHigh, maximumApprovedAcquisitionPrice, spreadAtAsking, assumptions, risks, blockers, compDecisions, formula]
       properties:
         engineVersion: { type: string }
         calculatedAt: { type: string }
@@ -2326,6 +2424,7 @@ components:
         arv: { $ref: "#/components/schemas/Range" }
         repairs: { $ref: "#/components/schemas/Range" }
         repairEstimate: { $ref: "#/components/schemas/RepairEstimate" }
+        preliminaryRepairEstimate: { $ref: "#/components/schemas/PreliminaryRepairEstimate" }
         mao: { type: number }
         openingLow: { type: number }
         openingHigh: { type: number }

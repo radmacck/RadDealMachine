@@ -90,3 +90,83 @@ test("stale, wrong-category, seller, and AI evidence cannot drive automatic repa
     assert.equal(estimate.total,null);
   }
 });
+
+test("current listing condition phrases create provenance-linked AI hypotheses and rate scenarios without changing MAO",()=>{
+  const listing: Intelligence = {
+    id:"listing-remarks-roof",leadId:lead.id,createdBy:"synthetic-test",createdAt:now.toISOString(),
+    classification:"OBSERVED",category:"listing_remarks",
+    statement:"SYNTHETIC listing remarks report a roof leak and a dated kitchen; inspection is still required.",
+    source:"SYNTHETIC permitted listing fixture",sourceType:"PERMITTED_LISTING",
+    sourceUrl:"https://example.invalid/synthetic-listing",confidence:0.8,
+    capturedAt:"2026-10-05T12:00:00.000Z",
+  };
+  const duplicateListing: Intelligence = {
+    ...listing,id:"listing-copy-roof",source:"SYNTHETIC second listing source",
+    sourceUrl:"https://example.invalid/synthetic-listing-copy",
+  };
+  const lumpSumCards: RepairRateCard[] = [
+    {...rate,id:"synthetic-roof-lump-v1",severity:"MODERATE",unit:"LUMP_SUM",lowRate:2500,expectedRate:3000,highRate:3500},
+    {...rate,id:"synthetic-finishes-lump-v1",category:"Interior finishes",severity:"COSMETIC",unit:"LUMP_SUM",
+      lowRate:1000,expectedRate:2000,highRate:3000},
+  ];
+  const assumptions = {...DEFAULT_ASSUMPTIONS,repairRateCatalogVersion:2,repairRates:[rate,...lumpSumCards]};
+  const input: UnderwritingInput = {
+    version:1,comps:[290000,300000,310000].map((salePrice,index)=>({
+      id:`synthetic-condition-comp-${index}`,address:`SYNTHETIC COMP ${index} CONDITION ROAD`,
+      salePrice,sqft:1000,soldAt:"2026-09-30",distanceMiles:0.5,
+      propertyType:"SINGLE_FAMILY",condition:"RENOVATED",source:"SYNTHETIC test comp",verified:true,
+    })),
+    repairs:[],repairObservations:[observation],repairsComplete:true,conditionConfirmed:true,
+  };
+  const withoutRemarks = analyzeDeal(lead,input,assumptions,now,[evidence]);
+  const withRemarks = analyzeDeal(lead,input,assumptions,now,[evidence,listing,duplicateListing]);
+  const preliminary = withRemarks.preliminaryRepairEstimate;
+
+  assert.equal(preliminary.status,"CALCULATED");
+  assert.equal(preliminary.hypotheses.length,4,"Both sourced remarks and both supported phrases remain traceable.");
+  assert.ok(preliminary.hypotheses.every(item=>item.epistemicStatus==="AI_HYPOTHESIS"));
+  assert.ok(preliminary.hypotheses.every(item=>item.confidenceMethod==="EXPLICIT_PHRASE_RULE_UNCALIBRATED"));
+  assert.equal(preliminary.lines.length,2,"Repeated reports of the same roof work do not double-count a category.");
+  assert.equal(preliminary.lines.find(line=>line.category==="Roof")?.hypothesisIds.length,2);
+  assert.deepEqual(preliminary.total,{low:3500,expected:5000,high:6500,confidence:0.4});
+  assert.deepEqual(withRemarks.repairs,withoutRemarks.repairs,"Listing phrases do not replace inspected repair scope.");
+  assert.equal(withRemarks.mao,withoutRemarks.mao,"AI hypotheses and preliminary rate scenarios never feed MAO.");
+  assert.equal(preliminary.hypotheses.find(item=>item.category==="Roof")?.evidenceId,listing.id);
+});
+
+test("negated, stale, unlinked, and model condition remarks are excluded with explicit provenance warnings",()=>{
+  const makeListing = (overrides:Partial<Intelligence>):Intelligence=>({
+    id:"listing-remarks-invalid",leadId:lead.id,createdBy:"synthetic-test",createdAt:now.toISOString(),
+    classification:"OBSERVED",category:"condition",statement:"SYNTHETIC listing reports a roof leak.",
+    source:"SYNTHETIC listing",sourceType:"PERMITTED_LISTING",sourceUrl:"https://example.invalid/listing",
+    confidence:0.8,capturedAt:"2026-10-05T12:00:00.000Z",...overrides,
+  });
+  const freshNegative = makeListing({statement:"SYNTHETIC listing says there is no roof leak."});
+  const stale = makeListing({id:"listing-stale",capturedAt:"2026-08-01T12:00:00.000Z"});
+  const unlinked = makeListing({id:"listing-unlinked",sourceUrl:undefined});
+  const model = makeListing({id:"model-condition",sourceType:"MODEL",classification:"AI_HYPOTHESIS"});
+  const estimate = analyzeDeal(lead,{
+    version:1,comps:[],repairs:[],repairsComplete:false,conditionConfirmed:false,
+  },DEFAULT_ASSUMPTIONS,now,[freshNegative,stale,unlinked,model]).preliminaryRepairEstimate;
+  assert.equal(estimate.status,"NOT_USED");
+  assert.equal(estimate.hypotheses.length,0);
+  assert.equal(estimate.total,null);
+  assert.ok(estimate.sourceWarnings.some(warning=>warning.includes("stale or invalid")));
+  assert.ok(estimate.sourceWarnings.some(warning=>warning.includes("HTTP(S) source link")));
+  assert.ok(estimate.sourceWarnings.some(warning=>warning.includes("model hypothesis")));
+});
+
+test("a recognized condition phrase without a current market lump-sum card withholds its scenario total",()=>{
+  const listing: Intelligence = {
+    id:"listing-no-rate",leadId:lead.id,createdBy:"synthetic-test",createdAt:now.toISOString(),
+    classification:"INDICATED",category:"listing_description",statement:"SYNTHETIC seller description: foundation settling.",
+    source:"SYNTHETIC owner-provided listing",sourceType:"SELLER",sourceUrl:"https://example.invalid/seller-listing",
+    confidence:0.8,capturedAt:"2026-10-05T12:00:00.000Z",
+  };
+  const estimate = analyzeDeal(lead,{version:1,comps:[],repairs:[],repairsComplete:false,conditionConfirmed:false},
+    DEFAULT_ASSUMPTIONS,now,[listing]).preliminaryRepairEstimate;
+  assert.equal(estimate.status,"BLOCKED");
+  assert.equal(estimate.total,null);
+  assert.match(estimate.blockers.join(" "),/no current source-backed PHILADELPHIA-PA LUMP_SUM rate/);
+  assert.equal(estimate.hypotheses[0]?.epistemicStatus,"AI_HYPOTHESIS");
+});

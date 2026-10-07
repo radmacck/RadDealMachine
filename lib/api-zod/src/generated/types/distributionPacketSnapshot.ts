@@ -6,6 +6,7 @@
  * OpenAPI spec version: 1.0.0
  */
 import type { DistributionPacketSnapshotEconomics } from './distributionPacketSnapshotEconomics';
+import type { DistributionPacketSnapshotEvidence } from './distributionPacketSnapshotEvidence';
 import type { DistributionPacketSnapshotLocation } from './distributionPacketSnapshotLocation';
 import type { DistributionPacketSnapshotMediaItem } from './distributionPacketSnapshotMediaItem';
 import type { DistributionPacketSnapshotProperty } from './distributionPacketSnapshotProperty';
@@ -16,6 +17,7 @@ export interface DistributionPacketSnapshot {
   property: DistributionPacketSnapshotProperty;
   economics: DistributionPacketSnapshotEconomics;
   underwriting: DistributionPacketSnapshotUnderwriting;
+  evidence: DistributionPacketSnapshotEvidence;
   closeBy: string;
   contingencies: string;
   media: DistributionPacketSnapshotMediaItem[];

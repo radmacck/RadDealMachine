@@ -8,6 +8,7 @@
 import type { AnalysisClassification } from './analysisClassification';
 import type { Assumptions } from './assumptions';
 import type { CompDecision } from './compDecision';
+import type { PreliminaryRepairEstimate } from './preliminaryRepairEstimate';
 import type { Range } from './range';
 import type { RepairEstimate } from './repairEstimate';
 
@@ -18,6 +19,7 @@ export interface Analysis {
   arv: Range;
   repairs: Range;
   repairEstimate: RepairEstimate;
+  preliminaryRepairEstimate: PreliminaryRepairEstimate;
   mao: number;
   openingLow: number;
   openingHigh: number;

@@ -5,6 +5,7 @@ import type {
   RecordCallBody, GetCallQueueResponse,
   CreateOfferDraftBody, AuthorizeOfferBody, CommunicateOfferBody, WithdrawOfferBody,
   Repair, RepairEstimate, RepairEstimateLine, RepairObservation, RepairRateCard,
+  ConditionRepairHypothesis, PreliminaryRepairEstimate, PreliminaryRepairLine,
 } from "@workspace/api-zod";
 
 export type Lead = z.infer<typeof CreateLeadResponse>;
@@ -28,6 +29,7 @@ export type OfferApprovalInput = z.infer<typeof AuthorizeOfferBody>;
 export type OfferCommunicationInput = z.infer<typeof CommunicateOfferBody>;
 export type OfferWithdrawalInput = z.infer<typeof WithdrawOfferBody>;
 export type { Repair, RepairEstimate, RepairEstimateLine, RepairObservation, RepairRateCard };
+export type { ConditionRepairHypothesis, PreliminaryRepairEstimate, PreliminaryRepairLine };
 
 export class DomainError extends Error {
   constructor(message: string, public readonly status = 422) {
