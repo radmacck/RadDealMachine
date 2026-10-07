@@ -5,9 +5,12 @@
  * Radical Deal OS seller intake, underwriting, conversations and approved offers
  * OpenAPI spec version: 1.0.0
  */
+import type { TransactionDocumentEvent } from './transactionDocumentEvent';
 import type { TransactionDocumentMetadataContentType } from './transactionDocumentMetadataContentType';
 import type { TransactionDocumentMetadataKind } from './transactionDocumentMetadataKind';
 import type { TransactionDocumentMetadataStatus } from './transactionDocumentMetadataStatus';
+import type { TransactionDocumentMetadataStorageMode } from './transactionDocumentMetadataStorageMode';
+import type { TransactionDocumentMetadataTemplateStatus } from './transactionDocumentMetadataTemplateStatus';
 
 export interface TransactionDocumentMetadata {
   id: string;
@@ -32,4 +35,12 @@ export interface TransactionDocumentMetadata {
   generatedAt: string;
   generatedBy: string;
   downloadUrl: string;
+  templateKey?: string;
+  /** @minimum 1 */
+  templateVersion?: number;
+  templateStatus?: TransactionDocumentMetadataTemplateStatus;
+  /** @pattern ^[a-f0-9]{64}$ */
+  partySnapshotHash?: string;
+  storageMode?: TransactionDocumentMetadataStorageMode;
+  events?: TransactionDocumentEvent[];
 }

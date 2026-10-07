@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Link } from 'wouter';
 import { Download, FileText, RefreshCw } from 'lucide-react';
 import {
-  getGetDealOperationsQueryKey, useCreateContract, useExecuteContract, useGetDealOperations, usePreparePurchaseReviewDocument, useRecordBuyerResponse, useRecordDestinationActivity,
+  getGetDealOperationsQueryKey, useCreateContract, useExecuteContract, useGetDealOperations, useGetTransactionDocumentReadiness, usePreparePurchaseReviewDocument, useTransitionTransactionDocument, useRecordBuyerResponse, useRecordDestinationActivity,
   useRecordClosingMilestone, useRecordDealOutcome, useRecordTransactionException, useRefreshMatches,
   type BuyerMatch, type BuyerResponseInputStatus, type ClosingMilestoneInputKind, type DealContract, type DealOutcomeInputOutcome,
   type DestinationActivityEvent, type DestinationActivityInputKind, type TransactionExceptionInputKind, type LeadDetail,
@@ -56,11 +56,14 @@ function CreateContract({ detail, onDone }: { detail: LeadDetail; onDone: () => 
 }
 
 function PurchaseReviewDocuments({ contract, onDone }: { contract: DealContract; onDone: () => void }) {
-  const { canCall } = useAccess();
+  const { canCall, isOwner } = useAccess();
   const prepare = usePreparePurchaseReviewDocument();
+  const transition = useTransitionTransactionDocument();
+  const readiness = useGetTransactionDocumentReadiness();
   const { toast } = useToast();
   const [downloading, setDownloading] = useState<string | null>(null);
   const [downloadError, setDownloadError] = useState<string | null>(null);
+  const [documentReasons, setDocumentReasons] = useState<Record<string, string>>({});
   const documents = contract.documents ?? [];
   const createReviewCopy = () => prepare.mutate(
     { id: contract.leadId, data: { version: contract.version } },
@@ -71,6 +74,14 @@ function PurchaseReviewDocuments({ contract, onDone }: { contract: DealContract;
       },
     },
   );
+  const transitionDocument = (documentId: string, targetStatus: 'REJECTED' | 'VOID') => {
+    const reason = documentReasons[documentId]?.trim() ?? '';
+    if (reason.length < 10) return;
+    transition.mutate(
+      { id: contract.leadId, documentId, data: { version: contract.version, targetStatus, reason } },
+      { onSuccess: () => { onDone(); toast({ title: `Document ${targetStatus.toLowerCase()}`, description: 'The lifecycle event is recorded; no signature or delivery is implied.' }); } },
+    );
+  };
   const downloadReviewCopy = async (documentId: string, fileName: string, url: string) => {
     setDownloading(documentId);
     setDownloadError(null);
@@ -105,6 +116,16 @@ function PurchaseReviewDocuments({ contract, onDone }: { contract: DealContract;
         <p className="mt-1 text-xs text-muted-foreground">Creates a persisted, fillable copy of the exact authorized terms, with unverified or missing legal details left blank. This worksheet is not a contract and cannot be signed here.</p>
       </div>
     </div>
+    {readiness.error && <ErrorNotice error={readiness.error} />}
+    {readiness.data && !readiness.data.canSendLegalDocuments && <div className="border border-signal/40 bg-signal/5 p-3 text-xs" role="status" data-testid="transaction-document-readiness">
+      <p className="font-semibold">Legal transaction documents are not ready to send or sign.</p>
+      <p className="mt-1 text-muted-foreground">
+        {readiness.data.templates.filter((item) => item.status === 'MISSING_APPROVED_TEMPLATE').length} approved jurisdiction-specific templates are missing.
+        {` `}{readiness.data.signingProvider.status === 'NOT_CONNECTED' ? 'No signing provider is connected.' : ''}
+        {` `}{readiness.data.storage.status === 'PRIVATE_FILE_STORE_UNAVAILABLE' ? 'Private file storage is unavailable; review-copy bytes use the protected database fallback.' : ''}
+      </p>
+      <p className="mt-1 text-muted-foreground">Next: provide approved templates, configure private file storage, and connect a signing provider. The worksheet below is not a contract and cannot be signed here.</p>
+    </div>}
     {contract.status === 'DRAFT' && canCall && <Button size="sm" onClick={createReviewCopy} disabled={prepare.isPending} data-testid="button-prepare-purchase-review-pdf">
       <FileText className="mr-2 h-4 w-4" />{prepare.isPending ? 'Preparing…' : 'Prepare fillable review PDF'}
     </Button>}
@@ -115,16 +136,30 @@ function PurchaseReviewDocuments({ contract, onDone }: { contract: DealContract;
       <ul className="space-y-2" data-testid="list-purchase-review-documents">
         {documents.map((document) => <li key={document.id} className="flex flex-wrap items-center justify-between gap-2 border border-border p-2" data-testid={`transaction-review-document-${document.id}`}>
           <div>
-            <p className="text-xs font-semibold">{document.fileName} · review copy</p>
+            <p className="text-xs font-semibold">{document.fileName} · {(document.status ?? 'PREPARED_FOR_REVIEW').replace(/_/g, ' ').toLowerCase()}</p>
             <p className="text-[11px] text-muted-foreground">Attempt {document.attemptNumber} · transaction version {document.sourceContractVersion} · generated {fmtDate(document.generatedAt)} · terms {document.snapshotHash.slice(0, 12)}…</p>
           </div>
-          <Button type="button" size="sm" variant="outline" onClick={() => void downloadReviewCopy(document.id,document.fileName,document.downloadUrl)}
-            disabled={downloading!==null} data-testid={`button-download-transaction-review-document-${document.id}`}>
-            <Download className="mr-2 h-3.5 w-3.5" />{downloading===document.id?'Checking…':'Download'}
-          </Button>
+          <div className="flex flex-wrap items-center gap-2">
+            <Button type="button" size="sm" variant="outline" onClick={() => void downloadReviewCopy(document.id,document.fileName,document.downloadUrl)}
+              disabled={downloading!==null || ['REJECTED','VOID','EXPIRED','REPLACED'].includes(document.status ?? '')} data-testid={`button-download-transaction-review-document-${document.id}`}>
+              <Download className="mr-2 h-3.5 w-3.5" />{downloading===document.id?'Checking…':'Download'}
+            </Button>
+          </div>
+          {document.status === 'PREPARED_FOR_REVIEW' && <div className="mt-2 w-full space-y-2">
+            <Input value={documentReasons[document.id] ?? ''} onChange={(event) => setDocumentReasons((current) => ({ ...current, [document.id]: event.target.value }))}
+              placeholder="Reason required (at least 10 characters)" aria-label={`Reason for changing document ${document.fileName}`}
+              data-testid={`input-document-transition-reason-${document.id}`} />
+            <div className="flex gap-2">
+              <Button type="button" size="sm" variant="outline" disabled={(documentReasons[document.id]?.trim().length ?? 0) < 10 || transition.isPending}
+                onClick={() => transitionDocument(document.id, 'REJECTED')} data-testid={`button-reject-transaction-document-${document.id}`}>Reject review copy</Button>
+              {isOwner && <Button type="button" size="sm" variant="ghost" disabled={(documentReasons[document.id]?.trim().length ?? 0) < 10 || transition.isPending}
+                onClick={() => transitionDocument(document.id, 'VOID')} data-testid={`button-void-transaction-document-${document.id}`}>Void review copy</Button>}
+            </div>
+          </div>}
         </li>)}
       </ul>
     )}
+    {transition.error && <ErrorNotice error={transition.error} />}
   </section>;
 }
 

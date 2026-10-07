@@ -87,6 +87,8 @@ import type {
   SourceRefreshInput,
   SourceResearch,
   SourceReviewInput,
+  TransactionDocumentLifecycleInput,
+  TransactionDocumentReadinessResponse,
   TransactionExceptionInput,
   TransitionInput,
   UnderwritingInput,
@@ -3717,6 +3719,91 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
       return useMutation(getPreparePurchaseReviewDocumentMutationOptions(options));
     }
 
+export const getTransitionTransactionDocumentUrl = (id: string,
+    documentId: string,) => {
+
+
+
+
+  return `/api/deals/${id}/contract/documents/${documentId}`
+}
+
+export const transitionTransactionDocument = async (id: string,
+    documentId: string,
+    transactionDocumentLifecycleInput: TransactionDocumentLifecycleInput, options?: Parameters<typeof customFetch>[1]): Promise<DealOperations> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return customFetch<DealOperations>(getTransitionTransactionDocumentUrl(id,documentId),
+  {
+    ...options,
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(transactionDocumentLifecycleInput)
+  }
+);}
+
+
+
+
+
+export const getTransitionTransactionDocumentMutationKey = () => ['transitionTransactionDocument'] as const;
+
+export const getTransitionTransactionDocumentMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof transitionTransactionDocument>>, TError,TransitionTransactionDocumentMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof transitionTransactionDocument>>, TError,TransitionTransactionDocumentMutationVariables, TContext> => {
+
+const mutationKey = getTransitionTransactionDocumentMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof transitionTransactionDocument>>, TransitionTransactionDocumentMutationVariables> = (props) => {
+          const {id,documentId,data} = props ?? {};
+
+          return  transitionTransactionDocument(id,documentId,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type TransitionTransactionDocumentMutationResult = NonNullable<Awaited<ReturnType<typeof transitionTransactionDocument>>>
+    export type TransitionTransactionDocumentMutationBody = BodyType<TransactionDocumentLifecycleInput>
+    export type TransitionTransactionDocumentMutationError = ErrorType<unknown>
+    export type TransitionTransactionDocumentMutationVariables = {id: string;documentId: string;data: BodyType<TransactionDocumentLifecycleInput>}
+
+    export const useTransitionTransactionDocument = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof transitionTransactionDocument>>, TError,TransitionTransactionDocumentMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof transitionTransactionDocument>>,
+        TError,
+        TransitionTransactionDocumentMutationVariables,
+        TContext
+      > => {
+      return useMutation(getTransitionTransactionDocumentMutationOptions(options));
+    }
+
 export const getDownloadPurchaseReviewDocumentUrl = (id: string,
     documentId: string,) => {
 
@@ -3781,6 +3868,77 @@ export function useDownloadPurchaseReviewDocument<TData = Awaited<ReturnType<typ
  ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
 
   const queryOptions = getDownloadPurchaseReviewDocumentQueryOptions(id,documentId,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getGetTransactionDocumentReadinessUrl = () => {
+
+
+
+
+  return `/api/transaction-documents/readiness`
+}
+
+export const getTransactionDocumentReadiness = async ( options?: Parameters<typeof customFetch>[1]): Promise<TransactionDocumentReadinessResponse> => {
+
+  return customFetch<TransactionDocumentReadinessResponse>(getGetTransactionDocumentReadinessUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetTransactionDocumentReadinessQueryKey = () => {
+    return [
+    `/api/transaction-documents/readiness`
+    ] as const;
+    }
+
+
+export const getGetTransactionDocumentReadinessQueryOptions = <TData = Awaited<ReturnType<typeof getTransactionDocumentReadiness>>, TError = ErrorType<unknown>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getTransactionDocumentReadiness>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetTransactionDocumentReadinessQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getTransactionDocumentReadiness>>> = ({ signal }) => getTransactionDocumentReadiness({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getTransactionDocumentReadiness>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetTransactionDocumentReadinessQueryResult = NonNullable<Awaited<ReturnType<typeof getTransactionDocumentReadiness>>>
+export type GetTransactionDocumentReadinessQueryError = ErrorType<unknown>
+
+
+
+export function useGetTransactionDocumentReadiness<TData = Awaited<ReturnType<typeof getTransactionDocumentReadiness>>, TError = ErrorType<unknown>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getTransactionDocumentReadiness>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetTransactionDocumentReadinessQueryOptions(options)
 
   const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
 

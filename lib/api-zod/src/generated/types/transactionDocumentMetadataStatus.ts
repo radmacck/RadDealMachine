@@ -10,5 +10,15 @@ export type TransactionDocumentMetadataStatus = typeof TransactionDocumentMetada
 
 
 export const TransactionDocumentMetadataStatus = {
+  DRAFT: 'DRAFT',
   PREPARED_FOR_REVIEW: 'PREPARED_FOR_REVIEW',
+  APPROVED_TO_SEND: 'APPROVED_TO_SEND',
+  SENT: 'SENT',
+  SIGNING_IN_PROGRESS: 'SIGNING_IN_PROGRESS',
+  SIGNED: 'SIGNED',
+  EXECUTED: 'EXECUTED',
+  REJECTED: 'REJECTED',
+  VOID: 'VOID',
+  EXPIRED: 'EXPIRED',
+  REPLACED: 'REPLACED',
 } as const;

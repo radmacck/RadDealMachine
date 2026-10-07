@@ -27,6 +27,12 @@ Without an owner-approved jurisdictional form, a generated PDF may only be a cle
 
 **How to apply:** Populate only authorized known terms, leave unknown legal fields blank, preserve the source snapshot and integrity hash, reject stale downloads, and require actual signature evidence through the existing execution gate.
 
+Without an approved jurisdictional template, connected signing adapter, and suitable private file storage, a generated document remains an internal review copy. It cannot advance to SENT, SIGNED, or EXECUTED, and recording a separately evidenced external agreement must not mutate the review copy's state.
+
+**Why:** PDF generation and owner review are not legal approval, delivery, or signature; provider events and protected document bytes must have real sources.
+
+**How to apply:** Keep template, storage, and signing readiness explicit and fail closed. Require a connected provider receipt for sending and provider-verified signature evidence for signature states; preserve externally executed evidence as its own transaction record.
+
 Actual external event time and software recording time are different. Late entry may establish what happened under already-existing authority; it must never create retroactive approval or reuse evidence contradicted before the event.
 
 **Why:** The user explicitly requires late-recorded events without weakening financial/provenance boundaries. Today's expiry does not erase a previously authorized signature, but an old snapshot is not permission to ignore intervening changes.

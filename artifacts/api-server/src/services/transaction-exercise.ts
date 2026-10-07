@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { randomUUID } from "node:crypto";
 import { PDFDocument } from "pdf-lib";
-import { db,pool,contractsTable,jobsTable,matchesTable,buyersTable } from "@workspace/db";
+import { db,pool,contractsTable,jobsTable,matchesTable,buyersTable,leadsTable,transactionDocumentBlobsTable } from "@workspace/db";
 import { eq } from "drizzle-orm";
 import { logger } from "../lib/logger";
 import * as seller from "./deal-store";
@@ -21,6 +21,7 @@ import {
   authorizeDealDistribution, getBuyerPortalDeal, getDealDistribution,
   respondToBuyerPortalDeal, shareDistributionRecipients,
 } from "./distribution-store";
+import { getTransactionDocumentReadiness } from "./transaction-document-registry";
 const actor = {id:`synthetic-transaction:${randomUUID()}`,role:"OWNER"};
 const operator = {...actor,role:"OPERATOR"};
 const now = new Date();
@@ -82,6 +83,16 @@ try {
     "preparing paperwork must not invalidate the exact communicated approval");
   assert.match(reviewDocument.snapshotHash,/^[a-f0-9]{64}$/);
   assert.match(reviewDocument.contentHash,/^[a-f0-9]{64}$/);
+  assert.equal(reviewDocument.templateKey,"PURCHASE_TERMS_REVIEW");
+  assert.equal(reviewDocument.templateStatus,"REVIEW_COPY_ONLY");
+  assert.equal(reviewDocument.storageMode,"PERSISTENT_DATABASE_BLOB");
+  assert.deepEqual(reviewDocument.events?.map(event=>event.to),["DRAFT","PREPARED_FOR_REVIEW"]);
+  const registryState = await getTransactionDocumentReadiness(actor);
+  assert.equal(registryState.canSendLegalDocuments,false);
+  assert.equal(registryState.signingProvider.status,"NOT_CONNECTED");
+  assert.equal(registryState.storage.status,"PRIVATE_FILE_STORE_UNAVAILABLE");
+  assert.ok(registryState.templates.some(item=>item.key==="PURCHASE_AGREEMENT"&&item.status==="MISSING_APPROVED_TEMPLATE"));
+  assert.ok(registryState.templates.some(item=>item.key==="ASSIGNMENT_AGREEMENT"&&item.status==="MISSING_APPROVED_TEMPLATE"));
   const reviewFile = await transactions.downloadPurchaseReviewDocument(id,reviewDocument.id,operator,now);
   assert.equal(reviewFile.bytes.subarray(0,5).toString(),"%PDF-");
   const parsedPdf = await PDFDocument.load(reviewFile.bytes);
@@ -93,9 +104,21 @@ try {
   const persistedArtifacts = persistedContract?.payload.documentArtifacts as Array<Record<string,unknown>>|undefined;
   assert.equal(persistedArtifacts?.length,1);
   assert.equal(persistedArtifacts?.[0]?.contentHash,reviewDocument.contentHash);
-  assert.equal(typeof persistedArtifacts?.[0]?.pdfBase64,"string");
-  assert.equal(JSON.stringify(op.contract).includes(String(persistedArtifacts?.[0]?.pdfBase64)),false,
-    "the base64 PDF must never leak in ordinary deal API responses");
+  assert.equal(persistedArtifacts?.[0]?.pdfBase64,undefined,"new document binaries must not be embedded in contract JSON");
+  const [persistedBlob] = await db.select().from(transactionDocumentBlobsTable)
+    .where(eq(transactionDocumentBlobsTable.documentId,reviewDocument.id));
+  assert.ok(persistedBlob);
+  assert.equal(persistedBlob?.contentHash,reviewDocument.contentHash);
+  assert.equal(persistedBlob?.sizeBytes,reviewDocument.sizeBytes);
+  assert.equal(Buffer.from(persistedBlob!.content).subarray(0,5).toString(),"%PDF-");
+  assert.equal(JSON.stringify(op.contract).includes(Buffer.from(persistedBlob!.content).toString("base64")),false,
+    "private PDF bytes must never appear in ordinary deal API responses");
+  const [currentLeadRow] = await db.select().from(leadsTable).where(eq(leadsTable.id,id));
+  assert.ok(currentLeadRow);
+  await db.update(leadsTable).set({payload:{...currentLeadRow!.payload,sellerName:"Changed synthetic party"}}).where(eq(leadsTable.id,id));
+  await assert.rejects(transactions.downloadPurchaseReviewDocument(id,reviewDocument.id,operator,now),
+    /Seller identity\/contact fields changed/,"a changed seller party must stale the prepared document");
+  await db.update(leadsTable).set({payload:currentLeadRow!.payload}).where(eq(leadsTable.id,id));
   const versionAfterPdf = op.contract!.version;
   op = await transactions.preparePurchaseReviewDocument(id,{version:versionAfterPdf},operator,now);
   assert.equal(op.contract?.version,versionAfterPdf,"same authorized snapshot must be idempotent");
@@ -108,6 +131,10 @@ try {
   op = await transactions.executeContract(id,execute,actor,new Date(now.getTime()+3*86400000));
   assert.equal(op.contract?.status,"UNDER_CONTRACT");
   assert.equal(op.contract?.documents?.[0]?.id,reviewDocument.id,"contract updates must retain the immutable review artifact");
+   const executedReviewArtifact = op.contract?.documents?.find(document=>document.id===reviewDocument.id);
+   assert.equal(executedReviewArtifact?.status,"PREPARED_FOR_REVIEW",
+     "executing a separately evidenced agreement must not mark the generated review worksheet as signed");
+   assert.equal(executedReviewArtifact?.events?.some(event=>event.to==="SIGNED"||event.to==="EXECUTED"),false);
   assert.equal((await seller.leadDetail(id)).lead.stage,"UNDER_CONTRACT");
   detail = await seller.leadDetail(id);
   await assert.rejects(seller.recordCall(id,{version:detail.lead.version,outcome:"NOT_INTERESTED",notes:"Synthetic only.",nextAction:"Try to cancel.",followUpAt:future(1)},actor.id,now),/cannot cancel/);
@@ -478,8 +505,26 @@ try {
       evidence:"SYNTHETIC communication, not actual outreach.",nextAction:"Record agreement.",followUpAt:future(1)},operator,now);
     return transactions.createContract(nextId,{version:d.lead.version,offerId:newOffer.id,closingAt:future(20)},operator,now);
   }
-  let restarted = await prepareNewAttempt();
-  restarted = await transactions.executeContract(nextId,{...execute,version:restarted.contract!.version},actor,now);
+   let restarted = await prepareNewAttempt();
+   restarted = await transactions.preparePurchaseReviewDocument(nextId,{version:restarted.contract!.version},operator,now);
+   const firstReviewCopy = restarted.contract!.documents!.at(-1)!;
+   restarted = await transactions.transitionTransactionDocument(nextId,firstReviewCopy.id,{
+     version:restarted.contract!.version,targetStatus:"REJECTED",reason:"SYNTHETIC review found an unresolved party-field issue."},operator,now);
+   assert.equal(restarted.contract?.documents?.find(doc=>doc.id===firstReviewCopy.id)?.status,"REJECTED");
+   assert.ok(restarted.contract?.documents?.find(doc=>doc.id===firstReviewCopy.id)?.events?.some(event=>event.to==="REJECTED"));
+   restarted = await transactions.preparePurchaseReviewDocument(nextId,{version:restarted.contract!.version},operator,now);
+   const voidReviewCopy = restarted.contract!.documents!.at(-1)!;
+   await assert.rejects(transactions.transitionTransactionDocument(nextId,voidReviewCopy.id,{
+     version:restarted.contract!.version,targetStatus:"VOID",reason:"SYNTHETIC owner void test."},operator,now),
+     (error:unknown)=>(error as {status?:number}).status===403);
+   restarted = await transactions.transitionTransactionDocument(nextId,voidReviewCopy.id,{
+     version:restarted.contract!.version,targetStatus:"VOID",reason:"SYNTHETIC owner void test."},actor,now);
+   assert.equal(restarted.contract?.documents?.find(doc=>doc.id===voidReviewCopy.id)?.status,"VOID");
+   assert.ok(restarted.contract?.documents?.find(doc=>doc.id===voidReviewCopy.id)?.events?.some(event=>event.to==="VOID"));
+   restarted = await transactions.preparePurchaseReviewDocument(nextId,{version:restarted.contract!.version},operator,now);
+   const activeReviewCopy = restarted.contract!.documents!.at(-1)!;
+   assert.equal(activeReviewCopy.status,"PREPARED_FOR_REVIEW");
+   restarted = await transactions.executeContract(nextId,{...execute,version:restarted.contract!.version},actor,now);
   const priorOfferId = restarted.contract!.offerId;
   restarted = await transactions.recordDealOutcome(nextId,{version:restarted.contract!.version,outcome:"CANCELLED",
     evidenceUrl:"https://example.com/synthetic-cancel",note:"SYNTHETIC externally documented cancellation."},actor,now);
@@ -490,13 +535,18 @@ try {
   assert.equal(restarted.contract?.status,"CANCELLED");
   assert.equal((await seller.leadDetail(nextId)).analysis,null);
   const retained = restarted.contract!.history?.length;
-  restarted = await prepareNewAttempt();
+   restarted = await prepareNewAttempt();
   assert.equal(restarted.contract?.attemptNumber,2);
   assert.notEqual(restarted.contract?.offerId,priorOfferId);
   assert.ok(restarted.contract?.history!.length!>retained!);
   assert.ok(restarted.contract?.history?.some(h=>h.kind==="CANCELLED_ATTEMPT"&&h.previousState.outcomeEvidenceUrl==="https://example.com/synthetic-cancel"));
   assert.equal((await db.select().from(contractsTable).where(eq(contractsTable.leadId,nextId))).length,1);
   assert.equal((await seller.leadDetail(nextId)).offers.length,2);
+   restarted = await transactions.preparePurchaseReviewDocument(nextId,{version:restarted.contract!.version},operator,now);
+   assert.equal(restarted.contract?.documents?.find(doc=>doc.id===activeReviewCopy.id)?.status,"REPLACED",
+     "a review copy from the cancelled attempt remains historical and is explicitly replaced by the new attempt's copy");
+   assert.ok(restarted.contract?.documents?.find(doc=>doc.id===activeReviewCopy.id)?.events?.some(event=>event.to==="REPLACED"));
+   assert.equal(restarted.contract?.documents?.at(-1)?.status,"PREPARED_FOR_REVIEW");
   async function verifyPreExecutionRevisionInvalidation() {
     const staleLead = await seller.createLead({address:"SYNTHETIC PRE-EXEC REVISION",city:"Synthetic City",state:"TX",county:"Synthetic County",zip:"75001",
       propertyType:"SINGLE_FAMILY",sqft:1000,beds:3,baths:2,units:1,askingPrice:100000,sellerName:"SYNTHETIC ONLY",sellerPhone:"000-000-0000",
@@ -556,8 +606,16 @@ try {
     assert.equal(staleOps.contract?.sellerSignedAt??null,null);
     assert.equal(staleOps.contract?.acquisitionSignedAt??null,null);
     assert.equal(staleOps.contract?.executedDocumentUrl??null,null);
+     staleOps = await transactions.transitionTransactionDocument(staleId,prepared.id,{
+       version:staleOps.contract!.version,targetStatus:"EXPIRED",reason:"SYNTHETIC expiry after the source offer deadline."},
+     actor,new Date(now.getTime()+3*86400000));
+     assert.equal(staleOps.contract?.documents?.find(doc=>doc.id===prepared.id)?.status,"EXPIRED",
+       "an elapsed authorized-offer deadline is recorded as persisted document expiry");
+     assert.ok(staleOps.contract?.documents?.find(doc=>doc.id===prepared.id)?.events?.some(event=>event.to==="EXPIRED"));
+     await assert.rejects(transactions.downloadPurchaseReviewDocument(staleId,prepared.id,operator,new Date(now.getTime()+3*86400000)),
+       /expired and cannot be downloaded/);
   }
   await verifyPreExecutionRevisionInvalidation();
   logger.info("Cancellation/restart PASSED: owner-only, fresh underwriting/approval/communication, distinct attempt, original cancellation/signatures/terms/buyer history retained; CLOSED cannot reopen.");
-   logger.info({checks:"condition phrase hypotheses remain separate from MAO; immutable economics hash shared across PDF and redacted buyer packet; material pre-execution evidence change makes saved analysis/offers/PDF unavailable; approved terms → draft → historically authorized late execution → matching; append-only deal-finder submission, exact terms, and post-close fee receipt/dispute/waiver isolated from buyer commitment and closing; leases; owner/buyer-consented amendment; evidenced release archives old assignment → verified replacement → commitment; refreshed research preserves lifecycle; four milestones; late evidenced settlement preserves actual/recorded times; reconciliation and terminal guards"},"Full lifecycle persistence exercise PASSED (isolated synthetic schema)");
+   logger.info({checks:"persisted document registry and missing-template/private-storage/signing blockers; review PDF bytes separated into protected blob table; party/economic changes stale artifacts; persisted DRAFT → PREPARED → REJECTED/VOID/EXPIRED/REPLACED paths; separately evidenced execution never marks a review worksheet SIGNED; immutable economics hash shared with redacted packet; existing seller/buyer/closing lifecycle guards"},"Full lifecycle persistence exercise PASSED (isolated synthetic schema)");
 } finally { await pool.end(); }

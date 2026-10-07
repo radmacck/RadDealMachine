@@ -7,11 +7,12 @@ import {
 } from "@workspace/db";
 import type { z } from "zod";
 import {
-  CreateContractBody, PreparePurchaseReviewDocumentBody, RecordDestinationActivityBody as DestinationActivityBody, ExecuteContractBody, RecordBuyerResponseBody, RecordClosingMilestoneBody, RecordDealOutcomeBody,
+  CreateContractBody, PreparePurchaseReviewDocumentBody, RecordDestinationActivityBody as DestinationActivityBody, ExecuteContractBody, RecordBuyerResponseBody, RecordClosingMilestoneBody, RecordDealOutcomeBody, TransitionTransactionDocumentBody,
   type DestinationActivityEvent,
 } from "@workspace/api-zod";
 import {
   assertOperationsRole, buyerReservations, evidenceUrl, pastInstant, wholeDollars, closingBlockers, matchBuyer, DomainError, DAY,
+  evaluateTransactionDocumentTransition, type TransactionDocumentState,
   type OfferActor, type DealContract, type LeadDetail,
   evidenceReviewedAnalysis, type Analysis, type Lead, type UnderwritingInput, type Intelligence,
 } from "@workspace/deal-domain";
@@ -20,6 +21,8 @@ import { contractRecord, buyerRecord, queueJob, type Tx } from "./operations-rec
 import { dealOperations, refreshMatches } from "./matching-store";
 import { buildPurchaseReviewPdf, purchaseReviewSnapshotHash, type PurchaseReviewSnapshot } from "./transaction-documents";
 import { lockDealEconomics } from "./locked-economics";
+import { ensureTransactionDocumentRegistry } from "./transaction-document-registry";
+import { transactionDocumentBinaryStore } from "./transaction-document-storage";
 
 export async function lockedContract(tx: Tx, id: string, version: number) {
   const [row] = await tx.select().from(contractsTable).where(eq(contractsTable.leadId,id)).for("update");
@@ -107,6 +110,15 @@ function storedDocumentArtifacts(row: typeof contractsTable.$inferSelect): Array
     : [];
 }
 
+function partySnapshotHash(lead: Lead) {
+  return createHash("sha256").update(JSON.stringify({
+    leadId:lead.id,
+    sellerName:lead.sellerName,
+    sellerPhone:lead.sellerPhone??null,
+    sellerEmail:lead.sellerEmail??null,
+  })).digest("hex");
+}
+
 export async function preparePurchaseReviewDocument(
   id: string,input: z.infer<typeof PreparePurchaseReviewDocumentBody>,actor: OfferActor,now = new Date(),
 ) {
@@ -129,33 +141,73 @@ export async function preparePurchaseReviewDocument(
     const original = analysisRow?.snapshot as {lead:Lead;analysis:Analysis}|undefined;
     if (!analysisRow||!original?.lead||!original.analysis)
       throw new DomainError("The immutable underwriting source for this communicated offer is missing.",409);
+    const registry = await ensureTransactionDocumentRegistry(tx);
+    const registeredTemplate = registry.find(item => item.templateKey==="PURCHASE_TERMS_REVIEW");
+    if (!registeredTemplate||registeredTemplate.status!=="REVIEW_COPY_ONLY")
+      throw new DomainError("The purchase terms review worksheet is not registered as an available review-only template.",409);
+    const partyHash = partySnapshotHash(detail.lead);
+    if (partyHash!==partySnapshotHash(original.lead))
+      throw new DomainError("Seller identity/contact fields changed after the authorized offer snapshot. Reconcile the parties and obtain fresh authorization before preparing documents.",409);
     const lockedEconomics = lockDealEconomics(analysisRow.id,offer.id,original.analysis,contract.purchasePrice);
     if (lockedEconomics.authorizedAssignmentFee!==contract.assignmentTarget)
       throw new DomainError("The transaction assignment fee no longer matches its underwriting snapshot.",409);
     const snapshot = purchaseReviewSnapshot(original.lead,contract,offer,lockedEconomics.economicsSnapshotHash,analysisRow.id);
     const snapshotHash = purchaseReviewSnapshotHash(snapshot);
     const previous = storedDocumentArtifacts(row);
-    if (previous.some(item=>item.kind==="PURCHASE_TERMS_REVIEW"&&item.snapshotHash===snapshotHash&&typeof item.pdfBase64==="string")) return;
+    if (previous.some(item=>item.kind==="PURCHASE_TERMS_REVIEW"&&item.snapshotHash===snapshotHash&&
+      item.status==="PREPARED_FOR_REVIEW"&&typeof item.contentHash==="string")) return;
 
+    const documentId = randomUUID();
+    const documentState = evaluateTransactionDocumentTransition("DRAFT","PREPARED_FOR_REVIEW",{
+      actorRole:actor.role==="OWNER"?"OWNER":"OPERATOR",
+      currentSnapshot:true,
+      templateStatus:"REVIEW_COPY_AVAILABLE",
+    });
+    if (!documentState.allowed) throw new DomainError(documentState.reason,409);
     const bytes = await buildPurchaseReviewPdf(snapshot,snapshotHash);
-    const idForDocument = randomUUID();
-    const fileName = `purchase-terms-review-${contract.attemptNumber??1}-${idForDocument.slice(0,8)}.pdf`;
+    const fileName = `purchase-terms-review-${contract.attemptNumber??1}-${documentId.slice(0,8)}.pdf`;
     const contentHash = createHash("sha256").update(bytes).digest("hex");
+    const at = now.toISOString();
+    const actorRole = actor.role==="OWNER"?"OWNER":"OPERATOR";
+    const superseded = previous.map(item => {
+      if (item.kind!=="PURCHASE_TERMS_REVIEW"||item.snapshotHash===snapshotHash||
+        !["DRAFT","PREPARED_FOR_REVIEW"].includes(String(item.status))) return item;
+      const priorState = String(item.status) as TransactionDocumentState;
+      const decision = evaluateTransactionDocumentTransition(priorState,"REPLACED",{
+        actorRole,reason:"Superseded by a newly prepared review copy from a different authorized snapshot.",
+        replacementDocumentId:documentId,
+      });
+      if (!decision.allowed) return item;
+      const events = Array.isArray(item.events)?item.events:[];
+      return {...item,status:"REPLACED",events:[...events,{
+        from:priorState,to:"REPLACED",occurredAt:at,actorId:actor.id,actorRole,
+        reason:"Superseded by a newly prepared review copy from a different authorized snapshot.",
+        evidenceRef:documentId,
+      }]};
+    });
     const artifact = {
-      id:idForDocument,kind:"PURCHASE_TERMS_REVIEW",status:"PREPARED_FOR_REVIEW",
+      id:documentId,kind:"PURCHASE_TERMS_REVIEW",status:"PREPARED_FOR_REVIEW",
       attemptNumber:contract.attemptNumber??1,sourceContractVersion:row.version,sourceOfferId:offer.id,
       snapshotHash,economicsSnapshotHash:lockedEconomics.economicsSnapshotHash,sourceAnalysisSnapshotId:analysisRow.id,
+      templateKey:registeredTemplate.templateKey,templateVersion:registeredTemplate.version,templateStatus:"REVIEW_COPY_ONLY",
+      partySnapshotHash:partyHash,storageMode:transactionDocumentBinaryStore.mode,
       contentHash,fileName,contentType:"application/pdf",sizeBytes:bytes.byteLength,
-      generatedAt:now.toISOString(),generatedBy:actor.id,
-      downloadUrl:`/api/deals/${id}/contract/documents/${idForDocument}/file`,
-      pdfBase64:Buffer.from(bytes).toString("base64"),
+      generatedAt:at,generatedBy:actor.id,
+      downloadUrl:`/api/deals/${id}/contract/documents/${documentId}/file`,
+      events:[
+        {from:null,to:"DRAFT",occurredAt:at,actorId:actor.id,actorRole,reason:"Created from the exact persisted communicated offer and locked economics snapshot."},
+        {from:"DRAFT",to:"PREPARED_FOR_REVIEW",occurredAt:at,actorId:actor.id,actorRole,reason:"Required mapped fields and current party/economic snapshots validated; review copy only."},
+      ],
     };
+    await transactionDocumentBinaryStore.put(tx,{
+      documentId,leadId:id,bytes:Buffer.from(bytes),contentType:"application/pdf",contentHash,createdBy:actor.id,createdAt:now,
+    });
     await tx.update(contractsTable).set({
-      payload:{...row.payload,documentArtifacts:[...previous,artifact]},
+      payload:{...row.payload,documentArtifacts:[...superseded,artifact]},
       version:row.version+1,updatedAt:now,
     }).where(eq(contractsTable.id,row.id));
     await audit(tx,actor.id,"TRANSACTION_REVIEW_PDF_PREPARED",id,
-      `Prepared ${idForDocument} from communicated offer ${offer.id}; economics ${lockedEconomics.economicsSnapshotHash}, terms ${snapshotHash}, PDF content ${contentHash}. Review copy only; no legal agreement or signature was created.`);
+      `Prepared ${documentId} from communicated offer ${offer.id}; economics ${lockedEconomics.economicsSnapshotHash}, parties ${partyHash}, terms ${snapshotHash}, PDF content ${contentHash}. Review copy only; binary stored in the protected database blob table because managed private file storage is unavailable; no legal agreement or signature was created.`);
   });
   return dealOperations(id,now);
 }
@@ -170,8 +222,10 @@ export async function downloadPurchaseReviewDocument(
     const contract = contractRecord(row);
     const detail = await leadDetail(id,tx,now);
     const artifact = storedDocumentArtifacts(row).find(item=>item.id===documentId);
-    if (!artifact||artifact.kind!=="PURCHASE_TERMS_REVIEW"||typeof artifact.pdfBase64!=="string")
+    if (!artifact||artifact.kind!=="PURCHASE_TERMS_REVIEW")
       throw new DomainError("Transaction review document not found.",404);
+    if (["REJECTED","VOID","EXPIRED","REPLACED"].includes(String(artifact.status)))
+      throw new DomainError(`This document is ${String(artifact.status).toLowerCase()} and cannot be downloaded as current.`,409);
     const offer = detail.offers.find(item=>item.id===String(artifact.sourceOfferId));
     if (!offer) throw new DomainError("The source authorized offer is missing; document cannot be validated.",409);
     if (contract.status==="DRAFT"&&offer.effectiveStatus!=="COMMUNICATED")
@@ -184,6 +238,10 @@ export async function downloadPurchaseReviewDocument(
     const original = analysisRow?.snapshot as {lead:Lead;analysis:Analysis}|undefined;
     if (!analysisRow||!original?.lead||!original.analysis)
       throw new DomainError("The immutable underwriting source for this review PDF is missing.",409);
+    const currentPartyHash = partySnapshotHash(detail.lead);
+    if (currentPartyHash!==partySnapshotHash(original.lead)||
+      (typeof artifact.partySnapshotHash==="string"&&currentPartyHash!==artifact.partySnapshotHash))
+      throw new DomainError("Seller identity/contact fields changed. This review PDF is stale and must not be used.",409);
     const lockedEconomics = lockDealEconomics(analysisRow.id,offer.id,original.analysis,contract.purchasePrice);
     if (lockedEconomics.authorizedAssignmentFee!==contract.assignmentTarget ||
       artifact.economicsSnapshotHash!==lockedEconomics.economicsSnapshotHash ||
@@ -192,12 +250,55 @@ export async function downloadPurchaseReviewDocument(
     const snapshot = purchaseReviewSnapshot(original.lead,contract,offer,lockedEconomics.economicsSnapshotHash,analysisRow.id);
     if (purchaseReviewSnapshotHash(snapshot)!==artifact.snapshotHash)
       throw new DomainError("This review PDF no longer matches the current transaction terms. Prepare a new copy.",409);
-    const bytes = Buffer.from(artifact.pdfBase64,"base64");
+    const storedBlob = await transactionDocumentBinaryStore.get(tx,documentId);
+    const bytes = storedBlob?.bytes??(typeof artifact.pdfBase64==="string"?Buffer.from(artifact.pdfBase64,"base64"):null);
+    if (!bytes) throw new DomainError("Transaction PDF bytes are missing from persistent private storage.",409);
     const contentHash = createHash("sha256").update(bytes).digest("hex");
-    if (contentHash!==artifact.contentHash||bytes.byteLength!==Number(artifact.sizeBytes))
+    if (contentHash!==artifact.contentHash||bytes.byteLength!==Number(artifact.sizeBytes)||
+      (storedBlob&&(storedBlob.contentHash!==artifact.contentHash||storedBlob.sizeBytes!==bytes.byteLength||storedBlob.contentType!=="application/pdf")))
       throw new DomainError("Stored transaction PDF failed its integrity check.",409);
     return {fileName:String(artifact.fileName),bytes};
   },{isolationLevel:"repeatable read",accessMode:"read only"});
+}
+
+export async function transitionTransactionDocument(
+  id: string,documentId: string,input: z.infer<typeof TransitionTransactionDocumentBody>,actor: OfferActor,now = new Date(),
+) {
+  const parsed = TransitionTransactionDocumentBody.parse(input);
+  const allowedRoles = parsed.targetStatus==="VOID"||parsed.targetStatus==="EXPIRED"?["OWNER"]:["OWNER","OPERATOR"];
+  assertOperationsRole(actor,allowedRoles);
+  await db.transaction(async tx=>{
+    const {row} = await lockedContract(tx,id,parsed.version);
+    const artifacts = storedDocumentArtifacts(row);
+    const index = artifacts.findIndex(item=>item.id===documentId);
+    if (index<0) throw new DomainError("Transaction document not found.",404);
+    const artifact = artifacts[index]!;
+    const current = String(artifact.status) as TransactionDocumentState;
+    const detail = await leadDetail(id,tx,now);
+    const offer = detail.offers.find(item=>item.id===String(artifact.sourceOfferId));
+    const actorRole = actor.role==="OWNER"?"OWNER":"OPERATOR";
+    const decision = evaluateTransactionDocumentTransition(current,parsed.targetStatus,{
+      actorRole,reason:parsed.reason,
+      expiresAt:offer?.expiresAt??undefined,
+      now,
+    });
+    if (!decision.allowed) throw new DomainError(decision.reason,409);
+    artifacts[index] = {
+      ...artifact,
+      status:parsed.targetStatus,
+      events:[...(Array.isArray(artifact.events)?artifact.events:[]),{
+        from:current,to:parsed.targetStatus,occurredAt:now.toISOString(),actorId:actor.id,actorRole,
+        reason:parsed.reason,
+      }],
+    };
+    await tx.update(contractsTable).set({
+      payload:{...row.payload,documentArtifacts:artifacts},
+      version:row.version+1,updatedAt:now,
+    }).where(eq(contractsTable.id,row.id));
+    await audit(tx,actor.id,`TRANSACTION_DOCUMENT_${parsed.targetStatus}`,id,
+      `Document ${documentId} moved ${current} → ${parsed.targetStatus}; reason: ${parsed.reason}. No signature or external delivery is implied.`);
+  });
+  return dealOperations(id,now);
 }
 
 export async function executeContract(id: string,input: z.infer<typeof ExecuteContractBody>,actor: OfferActor,now = new Date()) {

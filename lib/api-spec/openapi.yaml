@@ -612,6 +612,23 @@ paths:
           content:
             application/json:
               schema: { $ref: "#/components/schemas/DealOperations" }
+  /deals/{id}/contract/documents/{documentId}:
+    parameters:
+      - { name: id, in: path, required: true, schema: { type: string } }
+      - { name: documentId, in: path, required: true, schema: { type: string, format: uuid } }
+    patch:
+      operationId: transitionTransactionDocument
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/TransactionDocumentLifecycleInput" }
+      responses:
+        "200":
+          description: Owner/reviewer rejection, void, or verified-expiry event; no send or signature is inferred
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/DealOperations" }
   /deals/{id}/contract/documents/{documentId}/file:
     parameters:
       - { name: id, in: path, required: true, schema: { type: string } }
@@ -626,6 +643,15 @@ paths:
               schema: { type: string, format: binary }
         "409":
           description: Document snapshot is stale; prepare a new copy from current authorized terms
+  /transaction-documents/readiness:
+    get:
+      operationId: getTransactionDocumentReadiness
+      responses:
+        "200":
+          description: Persisted template registry plus current private-storage and signing-provider readiness
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/TransactionDocumentReadinessResponse" }
   /deals/{id}/contract/execution:
     parameters:
       - { name: id, in: path, required: true, schema: { type: string } }
@@ -1576,6 +1602,13 @@ components:
       required: [version]
       properties:
         version: { type: integer, minimum: 1 }
+    TransactionDocumentLifecycleInput:
+      type: object
+      required: [version, targetStatus, reason]
+      properties:
+        version: { type: integer, minimum: 1 }
+        targetStatus: { type: string, enum: [REJECTED, VOID, EXPIRED] }
+        reason: { type: string, minLength: 10, maxLength: 2000 }
     ContractExecutionInput:
       type: object
       required: [version, executedDocumentUrl, sellerSignedAt, acquisitionSignedAt, reviewNote]
@@ -1688,8 +1721,8 @@ components:
       required: [id, kind, status, attemptNumber, sourceContractVersion, sourceOfferId, snapshotHash, contentHash, fileName, contentType, sizeBytes, generatedAt, generatedBy, downloadUrl]
       properties:
         id: { type: string, format: uuid }
-        kind: { type: string, enum: [PURCHASE_TERMS_REVIEW] }
-        status: { type: string, enum: [PREPARED_FOR_REVIEW] }
+        kind: { type: string, enum: [PURCHASE_TERMS_REVIEW, PURCHASE_AGREEMENT, ASSIGNMENT_AGREEMENT, SELLER_RESPONSE, AMENDMENT, REPLACEMENT_BUYER, EMD_ACKNOWLEDGMENT, CLOSING_DOCUMENT] }
+        status: { type: string, enum: [DRAFT, PREPARED_FOR_REVIEW, APPROVED_TO_SEND, SENT, SIGNING_IN_PROGRESS, SIGNED, EXECUTED, REJECTED, VOID, EXPIRED, REPLACED] }
         attemptNumber: { type: integer, minimum: 1 }
         sourceContractVersion: { type: integer, minimum: 1 }
         sourceOfferId: { type: string, format: uuid }
@@ -1703,6 +1736,57 @@ components:
         generatedAt: { type: string, format: date-time }
         generatedBy: { type: string }
         downloadUrl: { type: string }
+        templateKey: { type: string }
+        templateVersion: { type: integer, minimum: 1 }
+        templateStatus: { type: string, enum: [REVIEW_COPY_ONLY, APPROVED_LEGAL] }
+        partySnapshotHash: { type: string, pattern: "^[a-f0-9]{64}$" }
+        storageMode: { type: string, enum: [PERSISTENT_DATABASE_BLOB, PRIVATE_OBJECT_STORAGE] }
+        events: { type: array, items: { $ref: "#/components/schemas/TransactionDocumentEvent" } }
+    TransactionDocumentEvent:
+      type: object
+      required: [to, occurredAt, actorId, actorRole, reason]
+      properties:
+        from: { type: [string, "null"], enum: [DRAFT, PREPARED_FOR_REVIEW, APPROVED_TO_SEND, SENT, SIGNING_IN_PROGRESS, SIGNED, EXECUTED, REJECTED, VOID, EXPIRED, REPLACED, null] }
+        to: { type: string, enum: [DRAFT, PREPARED_FOR_REVIEW, APPROVED_TO_SEND, SENT, SIGNING_IN_PROGRESS, SIGNED, EXECUTED, REJECTED, VOID, EXPIRED, REPLACED] }
+        occurredAt: { type: string, format: date-time }
+        actorId: { type: string }
+        actorRole: { type: string, enum: [OWNER, OPERATOR, SYSTEM_WORKER, PROVIDER] }
+        reason: { type: string }
+        evidenceRef: { type: [string, "null"] }
+    TransactionDocumentTemplateReadiness:
+      type: object
+      required: [key, documentKind, jurisdiction, status, version, requiredFields, templateHash, approvalEvidenceRef, missingReason]
+      properties:
+        key: { type: string }
+        documentKind: { type: string }
+        jurisdiction: { type: string }
+        status: { type: string, enum: [REVIEW_COPY_ONLY, PORTAL_EVENT_RECORD, MISSING_APPROVED_TEMPLATE, APPROVED_LEGAL] }
+        version: { type: integer, minimum: 1 }
+        requiredFields: { type: array, items: { type: string } }
+        templateHash: { type: [string, "null"] }
+        approvalEvidenceRef: { type: [string, "null"] }
+        missingReason: { type: [string, "null"] }
+    TransactionDocumentReadinessResponse:
+      type: object
+      required: [templates, signingProvider, storage, canSendLegalDocuments, blockers]
+      properties:
+        templates: { type: array, items: { $ref: "#/components/schemas/TransactionDocumentTemplateReadiness" } }
+        signingProvider:
+          type: object
+          required: [status, provider, reason]
+          properties:
+            status: { type: string, enum: [CONNECTED, NOT_CONNECTED] }
+            provider: { type: [string, "null"] }
+            reason: { type: [string, "null"] }
+        storage:
+          type: object
+          required: [status, activeStore, reason]
+          properties:
+            status: { type: string, enum: [PRIVATE_FILE_STORE_READY, PRIVATE_FILE_STORE_UNAVAILABLE] }
+            activeStore: { type: string, enum: [PERSISTENT_DATABASE_BLOB, PRIVATE_OBJECT_STORAGE] }
+            reason: { type: [string, "null"] }
+        canSendLegalDocuments: { type: boolean }
+        blockers: { type: array, items: { type: string } }
     DistributionAuthorizationInput:
       type: object
       required: [version, reason]

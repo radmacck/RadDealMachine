@@ -1432,6 +1432,26 @@ export interface PrepareTransactionDocumentInput {
   version: number;
 }
 
+export type TransactionDocumentLifecycleInputTargetStatus = typeof TransactionDocumentLifecycleInputTargetStatus[keyof typeof TransactionDocumentLifecycleInputTargetStatus];
+
+
+export const TransactionDocumentLifecycleInputTargetStatus = {
+  REJECTED: 'REJECTED',
+  VOID: 'VOID',
+  EXPIRED: 'EXPIRED',
+} as const;
+
+export interface TransactionDocumentLifecycleInput {
+  /** @minimum 1 */
+  version: number;
+  targetStatus: TransactionDocumentLifecycleInputTargetStatus;
+  /**
+     * @minLength 10
+     * @maxLength 2000
+     */
+  reason: string;
+}
+
 export interface ContractExecutionInput {
   /** @minimum 1 */
   version: number;
@@ -2462,13 +2482,30 @@ export type TransactionDocumentMetadataKind = typeof TransactionDocumentMetadata
 
 export const TransactionDocumentMetadataKind = {
   PURCHASE_TERMS_REVIEW: 'PURCHASE_TERMS_REVIEW',
+  PURCHASE_AGREEMENT: 'PURCHASE_AGREEMENT',
+  ASSIGNMENT_AGREEMENT: 'ASSIGNMENT_AGREEMENT',
+  SELLER_RESPONSE: 'SELLER_RESPONSE',
+  AMENDMENT: 'AMENDMENT',
+  REPLACEMENT_BUYER: 'REPLACEMENT_BUYER',
+  EMD_ACKNOWLEDGMENT: 'EMD_ACKNOWLEDGMENT',
+  CLOSING_DOCUMENT: 'CLOSING_DOCUMENT',
 } as const;
 
 export type TransactionDocumentMetadataStatus = typeof TransactionDocumentMetadataStatus[keyof typeof TransactionDocumentMetadataStatus];
 
 
 export const TransactionDocumentMetadataStatus = {
+  DRAFT: 'DRAFT',
   PREPARED_FOR_REVIEW: 'PREPARED_FOR_REVIEW',
+  APPROVED_TO_SEND: 'APPROVED_TO_SEND',
+  SENT: 'SENT',
+  SIGNING_IN_PROGRESS: 'SIGNING_IN_PROGRESS',
+  SIGNED: 'SIGNED',
+  EXECUTED: 'EXECUTED',
+  REJECTED: 'REJECTED',
+  VOID: 'VOID',
+  EXPIRED: 'EXPIRED',
+  REPLACED: 'REPLACED',
 } as const;
 
 export type TransactionDocumentMetadataContentType = typeof TransactionDocumentMetadataContentType[keyof typeof TransactionDocumentMetadataContentType];
@@ -2477,6 +2514,81 @@ export type TransactionDocumentMetadataContentType = typeof TransactionDocumentM
 export const TransactionDocumentMetadataContentType = {
   'application/pdf': 'application/pdf',
 } as const;
+
+export type TransactionDocumentMetadataTemplateStatus = typeof TransactionDocumentMetadataTemplateStatus[keyof typeof TransactionDocumentMetadataTemplateStatus];
+
+
+export const TransactionDocumentMetadataTemplateStatus = {
+  REVIEW_COPY_ONLY: 'REVIEW_COPY_ONLY',
+  APPROVED_LEGAL: 'APPROVED_LEGAL',
+} as const;
+
+export type TransactionDocumentMetadataStorageMode = typeof TransactionDocumentMetadataStorageMode[keyof typeof TransactionDocumentMetadataStorageMode];
+
+
+export const TransactionDocumentMetadataStorageMode = {
+  PERSISTENT_DATABASE_BLOB: 'PERSISTENT_DATABASE_BLOB',
+  PRIVATE_OBJECT_STORAGE: 'PRIVATE_OBJECT_STORAGE',
+} as const;
+
+/**
+ * @nullable
+ */
+export type TransactionDocumentEventFrom = typeof TransactionDocumentEventFrom[keyof typeof TransactionDocumentEventFrom] | null;
+
+
+export const TransactionDocumentEventFrom = {
+  DRAFT: 'DRAFT',
+  PREPARED_FOR_REVIEW: 'PREPARED_FOR_REVIEW',
+  APPROVED_TO_SEND: 'APPROVED_TO_SEND',
+  SENT: 'SENT',
+  SIGNING_IN_PROGRESS: 'SIGNING_IN_PROGRESS',
+  SIGNED: 'SIGNED',
+  EXECUTED: 'EXECUTED',
+  REJECTED: 'REJECTED',
+  VOID: 'VOID',
+  EXPIRED: 'EXPIRED',
+  REPLACED: 'REPLACED',
+} as const;
+
+export type TransactionDocumentEventTo = typeof TransactionDocumentEventTo[keyof typeof TransactionDocumentEventTo];
+
+
+export const TransactionDocumentEventTo = {
+  DRAFT: 'DRAFT',
+  PREPARED_FOR_REVIEW: 'PREPARED_FOR_REVIEW',
+  APPROVED_TO_SEND: 'APPROVED_TO_SEND',
+  SENT: 'SENT',
+  SIGNING_IN_PROGRESS: 'SIGNING_IN_PROGRESS',
+  SIGNED: 'SIGNED',
+  EXECUTED: 'EXECUTED',
+  REJECTED: 'REJECTED',
+  VOID: 'VOID',
+  EXPIRED: 'EXPIRED',
+  REPLACED: 'REPLACED',
+} as const;
+
+export type TransactionDocumentEventActorRole = typeof TransactionDocumentEventActorRole[keyof typeof TransactionDocumentEventActorRole];
+
+
+export const TransactionDocumentEventActorRole = {
+  OWNER: 'OWNER',
+  OPERATOR: 'OPERATOR',
+  SYSTEM_WORKER: 'SYSTEM_WORKER',
+  PROVIDER: 'PROVIDER',
+} as const;
+
+export interface TransactionDocumentEvent {
+  /** @nullable */
+  from?: TransactionDocumentEventFrom;
+  to: TransactionDocumentEventTo;
+  occurredAt: string;
+  actorId: string;
+  actorRole: TransactionDocumentEventActorRole;
+  reason: string;
+  /** @nullable */
+  evidenceRef?: string | null;
+}
 
 export interface TransactionDocumentMetadata {
   id: string;
@@ -2501,6 +2613,14 @@ export interface TransactionDocumentMetadata {
   generatedAt: string;
   generatedBy: string;
   downloadUrl: string;
+  templateKey?: string;
+  /** @minimum 1 */
+  templateVersion?: number;
+  templateStatus?: TransactionDocumentMetadataTemplateStatus;
+  /** @pattern ^[a-f0-9]{64}$ */
+  partySnapshotHash?: string;
+  storageMode?: TransactionDocumentMetadataStorageMode;
+  events?: TransactionDocumentEvent[];
 }
 
 export interface DealContract {
@@ -2551,6 +2671,79 @@ export interface DealContract {
   closedAt?: string | null;
   createdAt: string;
   documents?: TransactionDocumentMetadata[];
+}
+
+export type TransactionDocumentTemplateReadinessStatus = typeof TransactionDocumentTemplateReadinessStatus[keyof typeof TransactionDocumentTemplateReadinessStatus];
+
+
+export const TransactionDocumentTemplateReadinessStatus = {
+  REVIEW_COPY_ONLY: 'REVIEW_COPY_ONLY',
+  PORTAL_EVENT_RECORD: 'PORTAL_EVENT_RECORD',
+  MISSING_APPROVED_TEMPLATE: 'MISSING_APPROVED_TEMPLATE',
+  APPROVED_LEGAL: 'APPROVED_LEGAL',
+} as const;
+
+export interface TransactionDocumentTemplateReadiness {
+  key: string;
+  documentKind: string;
+  jurisdiction: string;
+  status: TransactionDocumentTemplateReadinessStatus;
+  /** @minimum 1 */
+  version: number;
+  requiredFields: string[];
+  /** @nullable */
+  templateHash: string | null;
+  /** @nullable */
+  approvalEvidenceRef: string | null;
+  /** @nullable */
+  missingReason: string | null;
+}
+
+export type TransactionDocumentReadinessResponseSigningProviderStatus = typeof TransactionDocumentReadinessResponseSigningProviderStatus[keyof typeof TransactionDocumentReadinessResponseSigningProviderStatus];
+
+
+export const TransactionDocumentReadinessResponseSigningProviderStatus = {
+  CONNECTED: 'CONNECTED',
+  NOT_CONNECTED: 'NOT_CONNECTED',
+} as const;
+
+export type TransactionDocumentReadinessResponseSigningProvider = {
+  status: TransactionDocumentReadinessResponseSigningProviderStatus;
+  /** @nullable */
+  provider: string | null;
+  /** @nullable */
+  reason: string | null;
+};
+
+export type TransactionDocumentReadinessResponseStorageStatus = typeof TransactionDocumentReadinessResponseStorageStatus[keyof typeof TransactionDocumentReadinessResponseStorageStatus];
+
+
+export const TransactionDocumentReadinessResponseStorageStatus = {
+  PRIVATE_FILE_STORE_READY: 'PRIVATE_FILE_STORE_READY',
+  PRIVATE_FILE_STORE_UNAVAILABLE: 'PRIVATE_FILE_STORE_UNAVAILABLE',
+} as const;
+
+export type TransactionDocumentReadinessResponseStorageActiveStore = typeof TransactionDocumentReadinessResponseStorageActiveStore[keyof typeof TransactionDocumentReadinessResponseStorageActiveStore];
+
+
+export const TransactionDocumentReadinessResponseStorageActiveStore = {
+  PERSISTENT_DATABASE_BLOB: 'PERSISTENT_DATABASE_BLOB',
+  PRIVATE_OBJECT_STORAGE: 'PRIVATE_OBJECT_STORAGE',
+} as const;
+
+export type TransactionDocumentReadinessResponseStorage = {
+  status: TransactionDocumentReadinessResponseStorageStatus;
+  activeStore: TransactionDocumentReadinessResponseStorageActiveStore;
+  /** @nullable */
+  reason: string | null;
+};
+
+export interface TransactionDocumentReadinessResponse {
+  templates: TransactionDocumentTemplateReadiness[];
+  signingProvider: TransactionDocumentReadinessResponseSigningProvider;
+  storage: TransactionDocumentReadinessResponseStorage;
+  canSendLegalDocuments: boolean;
+  blockers: string[];
 }
 
 export interface DistributionAuthorizationInput {

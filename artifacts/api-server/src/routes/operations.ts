@@ -8,12 +8,16 @@ import * as buyers from "../services/buyer-store";
 import { allBuyerRecords, getBuyerRecord } from "../services/operations-records";
 import { dealOperations, refreshMatches } from "../services/matching-store";
 import * as transactions from "../services/transaction-store";
+import { getTransactionDocumentReadiness } from "../services/transaction-document-registry";
 import { recordTransactionException } from "../services/transaction-exceptions";
 import * as workers from "../services/workers";
 import { listHandoffs, recordHandoffEvent } from "../services/handoffs";
 
 const router: IRouter = Router();
 router.use(authenticated,membership);
+router.get("/transaction-documents/readiness",roles("OWNER","OPERATOR"),async(_req,res)=>{
+  res.json(schemas.GetTransactionDocumentReadinessResponse.parse(await getTransactionDocumentReadiness(actor(res))));
+});
 export const actor = (res: {locals:Record<string,unknown>}): OfferActor => ({id:String(res.locals.actor),role:String(res.locals.role)});
 export function parse<T extends z.ZodType>(schema: T,value: unknown): z.infer<T> {
   const clean = (v: unknown): unknown => typeof v==="string"?v.trim():Array.isArray(v)?v.map(clean):
@@ -74,6 +78,13 @@ router.post("/deals/:id/contract/documents",roles("OWNER","OPERATOR"),async(req,
     id,parse(schemas.PreparePurchaseReviewDocumentBody,req.body),actor(res),
   );
   res.json(schemas.PreparePurchaseReviewDocumentResponse.parse(result));
+});
+router.patch("/deals/:id/contract/documents/:documentId",roles("OWNER","OPERATOR"),async(req,res)=>{
+  const {id,documentId} = parse(schemas.TransitionTransactionDocumentParams,req.params);
+  const result = await transactions.transitionTransactionDocument(
+    id,documentId,parse(schemas.TransitionTransactionDocumentBody,req.body),actor(res),
+  );
+  res.json(schemas.TransitionTransactionDocumentResponse.parse(result));
 });
 router.get("/deals/:id/contract/documents/:documentId/file",roles("OWNER","OPERATOR"),async(req,res)=>{
   const {id,documentId} = parse(schemas.DownloadPurchaseReviewDocumentParams,req.params);

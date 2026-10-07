@@ -29,3 +29,4 @@ export * from "./operations";
 export * from "./distribution";
 export * from "./seller-offer-portals";
 export * from "./property-discoveries";
+export * from "./transaction-documents";

@@ -466,6 +466,8 @@ export const recordTransactionExceptionResponseContractOneDocumentsItemEconomics
 export const recordTransactionExceptionResponseContractOneDocumentsItemContentHashRegExp = new RegExp('^[a-f0-9]{64}$');
 
 
+export const recordTransactionExceptionResponseContractOneDocumentsItemPartySnapshotHashRegExp = new RegExp('^[a-f0-9]{64}$');
+
 
 export const RecordTransactionExceptionResponse = zod.object({
   "leadId": zod.string(),
@@ -1042,8 +1044,8 @@ export const RecordTransactionExceptionResponse = zod.object({
   "createdAt": zod.string(),
   "documents": zod.array(zod.object({
   "id": zod.string().uuid(),
-  "kind": zod.enum(['PURCHASE_TERMS_REVIEW']),
-  "status": zod.enum(['PREPARED_FOR_REVIEW']),
+  "kind": zod.enum(['PURCHASE_TERMS_REVIEW', 'PURCHASE_AGREEMENT', 'ASSIGNMENT_AGREEMENT', 'SELLER_RESPONSE', 'AMENDMENT', 'REPLACEMENT_BUYER', 'EMD_ACKNOWLEDGMENT', 'CLOSING_DOCUMENT']),
+  "status": zod.enum(['DRAFT', 'PREPARED_FOR_REVIEW', 'APPROVED_TO_SEND', 'SENT', 'SIGNING_IN_PROGRESS', 'SIGNED', 'EXECUTED', 'REJECTED', 'VOID', 'EXPIRED', 'REPLACED']),
   "attemptNumber": zod.number().int().min(1),
   "sourceContractVersion": zod.number().int().min(1),
   "sourceOfferId": zod.string().uuid(),
@@ -1056,7 +1058,21 @@ export const RecordTransactionExceptionResponse = zod.object({
   "sizeBytes": zod.number().int().min(1),
   "generatedAt": zod.string().datetime({"offset":true}),
   "generatedBy": zod.string(),
-  "downloadUrl": zod.string()
+  "downloadUrl": zod.string(),
+  "templateKey": zod.string().optional(),
+  "templateVersion": zod.number().int().min(1).optional(),
+  "templateStatus": zod.enum(['REVIEW_COPY_ONLY', 'APPROVED_LEGAL']).optional(),
+  "partySnapshotHash": zod.string().regex(recordTransactionExceptionResponseContractOneDocumentsItemPartySnapshotHashRegExp).optional(),
+  "storageMode": zod.enum(['PERSISTENT_DATABASE_BLOB', 'PRIVATE_OBJECT_STORAGE']).optional(),
+  "events": zod.array(zod.object({
+  "from": zod.union([zod.literal('DRAFT'),zod.literal('PREPARED_FOR_REVIEW'),zod.literal('APPROVED_TO_SEND'),zod.literal('SENT'),zod.literal('SIGNING_IN_PROGRESS'),zod.literal('SIGNED'),zod.literal('EXECUTED'),zod.literal('REJECTED'),zod.literal('VOID'),zod.literal('EXPIRED'),zod.literal('REPLACED'),zod.literal(null)]).nullish(),
+  "to": zod.enum(['DRAFT', 'PREPARED_FOR_REVIEW', 'APPROVED_TO_SEND', 'SENT', 'SIGNING_IN_PROGRESS', 'SIGNED', 'EXECUTED', 'REJECTED', 'VOID', 'EXPIRED', 'REPLACED']),
+  "occurredAt": zod.string().datetime({"offset":true}),
+  "actorId": zod.string(),
+  "actorRole": zod.enum(['OWNER', 'OPERATOR', 'SYSTEM_WORKER', 'PROVIDER']),
+  "reason": zod.string(),
+  "evidenceRef": zod.string().nullish()
+})).optional()
 })).optional()
 }),zod.null()]),
   "matches": zod.array(zod.object({
@@ -9920,6 +9936,8 @@ export const getCommandCenterResponseOperationsItemContractOneDocumentsItemSnaps
 export const getCommandCenterResponseOperationsItemContractOneDocumentsItemEconomicsSnapshotHashRegExp = new RegExp('^[a-f0-9]{64}$');
 export const getCommandCenterResponseOperationsItemContractOneDocumentsItemContentHashRegExp = new RegExp('^[a-f0-9]{64}$');
 
+
+export const getCommandCenterResponseOperationsItemContractOneDocumentsItemPartySnapshotHashRegExp = new RegExp('^[a-f0-9]{64}$');
 export const getCommandCenterResponseBuyersItemOneNameMax = 200;
 
 export const getCommandCenterResponseBuyersItemOneEmailMax = 200;
@@ -11742,8 +11760,8 @@ export const GetCommandCenterResponse = zod.object({
   "createdAt": zod.string(),
   "documents": zod.array(zod.object({
   "id": zod.string().uuid(),
-  "kind": zod.enum(['PURCHASE_TERMS_REVIEW']),
-  "status": zod.enum(['PREPARED_FOR_REVIEW']),
+  "kind": zod.enum(['PURCHASE_TERMS_REVIEW', 'PURCHASE_AGREEMENT', 'ASSIGNMENT_AGREEMENT', 'SELLER_RESPONSE', 'AMENDMENT', 'REPLACEMENT_BUYER', 'EMD_ACKNOWLEDGMENT', 'CLOSING_DOCUMENT']),
+  "status": zod.enum(['DRAFT', 'PREPARED_FOR_REVIEW', 'APPROVED_TO_SEND', 'SENT', 'SIGNING_IN_PROGRESS', 'SIGNED', 'EXECUTED', 'REJECTED', 'VOID', 'EXPIRED', 'REPLACED']),
   "attemptNumber": zod.number().int().min(1),
   "sourceContractVersion": zod.number().int().min(1),
   "sourceOfferId": zod.string().uuid(),
@@ -11756,7 +11774,21 @@ export const GetCommandCenterResponse = zod.object({
   "sizeBytes": zod.number().int().min(1),
   "generatedAt": zod.string().datetime({"offset":true}),
   "generatedBy": zod.string(),
-  "downloadUrl": zod.string()
+  "downloadUrl": zod.string(),
+  "templateKey": zod.string().optional(),
+  "templateVersion": zod.number().int().min(1).optional(),
+  "templateStatus": zod.enum(['REVIEW_COPY_ONLY', 'APPROVED_LEGAL']).optional(),
+  "partySnapshotHash": zod.string().regex(getCommandCenterResponseOperationsItemContractOneDocumentsItemPartySnapshotHashRegExp).optional(),
+  "storageMode": zod.enum(['PERSISTENT_DATABASE_BLOB', 'PRIVATE_OBJECT_STORAGE']).optional(),
+  "events": zod.array(zod.object({
+  "from": zod.union([zod.literal('DRAFT'),zod.literal('PREPARED_FOR_REVIEW'),zod.literal('APPROVED_TO_SEND'),zod.literal('SENT'),zod.literal('SIGNING_IN_PROGRESS'),zod.literal('SIGNED'),zod.literal('EXECUTED'),zod.literal('REJECTED'),zod.literal('VOID'),zod.literal('EXPIRED'),zod.literal('REPLACED'),zod.literal(null)]).nullish(),
+  "to": zod.enum(['DRAFT', 'PREPARED_FOR_REVIEW', 'APPROVED_TO_SEND', 'SENT', 'SIGNING_IN_PROGRESS', 'SIGNED', 'EXECUTED', 'REJECTED', 'VOID', 'EXPIRED', 'REPLACED']),
+  "occurredAt": zod.string().datetime({"offset":true}),
+  "actorId": zod.string(),
+  "actorRole": zod.enum(['OWNER', 'OPERATOR', 'SYSTEM_WORKER', 'PROVIDER']),
+  "reason": zod.string(),
+  "evidenceRef": zod.string().nullish()
+})).optional()
 })).optional()
 }),zod.null()]),
   "matches": zod.array(zod.object({
@@ -14492,6 +14524,8 @@ export const getDealOperationsResponseContractOneDocumentsItemEconomicsSnapshotH
 export const getDealOperationsResponseContractOneDocumentsItemContentHashRegExp = new RegExp('^[a-f0-9]{64}$');
 
 
+export const getDealOperationsResponseContractOneDocumentsItemPartySnapshotHashRegExp = new RegExp('^[a-f0-9]{64}$');
+
 
 export const GetDealOperationsResponse = zod.object({
   "leadId": zod.string(),
@@ -15068,8 +15102,8 @@ export const GetDealOperationsResponse = zod.object({
   "createdAt": zod.string(),
   "documents": zod.array(zod.object({
   "id": zod.string().uuid(),
-  "kind": zod.enum(['PURCHASE_TERMS_REVIEW']),
-  "status": zod.enum(['PREPARED_FOR_REVIEW']),
+  "kind": zod.enum(['PURCHASE_TERMS_REVIEW', 'PURCHASE_AGREEMENT', 'ASSIGNMENT_AGREEMENT', 'SELLER_RESPONSE', 'AMENDMENT', 'REPLACEMENT_BUYER', 'EMD_ACKNOWLEDGMENT', 'CLOSING_DOCUMENT']),
+  "status": zod.enum(['DRAFT', 'PREPARED_FOR_REVIEW', 'APPROVED_TO_SEND', 'SENT', 'SIGNING_IN_PROGRESS', 'SIGNED', 'EXECUTED', 'REJECTED', 'VOID', 'EXPIRED', 'REPLACED']),
   "attemptNumber": zod.number().int().min(1),
   "sourceContractVersion": zod.number().int().min(1),
   "sourceOfferId": zod.string().uuid(),
@@ -15082,7 +15116,21 @@ export const GetDealOperationsResponse = zod.object({
   "sizeBytes": zod.number().int().min(1),
   "generatedAt": zod.string().datetime({"offset":true}),
   "generatedBy": zod.string(),
-  "downloadUrl": zod.string()
+  "downloadUrl": zod.string(),
+  "templateKey": zod.string().optional(),
+  "templateVersion": zod.number().int().min(1).optional(),
+  "templateStatus": zod.enum(['REVIEW_COPY_ONLY', 'APPROVED_LEGAL']).optional(),
+  "partySnapshotHash": zod.string().regex(getDealOperationsResponseContractOneDocumentsItemPartySnapshotHashRegExp).optional(),
+  "storageMode": zod.enum(['PERSISTENT_DATABASE_BLOB', 'PRIVATE_OBJECT_STORAGE']).optional(),
+  "events": zod.array(zod.object({
+  "from": zod.union([zod.literal('DRAFT'),zod.literal('PREPARED_FOR_REVIEW'),zod.literal('APPROVED_TO_SEND'),zod.literal('SENT'),zod.literal('SIGNING_IN_PROGRESS'),zod.literal('SIGNED'),zod.literal('EXECUTED'),zod.literal('REJECTED'),zod.literal('VOID'),zod.literal('EXPIRED'),zod.literal('REPLACED'),zod.literal(null)]).nullish(),
+  "to": zod.enum(['DRAFT', 'PREPARED_FOR_REVIEW', 'APPROVED_TO_SEND', 'SENT', 'SIGNING_IN_PROGRESS', 'SIGNED', 'EXECUTED', 'REJECTED', 'VOID', 'EXPIRED', 'REPLACED']),
+  "occurredAt": zod.string().datetime({"offset":true}),
+  "actorId": zod.string(),
+  "actorRole": zod.enum(['OWNER', 'OPERATOR', 'SYSTEM_WORKER', 'PROVIDER']),
+  "reason": zod.string(),
+  "evidenceRef": zod.string().nullish()
+})).optional()
 })).optional()
 }),zod.null()]),
   "matches": zod.array(zod.object({
@@ -15556,6 +15604,8 @@ export const refreshMatchesResponseContractOneDocumentsItemSnapshotHashRegExp = 
 export const refreshMatchesResponseContractOneDocumentsItemEconomicsSnapshotHashRegExp = new RegExp('^[a-f0-9]{64}$');
 export const refreshMatchesResponseContractOneDocumentsItemContentHashRegExp = new RegExp('^[a-f0-9]{64}$');
 
+
+export const refreshMatchesResponseContractOneDocumentsItemPartySnapshotHashRegExp = new RegExp('^[a-f0-9]{64}$');
 
 
 export const RefreshMatchesResponse = zod.object({
@@ -16133,8 +16183,8 @@ export const RefreshMatchesResponse = zod.object({
   "createdAt": zod.string(),
   "documents": zod.array(zod.object({
   "id": zod.string().uuid(),
-  "kind": zod.enum(['PURCHASE_TERMS_REVIEW']),
-  "status": zod.enum(['PREPARED_FOR_REVIEW']),
+  "kind": zod.enum(['PURCHASE_TERMS_REVIEW', 'PURCHASE_AGREEMENT', 'ASSIGNMENT_AGREEMENT', 'SELLER_RESPONSE', 'AMENDMENT', 'REPLACEMENT_BUYER', 'EMD_ACKNOWLEDGMENT', 'CLOSING_DOCUMENT']),
+  "status": zod.enum(['DRAFT', 'PREPARED_FOR_REVIEW', 'APPROVED_TO_SEND', 'SENT', 'SIGNING_IN_PROGRESS', 'SIGNED', 'EXECUTED', 'REJECTED', 'VOID', 'EXPIRED', 'REPLACED']),
   "attemptNumber": zod.number().int().min(1),
   "sourceContractVersion": zod.number().int().min(1),
   "sourceOfferId": zod.string().uuid(),
@@ -16147,7 +16197,21 @@ export const RefreshMatchesResponse = zod.object({
   "sizeBytes": zod.number().int().min(1),
   "generatedAt": zod.string().datetime({"offset":true}),
   "generatedBy": zod.string(),
-  "downloadUrl": zod.string()
+  "downloadUrl": zod.string(),
+  "templateKey": zod.string().optional(),
+  "templateVersion": zod.number().int().min(1).optional(),
+  "templateStatus": zod.enum(['REVIEW_COPY_ONLY', 'APPROVED_LEGAL']).optional(),
+  "partySnapshotHash": zod.string().regex(refreshMatchesResponseContractOneDocumentsItemPartySnapshotHashRegExp).optional(),
+  "storageMode": zod.enum(['PERSISTENT_DATABASE_BLOB', 'PRIVATE_OBJECT_STORAGE']).optional(),
+  "events": zod.array(zod.object({
+  "from": zod.union([zod.literal('DRAFT'),zod.literal('PREPARED_FOR_REVIEW'),zod.literal('APPROVED_TO_SEND'),zod.literal('SENT'),zod.literal('SIGNING_IN_PROGRESS'),zod.literal('SIGNED'),zod.literal('EXECUTED'),zod.literal('REJECTED'),zod.literal('VOID'),zod.literal('EXPIRED'),zod.literal('REPLACED'),zod.literal(null)]).nullish(),
+  "to": zod.enum(['DRAFT', 'PREPARED_FOR_REVIEW', 'APPROVED_TO_SEND', 'SENT', 'SIGNING_IN_PROGRESS', 'SIGNED', 'EXECUTED', 'REJECTED', 'VOID', 'EXPIRED', 'REPLACED']),
+  "occurredAt": zod.string().datetime({"offset":true}),
+  "actorId": zod.string(),
+  "actorRole": zod.enum(['OWNER', 'OPERATOR', 'SYSTEM_WORKER', 'PROVIDER']),
+  "reason": zod.string(),
+  "evidenceRef": zod.string().nullish()
+})).optional()
 })).optional()
 }),zod.null()]),
   "matches": zod.array(zod.object({
@@ -16643,6 +16707,8 @@ export const recordBuyerResponseResponseContractOneDocumentsItemSnapshotHashRegE
 export const recordBuyerResponseResponseContractOneDocumentsItemEconomicsSnapshotHashRegExp = new RegExp('^[a-f0-9]{64}$');
 export const recordBuyerResponseResponseContractOneDocumentsItemContentHashRegExp = new RegExp('^[a-f0-9]{64}$');
 
+
+export const recordBuyerResponseResponseContractOneDocumentsItemPartySnapshotHashRegExp = new RegExp('^[a-f0-9]{64}$');
 
 
 export const RecordBuyerResponseResponse = zod.object({
@@ -17220,8 +17286,8 @@ export const RecordBuyerResponseResponse = zod.object({
   "createdAt": zod.string(),
   "documents": zod.array(zod.object({
   "id": zod.string().uuid(),
-  "kind": zod.enum(['PURCHASE_TERMS_REVIEW']),
-  "status": zod.enum(['PREPARED_FOR_REVIEW']),
+  "kind": zod.enum(['PURCHASE_TERMS_REVIEW', 'PURCHASE_AGREEMENT', 'ASSIGNMENT_AGREEMENT', 'SELLER_RESPONSE', 'AMENDMENT', 'REPLACEMENT_BUYER', 'EMD_ACKNOWLEDGMENT', 'CLOSING_DOCUMENT']),
+  "status": zod.enum(['DRAFT', 'PREPARED_FOR_REVIEW', 'APPROVED_TO_SEND', 'SENT', 'SIGNING_IN_PROGRESS', 'SIGNED', 'EXECUTED', 'REJECTED', 'VOID', 'EXPIRED', 'REPLACED']),
   "attemptNumber": zod.number().int().min(1),
   "sourceContractVersion": zod.number().int().min(1),
   "sourceOfferId": zod.string().uuid(),
@@ -17234,7 +17300,21 @@ export const RecordBuyerResponseResponse = zod.object({
   "sizeBytes": zod.number().int().min(1),
   "generatedAt": zod.string().datetime({"offset":true}),
   "generatedBy": zod.string(),
-  "downloadUrl": zod.string()
+  "downloadUrl": zod.string(),
+  "templateKey": zod.string().optional(),
+  "templateVersion": zod.number().int().min(1).optional(),
+  "templateStatus": zod.enum(['REVIEW_COPY_ONLY', 'APPROVED_LEGAL']).optional(),
+  "partySnapshotHash": zod.string().regex(recordBuyerResponseResponseContractOneDocumentsItemPartySnapshotHashRegExp).optional(),
+  "storageMode": zod.enum(['PERSISTENT_DATABASE_BLOB', 'PRIVATE_OBJECT_STORAGE']).optional(),
+  "events": zod.array(zod.object({
+  "from": zod.union([zod.literal('DRAFT'),zod.literal('PREPARED_FOR_REVIEW'),zod.literal('APPROVED_TO_SEND'),zod.literal('SENT'),zod.literal('SIGNING_IN_PROGRESS'),zod.literal('SIGNED'),zod.literal('EXECUTED'),zod.literal('REJECTED'),zod.literal('VOID'),zod.literal('EXPIRED'),zod.literal('REPLACED'),zod.literal(null)]).nullish(),
+  "to": zod.enum(['DRAFT', 'PREPARED_FOR_REVIEW', 'APPROVED_TO_SEND', 'SENT', 'SIGNING_IN_PROGRESS', 'SIGNED', 'EXECUTED', 'REJECTED', 'VOID', 'EXPIRED', 'REPLACED']),
+  "occurredAt": zod.string().datetime({"offset":true}),
+  "actorId": zod.string(),
+  "actorRole": zod.enum(['OWNER', 'OPERATOR', 'SYSTEM_WORKER', 'PROVIDER']),
+  "reason": zod.string(),
+  "evidenceRef": zod.string().nullish()
+})).optional()
 })).optional()
 }),zod.null()]),
   "matches": zod.array(zod.object({
@@ -18713,6 +18793,8 @@ export const recordDestinationActivityResponseContractOneDocumentsItemEconomicsS
 export const recordDestinationActivityResponseContractOneDocumentsItemContentHashRegExp = new RegExp('^[a-f0-9]{64}$');
 
 
+export const recordDestinationActivityResponseContractOneDocumentsItemPartySnapshotHashRegExp = new RegExp('^[a-f0-9]{64}$');
+
 
 export const RecordDestinationActivityResponse = zod.object({
   "leadId": zod.string(),
@@ -19289,8 +19371,8 @@ export const RecordDestinationActivityResponse = zod.object({
   "createdAt": zod.string(),
   "documents": zod.array(zod.object({
   "id": zod.string().uuid(),
-  "kind": zod.enum(['PURCHASE_TERMS_REVIEW']),
-  "status": zod.enum(['PREPARED_FOR_REVIEW']),
+  "kind": zod.enum(['PURCHASE_TERMS_REVIEW', 'PURCHASE_AGREEMENT', 'ASSIGNMENT_AGREEMENT', 'SELLER_RESPONSE', 'AMENDMENT', 'REPLACEMENT_BUYER', 'EMD_ACKNOWLEDGMENT', 'CLOSING_DOCUMENT']),
+  "status": zod.enum(['DRAFT', 'PREPARED_FOR_REVIEW', 'APPROVED_TO_SEND', 'SENT', 'SIGNING_IN_PROGRESS', 'SIGNED', 'EXECUTED', 'REJECTED', 'VOID', 'EXPIRED', 'REPLACED']),
   "attemptNumber": zod.number().int().min(1),
   "sourceContractVersion": zod.number().int().min(1),
   "sourceOfferId": zod.string().uuid(),
@@ -19303,7 +19385,21 @@ export const RecordDestinationActivityResponse = zod.object({
   "sizeBytes": zod.number().int().min(1),
   "generatedAt": zod.string().datetime({"offset":true}),
   "generatedBy": zod.string(),
-  "downloadUrl": zod.string()
+  "downloadUrl": zod.string(),
+  "templateKey": zod.string().optional(),
+  "templateVersion": zod.number().int().min(1).optional(),
+  "templateStatus": zod.enum(['REVIEW_COPY_ONLY', 'APPROVED_LEGAL']).optional(),
+  "partySnapshotHash": zod.string().regex(recordDestinationActivityResponseContractOneDocumentsItemPartySnapshotHashRegExp).optional(),
+  "storageMode": zod.enum(['PERSISTENT_DATABASE_BLOB', 'PRIVATE_OBJECT_STORAGE']).optional(),
+  "events": zod.array(zod.object({
+  "from": zod.union([zod.literal('DRAFT'),zod.literal('PREPARED_FOR_REVIEW'),zod.literal('APPROVED_TO_SEND'),zod.literal('SENT'),zod.literal('SIGNING_IN_PROGRESS'),zod.literal('SIGNED'),zod.literal('EXECUTED'),zod.literal('REJECTED'),zod.literal('VOID'),zod.literal('EXPIRED'),zod.literal('REPLACED'),zod.literal(null)]).nullish(),
+  "to": zod.enum(['DRAFT', 'PREPARED_FOR_REVIEW', 'APPROVED_TO_SEND', 'SENT', 'SIGNING_IN_PROGRESS', 'SIGNED', 'EXECUTED', 'REJECTED', 'VOID', 'EXPIRED', 'REPLACED']),
+  "occurredAt": zod.string().datetime({"offset":true}),
+  "actorId": zod.string(),
+  "actorRole": zod.enum(['OWNER', 'OPERATOR', 'SYSTEM_WORKER', 'PROVIDER']),
+  "reason": zod.string(),
+  "evidenceRef": zod.string().nullish()
+})).optional()
 })).optional()
 }),zod.null()]),
   "matches": zod.array(zod.object({
@@ -19786,6 +19882,8 @@ export const createContractResponseContractOneDocumentsItemSnapshotHashRegExp = 
 export const createContractResponseContractOneDocumentsItemEconomicsSnapshotHashRegExp = new RegExp('^[a-f0-9]{64}$');
 export const createContractResponseContractOneDocumentsItemContentHashRegExp = new RegExp('^[a-f0-9]{64}$');
 
+
+export const createContractResponseContractOneDocumentsItemPartySnapshotHashRegExp = new RegExp('^[a-f0-9]{64}$');
 
 
 export const CreateContractResponse = zod.object({
@@ -20363,8 +20461,8 @@ export const CreateContractResponse = zod.object({
   "createdAt": zod.string(),
   "documents": zod.array(zod.object({
   "id": zod.string().uuid(),
-  "kind": zod.enum(['PURCHASE_TERMS_REVIEW']),
-  "status": zod.enum(['PREPARED_FOR_REVIEW']),
+  "kind": zod.enum(['PURCHASE_TERMS_REVIEW', 'PURCHASE_AGREEMENT', 'ASSIGNMENT_AGREEMENT', 'SELLER_RESPONSE', 'AMENDMENT', 'REPLACEMENT_BUYER', 'EMD_ACKNOWLEDGMENT', 'CLOSING_DOCUMENT']),
+  "status": zod.enum(['DRAFT', 'PREPARED_FOR_REVIEW', 'APPROVED_TO_SEND', 'SENT', 'SIGNING_IN_PROGRESS', 'SIGNED', 'EXECUTED', 'REJECTED', 'VOID', 'EXPIRED', 'REPLACED']),
   "attemptNumber": zod.number().int().min(1),
   "sourceContractVersion": zod.number().int().min(1),
   "sourceOfferId": zod.string().uuid(),
@@ -20377,7 +20475,21 @@ export const CreateContractResponse = zod.object({
   "sizeBytes": zod.number().int().min(1),
   "generatedAt": zod.string().datetime({"offset":true}),
   "generatedBy": zod.string(),
-  "downloadUrl": zod.string()
+  "downloadUrl": zod.string(),
+  "templateKey": zod.string().optional(),
+  "templateVersion": zod.number().int().min(1).optional(),
+  "templateStatus": zod.enum(['REVIEW_COPY_ONLY', 'APPROVED_LEGAL']).optional(),
+  "partySnapshotHash": zod.string().regex(createContractResponseContractOneDocumentsItemPartySnapshotHashRegExp).optional(),
+  "storageMode": zod.enum(['PERSISTENT_DATABASE_BLOB', 'PRIVATE_OBJECT_STORAGE']).optional(),
+  "events": zod.array(zod.object({
+  "from": zod.union([zod.literal('DRAFT'),zod.literal('PREPARED_FOR_REVIEW'),zod.literal('APPROVED_TO_SEND'),zod.literal('SENT'),zod.literal('SIGNING_IN_PROGRESS'),zod.literal('SIGNED'),zod.literal('EXECUTED'),zod.literal('REJECTED'),zod.literal('VOID'),zod.literal('EXPIRED'),zod.literal('REPLACED'),zod.literal(null)]).nullish(),
+  "to": zod.enum(['DRAFT', 'PREPARED_FOR_REVIEW', 'APPROVED_TO_SEND', 'SENT', 'SIGNING_IN_PROGRESS', 'SIGNED', 'EXECUTED', 'REJECTED', 'VOID', 'EXPIRED', 'REPLACED']),
+  "occurredAt": zod.string().datetime({"offset":true}),
+  "actorId": zod.string(),
+  "actorRole": zod.enum(['OWNER', 'OPERATOR', 'SYSTEM_WORKER', 'PROVIDER']),
+  "reason": zod.string(),
+  "evidenceRef": zod.string().nullish()
+})).optional()
 })).optional()
 }),zod.null()]),
   "matches": zod.array(zod.object({
@@ -20858,6 +20970,8 @@ export const preparePurchaseReviewDocumentResponseContractOneDocumentsItemSnapsh
 export const preparePurchaseReviewDocumentResponseContractOneDocumentsItemEconomicsSnapshotHashRegExp = new RegExp('^[a-f0-9]{64}$');
 export const preparePurchaseReviewDocumentResponseContractOneDocumentsItemContentHashRegExp = new RegExp('^[a-f0-9]{64}$');
 
+
+export const preparePurchaseReviewDocumentResponseContractOneDocumentsItemPartySnapshotHashRegExp = new RegExp('^[a-f0-9]{64}$');
 
 
 export const PreparePurchaseReviewDocumentResponse = zod.object({
@@ -21435,8 +21549,8 @@ export const PreparePurchaseReviewDocumentResponse = zod.object({
   "createdAt": zod.string(),
   "documents": zod.array(zod.object({
   "id": zod.string().uuid(),
-  "kind": zod.enum(['PURCHASE_TERMS_REVIEW']),
-  "status": zod.enum(['PREPARED_FOR_REVIEW']),
+  "kind": zod.enum(['PURCHASE_TERMS_REVIEW', 'PURCHASE_AGREEMENT', 'ASSIGNMENT_AGREEMENT', 'SELLER_RESPONSE', 'AMENDMENT', 'REPLACEMENT_BUYER', 'EMD_ACKNOWLEDGMENT', 'CLOSING_DOCUMENT']),
+  "status": zod.enum(['DRAFT', 'PREPARED_FOR_REVIEW', 'APPROVED_TO_SEND', 'SENT', 'SIGNING_IN_PROGRESS', 'SIGNED', 'EXECUTED', 'REJECTED', 'VOID', 'EXPIRED', 'REPLACED']),
   "attemptNumber": zod.number().int().min(1),
   "sourceContractVersion": zod.number().int().min(1),
   "sourceOfferId": zod.string().uuid(),
@@ -21449,7 +21563,1115 @@ export const PreparePurchaseReviewDocumentResponse = zod.object({
   "sizeBytes": zod.number().int().min(1),
   "generatedAt": zod.string().datetime({"offset":true}),
   "generatedBy": zod.string(),
-  "downloadUrl": zod.string()
+  "downloadUrl": zod.string(),
+  "templateKey": zod.string().optional(),
+  "templateVersion": zod.number().int().min(1).optional(),
+  "templateStatus": zod.enum(['REVIEW_COPY_ONLY', 'APPROVED_LEGAL']).optional(),
+  "partySnapshotHash": zod.string().regex(preparePurchaseReviewDocumentResponseContractOneDocumentsItemPartySnapshotHashRegExp).optional(),
+  "storageMode": zod.enum(['PERSISTENT_DATABASE_BLOB', 'PRIVATE_OBJECT_STORAGE']).optional(),
+  "events": zod.array(zod.object({
+  "from": zod.union([zod.literal('DRAFT'),zod.literal('PREPARED_FOR_REVIEW'),zod.literal('APPROVED_TO_SEND'),zod.literal('SENT'),zod.literal('SIGNING_IN_PROGRESS'),zod.literal('SIGNED'),zod.literal('EXECUTED'),zod.literal('REJECTED'),zod.literal('VOID'),zod.literal('EXPIRED'),zod.literal('REPLACED'),zod.literal(null)]).nullish(),
+  "to": zod.enum(['DRAFT', 'PREPARED_FOR_REVIEW', 'APPROVED_TO_SEND', 'SENT', 'SIGNING_IN_PROGRESS', 'SIGNED', 'EXECUTED', 'REJECTED', 'VOID', 'EXPIRED', 'REPLACED']),
+  "occurredAt": zod.string().datetime({"offset":true}),
+  "actorId": zod.string(),
+  "actorRole": zod.enum(['OWNER', 'OPERATOR', 'SYSTEM_WORKER', 'PROVIDER']),
+  "reason": zod.string(),
+  "evidenceRef": zod.string().nullish()
+})).optional()
+})).optional()
+}),zod.null()]),
+  "matches": zod.array(zod.object({
+  "buyerId": zod.string(),
+  "leadId": zod.string(),
+  "buyerName": zod.string(),
+  "destinationKind": zod.enum(['BUYER', 'DEAL_FINDER', 'GURU']).optional(),
+  "eligible": zod.boolean(),
+  "score": zod.number(),
+  "reasons": zod.array(zod.string()),
+  "mismatches": zod.array(zod.string()),
+  "status": zod.enum(['MATCHED', 'INTERESTED', 'COMMITTED', 'DECLINED', 'EXPIRED']),
+  "buyerVersion": zod.number().int(),
+  "agreedPrice": zod.number().nullish(),
+  "evidence": zod.string().nullish(),
+  "updatedAt": zod.string(),
+  "legacyDestinationResponse": zod.union([zod.object({
+  "status": zod.enum(['INTERESTED', 'COMMITTED', 'DECLINED']),
+  "evidence": zod.string().nullable()
+}),zod.null()]).optional()
+})),
+  "jobs": zod.array(zod.object({
+  "id": zod.string(),
+  "kind": zod.enum(['MATCH_BUYERS', 'REVIEW_DEADLINES', 'ENRICH_PROPERTY', 'PREPARE_BRIEF', 'BUYER_DISCOVERY', 'DISCOVER_PROPERTIES', 'REVIEW_BUYER_POOL', 'REVIEW_HANDOFFS', 'HUMAN_HANDOFF']),
+  "termsReviewed": zod.boolean().optional(),
+  "recurringDiscovery": zod.boolean().optional(),
+  "recurringPropertyDiscovery": zod.boolean().optional(),
+  "state": zod.enum(['QUEUED', 'RUNNING', 'SUCCEEDED', 'FAILED']),
+  "leadId": zod.string().nullable(),
+  "requestedBy": zod.string(),
+  "message": zod.string(),
+  "attempts": zod.number().int(),
+  "createdAt": zod.string(),
+  "updatedAt": zod.string()
+})),
+  "nextAction": zod.string()
+})
+
+
+export const TransitionTransactionDocumentParams = zod.object({
+  "id": zod.coerce.string(),
+  "documentId": zod.coerce.string().uuid()
+})
+
+
+export const transitionTransactionDocumentBodyReasonMin = 10;
+export const transitionTransactionDocumentBodyReasonMax = 2000;
+
+
+
+export const TransitionTransactionDocumentBody = zod.object({
+  "version": zod.number().int().min(1),
+  "targetStatus": zod.enum(['REJECTED', 'VOID', 'EXPIRED']),
+  "reason": zod.string().min(transitionTransactionDocumentBodyReasonMin).max(transitionTransactionDocumentBodyReasonMax)
+})
+
+
+export const transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneBuyerOneNameMax = 200;
+
+export const transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneBuyerOneEmailMax = 200;
+
+export const transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneBuyerOnePhoneMax = 50;
+
+export const transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneBuyerOneSourceMax = 2000;
+
+export const transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneBuyerOneCriteriaOneStatesItemMin = 2;
+export const transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneBuyerOneCriteriaOneStatesItemMax = 2;
+
+
+
+export const transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneBuyerOneCriteriaOneZipCodesItemRegExp = new RegExp('^\\d{5}$');
+
+export const transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneBuyerOneCriteriaOneMaxPurchasePriceExclusiveMin = 0;
+export const transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneBuyerOneCriteriaOneMaxPurchasePriceMax = 1000000000;
+
+export const transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneBuyerOneCriteriaOneMaxRepairsMin = 0;
+export const transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneBuyerOneCriteriaOneMaxRepairsMax = 1000000000;
+
+export const transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneBuyerOneCriteriaOneMinBedsMin = 0;
+export const transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneBuyerOneCriteriaOneMinBedsMax = 100;
+
+export const transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneBuyerOneCriteriaOneMinSqftMin = 0;
+export const transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneBuyerOneCriteriaOneMinSqftMax = 1000000;
+
+export const transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneBuyerOneCriteriaOneMaxSqftExclusiveMin = 0;
+export const transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneBuyerOneCriteriaOneMaxSqftMax = 1000000;
+
+export const transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneBuyerOneCriteriaOneClosingDaysMax = 365;
+
+export const transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneBuyerOneCriteriaOneCountiesItemMax = 200;
+
+export const transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneBuyerOneCriteriaOneExcludedCountiesItemMax = 200;
+
+export const transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneBuyerOneCriteriaOneExcludedCitiesItemMax = 200;
+
+export const transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneBuyerOneCriteriaOneExcludedZipCodesItemRegExp = new RegExp('^\\d{5}$');
+export const transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneBuyerOneCriteriaOneMinPurchasePriceMin = 0;
+export const transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneBuyerOneCriteriaOneMinPurchasePriceMax = 1000000000;
+
+export const transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneBuyerOneCriteriaOneMinArvMin = 0;
+export const transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneBuyerOneCriteriaOneMinArvMax = 1000000000;
+
+export const transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneBuyerOneCriteriaOneMaxArvMin = 0;
+export const transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneBuyerOneCriteriaOneMaxArvMax = 1000000000;
+
+export const transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneBuyerOneCriteriaOneMinUnitsMin = 0;
+export const transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneBuyerOneCriteriaOneMinUnitsMax = 10000;
+
+export const transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneBuyerOneCriteriaOneMaxUnitsMin = 0;
+export const transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneBuyerOneCriteriaOneMaxUnitsMax = 10000;
+
+export const transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneBuyerOneCriteriaOneMinBathsMin = 0;
+export const transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneBuyerOneCriteriaOneMinBathsMax = 100;
+
+export const transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneBuyerOneCriteriaOneMaxBedsMin = 0;
+export const transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneBuyerOneCriteriaOneMaxBedsMax = 100;
+
+export const transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneBuyerOneCriteriaOneMaxBathsMin = 0;
+export const transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneBuyerOneCriteriaOneMaxBathsMax = 100;
+
+
+
+export const transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneBuyerOneCriteriaOneMaxConcurrentDealsMax = 1000;
+
+export const transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneBuyerOneCriteriaOneMinSpreadMin = 0;
+export const transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneBuyerOneCriteriaOneMinSpreadMax = 1000000000;
+
+export const transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneBuyerOneCriteriaOneMinCapRateMin = 0;
+export const transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneBuyerOneCriteriaOneMinCapRateMax = 1;
+
+export const transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneBuyerOneQualifiedDealFeeMin = 0;
+export const transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneBuyerOneQualifiedDealFeeMax = 1000000000;
+
+export const transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneBuyerOneFeeTermsSourceMax = 2000;
+
+export const transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneBuyerTwoDiscoveryEvidenceConfidenceMin = 0;
+export const transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneBuyerTwoDiscoveryEvidenceConfidenceMax = 1;
+
+export const transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneBuyerTwoSourceObservationsItemConfidenceMin = 0;
+export const transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneBuyerTwoSourceObservationsItemConfidenceMax = 1;
+
+
+export const transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneBuyerTwoSourceObservationsItemRecordIdentitiesMax = 100;
+
+
+export const transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneBuyerTwoSourceObservationsItemHistoryItemConfidenceMin = 0;
+export const transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneBuyerTwoSourceObservationsItemHistoryItemConfidenceMax = 1;
+
+export const transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneBuyerTwoSourceObservationsItemHistoryItemRecordIdentitiesMax = 100;
+
+
+export const transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneBuyerTwoSourceObservationsItemHistoryMax = 20;
+
+export const transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneBuyerTwoVerificationHistoryItemCriteriaOneStatesItemMin = 2;
+export const transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneBuyerTwoVerificationHistoryItemCriteriaOneStatesItemMax = 2;
+
+
+
+export const transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneBuyerTwoVerificationHistoryItemCriteriaOneZipCodesItemRegExp = new RegExp('^\\d{5}$');
+
+export const transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneBuyerTwoVerificationHistoryItemCriteriaOneMaxPurchasePriceExclusiveMin = 0;
+export const transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneBuyerTwoVerificationHistoryItemCriteriaOneMaxPurchasePriceMax = 1000000000;
+
+export const transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneBuyerTwoVerificationHistoryItemCriteriaOneMaxRepairsMin = 0;
+export const transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneBuyerTwoVerificationHistoryItemCriteriaOneMaxRepairsMax = 1000000000;
+
+export const transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneBuyerTwoVerificationHistoryItemCriteriaOneMinBedsMin = 0;
+export const transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneBuyerTwoVerificationHistoryItemCriteriaOneMinBedsMax = 100;
+
+export const transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneBuyerTwoVerificationHistoryItemCriteriaOneMinSqftMin = 0;
+export const transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneBuyerTwoVerificationHistoryItemCriteriaOneMinSqftMax = 1000000;
+
+export const transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneBuyerTwoVerificationHistoryItemCriteriaOneMaxSqftExclusiveMin = 0;
+export const transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneBuyerTwoVerificationHistoryItemCriteriaOneMaxSqftMax = 1000000;
+
+export const transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneBuyerTwoVerificationHistoryItemCriteriaOneClosingDaysMax = 365;
+
+export const transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneBuyerTwoVerificationHistoryItemCriteriaOneCountiesItemMax = 200;
+
+export const transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneBuyerTwoVerificationHistoryItemCriteriaOneExcludedCountiesItemMax = 200;
+
+export const transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneBuyerTwoVerificationHistoryItemCriteriaOneExcludedCitiesItemMax = 200;
+
+export const transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneBuyerTwoVerificationHistoryItemCriteriaOneExcludedZipCodesItemRegExp = new RegExp('^\\d{5}$');
+export const transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneBuyerTwoVerificationHistoryItemCriteriaOneMinPurchasePriceMin = 0;
+export const transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneBuyerTwoVerificationHistoryItemCriteriaOneMinPurchasePriceMax = 1000000000;
+
+export const transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneBuyerTwoVerificationHistoryItemCriteriaOneMinArvMin = 0;
+export const transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneBuyerTwoVerificationHistoryItemCriteriaOneMinArvMax = 1000000000;
+
+export const transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneBuyerTwoVerificationHistoryItemCriteriaOneMaxArvMin = 0;
+export const transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneBuyerTwoVerificationHistoryItemCriteriaOneMaxArvMax = 1000000000;
+
+export const transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneBuyerTwoVerificationHistoryItemCriteriaOneMinUnitsMin = 0;
+export const transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneBuyerTwoVerificationHistoryItemCriteriaOneMinUnitsMax = 10000;
+
+export const transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneBuyerTwoVerificationHistoryItemCriteriaOneMaxUnitsMin = 0;
+export const transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneBuyerTwoVerificationHistoryItemCriteriaOneMaxUnitsMax = 10000;
+
+export const transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneBuyerTwoVerificationHistoryItemCriteriaOneMinBathsMin = 0;
+export const transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneBuyerTwoVerificationHistoryItemCriteriaOneMinBathsMax = 100;
+
+export const transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneBuyerTwoVerificationHistoryItemCriteriaOneMaxBedsMin = 0;
+export const transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneBuyerTwoVerificationHistoryItemCriteriaOneMaxBedsMax = 100;
+
+export const transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneBuyerTwoVerificationHistoryItemCriteriaOneMaxBathsMin = 0;
+export const transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneBuyerTwoVerificationHistoryItemCriteriaOneMaxBathsMax = 100;
+
+
+
+export const transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneBuyerTwoVerificationHistoryItemCriteriaOneMaxConcurrentDealsMax = 1000;
+
+export const transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneBuyerTwoVerificationHistoryItemCriteriaOneMinSpreadMin = 0;
+export const transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneBuyerTwoVerificationHistoryItemCriteriaOneMinSpreadMax = 1000000000;
+
+export const transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneBuyerTwoVerificationHistoryItemCriteriaOneMinCapRateMin = 0;
+export const transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneBuyerTwoVerificationHistoryItemCriteriaOneMinCapRateMax = 1;
+
+export const transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneDetailLeadOneAddressMin = 3;
+export const transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneDetailLeadOneAddressMax = 250;
+
+export const transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneDetailLeadOneCityMax = 100;
+
+export const transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneDetailLeadOneStateMin = 2;
+export const transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneDetailLeadOneStateMax = 2;
+
+export const transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneDetailLeadOneCountyMax = 100;
+
+export const transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneDetailLeadOneZipRegExp = new RegExp('^\\d{5}(-\\d{4})?$');
+export const transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneDetailLeadOneSqftMin = 0;
+export const transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneDetailLeadOneSqftMax = 1000000;
+
+export const transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneDetailLeadOneBedsMin = 0;
+export const transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneDetailLeadOneBedsMax = 100;
+
+export const transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneDetailLeadOneBathsMin = 0;
+export const transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneDetailLeadOneBathsMax = 100;
+
+export const transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneDetailLeadOneUnitsMax = 10000;
+
+export const transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneDetailLeadOneAskingPriceMin = 0;
+export const transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneDetailLeadOneAskingPriceMax = 1000000000;
+
+export const transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneDetailLeadOneSellerNameMax = 200;
+
+export const transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneDetailLeadOneSellerPhoneMax = 50;
+
+export const transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneDetailLeadOneSellerEmailMax = 200;
+
+export const transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneDetailLeadOneSellerDescriptionMax = 5000;
+
+export const transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneDetailLeadOneSellingReasonMax = 2000;
+
+export const transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneDetailLeadOneSourceMax = 2000;
+
+export const transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneDetailLeadOneNextActionMax = 1000;
+
+export const transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneDetailLeadTwoPropertyQualificationScoreMin = 0;
+export const transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneDetailLeadTwoPropertyQualificationScoreMax = 100;
+
+export const transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneDetailLeadTwoPropertyQualificationConfidenceMin = 0;
+export const transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneDetailLeadTwoPropertyQualificationConfidenceMax = 1;
+
+
+export const transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneDetailLeadTwoPropertyQualificationSignalsItemConfidenceMin = 0;
+export const transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneDetailLeadTwoPropertyQualificationSignalsItemConfidenceMax = 1;
+
+export const transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneDetailLeadTwoPropertyQualificationSignalsItemScoreContributionMin = 0;
+export const transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneDetailLeadTwoPropertyQualificationSignalsItemScoreContributionMax = 100;
+
+export const transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneDetailIntelligenceItemOneCategoryMax = 100;
+
+export const transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneDetailIntelligenceItemOneStatementMax = 5000;
+
+export const transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneDetailIntelligenceItemOneSourceMax = 2000;
+
+export const transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneDetailIntelligenceItemOneSourceUrlMax = 2000;
+
+export const transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneDetailIntelligenceItemOneConfidenceMin = 0;
+export const transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneDetailIntelligenceItemOneConfidenceMax = 1;
+
+export const transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneDetailIntelligenceItemOneVerificationNoteMax = 2000;
+
+export const transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneDetailIntelligenceItemOneContactPermissionEvidenceUrlMax = 2000;
+
+export const transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneDetailIntelligenceItemOneQuestionMax = 2000;
+
+export const transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneDetailIntelligenceItemOneActionMax = 2000;
+
+export const transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneDetailAnalysisOneRepairEstimateCatalogVersionMin = 0;
+
+export const transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneDetailAnalysisOneRepairEstimateLinesItemLowMin = 0;
+
+export const transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneDetailAnalysisOneRepairEstimateLinesItemExpectedMin = 0;
+
+export const transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneDetailAnalysisOneRepairEstimateLinesItemHighMin = 0;
+
+export const transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneDetailAnalysisOneRepairEstimateLinesItemConfidenceMin = 0;
+export const transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneDetailAnalysisOneRepairEstimateLinesItemConfidenceMax = 1;
+
+export const transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneDetailAnalysisOneRepairEstimateLinesMax = 50;
+
+export const transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneDetailAnalysisOnePreliminaryRepairEstimateCatalogVersionMin = 0;
+
+export const transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneDetailAnalysisOnePreliminaryRepairEstimateHypothesesItemSourceConfidenceMin = 0;
+export const transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneDetailAnalysisOnePreliminaryRepairEstimateHypothesesItemSourceConfidenceMax = 1;
+
+export const transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneDetailAnalysisOnePreliminaryRepairEstimateHypothesesItemConfidenceMin = 0;
+export const transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneDetailAnalysisOnePreliminaryRepairEstimateHypothesesItemConfidenceMax = 0.5;
+
+export const transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneDetailAnalysisOnePreliminaryRepairEstimateHypothesesMax = 100;
+
+export const transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneDetailAnalysisOnePreliminaryRepairEstimateLinesItemLowMin = 0;
+
+export const transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneDetailAnalysisOnePreliminaryRepairEstimateLinesItemExpectedMin = 0;
+
+export const transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneDetailAnalysisOnePreliminaryRepairEstimateLinesItemHighMin = 0;
+
+export const transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneDetailAnalysisOnePreliminaryRepairEstimateLinesItemConfidenceMin = 0;
+export const transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneDetailAnalysisOnePreliminaryRepairEstimateLinesItemConfidenceMax = 0.5;
+
+
+
+export const transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneDetailAnalysisOnePreliminaryRepairEstimateLinesMax = 50;
+
+export const transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneDetailAnalysisOneAssumptionsArvMultiplierMin = 0.1;
+export const transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneDetailAnalysisOneAssumptionsArvMultiplierMax = 1;
+
+export const transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneDetailAnalysisOneAssumptionsSellingCostPctMin = 0;
+export const transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneDetailAnalysisOneAssumptionsSellingCostPctMax = 0.5;
+
+export const transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneDetailAnalysisOneAssumptionsAcquisitionCostMin = 0;
+export const transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneDetailAnalysisOneAssumptionsAcquisitionCostMax = 1000000000;
+
+export const transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneDetailAnalysisOneAssumptionsHoldingMonthlyMin = 0;
+export const transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneDetailAnalysisOneAssumptionsHoldingMonthlyMax = 1000000000;
+
+export const transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneDetailAnalysisOneAssumptionsHoldingMonthsMin = 0;
+export const transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneDetailAnalysisOneAssumptionsHoldingMonthsMax = 120;
+
+export const transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneDetailAnalysisOneAssumptionsAssignmentTargetMin = 0;
+export const transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneDetailAnalysisOneAssumptionsAssignmentTargetMax = 1000000000;
+
+export const transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneDetailAnalysisOneAssumptionsContingencyPctMin = 0;
+export const transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneDetailAnalysisOneAssumptionsContingencyPctMax = 1;
+
+export const transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneDetailAnalysisOneAssumptionsStrongMarginMin = 0;
+export const transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneDetailAnalysisOneAssumptionsStrongMarginMax = 1000000000;
+
+export const transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneDetailAnalysisOneAssumptionsOpeningLowPctMin = 0;
+export const transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneDetailAnalysisOneAssumptionsOpeningLowPctMax = 1;
+
+export const transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneDetailAnalysisOneAssumptionsOpeningHighPctMin = 0;
+export const transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneDetailAnalysisOneAssumptionsOpeningHighPctMax = 1;
+
+export const transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneDetailAnalysisOneAssumptionsMaxCompAgeDaysMax = 1095;
+
+export const transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneDetailAnalysisOneAssumptionsMaxDistanceMilesExclusiveMin = 0;
+export const transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneDetailAnalysisOneAssumptionsMaxDistanceMilesMax = 100;
+
+export const transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneDetailAnalysisOneAssumptionsMaxSqftDifferencePctMin = 0;
+export const transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneDetailAnalysisOneAssumptionsMaxSqftDifferencePctMax = 1;
+
+export const transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneDetailAnalysisOneAssumptionsMinCompsMin = 3;
+export const transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneDetailAnalysisOneAssumptionsMinCompsMax = 20;
+
+export const transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneDetailAnalysisOneAssumptionsMinConfidenceMin = 0.3;
+export const transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneDetailAnalysisOneAssumptionsMinConfidenceMax = 1;
+
+export const transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneDetailAnalysisOneAssumptionsRepairRateCatalogVersionMin = 0;
+
+export const transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneDetailAnalysisOneAssumptionsRepairRatesItemIdMax = 100;
+
+
+export const transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneDetailAnalysisOneAssumptionsRepairRatesItemMarketKeyMin = 2;
+export const transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneDetailAnalysisOneAssumptionsRepairRatesItemMarketKeyMax = 100;
+
+export const transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneDetailAnalysisOneAssumptionsRepairRatesItemCategoryMax = 100;
+
+export const transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneDetailAnalysisOneAssumptionsRepairRatesItemLowRateMin = 0;
+export const transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneDetailAnalysisOneAssumptionsRepairRatesItemLowRateMax = 100000000;
+
+export const transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneDetailAnalysisOneAssumptionsRepairRatesItemExpectedRateMin = 0;
+export const transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneDetailAnalysisOneAssumptionsRepairRatesItemExpectedRateMax = 100000000;
+
+export const transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneDetailAnalysisOneAssumptionsRepairRatesItemHighRateMin = 0;
+export const transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneDetailAnalysisOneAssumptionsRepairRatesItemHighRateMax = 100000000;
+
+export const transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneDetailAnalysisOneAssumptionsRepairRatesItemConfidenceMin = 0;
+export const transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneDetailAnalysisOneAssumptionsRepairRatesItemConfidenceMax = 1;
+
+export const transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneDetailAnalysisOneAssumptionsRepairRatesItemSourceMax = 2000;
+
+export const transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneDetailAnalysisOneAssumptionsRepairRatesItemSourceUrlMax = 2000;
+
+export const transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneDetailAnalysisOneAssumptionsRepairRatesMax = 1000;
+
+export const transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneDetailOffersItemOneAmountExclusiveMin = 0;
+export const transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneDetailOffersItemOneAmountMax = 1000000000;
+
+export const transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneDetailOffersItemOneEarnestMoneyMin = 0;
+export const transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneDetailOffersItemOneEarnestMoneyMax = 1000000000;
+
+export const transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneDetailOffersItemOneClosingDaysMax = 180;
+
+export const transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneDetailOffersItemOneContingenciesMin = 3;
+export const transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneDetailOffersItemOneContingenciesMax = 5000;
+
+
+
+export const transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneDetailUnderwritingOneCompsItemAddressMin = 3;
+
+export const transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneDetailUnderwritingOneCompsItemSalePriceExclusiveMin = 0;
+export const transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneDetailUnderwritingOneCompsItemSalePriceMax = 1000000000;
+
+export const transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneDetailUnderwritingOneCompsItemSqftExclusiveMin = 0;
+export const transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneDetailUnderwritingOneCompsItemSqftMax = 1000000;
+
+export const transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneDetailUnderwritingOneCompsItemDistanceMilesMin = 0;
+export const transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneDetailUnderwritingOneCompsItemDistanceMilesMax = 10000;
+
+
+export const transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneDetailUnderwritingOneCompsItemSaleEvidenceIdMax = 200;
+
+export const transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneDetailUnderwritingOneCompsItemConditionEvidenceIdMax = 200;
+
+export const transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneDetailUnderwritingOneCompsMax = 100;
+
+
+export const transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneDetailUnderwritingOneRepairsItemLowMin = 0;
+export const transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneDetailUnderwritingOneRepairsItemLowMax = 1000000000;
+
+export const transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneDetailUnderwritingOneRepairsItemExpectedMin = 0;
+export const transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneDetailUnderwritingOneRepairsItemExpectedMax = 1000000000;
+
+export const transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneDetailUnderwritingOneRepairsItemHighMin = 0;
+export const transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneDetailUnderwritingOneRepairsItemHighMax = 1000000000;
+
+export const transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneDetailUnderwritingOneRepairsItemConfidenceMin = 0;
+export const transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneDetailUnderwritingOneRepairsItemConfidenceMax = 1;
+
+
+export const transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneDetailUnderwritingOneRepairsItemEvidenceIdMax = 200;
+
+export const transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneDetailUnderwritingOneRepairsMax = 50;
+
+export const transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneDetailUnderwritingOneRepairObservationsItemCategoryMax = 100;
+
+export const transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneDetailUnderwritingOneRepairObservationsItemQuantityMin = 0;
+export const transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneDetailUnderwritingOneRepairObservationsItemQuantityMax = 1000000;
+
+export const transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneDetailUnderwritingOneRepairObservationsItemEvidenceIdMax = 200;
+
+export const transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneDetailUnderwritingOneRepairObservationsMax = 50;
+
+export const transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneDetailUnderwritingOneRepairEstimateCatalogVersionMin = 0;
+
+export const transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneDetailUnderwritingOneRepairEstimateLinesItemLowMin = 0;
+
+export const transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneDetailUnderwritingOneRepairEstimateLinesItemExpectedMin = 0;
+
+export const transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneDetailUnderwritingOneRepairEstimateLinesItemHighMin = 0;
+
+export const transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneDetailUnderwritingOneRepairEstimateLinesItemConfidenceMin = 0;
+export const transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneDetailUnderwritingOneRepairEstimateLinesItemConfidenceMax = 1;
+
+export const transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneDetailUnderwritingOneRepairEstimateLinesMax = 50;
+
+export const transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneDetailUnderwritingOneSubjectEvidenceIdMax = 200;
+
+export const transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneDetailUnderwritingOneConditionEvidenceIdMax = 200;
+
+export const transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneDetailUnderwritingOneSellerContactEvidenceIdMax = 200;
+
+
+export const transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneDetailCallsItemOneNotesMax = 10000;
+
+export const transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneDetailCallsItemOneNextActionMin = 3;
+export const transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneDetailCallsItemOneNextActionMax = 1000;
+
+
+
+export const transitionTransactionDocumentResponseContractOneDocumentsItemSnapshotHashRegExp = new RegExp('^[a-f0-9]{64}$');
+export const transitionTransactionDocumentResponseContractOneDocumentsItemEconomicsSnapshotHashRegExp = new RegExp('^[a-f0-9]{64}$');
+export const transitionTransactionDocumentResponseContractOneDocumentsItemContentHashRegExp = new RegExp('^[a-f0-9]{64}$');
+
+
+export const transitionTransactionDocumentResponseContractOneDocumentsItemPartySnapshotHashRegExp = new RegExp('^[a-f0-9]{64}$');
+
+
+export const TransitionTransactionDocumentResponse = zod.object({
+  "leadId": zod.string(),
+  "contract": zod.union([zod.object({
+  "id": zod.string(),
+  "leadId": zod.string(),
+  "offerId": zod.string(),
+  "version": zod.number().int(),
+  "status": zod.enum(['DRAFT', 'UNDER_CONTRACT', 'CLOSING', 'CLOSED', 'CANCELLED']),
+  "purchasePrice": zod.number(),
+  "assignmentTarget": zod.number(),
+  "earnestMoney": zod.number(),
+  "assignmentAllowed": zod.boolean(),
+  "closingAt": zod.string(),
+  "attemptNumber": zod.number().int().min(1).optional(),
+  "history": zod.array(zod.object({
+  "kind": zod.enum(['AMEND_CLOSING', 'RELEASE_BUYER', 'RESTART_CANCELLED', 'CANCELLED_ATTEMPT', 'ELIGIBILITY_REVIEW']),
+  "effectiveAt": zod.string(),
+  "recordedAt": zod.string(),
+  "recordedBy": zod.string(),
+  "evidenceUrl": zod.string(),
+  "note": zod.string(),
+  "previousState": zod.record(zod.string(), zod.unknown())
+})).optional(),
+  "destinationActivityHistory": zod.array(zod.object({
+  "eventKey": zod.string(),
+  "destinationId": zod.string(),
+  "destinationName": zod.string(),
+  "destinationKind": zod.enum(['DEAL_FINDER', 'GURU']),
+  "kind": zod.enum(['SUBMITTED', 'ACKNOWLEDGED', 'DECLINED', 'TERMS_REVIEWED', 'TERMS_ACCEPTED', 'FEE_RECEIVED', 'FEE_DISPUTED', 'FEE_WAIVED']),
+  "occurredAt": zod.string(),
+  "recordedAt": zod.string(),
+  "recordedBy": zod.string(),
+  "evidenceUrl": zod.string(),
+  "note": zod.string(),
+  "exactTerms": zod.string().nullish(),
+  "feeAmount": zod.number().nullish(),
+  "currency": zod.string().nullish(),
+  "relatedEventKey": zod.string().nullish()
+})).optional(),
+  "buyerCommittedAt": zod.string().nullish(),
+  "commitmentSnapshot": zod.union([zod.object({
+  "recordedAt": zod.string().optional(),
+  "buyer": zod.object({
+  "name": zod.string().min(1).max(transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneBuyerOneNameMax),
+  "email": zod.string().max(transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneBuyerOneEmailMax),
+  "phone": zod.string().max(transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneBuyerOnePhoneMax),
+  "source": zod.string().min(1).max(transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneBuyerOneSourceMax),
+  "criteria": zod.union([zod.object({
+  "states": zod.array(zod.string().min(transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneBuyerOneCriteriaOneStatesItemMin).max(transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneBuyerOneCriteriaOneStatesItemMax)).min(1),
+  "cities": zod.array(zod.string().min(1)),
+  "zipCodes": zod.array(zod.string().regex(transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneBuyerOneCriteriaOneZipCodesItemRegExp)),
+  "propertyTypes": zod.array(zod.enum(['SINGLE_FAMILY', 'MULTIFAMILY', 'CONDO', 'TOWNHOUSE', 'LAND', 'OTHER'])).min(1),
+  "maxPurchasePrice": zod.number().gt(transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneBuyerOneCriteriaOneMaxPurchasePriceExclusiveMin).max(transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneBuyerOneCriteriaOneMaxPurchasePriceMax),
+  "maxRepairs": zod.number().min(transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneBuyerOneCriteriaOneMaxRepairsMin).max(transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneBuyerOneCriteriaOneMaxRepairsMax),
+  "minBeds": zod.number().int().min(transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneBuyerOneCriteriaOneMinBedsMin).max(transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneBuyerOneCriteriaOneMinBedsMax),
+  "minSqft": zod.number().min(transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneBuyerOneCriteriaOneMinSqftMin).max(transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneBuyerOneCriteriaOneMinSqftMax),
+  "maxSqft": zod.number().gt(transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneBuyerOneCriteriaOneMaxSqftExclusiveMin).max(transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneBuyerOneCriteriaOneMaxSqftMax),
+  "closingDays": zod.number().int().min(1).max(transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneBuyerOneCriteriaOneClosingDaysMax),
+  "counties": zod.array(zod.string().min(1).max(transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneBuyerOneCriteriaOneCountiesItemMax)).optional(),
+  "excludedCounties": zod.array(zod.string().min(1).max(transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneBuyerOneCriteriaOneExcludedCountiesItemMax)).optional(),
+  "excludedCities": zod.array(zod.string().min(1).max(transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneBuyerOneCriteriaOneExcludedCitiesItemMax)).optional(),
+  "excludedZipCodes": zod.array(zod.string().regex(transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneBuyerOneCriteriaOneExcludedZipCodesItemRegExp)).optional(),
+  "minPurchasePrice": zod.number().min(transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneBuyerOneCriteriaOneMinPurchasePriceMin).max(transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneBuyerOneCriteriaOneMinPurchasePriceMax).optional(),
+  "minArv": zod.number().min(transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneBuyerOneCriteriaOneMinArvMin).max(transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneBuyerOneCriteriaOneMinArvMax).nullish(),
+  "maxArv": zod.number().min(transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneBuyerOneCriteriaOneMaxArvMin).max(transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneBuyerOneCriteriaOneMaxArvMax).nullish(),
+  "minUnits": zod.number().int().min(transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneBuyerOneCriteriaOneMinUnitsMin).max(transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneBuyerOneCriteriaOneMinUnitsMax).optional(),
+  "maxUnits": zod.number().int().min(transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneBuyerOneCriteriaOneMaxUnitsMin).max(transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneBuyerOneCriteriaOneMaxUnitsMax).optional(),
+  "minBaths": zod.number().min(transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneBuyerOneCriteriaOneMinBathsMin).max(transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneBuyerOneCriteriaOneMinBathsMax).optional(),
+  "maxBeds": zod.number().int().min(transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneBuyerOneCriteriaOneMaxBedsMin).max(transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneBuyerOneCriteriaOneMaxBedsMax).nullish(),
+  "maxBaths": zod.number().min(transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneBuyerOneCriteriaOneMaxBathsMin).max(transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneBuyerOneCriteriaOneMaxBathsMax).nullish(),
+  "rehabTolerance": zod.enum(['NONE', 'LIGHT', 'MODERATE', 'HEAVY', 'ANY']).optional(),
+  "strategies": zod.array(zod.enum(['FLIP', 'RENTAL', 'BRRRR', 'WHOLESALE', 'DEVELOPMENT', 'OTHER'])).min(1).optional(),
+  "fundingTypes": zod.array(zod.enum(['CASH', 'HARD_MONEY', 'PRIVATE_LENDING', 'CONVENTIONAL', 'OTHER'])).min(1).optional(),
+  "maxConcurrentDeals": zod.number().int().min(1).max(transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneBuyerOneCriteriaOneMaxConcurrentDealsMax).optional(),
+  "minSpread": zod.number().min(transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneBuyerOneCriteriaOneMinSpreadMin).max(transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneBuyerOneCriteriaOneMinSpreadMax).nullish(),
+  "minCapRate": zod.number().min(transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneBuyerOneCriteriaOneMinCapRateMin).max(transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneBuyerOneCriteriaOneMinCapRateMax).nullish()
+}),zod.null()]),
+  "status": zod.enum(['ACTIVE', 'PAUSED']),
+  "destinationKind": zod.enum(['BUYER', 'DEAL_FINDER', 'GURU']).optional(),
+  "qualifiedDealFee": zod.number().min(transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneBuyerOneQualifiedDealFeeMin).max(transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneBuyerOneQualifiedDealFeeMax).nullish(),
+  "feeTermsSource": zod.string().max(transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneBuyerOneFeeTermsSourceMax).optional()
+}).and(zod.object({
+  "id": zod.string(),
+  "version": zod.number().int(),
+  "verificationStatus": zod.enum(['UNVERIFIED', 'VERIFIED', 'STALE']),
+  "identityEvidenceUrl": zod.string().nullish(),
+  "fundingEvidenceUrl": zod.string().nullish(),
+  "verificationNote": zod.string().nullish(),
+  "availableFunds": zod.number().nullish(),
+  "verifiedFundingTypes": zod.array(zod.enum(['CASH', 'HARD_MONEY', 'PRIVATE_LENDING', 'CONVENTIONAL', 'OTHER'])).optional(),
+  "evidenceAt": zod.string().nullish(),
+  "validUntil": zod.string().nullish(),
+  "verifiedBy": zod.string().nullish(),
+  "verifiedAt": zod.string().nullish(),
+  "approvalStatus": zod.enum(['DISCOVERED', 'QUALIFICATION_REQUIRED', 'APPROVED', 'REVERIFICATION_REQUIRED']).optional(),
+  "currentBuyingStatus": zod.enum(['UNKNOWN', 'BUYING', 'PAUSED', 'NOT_BUYING']).optional(),
+  "buyingEvidenceUrl": zod.string().nullish(),
+  "buyingEvidenceAt": zod.string().nullish(),
+  "buyingVerifiedAt": zod.string().nullish(),
+  "criteriaEvidenceUrl": zod.string().nullish(),
+  "verificationSource": zod.string().nullish(),
+  "confidence": zod.number().nullish(),
+  "qualificationBlockers": zod.array(zod.string()).optional(),
+  "discoveryEvidence": zod.object({
+  "classification": zod.enum(['OBSERVED']),
+  "source": zod.string(),
+  "sourceUrl": zod.string(),
+  "capturedAt": zod.string(),
+  "confidence": zod.number().min(transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneBuyerTwoDiscoveryEvidenceConfidenceMin).max(transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneBuyerTwoDiscoveryEvidenceConfidenceMax)
+}).optional(),
+  "sourceObservations": zod.array(zod.object({
+  "sourceId": zod.string(),
+  "source": zod.string(),
+  "sourceUrl": zod.string().url(),
+  "classification": zod.enum(['OBSERVED']),
+  "statement": zod.string(),
+  "confidence": zod.number().min(transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneBuyerTwoSourceObservationsItemConfidenceMin).max(transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneBuyerTwoSourceObservationsItemConfidenceMax),
+  "capturedAt": zod.string().datetime({"offset":true}),
+  "firstObservedAt": zod.string().datetime({"offset":true}),
+  "lastObservedAt": zod.string().datetime({"offset":true}),
+  "seenCount": zod.number().int().min(1),
+  "recordIdentities": zod.array(zod.string()).max(transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneBuyerTwoSourceObservationsItemRecordIdentitiesMax),
+  "activityCount": zod.number().int().min(1),
+  "eventAt": zod.string().nullable(),
+  "history": zod.array(zod.object({
+  "capturedAt": zod.string().datetime({"offset":true}),
+  "statement": zod.string(),
+  "confidence": zod.number().min(transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneBuyerTwoSourceObservationsItemHistoryItemConfidenceMin).max(transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneBuyerTwoSourceObservationsItemHistoryItemConfidenceMax),
+  "recordIdentities": zod.array(zod.string()).max(transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneBuyerTwoSourceObservationsItemHistoryItemRecordIdentitiesMax),
+  "activityCount": zod.number().int().min(1),
+  "eventAt": zod.string().nullable()
+})).max(transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneBuyerTwoSourceObservationsItemHistoryMax)
+})).optional(),
+  "verificationHistory": zod.array(zod.object({
+  "verifiedFundingTypes": zod.array(zod.enum(['CASH', 'HARD_MONEY', 'PRIVATE_LENDING', 'CONVENTIONAL', 'OTHER'])).optional(),
+  "reviewedBy": zod.string(),
+  "reviewedAt": zod.string(),
+  "currentBuyingStatus": zod.enum(['BUYING', 'PAUSED', 'NOT_BUYING']),
+  "buyingEvidenceUrl": zod.string(),
+  "buyingEvidenceAt": zod.string().optional(),
+  "criteriaEvidenceUrl": zod.string(),
+  "verificationSource": zod.string(),
+  "identityEvidenceUrl": zod.string().optional(),
+  "fundingEvidenceUrl": zod.string().optional(),
+  "availableFunds": zod.number().optional(),
+  "evidenceAt": zod.string().optional(),
+  "validUntil": zod.string().optional(),
+  "confidence": zod.number().optional(),
+  "verificationNote": zod.string().optional(),
+  "destinationKind": zod.enum(['BUYER', 'DEAL_FINDER', 'GURU']).optional(),
+  "criteria": zod.union([zod.object({
+  "states": zod.array(zod.string().min(transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneBuyerTwoVerificationHistoryItemCriteriaOneStatesItemMin).max(transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneBuyerTwoVerificationHistoryItemCriteriaOneStatesItemMax)).min(1),
+  "cities": zod.array(zod.string().min(1)),
+  "zipCodes": zod.array(zod.string().regex(transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneBuyerTwoVerificationHistoryItemCriteriaOneZipCodesItemRegExp)),
+  "propertyTypes": zod.array(zod.enum(['SINGLE_FAMILY', 'MULTIFAMILY', 'CONDO', 'TOWNHOUSE', 'LAND', 'OTHER'])).min(1),
+  "maxPurchasePrice": zod.number().gt(transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneBuyerTwoVerificationHistoryItemCriteriaOneMaxPurchasePriceExclusiveMin).max(transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneBuyerTwoVerificationHistoryItemCriteriaOneMaxPurchasePriceMax),
+  "maxRepairs": zod.number().min(transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneBuyerTwoVerificationHistoryItemCriteriaOneMaxRepairsMin).max(transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneBuyerTwoVerificationHistoryItemCriteriaOneMaxRepairsMax),
+  "minBeds": zod.number().int().min(transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneBuyerTwoVerificationHistoryItemCriteriaOneMinBedsMin).max(transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneBuyerTwoVerificationHistoryItemCriteriaOneMinBedsMax),
+  "minSqft": zod.number().min(transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneBuyerTwoVerificationHistoryItemCriteriaOneMinSqftMin).max(transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneBuyerTwoVerificationHistoryItemCriteriaOneMinSqftMax),
+  "maxSqft": zod.number().gt(transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneBuyerTwoVerificationHistoryItemCriteriaOneMaxSqftExclusiveMin).max(transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneBuyerTwoVerificationHistoryItemCriteriaOneMaxSqftMax),
+  "closingDays": zod.number().int().min(1).max(transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneBuyerTwoVerificationHistoryItemCriteriaOneClosingDaysMax),
+  "counties": zod.array(zod.string().min(1).max(transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneBuyerTwoVerificationHistoryItemCriteriaOneCountiesItemMax)).optional(),
+  "excludedCounties": zod.array(zod.string().min(1).max(transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneBuyerTwoVerificationHistoryItemCriteriaOneExcludedCountiesItemMax)).optional(),
+  "excludedCities": zod.array(zod.string().min(1).max(transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneBuyerTwoVerificationHistoryItemCriteriaOneExcludedCitiesItemMax)).optional(),
+  "excludedZipCodes": zod.array(zod.string().regex(transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneBuyerTwoVerificationHistoryItemCriteriaOneExcludedZipCodesItemRegExp)).optional(),
+  "minPurchasePrice": zod.number().min(transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneBuyerTwoVerificationHistoryItemCriteriaOneMinPurchasePriceMin).max(transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneBuyerTwoVerificationHistoryItemCriteriaOneMinPurchasePriceMax).optional(),
+  "minArv": zod.number().min(transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneBuyerTwoVerificationHistoryItemCriteriaOneMinArvMin).max(transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneBuyerTwoVerificationHistoryItemCriteriaOneMinArvMax).nullish(),
+  "maxArv": zod.number().min(transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneBuyerTwoVerificationHistoryItemCriteriaOneMaxArvMin).max(transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneBuyerTwoVerificationHistoryItemCriteriaOneMaxArvMax).nullish(),
+  "minUnits": zod.number().int().min(transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneBuyerTwoVerificationHistoryItemCriteriaOneMinUnitsMin).max(transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneBuyerTwoVerificationHistoryItemCriteriaOneMinUnitsMax).optional(),
+  "maxUnits": zod.number().int().min(transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneBuyerTwoVerificationHistoryItemCriteriaOneMaxUnitsMin).max(transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneBuyerTwoVerificationHistoryItemCriteriaOneMaxUnitsMax).optional(),
+  "minBaths": zod.number().min(transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneBuyerTwoVerificationHistoryItemCriteriaOneMinBathsMin).max(transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneBuyerTwoVerificationHistoryItemCriteriaOneMinBathsMax).optional(),
+  "maxBeds": zod.number().int().min(transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneBuyerTwoVerificationHistoryItemCriteriaOneMaxBedsMin).max(transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneBuyerTwoVerificationHistoryItemCriteriaOneMaxBedsMax).nullish(),
+  "maxBaths": zod.number().min(transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneBuyerTwoVerificationHistoryItemCriteriaOneMaxBathsMin).max(transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneBuyerTwoVerificationHistoryItemCriteriaOneMaxBathsMax).nullish(),
+  "rehabTolerance": zod.enum(['NONE', 'LIGHT', 'MODERATE', 'HEAVY', 'ANY']).optional(),
+  "strategies": zod.array(zod.enum(['FLIP', 'RENTAL', 'BRRRR', 'WHOLESALE', 'DEVELOPMENT', 'OTHER'])).min(1).optional(),
+  "fundingTypes": zod.array(zod.enum(['CASH', 'HARD_MONEY', 'PRIVATE_LENDING', 'CONVENTIONAL', 'OTHER'])).min(1).optional(),
+  "maxConcurrentDeals": zod.number().int().min(1).max(transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneBuyerTwoVerificationHistoryItemCriteriaOneMaxConcurrentDealsMax).optional(),
+  "minSpread": zod.number().min(transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneBuyerTwoVerificationHistoryItemCriteriaOneMinSpreadMin).max(transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneBuyerTwoVerificationHistoryItemCriteriaOneMinSpreadMax).nullish(),
+  "minCapRate": zod.number().min(transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneBuyerTwoVerificationHistoryItemCriteriaOneMinCapRateMin).max(transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneBuyerTwoVerificationHistoryItemCriteriaOneMinCapRateMax).nullish()
+}),zod.null()]).optional()
+})).optional(),
+  "qualificationTask": zod.union([zod.object({
+  "id": zod.string(),
+  "kind": zod.enum(['QUALIFY', 'REVERIFY']),
+  "state": zod.enum(['PENDING_EXECUTION', 'WAITING_EXTERNAL', 'WAITING_REVIEW', 'COMPLETED']),
+  "reason": zod.string(),
+  "preparedMessage": zod.string(),
+  "dueAt": zod.string(),
+  "updatedAt": zod.string()
+}),zod.null()]).optional(),
+  "lastOutreachReplyAt": zod.string().optional(),
+  "lastOutreachReplyEvidenceUrl": zod.string().optional(),
+  "createdAt": zod.string(),
+  "updatedAt": zod.string()
+})),
+  "detail": zod.object({
+  "lead": zod.object({
+  "address": zod.string().min(transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneDetailLeadOneAddressMin).max(transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneDetailLeadOneAddressMax),
+  "city": zod.string().min(1).max(transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneDetailLeadOneCityMax),
+  "state": zod.string().min(transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneDetailLeadOneStateMin).max(transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneDetailLeadOneStateMax),
+  "county": zod.string().min(1).max(transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneDetailLeadOneCountyMax),
+  "zip": zod.string().regex(transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneDetailLeadOneZipRegExp),
+  "propertyType": zod.enum(['SINGLE_FAMILY', 'MULTIFAMILY', 'CONDO', 'TOWNHOUSE', 'LAND', 'OTHER']),
+  "sqft": zod.number().min(transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneDetailLeadOneSqftMin).max(transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneDetailLeadOneSqftMax),
+  "beds": zod.number().int().min(transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneDetailLeadOneBedsMin).max(transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneDetailLeadOneBedsMax),
+  "baths": zod.number().min(transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneDetailLeadOneBathsMin).max(transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneDetailLeadOneBathsMax),
+  "units": zod.number().int().min(1).max(transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneDetailLeadOneUnitsMax),
+  "askingPrice": zod.number().min(transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneDetailLeadOneAskingPriceMin).max(transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneDetailLeadOneAskingPriceMax).nullish(),
+  "sellerName": zod.string().min(1).max(transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneDetailLeadOneSellerNameMax),
+  "sellerPhone": zod.string().max(transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneDetailLeadOneSellerPhoneMax).optional(),
+  "sellerEmail": zod.string().max(transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneDetailLeadOneSellerEmailMax).optional(),
+  "sellerDescription": zod.string().max(transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneDetailLeadOneSellerDescriptionMax).optional(),
+  "sellingReason": zod.string().max(transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneDetailLeadOneSellingReasonMax).optional(),
+  "urgency": zod.enum(['UNKNOWN', 'LOW', 'MEDIUM', 'HIGH']).optional(),
+  "source": zod.string().min(1).max(transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneDetailLeadOneSourceMax),
+  "nextAction": zod.string().max(transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneDetailLeadOneNextActionMax)
+}).and(zod.object({
+  "id": zod.string(),
+  "stage": zod.enum(['DISCOVERED', 'ENRICHING', 'ANALYZED', 'STRONG', 'NEGOTIABLE', 'PASS', 'CALL_READY', 'CONTACTED', 'CONVERSATION', 'OFFER_READY', 'OFFER_SENT', 'NEGOTIATING', 'CONTRACT_PENDING', 'UNDER_CONTRACT', 'BUYER_MATCHED', 'BUYER_INTERESTED', 'BUYER_COMMITTED', 'CLOSING', 'CLOSED', 'DEAD_DEAL']),
+  "version": zod.number().int(),
+  "nextAction": zod.string(),
+  "followUpAt": zod.string().nullish(),
+  "createdAt": zod.string(),
+  "updatedAt": zod.string(),
+  "propertyQualification": zod.object({
+  "discoveryId": zod.string(),
+  "status": zod.enum(['QUALIFIED_LEAD', 'CALL_READY', 'DISQUALIFIED']),
+  "score": zod.number().int().min(transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneDetailLeadTwoPropertyQualificationScoreMin).max(transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneDetailLeadTwoPropertyQualificationScoreMax),
+  "confidence": zod.number().min(transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneDetailLeadTwoPropertyQualificationConfidenceMin).max(transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneDetailLeadTwoPropertyQualificationConfidenceMax),
+  "criteriaVersion": zod.number().int().min(1),
+  "reviewReason": zod.string(),
+  "qualifiedBy": zod.string(),
+  "qualifiedAt": zod.string().datetime({"offset":true}),
+  "reason": zod.string(),
+  "signals": zod.array(zod.object({
+  "id": zod.string(),
+  "key": zod.enum(['ENTITY_OWNER', 'LONG_TERM_HOLD', 'REPORTED_POOR_CONDITION', 'OPEN_CODE_VIOLATION', 'UNSAFE_BUILDING_RECORD', 'SELLER_MOTIVATION', 'TAX_DELINQUENCY', 'FORECLOSURE', 'PROBATE', 'ABSENTEE_OWNER', 'STALE_LISTING', 'REPEATED_PRICE_REDUCTION', 'BELOW_MARKET', 'VACANCY', 'EQUITY_OPPORTUNITY', 'MARKET_FIT']),
+  "group": zod.enum(['OWNERSHIP_CONTEXT', 'CONDITION', 'MOTIVATION', 'DISTRESS', 'LISTING_PRESSURE', 'VACANCY', 'FINANCIAL_OPPORTUNITY', 'MARKET_FIT']),
+  "classification": zod.enum(['VERIFIED', 'OBSERVED', 'INDICATED', 'AI_HYPOTHESIS']),
+  "sourceType": zod.enum(['PUBLIC_RECORD', 'PERMITTED_LISTING', 'SELLER', 'INSPECTION', 'PUBLIC_PAGE', 'ANALYST', 'MODEL']),
+  "statement": zod.string(),
+  "source": zod.string(),
+  "sourceUrl": zod.string().nullable(),
+  "evidenceRef": zod.string().nullable(),
+  "capturedAt": zod.string().datetime({"offset":true}),
+  "confidence": zod.number().min(transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneDetailLeadTwoPropertyQualificationSignalsItemConfidenceMin).max(transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneDetailLeadTwoPropertyQualificationSignalsItemConfidenceMax),
+  "scoreContribution": zod.number().int().min(transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneDetailLeadTwoPropertyQualificationSignalsItemScoreContributionMin).max(transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneDetailLeadTwoPropertyQualificationSignalsItemScoreContributionMax)
+})),
+  "missingInformation": zod.array(zod.string()),
+  "nextAction": zod.string()
+}).optional()
+})),
+  "intelligence": zod.array(zod.object({
+  "classification": zod.enum(['VERIFIED_FACTS', 'OBSERVED', 'INDICATED', 'AI_HYPOTHESIS']),
+  "category": zod.string().min(1).max(transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneDetailIntelligenceItemOneCategoryMax),
+  "statement": zod.string().min(1).max(transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneDetailIntelligenceItemOneStatementMax),
+  "source": zod.string().min(1).max(transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneDetailIntelligenceItemOneSourceMax),
+  "sourceUrl": zod.string().max(transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneDetailIntelligenceItemOneSourceUrlMax).optional(),
+  "sourceType": zod.enum(['PUBLIC_RECORD', 'PERMITTED_LISTING', 'SELLER', 'INSPECTION', 'PUBLIC_PAGE', 'ANALYST', 'MODEL']),
+  "confidence": zod.number().min(transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneDetailIntelligenceItemOneConfidenceMin).max(transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneDetailIntelligenceItemOneConfidenceMax),
+  "capturedAt": zod.string().datetime({"offset":true}),
+  "verificationNote": zod.string().max(transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneDetailIntelligenceItemOneVerificationNoteMax).optional(),
+  "contactPermissionStatus": zod.enum(['NOT_REVIEWED', 'PERMITTED', 'PROHIBITED']).optional(),
+  "contactPermissionEvidenceUrl": zod.string().url().max(transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneDetailIntelligenceItemOneContactPermissionEvidenceUrlMax).optional(),
+  "question": zod.string().max(transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneDetailIntelligenceItemOneQuestionMax).optional(),
+  "action": zod.string().max(transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneDetailIntelligenceItemOneActionMax).optional()
+}).and(zod.object({
+  "id": zod.string(),
+  "leadId": zod.string(),
+  "createdAt": zod.string(),
+  "createdBy": zod.string()
+}))),
+  "analysis": zod.union([zod.object({
+  "engineVersion": zod.string(),
+  "calculatedAt": zod.string(),
+  "classification": zod.enum(['STRONG', 'NEGOTIABLE', 'PASS', 'INCOMPLETE']),
+  "arv": zod.object({
+  "low": zod.number(),
+  "expected": zod.number(),
+  "high": zod.number(),
+  "confidence": zod.number()
+}),
+  "repairs": zod.object({
+  "low": zod.number(),
+  "expected": zod.number(),
+  "high": zod.number(),
+  "confidence": zod.number()
+}),
+  "repairEstimate": zod.object({
+  "status": zod.enum(['NOT_USED', 'CALCULATED', 'BLOCKED']),
+  "marketKey": zod.string(),
+  "catalogVersion": zod.number().int().min(transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneDetailAnalysisOneRepairEstimateCatalogVersionMin),
+  "calculatedAt": zod.string().datetime({"offset":true}),
+  "lines": zod.array(zod.object({
+  "category": zod.string(),
+  "severity": zod.enum(['NO_REPAIR', 'COSMETIC', 'MODERATE', 'MAJOR', 'REPLACEMENT']),
+  "quantity": zod.number(),
+  "unit": zod.enum(['SQFT', 'LINEAR_FT', 'EACH', 'LUMP_SUM']),
+  "evidenceId": zod.string(),
+  "rateCardId": zod.string().optional(),
+  "rateCardVersion": zod.number().int().optional(),
+  "low": zod.number().min(transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneDetailAnalysisOneRepairEstimateLinesItemLowMin),
+  "expected": zod.number().min(transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneDetailAnalysisOneRepairEstimateLinesItemExpectedMin),
+  "high": zod.number().min(transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneDetailAnalysisOneRepairEstimateLinesItemHighMin),
+  "confidence": zod.number().min(transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneDetailAnalysisOneRepairEstimateLinesItemConfidenceMin).max(transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneDetailAnalysisOneRepairEstimateLinesItemConfidenceMax),
+  "source": zod.string(),
+  "sourceUrl": zod.string().url().optional()
+})).max(transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneDetailAnalysisOneRepairEstimateLinesMax),
+  "total": zod.union([zod.object({
+  "low": zod.number(),
+  "expected": zod.number(),
+  "high": zod.number(),
+  "confidence": zod.number()
+}),zod.null()]),
+  "blockers": zod.array(zod.string())
+}),
+  "preliminaryRepairEstimate": zod.object({
+  "status": zod.enum(['NOT_USED', 'CALCULATED', 'BLOCKED']),
+  "marketKey": zod.string(),
+  "catalogVersion": zod.number().int().min(transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneDetailAnalysisOnePreliminaryRepairEstimateCatalogVersionMin),
+  "calculatedAt": zod.string().datetime({"offset":true}),
+  "hypotheses": zod.array(zod.object({
+  "id": zod.string(),
+  "evidenceId": zod.string(),
+  "category": zod.string(),
+  "severity": zod.enum(['COSMETIC', 'MODERATE', 'MAJOR', 'REPLACEMENT']),
+  "statement": zod.string(),
+  "evidenceClassification": zod.enum(['VERIFIED_FACTS', 'OBSERVED', 'INDICATED', 'AI_HYPOTHESIS']),
+  "epistemicStatus": zod.enum(['AI_HYPOTHESIS']),
+  "sourceConfidence": zod.number().min(transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneDetailAnalysisOnePreliminaryRepairEstimateHypothesesItemSourceConfidenceMin).max(transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneDetailAnalysisOnePreliminaryRepairEstimateHypothesesItemSourceConfidenceMax),
+  "confidence": zod.number().min(transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneDetailAnalysisOnePreliminaryRepairEstimateHypothesesItemConfidenceMin).max(transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneDetailAnalysisOnePreliminaryRepairEstimateHypothesesItemConfidenceMax),
+  "confidenceMethod": zod.enum(['EXPLICIT_PHRASE_RULE_UNCALIBRATED']),
+  "source": zod.string(),
+  "sourceUrl": zod.string().url(),
+  "ruleId": zod.string(),
+  "question": zod.string(),
+  "action": zod.string()
+})).max(transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneDetailAnalysisOnePreliminaryRepairEstimateHypothesesMax),
+  "lines": zod.array(zod.object({
+  "category": zod.string(),
+  "severity": zod.enum(['COSMETIC', 'MODERATE', 'MAJOR', 'REPLACEMENT']),
+  "low": zod.number().min(transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneDetailAnalysisOnePreliminaryRepairEstimateLinesItemLowMin),
+  "expected": zod.number().min(transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneDetailAnalysisOnePreliminaryRepairEstimateLinesItemExpectedMin),
+  "high": zod.number().min(transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneDetailAnalysisOnePreliminaryRepairEstimateLinesItemHighMin),
+  "confidence": zod.number().min(transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneDetailAnalysisOnePreliminaryRepairEstimateLinesItemConfidenceMin).max(transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneDetailAnalysisOnePreliminaryRepairEstimateLinesItemConfidenceMax),
+  "rateCardId": zod.string(),
+  "rateCardVersion": zod.number().int().min(1),
+  "hypothesisIds": zod.array(zod.string()).min(1),
+  "source": zod.string(),
+  "sourceUrl": zod.string().url()
+})).max(transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneDetailAnalysisOnePreliminaryRepairEstimateLinesMax),
+  "total": zod.union([zod.object({
+  "low": zod.number(),
+  "expected": zod.number(),
+  "high": zod.number(),
+  "confidence": zod.number()
+}),zod.null()]),
+  "blockers": zod.array(zod.string()),
+  "sourceWarnings": zod.array(zod.string())
+}),
+  "mao": zod.number(),
+  "openingLow": zod.number(),
+  "openingHigh": zod.number(),
+  "maximumApprovedAcquisitionPrice": zod.number().nullable(),
+  "spreadAtAsking": zod.number().nullable(),
+  "assumptions": zod.object({
+  "arvMultiplier": zod.number().min(transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneDetailAnalysisOneAssumptionsArvMultiplierMin).max(transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneDetailAnalysisOneAssumptionsArvMultiplierMax),
+  "sellingCostPct": zod.number().min(transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneDetailAnalysisOneAssumptionsSellingCostPctMin).max(transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneDetailAnalysisOneAssumptionsSellingCostPctMax),
+  "acquisitionCost": zod.number().min(transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneDetailAnalysisOneAssumptionsAcquisitionCostMin).max(transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneDetailAnalysisOneAssumptionsAcquisitionCostMax),
+  "holdingMonthly": zod.number().min(transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneDetailAnalysisOneAssumptionsHoldingMonthlyMin).max(transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneDetailAnalysisOneAssumptionsHoldingMonthlyMax),
+  "holdingMonths": zod.number().min(transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneDetailAnalysisOneAssumptionsHoldingMonthsMin).max(transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneDetailAnalysisOneAssumptionsHoldingMonthsMax),
+  "assignmentTarget": zod.number().min(transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneDetailAnalysisOneAssumptionsAssignmentTargetMin).max(transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneDetailAnalysisOneAssumptionsAssignmentTargetMax),
+  "contingencyPct": zod.number().min(transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneDetailAnalysisOneAssumptionsContingencyPctMin).max(transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneDetailAnalysisOneAssumptionsContingencyPctMax),
+  "strongMargin": zod.number().min(transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneDetailAnalysisOneAssumptionsStrongMarginMin).max(transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneDetailAnalysisOneAssumptionsStrongMarginMax),
+  "openingLowPct": zod.number().min(transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneDetailAnalysisOneAssumptionsOpeningLowPctMin).max(transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneDetailAnalysisOneAssumptionsOpeningLowPctMax),
+  "openingHighPct": zod.number().min(transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneDetailAnalysisOneAssumptionsOpeningHighPctMin).max(transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneDetailAnalysisOneAssumptionsOpeningHighPctMax),
+  "maxCompAgeDays": zod.number().int().min(1).max(transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneDetailAnalysisOneAssumptionsMaxCompAgeDaysMax),
+  "maxDistanceMiles": zod.number().gt(transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneDetailAnalysisOneAssumptionsMaxDistanceMilesExclusiveMin).max(transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneDetailAnalysisOneAssumptionsMaxDistanceMilesMax),
+  "maxSqftDifferencePct": zod.number().min(transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneDetailAnalysisOneAssumptionsMaxSqftDifferencePctMin).max(transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneDetailAnalysisOneAssumptionsMaxSqftDifferencePctMax),
+  "minComps": zod.number().int().min(transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneDetailAnalysisOneAssumptionsMinCompsMin).max(transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneDetailAnalysisOneAssumptionsMinCompsMax),
+  "minConfidence": zod.number().min(transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneDetailAnalysisOneAssumptionsMinConfidenceMin).max(transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneDetailAnalysisOneAssumptionsMinConfidenceMax),
+  "approvalRequired": zod.boolean(),
+  "repairRateCatalogVersion": zod.number().int().min(transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneDetailAnalysisOneAssumptionsRepairRateCatalogVersionMin),
+  "repairRates": zod.array(zod.object({
+  "id": zod.string().min(1).max(transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneDetailAnalysisOneAssumptionsRepairRatesItemIdMax),
+  "version": zod.number().int().min(1),
+  "marketKey": zod.string().min(transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneDetailAnalysisOneAssumptionsRepairRatesItemMarketKeyMin).max(transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneDetailAnalysisOneAssumptionsRepairRatesItemMarketKeyMax),
+  "category": zod.string().min(1).max(transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneDetailAnalysisOneAssumptionsRepairRatesItemCategoryMax),
+  "severity": zod.enum(['COSMETIC', 'MODERATE', 'MAJOR', 'REPLACEMENT']),
+  "unit": zod.enum(['SQFT', 'LINEAR_FT', 'EACH', 'LUMP_SUM']),
+  "lowRate": zod.number().min(transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneDetailAnalysisOneAssumptionsRepairRatesItemLowRateMin).max(transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneDetailAnalysisOneAssumptionsRepairRatesItemLowRateMax),
+  "expectedRate": zod.number().min(transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneDetailAnalysisOneAssumptionsRepairRatesItemExpectedRateMin).max(transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneDetailAnalysisOneAssumptionsRepairRatesItemExpectedRateMax),
+  "highRate": zod.number().min(transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneDetailAnalysisOneAssumptionsRepairRatesItemHighRateMin).max(transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneDetailAnalysisOneAssumptionsRepairRatesItemHighRateMax),
+  "confidence": zod.number().min(transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneDetailAnalysisOneAssumptionsRepairRatesItemConfidenceMin).max(transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneDetailAnalysisOneAssumptionsRepairRatesItemConfidenceMax),
+  "source": zod.string().min(1).max(transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneDetailAnalysisOneAssumptionsRepairRatesItemSourceMax),
+  "sourceUrl": zod.string().url().max(transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneDetailAnalysisOneAssumptionsRepairRatesItemSourceUrlMax),
+  "capturedOn": zod.string().date(),
+  "validThrough": zod.string().date(),
+  "active": zod.boolean()
+})).max(transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneDetailAnalysisOneAssumptionsRepairRatesMax)
+}),
+  "risks": zod.array(zod.string()),
+  "blockers": zod.array(zod.string()),
+  "compDecisions": zod.array(zod.object({
+  "id": zod.string(),
+  "included": zod.boolean(),
+  "reasons": zod.array(zod.string())
+})),
+  "formula": zod.string()
+}),zod.null()]),
+  "analysisSnapshotId": zod.string().nullable(),
+  "offers": zod.array(zod.object({
+  "amount": zod.number().gt(transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneDetailOffersItemOneAmountExclusiveMin).max(transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneDetailOffersItemOneAmountMax),
+  "earnestMoney": zod.number().min(transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneDetailOffersItemOneEarnestMoneyMin).max(transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneDetailOffersItemOneEarnestMoneyMax),
+  "closingDays": zod.number().int().min(1).max(transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneDetailOffersItemOneClosingDaysMax),
+  "contingencies": zod.string().min(transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneDetailOffersItemOneContingenciesMin).max(transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneDetailOffersItemOneContingenciesMax),
+  "assignmentIntent": zod.boolean()
+}).and(zod.object({
+  "id": zod.string().uuid(),
+  "leadId": zod.string().uuid(),
+  "analysisSnapshotId": zod.string().uuid(),
+  "status": zod.enum(['DRAFT', 'AUTHORIZED', 'COMMUNICATED', 'REVOKED', 'INVALIDATED', 'EXPIRED']),
+  "effectiveStatus": zod.enum(['DRAFT', 'AUTHORIZED', 'COMMUNICATED', 'REVOKED', 'INVALIDATED', 'EXPIRED']),
+  "blockers": zod.array(zod.string()),
+  "reason": zod.string(),
+  "createdBy": zod.string(),
+  "createdAt": zod.string().datetime({"offset":true}),
+  "updatedAt": zod.string().datetime({"offset":true}),
+  "maximumApprovedAcquisitionPrice": zod.number().nullable(),
+  "authorityEvidenceId": zod.string().nullable(),
+  "approvedBy": zod.string().nullable(),
+  "approvedAt": zod.string().nullable(),
+  "approvalReason": zod.string().nullable(),
+  "expiresAt": zod.string().nullable(),
+  "communicatedBy": zod.string().nullable(),
+  "communicatedAt": zod.string().nullable(),
+  "communicatedAmount": zod.number().nullable(),
+  "channel": zod.string().nullable(),
+  "evidence": zod.string().nullable(),
+  "withdrawalReason": zod.string().nullable()
+}))),
+  "underwriting": zod.union([zod.object({
+  "version": zod.number().int().min(1),
+  "comps": zod.array(zod.object({
+  "id": zod.string().min(1),
+  "address": zod.string().min(transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneDetailUnderwritingOneCompsItemAddressMin),
+  "salePrice": zod.number().gt(transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneDetailUnderwritingOneCompsItemSalePriceExclusiveMin).max(transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneDetailUnderwritingOneCompsItemSalePriceMax),
+  "sqft": zod.number().gt(transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneDetailUnderwritingOneCompsItemSqftExclusiveMin).max(transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneDetailUnderwritingOneCompsItemSqftMax),
+  "soldAt": zod.string().date(),
+  "distanceMiles": zod.number().min(transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneDetailUnderwritingOneCompsItemDistanceMilesMin).max(transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneDetailUnderwritingOneCompsItemDistanceMilesMax),
+  "propertyType": zod.string(),
+  "condition": zod.enum(['RENOVATED', 'SIMILAR', 'UNKNOWN']),
+  "source": zod.string().min(1),
+  "verified": zod.boolean(),
+  "saleEvidenceId": zod.string().max(transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneDetailUnderwritingOneCompsItemSaleEvidenceIdMax).optional(),
+  "conditionEvidenceId": zod.string().max(transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneDetailUnderwritingOneCompsItemConditionEvidenceIdMax).optional()
+})).max(transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneDetailUnderwritingOneCompsMax),
+  "repairs": zod.array(zod.object({
+  "category": zod.string().min(1),
+  "low": zod.number().min(transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneDetailUnderwritingOneRepairsItemLowMin).max(transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneDetailUnderwritingOneRepairsItemLowMax),
+  "expected": zod.number().min(transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneDetailUnderwritingOneRepairsItemExpectedMin).max(transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneDetailUnderwritingOneRepairsItemExpectedMax),
+  "high": zod.number().min(transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneDetailUnderwritingOneRepairsItemHighMin).max(transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneDetailUnderwritingOneRepairsItemHighMax),
+  "confidence": zod.number().min(transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneDetailUnderwritingOneRepairsItemConfidenceMin).max(transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneDetailUnderwritingOneRepairsItemConfidenceMax),
+  "source": zod.string().min(1),
+  "evidenceId": zod.string().max(transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneDetailUnderwritingOneRepairsItemEvidenceIdMax).optional()
+})).max(transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneDetailUnderwritingOneRepairsMax),
+  "repairsComplete": zod.boolean(),
+  "conditionConfirmed": zod.boolean(),
+  "repairObservations": zod.array(zod.object({
+  "category": zod.string().min(1).max(transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneDetailUnderwritingOneRepairObservationsItemCategoryMax),
+  "severity": zod.enum(['NO_REPAIR', 'COSMETIC', 'MODERATE', 'MAJOR', 'REPLACEMENT']),
+  "quantity": zod.number().min(transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneDetailUnderwritingOneRepairObservationsItemQuantityMin).max(transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneDetailUnderwritingOneRepairObservationsItemQuantityMax),
+  "unit": zod.enum(['SQFT', 'LINEAR_FT', 'EACH', 'LUMP_SUM']),
+  "evidenceId": zod.string().min(1).max(transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneDetailUnderwritingOneRepairObservationsItemEvidenceIdMax)
+})).max(transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneDetailUnderwritingOneRepairObservationsMax).optional(),
+  "repairEstimate": zod.object({
+  "status": zod.enum(['NOT_USED', 'CALCULATED', 'BLOCKED']),
+  "marketKey": zod.string(),
+  "catalogVersion": zod.number().int().min(transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneDetailUnderwritingOneRepairEstimateCatalogVersionMin),
+  "calculatedAt": zod.string().datetime({"offset":true}),
+  "lines": zod.array(zod.object({
+  "category": zod.string(),
+  "severity": zod.enum(['NO_REPAIR', 'COSMETIC', 'MODERATE', 'MAJOR', 'REPLACEMENT']),
+  "quantity": zod.number(),
+  "unit": zod.enum(['SQFT', 'LINEAR_FT', 'EACH', 'LUMP_SUM']),
+  "evidenceId": zod.string(),
+  "rateCardId": zod.string().optional(),
+  "rateCardVersion": zod.number().int().optional(),
+  "low": zod.number().min(transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneDetailUnderwritingOneRepairEstimateLinesItemLowMin),
+  "expected": zod.number().min(transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneDetailUnderwritingOneRepairEstimateLinesItemExpectedMin),
+  "high": zod.number().min(transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneDetailUnderwritingOneRepairEstimateLinesItemHighMin),
+  "confidence": zod.number().min(transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneDetailUnderwritingOneRepairEstimateLinesItemConfidenceMin).max(transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneDetailUnderwritingOneRepairEstimateLinesItemConfidenceMax),
+  "source": zod.string(),
+  "sourceUrl": zod.string().url().optional()
+})).max(transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneDetailUnderwritingOneRepairEstimateLinesMax),
+  "total": zod.union([zod.object({
+  "low": zod.number(),
+  "expected": zod.number(),
+  "high": zod.number(),
+  "confidence": zod.number()
+}),zod.null()]),
+  "blockers": zod.array(zod.string())
+}).optional(),
+  "subjectEvidenceId": zod.string().max(transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneDetailUnderwritingOneSubjectEvidenceIdMax).optional(),
+  "conditionEvidenceId": zod.string().max(transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneDetailUnderwritingOneConditionEvidenceIdMax).optional(),
+  "sellerContactEvidenceId": zod.string().max(transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneDetailUnderwritingOneSellerContactEvidenceIdMax).optional()
+}),zod.null()]),
+  "transitions": zod.array(zod.object({
+  "id": zod.string(),
+  "from": zod.string(),
+  "to": zod.string(),
+  "reason": zod.string(),
+  "nextAction": zod.string(),
+  "actor": zod.string(),
+  "createdAt": zod.string()
+})),
+  "calls": zod.array(zod.object({
+  "version": zod.number().int().min(1),
+  "outcome": zod.enum(['NO_ANSWER', 'VOICEMAIL', 'CONNECTED', 'NOT_INTERESTED']),
+  "notes": zod.string().min(1).max(transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneDetailCallsItemOneNotesMax),
+  "nextAction": zod.string().min(transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneDetailCallsItemOneNextActionMin).max(transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneDetailCallsItemOneNextActionMax),
+  "followUpAt": zod.string().datetime({"offset":true}).nullable()
+}).and(zod.object({
+  "id": zod.string(),
+  "createdAt": zod.string(),
+  "actor": zod.string()
+}))),
+  "allowedTransitions": zod.array(zod.enum(['DISCOVERED', 'ENRICHING', 'ANALYZED', 'STRONG', 'NEGOTIABLE', 'PASS', 'CALL_READY', 'CONTACTED', 'CONVERSATION', 'OFFER_READY', 'OFFER_SENT', 'NEGOTIATING', 'CONTRACT_PENDING', 'UNDER_CONTRACT', 'BUYER_MATCHED', 'BUYER_INTERESTED', 'BUYER_COMMITTED', 'CLOSING', 'CLOSED', 'DEAD_DEAL'])),
+  "workGuidance": zod.union([zod.object({
+  "category": zod.enum(['RESEARCH', 'CALL', 'FOLLOW_UP', 'OFFER_APPROVAL', 'NEGOTIATION', 'CONTRACT', 'BUYER_MATCH', 'DEADLINE', 'CLOSING', 'DISCOVERY_REVIEW', 'BUYER_VERIFICATION', 'WORKER']),
+  "priority": zod.number().int(),
+  "title": zod.string(),
+  "href": zod.string(),
+  "cta": zod.string(),
+  "currentState": zod.string(),
+  "responsibleRole": zod.enum(['OWNER', 'OPERATOR', 'ANALYST']),
+  "dueAt": zod.string().nullable(),
+  "dueLabel": zod.string(),
+  "knownFacts": zod.array(zod.string()),
+  "missingFacts": zod.array(zod.string()),
+  "why": zod.string(),
+  "systemCanDo": zod.string(),
+  "humanMustDo": zod.string(),
+  "requiredEvidence": zod.array(zod.string()),
+  "completionRecord": zod.string()
+}),zod.null()])
+}),
+  "reservedCount": zod.number().int(),
+  "reservedFunds": zod.number()
+}),zod.null()]).optional(),
+  "cancelledAt": zod.string().optional(),
+  "outcomeRecordedAt": zod.string().optional(),
+  "contingencies": zod.string(),
+  "executedDocumentUrl": zod.string().nullish(),
+  "sellerSignedAt": zod.string().nullish(),
+  "acquisitionSignedAt": zod.string().nullish(),
+  "reviewNote": zod.string().nullish(),
+  "committedBuyerId": zod.string().nullish(),
+  "agreedBuyerPrice": zod.number().nullish(),
+  "milestones": zod.array(zod.object({
+  "kind": zod.enum(['TITLE_CLEARED', 'EARNEST_MONEY_CONFIRMED', 'ASSIGNMENT_SIGNED', 'FUNDS_CONFIRMED']),
+  "evidenceUrl": zod.string(),
+  "note": zod.string(),
+  "recordedBy": zod.string(),
+  "recordedAt": zod.string()
+})),
+  "outcomeNote": zod.string().nullish(),
+  "outcomeEvidenceUrl": zod.string().nullish(),
+  "assignmentFeeReceived": zod.number().nullish(),
+  "closingCosts": zod.number().nullish(),
+  "netProceeds": zod.number().nullish(),
+  "closedAt": zod.string().nullish(),
+  "createdAt": zod.string(),
+  "documents": zod.array(zod.object({
+  "id": zod.string().uuid(),
+  "kind": zod.enum(['PURCHASE_TERMS_REVIEW', 'PURCHASE_AGREEMENT', 'ASSIGNMENT_AGREEMENT', 'SELLER_RESPONSE', 'AMENDMENT', 'REPLACEMENT_BUYER', 'EMD_ACKNOWLEDGMENT', 'CLOSING_DOCUMENT']),
+  "status": zod.enum(['DRAFT', 'PREPARED_FOR_REVIEW', 'APPROVED_TO_SEND', 'SENT', 'SIGNING_IN_PROGRESS', 'SIGNED', 'EXECUTED', 'REJECTED', 'VOID', 'EXPIRED', 'REPLACED']),
+  "attemptNumber": zod.number().int().min(1),
+  "sourceContractVersion": zod.number().int().min(1),
+  "sourceOfferId": zod.string().uuid(),
+  "snapshotHash": zod.string().regex(transitionTransactionDocumentResponseContractOneDocumentsItemSnapshotHashRegExp),
+  "economicsSnapshotHash": zod.string().regex(transitionTransactionDocumentResponseContractOneDocumentsItemEconomicsSnapshotHashRegExp).optional(),
+  "sourceAnalysisSnapshotId": zod.string().uuid().optional(),
+  "contentHash": zod.string().regex(transitionTransactionDocumentResponseContractOneDocumentsItemContentHashRegExp),
+  "fileName": zod.string(),
+  "contentType": zod.enum(['application/pdf']),
+  "sizeBytes": zod.number().int().min(1),
+  "generatedAt": zod.string().datetime({"offset":true}),
+  "generatedBy": zod.string(),
+  "downloadUrl": zod.string(),
+  "templateKey": zod.string().optional(),
+  "templateVersion": zod.number().int().min(1).optional(),
+  "templateStatus": zod.enum(['REVIEW_COPY_ONLY', 'APPROVED_LEGAL']).optional(),
+  "partySnapshotHash": zod.string().regex(transitionTransactionDocumentResponseContractOneDocumentsItemPartySnapshotHashRegExp).optional(),
+  "storageMode": zod.enum(['PERSISTENT_DATABASE_BLOB', 'PRIVATE_OBJECT_STORAGE']).optional(),
+  "events": zod.array(zod.object({
+  "from": zod.union([zod.literal('DRAFT'),zod.literal('PREPARED_FOR_REVIEW'),zod.literal('APPROVED_TO_SEND'),zod.literal('SENT'),zod.literal('SIGNING_IN_PROGRESS'),zod.literal('SIGNED'),zod.literal('EXECUTED'),zod.literal('REJECTED'),zod.literal('VOID'),zod.literal('EXPIRED'),zod.literal('REPLACED'),zod.literal(null)]).nullish(),
+  "to": zod.enum(['DRAFT', 'PREPARED_FOR_REVIEW', 'APPROVED_TO_SEND', 'SENT', 'SIGNING_IN_PROGRESS', 'SIGNED', 'EXECUTED', 'REJECTED', 'VOID', 'EXPIRED', 'REPLACED']),
+  "occurredAt": zod.string().datetime({"offset":true}),
+  "actorId": zod.string(),
+  "actorRole": zod.enum(['OWNER', 'OPERATOR', 'SYSTEM_WORKER', 'PROVIDER']),
+  "reason": zod.string(),
+  "evidenceRef": zod.string().nullish()
+})).optional()
 })).optional()
 }),zod.null()]),
   "matches": zod.array(zod.object({
@@ -21495,6 +22717,36 @@ export const DownloadPurchaseReviewDocumentParams = zod.object({
 })
 
 export const DownloadPurchaseReviewDocumentResponse = zod.unknown()
+
+
+
+
+
+export const GetTransactionDocumentReadinessResponse = zod.object({
+  "templates": zod.array(zod.object({
+  "key": zod.string(),
+  "documentKind": zod.string(),
+  "jurisdiction": zod.string(),
+  "status": zod.enum(['REVIEW_COPY_ONLY', 'PORTAL_EVENT_RECORD', 'MISSING_APPROVED_TEMPLATE', 'APPROVED_LEGAL']),
+  "version": zod.number().int().min(1),
+  "requiredFields": zod.array(zod.string()),
+  "templateHash": zod.string().nullable(),
+  "approvalEvidenceRef": zod.string().nullable(),
+  "missingReason": zod.string().nullable()
+})),
+  "signingProvider": zod.object({
+  "status": zod.enum(['CONNECTED', 'NOT_CONNECTED']),
+  "provider": zod.string().nullable(),
+  "reason": zod.string().nullable()
+}),
+  "storage": zod.object({
+  "status": zod.enum(['PRIVATE_FILE_STORE_READY', 'PRIVATE_FILE_STORE_UNAVAILABLE']),
+  "activeStore": zod.enum(['PERSISTENT_DATABASE_BLOB', 'PRIVATE_OBJECT_STORAGE']),
+  "reason": zod.string().nullable()
+}),
+  "canSendLegalDocuments": zod.boolean(),
+  "blockers": zod.array(zod.string())
+})
 
 
 export const ExecuteContractParams = zod.object({
@@ -21948,6 +23200,8 @@ export const executeContractResponseContractOneDocumentsItemSnapshotHashRegExp =
 export const executeContractResponseContractOneDocumentsItemEconomicsSnapshotHashRegExp = new RegExp('^[a-f0-9]{64}$');
 export const executeContractResponseContractOneDocumentsItemContentHashRegExp = new RegExp('^[a-f0-9]{64}$');
 
+
+export const executeContractResponseContractOneDocumentsItemPartySnapshotHashRegExp = new RegExp('^[a-f0-9]{64}$');
 
 
 export const ExecuteContractResponse = zod.object({
@@ -22525,8 +23779,8 @@ export const ExecuteContractResponse = zod.object({
   "createdAt": zod.string(),
   "documents": zod.array(zod.object({
   "id": zod.string().uuid(),
-  "kind": zod.enum(['PURCHASE_TERMS_REVIEW']),
-  "status": zod.enum(['PREPARED_FOR_REVIEW']),
+  "kind": zod.enum(['PURCHASE_TERMS_REVIEW', 'PURCHASE_AGREEMENT', 'ASSIGNMENT_AGREEMENT', 'SELLER_RESPONSE', 'AMENDMENT', 'REPLACEMENT_BUYER', 'EMD_ACKNOWLEDGMENT', 'CLOSING_DOCUMENT']),
+  "status": zod.enum(['DRAFT', 'PREPARED_FOR_REVIEW', 'APPROVED_TO_SEND', 'SENT', 'SIGNING_IN_PROGRESS', 'SIGNED', 'EXECUTED', 'REJECTED', 'VOID', 'EXPIRED', 'REPLACED']),
   "attemptNumber": zod.number().int().min(1),
   "sourceContractVersion": zod.number().int().min(1),
   "sourceOfferId": zod.string().uuid(),
@@ -22539,7 +23793,21 @@ export const ExecuteContractResponse = zod.object({
   "sizeBytes": zod.number().int().min(1),
   "generatedAt": zod.string().datetime({"offset":true}),
   "generatedBy": zod.string(),
-  "downloadUrl": zod.string()
+  "downloadUrl": zod.string(),
+  "templateKey": zod.string().optional(),
+  "templateVersion": zod.number().int().min(1).optional(),
+  "templateStatus": zod.enum(['REVIEW_COPY_ONLY', 'APPROVED_LEGAL']).optional(),
+  "partySnapshotHash": zod.string().regex(executeContractResponseContractOneDocumentsItemPartySnapshotHashRegExp).optional(),
+  "storageMode": zod.enum(['PERSISTENT_DATABASE_BLOB', 'PRIVATE_OBJECT_STORAGE']).optional(),
+  "events": zod.array(zod.object({
+  "from": zod.union([zod.literal('DRAFT'),zod.literal('PREPARED_FOR_REVIEW'),zod.literal('APPROVED_TO_SEND'),zod.literal('SENT'),zod.literal('SIGNING_IN_PROGRESS'),zod.literal('SIGNED'),zod.literal('EXECUTED'),zod.literal('REJECTED'),zod.literal('VOID'),zod.literal('EXPIRED'),zod.literal('REPLACED'),zod.literal(null)]).nullish(),
+  "to": zod.enum(['DRAFT', 'PREPARED_FOR_REVIEW', 'APPROVED_TO_SEND', 'SENT', 'SIGNING_IN_PROGRESS', 'SIGNED', 'EXECUTED', 'REJECTED', 'VOID', 'EXPIRED', 'REPLACED']),
+  "occurredAt": zod.string().datetime({"offset":true}),
+  "actorId": zod.string(),
+  "actorRole": zod.enum(['OWNER', 'OPERATOR', 'SYSTEM_WORKER', 'PROVIDER']),
+  "reason": zod.string(),
+  "evidenceRef": zod.string().nullish()
+})).optional()
 })).optional()
 }),zod.null()]),
   "matches": zod.array(zod.object({
@@ -23029,6 +24297,8 @@ export const recordClosingMilestoneResponseContractOneDocumentsItemSnapshotHashR
 export const recordClosingMilestoneResponseContractOneDocumentsItemEconomicsSnapshotHashRegExp = new RegExp('^[a-f0-9]{64}$');
 export const recordClosingMilestoneResponseContractOneDocumentsItemContentHashRegExp = new RegExp('^[a-f0-9]{64}$');
 
+
+export const recordClosingMilestoneResponseContractOneDocumentsItemPartySnapshotHashRegExp = new RegExp('^[a-f0-9]{64}$');
 
 
 export const RecordClosingMilestoneResponse = zod.object({
@@ -23606,8 +24876,8 @@ export const RecordClosingMilestoneResponse = zod.object({
   "createdAt": zod.string(),
   "documents": zod.array(zod.object({
   "id": zod.string().uuid(),
-  "kind": zod.enum(['PURCHASE_TERMS_REVIEW']),
-  "status": zod.enum(['PREPARED_FOR_REVIEW']),
+  "kind": zod.enum(['PURCHASE_TERMS_REVIEW', 'PURCHASE_AGREEMENT', 'ASSIGNMENT_AGREEMENT', 'SELLER_RESPONSE', 'AMENDMENT', 'REPLACEMENT_BUYER', 'EMD_ACKNOWLEDGMENT', 'CLOSING_DOCUMENT']),
+  "status": zod.enum(['DRAFT', 'PREPARED_FOR_REVIEW', 'APPROVED_TO_SEND', 'SENT', 'SIGNING_IN_PROGRESS', 'SIGNED', 'EXECUTED', 'REJECTED', 'VOID', 'EXPIRED', 'REPLACED']),
   "attemptNumber": zod.number().int().min(1),
   "sourceContractVersion": zod.number().int().min(1),
   "sourceOfferId": zod.string().uuid(),
@@ -23620,7 +24890,21 @@ export const RecordClosingMilestoneResponse = zod.object({
   "sizeBytes": zod.number().int().min(1),
   "generatedAt": zod.string().datetime({"offset":true}),
   "generatedBy": zod.string(),
-  "downloadUrl": zod.string()
+  "downloadUrl": zod.string(),
+  "templateKey": zod.string().optional(),
+  "templateVersion": zod.number().int().min(1).optional(),
+  "templateStatus": zod.enum(['REVIEW_COPY_ONLY', 'APPROVED_LEGAL']).optional(),
+  "partySnapshotHash": zod.string().regex(recordClosingMilestoneResponseContractOneDocumentsItemPartySnapshotHashRegExp).optional(),
+  "storageMode": zod.enum(['PERSISTENT_DATABASE_BLOB', 'PRIVATE_OBJECT_STORAGE']).optional(),
+  "events": zod.array(zod.object({
+  "from": zod.union([zod.literal('DRAFT'),zod.literal('PREPARED_FOR_REVIEW'),zod.literal('APPROVED_TO_SEND'),zod.literal('SENT'),zod.literal('SIGNING_IN_PROGRESS'),zod.literal('SIGNED'),zod.literal('EXECUTED'),zod.literal('REJECTED'),zod.literal('VOID'),zod.literal('EXPIRED'),zod.literal('REPLACED'),zod.literal(null)]).nullish(),
+  "to": zod.enum(['DRAFT', 'PREPARED_FOR_REVIEW', 'APPROVED_TO_SEND', 'SENT', 'SIGNING_IN_PROGRESS', 'SIGNED', 'EXECUTED', 'REJECTED', 'VOID', 'EXPIRED', 'REPLACED']),
+  "occurredAt": zod.string().datetime({"offset":true}),
+  "actorId": zod.string(),
+  "actorRole": zod.enum(['OWNER', 'OPERATOR', 'SYSTEM_WORKER', 'PROVIDER']),
+  "reason": zod.string(),
+  "evidenceRef": zod.string().nullish()
+})).optional()
 })).optional()
 }),zod.null()]),
   "matches": zod.array(zod.object({
@@ -24123,6 +25407,8 @@ export const recordDealOutcomeResponseContractOneDocumentsItemSnapshotHashRegExp
 export const recordDealOutcomeResponseContractOneDocumentsItemEconomicsSnapshotHashRegExp = new RegExp('^[a-f0-9]{64}$');
 export const recordDealOutcomeResponseContractOneDocumentsItemContentHashRegExp = new RegExp('^[a-f0-9]{64}$');
 
+
+export const recordDealOutcomeResponseContractOneDocumentsItemPartySnapshotHashRegExp = new RegExp('^[a-f0-9]{64}$');
 
 
 export const RecordDealOutcomeResponse = zod.object({
@@ -24700,8 +25986,8 @@ export const RecordDealOutcomeResponse = zod.object({
   "createdAt": zod.string(),
   "documents": zod.array(zod.object({
   "id": zod.string().uuid(),
-  "kind": zod.enum(['PURCHASE_TERMS_REVIEW']),
-  "status": zod.enum(['PREPARED_FOR_REVIEW']),
+  "kind": zod.enum(['PURCHASE_TERMS_REVIEW', 'PURCHASE_AGREEMENT', 'ASSIGNMENT_AGREEMENT', 'SELLER_RESPONSE', 'AMENDMENT', 'REPLACEMENT_BUYER', 'EMD_ACKNOWLEDGMENT', 'CLOSING_DOCUMENT']),
+  "status": zod.enum(['DRAFT', 'PREPARED_FOR_REVIEW', 'APPROVED_TO_SEND', 'SENT', 'SIGNING_IN_PROGRESS', 'SIGNED', 'EXECUTED', 'REJECTED', 'VOID', 'EXPIRED', 'REPLACED']),
   "attemptNumber": zod.number().int().min(1),
   "sourceContractVersion": zod.number().int().min(1),
   "sourceOfferId": zod.string().uuid(),
@@ -24714,7 +26000,21 @@ export const RecordDealOutcomeResponse = zod.object({
   "sizeBytes": zod.number().int().min(1),
   "generatedAt": zod.string().datetime({"offset":true}),
   "generatedBy": zod.string(),
-  "downloadUrl": zod.string()
+  "downloadUrl": zod.string(),
+  "templateKey": zod.string().optional(),
+  "templateVersion": zod.number().int().min(1).optional(),
+  "templateStatus": zod.enum(['REVIEW_COPY_ONLY', 'APPROVED_LEGAL']).optional(),
+  "partySnapshotHash": zod.string().regex(recordDealOutcomeResponseContractOneDocumentsItemPartySnapshotHashRegExp).optional(),
+  "storageMode": zod.enum(['PERSISTENT_DATABASE_BLOB', 'PRIVATE_OBJECT_STORAGE']).optional(),
+  "events": zod.array(zod.object({
+  "from": zod.union([zod.literal('DRAFT'),zod.literal('PREPARED_FOR_REVIEW'),zod.literal('APPROVED_TO_SEND'),zod.literal('SENT'),zod.literal('SIGNING_IN_PROGRESS'),zod.literal('SIGNED'),zod.literal('EXECUTED'),zod.literal('REJECTED'),zod.literal('VOID'),zod.literal('EXPIRED'),zod.literal('REPLACED'),zod.literal(null)]).nullish(),
+  "to": zod.enum(['DRAFT', 'PREPARED_FOR_REVIEW', 'APPROVED_TO_SEND', 'SENT', 'SIGNING_IN_PROGRESS', 'SIGNED', 'EXECUTED', 'REJECTED', 'VOID', 'EXPIRED', 'REPLACED']),
+  "occurredAt": zod.string().datetime({"offset":true}),
+  "actorId": zod.string(),
+  "actorRole": zod.enum(['OWNER', 'OPERATOR', 'SYSTEM_WORKER', 'PROVIDER']),
+  "reason": zod.string(),
+  "evidenceRef": zod.string().nullish()
+})).optional()
 })).optional()
 }),zod.null()]),
   "matches": zod.array(zod.object({
