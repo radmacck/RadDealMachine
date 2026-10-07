@@ -1245,6 +1245,131 @@ export interface BuyerInput {
   feeTermsSource?: string;
 }
 
+export type PublicBuyerIntakeInputCurrentBuyingStatus = typeof PublicBuyerIntakeInputCurrentBuyingStatus[keyof typeof PublicBuyerIntakeInputCurrentBuyingStatus];
+
+
+export const PublicBuyerIntakeInputCurrentBuyingStatus = {
+  BUYING: 'BUYING',
+  NOT_BUYING: 'NOT_BUYING',
+} as const;
+
+export type PublicBuyerIntakeInputPrivacyNoticeVersion = typeof PublicBuyerIntakeInputPrivacyNoticeVersion[keyof typeof PublicBuyerIntakeInputPrivacyNoticeVersion];
+
+
+export const PublicBuyerIntakeInputPrivacyNoticeVersion = {
+  'buyer-network-intake-v1': 'buyer-network-intake-v1',
+} as const;
+
+export type PublicBuyerIntakeInput = (unknown & {
+  submissionId: string;
+  /**
+     * @minLength 1
+     * @maxLength 200
+     */
+  name: string;
+  /** @maxLength 254 */
+  email?: string;
+  /**
+     * @minLength 7
+     * @maxLength 50
+     */
+  phone?: string;
+  currentBuyingStatus: PublicBuyerIntakeInputCurrentBuyingStatus;
+  criteria: BuyerCriteria;
+  contactPermissionConfirmed: true;
+  privacyNoticeVersion: PublicBuyerIntakeInputPrivacyNoticeVersion;
+  /** @maxLength 2000 */
+  note?: string;
+  /** @maxLength 200 */
+  website?: string;
+});
+
+export type BuyerIntakeReceiptStatus = typeof BuyerIntakeReceiptStatus[keyof typeof BuyerIntakeReceiptStatus];
+
+
+export const BuyerIntakeReceiptStatus = {
+  RECEIVED_PENDING_REVIEW: 'RECEIVED_PENDING_REVIEW',
+} as const;
+
+export interface BuyerIntakeReceipt {
+  status: BuyerIntakeReceiptStatus;
+  receivedAt: string;
+}
+
+export type BuyerIntakeRecordStatus = typeof BuyerIntakeRecordStatus[keyof typeof BuyerIntakeRecordStatus];
+
+
+export const BuyerIntakeRecordStatus = {
+  PENDING_REVIEW: 'PENDING_REVIEW',
+} as const;
+
+export type BuyerIntakeRecordCurrentBuyingStatus = typeof BuyerIntakeRecordCurrentBuyingStatus[keyof typeof BuyerIntakeRecordCurrentBuyingStatus];
+
+
+export const BuyerIntakeRecordCurrentBuyingStatus = {
+  BUYING: 'BUYING',
+  NOT_BUYING: 'NOT_BUYING',
+} as const;
+
+export type BuyerIntakeRecordContactPermissionClassification = typeof BuyerIntakeRecordContactPermissionClassification[keyof typeof BuyerIntakeRecordContactPermissionClassification];
+
+
+export const BuyerIntakeRecordContactPermissionClassification = {
+  INDICATED: 'INDICATED',
+} as const;
+
+export interface BuyerIntakeRecord {
+  id: string;
+  /** @minimum 1 */
+  version: number;
+  status: BuyerIntakeRecordStatus;
+  name: string;
+  email: string;
+  phone: string;
+  currentBuyingStatus: BuyerIntakeRecordCurrentBuyingStatus;
+  criteria: BuyerCriteria;
+  contactPermissionClassification: BuyerIntakeRecordContactPermissionClassification;
+  privacyNoticeVersion: string;
+  note?: string;
+  submittedAt: string;
+  possibleDuplicateBuyerIds: string[];
+}
+
+export type BuyerIntakeDecisionInputAction = typeof BuyerIntakeDecisionInputAction[keyof typeof BuyerIntakeDecisionInputAction];
+
+
+export const BuyerIntakeDecisionInputAction = {
+  CREATE_UNVERIFIED_PROSPECT: 'CREATE_UNVERIFIED_PROSPECT',
+  DECLINE: 'DECLINE',
+} as const;
+
+export interface BuyerIntakeDecisionInput {
+  /** @minimum 1 */
+  version: number;
+  action: BuyerIntakeDecisionInputAction;
+  /**
+     * @minLength 5
+     * @maxLength 2000
+     */
+  reviewNote: string;
+}
+
+export type BuyerIntakeDecisionStatus = typeof BuyerIntakeDecisionStatus[keyof typeof BuyerIntakeDecisionStatus];
+
+
+export const BuyerIntakeDecisionStatus = {
+  PROMOTED_TO_PROSPECT: 'PROMOTED_TO_PROSPECT',
+  DECLINED: 'DECLINED',
+} as const;
+
+export interface BuyerIntakeDecision {
+  id: string;
+  status: BuyerIntakeDecisionStatus;
+  /** @nullable */
+  buyerId: string | null;
+  reviewedAt: string;
+}
+
 export type BuyerUpdate = BuyerInput & {
   /** @minimum 1 */
   version: number;

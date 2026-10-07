@@ -371,6 +371,46 @@ paths:
           content:
             application/json:
               schema: { $ref: "#/components/schemas/Buyer" }
+  /buyer-intakes:
+    get:
+      operationId: listBuyerIntakes
+      responses:
+        "200":
+          description: Pending, buyer-submitted profiles for owner review; not approved buyers
+          content:
+            application/json:
+              schema: { type: array, items: { $ref: "#/components/schemas/BuyerIntakeRecord" } }
+  /buyer-intakes/{id}/decision:
+    parameters:
+      - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
+    post:
+      operationId: decideBuyerIntake
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/BuyerIntakeDecisionInput" }
+      responses:
+        "200":
+          description: Intake declined or converted to an unverified prospect; never auto-approved
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/BuyerIntakeDecision" }
+  /portal/buyer-intake:
+    post:
+      operationId: submitPublicBuyerIntake
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/PublicBuyerIntakeInput" }
+      responses:
+        "202":
+          description: Buyer-submitted profile saved for owner review; no buyer record or approval created
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/BuyerIntakeReceipt" }
   /buyers/{id}:
     parameters:
       - { name: id, in: path, required: true, schema: { type: string } }
@@ -1602,6 +1642,63 @@ components:
         destinationKind: { type: string, enum: [BUYER, DEAL_FINDER, GURU] }
         qualifiedDealFee: { type: ["number", "null"], minimum: 0, maximum: 1000000000 }
         feeTermsSource: { type: string, maxLength: 2000 }
+    PublicBuyerIntakeInput:
+      type: object
+      additionalProperties: false
+      required: [submissionId, name, currentBuyingStatus, criteria, contactPermissionConfirmed, privacyNoticeVersion]
+      anyOf:
+        - required: [email]
+        - required: [phone]
+      properties:
+        submissionId: { type: string, format: uuid }
+        name: { type: string, minLength: 1, maxLength: 200 }
+        email: { type: string, format: email, maxLength: 254 }
+        phone: { type: string, minLength: 7, maxLength: 50 }
+        currentBuyingStatus: { type: string, enum: [BUYING, NOT_BUYING] }
+        criteria: { $ref: "#/components/schemas/BuyerCriteria" }
+        contactPermissionConfirmed: { type: boolean, enum: [true] }
+        privacyNoticeVersion: { type: string, enum: [buyer-network-intake-v1] }
+        note: { type: string, maxLength: 2000 }
+        website: { type: string, maxLength: 200 }
+    BuyerIntakeReceipt:
+      type: object
+      required: [status, receivedAt]
+      properties:
+        status: { type: string, enum: [RECEIVED_PENDING_REVIEW] }
+        receivedAt: { type: string, format: date-time }
+    BuyerIntakeRecord:
+      type: object
+      required: [id, version, status, name, email, phone, currentBuyingStatus, criteria, contactPermissionClassification, privacyNoticeVersion, submittedAt, possibleDuplicateBuyerIds]
+      properties:
+        id: { type: string, format: uuid }
+        version: { type: integer, minimum: 1 }
+        status: { type: string, enum: [PENDING_REVIEW] }
+        name: { type: string }
+        email: { type: string }
+        phone: { type: string }
+        currentBuyingStatus: { type: string, enum: [BUYING, NOT_BUYING] }
+        criteria: { $ref: "#/components/schemas/BuyerCriteria" }
+        contactPermissionClassification: { type: string, enum: [INDICATED] }
+        privacyNoticeVersion: { type: string }
+        note: { type: string }
+        submittedAt: { type: string, format: date-time }
+        possibleDuplicateBuyerIds: { type: array, items: { type: string, format: uuid } }
+    BuyerIntakeDecisionInput:
+      type: object
+      additionalProperties: false
+      required: [version, action, reviewNote]
+      properties:
+        version: { type: integer, minimum: 1 }
+        action: { type: string, enum: [CREATE_UNVERIFIED_PROSPECT, DECLINE] }
+        reviewNote: { type: string, minLength: 5, maxLength: 2000 }
+    BuyerIntakeDecision:
+      type: object
+      required: [id, status, buyerId, reviewedAt]
+      properties:
+        id: { type: string, format: uuid }
+        status: { type: string, enum: [PROMOTED_TO_PROSPECT, DECLINED] }
+        buyerId: { type: ["string", "null"], format: uuid }
+        reviewedAt: { type: string, format: date-time }
     BuyerUpdate:
       allOf:
         - { $ref: "#/components/schemas/BuyerInput" }

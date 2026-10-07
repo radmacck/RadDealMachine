@@ -13573,6 +13573,503 @@ export const CreateBuyerResponse = zod.object({
 }))
 
 
+
+export const listBuyerIntakesResponseCriteriaStatesItemMin = 2;
+export const listBuyerIntakesResponseCriteriaStatesItemMax = 2;
+
+
+
+export const listBuyerIntakesResponseCriteriaZipCodesItemRegExp = new RegExp('^\\d{5}$');
+
+export const listBuyerIntakesResponseCriteriaMaxPurchasePriceExclusiveMin = 0;
+export const listBuyerIntakesResponseCriteriaMaxPurchasePriceMax = 1000000000;
+
+export const listBuyerIntakesResponseCriteriaMaxRepairsMin = 0;
+export const listBuyerIntakesResponseCriteriaMaxRepairsMax = 1000000000;
+
+export const listBuyerIntakesResponseCriteriaMinBedsMin = 0;
+export const listBuyerIntakesResponseCriteriaMinBedsMax = 100;
+
+export const listBuyerIntakesResponseCriteriaMinSqftMin = 0;
+export const listBuyerIntakesResponseCriteriaMinSqftMax = 1000000;
+
+export const listBuyerIntakesResponseCriteriaMaxSqftExclusiveMin = 0;
+export const listBuyerIntakesResponseCriteriaMaxSqftMax = 1000000;
+
+export const listBuyerIntakesResponseCriteriaClosingDaysMax = 365;
+
+export const listBuyerIntakesResponseCriteriaCountiesItemMax = 200;
+
+export const listBuyerIntakesResponseCriteriaExcludedCountiesItemMax = 200;
+
+export const listBuyerIntakesResponseCriteriaExcludedCitiesItemMax = 200;
+
+export const listBuyerIntakesResponseCriteriaExcludedZipCodesItemRegExp = new RegExp('^\\d{5}$');
+export const listBuyerIntakesResponseCriteriaMinPurchasePriceMin = 0;
+export const listBuyerIntakesResponseCriteriaMinPurchasePriceMax = 1000000000;
+
+export const listBuyerIntakesResponseCriteriaMinArvMin = 0;
+export const listBuyerIntakesResponseCriteriaMinArvMax = 1000000000;
+
+export const listBuyerIntakesResponseCriteriaMaxArvMin = 0;
+export const listBuyerIntakesResponseCriteriaMaxArvMax = 1000000000;
+
+export const listBuyerIntakesResponseCriteriaMinUnitsMin = 0;
+export const listBuyerIntakesResponseCriteriaMinUnitsMax = 10000;
+
+export const listBuyerIntakesResponseCriteriaMaxUnitsMin = 0;
+export const listBuyerIntakesResponseCriteriaMaxUnitsMax = 10000;
+
+export const listBuyerIntakesResponseCriteriaMinBathsMin = 0;
+export const listBuyerIntakesResponseCriteriaMinBathsMax = 100;
+
+export const listBuyerIntakesResponseCriteriaMaxBedsMin = 0;
+export const listBuyerIntakesResponseCriteriaMaxBedsMax = 100;
+
+export const listBuyerIntakesResponseCriteriaMaxBathsMin = 0;
+export const listBuyerIntakesResponseCriteriaMaxBathsMax = 100;
+
+
+
+export const listBuyerIntakesResponseCriteriaMaxConcurrentDealsMax = 1000;
+
+export const listBuyerIntakesResponseCriteriaMinSpreadMin = 0;
+export const listBuyerIntakesResponseCriteriaMinSpreadMax = 1000000000;
+
+export const listBuyerIntakesResponseCriteriaMinCapRateMin = 0;
+export const listBuyerIntakesResponseCriteriaMinCapRateMax = 1;
+
+
+
+export const ListBuyerIntakesResponseItem = zod.object({
+  "id": zod.string().uuid(),
+  "version": zod.number().int().min(1),
+  "status": zod.enum(['PENDING_REVIEW']),
+  "name": zod.string(),
+  "email": zod.string(),
+  "phone": zod.string(),
+  "currentBuyingStatus": zod.enum(['BUYING', 'NOT_BUYING']),
+  "criteria": zod.object({
+  "states": zod.array(zod.string().min(listBuyerIntakesResponseCriteriaStatesItemMin).max(listBuyerIntakesResponseCriteriaStatesItemMax)).min(1),
+  "cities": zod.array(zod.string().min(1)),
+  "zipCodes": zod.array(zod.string().regex(listBuyerIntakesResponseCriteriaZipCodesItemRegExp)),
+  "propertyTypes": zod.array(zod.enum(['SINGLE_FAMILY', 'MULTIFAMILY', 'CONDO', 'TOWNHOUSE', 'LAND', 'OTHER'])).min(1),
+  "maxPurchasePrice": zod.number().gt(listBuyerIntakesResponseCriteriaMaxPurchasePriceExclusiveMin).max(listBuyerIntakesResponseCriteriaMaxPurchasePriceMax),
+  "maxRepairs": zod.number().min(listBuyerIntakesResponseCriteriaMaxRepairsMin).max(listBuyerIntakesResponseCriteriaMaxRepairsMax),
+  "minBeds": zod.number().int().min(listBuyerIntakesResponseCriteriaMinBedsMin).max(listBuyerIntakesResponseCriteriaMinBedsMax),
+  "minSqft": zod.number().min(listBuyerIntakesResponseCriteriaMinSqftMin).max(listBuyerIntakesResponseCriteriaMinSqftMax),
+  "maxSqft": zod.number().gt(listBuyerIntakesResponseCriteriaMaxSqftExclusiveMin).max(listBuyerIntakesResponseCriteriaMaxSqftMax),
+  "closingDays": zod.number().int().min(1).max(listBuyerIntakesResponseCriteriaClosingDaysMax),
+  "counties": zod.array(zod.string().min(1).max(listBuyerIntakesResponseCriteriaCountiesItemMax)).optional(),
+  "excludedCounties": zod.array(zod.string().min(1).max(listBuyerIntakesResponseCriteriaExcludedCountiesItemMax)).optional(),
+  "excludedCities": zod.array(zod.string().min(1).max(listBuyerIntakesResponseCriteriaExcludedCitiesItemMax)).optional(),
+  "excludedZipCodes": zod.array(zod.string().regex(listBuyerIntakesResponseCriteriaExcludedZipCodesItemRegExp)).optional(),
+  "minPurchasePrice": zod.number().min(listBuyerIntakesResponseCriteriaMinPurchasePriceMin).max(listBuyerIntakesResponseCriteriaMinPurchasePriceMax).optional(),
+  "minArv": zod.number().min(listBuyerIntakesResponseCriteriaMinArvMin).max(listBuyerIntakesResponseCriteriaMinArvMax).nullish(),
+  "maxArv": zod.number().min(listBuyerIntakesResponseCriteriaMaxArvMin).max(listBuyerIntakesResponseCriteriaMaxArvMax).nullish(),
+  "minUnits": zod.number().int().min(listBuyerIntakesResponseCriteriaMinUnitsMin).max(listBuyerIntakesResponseCriteriaMinUnitsMax).optional(),
+  "maxUnits": zod.number().int().min(listBuyerIntakesResponseCriteriaMaxUnitsMin).max(listBuyerIntakesResponseCriteriaMaxUnitsMax).optional(),
+  "minBaths": zod.number().min(listBuyerIntakesResponseCriteriaMinBathsMin).max(listBuyerIntakesResponseCriteriaMinBathsMax).optional(),
+  "maxBeds": zod.number().int().min(listBuyerIntakesResponseCriteriaMaxBedsMin).max(listBuyerIntakesResponseCriteriaMaxBedsMax).nullish(),
+  "maxBaths": zod.number().min(listBuyerIntakesResponseCriteriaMaxBathsMin).max(listBuyerIntakesResponseCriteriaMaxBathsMax).nullish(),
+  "rehabTolerance": zod.enum(['NONE', 'LIGHT', 'MODERATE', 'HEAVY', 'ANY']).optional(),
+  "strategies": zod.array(zod.enum(['FLIP', 'RENTAL', 'BRRRR', 'WHOLESALE', 'DEVELOPMENT', 'OTHER'])).min(1).optional(),
+  "fundingTypes": zod.array(zod.enum(['CASH', 'HARD_MONEY', 'PRIVATE_LENDING', 'CONVENTIONAL', 'OTHER'])).min(1).optional(),
+  "maxConcurrentDeals": zod.number().int().min(1).max(listBuyerIntakesResponseCriteriaMaxConcurrentDealsMax).optional(),
+  "minSpread": zod.number().min(listBuyerIntakesResponseCriteriaMinSpreadMin).max(listBuyerIntakesResponseCriteriaMinSpreadMax).nullish(),
+  "minCapRate": zod.number().min(listBuyerIntakesResponseCriteriaMinCapRateMin).max(listBuyerIntakesResponseCriteriaMinCapRateMax).nullish()
+}),
+  "contactPermissionClassification": zod.enum(['INDICATED']),
+  "privacyNoticeVersion": zod.string(),
+  "note": zod.string().optional(),
+  "submittedAt": zod.string().datetime({"offset":true}),
+  "possibleDuplicateBuyerIds": zod.array(zod.string().uuid())
+})
+export const ListBuyerIntakesResponse = zod.array(ListBuyerIntakesResponseItem)
+
+
+export const DecideBuyerIntakeParams = zod.object({
+  "id": zod.coerce.string().uuid()
+})
+
+
+export const decideBuyerIntakeBodyReviewNoteMin = 5;
+export const decideBuyerIntakeBodyReviewNoteMax = 2000;
+
+
+
+export const DecideBuyerIntakeBody = zod.object({
+  "version": zod.number().int().min(1),
+  "action": zod.enum(['CREATE_UNVERIFIED_PROSPECT', 'DECLINE']),
+  "reviewNote": zod.string().min(decideBuyerIntakeBodyReviewNoteMin).max(decideBuyerIntakeBodyReviewNoteMax)
+})
+
+export const DecideBuyerIntakeResponse = zod.object({
+  "id": zod.string().uuid(),
+  "status": zod.enum(['PROMOTED_TO_PROSPECT', 'DECLINED']),
+  "buyerId": zod.string().uuid().nullable(),
+  "reviewedAt": zod.string().datetime({"offset":true})
+})
+
+
+export const submitPublicBuyerIntakeBodyOneNameMax = 200;
+
+export const submitPublicBuyerIntakeBodyOneEmailMax = 254;
+
+export const submitPublicBuyerIntakeBodyOnePhoneMin = 7;
+export const submitPublicBuyerIntakeBodyOnePhoneMax = 50;
+
+export const submitPublicBuyerIntakeBodyOneCriteriaStatesItemMin = 2;
+export const submitPublicBuyerIntakeBodyOneCriteriaStatesItemMax = 2;
+
+
+
+export const submitPublicBuyerIntakeBodyOneCriteriaZipCodesItemRegExp = new RegExp('^\\d{5}$');
+
+export const submitPublicBuyerIntakeBodyOneCriteriaMaxPurchasePriceExclusiveMin = 0;
+export const submitPublicBuyerIntakeBodyOneCriteriaMaxPurchasePriceMax = 1000000000;
+
+export const submitPublicBuyerIntakeBodyOneCriteriaMaxRepairsMin = 0;
+export const submitPublicBuyerIntakeBodyOneCriteriaMaxRepairsMax = 1000000000;
+
+export const submitPublicBuyerIntakeBodyOneCriteriaMinBedsMin = 0;
+export const submitPublicBuyerIntakeBodyOneCriteriaMinBedsMax = 100;
+
+export const submitPublicBuyerIntakeBodyOneCriteriaMinSqftMin = 0;
+export const submitPublicBuyerIntakeBodyOneCriteriaMinSqftMax = 1000000;
+
+export const submitPublicBuyerIntakeBodyOneCriteriaMaxSqftExclusiveMin = 0;
+export const submitPublicBuyerIntakeBodyOneCriteriaMaxSqftMax = 1000000;
+
+export const submitPublicBuyerIntakeBodyOneCriteriaClosingDaysMax = 365;
+
+export const submitPublicBuyerIntakeBodyOneCriteriaCountiesItemMax = 200;
+
+export const submitPublicBuyerIntakeBodyOneCriteriaExcludedCountiesItemMax = 200;
+
+export const submitPublicBuyerIntakeBodyOneCriteriaExcludedCitiesItemMax = 200;
+
+export const submitPublicBuyerIntakeBodyOneCriteriaExcludedZipCodesItemRegExp = new RegExp('^\\d{5}$');
+export const submitPublicBuyerIntakeBodyOneCriteriaMinPurchasePriceMin = 0;
+export const submitPublicBuyerIntakeBodyOneCriteriaMinPurchasePriceMax = 1000000000;
+
+export const submitPublicBuyerIntakeBodyOneCriteriaMinArvMin = 0;
+export const submitPublicBuyerIntakeBodyOneCriteriaMinArvMax = 1000000000;
+
+export const submitPublicBuyerIntakeBodyOneCriteriaMaxArvMin = 0;
+export const submitPublicBuyerIntakeBodyOneCriteriaMaxArvMax = 1000000000;
+
+export const submitPublicBuyerIntakeBodyOneCriteriaMinUnitsMin = 0;
+export const submitPublicBuyerIntakeBodyOneCriteriaMinUnitsMax = 10000;
+
+export const submitPublicBuyerIntakeBodyOneCriteriaMaxUnitsMin = 0;
+export const submitPublicBuyerIntakeBodyOneCriteriaMaxUnitsMax = 10000;
+
+export const submitPublicBuyerIntakeBodyOneCriteriaMinBathsMin = 0;
+export const submitPublicBuyerIntakeBodyOneCriteriaMinBathsMax = 100;
+
+export const submitPublicBuyerIntakeBodyOneCriteriaMaxBedsMin = 0;
+export const submitPublicBuyerIntakeBodyOneCriteriaMaxBedsMax = 100;
+
+export const submitPublicBuyerIntakeBodyOneCriteriaMaxBathsMin = 0;
+export const submitPublicBuyerIntakeBodyOneCriteriaMaxBathsMax = 100;
+
+
+
+export const submitPublicBuyerIntakeBodyOneCriteriaMaxConcurrentDealsMax = 1000;
+
+export const submitPublicBuyerIntakeBodyOneCriteriaMinSpreadMin = 0;
+export const submitPublicBuyerIntakeBodyOneCriteriaMinSpreadMax = 1000000000;
+
+export const submitPublicBuyerIntakeBodyOneCriteriaMinCapRateMin = 0;
+export const submitPublicBuyerIntakeBodyOneCriteriaMinCapRateMax = 1;
+
+export const submitPublicBuyerIntakeBodyOneNoteMax = 2000;
+
+export const submitPublicBuyerIntakeBodyOneWebsiteMax = 200;
+
+export const submitPublicBuyerIntakeBodyTwoNameMax = 200;
+
+export const submitPublicBuyerIntakeBodyTwoEmailMax = 254;
+
+export const submitPublicBuyerIntakeBodyTwoPhoneMin = 7;
+export const submitPublicBuyerIntakeBodyTwoPhoneMax = 50;
+
+export const submitPublicBuyerIntakeBodyTwoCriteriaStatesItemMin = 2;
+export const submitPublicBuyerIntakeBodyTwoCriteriaStatesItemMax = 2;
+
+
+
+export const submitPublicBuyerIntakeBodyTwoCriteriaZipCodesItemRegExp = new RegExp('^\\d{5}$');
+
+export const submitPublicBuyerIntakeBodyTwoCriteriaMaxPurchasePriceExclusiveMin = 0;
+export const submitPublicBuyerIntakeBodyTwoCriteriaMaxPurchasePriceMax = 1000000000;
+
+export const submitPublicBuyerIntakeBodyTwoCriteriaMaxRepairsMin = 0;
+export const submitPublicBuyerIntakeBodyTwoCriteriaMaxRepairsMax = 1000000000;
+
+export const submitPublicBuyerIntakeBodyTwoCriteriaMinBedsMin = 0;
+export const submitPublicBuyerIntakeBodyTwoCriteriaMinBedsMax = 100;
+
+export const submitPublicBuyerIntakeBodyTwoCriteriaMinSqftMin = 0;
+export const submitPublicBuyerIntakeBodyTwoCriteriaMinSqftMax = 1000000;
+
+export const submitPublicBuyerIntakeBodyTwoCriteriaMaxSqftExclusiveMin = 0;
+export const submitPublicBuyerIntakeBodyTwoCriteriaMaxSqftMax = 1000000;
+
+export const submitPublicBuyerIntakeBodyTwoCriteriaClosingDaysMax = 365;
+
+export const submitPublicBuyerIntakeBodyTwoCriteriaCountiesItemMax = 200;
+
+export const submitPublicBuyerIntakeBodyTwoCriteriaExcludedCountiesItemMax = 200;
+
+export const submitPublicBuyerIntakeBodyTwoCriteriaExcludedCitiesItemMax = 200;
+
+export const submitPublicBuyerIntakeBodyTwoCriteriaExcludedZipCodesItemRegExp = new RegExp('^\\d{5}$');
+export const submitPublicBuyerIntakeBodyTwoCriteriaMinPurchasePriceMin = 0;
+export const submitPublicBuyerIntakeBodyTwoCriteriaMinPurchasePriceMax = 1000000000;
+
+export const submitPublicBuyerIntakeBodyTwoCriteriaMinArvMin = 0;
+export const submitPublicBuyerIntakeBodyTwoCriteriaMinArvMax = 1000000000;
+
+export const submitPublicBuyerIntakeBodyTwoCriteriaMaxArvMin = 0;
+export const submitPublicBuyerIntakeBodyTwoCriteriaMaxArvMax = 1000000000;
+
+export const submitPublicBuyerIntakeBodyTwoCriteriaMinUnitsMin = 0;
+export const submitPublicBuyerIntakeBodyTwoCriteriaMinUnitsMax = 10000;
+
+export const submitPublicBuyerIntakeBodyTwoCriteriaMaxUnitsMin = 0;
+export const submitPublicBuyerIntakeBodyTwoCriteriaMaxUnitsMax = 10000;
+
+export const submitPublicBuyerIntakeBodyTwoCriteriaMinBathsMin = 0;
+export const submitPublicBuyerIntakeBodyTwoCriteriaMinBathsMax = 100;
+
+export const submitPublicBuyerIntakeBodyTwoCriteriaMaxBedsMin = 0;
+export const submitPublicBuyerIntakeBodyTwoCriteriaMaxBedsMax = 100;
+
+export const submitPublicBuyerIntakeBodyTwoCriteriaMaxBathsMin = 0;
+export const submitPublicBuyerIntakeBodyTwoCriteriaMaxBathsMax = 100;
+
+
+
+export const submitPublicBuyerIntakeBodyTwoCriteriaMaxConcurrentDealsMax = 1000;
+
+export const submitPublicBuyerIntakeBodyTwoCriteriaMinSpreadMin = 0;
+export const submitPublicBuyerIntakeBodyTwoCriteriaMinSpreadMax = 1000000000;
+
+export const submitPublicBuyerIntakeBodyTwoCriteriaMinCapRateMin = 0;
+export const submitPublicBuyerIntakeBodyTwoCriteriaMinCapRateMax = 1;
+
+export const submitPublicBuyerIntakeBodyTwoNoteMax = 2000;
+
+export const submitPublicBuyerIntakeBodyTwoWebsiteMax = 200;
+
+export const submitPublicBuyerIntakeBodyThreeNameMax = 200;
+
+export const submitPublicBuyerIntakeBodyThreeEmailMax = 254;
+
+export const submitPublicBuyerIntakeBodyThreePhoneMin = 7;
+export const submitPublicBuyerIntakeBodyThreePhoneMax = 50;
+
+export const submitPublicBuyerIntakeBodyThreeCriteriaStatesItemMin = 2;
+export const submitPublicBuyerIntakeBodyThreeCriteriaStatesItemMax = 2;
+
+
+
+export const submitPublicBuyerIntakeBodyThreeCriteriaZipCodesItemRegExp = new RegExp('^\\d{5}$');
+
+export const submitPublicBuyerIntakeBodyThreeCriteriaMaxPurchasePriceExclusiveMin = 0;
+export const submitPublicBuyerIntakeBodyThreeCriteriaMaxPurchasePriceMax = 1000000000;
+
+export const submitPublicBuyerIntakeBodyThreeCriteriaMaxRepairsMin = 0;
+export const submitPublicBuyerIntakeBodyThreeCriteriaMaxRepairsMax = 1000000000;
+
+export const submitPublicBuyerIntakeBodyThreeCriteriaMinBedsMin = 0;
+export const submitPublicBuyerIntakeBodyThreeCriteriaMinBedsMax = 100;
+
+export const submitPublicBuyerIntakeBodyThreeCriteriaMinSqftMin = 0;
+export const submitPublicBuyerIntakeBodyThreeCriteriaMinSqftMax = 1000000;
+
+export const submitPublicBuyerIntakeBodyThreeCriteriaMaxSqftExclusiveMin = 0;
+export const submitPublicBuyerIntakeBodyThreeCriteriaMaxSqftMax = 1000000;
+
+export const submitPublicBuyerIntakeBodyThreeCriteriaClosingDaysMax = 365;
+
+export const submitPublicBuyerIntakeBodyThreeCriteriaCountiesItemMax = 200;
+
+export const submitPublicBuyerIntakeBodyThreeCriteriaExcludedCountiesItemMax = 200;
+
+export const submitPublicBuyerIntakeBodyThreeCriteriaExcludedCitiesItemMax = 200;
+
+export const submitPublicBuyerIntakeBodyThreeCriteriaExcludedZipCodesItemRegExp = new RegExp('^\\d{5}$');
+export const submitPublicBuyerIntakeBodyThreeCriteriaMinPurchasePriceMin = 0;
+export const submitPublicBuyerIntakeBodyThreeCriteriaMinPurchasePriceMax = 1000000000;
+
+export const submitPublicBuyerIntakeBodyThreeCriteriaMinArvMin = 0;
+export const submitPublicBuyerIntakeBodyThreeCriteriaMinArvMax = 1000000000;
+
+export const submitPublicBuyerIntakeBodyThreeCriteriaMaxArvMin = 0;
+export const submitPublicBuyerIntakeBodyThreeCriteriaMaxArvMax = 1000000000;
+
+export const submitPublicBuyerIntakeBodyThreeCriteriaMinUnitsMin = 0;
+export const submitPublicBuyerIntakeBodyThreeCriteriaMinUnitsMax = 10000;
+
+export const submitPublicBuyerIntakeBodyThreeCriteriaMaxUnitsMin = 0;
+export const submitPublicBuyerIntakeBodyThreeCriteriaMaxUnitsMax = 10000;
+
+export const submitPublicBuyerIntakeBodyThreeCriteriaMinBathsMin = 0;
+export const submitPublicBuyerIntakeBodyThreeCriteriaMinBathsMax = 100;
+
+export const submitPublicBuyerIntakeBodyThreeCriteriaMaxBedsMin = 0;
+export const submitPublicBuyerIntakeBodyThreeCriteriaMaxBedsMax = 100;
+
+export const submitPublicBuyerIntakeBodyThreeCriteriaMaxBathsMin = 0;
+export const submitPublicBuyerIntakeBodyThreeCriteriaMaxBathsMax = 100;
+
+
+
+export const submitPublicBuyerIntakeBodyThreeCriteriaMaxConcurrentDealsMax = 1000;
+
+export const submitPublicBuyerIntakeBodyThreeCriteriaMinSpreadMin = 0;
+export const submitPublicBuyerIntakeBodyThreeCriteriaMinSpreadMax = 1000000000;
+
+export const submitPublicBuyerIntakeBodyThreeCriteriaMinCapRateMin = 0;
+export const submitPublicBuyerIntakeBodyThreeCriteriaMinCapRateMax = 1;
+
+export const submitPublicBuyerIntakeBodyThreeNoteMax = 2000;
+
+export const submitPublicBuyerIntakeBodyThreeWebsiteMax = 200;
+
+
+
+export const SubmitPublicBuyerIntakeBody = zod.union([zod.object({
+  "submissionId": zod.string().uuid().optional(),
+  "name": zod.string().min(1).max(submitPublicBuyerIntakeBodyOneNameMax).optional(),
+  "email": zod.string().email().max(submitPublicBuyerIntakeBodyOneEmailMax),
+  "phone": zod.string().min(submitPublicBuyerIntakeBodyOnePhoneMin).max(submitPublicBuyerIntakeBodyOnePhoneMax).optional(),
+  "currentBuyingStatus": zod.enum(['BUYING', 'NOT_BUYING']).optional(),
+  "criteria": zod.object({
+  "states": zod.array(zod.string().min(submitPublicBuyerIntakeBodyOneCriteriaStatesItemMin).max(submitPublicBuyerIntakeBodyOneCriteriaStatesItemMax)).min(1),
+  "cities": zod.array(zod.string().min(1)),
+  "zipCodes": zod.array(zod.string().regex(submitPublicBuyerIntakeBodyOneCriteriaZipCodesItemRegExp)),
+  "propertyTypes": zod.array(zod.enum(['SINGLE_FAMILY', 'MULTIFAMILY', 'CONDO', 'TOWNHOUSE', 'LAND', 'OTHER'])).min(1),
+  "maxPurchasePrice": zod.number().gt(submitPublicBuyerIntakeBodyOneCriteriaMaxPurchasePriceExclusiveMin).max(submitPublicBuyerIntakeBodyOneCriteriaMaxPurchasePriceMax),
+  "maxRepairs": zod.number().min(submitPublicBuyerIntakeBodyOneCriteriaMaxRepairsMin).max(submitPublicBuyerIntakeBodyOneCriteriaMaxRepairsMax),
+  "minBeds": zod.number().int().min(submitPublicBuyerIntakeBodyOneCriteriaMinBedsMin).max(submitPublicBuyerIntakeBodyOneCriteriaMinBedsMax),
+  "minSqft": zod.number().min(submitPublicBuyerIntakeBodyOneCriteriaMinSqftMin).max(submitPublicBuyerIntakeBodyOneCriteriaMinSqftMax),
+  "maxSqft": zod.number().gt(submitPublicBuyerIntakeBodyOneCriteriaMaxSqftExclusiveMin).max(submitPublicBuyerIntakeBodyOneCriteriaMaxSqftMax),
+  "closingDays": zod.number().int().min(1).max(submitPublicBuyerIntakeBodyOneCriteriaClosingDaysMax),
+  "counties": zod.array(zod.string().min(1).max(submitPublicBuyerIntakeBodyOneCriteriaCountiesItemMax)).optional(),
+  "excludedCounties": zod.array(zod.string().min(1).max(submitPublicBuyerIntakeBodyOneCriteriaExcludedCountiesItemMax)).optional(),
+  "excludedCities": zod.array(zod.string().min(1).max(submitPublicBuyerIntakeBodyOneCriteriaExcludedCitiesItemMax)).optional(),
+  "excludedZipCodes": zod.array(zod.string().regex(submitPublicBuyerIntakeBodyOneCriteriaExcludedZipCodesItemRegExp)).optional(),
+  "minPurchasePrice": zod.number().min(submitPublicBuyerIntakeBodyOneCriteriaMinPurchasePriceMin).max(submitPublicBuyerIntakeBodyOneCriteriaMinPurchasePriceMax).optional(),
+  "minArv": zod.number().min(submitPublicBuyerIntakeBodyOneCriteriaMinArvMin).max(submitPublicBuyerIntakeBodyOneCriteriaMinArvMax).nullish(),
+  "maxArv": zod.number().min(submitPublicBuyerIntakeBodyOneCriteriaMaxArvMin).max(submitPublicBuyerIntakeBodyOneCriteriaMaxArvMax).nullish(),
+  "minUnits": zod.number().int().min(submitPublicBuyerIntakeBodyOneCriteriaMinUnitsMin).max(submitPublicBuyerIntakeBodyOneCriteriaMinUnitsMax).optional(),
+  "maxUnits": zod.number().int().min(submitPublicBuyerIntakeBodyOneCriteriaMaxUnitsMin).max(submitPublicBuyerIntakeBodyOneCriteriaMaxUnitsMax).optional(),
+  "minBaths": zod.number().min(submitPublicBuyerIntakeBodyOneCriteriaMinBathsMin).max(submitPublicBuyerIntakeBodyOneCriteriaMinBathsMax).optional(),
+  "maxBeds": zod.number().int().min(submitPublicBuyerIntakeBodyOneCriteriaMaxBedsMin).max(submitPublicBuyerIntakeBodyOneCriteriaMaxBedsMax).nullish(),
+  "maxBaths": zod.number().min(submitPublicBuyerIntakeBodyOneCriteriaMaxBathsMin).max(submitPublicBuyerIntakeBodyOneCriteriaMaxBathsMax).nullish(),
+  "rehabTolerance": zod.enum(['NONE', 'LIGHT', 'MODERATE', 'HEAVY', 'ANY']).optional(),
+  "strategies": zod.array(zod.enum(['FLIP', 'RENTAL', 'BRRRR', 'WHOLESALE', 'DEVELOPMENT', 'OTHER'])).min(1).optional(),
+  "fundingTypes": zod.array(zod.enum(['CASH', 'HARD_MONEY', 'PRIVATE_LENDING', 'CONVENTIONAL', 'OTHER'])).min(1).optional(),
+  "maxConcurrentDeals": zod.number().int().min(1).max(submitPublicBuyerIntakeBodyOneCriteriaMaxConcurrentDealsMax).optional(),
+  "minSpread": zod.number().min(submitPublicBuyerIntakeBodyOneCriteriaMinSpreadMin).max(submitPublicBuyerIntakeBodyOneCriteriaMinSpreadMax).nullish(),
+  "minCapRate": zod.number().min(submitPublicBuyerIntakeBodyOneCriteriaMinCapRateMin).max(submitPublicBuyerIntakeBodyOneCriteriaMinCapRateMax).nullish()
+}).optional(),
+  "contactPermissionConfirmed": zod.literal(true).optional(),
+  "privacyNoticeVersion": zod.enum(['buyer-network-intake-v1']).optional(),
+  "note": zod.string().max(submitPublicBuyerIntakeBodyOneNoteMax).optional(),
+  "website": zod.string().max(submitPublicBuyerIntakeBodyOneWebsiteMax).optional()
+}),zod.object({
+  "submissionId": zod.string().uuid().optional(),
+  "name": zod.string().min(1).max(submitPublicBuyerIntakeBodyTwoNameMax).optional(),
+  "email": zod.string().email().max(submitPublicBuyerIntakeBodyTwoEmailMax).optional(),
+  "phone": zod.string().min(submitPublicBuyerIntakeBodyTwoPhoneMin).max(submitPublicBuyerIntakeBodyTwoPhoneMax),
+  "currentBuyingStatus": zod.enum(['BUYING', 'NOT_BUYING']).optional(),
+  "criteria": zod.object({
+  "states": zod.array(zod.string().min(submitPublicBuyerIntakeBodyTwoCriteriaStatesItemMin).max(submitPublicBuyerIntakeBodyTwoCriteriaStatesItemMax)).min(1),
+  "cities": zod.array(zod.string().min(1)),
+  "zipCodes": zod.array(zod.string().regex(submitPublicBuyerIntakeBodyTwoCriteriaZipCodesItemRegExp)),
+  "propertyTypes": zod.array(zod.enum(['SINGLE_FAMILY', 'MULTIFAMILY', 'CONDO', 'TOWNHOUSE', 'LAND', 'OTHER'])).min(1),
+  "maxPurchasePrice": zod.number().gt(submitPublicBuyerIntakeBodyTwoCriteriaMaxPurchasePriceExclusiveMin).max(submitPublicBuyerIntakeBodyTwoCriteriaMaxPurchasePriceMax),
+  "maxRepairs": zod.number().min(submitPublicBuyerIntakeBodyTwoCriteriaMaxRepairsMin).max(submitPublicBuyerIntakeBodyTwoCriteriaMaxRepairsMax),
+  "minBeds": zod.number().int().min(submitPublicBuyerIntakeBodyTwoCriteriaMinBedsMin).max(submitPublicBuyerIntakeBodyTwoCriteriaMinBedsMax),
+  "minSqft": zod.number().min(submitPublicBuyerIntakeBodyTwoCriteriaMinSqftMin).max(submitPublicBuyerIntakeBodyTwoCriteriaMinSqftMax),
+  "maxSqft": zod.number().gt(submitPublicBuyerIntakeBodyTwoCriteriaMaxSqftExclusiveMin).max(submitPublicBuyerIntakeBodyTwoCriteriaMaxSqftMax),
+  "closingDays": zod.number().int().min(1).max(submitPublicBuyerIntakeBodyTwoCriteriaClosingDaysMax),
+  "counties": zod.array(zod.string().min(1).max(submitPublicBuyerIntakeBodyTwoCriteriaCountiesItemMax)).optional(),
+  "excludedCounties": zod.array(zod.string().min(1).max(submitPublicBuyerIntakeBodyTwoCriteriaExcludedCountiesItemMax)).optional(),
+  "excludedCities": zod.array(zod.string().min(1).max(submitPublicBuyerIntakeBodyTwoCriteriaExcludedCitiesItemMax)).optional(),
+  "excludedZipCodes": zod.array(zod.string().regex(submitPublicBuyerIntakeBodyTwoCriteriaExcludedZipCodesItemRegExp)).optional(),
+  "minPurchasePrice": zod.number().min(submitPublicBuyerIntakeBodyTwoCriteriaMinPurchasePriceMin).max(submitPublicBuyerIntakeBodyTwoCriteriaMinPurchasePriceMax).optional(),
+  "minArv": zod.number().min(submitPublicBuyerIntakeBodyTwoCriteriaMinArvMin).max(submitPublicBuyerIntakeBodyTwoCriteriaMinArvMax).nullish(),
+  "maxArv": zod.number().min(submitPublicBuyerIntakeBodyTwoCriteriaMaxArvMin).max(submitPublicBuyerIntakeBodyTwoCriteriaMaxArvMax).nullish(),
+  "minUnits": zod.number().int().min(submitPublicBuyerIntakeBodyTwoCriteriaMinUnitsMin).max(submitPublicBuyerIntakeBodyTwoCriteriaMinUnitsMax).optional(),
+  "maxUnits": zod.number().int().min(submitPublicBuyerIntakeBodyTwoCriteriaMaxUnitsMin).max(submitPublicBuyerIntakeBodyTwoCriteriaMaxUnitsMax).optional(),
+  "minBaths": zod.number().min(submitPublicBuyerIntakeBodyTwoCriteriaMinBathsMin).max(submitPublicBuyerIntakeBodyTwoCriteriaMinBathsMax).optional(),
+  "maxBeds": zod.number().int().min(submitPublicBuyerIntakeBodyTwoCriteriaMaxBedsMin).max(submitPublicBuyerIntakeBodyTwoCriteriaMaxBedsMax).nullish(),
+  "maxBaths": zod.number().min(submitPublicBuyerIntakeBodyTwoCriteriaMaxBathsMin).max(submitPublicBuyerIntakeBodyTwoCriteriaMaxBathsMax).nullish(),
+  "rehabTolerance": zod.enum(['NONE', 'LIGHT', 'MODERATE', 'HEAVY', 'ANY']).optional(),
+  "strategies": zod.array(zod.enum(['FLIP', 'RENTAL', 'BRRRR', 'WHOLESALE', 'DEVELOPMENT', 'OTHER'])).min(1).optional(),
+  "fundingTypes": zod.array(zod.enum(['CASH', 'HARD_MONEY', 'PRIVATE_LENDING', 'CONVENTIONAL', 'OTHER'])).min(1).optional(),
+  "maxConcurrentDeals": zod.number().int().min(1).max(submitPublicBuyerIntakeBodyTwoCriteriaMaxConcurrentDealsMax).optional(),
+  "minSpread": zod.number().min(submitPublicBuyerIntakeBodyTwoCriteriaMinSpreadMin).max(submitPublicBuyerIntakeBodyTwoCriteriaMinSpreadMax).nullish(),
+  "minCapRate": zod.number().min(submitPublicBuyerIntakeBodyTwoCriteriaMinCapRateMin).max(submitPublicBuyerIntakeBodyTwoCriteriaMinCapRateMax).nullish()
+}).optional(),
+  "contactPermissionConfirmed": zod.literal(true).optional(),
+  "privacyNoticeVersion": zod.enum(['buyer-network-intake-v1']).optional(),
+  "note": zod.string().max(submitPublicBuyerIntakeBodyTwoNoteMax).optional(),
+  "website": zod.string().max(submitPublicBuyerIntakeBodyTwoWebsiteMax).optional()
+})]).and(zod.object({
+  "submissionId": zod.string().uuid(),
+  "name": zod.string().min(1).max(submitPublicBuyerIntakeBodyThreeNameMax),
+  "email": zod.string().email().max(submitPublicBuyerIntakeBodyThreeEmailMax).optional(),
+  "phone": zod.string().min(submitPublicBuyerIntakeBodyThreePhoneMin).max(submitPublicBuyerIntakeBodyThreePhoneMax).optional(),
+  "currentBuyingStatus": zod.enum(['BUYING', 'NOT_BUYING']),
+  "criteria": zod.object({
+  "states": zod.array(zod.string().min(submitPublicBuyerIntakeBodyThreeCriteriaStatesItemMin).max(submitPublicBuyerIntakeBodyThreeCriteriaStatesItemMax)).min(1),
+  "cities": zod.array(zod.string().min(1)),
+  "zipCodes": zod.array(zod.string().regex(submitPublicBuyerIntakeBodyThreeCriteriaZipCodesItemRegExp)),
+  "propertyTypes": zod.array(zod.enum(['SINGLE_FAMILY', 'MULTIFAMILY', 'CONDO', 'TOWNHOUSE', 'LAND', 'OTHER'])).min(1),
+  "maxPurchasePrice": zod.number().gt(submitPublicBuyerIntakeBodyThreeCriteriaMaxPurchasePriceExclusiveMin).max(submitPublicBuyerIntakeBodyThreeCriteriaMaxPurchasePriceMax),
+  "maxRepairs": zod.number().min(submitPublicBuyerIntakeBodyThreeCriteriaMaxRepairsMin).max(submitPublicBuyerIntakeBodyThreeCriteriaMaxRepairsMax),
+  "minBeds": zod.number().int().min(submitPublicBuyerIntakeBodyThreeCriteriaMinBedsMin).max(submitPublicBuyerIntakeBodyThreeCriteriaMinBedsMax),
+  "minSqft": zod.number().min(submitPublicBuyerIntakeBodyThreeCriteriaMinSqftMin).max(submitPublicBuyerIntakeBodyThreeCriteriaMinSqftMax),
+  "maxSqft": zod.number().gt(submitPublicBuyerIntakeBodyThreeCriteriaMaxSqftExclusiveMin).max(submitPublicBuyerIntakeBodyThreeCriteriaMaxSqftMax),
+  "closingDays": zod.number().int().min(1).max(submitPublicBuyerIntakeBodyThreeCriteriaClosingDaysMax),
+  "counties": zod.array(zod.string().min(1).max(submitPublicBuyerIntakeBodyThreeCriteriaCountiesItemMax)).optional(),
+  "excludedCounties": zod.array(zod.string().min(1).max(submitPublicBuyerIntakeBodyThreeCriteriaExcludedCountiesItemMax)).optional(),
+  "excludedCities": zod.array(zod.string().min(1).max(submitPublicBuyerIntakeBodyThreeCriteriaExcludedCitiesItemMax)).optional(),
+  "excludedZipCodes": zod.array(zod.string().regex(submitPublicBuyerIntakeBodyThreeCriteriaExcludedZipCodesItemRegExp)).optional(),
+  "minPurchasePrice": zod.number().min(submitPublicBuyerIntakeBodyThreeCriteriaMinPurchasePriceMin).max(submitPublicBuyerIntakeBodyThreeCriteriaMinPurchasePriceMax).optional(),
+  "minArv": zod.number().min(submitPublicBuyerIntakeBodyThreeCriteriaMinArvMin).max(submitPublicBuyerIntakeBodyThreeCriteriaMinArvMax).nullish(),
+  "maxArv": zod.number().min(submitPublicBuyerIntakeBodyThreeCriteriaMaxArvMin).max(submitPublicBuyerIntakeBodyThreeCriteriaMaxArvMax).nullish(),
+  "minUnits": zod.number().int().min(submitPublicBuyerIntakeBodyThreeCriteriaMinUnitsMin).max(submitPublicBuyerIntakeBodyThreeCriteriaMinUnitsMax).optional(),
+  "maxUnits": zod.number().int().min(submitPublicBuyerIntakeBodyThreeCriteriaMaxUnitsMin).max(submitPublicBuyerIntakeBodyThreeCriteriaMaxUnitsMax).optional(),
+  "minBaths": zod.number().min(submitPublicBuyerIntakeBodyThreeCriteriaMinBathsMin).max(submitPublicBuyerIntakeBodyThreeCriteriaMinBathsMax).optional(),
+  "maxBeds": zod.number().int().min(submitPublicBuyerIntakeBodyThreeCriteriaMaxBedsMin).max(submitPublicBuyerIntakeBodyThreeCriteriaMaxBedsMax).nullish(),
+  "maxBaths": zod.number().min(submitPublicBuyerIntakeBodyThreeCriteriaMaxBathsMin).max(submitPublicBuyerIntakeBodyThreeCriteriaMaxBathsMax).nullish(),
+  "rehabTolerance": zod.enum(['NONE', 'LIGHT', 'MODERATE', 'HEAVY', 'ANY']).optional(),
+  "strategies": zod.array(zod.enum(['FLIP', 'RENTAL', 'BRRRR', 'WHOLESALE', 'DEVELOPMENT', 'OTHER'])).min(1).optional(),
+  "fundingTypes": zod.array(zod.enum(['CASH', 'HARD_MONEY', 'PRIVATE_LENDING', 'CONVENTIONAL', 'OTHER'])).min(1).optional(),
+  "maxConcurrentDeals": zod.number().int().min(1).max(submitPublicBuyerIntakeBodyThreeCriteriaMaxConcurrentDealsMax).optional(),
+  "minSpread": zod.number().min(submitPublicBuyerIntakeBodyThreeCriteriaMinSpreadMin).max(submitPublicBuyerIntakeBodyThreeCriteriaMinSpreadMax).nullish(),
+  "minCapRate": zod.number().min(submitPublicBuyerIntakeBodyThreeCriteriaMinCapRateMin).max(submitPublicBuyerIntakeBodyThreeCriteriaMinCapRateMax).nullish()
+}),
+  "contactPermissionConfirmed": zod.literal(true),
+  "privacyNoticeVersion": zod.enum(['buyer-network-intake-v1']),
+  "note": zod.string().max(submitPublicBuyerIntakeBodyThreeNoteMax).optional(),
+  "website": zod.string().max(submitPublicBuyerIntakeBodyThreeWebsiteMax).optional()
+}))
+
+export const SubmitPublicBuyerIntakeResponse = zod.object({
+  "status": zod.enum(['RECEIVED_PENDING_REVIEW']),
+  "receivedAt": zod.string().datetime({"offset":true})
+})
+
+
 export const GetBuyerParams = zod.object({
   "id": zod.coerce.string()
 })
