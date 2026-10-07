@@ -1062,6 +1062,7 @@ export const RecordTransactionExceptionResponse = zod.object({
   "templateKey": zod.string().optional(),
   "templateVersion": zod.number().int().min(1).optional(),
   "templateStatus": zod.enum(['REVIEW_COPY_ONLY', 'APPROVED_LEGAL']).optional(),
+  "templateJurisdiction": zod.string().optional(),
   "partySnapshotHash": zod.string().regex(recordTransactionExceptionResponseContractOneDocumentsItemPartySnapshotHashRegExp).optional(),
   "storageMode": zod.enum(['PERSISTENT_DATABASE_BLOB', 'PRIVATE_OBJECT_STORAGE']).optional(),
   "events": zod.array(zod.object({
@@ -11778,6 +11779,7 @@ export const GetCommandCenterResponse = zod.object({
   "templateKey": zod.string().optional(),
   "templateVersion": zod.number().int().min(1).optional(),
   "templateStatus": zod.enum(['REVIEW_COPY_ONLY', 'APPROVED_LEGAL']).optional(),
+  "templateJurisdiction": zod.string().optional(),
   "partySnapshotHash": zod.string().regex(getCommandCenterResponseOperationsItemContractOneDocumentsItemPartySnapshotHashRegExp).optional(),
   "storageMode": zod.enum(['PERSISTENT_DATABASE_BLOB', 'PRIVATE_OBJECT_STORAGE']).optional(),
   "events": zod.array(zod.object({
@@ -15120,6 +15122,7 @@ export const GetDealOperationsResponse = zod.object({
   "templateKey": zod.string().optional(),
   "templateVersion": zod.number().int().min(1).optional(),
   "templateStatus": zod.enum(['REVIEW_COPY_ONLY', 'APPROVED_LEGAL']).optional(),
+  "templateJurisdiction": zod.string().optional(),
   "partySnapshotHash": zod.string().regex(getDealOperationsResponseContractOneDocumentsItemPartySnapshotHashRegExp).optional(),
   "storageMode": zod.enum(['PERSISTENT_DATABASE_BLOB', 'PRIVATE_OBJECT_STORAGE']).optional(),
   "events": zod.array(zod.object({
@@ -16201,6 +16204,7 @@ export const RefreshMatchesResponse = zod.object({
   "templateKey": zod.string().optional(),
   "templateVersion": zod.number().int().min(1).optional(),
   "templateStatus": zod.enum(['REVIEW_COPY_ONLY', 'APPROVED_LEGAL']).optional(),
+  "templateJurisdiction": zod.string().optional(),
   "partySnapshotHash": zod.string().regex(refreshMatchesResponseContractOneDocumentsItemPartySnapshotHashRegExp).optional(),
   "storageMode": zod.enum(['PERSISTENT_DATABASE_BLOB', 'PRIVATE_OBJECT_STORAGE']).optional(),
   "events": zod.array(zod.object({
@@ -17304,6 +17308,7 @@ export const RecordBuyerResponseResponse = zod.object({
   "templateKey": zod.string().optional(),
   "templateVersion": zod.number().int().min(1).optional(),
   "templateStatus": zod.enum(['REVIEW_COPY_ONLY', 'APPROVED_LEGAL']).optional(),
+  "templateJurisdiction": zod.string().optional(),
   "partySnapshotHash": zod.string().regex(recordBuyerResponseResponseContractOneDocumentsItemPartySnapshotHashRegExp).optional(),
   "storageMode": zod.enum(['PERSISTENT_DATABASE_BLOB', 'PRIVATE_OBJECT_STORAGE']).optional(),
   "events": zod.array(zod.object({
@@ -19389,6 +19394,7 @@ export const RecordDestinationActivityResponse = zod.object({
   "templateKey": zod.string().optional(),
   "templateVersion": zod.number().int().min(1).optional(),
   "templateStatus": zod.enum(['REVIEW_COPY_ONLY', 'APPROVED_LEGAL']).optional(),
+  "templateJurisdiction": zod.string().optional(),
   "partySnapshotHash": zod.string().regex(recordDestinationActivityResponseContractOneDocumentsItemPartySnapshotHashRegExp).optional(),
   "storageMode": zod.enum(['PERSISTENT_DATABASE_BLOB', 'PRIVATE_OBJECT_STORAGE']).optional(),
   "events": zod.array(zod.object({
@@ -20479,6 +20485,7 @@ export const CreateContractResponse = zod.object({
   "templateKey": zod.string().optional(),
   "templateVersion": zod.number().int().min(1).optional(),
   "templateStatus": zod.enum(['REVIEW_COPY_ONLY', 'APPROVED_LEGAL']).optional(),
+  "templateJurisdiction": zod.string().optional(),
   "partySnapshotHash": zod.string().regex(createContractResponseContractOneDocumentsItemPartySnapshotHashRegExp).optional(),
   "storageMode": zod.enum(['PERSISTENT_DATABASE_BLOB', 'PRIVATE_OBJECT_STORAGE']).optional(),
   "events": zod.array(zod.object({
@@ -21567,6 +21574,7 @@ export const PreparePurchaseReviewDocumentResponse = zod.object({
   "templateKey": zod.string().optional(),
   "templateVersion": zod.number().int().min(1).optional(),
   "templateStatus": zod.enum(['REVIEW_COPY_ONLY', 'APPROVED_LEGAL']).optional(),
+  "templateJurisdiction": zod.string().optional(),
   "partySnapshotHash": zod.string().regex(preparePurchaseReviewDocumentResponseContractOneDocumentsItemPartySnapshotHashRegExp).optional(),
   "storageMode": zod.enum(['PERSISTENT_DATABASE_BLOB', 'PRIVATE_OBJECT_STORAGE']).optional(),
   "events": zod.array(zod.object({
@@ -22661,6 +22669,7 @@ export const TransitionTransactionDocumentResponse = zod.object({
   "templateKey": zod.string().optional(),
   "templateVersion": zod.number().int().min(1).optional(),
   "templateStatus": zod.enum(['REVIEW_COPY_ONLY', 'APPROVED_LEGAL']).optional(),
+  "templateJurisdiction": zod.string().optional(),
   "partySnapshotHash": zod.string().regex(transitionTransactionDocumentResponseContractOneDocumentsItemPartySnapshotHashRegExp).optional(),
   "storageMode": zod.enum(['PERSISTENT_DATABASE_BLOB', 'PRIVATE_OBJECT_STORAGE']).optional(),
   "events": zod.array(zod.object({
@@ -22719,10 +22728,16 @@ export const DownloadPurchaseReviewDocumentParams = zod.object({
 export const DownloadPurchaseReviewDocumentResponse = zod.unknown()
 
 
+export const GetTransactionDocumentReadinessQueryParams = zod.object({
+  "leadId": zod.coerce.string().uuid().optional()
+})
+
 
 
 
 export const GetTransactionDocumentReadinessResponse = zod.object({
+  "leadId": zod.string().uuid().nullable(),
+  "jurisdiction": zod.string().nullable(),
   "templates": zod.array(zod.object({
   "key": zod.string(),
   "documentKind": zod.string(),
@@ -23797,6 +23812,7 @@ export const ExecuteContractResponse = zod.object({
   "templateKey": zod.string().optional(),
   "templateVersion": zod.number().int().min(1).optional(),
   "templateStatus": zod.enum(['REVIEW_COPY_ONLY', 'APPROVED_LEGAL']).optional(),
+  "templateJurisdiction": zod.string().optional(),
   "partySnapshotHash": zod.string().regex(executeContractResponseContractOneDocumentsItemPartySnapshotHashRegExp).optional(),
   "storageMode": zod.enum(['PERSISTENT_DATABASE_BLOB', 'PRIVATE_OBJECT_STORAGE']).optional(),
   "events": zod.array(zod.object({
@@ -24894,6 +24910,7 @@ export const RecordClosingMilestoneResponse = zod.object({
   "templateKey": zod.string().optional(),
   "templateVersion": zod.number().int().min(1).optional(),
   "templateStatus": zod.enum(['REVIEW_COPY_ONLY', 'APPROVED_LEGAL']).optional(),
+  "templateJurisdiction": zod.string().optional(),
   "partySnapshotHash": zod.string().regex(recordClosingMilestoneResponseContractOneDocumentsItemPartySnapshotHashRegExp).optional(),
   "storageMode": zod.enum(['PERSISTENT_DATABASE_BLOB', 'PRIVATE_OBJECT_STORAGE']).optional(),
   "events": zod.array(zod.object({
@@ -26004,6 +26021,7 @@ export const RecordDealOutcomeResponse = zod.object({
   "templateKey": zod.string().optional(),
   "templateVersion": zod.number().int().min(1).optional(),
   "templateStatus": zod.enum(['REVIEW_COPY_ONLY', 'APPROVED_LEGAL']).optional(),
+  "templateJurisdiction": zod.string().optional(),
   "partySnapshotHash": zod.string().regex(recordDealOutcomeResponseContractOneDocumentsItemPartySnapshotHashRegExp).optional(),
   "storageMode": zod.enum(['PERSISTENT_DATABASE_BLOB', 'PRIVATE_OBJECT_STORAGE']).optional(),
   "events": zod.array(zod.object({

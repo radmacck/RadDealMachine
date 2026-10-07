@@ -47,6 +47,7 @@ import type {
   DistributionShareInput,
   DistributionShareResponse,
   GetSourceResearch200,
+  GetTransactionDocumentReadinessParams,
   GetWorkerCapabilities200Item,
   HandoffEventInput,
   HealthStatus,
@@ -3880,17 +3881,24 @@ export function useDownloadPurchaseReviewDocument<TData = Awaited<ReturnType<typ
 
 
 
-export const getGetTransactionDocumentReadinessUrl = () => {
+export const getGetTransactionDocumentReadinessUrl = (params?: GetTransactionDocumentReadinessParams,) => {
+  const normalizedParams = new URLSearchParams();
 
+  Object.entries(params || {}).forEach(([key, value]) => {
 
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
 
+  const stringifiedParams = normalizedParams.toString();
 
-  return `/api/transaction-documents/readiness`
+  return stringifiedParams.length > 0 ? `/api/transaction-documents/readiness?${stringifiedParams}` : `/api/transaction-documents/readiness`
 }
 
-export const getTransactionDocumentReadiness = async ( options?: Parameters<typeof customFetch>[1]): Promise<TransactionDocumentReadinessResponse> => {
+export const getTransactionDocumentReadiness = async (params?: GetTransactionDocumentReadinessParams, options?: Parameters<typeof customFetch>[1]): Promise<TransactionDocumentReadinessResponse> => {
 
-  return customFetch<TransactionDocumentReadinessResponse>(getGetTransactionDocumentReadinessUrl(),
+  return customFetch<TransactionDocumentReadinessResponse>(getGetTransactionDocumentReadinessUrl(params),
   {
     ...options,
     method: 'GET'
@@ -3903,23 +3911,23 @@ export const getTransactionDocumentReadiness = async ( options?: Parameters<type
 
 
 
-export const getGetTransactionDocumentReadinessQueryKey = () => {
+export const getGetTransactionDocumentReadinessQueryKey = (params?: GetTransactionDocumentReadinessParams,) => {
     return [
-    `/api/transaction-documents/readiness`
+    `/api/transaction-documents/readiness`, ...(params ? [params] : [])
     ] as const;
     }
 
 
-export const getGetTransactionDocumentReadinessQueryOptions = <TData = Awaited<ReturnType<typeof getTransactionDocumentReadiness>>, TError = ErrorType<unknown>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getTransactionDocumentReadiness>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+export const getGetTransactionDocumentReadinessQueryOptions = <TData = Awaited<ReturnType<typeof getTransactionDocumentReadiness>>, TError = ErrorType<unknown>>(params?: GetTransactionDocumentReadinessParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getTransactionDocumentReadiness>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
 ) => {
 
 const {query: queryOptions, request: requestOptions} = options ?? {};
 
-  const queryKey =  queryOptions?.queryKey ?? getGetTransactionDocumentReadinessQueryKey();
+  const queryKey =  queryOptions?.queryKey ?? getGetTransactionDocumentReadinessQueryKey(params);
 
 
 
-    const queryFn: QueryFunction<Awaited<ReturnType<typeof getTransactionDocumentReadiness>>> = ({ signal }) => getTransactionDocumentReadiness({ signal, ...requestOptions });
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getTransactionDocumentReadiness>>> = ({ signal }) => getTransactionDocumentReadiness(params, { signal, ...requestOptions });
 
 
 
@@ -3934,11 +3942,11 @@ export type GetTransactionDocumentReadinessQueryError = ErrorType<unknown>
 
 
 export function useGetTransactionDocumentReadiness<TData = Awaited<ReturnType<typeof getTransactionDocumentReadiness>>, TError = ErrorType<unknown>>(
-  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getTransactionDocumentReadiness>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+ params?: GetTransactionDocumentReadinessParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getTransactionDocumentReadiness>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
 
  ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
 
-  const queryOptions = getGetTransactionDocumentReadinessQueryOptions(options)
+  const queryOptions = getGetTransactionDocumentReadinessQueryOptions(params,options)
 
   const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
 

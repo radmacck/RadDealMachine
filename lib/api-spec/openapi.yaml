@@ -646,9 +646,14 @@ paths:
   /transaction-documents/readiness:
     get:
       operationId: getTransactionDocumentReadiness
+      parameters:
+        - name: leadId
+          in: query
+          required: false
+          schema: { type: string, format: uuid }
       responses:
         "200":
-          description: Persisted template registry plus current private-storage and signing-provider readiness
+          description: Jurisdiction-specific persisted template registry plus private-storage and signing-provider readiness
           content:
             application/json:
               schema: { $ref: "#/components/schemas/TransactionDocumentReadinessResponse" }
@@ -1739,6 +1744,7 @@ components:
         templateKey: { type: string }
         templateVersion: { type: integer, minimum: 1 }
         templateStatus: { type: string, enum: [REVIEW_COPY_ONLY, APPROVED_LEGAL] }
+        templateJurisdiction: { type: string }
         partySnapshotHash: { type: string, pattern: "^[a-f0-9]{64}$" }
         storageMode: { type: string, enum: [PERSISTENT_DATABASE_BLOB, PRIVATE_OBJECT_STORAGE] }
         events: { type: array, items: { $ref: "#/components/schemas/TransactionDocumentEvent" } }
@@ -1768,8 +1774,10 @@ components:
         missingReason: { type: [string, "null"] }
     TransactionDocumentReadinessResponse:
       type: object
-      required: [templates, signingProvider, storage, canSendLegalDocuments, blockers]
+      required: [leadId, jurisdiction, templates, signingProvider, storage, canSendLegalDocuments, blockers]
       properties:
+        leadId: { type: [string, "null"], format: uuid }
+        jurisdiction: { type: [string, "null"] }
         templates: { type: array, items: { $ref: "#/components/schemas/TransactionDocumentTemplateReadiness" } }
         signingProvider:
           type: object

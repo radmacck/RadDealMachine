@@ -1,6 +1,6 @@
-import { asc } from "drizzle-orm";
-import { db, transactionDocumentTemplatesTable } from "@workspace/db";
-import { assertOperationsRole, type OfferActor } from "@workspace/deal-domain";
+import { asc, eq } from "drizzle-orm";
+import { db, leadsTable, transactionDocumentTemplatesTable } from "@workspace/db";
+import { assertOperationsRole, DomainError, type OfferActor } from "@workspace/deal-domain";
 import type { Store } from "./operations-records";
 import { unavailableSigningProvider } from "./transaction-signing-provider";
 
@@ -55,33 +55,65 @@ const REQUIRED_DOCUMENTS = [
   },
 ] as const;
 
-export async function ensureTransactionDocumentRegistry(database: Store = db) {
+function jurisdictionSegment(value: unknown) {
+  if (typeof value !== "string") return null;
+  const normalized = value.normalize("NFKD").replace(/[\u0300-\u036f]/g, "")
+    .trim().toUpperCase().replace(/[^A-Z0-9]+/g, "-").replace(/^-|-$/g, "");
+  return normalized || null;
+}
+
+/**
+ * This chooses a checklist scope from the persisted property location only.
+ * It does not establish the governing law or approve a legal template.
+ */
+export function propertyDocumentJurisdiction(property: { state?: unknown; county?: unknown }) {
+  const state = jurisdictionSegment(property.state) ?? "UNKNOWN";
+  const county = jurisdictionSegment(property.county) ?? "UNSPECIFIED";
+  return `US/${state}/${county}`;
+}
+
+export async function ensureTransactionDocumentRegistry(
+  database: Store = db,
+  jurisdiction = "US/UNSPECIFIED",
+) {
   for (const item of REQUIRED_DOCUMENTS) {
     await database.insert(transactionDocumentTemplatesTable).values({
       templateKey: item.templateKey,
       documentKind: item.documentKind,
-      jurisdiction: "US/UNSPECIFIED",
+      jurisdiction,
       status: item.status,
       version: 1,
       requiredFields: [...item.requiredFields],
     }).onConflictDoNothing();
   }
   return database.select().from(transactionDocumentTemplatesTable)
+    .where(eq(transactionDocumentTemplatesTable.jurisdiction,jurisdiction))
     .orderBy(asc(transactionDocumentTemplatesTable.templateKey));
 }
 
-export async function getTransactionDocumentReadiness(actor: OfferActor) {
+export async function getTransactionDocumentReadiness(actor: OfferActor, leadId?: string) {
   assertOperationsRole(actor, ["OWNER", "OPERATOR"]);
-  const templates = await ensureTransactionDocumentRegistry();
+  let jurisdiction: string | null = null;
+  let templates: Awaited<ReturnType<typeof ensureTransactionDocumentRegistry>> = [];
+  if (leadId) {
+    const [lead] = await db.select().from(leadsTable).where(eq(leadsTable.id, leadId));
+    if (!lead) throw new DomainError("The deal property for document-readiness review was not found.", 404);
+    jurisdiction = propertyDocumentJurisdiction(lead.payload);
+    templates = await ensureTransactionDocumentRegistry(db, jurisdiction);
+  }
   const legalDocs = templates.filter(item =>
     !["PURCHASE_TERMS_REVIEW", "SELLER_RESPONSE_EVIDENCE"].includes(item.templateKey));
-  const blockers = legalDocs
-    .filter(item => item.status !== "APPROVED_LEGAL" || !item.templateHash || !item.approvalEvidenceRef)
-    .map(item => `No approved ${item.documentKind.toLowerCase().replaceAll("_", " ")} template is registered for ${item.jurisdiction}.`);
+  const blockers = leadId
+    ? legalDocs
+        .filter(item => item.status !== "APPROVED_LEGAL" || !item.templateHash || !item.approvalEvidenceRef)
+        .map(item => `No approved ${item.documentKind.toLowerCase().replaceAll("_", " ")} template is registered for property jurisdiction ${item.jurisdiction}.`)
+    : ["Open a deal to evaluate document readiness against its persisted property jurisdiction."];
   blockers.push("Managed private file storage is unavailable; current review-copy bytes use a protected persistent database blob table.");
   blockers.push("No e-signature provider is connected; system-managed send/sign events are unavailable.");
 
   return {
+    leadId: leadId ?? null,
+    jurisdiction,
     templates: templates.map(item => ({
       key: item.templateKey,
       documentKind: item.documentKind,

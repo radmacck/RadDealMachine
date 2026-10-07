@@ -21,7 +21,7 @@ import { contractRecord, buyerRecord, queueJob, type Tx } from "./operations-rec
 import { dealOperations, refreshMatches } from "./matching-store";
 import { buildPurchaseReviewPdf, purchaseReviewSnapshotHash, type PurchaseReviewSnapshot } from "./transaction-documents";
 import { lockDealEconomics } from "./locked-economics";
-import { ensureTransactionDocumentRegistry } from "./transaction-document-registry";
+import { ensureTransactionDocumentRegistry, propertyDocumentJurisdiction } from "./transaction-document-registry";
 import { transactionDocumentBinaryStore } from "./transaction-document-storage";
 
 export async function lockedContract(tx: Tx, id: string, version: number) {
@@ -141,7 +141,8 @@ export async function preparePurchaseReviewDocument(
     const original = analysisRow?.snapshot as {lead:Lead;analysis:Analysis}|undefined;
     if (!analysisRow||!original?.lead||!original.analysis)
       throw new DomainError("The immutable underwriting source for this communicated offer is missing.",409);
-    const registry = await ensureTransactionDocumentRegistry(tx);
+    const templateJurisdiction = propertyDocumentJurisdiction(detail.lead);
+    const registry = await ensureTransactionDocumentRegistry(tx,templateJurisdiction);
     const registeredTemplate = registry.find(item => item.templateKey==="PURCHASE_TERMS_REVIEW");
     if (!registeredTemplate||registeredTemplate.status!=="REVIEW_COPY_ONLY")
       throw new DomainError("The purchase terms review worksheet is not registered as an available review-only template.",409);
@@ -190,6 +191,7 @@ export async function preparePurchaseReviewDocument(
       attemptNumber:contract.attemptNumber??1,sourceContractVersion:row.version,sourceOfferId:offer.id,
       snapshotHash,economicsSnapshotHash:lockedEconomics.economicsSnapshotHash,sourceAnalysisSnapshotId:analysisRow.id,
       templateKey:registeredTemplate.templateKey,templateVersion:registeredTemplate.version,templateStatus:"REVIEW_COPY_ONLY",
+      templateJurisdiction,
       partySnapshotHash:partyHash,storageMode:transactionDocumentBinaryStore.mode,
       contentHash,fileName,contentType:"application/pdf",sizeBytes:bytes.byteLength,
       generatedAt:at,generatedBy:actor.id,

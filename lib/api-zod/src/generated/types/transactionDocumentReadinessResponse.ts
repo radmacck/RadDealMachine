@@ -10,6 +10,10 @@ import type { TransactionDocumentReadinessResponseStorage } from './transactionD
 import type { TransactionDocumentTemplateReadiness } from './transactionDocumentTemplateReadiness';
 
 export interface TransactionDocumentReadinessResponse {
+  /** @nullable */
+  leadId: string | null;
+  /** @nullable */
+  jurisdiction: string | null;
   templates: TransactionDocumentTemplateReadiness[];
   signingProvider: TransactionDocumentReadinessResponseSigningProvider;
   storage: TransactionDocumentReadinessResponseStorage;

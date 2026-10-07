@@ -43,7 +43,28 @@ try {
     repairs:[{category:"Synthetic repairs",low:10000,expected:20000,high:30000,confidence:0.8,source:"Synthetic repair scope"}]};
   Object.assign(uw,await exerciseEvidence(id,uw,actor.id,now));
   detail = await seller.saveUnderwriting(id,uw,actor.id,now);
+  await seller.addIntelligence(id,{classification:"AI_HYPOTHESIS",category:"prepared_questions",
+    statement:"Synthetic call-preparation hypothesis only; not a seller fact.",
+    source:"Synthetic command-center exercise",sourceType:"MODEL",confidence:0.4,capturedAt:now.toISOString(),
+    question:"What is your preferred closing timeline?",action:"Ask the seller and record the actual answer."},actor.id,now);
+  detail = await seller.leadDetail(id);
   detail = await seller.transitionLead(id,{version:detail.lead.version,to:"CALL_READY",reason:"Synthetic research complete.",nextAction:"Synthetic call."},actor.id,now);
+  const liveDesk = await commandCenter("OWNER",now);
+  const callBrief = liveDesk.calls.find(item=>item.lead.id===id);
+  assert.ok(callBrief,"A persisted CALL_READY lead with a phone route and current underwriting must appear in CALL NEXT.");
+  assert.equal(callBrief.lead.address,"SYNTHETIC COMPLETE DEAL");
+  assert.equal(callBrief.lead.sellerPhone,"000-000-0000");
+  assert.ok(callBrief.analysis.arv,"The call brief carries current ARV evidence.");
+  assert.ok(callBrief.analysis.repairs,"The call brief carries current repair assumptions.");
+  assert.ok(callBrief.intelligence.some(item=>item.classification==="VERIFIED_FACTS"));
+  assert.ok(callBrief.intelligence.some(item=>item.classification==="AI_HYPOTHESIS"),
+    "Call preparation must preserve hypothesis status instead of presenting it as a seller fact.");
+  assert.ok(callBrief.questions.includes("What is your preferred closing timeline?"),
+    "The seller's next question is carried into the call brief without re-entry.");
+  const callAction = liveDesk.actions.find(action=>action.leadId===id);
+  assert.equal(callAction?.href,`/calls?lead=${id}`);
+  assert.ok(callAction?.workGuidance?.humanMustDo);
+  assert.match(callAction?.workGuidance?.currentState??"",/call ready/i);
   detail = await seller.recordCall(id,{version:detail.lead.version,outcome:"CONNECTED",notes:"Synthetic conversation, no external call.",nextAction:"Review terms.",followUpAt:future(1)},actor.id,now);
   detail = await offers.createOfferDraft(id,{version:detail.lead.version,amount:110000,earnestMoney:1000,closingDays:30,
     contingencies:"Synthetic title and diligence",assignmentIntent:true,reason:"Synthetic terms"},actor,now);
@@ -87,12 +108,26 @@ try {
   assert.equal(reviewDocument.templateStatus,"REVIEW_COPY_ONLY");
   assert.equal(reviewDocument.storageMode,"PERSISTENT_DATABASE_BLOB");
   assert.deepEqual(reviewDocument.events?.map(event=>event.to),["DRAFT","PREPARED_FOR_REVIEW"]);
-  const registryState = await getTransactionDocumentReadiness(actor);
+  const registryState = await getTransactionDocumentReadiness(actor,id);
   assert.equal(registryState.canSendLegalDocuments,false);
+  assert.equal(registryState.leadId,id);
+  assert.equal(registryState.jurisdiction,"US/TX/SYNTHETIC-COUNTY",
+    "Readiness must use the persisted deal property's state/county rather than an unspecified global registry.");
   assert.equal(registryState.signingProvider.status,"NOT_CONNECTED");
   assert.equal(registryState.storage.status,"PRIVATE_FILE_STORE_UNAVAILABLE");
-  assert.ok(registryState.templates.some(item=>item.key==="PURCHASE_AGREEMENT"&&item.status==="MISSING_APPROVED_TEMPLATE"));
-  assert.ok(registryState.templates.some(item=>item.key==="ASSIGNMENT_AGREEMENT"&&item.status==="MISSING_APPROVED_TEMPLATE"));
+  assert.ok(registryState.templates.some(item=>item.key==="PURCHASE_AGREEMENT"&&item.status==="MISSING_APPROVED_TEMPLATE"&&
+    item.jurisdiction==="US/TX/SYNTHETIC-COUNTY"));
+  assert.ok(registryState.templates.some(item=>item.key==="ASSIGNMENT_AGREEMENT"&&item.status==="MISSING_APPROVED_TEMPLATE"&&
+    item.jurisdiction==="US/TX/SYNTHETIC-COUNTY"));
+  assert.ok(registryState.blockers.some(reason=>reason.includes("US/TX/SYNTHETIC-COUNTY")),
+    "Absent legal templates must explicitly block the subject transaction in its property jurisdiction.");
+  await assert.rejects(getTransactionDocumentReadiness({id:"synthetic-analyst",role:"ANALYST"},id),
+    (error:unknown)=>(error as {status?:number}).status===403,
+    "jurisdiction and document readiness are not exposed to research-only roles");
+  await assert.rejects(transactions.downloadPurchaseReviewDocument(id,reviewDocument.id,
+    {id:"synthetic-analyst",role:"ANALYST"},now),
+    (error:unknown)=>(error as {status?:number}).status===403,
+    "private document bytes must only be retrieved through an authorized operator route");
   const reviewFile = await transactions.downloadPurchaseReviewDocument(id,reviewDocument.id,operator,now);
   assert.equal(reviewFile.bytes.subarray(0,5).toString(),"%PDF-");
   const parsedPdf = await PDFDocument.load(reviewFile.bytes);
@@ -223,6 +258,27 @@ try {
      assert.equal(distribution.packet?.evidence.comparables.filter(comp=>comp.included).length,3);
      const syntheticRepairEvidenceId=(uw as {repairs:Array<{evidenceId?:string}>}).repairs[0]?.evidenceId;
      assert.ok(distribution.packet?.evidence.repairs.lines.some(line=>line.evidenceId===syntheticRepairEvidenceId));
+     const unverifiedBuyer = await buyers.createBuyer({name:"SYNTHETIC UNVERIFIED BUYER",email:"unverified@example.com",phone:"",
+       source:"Synthetic fixture only; no current buyer evidence",status:"ACTIVE",criteria:buyer.criteria},actor);
+     let staleBuyer = await buyers.createBuyer({name:"SYNTHETIC STALE BUYER",email:"stale@example.com",phone:"",
+       source:"Synthetic fixture only; evidence deliberately expires before distribution",status:"ACTIVE",criteria:buyer.criteria},actor);
+     const olderEvidenceAt = new Date(now.getTime()-29*86400000);
+     staleBuyer = await buyers.verifyBuyer(staleBuyer.id,{...verificationInput,version:staleBuyer.version,
+       evidenceAt:olderEvidenceAt.toISOString(),buyingEvidenceAt:olderEvidenceAt.toISOString(),
+       validUntil:new Date(olderEvidenceAt.getTime()+30*86400000).toISOString()},actor,now);
+     const afterExpiry = new Date(olderEvidenceAt.getTime()+30*86400000+1000);
+     const expiredBuyer = await getBuyerRecord(staleBuyer.id,db,afterExpiry);
+     assert.equal(expiredBuyer.approvalStatus,"REVERIFICATION_REQUIRED");
+     await assert.rejects(shareDistributionRecipients(distribution.packetId!,{
+       version:distribution.version,buyerIds:[unverifiedBuyer.id],
+     },operator,now),/no longer qualified/i,
+     "An unverified prospect cannot receive an authorized multi-buyer packet.");
+     await assert.rejects(shareDistributionRecipients(distribution.packetId!,{
+       version:distribution.version,buyerIds:[staleBuyer.id],
+     },operator,afterExpiry),/no longer qualified/i,
+     "A buyer whose current verification expired cannot receive a packet.");
+     assert.equal((await getDealDistribution(id)).recipients.length,0,
+       "Failed stale/unverified recipient checks must not persist distribution links.");
     const shared = await shareDistributionRecipients(distribution.packetId!,{version:distribution.version,buyerIds:[buyer.id,competitor.id]},operator,now);
     assert.equal(shared.links.length,2);
     const portalToken = shared.links.find(link=>link.buyerId===buyer.id)!.token;

@@ -15,8 +15,9 @@ import { listHandoffs, recordHandoffEvent } from "../services/handoffs";
 
 const router: IRouter = Router();
 router.use(authenticated,membership);
-router.get("/transaction-documents/readiness",roles("OWNER","OPERATOR"),async(_req,res)=>{
-  res.json(schemas.GetTransactionDocumentReadinessResponse.parse(await getTransactionDocumentReadiness(actor(res))));
+router.get("/transaction-documents/readiness",roles("OWNER","OPERATOR"),async(req,res)=>{
+  const {leadId} = parse(z.object({leadId:z.string().uuid().optional()}),req.query);
+  res.json(schemas.GetTransactionDocumentReadinessResponse.parse(await getTransactionDocumentReadiness(actor(res),leadId)));
 });
 export const actor = (res: {locals:Record<string,unknown>}): OfferActor => ({id:String(res.locals.actor),role:String(res.locals.role)});
 export function parse<T extends z.ZodType>(schema: T,value: unknown): z.infer<T> {

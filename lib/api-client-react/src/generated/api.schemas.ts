@@ -2617,6 +2617,7 @@ export interface TransactionDocumentMetadata {
   /** @minimum 1 */
   templateVersion?: number;
   templateStatus?: TransactionDocumentMetadataTemplateStatus;
+  templateJurisdiction?: string;
   /** @pattern ^[a-f0-9]{64}$ */
   partySnapshotHash?: string;
   storageMode?: TransactionDocumentMetadataStorageMode;
@@ -2739,6 +2740,10 @@ export type TransactionDocumentReadinessResponseStorage = {
 };
 
 export interface TransactionDocumentReadinessResponse {
+  /** @nullable */
+  leadId: string | null;
+  /** @nullable */
+  jurisdiction: string | null;
   templates: TransactionDocumentTemplateReadiness[];
   signingProvider: TransactionDocumentReadinessResponseSigningProvider;
   storage: TransactionDocumentReadinessResponseStorage;
@@ -3636,6 +3641,10 @@ export interface Dashboard {
   stages: StageCount[];
   recentActivity: AuditEvent[];
 }
+
+export type GetTransactionDocumentReadinessParams = {
+leadId?: string;
+};
 
 export type SearchPublicPropertiesParams = {
 /**

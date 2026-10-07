@@ -39,6 +39,7 @@ export interface TransactionDocumentMetadata {
   /** @minimum 1 */
   templateVersion?: number;
   templateStatus?: TransactionDocumentMetadataTemplateStatus;
+  templateJurisdiction?: string;
   /** @pattern ^[a-f0-9]{64}$ */
   partySnapshotHash?: string;
   storageMode?: TransactionDocumentMetadataStorageMode;

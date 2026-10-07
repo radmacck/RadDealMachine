@@ -120,6 +120,7 @@ export * from './distributionShareInput';
 export * from './distributionShareResponse';
 export * from './distributionShareResponseLinksItem';
 export * from './getSourceResearch200';
+export * from './getTransactionDocumentReadinessParams';
 export * from './getWorkerCapabilities200Item';
 export * from './getWorkerCapabilities200ItemState';
 export * from './handoffEvent';

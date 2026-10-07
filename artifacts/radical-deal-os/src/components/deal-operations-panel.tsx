@@ -59,7 +59,7 @@ function PurchaseReviewDocuments({ contract, onDone }: { contract: DealContract;
   const { canCall, isOwner } = useAccess();
   const prepare = usePreparePurchaseReviewDocument();
   const transition = useTransitionTransactionDocument();
-  const readiness = useGetTransactionDocumentReadiness();
+  const readiness = useGetTransactionDocumentReadiness({ leadId: contract.leadId });
   const { toast } = useToast();
   const [downloading, setDownloading] = useState<string | null>(null);
   const [downloadError, setDownloadError] = useState<string | null>(null);
@@ -120,10 +120,22 @@ function PurchaseReviewDocuments({ contract, onDone }: { contract: DealContract;
     {readiness.data && !readiness.data.canSendLegalDocuments && <div className="border border-signal/40 bg-signal/5 p-3 text-xs" role="status" data-testid="transaction-document-readiness">
       <p className="font-semibold">Legal transaction documents are not ready to send or sign.</p>
       <p className="mt-1 text-muted-foreground">
+        {readiness.data.jurisdiction
+          ? `Checklist scope from this property's saved location: ${readiness.data.jurisdiction}. Legal applicability still requires approved local templates. `
+          : 'Open a deal with a saved property location to evaluate jurisdiction-specific requirements. '}
         {readiness.data.templates.filter((item) => item.status === 'MISSING_APPROVED_TEMPLATE').length} approved jurisdiction-specific templates are missing.
         {` `}{readiness.data.signingProvider.status === 'NOT_CONNECTED' ? 'No signing provider is connected.' : ''}
         {` `}{readiness.data.storage.status === 'PRIVATE_FILE_STORE_UNAVAILABLE' ? 'Private file storage is unavailable; review-copy bytes use the protected database fallback.' : ''}
       </p>
+      {readiness.data.templates.some((item) => item.status === 'MISSING_APPROVED_TEMPLATE') && (
+        <ul className="mt-2 list-disc space-y-1 pl-5 text-muted-foreground" data-testid="list-missing-jurisdiction-templates">
+          {readiness.data.templates.filter((item) => item.status === 'MISSING_APPROVED_TEMPLATE').map((item) => (
+            <li key={`${item.key}:${item.jurisdiction}`}>
+              {item.documentKind.replaceAll('_', ' ')} · {item.jurisdiction}: {item.missingReason}
+            </li>
+          ))}
+        </ul>
+      )}
       <p className="mt-1 text-muted-foreground">Next: provide approved templates, configure private file storage, and connect a signing provider. The worksheet below is not a contract and cannot be signed here.</p>
     </div>}
     {contract.status === 'DRAFT' && canCall && <Button size="sm" onClick={createReviewCopy} disabled={prepare.isPending} data-testid="button-prepare-purchase-review-pdf">
