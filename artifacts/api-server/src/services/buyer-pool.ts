@@ -9,6 +9,7 @@ import type { RepeatedTransferBuyer } from "@workspace/property-sources";
 import { audit } from "./deal-store";
 import { allBuyerRecords, buyerRecord, queueJob } from "./operations-records";
 import { allPropertySourceConnectors } from "./property-source-connectors";
+import { buyerOutreachReadiness } from "./buyer-outreach";
 type Prospect = ReturnType<typeof DiscoverBuyerBody.parse>;
 type SourceObservationInput = {
   sourceId: string;
@@ -141,12 +142,44 @@ function mergeSourceObservation(
     : prior.history;
   return { observation: candidate, contentChanged, captureChanged };
 }
-export function qualificationTask(b: Pick<Buyer,"name"|"criteria"|"destinationKind">, kind:"QUALIFY"|"REVERIFY", now:Date) {
-  const market = b.criteria?.cities.length ? ` in ${b.criteria.cities.join(", ")}` : "";
+function buyerCriteriaSummary(b: Pick<Buyer,"criteria">) {
+  const c = b.criteria;
+  if (!c) return "No structured buying criteria are on file yet.";
+  const money = (n: number | null | undefined) => n == null ? null : `$${Math.round(n).toLocaleString("en-US")}`;
+  const lines = [
+    [`Markets`, [c.states, c.counties ?? [], c.cities, c.zipCodes].flat().filter(Boolean).join(", ")],
+    ["Property types", c.propertyTypes.join(", ")],
+    ["Purchase range", [money(c.minPurchasePrice), money(c.maxPurchasePrice)].filter(Boolean).join("–")],
+    ["ARV range", [money(c.minArv), money(c.maxArv)].filter(Boolean).join("–")],
+    ["Units", [c.minUnits, c.maxUnits].filter(x => x != null).join("–")],
+    ["Beds / baths", [c.minBeds != null ? `${c.minBeds}+ beds` : null, c.maxBeds != null ? `up to ${c.maxBeds} beds` : null,
+      c.minBaths != null ? `${c.minBaths}+ baths` : null, c.maxBaths != null ? `up to ${c.maxBaths} baths` : null].filter(Boolean).join(", ")],
+    ["Square feet", [c.minSqft, c.maxSqft].filter(x => x != null).join("–")],
+    ["Maximum repairs", money(c.maxRepairs)],
+    ["Rehab tolerance", c.rehabTolerance],
+    ["Strategies", c.strategies?.join(", ")],
+    ["Funding types stated", c.fundingTypes?.join(", ")],
+    ["Closing speed", `${c.closingDays} days`],
+    ["Concurrent capacity", c.maxConcurrentDeals],
+    ["Minimum spread", money(c.minSpread)],
+    ["Minimum cap rate", c.minCapRate == null ? null : `${(c.minCapRate * 100).toFixed(2)}%`],
+    ["Excluded counties", c.excludedCounties?.join(", ")],
+    ["Excluded cities", c.excludedCities?.join(", ")],
+    ["Excluded ZIP codes", c.excludedZipCodes?.join(", ")],
+  ].filter(([, value]) => value != null && value !== "");
+  return lines.map(([label, value]) => `${label}: ${value}`).join("\n");
+}
+
+export function qualificationTask(
+  b: Pick<Buyer,"name"|"criteria"|"destinationKind"|"email"|"phone">,
+  kind:"QUALIFY"|"REVERIFY",
+  now:Date,
+) {
   const destination = b.destinationKind && b.destinationKind!=="BUYER";
   return {id:randomUUID(),kind,state:"WAITING_EXTERNAL" as const,
     reason:kind==="REVERIFY"?"Dated buying/criteria or identity/funding evidence expired. Approval and matching are blocked.":"Discovery is not approval. Confirm identity, contact permission, current buying/accepting status and structured criteria.",
-    preparedMessage:`We are updating our investor criteria. Are you currently ${destination?"accepting qualified deals":"buying"}${market}? If so, which states/counties/cities/ZIPs, property types, units, price and ARV ranges, size, beds/baths, rehab scope and strategies fit? Please confirm funding arrangements, closing speed/capacity and exclusions. ${destination?"Please also confirm any fee terms and who can act as the acquisition buyer.":"Current dated identity/funding evidence is required before approval."}`,
+    preparedMessage:`We are reviewing the buying profile currently on file. It is not independently re-verified:\n${buyerCriteriaSummary(b)}\n\nPlease confirm or correct only what has changed. Are you currently ${destination?"accepting qualified deals":"buying"}? Please provide current dated evidence for identity/authority, buying status, criteria and funding/capacity; a response alone does not grant approval. ${destination?"Please also confirm any fee terms and who can act as the acquisition buyer.":"Please state current funding arrangements and available closing capacity."}`,
+    outreachReadiness:buyerOutreachReadiness(b,now),
     dueAt:now.toISOString(),updatedAt:now.toISOString()};
 }
 export async function discoverBuyer(
@@ -322,6 +355,7 @@ export async function requestBuyerQualification(id:string,input:unknown,actor:Of
       throw new DomainError("An outreach/evidence request is already pending. Use its current handoff.",409);
     const task = qualificationTask(b,b.approvalStatus==="REVERIFICATION_REQUIRED"?"REVERIFY":"QUALIFY",now);
     task.reason = `Explicit additional-evidence request: ${p.note}. Approval remains subject to owner evidence review.`;
+    task.preparedMessage = `${task.preparedMessage}\n\nAdditional evidence requested by the reviewer: ${p.note}`;
     const history = Array.isArray(row.payload.qualificationTaskHistory)?row.payload.qualificationTaskHistory:[];
     const [saved] = await tx.update(buyersTable).set({payload:{...row.payload,qualificationTask:task,
       qualificationTaskHistory:[...history,...(b.qualificationTask?[b.qualificationTask]:[])]},version:row.version+1,updatedAt:now})

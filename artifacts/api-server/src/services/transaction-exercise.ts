@@ -12,7 +12,7 @@ import * as buyers from "./buyer-store";
 import { dealOperations,refreshMatches } from "./matching-store";
 import { submitWorkerJob,runWorkerOnce } from "./workers";
 import { commandCenter } from "./command-center";
-import { CLOSING_MILESTONES } from "@workspace/deal-domain";
+import { CLOSING_MILESTONES, closingBlockers } from "@workspace/deal-domain";
 import { recordTransactionException } from "./transaction-exceptions";
 import { reviewHandoffs, listHandoffs, recordHandoffEvent } from "./handoffs";
 import { getBuyerRecord } from "./operations-records";
@@ -483,10 +483,46 @@ try {
   const outcome = {version:op.contract!.version,outcome:"CLOSED" as const,evidenceUrl:"https://example.com/synthetic-settlement",
     note:"Synthetic reconciliation only, not actual funds.",assignmentFeeReceived:20000,closingCosts:2000};
   await assert.rejects(transactions.recordDealOutcome(id,outcome,actor,now),/Missing evidence/);
+  const earnestEvidence = {
+    kind:"EARNEST_MONEY_CONFIRMED" as const,evidenceUrl:"https://example.com/synthetic-escrow-receipt",
+    note:"Synthetic escrow receipt reviewed; no real deposit occurred.",amount:op.contract!.earnestMoney,
+    currency:"USD" as const,evidenceKind:"ESCROW_RECEIPT" as const,counterpartyName:"SYNTHETIC ESCROW",
+    paymentReference:"SYN-ESCROW-001",effectiveAt:now.toISOString(),
+  };
+  await assert.rejects(transactions.recordClosingMilestone(id,{...earnestEvidence,amount:earnestEvidence.amount+1,
+    version:op.contract!.version},actor,now),/equal the earnest money/);
+  const buyerFundsEvidence = {
+    kind:"FUNDS_CONFIRMED" as const,evidenceUrl:buyer.fundingEvidenceUrl!,
+    note:"Synthetic current funding evidence reviewed; no real funds moved.",amount:buyer.availableFunds!,
+    currency:"USD" as const,evidenceKind:"BANK_CONFIRMATION" as const,counterpartyName:"SYNTHETIC BANK",
+    paymentReference:"SYN-FUNDS-001",effectiveAt:now.toISOString(),
+  };
+  await assert.rejects(transactions.recordClosingMilestone(id,{...buyerFundsEvidence,
+    evidenceUrl:"https://example.com/synthetic-stale-funds",version:op.contract!.version},actor,now),
+  /current owner-reviewed funding evidence/);
+  const legacySparseContract = {...op.contract!,status:"CLOSING" as const,milestones:[
+    {kind:"EARNEST_MONEY_CONFIRMED" as const,evidenceUrl:"https://example.com/synthetic-old-emd",
+      note:"Legacy evidence link only.",recordedBy:actor.id,recordedAt:now.toISOString()},
+    {kind:"FUNDS_CONFIRMED" as const,evidenceUrl:"https://example.com/synthetic-old-funds",
+      note:"Legacy evidence link only.",recordedBy:actor.id,recordedAt:now.toISOString()},
+  ]};
+  const legacyBlockers = closingBlockers(legacySparseContract,undefined);
+  assert.ok(legacyBlockers.some(x=>/Acquisition earnest-money evidence is incomplete/.test(x)),
+    "Legacy generic EMD links cannot satisfy the structured closing gate.");
+  assert.ok(legacyBlockers.some(x=>/Buyer-funds evidence is incomplete/.test(x)),
+    "Legacy generic funds links cannot satisfy the current-funds evidence gate.");
   for (const kind of CLOSING_MILESTONES) {
-    op = await transactions.recordClosingMilestone(id,{version:op.contract!.version,kind,
-      evidenceUrl:`https://example.com/synthetic-${kind.toLowerCase()}`,note:"Synthetic reviewed evidence, no actual escrow activity."},actor,now);
+    const details = kind==="EARNEST_MONEY_CONFIRMED" ? earnestEvidence
+      : kind==="FUNDS_CONFIRMED" ? buyerFundsEvidence
+        : {kind,evidenceUrl:`https://example.com/synthetic-${kind.toLowerCase()}`,note:"Synthetic reviewed evidence, no actual escrow activity."};
+    op = await transactions.recordClosingMilestone(id,{version:op.contract!.version,...details},actor,now);
   }
+  const recordedEarnest = op.contract?.milestones.find(m=>m.kind==="EARNEST_MONEY_CONFIRMED");
+  const recordedFunds = op.contract?.milestones.find(m=>m.kind==="FUNDS_CONFIRMED");
+  assert.equal(recordedEarnest?.amount,op.contract?.earnestMoney);
+  assert.equal(recordedEarnest?.effectiveAt,now.toISOString());
+  assert.equal(recordedFunds?.amount,buyer.availableFunds);
+  assert.equal(recordedFunds?.evidenceUrl,buyer.fundingEvidenceUrl);
   await assert.rejects(transactions.recordDealOutcome(id,{...outcome,version:op.contract!.version,assignmentFeeReceived:19999},actor,now),/reconcile/);
    // An actual response can predate settlement even when entered afterwards.
    // A recorded-time-only check must not ignore that contradiction.

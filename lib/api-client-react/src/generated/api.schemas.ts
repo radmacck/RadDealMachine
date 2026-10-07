@@ -721,12 +721,66 @@ export const BuyerQualificationTaskState = {
   COMPLETED: 'COMPLETED',
 } as const;
 
+export type BuyerOutreachReadinessStatus = typeof BuyerOutreachReadinessStatus[keyof typeof BuyerOutreachReadinessStatus];
+
+
+export const BuyerOutreachReadinessStatus = {
+  NO_CONTACT_ROUTE: 'NO_CONTACT_ROUTE',
+  CONTACT_PERMISSION_REQUIRED: 'CONTACT_PERMISSION_REQUIRED',
+  NO_CONNECTED_PROVIDER: 'NO_CONNECTED_PROVIDER',
+  READY: 'READY',
+} as const;
+
+export type BuyerOutreachReadinessContactRouteStatus = typeof BuyerOutreachReadinessContactRouteStatus[keyof typeof BuyerOutreachReadinessContactRouteStatus];
+
+
+export const BuyerOutreachReadinessContactRouteStatus = {
+  NONE: 'NONE',
+  PRESENT_UNVERIFIED: 'PRESENT_UNVERIFIED',
+} as const;
+
+export type BuyerOutreachReadinessProviderStatus = typeof BuyerOutreachReadinessProviderStatus[keyof typeof BuyerOutreachReadinessProviderStatus];
+
+
+export const BuyerOutreachReadinessProviderStatus = {
+  NOT_CONNECTED: 'NOT_CONNECTED',
+  CONNECTED: 'CONNECTED',
+} as const;
+
+export type BuyerOutreachReadinessDeliveryStatus = typeof BuyerOutreachReadinessDeliveryStatus[keyof typeof BuyerOutreachReadinessDeliveryStatus];
+
+
+export const BuyerOutreachReadinessDeliveryStatus = {
+  NOT_SENT: 'NOT_SENT',
+} as const;
+
+export type BuyerOutreachReadinessAvailableChannelsItem = typeof BuyerOutreachReadinessAvailableChannelsItem[keyof typeof BuyerOutreachReadinessAvailableChannelsItem];
+
+
+export const BuyerOutreachReadinessAvailableChannelsItem = {
+  EMAIL: 'EMAIL',
+  SMS: 'SMS',
+  VOICE: 'VOICE',
+} as const;
+
+export interface BuyerOutreachReadiness {
+  status: BuyerOutreachReadinessStatus;
+  contactRouteStatus: BuyerOutreachReadinessContactRouteStatus;
+  providerStatus: BuyerOutreachReadinessProviderStatus;
+  deliveryStatus: BuyerOutreachReadinessDeliveryStatus;
+  availableChannels: BuyerOutreachReadinessAvailableChannelsItem[];
+  missingCapabilities: string[];
+  nextAction: string;
+  checkedAt: string;
+}
+
 export interface BuyerQualificationTask {
   id: string;
   kind: BuyerQualificationTaskKind;
   state: BuyerQualificationTaskState;
   reason: string;
   preparedMessage: string;
+  outreachReadiness?: BuyerOutreachReadiness;
   dueAt: string;
   updatedAt: string;
 }
@@ -1479,10 +1533,43 @@ export const ClosingMilestoneKind = {
   FUNDS_CONFIRMED: 'FUNDS_CONFIRMED',
 } as const;
 
+export type ClosingMilestoneCurrency = typeof ClosingMilestoneCurrency[keyof typeof ClosingMilestoneCurrency];
+
+
+export const ClosingMilestoneCurrency = {
+  USD: 'USD',
+} as const;
+
+export type ClosingMilestoneEvidenceKind = typeof ClosingMilestoneEvidenceKind[keyof typeof ClosingMilestoneEvidenceKind];
+
+
+export const ClosingMilestoneEvidenceKind = {
+  ESCROW_RECEIPT: 'ESCROW_RECEIPT',
+  WIRE_CONFIRMATION: 'WIRE_CONFIRMATION',
+  BANK_CONFIRMATION: 'BANK_CONFIRMATION',
+  LENDER_LETTER: 'LENDER_LETTER',
+  REDACTED_STATEMENT: 'REDACTED_STATEMENT',
+} as const;
+
 export interface ClosingMilestone {
   kind: ClosingMilestoneKind;
   evidenceUrl: string;
   note: string;
+  /**
+     * @minimum 0
+     * @maximum 1000000000
+     */
+  amount?: number;
+  currency?: ClosingMilestoneCurrency;
+  evidenceKind?: ClosingMilestoneEvidenceKind;
+  /** @maxLength 200 */
+  counterpartyName?: string;
+  /**
+     * Masked receipt/reference only. Never include an account number, card number, password, or other credential.
+     * @maxLength 100
+     */
+  paymentReference?: string;
+  effectiveAt?: string;
   recordedBy: string;
   recordedAt: string;
 }
@@ -1495,6 +1582,24 @@ export const ClosingMilestoneInputKind = {
   EARNEST_MONEY_CONFIRMED: 'EARNEST_MONEY_CONFIRMED',
   ASSIGNMENT_SIGNED: 'ASSIGNMENT_SIGNED',
   FUNDS_CONFIRMED: 'FUNDS_CONFIRMED',
+} as const;
+
+export type ClosingMilestoneInputCurrency = typeof ClosingMilestoneInputCurrency[keyof typeof ClosingMilestoneInputCurrency];
+
+
+export const ClosingMilestoneInputCurrency = {
+  USD: 'USD',
+} as const;
+
+export type ClosingMilestoneInputEvidenceKind = typeof ClosingMilestoneInputEvidenceKind[keyof typeof ClosingMilestoneInputEvidenceKind];
+
+
+export const ClosingMilestoneInputEvidenceKind = {
+  ESCROW_RECEIPT: 'ESCROW_RECEIPT',
+  WIRE_CONFIRMATION: 'WIRE_CONFIRMATION',
+  BANK_CONFIRMATION: 'BANK_CONFIRMATION',
+  LENDER_LETTER: 'LENDER_LETTER',
+  REDACTED_STATEMENT: 'REDACTED_STATEMENT',
 } as const;
 
 export interface ClosingMilestoneInput {
@@ -1511,6 +1616,25 @@ export interface ClosingMilestoneInput {
      * @maxLength 3000
      */
   note: string;
+  /**
+     * @minimum 0
+     * @maximum 1000000000
+     */
+  amount?: number;
+  currency?: ClosingMilestoneInputCurrency;
+  evidenceKind?: ClosingMilestoneInputEvidenceKind;
+  /**
+     * @minLength 2
+     * @maxLength 200
+     */
+  counterpartyName?: string;
+  /**
+     * Masked receipt/reference only. Never include an account number, card number, password, or other credential.
+     * @minLength 3
+     * @maxLength 100
+     */
+  paymentReference?: string;
+  effectiveAt?: string;
 }
 
 export type DealOutcomeInputOutcome = typeof DealOutcomeInputOutcome[keyof typeof DealOutcomeInputOutcome];

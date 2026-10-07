@@ -1355,8 +1355,21 @@ components:
         state: { type: string, enum: [PENDING_EXECUTION, WAITING_EXTERNAL, WAITING_REVIEW, COMPLETED] }
         reason: { type: string }
         preparedMessage: { type: string }
+        outreachReadiness: { $ref: "#/components/schemas/BuyerOutreachReadiness" }
         dueAt: { type: string }
         updatedAt: { type: string }
+    BuyerOutreachReadiness:
+      type: object
+      required: [status, contactRouteStatus, providerStatus, deliveryStatus, availableChannels, missingCapabilities, nextAction, checkedAt]
+      properties:
+        status: { type: string, enum: [NO_CONTACT_ROUTE, CONTACT_PERMISSION_REQUIRED, NO_CONNECTED_PROVIDER, READY] }
+        contactRouteStatus: { type: string, enum: [NONE, PRESENT_UNVERIFIED] }
+        providerStatus: { type: string, enum: [NOT_CONNECTED, CONNECTED] }
+        deliveryStatus: { type: string, enum: [NOT_SENT] }
+        availableChannels: { type: array, items: { type: string, enum: [EMAIL, SMS, VOICE] } }
+        missingCapabilities: { type: array, items: { type: string } }
+        nextAction: { type: string }
+        checkedAt: { type: string, format: date-time }
     BuyerQualificationRequest:
       type: object
       required: [version, note]
@@ -1630,6 +1643,12 @@ components:
         kind: { type: string, enum: [TITLE_CLEARED, EARNEST_MONEY_CONFIRMED, ASSIGNMENT_SIGNED, FUNDS_CONFIRMED] }
         evidenceUrl: { type: string }
         note: { type: string }
+        amount: { type: number, minimum: 0, maximum: 1000000000 }
+        currency: { type: string, enum: [USD] }
+        evidenceKind: { type: string, enum: [ESCROW_RECEIPT, WIRE_CONFIRMATION, BANK_CONFIRMATION, LENDER_LETTER, REDACTED_STATEMENT] }
+        counterpartyName: { type: string, maxLength: 200 }
+        paymentReference: { type: string, maxLength: 100, description: "Masked receipt/reference only. Never include an account number, card number, password, or other credential." }
+        effectiveAt: { type: string, format: date-time }
         recordedBy: { type: string }
         recordedAt: { type: string }
     ClosingMilestoneInput:
@@ -1640,6 +1659,12 @@ components:
         kind: { type: string, enum: [TITLE_CLEARED, EARNEST_MONEY_CONFIRMED, ASSIGNMENT_SIGNED, FUNDS_CONFIRMED] }
         evidenceUrl: { type: string, minLength: 8, maxLength: 2000 }
         note: { type: string, minLength: 10, maxLength: 3000 }
+        amount: { type: number, minimum: 0, maximum: 1000000000 }
+        currency: { type: string, enum: [USD] }
+        evidenceKind: { type: string, enum: [ESCROW_RECEIPT, WIRE_CONFIRMATION, BANK_CONFIRMATION, LENDER_LETTER, REDACTED_STATEMENT] }
+        counterpartyName: { type: string, minLength: 2, maxLength: 200 }
+        paymentReference: { type: string, minLength: 3, maxLength: 100, description: "Masked receipt/reference only. Never include an account number, card number, password, or other credential." }
+        effectiveAt: { type: string, format: date-time }
     DealOutcomeInput:
       type: object
       required: [version, outcome, evidenceUrl, note]

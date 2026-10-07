@@ -5,12 +5,29 @@
  * Radical Deal OS seller intake, underwriting, conversations and approved offers
  * OpenAPI spec version: 1.0.0
  */
+import type { ClosingMilestoneCurrency } from './closingMilestoneCurrency';
+import type { ClosingMilestoneEvidenceKind } from './closingMilestoneEvidenceKind';
 import type { ClosingMilestoneKind } from './closingMilestoneKind';
 
 export interface ClosingMilestone {
   kind: ClosingMilestoneKind;
   evidenceUrl: string;
   note: string;
+  /**
+     * @minimum 0
+     * @maximum 1000000000
+     */
+  amount?: number;
+  currency?: ClosingMilestoneCurrency;
+  evidenceKind?: ClosingMilestoneEvidenceKind;
+  /** @maxLength 200 */
+  counterpartyName?: string;
+  /**
+     * Masked receipt/reference only. Never include an account number, card number, password, or other credential.
+     * @maxLength 100
+     */
+  paymentReference?: string;
+  effectiveAt?: string;
   recordedBy: string;
   recordedAt: string;
 }

@@ -459,6 +459,13 @@ export const recordTransactionExceptionResponseContractOneCommitmentSnapshotOneD
 export const recordTransactionExceptionResponseContractOneCommitmentSnapshotOneDetailCallsItemOneNextActionMin = 3;
 export const recordTransactionExceptionResponseContractOneCommitmentSnapshotOneDetailCallsItemOneNextActionMax = 1000;
 
+export const recordTransactionExceptionResponseContractOneMilestonesItemAmountMin = 0;
+export const recordTransactionExceptionResponseContractOneMilestonesItemAmountMax = 1000000000;
+
+export const recordTransactionExceptionResponseContractOneMilestonesItemCounterpartyNameMax = 200;
+
+export const recordTransactionExceptionResponseContractOneMilestonesItemPaymentReferenceMax = 100;
+
 
 
 export const recordTransactionExceptionResponseContractOneDocumentsItemSnapshotHashRegExp = new RegExp('^[a-f0-9]{64}$');
@@ -656,6 +663,16 @@ export const RecordTransactionExceptionResponse = zod.object({
   "state": zod.enum(['PENDING_EXECUTION', 'WAITING_EXTERNAL', 'WAITING_REVIEW', 'COMPLETED']),
   "reason": zod.string(),
   "preparedMessage": zod.string(),
+  "outreachReadiness": zod.object({
+  "status": zod.enum(['NO_CONTACT_ROUTE', 'CONTACT_PERMISSION_REQUIRED', 'NO_CONNECTED_PROVIDER', 'READY']),
+  "contactRouteStatus": zod.enum(['NONE', 'PRESENT_UNVERIFIED']),
+  "providerStatus": zod.enum(['NOT_CONNECTED', 'CONNECTED']),
+  "deliveryStatus": zod.enum(['NOT_SENT']),
+  "availableChannels": zod.array(zod.enum(['EMAIL', 'SMS', 'VOICE'])),
+  "missingCapabilities": zod.array(zod.string()),
+  "nextAction": zod.string(),
+  "checkedAt": zod.string().datetime({"offset":true})
+}).optional(),
   "dueAt": zod.string(),
   "updatedAt": zod.string()
 }),zod.null()]).optional(),
@@ -1032,6 +1049,12 @@ export const RecordTransactionExceptionResponse = zod.object({
   "kind": zod.enum(['TITLE_CLEARED', 'EARNEST_MONEY_CONFIRMED', 'ASSIGNMENT_SIGNED', 'FUNDS_CONFIRMED']),
   "evidenceUrl": zod.string(),
   "note": zod.string(),
+  "amount": zod.number().min(recordTransactionExceptionResponseContractOneMilestonesItemAmountMin).max(recordTransactionExceptionResponseContractOneMilestonesItemAmountMax).optional(),
+  "currency": zod.enum(['USD']).optional(),
+  "evidenceKind": zod.enum(['ESCROW_RECEIPT', 'WIRE_CONFIRMATION', 'BANK_CONFIRMATION', 'LENDER_LETTER', 'REDACTED_STATEMENT']).optional(),
+  "counterpartyName": zod.string().max(recordTransactionExceptionResponseContractOneMilestonesItemCounterpartyNameMax).optional(),
+  "paymentReference": zod.string().max(recordTransactionExceptionResponseContractOneMilestonesItemPaymentReferenceMax).optional().describe('Masked receipt/reference only. Never include an account number, card number, password, or other credential.'),
+  "effectiveAt": zod.string().datetime({"offset":true}).optional(),
   "recordedBy": zod.string(),
   "recordedAt": zod.string()
 })),
@@ -9931,6 +9954,13 @@ export const getCommandCenterResponseOperationsItemContractOneCommitmentSnapshot
 export const getCommandCenterResponseOperationsItemContractOneCommitmentSnapshotOneDetailCallsItemOneNextActionMin = 3;
 export const getCommandCenterResponseOperationsItemContractOneCommitmentSnapshotOneDetailCallsItemOneNextActionMax = 1000;
 
+export const getCommandCenterResponseOperationsItemContractOneMilestonesItemAmountMin = 0;
+export const getCommandCenterResponseOperationsItemContractOneMilestonesItemAmountMax = 1000000000;
+
+export const getCommandCenterResponseOperationsItemContractOneMilestonesItemCounterpartyNameMax = 200;
+
+export const getCommandCenterResponseOperationsItemContractOneMilestonesItemPaymentReferenceMax = 100;
+
 
 
 export const getCommandCenterResponseOperationsItemContractOneDocumentsItemSnapshotHashRegExp = new RegExp('^[a-f0-9]{64}$');
@@ -11373,6 +11403,16 @@ export const GetCommandCenterResponse = zod.object({
   "state": zod.enum(['PENDING_EXECUTION', 'WAITING_EXTERNAL', 'WAITING_REVIEW', 'COMPLETED']),
   "reason": zod.string(),
   "preparedMessage": zod.string(),
+  "outreachReadiness": zod.object({
+  "status": zod.enum(['NO_CONTACT_ROUTE', 'CONTACT_PERMISSION_REQUIRED', 'NO_CONNECTED_PROVIDER', 'READY']),
+  "contactRouteStatus": zod.enum(['NONE', 'PRESENT_UNVERIFIED']),
+  "providerStatus": zod.enum(['NOT_CONNECTED', 'CONNECTED']),
+  "deliveryStatus": zod.enum(['NOT_SENT']),
+  "availableChannels": zod.array(zod.enum(['EMAIL', 'SMS', 'VOICE'])),
+  "missingCapabilities": zod.array(zod.string()),
+  "nextAction": zod.string(),
+  "checkedAt": zod.string().datetime({"offset":true})
+}).optional(),
   "dueAt": zod.string(),
   "updatedAt": zod.string()
 }),zod.null()]).optional(),
@@ -11749,6 +11789,12 @@ export const GetCommandCenterResponse = zod.object({
   "kind": zod.enum(['TITLE_CLEARED', 'EARNEST_MONEY_CONFIRMED', 'ASSIGNMENT_SIGNED', 'FUNDS_CONFIRMED']),
   "evidenceUrl": zod.string(),
   "note": zod.string(),
+  "amount": zod.number().min(getCommandCenterResponseOperationsItemContractOneMilestonesItemAmountMin).max(getCommandCenterResponseOperationsItemContractOneMilestonesItemAmountMax).optional(),
+  "currency": zod.enum(['USD']).optional(),
+  "evidenceKind": zod.enum(['ESCROW_RECEIPT', 'WIRE_CONFIRMATION', 'BANK_CONFIRMATION', 'LENDER_LETTER', 'REDACTED_STATEMENT']).optional(),
+  "counterpartyName": zod.string().max(getCommandCenterResponseOperationsItemContractOneMilestonesItemCounterpartyNameMax).optional(),
+  "paymentReference": zod.string().max(getCommandCenterResponseOperationsItemContractOneMilestonesItemPaymentReferenceMax).optional().describe('Masked receipt/reference only. Never include an account number, card number, password, or other credential.'),
+  "effectiveAt": zod.string().datetime({"offset":true}).optional(),
   "recordedBy": zod.string(),
   "recordedAt": zod.string()
 })),
@@ -11973,6 +12019,16 @@ export const GetCommandCenterResponse = zod.object({
   "state": zod.enum(['PENDING_EXECUTION', 'WAITING_EXTERNAL', 'WAITING_REVIEW', 'COMPLETED']),
   "reason": zod.string(),
   "preparedMessage": zod.string(),
+  "outreachReadiness": zod.object({
+  "status": zod.enum(['NO_CONTACT_ROUTE', 'CONTACT_PERMISSION_REQUIRED', 'NO_CONNECTED_PROVIDER', 'READY']),
+  "contactRouteStatus": zod.enum(['NONE', 'PRESENT_UNVERIFIED']),
+  "providerStatus": zod.enum(['NOT_CONNECTED', 'CONNECTED']),
+  "deliveryStatus": zod.enum(['NOT_SENT']),
+  "availableChannels": zod.array(zod.enum(['EMAIL', 'SMS', 'VOICE'])),
+  "missingCapabilities": zod.array(zod.string()),
+  "nextAction": zod.string(),
+  "checkedAt": zod.string().datetime({"offset":true})
+}).optional(),
   "dueAt": zod.string(),
   "updatedAt": zod.string()
 }),zod.null()]).optional(),
@@ -12506,6 +12562,16 @@ export const ListBuyersResponseItem = zod.object({
   "state": zod.enum(['PENDING_EXECUTION', 'WAITING_EXTERNAL', 'WAITING_REVIEW', 'COMPLETED']),
   "reason": zod.string(),
   "preparedMessage": zod.string(),
+  "outreachReadiness": zod.object({
+  "status": zod.enum(['NO_CONTACT_ROUTE', 'CONTACT_PERMISSION_REQUIRED', 'NO_CONNECTED_PROVIDER', 'READY']),
+  "contactRouteStatus": zod.enum(['NONE', 'PRESENT_UNVERIFIED']),
+  "providerStatus": zod.enum(['NOT_CONNECTED', 'CONNECTED']),
+  "deliveryStatus": zod.enum(['NOT_SENT']),
+  "availableChannels": zod.array(zod.enum(['EMAIL', 'SMS', 'VOICE'])),
+  "missingCapabilities": zod.array(zod.string()),
+  "nextAction": zod.string(),
+  "checkedAt": zod.string().datetime({"offset":true})
+}).optional(),
   "dueAt": zod.string(),
   "updatedAt": zod.string()
 }),zod.null()]).optional(),
@@ -12946,6 +13012,16 @@ export const CreateBuyerResponse = zod.object({
   "state": zod.enum(['PENDING_EXECUTION', 'WAITING_EXTERNAL', 'WAITING_REVIEW', 'COMPLETED']),
   "reason": zod.string(),
   "preparedMessage": zod.string(),
+  "outreachReadiness": zod.object({
+  "status": zod.enum(['NO_CONTACT_ROUTE', 'CONTACT_PERMISSION_REQUIRED', 'NO_CONNECTED_PROVIDER', 'READY']),
+  "contactRouteStatus": zod.enum(['NONE', 'PRESENT_UNVERIFIED']),
+  "providerStatus": zod.enum(['NOT_CONNECTED', 'CONNECTED']),
+  "deliveryStatus": zod.enum(['NOT_SENT']),
+  "availableChannels": zod.array(zod.enum(['EMAIL', 'SMS', 'VOICE'])),
+  "missingCapabilities": zod.array(zod.string()),
+  "nextAction": zod.string(),
+  "checkedAt": zod.string().datetime({"offset":true})
+}).optional(),
   "dueAt": zod.string(),
   "updatedAt": zod.string()
 }),zod.null()]).optional(),
@@ -13268,6 +13344,16 @@ export const GetBuyerResponse = zod.object({
   "state": zod.enum(['PENDING_EXECUTION', 'WAITING_EXTERNAL', 'WAITING_REVIEW', 'COMPLETED']),
   "reason": zod.string(),
   "preparedMessage": zod.string(),
+  "outreachReadiness": zod.object({
+  "status": zod.enum(['NO_CONTACT_ROUTE', 'CONTACT_PERMISSION_REQUIRED', 'NO_CONNECTED_PROVIDER', 'READY']),
+  "contactRouteStatus": zod.enum(['NONE', 'PRESENT_UNVERIFIED']),
+  "providerStatus": zod.enum(['NOT_CONNECTED', 'CONNECTED']),
+  "deliveryStatus": zod.enum(['NOT_SENT']),
+  "availableChannels": zod.array(zod.enum(['EMAIL', 'SMS', 'VOICE'])),
+  "missingCapabilities": zod.array(zod.string()),
+  "nextAction": zod.string(),
+  "checkedAt": zod.string().datetime({"offset":true})
+}).optional(),
   "dueAt": zod.string(),
   "updatedAt": zod.string()
 }),zod.null()]).optional(),
@@ -13714,6 +13800,16 @@ export const UpdateBuyerResponse = zod.object({
   "state": zod.enum(['PENDING_EXECUTION', 'WAITING_EXTERNAL', 'WAITING_REVIEW', 'COMPLETED']),
   "reason": zod.string(),
   "preparedMessage": zod.string(),
+  "outreachReadiness": zod.object({
+  "status": zod.enum(['NO_CONTACT_ROUTE', 'CONTACT_PERMISSION_REQUIRED', 'NO_CONNECTED_PROVIDER', 'READY']),
+  "contactRouteStatus": zod.enum(['NONE', 'PRESENT_UNVERIFIED']),
+  "providerStatus": zod.enum(['NOT_CONNECTED', 'CONNECTED']),
+  "deliveryStatus": zod.enum(['NOT_SENT']),
+  "availableChannels": zod.array(zod.enum(['EMAIL', 'SMS', 'VOICE'])),
+  "missingCapabilities": zod.array(zod.string()),
+  "nextAction": zod.string(),
+  "checkedAt": zod.string().datetime({"offset":true})
+}).optional(),
   "dueAt": zod.string(),
   "updatedAt": zod.string()
 }),zod.null()]).optional(),
@@ -14081,6 +14177,16 @@ export const VerifyBuyerResponse = zod.object({
   "state": zod.enum(['PENDING_EXECUTION', 'WAITING_EXTERNAL', 'WAITING_REVIEW', 'COMPLETED']),
   "reason": zod.string(),
   "preparedMessage": zod.string(),
+  "outreachReadiness": zod.object({
+  "status": zod.enum(['NO_CONTACT_ROUTE', 'CONTACT_PERMISSION_REQUIRED', 'NO_CONNECTED_PROVIDER', 'READY']),
+  "contactRouteStatus": zod.enum(['NONE', 'PRESENT_UNVERIFIED']),
+  "providerStatus": zod.enum(['NOT_CONNECTED', 'CONNECTED']),
+  "deliveryStatus": zod.enum(['NOT_SENT']),
+  "availableChannels": zod.array(zod.enum(['EMAIL', 'SMS', 'VOICE'])),
+  "missingCapabilities": zod.array(zod.string()),
+  "nextAction": zod.string(),
+  "checkedAt": zod.string().datetime({"offset":true})
+}).optional(),
   "dueAt": zod.string(),
   "updatedAt": zod.string()
 }),zod.null()]).optional(),
@@ -14519,6 +14625,13 @@ export const getDealOperationsResponseContractOneCommitmentSnapshotOneDetailCall
 export const getDealOperationsResponseContractOneCommitmentSnapshotOneDetailCallsItemOneNextActionMin = 3;
 export const getDealOperationsResponseContractOneCommitmentSnapshotOneDetailCallsItemOneNextActionMax = 1000;
 
+export const getDealOperationsResponseContractOneMilestonesItemAmountMin = 0;
+export const getDealOperationsResponseContractOneMilestonesItemAmountMax = 1000000000;
+
+export const getDealOperationsResponseContractOneMilestonesItemCounterpartyNameMax = 200;
+
+export const getDealOperationsResponseContractOneMilestonesItemPaymentReferenceMax = 100;
+
 
 
 export const getDealOperationsResponseContractOneDocumentsItemSnapshotHashRegExp = new RegExp('^[a-f0-9]{64}$');
@@ -14716,6 +14829,16 @@ export const GetDealOperationsResponse = zod.object({
   "state": zod.enum(['PENDING_EXECUTION', 'WAITING_EXTERNAL', 'WAITING_REVIEW', 'COMPLETED']),
   "reason": zod.string(),
   "preparedMessage": zod.string(),
+  "outreachReadiness": zod.object({
+  "status": zod.enum(['NO_CONTACT_ROUTE', 'CONTACT_PERMISSION_REQUIRED', 'NO_CONNECTED_PROVIDER', 'READY']),
+  "contactRouteStatus": zod.enum(['NONE', 'PRESENT_UNVERIFIED']),
+  "providerStatus": zod.enum(['NOT_CONNECTED', 'CONNECTED']),
+  "deliveryStatus": zod.enum(['NOT_SENT']),
+  "availableChannels": zod.array(zod.enum(['EMAIL', 'SMS', 'VOICE'])),
+  "missingCapabilities": zod.array(zod.string()),
+  "nextAction": zod.string(),
+  "checkedAt": zod.string().datetime({"offset":true})
+}).optional(),
   "dueAt": zod.string(),
   "updatedAt": zod.string()
 }),zod.null()]).optional(),
@@ -15092,6 +15215,12 @@ export const GetDealOperationsResponse = zod.object({
   "kind": zod.enum(['TITLE_CLEARED', 'EARNEST_MONEY_CONFIRMED', 'ASSIGNMENT_SIGNED', 'FUNDS_CONFIRMED']),
   "evidenceUrl": zod.string(),
   "note": zod.string(),
+  "amount": zod.number().min(getDealOperationsResponseContractOneMilestonesItemAmountMin).max(getDealOperationsResponseContractOneMilestonesItemAmountMax).optional(),
+  "currency": zod.enum(['USD']).optional(),
+  "evidenceKind": zod.enum(['ESCROW_RECEIPT', 'WIRE_CONFIRMATION', 'BANK_CONFIRMATION', 'LENDER_LETTER', 'REDACTED_STATEMENT']).optional(),
+  "counterpartyName": zod.string().max(getDealOperationsResponseContractOneMilestonesItemCounterpartyNameMax).optional(),
+  "paymentReference": zod.string().max(getDealOperationsResponseContractOneMilestonesItemPaymentReferenceMax).optional().describe('Masked receipt/reference only. Never include an account number, card number, password, or other credential.'),
+  "effectiveAt": zod.string().datetime({"offset":true}).optional(),
   "recordedBy": zod.string(),
   "recordedAt": zod.string()
 })),
@@ -15601,6 +15730,13 @@ export const refreshMatchesResponseContractOneCommitmentSnapshotOneDetailCallsIt
 export const refreshMatchesResponseContractOneCommitmentSnapshotOneDetailCallsItemOneNextActionMin = 3;
 export const refreshMatchesResponseContractOneCommitmentSnapshotOneDetailCallsItemOneNextActionMax = 1000;
 
+export const refreshMatchesResponseContractOneMilestonesItemAmountMin = 0;
+export const refreshMatchesResponseContractOneMilestonesItemAmountMax = 1000000000;
+
+export const refreshMatchesResponseContractOneMilestonesItemCounterpartyNameMax = 200;
+
+export const refreshMatchesResponseContractOneMilestonesItemPaymentReferenceMax = 100;
+
 
 
 export const refreshMatchesResponseContractOneDocumentsItemSnapshotHashRegExp = new RegExp('^[a-f0-9]{64}$');
@@ -15798,6 +15934,16 @@ export const RefreshMatchesResponse = zod.object({
   "state": zod.enum(['PENDING_EXECUTION', 'WAITING_EXTERNAL', 'WAITING_REVIEW', 'COMPLETED']),
   "reason": zod.string(),
   "preparedMessage": zod.string(),
+  "outreachReadiness": zod.object({
+  "status": zod.enum(['NO_CONTACT_ROUTE', 'CONTACT_PERMISSION_REQUIRED', 'NO_CONNECTED_PROVIDER', 'READY']),
+  "contactRouteStatus": zod.enum(['NONE', 'PRESENT_UNVERIFIED']),
+  "providerStatus": zod.enum(['NOT_CONNECTED', 'CONNECTED']),
+  "deliveryStatus": zod.enum(['NOT_SENT']),
+  "availableChannels": zod.array(zod.enum(['EMAIL', 'SMS', 'VOICE'])),
+  "missingCapabilities": zod.array(zod.string()),
+  "nextAction": zod.string(),
+  "checkedAt": zod.string().datetime({"offset":true})
+}).optional(),
   "dueAt": zod.string(),
   "updatedAt": zod.string()
 }),zod.null()]).optional(),
@@ -16174,6 +16320,12 @@ export const RefreshMatchesResponse = zod.object({
   "kind": zod.enum(['TITLE_CLEARED', 'EARNEST_MONEY_CONFIRMED', 'ASSIGNMENT_SIGNED', 'FUNDS_CONFIRMED']),
   "evidenceUrl": zod.string(),
   "note": zod.string(),
+  "amount": zod.number().min(refreshMatchesResponseContractOneMilestonesItemAmountMin).max(refreshMatchesResponseContractOneMilestonesItemAmountMax).optional(),
+  "currency": zod.enum(['USD']).optional(),
+  "evidenceKind": zod.enum(['ESCROW_RECEIPT', 'WIRE_CONFIRMATION', 'BANK_CONFIRMATION', 'LENDER_LETTER', 'REDACTED_STATEMENT']).optional(),
+  "counterpartyName": zod.string().max(refreshMatchesResponseContractOneMilestonesItemCounterpartyNameMax).optional(),
+  "paymentReference": zod.string().max(refreshMatchesResponseContractOneMilestonesItemPaymentReferenceMax).optional().describe('Masked receipt/reference only. Never include an account number, card number, password, or other credential.'),
+  "effectiveAt": zod.string().datetime({"offset":true}).optional(),
   "recordedBy": zod.string(),
   "recordedAt": zod.string()
 })),
@@ -16705,6 +16857,13 @@ export const recordBuyerResponseResponseContractOneCommitmentSnapshotOneDetailCa
 export const recordBuyerResponseResponseContractOneCommitmentSnapshotOneDetailCallsItemOneNextActionMin = 3;
 export const recordBuyerResponseResponseContractOneCommitmentSnapshotOneDetailCallsItemOneNextActionMax = 1000;
 
+export const recordBuyerResponseResponseContractOneMilestonesItemAmountMin = 0;
+export const recordBuyerResponseResponseContractOneMilestonesItemAmountMax = 1000000000;
+
+export const recordBuyerResponseResponseContractOneMilestonesItemCounterpartyNameMax = 200;
+
+export const recordBuyerResponseResponseContractOneMilestonesItemPaymentReferenceMax = 100;
+
 
 
 export const recordBuyerResponseResponseContractOneDocumentsItemSnapshotHashRegExp = new RegExp('^[a-f0-9]{64}$');
@@ -16902,6 +17061,16 @@ export const RecordBuyerResponseResponse = zod.object({
   "state": zod.enum(['PENDING_EXECUTION', 'WAITING_EXTERNAL', 'WAITING_REVIEW', 'COMPLETED']),
   "reason": zod.string(),
   "preparedMessage": zod.string(),
+  "outreachReadiness": zod.object({
+  "status": zod.enum(['NO_CONTACT_ROUTE', 'CONTACT_PERMISSION_REQUIRED', 'NO_CONNECTED_PROVIDER', 'READY']),
+  "contactRouteStatus": zod.enum(['NONE', 'PRESENT_UNVERIFIED']),
+  "providerStatus": zod.enum(['NOT_CONNECTED', 'CONNECTED']),
+  "deliveryStatus": zod.enum(['NOT_SENT']),
+  "availableChannels": zod.array(zod.enum(['EMAIL', 'SMS', 'VOICE'])),
+  "missingCapabilities": zod.array(zod.string()),
+  "nextAction": zod.string(),
+  "checkedAt": zod.string().datetime({"offset":true})
+}).optional(),
   "dueAt": zod.string(),
   "updatedAt": zod.string()
 }),zod.null()]).optional(),
@@ -17278,6 +17447,12 @@ export const RecordBuyerResponseResponse = zod.object({
   "kind": zod.enum(['TITLE_CLEARED', 'EARNEST_MONEY_CONFIRMED', 'ASSIGNMENT_SIGNED', 'FUNDS_CONFIRMED']),
   "evidenceUrl": zod.string(),
   "note": zod.string(),
+  "amount": zod.number().min(recordBuyerResponseResponseContractOneMilestonesItemAmountMin).max(recordBuyerResponseResponseContractOneMilestonesItemAmountMax).optional(),
+  "currency": zod.enum(['USD']).optional(),
+  "evidenceKind": zod.enum(['ESCROW_RECEIPT', 'WIRE_CONFIRMATION', 'BANK_CONFIRMATION', 'LENDER_LETTER', 'REDACTED_STATEMENT']).optional(),
+  "counterpartyName": zod.string().max(recordBuyerResponseResponseContractOneMilestonesItemCounterpartyNameMax).optional(),
+  "paymentReference": zod.string().max(recordBuyerResponseResponseContractOneMilestonesItemPaymentReferenceMax).optional().describe('Masked receipt/reference only. Never include an account number, card number, password, or other credential.'),
+  "effectiveAt": zod.string().datetime({"offset":true}).optional(),
   "recordedBy": zod.string(),
   "recordedAt": zod.string()
 })),
@@ -18791,6 +18966,13 @@ export const recordDestinationActivityResponseContractOneCommitmentSnapshotOneDe
 export const recordDestinationActivityResponseContractOneCommitmentSnapshotOneDetailCallsItemOneNextActionMin = 3;
 export const recordDestinationActivityResponseContractOneCommitmentSnapshotOneDetailCallsItemOneNextActionMax = 1000;
 
+export const recordDestinationActivityResponseContractOneMilestonesItemAmountMin = 0;
+export const recordDestinationActivityResponseContractOneMilestonesItemAmountMax = 1000000000;
+
+export const recordDestinationActivityResponseContractOneMilestonesItemCounterpartyNameMax = 200;
+
+export const recordDestinationActivityResponseContractOneMilestonesItemPaymentReferenceMax = 100;
+
 
 
 export const recordDestinationActivityResponseContractOneDocumentsItemSnapshotHashRegExp = new RegExp('^[a-f0-9]{64}$');
@@ -18988,6 +19170,16 @@ export const RecordDestinationActivityResponse = zod.object({
   "state": zod.enum(['PENDING_EXECUTION', 'WAITING_EXTERNAL', 'WAITING_REVIEW', 'COMPLETED']),
   "reason": zod.string(),
   "preparedMessage": zod.string(),
+  "outreachReadiness": zod.object({
+  "status": zod.enum(['NO_CONTACT_ROUTE', 'CONTACT_PERMISSION_REQUIRED', 'NO_CONNECTED_PROVIDER', 'READY']),
+  "contactRouteStatus": zod.enum(['NONE', 'PRESENT_UNVERIFIED']),
+  "providerStatus": zod.enum(['NOT_CONNECTED', 'CONNECTED']),
+  "deliveryStatus": zod.enum(['NOT_SENT']),
+  "availableChannels": zod.array(zod.enum(['EMAIL', 'SMS', 'VOICE'])),
+  "missingCapabilities": zod.array(zod.string()),
+  "nextAction": zod.string(),
+  "checkedAt": zod.string().datetime({"offset":true})
+}).optional(),
   "dueAt": zod.string(),
   "updatedAt": zod.string()
 }),zod.null()]).optional(),
@@ -19364,6 +19556,12 @@ export const RecordDestinationActivityResponse = zod.object({
   "kind": zod.enum(['TITLE_CLEARED', 'EARNEST_MONEY_CONFIRMED', 'ASSIGNMENT_SIGNED', 'FUNDS_CONFIRMED']),
   "evidenceUrl": zod.string(),
   "note": zod.string(),
+  "amount": zod.number().min(recordDestinationActivityResponseContractOneMilestonesItemAmountMin).max(recordDestinationActivityResponseContractOneMilestonesItemAmountMax).optional(),
+  "currency": zod.enum(['USD']).optional(),
+  "evidenceKind": zod.enum(['ESCROW_RECEIPT', 'WIRE_CONFIRMATION', 'BANK_CONFIRMATION', 'LENDER_LETTER', 'REDACTED_STATEMENT']).optional(),
+  "counterpartyName": zod.string().max(recordDestinationActivityResponseContractOneMilestonesItemCounterpartyNameMax).optional(),
+  "paymentReference": zod.string().max(recordDestinationActivityResponseContractOneMilestonesItemPaymentReferenceMax).optional().describe('Masked receipt/reference only. Never include an account number, card number, password, or other credential.'),
+  "effectiveAt": zod.string().datetime({"offset":true}).optional(),
   "recordedBy": zod.string(),
   "recordedAt": zod.string()
 })),
@@ -19882,6 +20080,13 @@ export const createContractResponseContractOneCommitmentSnapshotOneDetailCallsIt
 export const createContractResponseContractOneCommitmentSnapshotOneDetailCallsItemOneNextActionMin = 3;
 export const createContractResponseContractOneCommitmentSnapshotOneDetailCallsItemOneNextActionMax = 1000;
 
+export const createContractResponseContractOneMilestonesItemAmountMin = 0;
+export const createContractResponseContractOneMilestonesItemAmountMax = 1000000000;
+
+export const createContractResponseContractOneMilestonesItemCounterpartyNameMax = 200;
+
+export const createContractResponseContractOneMilestonesItemPaymentReferenceMax = 100;
+
 
 
 export const createContractResponseContractOneDocumentsItemSnapshotHashRegExp = new RegExp('^[a-f0-9]{64}$');
@@ -20079,6 +20284,16 @@ export const CreateContractResponse = zod.object({
   "state": zod.enum(['PENDING_EXECUTION', 'WAITING_EXTERNAL', 'WAITING_REVIEW', 'COMPLETED']),
   "reason": zod.string(),
   "preparedMessage": zod.string(),
+  "outreachReadiness": zod.object({
+  "status": zod.enum(['NO_CONTACT_ROUTE', 'CONTACT_PERMISSION_REQUIRED', 'NO_CONNECTED_PROVIDER', 'READY']),
+  "contactRouteStatus": zod.enum(['NONE', 'PRESENT_UNVERIFIED']),
+  "providerStatus": zod.enum(['NOT_CONNECTED', 'CONNECTED']),
+  "deliveryStatus": zod.enum(['NOT_SENT']),
+  "availableChannels": zod.array(zod.enum(['EMAIL', 'SMS', 'VOICE'])),
+  "missingCapabilities": zod.array(zod.string()),
+  "nextAction": zod.string(),
+  "checkedAt": zod.string().datetime({"offset":true})
+}).optional(),
   "dueAt": zod.string(),
   "updatedAt": zod.string()
 }),zod.null()]).optional(),
@@ -20455,6 +20670,12 @@ export const CreateContractResponse = zod.object({
   "kind": zod.enum(['TITLE_CLEARED', 'EARNEST_MONEY_CONFIRMED', 'ASSIGNMENT_SIGNED', 'FUNDS_CONFIRMED']),
   "evidenceUrl": zod.string(),
   "note": zod.string(),
+  "amount": zod.number().min(createContractResponseContractOneMilestonesItemAmountMin).max(createContractResponseContractOneMilestonesItemAmountMax).optional(),
+  "currency": zod.enum(['USD']).optional(),
+  "evidenceKind": zod.enum(['ESCROW_RECEIPT', 'WIRE_CONFIRMATION', 'BANK_CONFIRMATION', 'LENDER_LETTER', 'REDACTED_STATEMENT']).optional(),
+  "counterpartyName": zod.string().max(createContractResponseContractOneMilestonesItemCounterpartyNameMax).optional(),
+  "paymentReference": zod.string().max(createContractResponseContractOneMilestonesItemPaymentReferenceMax).optional().describe('Masked receipt/reference only. Never include an account number, card number, password, or other credential.'),
+  "effectiveAt": zod.string().datetime({"offset":true}).optional(),
   "recordedBy": zod.string(),
   "recordedAt": zod.string()
 })),
@@ -20971,6 +21192,13 @@ export const preparePurchaseReviewDocumentResponseContractOneCommitmentSnapshotO
 export const preparePurchaseReviewDocumentResponseContractOneCommitmentSnapshotOneDetailCallsItemOneNextActionMin = 3;
 export const preparePurchaseReviewDocumentResponseContractOneCommitmentSnapshotOneDetailCallsItemOneNextActionMax = 1000;
 
+export const preparePurchaseReviewDocumentResponseContractOneMilestonesItemAmountMin = 0;
+export const preparePurchaseReviewDocumentResponseContractOneMilestonesItemAmountMax = 1000000000;
+
+export const preparePurchaseReviewDocumentResponseContractOneMilestonesItemCounterpartyNameMax = 200;
+
+export const preparePurchaseReviewDocumentResponseContractOneMilestonesItemPaymentReferenceMax = 100;
+
 
 
 export const preparePurchaseReviewDocumentResponseContractOneDocumentsItemSnapshotHashRegExp = new RegExp('^[a-f0-9]{64}$');
@@ -21168,6 +21396,16 @@ export const PreparePurchaseReviewDocumentResponse = zod.object({
   "state": zod.enum(['PENDING_EXECUTION', 'WAITING_EXTERNAL', 'WAITING_REVIEW', 'COMPLETED']),
   "reason": zod.string(),
   "preparedMessage": zod.string(),
+  "outreachReadiness": zod.object({
+  "status": zod.enum(['NO_CONTACT_ROUTE', 'CONTACT_PERMISSION_REQUIRED', 'NO_CONNECTED_PROVIDER', 'READY']),
+  "contactRouteStatus": zod.enum(['NONE', 'PRESENT_UNVERIFIED']),
+  "providerStatus": zod.enum(['NOT_CONNECTED', 'CONNECTED']),
+  "deliveryStatus": zod.enum(['NOT_SENT']),
+  "availableChannels": zod.array(zod.enum(['EMAIL', 'SMS', 'VOICE'])),
+  "missingCapabilities": zod.array(zod.string()),
+  "nextAction": zod.string(),
+  "checkedAt": zod.string().datetime({"offset":true})
+}).optional(),
   "dueAt": zod.string(),
   "updatedAt": zod.string()
 }),zod.null()]).optional(),
@@ -21544,6 +21782,12 @@ export const PreparePurchaseReviewDocumentResponse = zod.object({
   "kind": zod.enum(['TITLE_CLEARED', 'EARNEST_MONEY_CONFIRMED', 'ASSIGNMENT_SIGNED', 'FUNDS_CONFIRMED']),
   "evidenceUrl": zod.string(),
   "note": zod.string(),
+  "amount": zod.number().min(preparePurchaseReviewDocumentResponseContractOneMilestonesItemAmountMin).max(preparePurchaseReviewDocumentResponseContractOneMilestonesItemAmountMax).optional(),
+  "currency": zod.enum(['USD']).optional(),
+  "evidenceKind": zod.enum(['ESCROW_RECEIPT', 'WIRE_CONFIRMATION', 'BANK_CONFIRMATION', 'LENDER_LETTER', 'REDACTED_STATEMENT']).optional(),
+  "counterpartyName": zod.string().max(preparePurchaseReviewDocumentResponseContractOneMilestonesItemCounterpartyNameMax).optional(),
+  "paymentReference": zod.string().max(preparePurchaseReviewDocumentResponseContractOneMilestonesItemPaymentReferenceMax).optional().describe('Masked receipt/reference only. Never include an account number, card number, password, or other credential.'),
+  "effectiveAt": zod.string().datetime({"offset":true}).optional(),
   "recordedBy": zod.string(),
   "recordedAt": zod.string()
 })),
@@ -22066,6 +22310,13 @@ export const transitionTransactionDocumentResponseContractOneCommitmentSnapshotO
 export const transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneDetailCallsItemOneNextActionMin = 3;
 export const transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneDetailCallsItemOneNextActionMax = 1000;
 
+export const transitionTransactionDocumentResponseContractOneMilestonesItemAmountMin = 0;
+export const transitionTransactionDocumentResponseContractOneMilestonesItemAmountMax = 1000000000;
+
+export const transitionTransactionDocumentResponseContractOneMilestonesItemCounterpartyNameMax = 200;
+
+export const transitionTransactionDocumentResponseContractOneMilestonesItemPaymentReferenceMax = 100;
+
 
 
 export const transitionTransactionDocumentResponseContractOneDocumentsItemSnapshotHashRegExp = new RegExp('^[a-f0-9]{64}$');
@@ -22263,6 +22514,16 @@ export const TransitionTransactionDocumentResponse = zod.object({
   "state": zod.enum(['PENDING_EXECUTION', 'WAITING_EXTERNAL', 'WAITING_REVIEW', 'COMPLETED']),
   "reason": zod.string(),
   "preparedMessage": zod.string(),
+  "outreachReadiness": zod.object({
+  "status": zod.enum(['NO_CONTACT_ROUTE', 'CONTACT_PERMISSION_REQUIRED', 'NO_CONNECTED_PROVIDER', 'READY']),
+  "contactRouteStatus": zod.enum(['NONE', 'PRESENT_UNVERIFIED']),
+  "providerStatus": zod.enum(['NOT_CONNECTED', 'CONNECTED']),
+  "deliveryStatus": zod.enum(['NOT_SENT']),
+  "availableChannels": zod.array(zod.enum(['EMAIL', 'SMS', 'VOICE'])),
+  "missingCapabilities": zod.array(zod.string()),
+  "nextAction": zod.string(),
+  "checkedAt": zod.string().datetime({"offset":true})
+}).optional(),
   "dueAt": zod.string(),
   "updatedAt": zod.string()
 }),zod.null()]).optional(),
@@ -22639,6 +22900,12 @@ export const TransitionTransactionDocumentResponse = zod.object({
   "kind": zod.enum(['TITLE_CLEARED', 'EARNEST_MONEY_CONFIRMED', 'ASSIGNMENT_SIGNED', 'FUNDS_CONFIRMED']),
   "evidenceUrl": zod.string(),
   "note": zod.string(),
+  "amount": zod.number().min(transitionTransactionDocumentResponseContractOneMilestonesItemAmountMin).max(transitionTransactionDocumentResponseContractOneMilestonesItemAmountMax).optional(),
+  "currency": zod.enum(['USD']).optional(),
+  "evidenceKind": zod.enum(['ESCROW_RECEIPT', 'WIRE_CONFIRMATION', 'BANK_CONFIRMATION', 'LENDER_LETTER', 'REDACTED_STATEMENT']).optional(),
+  "counterpartyName": zod.string().max(transitionTransactionDocumentResponseContractOneMilestonesItemCounterpartyNameMax).optional(),
+  "paymentReference": zod.string().max(transitionTransactionDocumentResponseContractOneMilestonesItemPaymentReferenceMax).optional().describe('Masked receipt/reference only. Never include an account number, card number, password, or other credential.'),
+  "effectiveAt": zod.string().datetime({"offset":true}).optional(),
   "recordedBy": zod.string(),
   "recordedAt": zod.string()
 })),
@@ -23209,6 +23476,13 @@ export const executeContractResponseContractOneCommitmentSnapshotOneDetailCallsI
 export const executeContractResponseContractOneCommitmentSnapshotOneDetailCallsItemOneNextActionMin = 3;
 export const executeContractResponseContractOneCommitmentSnapshotOneDetailCallsItemOneNextActionMax = 1000;
 
+export const executeContractResponseContractOneMilestonesItemAmountMin = 0;
+export const executeContractResponseContractOneMilestonesItemAmountMax = 1000000000;
+
+export const executeContractResponseContractOneMilestonesItemCounterpartyNameMax = 200;
+
+export const executeContractResponseContractOneMilestonesItemPaymentReferenceMax = 100;
+
 
 
 export const executeContractResponseContractOneDocumentsItemSnapshotHashRegExp = new RegExp('^[a-f0-9]{64}$');
@@ -23406,6 +23680,16 @@ export const ExecuteContractResponse = zod.object({
   "state": zod.enum(['PENDING_EXECUTION', 'WAITING_EXTERNAL', 'WAITING_REVIEW', 'COMPLETED']),
   "reason": zod.string(),
   "preparedMessage": zod.string(),
+  "outreachReadiness": zod.object({
+  "status": zod.enum(['NO_CONTACT_ROUTE', 'CONTACT_PERMISSION_REQUIRED', 'NO_CONNECTED_PROVIDER', 'READY']),
+  "contactRouteStatus": zod.enum(['NONE', 'PRESENT_UNVERIFIED']),
+  "providerStatus": zod.enum(['NOT_CONNECTED', 'CONNECTED']),
+  "deliveryStatus": zod.enum(['NOT_SENT']),
+  "availableChannels": zod.array(zod.enum(['EMAIL', 'SMS', 'VOICE'])),
+  "missingCapabilities": zod.array(zod.string()),
+  "nextAction": zod.string(),
+  "checkedAt": zod.string().datetime({"offset":true})
+}).optional(),
   "dueAt": zod.string(),
   "updatedAt": zod.string()
 }),zod.null()]).optional(),
@@ -23782,6 +24066,12 @@ export const ExecuteContractResponse = zod.object({
   "kind": zod.enum(['TITLE_CLEARED', 'EARNEST_MONEY_CONFIRMED', 'ASSIGNMENT_SIGNED', 'FUNDS_CONFIRMED']),
   "evidenceUrl": zod.string(),
   "note": zod.string(),
+  "amount": zod.number().min(executeContractResponseContractOneMilestonesItemAmountMin).max(executeContractResponseContractOneMilestonesItemAmountMax).optional(),
+  "currency": zod.enum(['USD']).optional(),
+  "evidenceKind": zod.enum(['ESCROW_RECEIPT', 'WIRE_CONFIRMATION', 'BANK_CONFIRMATION', 'LENDER_LETTER', 'REDACTED_STATEMENT']).optional(),
+  "counterpartyName": zod.string().max(executeContractResponseContractOneMilestonesItemCounterpartyNameMax).optional(),
+  "paymentReference": zod.string().max(executeContractResponseContractOneMilestonesItemPaymentReferenceMax).optional().describe('Masked receipt/reference only. Never include an account number, card number, password, or other credential.'),
+  "effectiveAt": zod.string().datetime({"offset":true}).optional(),
   "recordedBy": zod.string(),
   "recordedAt": zod.string()
 })),
@@ -23874,13 +24164,28 @@ export const recordClosingMilestoneBodyEvidenceUrlMax = 2000;
 export const recordClosingMilestoneBodyNoteMin = 10;
 export const recordClosingMilestoneBodyNoteMax = 3000;
 
+export const recordClosingMilestoneBodyAmountMin = 0;
+export const recordClosingMilestoneBodyAmountMax = 1000000000;
+
+export const recordClosingMilestoneBodyCounterpartyNameMin = 2;
+export const recordClosingMilestoneBodyCounterpartyNameMax = 200;
+
+export const recordClosingMilestoneBodyPaymentReferenceMin = 3;
+export const recordClosingMilestoneBodyPaymentReferenceMax = 100;
+
 
 
 export const RecordClosingMilestoneBody = zod.object({
   "version": zod.number().int().min(1),
   "kind": zod.enum(['TITLE_CLEARED', 'EARNEST_MONEY_CONFIRMED', 'ASSIGNMENT_SIGNED', 'FUNDS_CONFIRMED']),
   "evidenceUrl": zod.string().min(recordClosingMilestoneBodyEvidenceUrlMin).max(recordClosingMilestoneBodyEvidenceUrlMax),
-  "note": zod.string().min(recordClosingMilestoneBodyNoteMin).max(recordClosingMilestoneBodyNoteMax)
+  "note": zod.string().min(recordClosingMilestoneBodyNoteMin).max(recordClosingMilestoneBodyNoteMax),
+  "amount": zod.number().min(recordClosingMilestoneBodyAmountMin).max(recordClosingMilestoneBodyAmountMax).optional(),
+  "currency": zod.enum(['USD']).optional(),
+  "evidenceKind": zod.enum(['ESCROW_RECEIPT', 'WIRE_CONFIRMATION', 'BANK_CONFIRMATION', 'LENDER_LETTER', 'REDACTED_STATEMENT']).optional(),
+  "counterpartyName": zod.string().min(recordClosingMilestoneBodyCounterpartyNameMin).max(recordClosingMilestoneBodyCounterpartyNameMax).optional(),
+  "paymentReference": zod.string().min(recordClosingMilestoneBodyPaymentReferenceMin).max(recordClosingMilestoneBodyPaymentReferenceMax).optional().describe('Masked receipt/reference only. Never include an account number, card number, password, or other credential.'),
+  "effectiveAt": zod.string().datetime({"offset":true}).optional()
 })
 
 
@@ -24307,6 +24612,13 @@ export const recordClosingMilestoneResponseContractOneCommitmentSnapshotOneDetai
 export const recordClosingMilestoneResponseContractOneCommitmentSnapshotOneDetailCallsItemOneNextActionMin = 3;
 export const recordClosingMilestoneResponseContractOneCommitmentSnapshotOneDetailCallsItemOneNextActionMax = 1000;
 
+export const recordClosingMilestoneResponseContractOneMilestonesItemAmountMin = 0;
+export const recordClosingMilestoneResponseContractOneMilestonesItemAmountMax = 1000000000;
+
+export const recordClosingMilestoneResponseContractOneMilestonesItemCounterpartyNameMax = 200;
+
+export const recordClosingMilestoneResponseContractOneMilestonesItemPaymentReferenceMax = 100;
+
 
 
 export const recordClosingMilestoneResponseContractOneDocumentsItemSnapshotHashRegExp = new RegExp('^[a-f0-9]{64}$');
@@ -24504,6 +24816,16 @@ export const RecordClosingMilestoneResponse = zod.object({
   "state": zod.enum(['PENDING_EXECUTION', 'WAITING_EXTERNAL', 'WAITING_REVIEW', 'COMPLETED']),
   "reason": zod.string(),
   "preparedMessage": zod.string(),
+  "outreachReadiness": zod.object({
+  "status": zod.enum(['NO_CONTACT_ROUTE', 'CONTACT_PERMISSION_REQUIRED', 'NO_CONNECTED_PROVIDER', 'READY']),
+  "contactRouteStatus": zod.enum(['NONE', 'PRESENT_UNVERIFIED']),
+  "providerStatus": zod.enum(['NOT_CONNECTED', 'CONNECTED']),
+  "deliveryStatus": zod.enum(['NOT_SENT']),
+  "availableChannels": zod.array(zod.enum(['EMAIL', 'SMS', 'VOICE'])),
+  "missingCapabilities": zod.array(zod.string()),
+  "nextAction": zod.string(),
+  "checkedAt": zod.string().datetime({"offset":true})
+}).optional(),
   "dueAt": zod.string(),
   "updatedAt": zod.string()
 }),zod.null()]).optional(),
@@ -24880,6 +25202,12 @@ export const RecordClosingMilestoneResponse = zod.object({
   "kind": zod.enum(['TITLE_CLEARED', 'EARNEST_MONEY_CONFIRMED', 'ASSIGNMENT_SIGNED', 'FUNDS_CONFIRMED']),
   "evidenceUrl": zod.string(),
   "note": zod.string(),
+  "amount": zod.number().min(recordClosingMilestoneResponseContractOneMilestonesItemAmountMin).max(recordClosingMilestoneResponseContractOneMilestonesItemAmountMax).optional(),
+  "currency": zod.enum(['USD']).optional(),
+  "evidenceKind": zod.enum(['ESCROW_RECEIPT', 'WIRE_CONFIRMATION', 'BANK_CONFIRMATION', 'LENDER_LETTER', 'REDACTED_STATEMENT']).optional(),
+  "counterpartyName": zod.string().max(recordClosingMilestoneResponseContractOneMilestonesItemCounterpartyNameMax).optional(),
+  "paymentReference": zod.string().max(recordClosingMilestoneResponseContractOneMilestonesItemPaymentReferenceMax).optional().describe('Masked receipt/reference only. Never include an account number, card number, password, or other credential.'),
+  "effectiveAt": zod.string().datetime({"offset":true}).optional(),
   "recordedBy": zod.string(),
   "recordedAt": zod.string()
 })),
@@ -25418,6 +25746,13 @@ export const recordDealOutcomeResponseContractOneCommitmentSnapshotOneDetailCall
 export const recordDealOutcomeResponseContractOneCommitmentSnapshotOneDetailCallsItemOneNextActionMin = 3;
 export const recordDealOutcomeResponseContractOneCommitmentSnapshotOneDetailCallsItemOneNextActionMax = 1000;
 
+export const recordDealOutcomeResponseContractOneMilestonesItemAmountMin = 0;
+export const recordDealOutcomeResponseContractOneMilestonesItemAmountMax = 1000000000;
+
+export const recordDealOutcomeResponseContractOneMilestonesItemCounterpartyNameMax = 200;
+
+export const recordDealOutcomeResponseContractOneMilestonesItemPaymentReferenceMax = 100;
+
 
 
 export const recordDealOutcomeResponseContractOneDocumentsItemSnapshotHashRegExp = new RegExp('^[a-f0-9]{64}$');
@@ -25615,6 +25950,16 @@ export const RecordDealOutcomeResponse = zod.object({
   "state": zod.enum(['PENDING_EXECUTION', 'WAITING_EXTERNAL', 'WAITING_REVIEW', 'COMPLETED']),
   "reason": zod.string(),
   "preparedMessage": zod.string(),
+  "outreachReadiness": zod.object({
+  "status": zod.enum(['NO_CONTACT_ROUTE', 'CONTACT_PERMISSION_REQUIRED', 'NO_CONNECTED_PROVIDER', 'READY']),
+  "contactRouteStatus": zod.enum(['NONE', 'PRESENT_UNVERIFIED']),
+  "providerStatus": zod.enum(['NOT_CONNECTED', 'CONNECTED']),
+  "deliveryStatus": zod.enum(['NOT_SENT']),
+  "availableChannels": zod.array(zod.enum(['EMAIL', 'SMS', 'VOICE'])),
+  "missingCapabilities": zod.array(zod.string()),
+  "nextAction": zod.string(),
+  "checkedAt": zod.string().datetime({"offset":true})
+}).optional(),
   "dueAt": zod.string(),
   "updatedAt": zod.string()
 }),zod.null()]).optional(),
@@ -25991,6 +26336,12 @@ export const RecordDealOutcomeResponse = zod.object({
   "kind": zod.enum(['TITLE_CLEARED', 'EARNEST_MONEY_CONFIRMED', 'ASSIGNMENT_SIGNED', 'FUNDS_CONFIRMED']),
   "evidenceUrl": zod.string(),
   "note": zod.string(),
+  "amount": zod.number().min(recordDealOutcomeResponseContractOneMilestonesItemAmountMin).max(recordDealOutcomeResponseContractOneMilestonesItemAmountMax).optional(),
+  "currency": zod.enum(['USD']).optional(),
+  "evidenceKind": zod.enum(['ESCROW_RECEIPT', 'WIRE_CONFIRMATION', 'BANK_CONFIRMATION', 'LENDER_LETTER', 'REDACTED_STATEMENT']).optional(),
+  "counterpartyName": zod.string().max(recordDealOutcomeResponseContractOneMilestonesItemCounterpartyNameMax).optional(),
+  "paymentReference": zod.string().max(recordDealOutcomeResponseContractOneMilestonesItemPaymentReferenceMax).optional().describe('Masked receipt/reference only. Never include an account number, card number, password, or other credential.'),
+  "effectiveAt": zod.string().datetime({"offset":true}).optional(),
   "recordedBy": zod.string(),
   "recordedAt": zod.string()
 })),
@@ -26395,6 +26746,16 @@ export const RequestBuyerQualificationResponse = zod.object({
   "state": zod.enum(['PENDING_EXECUTION', 'WAITING_EXTERNAL', 'WAITING_REVIEW', 'COMPLETED']),
   "reason": zod.string(),
   "preparedMessage": zod.string(),
+  "outreachReadiness": zod.object({
+  "status": zod.enum(['NO_CONTACT_ROUTE', 'CONTACT_PERMISSION_REQUIRED', 'NO_CONNECTED_PROVIDER', 'READY']),
+  "contactRouteStatus": zod.enum(['NONE', 'PRESENT_UNVERIFIED']),
+  "providerStatus": zod.enum(['NOT_CONNECTED', 'CONNECTED']),
+  "deliveryStatus": zod.enum(['NOT_SENT']),
+  "availableChannels": zod.array(zod.enum(['EMAIL', 'SMS', 'VOICE'])),
+  "missingCapabilities": zod.array(zod.string()),
+  "nextAction": zod.string(),
+  "checkedAt": zod.string().datetime({"offset":true})
+}).optional(),
   "dueAt": zod.string(),
   "updatedAt": zod.string()
 }),zod.null()]).optional(),
@@ -29189,6 +29550,16 @@ export const DiscoverBuyerResponse = zod.object({
   "state": zod.enum(['PENDING_EXECUTION', 'WAITING_EXTERNAL', 'WAITING_REVIEW', 'COMPLETED']),
   "reason": zod.string(),
   "preparedMessage": zod.string(),
+  "outreachReadiness": zod.object({
+  "status": zod.enum(['NO_CONTACT_ROUTE', 'CONTACT_PERMISSION_REQUIRED', 'NO_CONNECTED_PROVIDER', 'READY']),
+  "contactRouteStatus": zod.enum(['NONE', 'PRESENT_UNVERIFIED']),
+  "providerStatus": zod.enum(['NOT_CONNECTED', 'CONNECTED']),
+  "deliveryStatus": zod.enum(['NOT_SENT']),
+  "availableChannels": zod.array(zod.enum(['EMAIL', 'SMS', 'VOICE'])),
+  "missingCapabilities": zod.array(zod.string()),
+  "nextAction": zod.string(),
+  "checkedAt": zod.string().datetime({"offset":true})
+}).optional(),
   "dueAt": zod.string(),
   "updatedAt": zod.string()
 }),zod.null()]).optional(),

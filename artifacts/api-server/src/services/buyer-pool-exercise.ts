@@ -1,7 +1,8 @@
 import assert from "node:assert/strict";
 import { randomUUID } from "node:crypto";
+import { eq } from "drizzle-orm";
 import { db,pool,buyersTable } from "@workspace/db";
-import { discoverBuyer, reviewBuyerPool } from "./buyer-pool";
+import { discoverBuyer, qualificationTask, reviewBuyerPool } from "./buyer-pool";
 import { submitWorkerJob, runWorkerOnce } from "./workers";
 import { allBuyerRecords } from "./operations-records";
 import { logger } from "../lib/logger";
@@ -17,7 +18,32 @@ try {
   assert.equal(b.approvalStatus,"DISCOVERED"); assert.equal(b.currentBuyingStatus,"UNKNOWN");
   assert.equal(b.discoveryEvidence?.classification,"OBSERVED");
   assert.equal(b.qualificationTask?.state,"WAITING_EXTERNAL");
+  assert.equal(b.qualificationTask?.outreachReadiness?.deliveryStatus,"NOT_SENT");
+  assert.equal(b.qualificationTask?.outreachReadiness?.providerStatus,"NOT_CONNECTED");
+  assert.equal(b.qualificationTask?.outreachReadiness?.contactRouteStatus,"NONE");
+  assert.deepEqual(b.qualificationTask?.outreachReadiness?.availableChannels,[]);
+  assert.ok(b.qualificationTask?.outreachReadiness?.missingCapabilities.some(x=>x.includes("No direct buyer email or phone route")));
+  assert.ok(b.qualificationTask?.outreachReadiness?.missingCapabilities.some(x=>x.includes("No permitted email/SMS/voice outreach provider")));
+  assert.match(b.qualificationTask?.preparedMessage ?? "",/No structured buying criteria are on file yet/);
   assert.equal(b.availableFunds,undefined);
+  const knownProfileTask = qualificationTask({...b,criteria:{
+    states:["PA"],cities:["Philadelphia"],zipCodes:["19104"],propertyTypes:["SINGLE_FAMILY"],
+    maxPurchasePrice:250000,maxRepairs:60000,minBeds:2,minSqft:800,maxSqft:2800,closingDays:21,
+    counties:["Philadelphia"],excludedCounties:["Chester"],excludedCities:["Norristown"],excludedZipCodes:["19001"],
+    minPurchasePrice:50000,minArv:300000,maxArv:450000,minUnits:1,maxUnits:2,minBaths:1,maxBeds:4,maxBaths:3,
+    rehabTolerance:"MODERATE",strategies:["FLIP"],fundingTypes:["CASH"],maxConcurrentDeals:2,minSpread:30000,minCapRate:0.08,
+  }},"QUALIFY",now);
+  assert.match(knownProfileTask.preparedMessage,/Philadelphia/);
+  assert.match(knownProfileTask.preparedMessage,/\$50,000–\$250,000/);
+  assert.match(knownProfileTask.preparedMessage,/Funding types stated: CASH/);
+  assert.match(knownProfileTask.preparedMessage,/Please confirm or correct only what has changed/);
+  const [persistedProspect] = await db.select({payload:buyersTable.payload}).from(buyersTable)
+    .where(eq(buyersTable.id,b.id));
+  const persistedTask = persistedProspect?.payload.qualificationTask as {
+    outreachReadiness?: { deliveryStatus?: string };
+  } | undefined;
+  assert.equal(persistedTask?.outreachReadiness?.deliveryStatus,"NOT_SENT",
+    "The provider block and not-sent delivery state must be persisted with the prospect's qualification task.");
   await assert.rejects(discoverBuyer(input,{...actor,role:"OPERATOR"},now),e=>(e as {status:number}).status===403);
   await assert.rejects(discoverBuyer({...input,capturedAt:new Date(now.getTime()+86400000).toISOString()},actor,now),/future/);
   await assert.rejects(submitWorkerJob({kind:"BUYER_DISCOVERY",idempotencyKey:"synthetic-no-permission"},actor),/terms/);

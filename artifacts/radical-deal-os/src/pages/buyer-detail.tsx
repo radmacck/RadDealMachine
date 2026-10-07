@@ -54,7 +54,13 @@ export default function BuyerDetail() {
           <p className="mt-1 font-mono text-[11px] text-muted-foreground">Due {fmtDate(b.qualificationTask.dueAt)} / updated {fmtDate(b.qualificationTask.updatedAt)}</p>
           <p className="eyebrow mt-3 mb-1">Prepared outreach (draft)</p>
           <p className="whitespace-pre-wrap border border-dashed border-border p-2 text-sm" data-testid="text-prepared-message">{b.qualificationTask.preparedMessage}</p>
-          <p className="mt-2 text-xs text-muted-foreground" data-testid="text-no-provider">The system has not sent this message. <Link href="/workers" className="underline">Review the pending handoff and record actual contact/reply evidence</Link>; owner-reviewed qualification remains separate.</p>
+           {b.qualificationTask.outreachReadiness && <div className="mt-3 rounded border border-border bg-background/60 p-3 text-sm" data-testid="panel-outreach-readiness">
+             <p className="font-medium">Automated delivery: {b.qualificationTask.outreachReadiness.deliveryStatus.replace(/_/g, ' ')}</p>
+             <p className="mt-1 text-xs text-muted-foreground">Contact route: {b.qualificationTask.outreachReadiness.contactRouteStatus.replace(/_/g, ' ').toLowerCase()} / provider: {b.qualificationTask.outreachReadiness.providerStatus.replace(/_/g, ' ').toLowerCase()} / checked {fmtDate(b.qualificationTask.outreachReadiness.checkedAt)}</p>
+             {!!b.qualificationTask.outreachReadiness.missingCapabilities.length && <ul className="mt-2 list-disc pl-4 text-xs" data-testid="list-outreach-blockers">{b.qualificationTask.outreachReadiness.missingCapabilities.map((item,i)=><li key={i}>{item}</li>)}</ul>}
+             <p className="mt-2 text-xs" data-testid="text-outreach-next-action">{b.qualificationTask.outreachReadiness.nextAction}</p>
+           </div>}
+           <p className="mt-2 text-xs text-muted-foreground" data-testid="text-no-provider">The system has not sent this message. <Link href="/workers" className="underline">Review the pending handoff and record actual contact/reply evidence</Link>; owner-reviewed qualification remains separate.</p>
           <Button size="sm" variant="outline" className="mt-2" onClick={() => { void navigator.clipboard?.writeText(b.qualificationTask!.preparedMessage).then(() => toast({ title: 'Message copied' }), () => toast({ title: 'Copy failed', variant: 'destructive' })); }} data-testid="button-copy-message"><Copy className="mr-1.5 h-3.5 w-3.5" />Copy text</Button>
           {b.qualificationTask.state === 'WAITING_REVIEW' && (isOwner || canResearch) && <div className="mt-3 space-y-2">
             <p className="text-xs text-muted-foreground">Review the reply through owner verification. If it lacks needed evidence, explicitly request another qualification handoff; no automatic resend occurs.</p>

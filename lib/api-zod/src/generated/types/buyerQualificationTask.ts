@@ -5,6 +5,7 @@
  * Radical Deal OS seller intake, underwriting, conversations and approved offers
  * OpenAPI spec version: 1.0.0
  */
+import type { BuyerOutreachReadiness } from './buyerOutreachReadiness';
 import type { BuyerQualificationTaskKind } from './buyerQualificationTaskKind';
 import type { BuyerQualificationTaskState } from './buyerQualificationTaskState';
 
@@ -14,6 +15,7 @@ export interface BuyerQualificationTask {
   state: BuyerQualificationTaskState;
   reason: string;
   preparedMessage: string;
+  outreachReadiness?: BuyerOutreachReadiness;
   dueAt: string;
   updatedAt: string;
 }

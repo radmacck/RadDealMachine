@@ -4,7 +4,7 @@ import { Download, FileText, RefreshCw } from 'lucide-react';
 import {
   getGetDealOperationsQueryKey, useCreateContract, useExecuteContract, useGetDealOperations, useGetTransactionDocumentReadiness, usePreparePurchaseReviewDocument, useTransitionTransactionDocument, useRecordBuyerResponse, useRecordDestinationActivity,
   useRecordClosingMilestone, useRecordDealOutcome, useRecordTransactionException, useRefreshMatches,
-  type BuyerMatch, type BuyerResponseInputStatus, type ClosingMilestoneInputKind, type DealContract, type DealOutcomeInputOutcome,
+  type BuyerMatch, type BuyerResponseInputStatus, type ClosingMilestoneInputKind, type ClosingMilestoneInputEvidenceKind, type DealContract, type DealOutcomeInputOutcome,
   type DestinationActivityEvent, type DestinationActivityInputKind, type TransactionExceptionInputKind, type LeadDetail,
 } from '@workspace/api-client-react';
 import { ErrorNotice, RowsSkeleton } from '@/components/state-views';
@@ -22,6 +22,8 @@ const MILESTONES: { k: ClosingMilestoneInputKind; label: string }[] = [
   { k: 'TITLE_CLEARED', label: 'Title cleared' }, { k: 'EARNEST_MONEY_CONFIRMED', label: 'Earnest money confirmed' },
   { k: 'ASSIGNMENT_SIGNED', label: 'Assignment signed' }, { k: 'FUNDS_CONFIRMED', label: 'Funds confirmed' },
 ];
+const requiredMilestones = (contract: DealContract) =>
+  MILESTONES.filter((m) => m.k !== 'EARNEST_MONEY_CONFIRMED' || contract.earnestMoney > 0);
 const STATUS_TONE: Record<DealContract['status'], string> = { DRAFT: 'tone-warn', UNDER_CONTRACT: 'tone-go', CLOSING: 'tone-signal', CLOSED: 'tone-ink', CANCELLED: 'tone-stop' };
 const STATUS_LABEL: Record<DealContract['status'], string> = { DRAFT: 'Draft, not under contract', UNDER_CONTRACT: 'Under contract', CLOSING: 'Closing', CLOSED: 'Closed', CANCELLED: 'Cancelled' };
 
@@ -247,22 +249,77 @@ function MilestoneForm({ contract, onDone }: { contract: DealContract; onDone: (
   const { isOwner } = useAccess();
   const rec = useRecordClosingMilestone();
   const { toast } = useToast();
-  const open = MILESTONES.filter((m) => !contract.milestones.some((x) => x.kind === m.k));
+  const open = requiredMilestones(contract).filter((m) => !contract.milestones.some((x) => x.kind === m.k));
   const [kind, setKind] = useState<ClosingMilestoneInputKind | ''>('');
   const [url, setUrl] = useState(''); const [note, setNote] = useState('');
+  const [amount, setAmount] = useState(() => open[0]?.k === 'EARNEST_MONEY_CONFIRMED'
+    ? String(contract.earnestMoney)
+    : open[0]?.k === 'FUNDS_CONFIRMED' && contract.commitmentSnapshot?.buyer.availableFunds != null
+      ? String(contract.commitmentSnapshot.buyer.availableFunds) : '');
+  const [evidenceKind, setEvidenceKind] = useState<ClosingMilestoneInputEvidenceKind | ''>('');
+  const [counterpartyName, setCounterpartyName] = useState('');
+  const [paymentReference, setPaymentReference] = useState('');
+  const [effectiveAt, setEffectiveAt] = useState('');
   const [local, setLocal] = useState<string | null>(null);
   const k = kind || open[0]?.k;
-  if (!k) return <p className="text-sm text-muted-foreground">All four milestones are recorded.</p>;
+  if (!k) return <p className="text-sm text-muted-foreground">All applicable closing milestones are recorded.</p>;
+  const financial = k === 'EARNEST_MONEY_CONFIRMED' || k === 'FUNDS_CONFIRMED';
+  const evidenceKinds: ClosingMilestoneInputEvidenceKind[] = k === 'EARNEST_MONEY_CONFIRMED'
+    ? ['ESCROW_RECEIPT', 'WIRE_CONFIRMATION']
+    : ['BANK_CONFIRMATION', 'LENDER_LETTER', 'REDACTED_STATEMENT', 'ESCROW_RECEIPT'];
   const submit = () => {
-    if (url.trim().length < 8 || note.trim().length < 3) return setLocal('Evidence link and a note are required.');
+    if (url.trim().length < 8 || note.trim().length < 10) return setLocal('Evidence link and a note of at least 10 characters are required.');
+    const amountValue = num(amount);
+    const effective = fromLocalInput(effectiveAt);
+    if (financial && (!Number.isFinite(amountValue) || amountValue < 0 || !evidenceKind ||
+      counterpartyName.trim().length < 2 || paymentReference.trim().length < 3 || !effective))
+      return setLocal('Financial evidence requires its actual amount, evidence type, counterparty, masked reference, and actual effective date.');
+    if (financial && /\b\d{9,}\b/.test(paymentReference))
+      return setLocal('Use a masked receipt reference only; do not enter account, card, or payment credentials.');
     setLocal(null);
-    rec.mutate({ id: contract.leadId, data: { version: contract.version, kind: k, evidenceUrl: url.trim(), note: note.trim() } }, { onSuccess: () => { setUrl(''); setNote(''); setKind(''); onDone(); toast({ title: 'Milestone recorded' }); } });
+    rec.mutate({ id: contract.leadId, data: {
+      version: contract.version, kind: k, evidenceUrl: url.trim(), note: note.trim(),
+      ...(financial ? {
+        amount: amountValue, currency: 'USD' as const, evidenceKind: evidenceKind as ClosingMilestoneInputEvidenceKind,
+        counterpartyName: counterpartyName.trim(), paymentReference: paymentReference.trim(), effectiveAt: effective!,
+      } : {}),
+    } }, { onSuccess: () => {
+      const next = open[open.findIndex((m) => m.k === k) + 1];
+      setUrl(''); setNote(''); setKind(''); setAmount(next?.k === 'EARNEST_MONEY_CONFIRMED'
+        ? String(contract.earnestMoney)
+        : next?.k === 'FUNDS_CONFIRMED' && contract.commitmentSnapshot?.buyer.availableFunds != null
+          ? String(contract.commitmentSnapshot.buyer.availableFunds) : '');
+      setEvidenceKind('');
+      setCounterpartyName(''); setPaymentReference(''); setEffectiveAt('');
+      onDone(); toast({ title: 'Milestone recorded' });
+    } });
   };
   return (
     <div className="space-y-3" data-testid="form-milestone">
-      <Field label="Milestone"><select className={SELECT} value={k} onChange={(e) => setKind(e.target.value as ClosingMilestoneInputKind)} disabled={!isOwner} data-testid="select-milestone">{open.map((m) => <option key={m.k} value={m.k}>{m.label}</option>)}</select></Field>
+      <Field label="Milestone"><select className={SELECT} value={k} onChange={(e) => {
+        const next = e.target.value as ClosingMilestoneInputKind;
+        setKind(next); setEvidenceKind(''); setEffectiveAt(''); setCounterpartyName(''); setPaymentReference('');
+        setAmount(next === 'EARNEST_MONEY_CONFIRMED' ? String(contract.earnestMoney)
+          : next === 'FUNDS_CONFIRMED' && contract.commitmentSnapshot?.buyer.availableFunds != null
+            ? String(contract.commitmentSnapshot.buyer.availableFunds) : '');
+      }} disabled={!isOwner} data-testid="select-milestone">{open.map((m) => <option key={m.k} value={m.k}>{m.label}</option>)}</select></Field>
       <Field label="Evidence link"><Input value={url} onChange={(e) => setUrl(e.target.value)} disabled={!isOwner} data-testid="input-milestone-url" /></Field>
       <Field label="Note"><Input value={note} onChange={(e) => setNote(e.target.value)} disabled={!isOwner} data-testid="input-milestone-note" /></Field>
+      {financial && <>
+        <p className="text-xs text-muted-foreground">{k === 'EARNEST_MONEY_CONFIRMED'
+          ? `Confirm the escrow receipt shows the authorized acquisition deposit of ${money(contract.earnestMoney)}.`
+          : `Confirm current buyer funds evidence. The amount is prefilled from the current verified profile (${money(contract.commitmentSnapshot?.buyer.availableFunds ?? 0)}); stale or mismatched evidence is rejected.`}
+          {' '}No bank or escrow system is connected; this records owner review of the linked evidence only.</p>
+        <div className="grid gap-3 sm:grid-cols-2">
+          <Field label="Amount shown by evidence"><Input inputMode="decimal" value={amount} onChange={(e) => setAmount(e.target.value)} disabled={!isOwner} data-testid="input-milestone-amount" /></Field>
+          <Field label="Evidence type"><select className={SELECT} value={evidenceKind} onChange={(e) => setEvidenceKind(e.target.value as ClosingMilestoneInputEvidenceKind | '')} disabled={!isOwner} data-testid="select-milestone-evidence-kind">
+            <option value="">Select evidence</option>{evidenceKinds.map((value) => <option key={value} value={value}>{value.replace(/_/g, ' ')}</option>)}
+          </select></Field>
+          <Field label={k === 'EARNEST_MONEY_CONFIRMED' ? 'Escrow / title holder' : 'Funding institution / escrow'}><Input value={counterpartyName} onChange={(e) => setCounterpartyName(e.target.value)} disabled={!isOwner} data-testid="input-milestone-counterparty" /></Field>
+          <Field label="Masked receipt/reference" hint="Do not enter account/card numbers or credentials"><Input value={paymentReference} onChange={(e) => setPaymentReference(e.target.value)} disabled={!isOwner} data-testid="input-milestone-reference" /></Field>
+          <Field label="When it actually occurred"><Input type="datetime-local" value={effectiveAt} onChange={(e) => setEffectiveAt(e.target.value)} disabled={!isOwner} data-testid="input-milestone-effective-at" /></Field>
+        </div>
+      </>}
       {local && <p className="text-sm text-destructive">{local}</p>}
       {rec.error != null && <ErrorNotice error={rec.error} />}
       <Button size="sm" disabled={!isOwner || rec.isPending} onClick={submit} data-testid="button-record-milestone">{rec.isPending ? 'Recording...' : 'Record milestone'}</Button>
@@ -279,7 +336,7 @@ function OutcomeForm({ contract, onDone }: { contract: DealContract; onDone: () 
   const [url, setUrl] = useState(''); const [note, setNote] = useState(''); const [fee, setFee] = useState(''); const [costs, setCosts] = useState(''); const [relUrl, setRelUrl] = useState(''); const [occ, setOcc] = useState('');
   const [local, setLocal] = useState<string | null>(null);
   const expected = contract.agreedBuyerPrice != null ? contract.agreedBuyerPrice - contract.purchasePrice : null;
-  const missing = MILESTONES.filter((m) => !contract.milestones.some((x) => x.kind === m.k));
+  const missing = requiredMilestones(contract).filter((m) => !contract.milestones.some((x) => x.kind === m.k));
   const submit = () => {
     if (url.trim().length < 8 || note.trim().length < 3) return setLocal('Evidence link and a note are required.');
     const f = num(fee); const c = num(costs);
@@ -593,11 +650,16 @@ export function DealOperationsPanel({ detail }: { detail: LeadDetail }) {
         {!c || c.status === 'DRAFT' ? <p className="text-sm text-muted-foreground">Closing work opens after the contract is executed.</p> : (
           <div className="grid gap-5 lg:grid-cols-2">
             <div>
-              <ul className="space-y-1.5" data-testid="list-milestones">{MILESTONES.map((m) => {
+              <ul className="space-y-1.5" data-testid="list-milestones">{requiredMilestones(c).map((m) => {
                 const x = c.milestones.find((y) => y.kind === m.k);
                 return <li key={m.k} className="flex items-start justify-between gap-2 text-sm"><span className={x ? 'font-semibold' : 'text-muted-foreground'}>{m.label}</span>
-                  {x ? <span className="text-right text-xs"><EvidenceLink url={x.evidenceUrl} label="evidence" /> / {x.recordedBy} / {fmtDate(x.recordedAt)}</span> : <span className="tag tone-future">open</span>}</li>;
+                  {x ? <span className="text-right text-xs">
+                    {x.amount != null && <span className="block">{money(x.amount)} {x.currency} / {x.evidenceKind?.replace(/_/g, ' ')} / {x.counterpartyName} / actual {x.effectiveAt ? fmtDate(x.effectiveAt) : 'date missing'}</span>}
+                    {x.paymentReference && <span className="block font-mono">{x.paymentReference}</span>}
+                    <EvidenceLink url={x.evidenceUrl} label="evidence" /> / {x.recordedBy} / recorded {fmtDate(x.recordedAt)}
+                  </span> : <span className="tag tone-future">open</span>}</li>;
               })}</ul>
+              {c.earnestMoney <= 0 && <p className="mt-2 text-xs text-muted-foreground">Authorized purchase terms set acquisition earnest money to $0; no deposit receipt is required for this deal.</p>}
               {c.status === 'CLOSED' || c.status === 'CANCELLED' ? (
                 <div className="mt-4 border-t border-border pt-3 text-sm" data-testid="panel-outcome">
                   <p className="font-semibold">{c.status === 'CLOSED' ? 'Closed' : 'Cancelled'}: actual outcome {fmtDate(c.status === 'CLOSED' ? c.closedAt : c.cancelledAt)}</p>

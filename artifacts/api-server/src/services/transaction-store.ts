@@ -507,7 +507,54 @@ export async function recordClosingMilestone(id: string,input: z.infer<typeof Re
     if (contract.status==="DRAFT") throw new DomainError("Record executed acquisition agreement first.",409);
     if (contract.milestones.some(m=>m.kind===parsed.kind)) throw new DomainError("This milestone is already recorded; evidence history is immutable.",409);
     if (["ASSIGNMENT_SIGNED","FUNDS_CONFIRMED"].includes(parsed.kind) && !contract.committedBuyerId) throw new DomainError("A qualified committed buyer is required before assignment or funds confirmation.",409);
-    contract.milestones.push({kind:parsed.kind,evidenceUrl:parsed.evidenceUrl,note:parsed.note,recordedBy:actor.id,recordedAt:now.toISOString()});
+    let effectiveAt: string | undefined;
+    if (parsed.kind==="EARNEST_MONEY_CONFIRMED" || parsed.kind==="FUNDS_CONFIRMED") {
+      if (parsed.amount==null || parsed.currency!=="USD" || !parsed.evidenceKind || !parsed.counterpartyName?.trim() ||
+        !parsed.paymentReference?.trim() || !parsed.effectiveAt)
+        throw new DomainError("Financial confirmation requires the evidence-backed amount, USD currency, evidence type, counterparty, masked reference and actual effective time.");
+      wholeDollars(parsed.amount,"Confirmed amount");
+      if (/\b\d{9,}\b/.test(parsed.paymentReference))
+        throw new DomainError("Use a masked receipt reference only; do not store full account, card, or payment credentials.");
+      effectiveAt = new Date(pastInstant(parsed.effectiveAt,now,"Financial evidence effective time")).toISOString();
+      if (parsed.kind==="EARNEST_MONEY_CONFIRMED") {
+        if (contract.earnestMoney<=0 || Math.abs(parsed.amount-contract.earnestMoney)>0.005)
+          throw new DomainError("The escrow evidence amount must equal the earnest money in the communicated, authorized acquisition terms.");
+        if (!["ESCROW_RECEIPT","WIRE_CONFIRMATION"].includes(parsed.evidenceKind))
+          throw new DomainError("Acquisition earnest money requires an escrow receipt or wire confirmation.");
+        if (!contract.executedDocumentUrl || !contract.sellerSignedAt || !contract.acquisitionSignedAt)
+          throw new DomainError("Acquisition earnest money can be recorded only after the executed agreement and both signatures are evidenced.");
+        if (Date.parse(effectiveAt)<Math.max(Date.parse(contract.sellerSignedAt),Date.parse(contract.acquisitionSignedAt)))
+          throw new DomainError("The earnest-money receipt cannot predate the executed acquisition agreement.");
+      }
+      if (parsed.kind==="FUNDS_CONFIRMED") {
+        const [buyerRow] = contract.committedBuyerId
+          ? await tx.select().from(buyersTable).where(eq(buyersTable.id,contract.committedBuyerId)).for("update")
+          : [];
+        const buyer = buyerRow ? buyerRecord(buyerRow,now) : null;
+        const detail = await leadDetail(id,tx,now);
+        const reservations = buyerReservations((await tx.select().from(contractsTable)).map(contractRecord),contract.committedBuyerId!,contract.id);
+        if (!buyer || !matchBuyer(buyer,detail,contract,now,contract.agreedBuyerPrice??undefined,reservations.count,reservations.funds).eligible)
+          throw new DomainError("Funds evidence requires the committed buyer to remain current, approved, and eligible under current criteria and capacity.",409);
+        if (parsed.evidenceUrl!==buyer.fundingEvidenceUrl || buyer.availableFunds==null ||
+          Math.abs(parsed.amount-buyer.availableFunds)>0.005)
+          throw new DomainError("Funds evidence must match the committed buyer's current owner-reviewed funding evidence and exact available-funds amount.",409);
+        if (!buyer.evidenceAt || Date.parse(effectiveAt)<Date.parse(buyer.evidenceAt) ||
+          Date.parse(effectiveAt)<Date.parse(contract.buyerCommittedAt??""))
+          throw new DomainError("Funds evidence is stale or predates the buyer's current verification or commitment.",409);
+        if (!["BANK_CONFIRMATION","LENDER_LETTER","REDACTED_STATEMENT","ESCROW_RECEIPT"].includes(parsed.evidenceKind))
+          throw new DomainError("Funds confirmation requires current bank, lender, redacted statement or escrow evidence.");
+      }
+    }
+    contract.milestones.push({
+      kind:parsed.kind,evidenceUrl:parsed.evidenceUrl,note:parsed.note,
+      ...(parsed.amount!=null?{amount:parsed.amount}:{}),
+      ...(parsed.currency?{currency:parsed.currency}:{}),
+      ...(parsed.evidenceKind?{evidenceKind:parsed.evidenceKind}:{}),
+      ...(parsed.counterpartyName?{counterpartyName:parsed.counterpartyName.trim()}:{}),
+      ...(parsed.paymentReference?{paymentReference:parsed.paymentReference.trim()}:{}),
+      ...(effectiveAt?{effectiveAt}:{}),
+      recordedBy:actor.id,recordedAt:now.toISOString(),
+    });
     if (contract.committedBuyerId) {
       const [buyerRow] = await tx.select().from(buyersTable).where(eq(buyersTable.id,contract.committedBuyerId)).for("update");
       const detail = await leadDetail(id,tx,now);
@@ -523,7 +570,10 @@ export async function recordClosingMilestone(id: string,input: z.infer<typeof Re
       await move(tx,lead,"CLOSING","Closing evidence recorded","Complete outstanding evidence and record actual settlement outcome.",actor.id,now);
     }
     await save(tx,row,contract,now); await saveLead(tx,lead,now);
-    await audit(tx,actor.id,"CLOSING_MILESTONE_RECORDED",id,`${parsed.kind}: ${parsed.note}. External evidence reviewed by owner, not an automated escrow check.`);
+    const financialSummary = parsed.amount!=null
+      ? ` Amount $${parsed.amount.toLocaleString("en-US",{minimumFractionDigits:2,maximumFractionDigits:2})} ${parsed.currency}; counterparty ${parsed.counterpartyName}; masked reference ${parsed.paymentReference}; effective ${effectiveAt}; evidence type ${parsed.evidenceKind}.`
+      : "";
+    await audit(tx,actor.id,"CLOSING_MILESTONE_RECORDED",id,`${parsed.kind}: ${parsed.note}.${financialSummary} External evidence reviewed by owner, not an automated escrow or bank check.`);
   });
   return dealOperations(id,now);
 }
