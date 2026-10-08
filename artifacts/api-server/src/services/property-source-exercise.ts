@@ -220,6 +220,9 @@ try {
     assert.equal((path as { classification?: string }).classification, "OBSERVED");
     assert.equal((path as { permissionStatus?: string }).permissionStatus, "NOT_REVIEWED");
   }
+  assert.ok(first.property.contactPaths.every(path => path.channel === "POSTAL"),
+    "The OPA discovery exercise must not reinterpret postal owner-mailing data as phone or email contact.");
+  assert.equal(first.property.contactPaths.some(path => path.channel === "PHONE" || path.channel === "EMAIL"), false);
   const secondary = await recordPropertyObservation(
     {
       ...property,
@@ -346,10 +349,20 @@ try {
     source: "SYNTHETIC isolated qualification fixture", sourceUrl: "https://example.com/synthetic-inspection",
     evidenceRef: "synthetic:condition", capturedAt: now.toISOString(), confidence: 0.9,
   });
+  await addSignal({
+    key: "FORECLOSURE", group: "DISTRESS", classification: "VERIFIED", sourceType: "PUBLIC_RECORD",
+    statement: "SYNTHETIC fixture: deliberately verified test evidence; not a real parcel fact.",
+    source: "SYNTHETIC isolated qualification fixture", sourceUrl: "https://example.com/synthetic-verified-record",
+    evidenceRef: "synthetic:verified-public-record", capturedAt: now.toISOString(), confidence: 0.9,
+  });
   assert.equal(discovery.status, "RELEVANT_CANDIDATE");
   assert.equal(discovery.canPromote, true, "Strong synthetic, independently referenced evidence should pass the market gate.");
   assert.ok(discovery.score >= 35);
   assert.ok(discovery.signals.every((signal) => signal.source && signal.capturedAt && signal.classification));
+  for (const classification of ["VERIFIED", "OBSERVED", "INDICATED", "AI_HYPOTHESIS"]) {
+    assert.ok(discovery.signals.some(signal => signal.classification === classification),
+      `The persisted synthetic test must retain ${classification} as a distinct evidence classification.`);
+  }
 
   const promoted = await promotePropertyDiscovery(discovery.id, {
     version: discovery.version,
@@ -365,6 +378,15 @@ try {
   let detail = await leadDetail(promoted.leadId);
   assert.equal(detail.lead.stage, "ENRICHING");
   assert.equal(detail.lead.propertyQualification?.status, "QUALIFIED_LEAD");
+  assert.equal(detail.lead.sellerPhone?.trim() ?? "", "",
+    "A source-backed discovery with only postal contact data must not acquire a direct seller phone route.");
+  await assert.rejects(() => transitionLead(promoted.leadId, {
+    version: detail.lead.version, to: "CALL_READY",
+    reason: "SYNTHETIC fail-closed check for a postal-only owner record.",
+    nextAction: "Find a permitted direct seller contact route.",
+  }, actor.id, now), /Seller phone is required/);
+  assert.equal((await leadDetail(promoted.leadId)).lead.stage, "ENRICHING",
+    "A failed CALL READY transition must leave the persisted acquisition stage unchanged.");
   assert.equal(detail.lead.propertyQualification?.score, promoted.discovery.score);
   assert.ok(detail.lead.propertyQualification?.reason);
   assert.ok((detail.lead.propertyQualification?.signals.length ?? 0) >= 3);
