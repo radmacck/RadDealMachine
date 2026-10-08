@@ -14,7 +14,7 @@ import { useToast } from '@/hooks/use-toast';
 const ROLE_OPTIONS = ['RECORDED_OWNER', 'SELLER_SELF_IDENTIFIED', 'AUTHORIZED_AGENT_CLAIM', 'DIRECTORY_CONTACT', 'UNKNOWN'] as const;
 const SOURCE_TYPES = ['PUBLIC_RECORD', 'PUBLIC_PAGE', 'PERMITTED_LISTING', 'SELLER', 'ANALYST'] as const;
 const empty = {
-  channel: 'PHONE' as 'PHONE' | 'EMAIL',
+  channel: 'PHONE' as 'PHONE' | 'EMAIL' | 'WEB' | 'OTHER',
   routeValue: '',
   recipient: '',
   recipientRole: 'UNKNOWN' as typeof ROLE_OPTIONS[number],
@@ -80,6 +80,10 @@ export function SellerContactPanel({ leadId, canResearch, onSaved }: {
       setLocalError('Public-source observations require the HTTPS page or record URL.');
       return;
     }
+    if (form.channel === 'WEB' && !form.routeValue.startsWith('https://')) {
+      setLocalError('Web/contact-form routes must use HTTPS. No message will be sent.');
+      return;
+    }
     if (form.permissionStatus === 'PERMITTED' && !form.contactPermissionEvidenceUrl.startsWith('https://')) {
       setLocalError('A permitted route requires HTTPS evidence for the source and intended use.');
       return;
@@ -143,23 +147,47 @@ export function SellerContactPanel({ leadId, canResearch, onSaved }: {
                 Recipient role: {path.recipientRole ?? 'UNKNOWN'} · identity {path.identityStatus ?? 'UNVERIFIED'} · signing authority {path.signingAuthorityStatus ?? 'NOT_ESTABLISHED'}
               </p>
               {path.sourceUrl && <a className="text-xs underline" href={path.sourceUrl} target="_blank" rel="noreferrer">Open source record</a>}
-              {path.verificationNote && <p className="mt-1 text-xs">Review note: {path.verificationNote}</p>}
+               {path.identityConflictStatus && path.identityConflictStatus !== 'NONE' && (
+                 <p className="mt-1 text-xs text-destructive" data-testid="contact-identity-conflict">
+                   Conflicting identity claims: {path.identityConflictStatus.replaceAll('_', ' ').toLowerCase()} · {path.recipientIdentityClaimCount ?? 0} claim(s). This blocks route selection.
+                 </p>
+               )}
+               {path.rankingReasons?.length ? (
+                 <ul className="mt-2 space-y-1 text-xs text-muted-foreground" data-testid="contact-ranking-reasons">
+                   {path.rankingReasons.map(reason => <li key={reason}>{reason}</li>)}
+                 </ul>
+               ) : null}
+               {path.supportingObservations && path.supportingObservations.length > 1 && (
+                 <details className="mt-2 text-xs" data-testid="contact-supporting-observations">
+                   <summary className="cursor-pointer font-medium">Source observations ({path.supportingObservations.length})</summary>
+                   <ul className="mt-1 space-y-1">
+                     {path.supportingObservations.map(observation => (
+                       <li key={`${observation.sourceId}:${observation.sourceRecordId}:${observation.id}`}>
+                         {observation.sourceName} · {observation.sourceRecordId} · {observation.recipient ?? 'recipient not stated'} ({observation.recipientRole}) · {observation.classification} · captured {new Date(observation.capturedAt).toLocaleDateString()}
+                       </li>
+                     ))}
+                   </ul>
+                 </details>
+               )}
+               {path.verificationNote && <p className="mt-1 text-xs">Review note: {path.verificationNote}</p>}
             </article>
           ))}
         </div>
       ) : <p className="rounded border border-border p-3 text-sm" data-testid="empty-contact-paths">No direct phone or email route is on file. A public mailing address is not a call route.</p>}
       {data.selectedPhonePath && <p className="border-l-2 border-signal pl-3 text-sm" data-testid="selected-contact-phone">
-        Ranked phone route: <b>{data.selectedPhonePath.routeValue}</b> from {data.selectedPhonePath.sourceName}. Confirm the person and authority in conversation; this is not a legal-identity check.
+        Ranked phone route: <b>{data.selectedPhonePath.routeValue}</b> from {data.selectedPhonePath.sourceName}.
+        {data.selectedPhonePath.rankingReasons?.[0] ? ` ${data.selectedPhonePath.rankingReasons[0]}` : ''}
+        Confirm the person and authority in conversation; this is not a legal-identity check.
       </p>}
       <div className="border-t border-border pt-3">
         <p className="eyebrow mb-2">Record a route you already obtained</p>
-        <p className="mb-3 text-xs text-muted-foreground">This is an evidence-intake form, not a search or outreach control. Public-source terms and intended-use permission must be checked before marking a route permitted. Only an owner can confirm validity or permission. Contact routes expire after 30 days unless re-observed.</p>
+         <p className="mb-3 text-xs text-muted-foreground">This is an evidence-intake form, not a search or outreach control. Phone, email, web/contact-form, other and postal evidence remain distinct. This system never submits a web form or sends messages. Public-source terms and intended-use permission must be checked before marking a route permitted. Only an owner can confirm validity or permission. Contact routes expire after 30 days unless re-observed.</p>
         <div className="grid gap-3 sm:grid-cols-2">
           <div className="space-y-1.5"><Label>Route type</Label><Select value={form.channel} onValueChange={v => set('channel')(v as typeof form.channel)} disabled={!canResearch || mutation.isPending}>
-            <SelectTrigger data-testid="select-contact-channel"><SelectValue /></SelectTrigger><SelectContent><SelectItem value="PHONE">Phone</SelectItem><SelectItem value="EMAIL">Email</SelectItem></SelectContent>
+             <SelectTrigger data-testid="select-contact-channel"><SelectValue /></SelectTrigger><SelectContent><SelectItem value="PHONE">Phone</SelectItem><SelectItem value="EMAIL">Email</SelectItem><SelectItem value="WEB">Web/contact form</SelectItem><SelectItem value="OTHER">Other</SelectItem></SelectContent>
           </Select></div>
-          <div className="space-y-1.5"><Label>{form.channel === 'PHONE' ? 'Phone route' : 'Email route'}</Label>
-            <Input value={form.routeValue} onChange={e => set('routeValue')(e.target.value)} disabled={!canResearch || mutation.isPending} data-testid="input-contact-route" /></div>
+           <div className="space-y-1.5"><Label>{form.channel === 'PHONE' ? 'Phone route' : form.channel === 'EMAIL' ? 'Email route' : form.channel === 'WEB' ? 'HTTPS web/contact-form URL' : 'Other route details'}</Label>
+             <Input type={form.channel === 'PHONE' ? 'tel' : form.channel === 'EMAIL' ? 'email' : form.channel === 'WEB' ? 'url' : 'text'} value={form.routeValue} onChange={e => set('routeValue')(e.target.value)} disabled={!canResearch || mutation.isPending} data-testid="input-contact-route" /></div>
           <div className="space-y-1.5"><Label>Recipient name (if observed)</Label>
             <Input value={form.recipient} onChange={e => set('recipient')(e.target.value)} disabled={!canResearch || mutation.isPending} data-testid="input-contact-recipient" /></div>
           <div className="space-y-1.5"><Label>Reported recipient role</Label><Select value={form.recipientRole} onValueChange={v => set('recipientRole')(v as typeof form.recipientRole)} disabled={!canResearch || mutation.isPending}>

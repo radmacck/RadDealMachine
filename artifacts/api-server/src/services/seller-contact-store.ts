@@ -12,8 +12,7 @@ import { DomainError, type OfferActor } from "@workspace/deal-domain";
 import {
   contactPathKey, reconcileContactPaths, type PropertyContactPath,
 } from "@workspace/property-sources";
-import { audit, lockedLead, move } from "./deal-store";
-import { invalidateOffers } from "./offer-records";
+import { audit, lockedLead } from "./deal-store";
 
 type Tx = Parameters<Parameters<typeof db.transaction>[0]>[0];
 type Query = typeof db | Tx;
@@ -332,8 +331,6 @@ export async function recordSellerContactObservation(
         : null;
     if (nextUnderwriting && !nextPhoneEvidenceId) delete nextUnderwriting.sellerContactEvidenceId;
     const payload = { ...row.payload, sellerPhone: nextPhone, sellerEmail: nextEmail };
-    const changedRoute = nextPhone !== currentPhone || nextEmail !== currentEmail ||
-      nextPhoneEvidenceId !== priorUnderwriting?.sellerContactEvidenceId;
     if (transactionLocked) {
       await audit(tx, actor.id, "SELLER_CONTACT_RESEARCH_DURING_TRANSACTION", id,
         "New contact evidence was recorded without changing executed transaction terms, underwriting, analysis, or next action.");

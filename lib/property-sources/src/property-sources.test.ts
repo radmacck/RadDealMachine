@@ -58,7 +58,8 @@ test("contact route ranking collapses duplicate source observations and keeps th
   },now).contactPaths[0]!;
   const duplicate={...first,id:"other-source-copy",sourceId:"permitted-directory",
     sourceName:"Permitted directory",sourceRecordId:"directory-123",sourceUrl:"https://example.com/record",
-    permissionStatus:"PERMITTED" as const,classification:"VERIFIED" as const,confidence:0.8};
+    permissionStatus:"PERMITTED" as const,classification:"VERIFIED" as const,confidence:0.8,
+    supportingObservations:undefined};
   const separate={...first,id:"other-address",addressLines:["200 SECOND ROUTE ST"]};
   const phone={...first,id:"phone-1",channel:"PHONE" as const,routeValue:"(215) 555-0100",addressLines:[],cityState:null,postalCode:null};
   const duplicatePhone={...phone,id:"phone-2",sourceId:"other-directory",routeValue:"215-555-0100",
@@ -72,6 +73,10 @@ test("contact route ranking collapses duplicate source observations and keeps th
   assert.equal(ranked[0]?.sourceUrl,"https://example.com/record");
   assert.equal(ranked[0]?.permissionStatus,"PERMITTED");
   assert.equal(ranked[0]?.freshnessStatus,"CURRENT");
+  assert.equal(ranked[0]?.supportingObservationCount,2);
+  assert.equal(ranked[0]?.supportingObservations?.length,2,"The merged route retains both source records.");
+  assert.equal(ranked[0]?.identityConflictStatus,"NONE");
+  assert.ok(ranked[0]?.rankingReasons?.[0]?.includes("Rank 1 of"));
   assert.ok(ranked.some(path=>path.channel==="PHONE"&&path.id==="phone-1"));
   assert.equal(ranked.filter(path=>path.channel==="PHONE").length,1);
   assert.equal(ranked.filter(path=>path.channel==="EMAIL").length,2,
@@ -80,6 +85,31 @@ test("contact route ranking collapses duplicate source observations and keeps th
   assert.equal(ranked.find(path=>path.channel==="PHONE")?.permissionStatus,"NOT_REVIEWED",
     "A prohibited duplicate cannot outrank an unreviewed copy of the same route.");
   assert.equal(rankContactPaths([first],new Date(now.getTime()+31*86400000))[0]?.freshnessStatus,"STALE");
+});
+test("contact route ranking prefers phone over email only after permission, freshness, evidence and confidence tie",()=>{
+  const property=normalizeProperty({...raw,mailing_address_1:"100 ROUTE TEST AVE",mailing_city_state:"Philadelphia PA"},now);
+  const postal=property.contactPaths[0]!;
+  const email={...postal,id:"email",channel:"EMAIL" as const,routeValue:"owner@example.test",addressLines:[],cityState:null,
+    permissionStatus:"PERMITTED" as const,routeVerificationStatus:"CONFIRMED" as const,classification:"VERIFIED" as const,confidence:0.9};
+  const phone={...email,id:"phone",channel:"PHONE" as const,routeValue:"215-555-0142"};
+  const ranked=rankContactPaths([email,phone],now);
+  assert.equal(ranked[0]?.channel,"PHONE");
+  assert.ok(ranked[0]?.rankingReasons?.some(reason=>reason.includes("preferred route for a call-ready")));
+  assert.ok(ranked[1]?.rankingReasons?.[0]?.includes("Rank 2 of 2"));
+});
+test("same-route records with conflicting recipient or role claims remain visible and flagged for review",()=>{
+  const first=normalizeProperty({...raw,mailing_address_1:"100 ROUTE TEST AVE",mailing_city_state:"Philadelphia PA"},now).contactPaths[0]!;
+  const shared={...first,id:"synthetic-phone-a",channel:"PHONE" as const,routeValue:"(215) 555-0142",
+    addressLines:[],cityState:null,permissionStatus:"PERMITTED" as const,routeVerificationStatus:"CONFIRMED" as const,
+    supportingObservations:undefined};
+  const second={...shared,id:"synthetic-phone-b",recipient:"SYNTHETIC DIFFERENT PERSON",sourceId:"synthetic-source-b",
+    sourceName:"SYNTHETIC source B",sourceRecordId:"SYNTHETIC-RECORD-B",recipientRole:"DIRECTORY_CONTACT" as const};
+  const [reconciled]=rankContactPaths([shared,second],now);
+  assert.equal(reconciled?.supportingObservations?.length,2);
+  assert.equal(reconciled?.identityConflictStatus,"MULTIPLE_RECIPIENTS");
+  assert.equal(reconciled?.recipientIdentityClaimCount,2);
+  assert.equal(reconciled?.identityStatus,"UNVERIFIED");
+  assert.equal(reconciled?.signingAuthorityStatus,"NOT_ESTABLISHED");
 });
 test("unverified condition is not promoted by a favorable assessment condition code",()=>{
   const subject = normalizeProperty(raw,now);

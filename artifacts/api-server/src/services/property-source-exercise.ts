@@ -178,6 +178,14 @@ try {
     "Demand ranking may add a separate priority bonus but cannot reduce seller relevance.");
   assert.ok(liveDiscoveryRecords.every(record => Array.isArray(record.property.contactPaths)),
     "The API response must preserve contact-path evidence, including an explicit empty list when OPA has no mailing route.");
+  const liveContactPaths = liveDiscoveryRecords.flatMap(record => record.property.contactPaths);
+  const liveContactChannelCounts = Object.fromEntries(
+    ["POSTAL", "PHONE", "EMAIL", "WEB", "OTHER"].map(channel => [
+      channel, liveContactPaths.filter(path => path.channel === channel).length,
+    ]),
+  );
+  assert.equal(liveContactPaths.some(path => path.channel === "PHONE" || path.channel === "EMAIL" || path.channel === "WEB"), false,
+    "Available Philadelphia public adapters expose no direct phone/email/web contact route; a mailing record remains postal-only.");
   assert.ok(liveApiUnmatched.every(row => row.nextAction.includes("exact residential OPA match")));
   const observedSources = await db.select().from(propertySourceObservationsTable);
   assert.ok(observedSources.some(row => row.sourceKey.startsWith("phila-opa:")), "OPA raw observations must persist.");
@@ -505,6 +513,7 @@ try {
   assert.ok(first.property.contactPaths.every(path => path.channel === "POSTAL"),
     "The OPA discovery exercise must not reinterpret postal owner-mailing data as phone or email contact.");
   assert.equal(first.property.contactPaths.some(path => path.channel === "PHONE" || path.channel === "EMAIL"), false);
+  console.log(`LIVE permitted-source contact evidence: ${liveDiscoveryRecords.length} persisted discoveries; ${liveContactPaths.length} contact routes by channel ${JSON.stringify(liveContactChannelCounts)}; direct phone/email/web routes unavailable.`);
   const secondary = await recordPropertyObservation(
     {
       ...property,

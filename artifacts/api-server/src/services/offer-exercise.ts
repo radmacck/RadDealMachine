@@ -12,6 +12,7 @@ import { logger } from "../lib/logger";
 import * as store from "./deal-store";
 import { exerciseEvidence } from "./exercise-evidence";
 import * as offers from "./offer-store";
+import { recordSellerContactObservation } from "./seller-contact-store";
 
 async function exercise() {
   const actorId = `synthetic-offer-exercise:${randomUUID()}`;
@@ -85,6 +86,30 @@ async function exercise() {
     assert.equal(detail.lead.stage,"OFFER_READY");
     assert.equal(detail.offers.filter(o => o.effectiveStatus === "AUTHORIZED").length,1);
     const approved = detail.offers.find(o => o.effectiveStatus === "AUTHORIZED")!;
+    const contactResearchSnapshot = {
+      analysis:structuredClone(detail.analysis),
+      analysisSnapshotId:detail.analysisSnapshotId,
+      underwriting:structuredClone(detail.underwriting),
+      stage:detail.lead.stage,
+      nextAction:detail.lead.nextAction,
+      authorizedOffer:structuredClone(approved),
+    };
+    const contactResearch = await recordSellerContactObservation(id,{
+      version:detail.lead.version,channel:"OTHER",routeValue:"SYNTHETIC review-only route note",
+      recipient:"SYNTHETIC exercise seller",recipientRole:"UNKNOWN",classification:"OBSERVED",confidence:0.2,
+      sourceType:"ANALYST",sourceId:"synthetic-contact-research",sourceName:"SYNTHETIC review-only source",
+      sourceRecordId:"SYNTHETIC-CONTACT-RESEARCH-001",permissionStatus:"NOT_REVIEWED",
+      routeVerificationStatus:"UNREVIEWED",verificationNote:"SYNTHETIC evidence only; no communication occurred.",
+    },owner,now);
+    detail = await store.leadDetail(id);
+    assert.equal(contactResearch.directRouteStatus,"PHONE_ROUTE_AVAILABLE");
+    assert.deepEqual(detail.analysis,contactResearchSnapshot.analysis);
+    assert.equal(detail.analysisSnapshotId,contactResearchSnapshot.analysisSnapshotId);
+    assert.deepEqual(detail.underwriting,contactResearchSnapshot.underwriting);
+    assert.equal(detail.lead.stage,contactResearchSnapshot.stage);
+    assert.equal(detail.lead.nextAction,contactResearchSnapshot.nextAction);
+    assert.deepEqual(detail.offers.find(o => o.id === approved.id),contactResearchSnapshot.authorizedOffer,
+      "Contact research must not change or revoke an already owner-authorized offer.");
     assert.equal(detail.analysis!.maximumApprovedAcquisitionPrice,null);
     const expired = await store.leadDetail(id,db,new Date(now.getTime()+49*3_600_000));
     assert.equal(expired.offers.find(o => o.id === approved.id)!.effectiveStatus,"EXPIRED");

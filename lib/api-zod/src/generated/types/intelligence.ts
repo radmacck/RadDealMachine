@@ -6,10 +6,12 @@
  * OpenAPI spec version: 1.0.0
  */
 import type { IntelligenceInput } from './intelligenceInput';
+import type { PropertyContactPath } from './propertyContactPath';
 
-export type Intelligence = IntelligenceInput & {
+export type Intelligence = IntelligenceInput & ({
   id: string;
   leadId: string;
   createdAt: string;
   createdBy: string;
-};
+  contactPath?: PropertyContactPath | null;
+});

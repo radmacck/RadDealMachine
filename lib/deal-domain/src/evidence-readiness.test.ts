@@ -15,7 +15,20 @@ const entries = [["subject","subject_property"],["condition","subject_condition"
   sourceType:id==="contact"?"PUBLIC_PAGE":"INSPECTION",
   statement:"SYNTHETIC reviewed evidence",source:"SYNTHETIC fixture",
   sourceUrl:"https://example.com/synthetic",capturedAt:now.toISOString(),verificationNote:"Synthetic review",confidence:0.9,createdBy:"synthetic",createdAt:now.toISOString(),
-  ...(id==="contact"?{contactPermissionStatus:"PERMITTED",contactPermissionEvidenceUrl:"https://example.com/synthetic-permission"}:{}),
+   ...(id==="contact"?{
+     contactPermissionStatus:"PERMITTED",contactPermissionEvidenceUrl:"https://example.com/synthetic-permission",
+     contactPath:{
+       id:"contact",channel:"PHONE",recipient:"SYNTHETIC TEST RECIPIENT",routeValue:"000-000-0000",postalCode:null,
+       classification:"OBSERVED",confidence:0.9,sourceId:"synthetic-contact-source",sourceName:"SYNTHETIC source",
+       sourceRecordId:"SYNTHETIC-CONTACT-1",capturedAt:now.toISOString(),
+       freshUntilAt:new Date(now.getTime()+30*86400000).toISOString(),freshnessStatus:"CURRENT",
+       permissionStatus:"PERMITTED",contactPermissionEvidenceUrl:"https://example.com/synthetic-permission",
+       permissionReviewedAt:now.toISOString(),sourceType:"SELLER",recipientRole:"UNKNOWN",
+       routeVerificationStatus:"CONFIRMED",routeReviewedAt:now.toISOString(),
+       verificationNote:"SYNTHETIC owner review; no real person or contact data.",
+       identityStatus:"UNVERIFIED",signingAuthorityStatus:"NOT_ESTABLISHED",identityConflictStatus:"NONE",
+     },
+   }:{}),
 })) as Intelligence[];
 test("checkboxes cannot create sourced property readiness",()=>{
   assert.ok(evidenceReadiness(lead,{...input,subjectEvidenceId:undefined,conditionEvidenceId:undefined},entries,now).length>=2);
@@ -48,6 +61,26 @@ test("CALL READY contact evidence must be a current, reviewed, source-backed pho
   assert.ok(evidenceReadiness(lead,input,unreviewedPermission,now).some(item=>/contact permission is not recorded/.test(item)));
   const missingPermissionEvidence = entries.map(e=>e.id==="contact"?{...e,contactPermissionEvidenceUrl:undefined}:e);
   assert.ok(evidenceReadiness(lead,input,missingPermissionEvidence,now).some(item=>/link evidence for permission/.test(item)));
+  const unconfirmedRoute = entries.map(e=>e.id==="contact"?{
+    ...e,contactPath:{...e.contactPath!,routeVerificationStatus:"UNREVIEWED" as const},
+  }:e);
+  assert.ok(evidenceReadiness(lead,input,unconfirmedRoute,now).some(item=>/must be owner-confirmed/.test(item)));
+  const staleRoute = entries.map(e=>e.id==="contact"?{
+    ...e,contactPath:{...e.contactPath!,freshnessStatus:"STALE" as const,freshUntilAt:now.toISOString()},
+  }:e);
+  assert.ok(evidenceReadiness(lead,input,staleRoute,now).some(item=>/selected phone route is stale/.test(item)));
+  const conflictingRoute = entries.map(e=>e.id==="contact"?{
+    ...e,contactPath:{...e.contactPath!,identityConflictStatus:"MULTIPLE_RECIPIENTS" as const},
+  }:e);
+  assert.ok(evidenceReadiness(lead,input,conflictingRoute,now).some(item=>/conflicting recipient identity/.test(item)));
+  const emailOnly = entries.map(e=>e.id==="contact"?{
+    ...e,contactPath:{...e.contactPath!,channel:"EMAIL" as const,routeValue:"synthetic@example.com"},
+  }:e);
+  assert.ok(evidenceReadiness(lead,input,emailOnly,now).some(item=>/only a phone route/.test(item)));
+  const contact = entries.find(e=>e.id==="contact")!.contactPath!;
+  assert.equal(contact.identityStatus,"UNVERIFIED");
+  assert.equal(contact.signingAuthorityStatus,"NOT_ESTABLISHED",
+    "A callable route must not silently promote seller identity or signing authority.");
   assert.ok(evidenceReadiness({...lead,sellerPhone:""},input,entries,now)
     .some(item=>/postal-only and is not CALL READY/.test(item)));
 });

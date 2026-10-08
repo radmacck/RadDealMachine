@@ -9,6 +9,12 @@ An owner's acquisition ceiling is a constraint, not blanket permission for an op
 
 **How to apply:** When extending counteroffers or automated communications, keep calculation, explicit commercial approval and the actual communication event separate. Do not relax the approval boundary merely to make negotiation easier.
 
+Seller contact research may update contact evidence and readiness, but it must not invalidate or alter acquisition economics, offer authority, transaction stage, or next action. Only the existing authorized workflows may change those states.
+
+**Why:** Contact evidence is not a change to the deal's financial terms or a seller event; conflating it with underwriting can silently revoke or rewrite valid authority.
+
+**How to apply:** Keep contact-route observations and review audit events separate from underwriting snapshots and offer/transaction transitions. A contact change may block future readiness, but must not rewrite a prior authorized offer or transaction history.
+
 Revoking or superseding internal authority does not undo a proposal already communicated to a seller.
 
 **Why:** The system controls its own permissions, not a seller's memory or the legal effect of a prior human communication. A new approval must never rewrite that history.

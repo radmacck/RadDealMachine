@@ -455,6 +455,82 @@ export const PropertyContactPathSigningAuthorityStatus = {
   NOT_ESTABLISHED: 'NOT_ESTABLISHED',
 } as const;
 
+export type ContactPathObservationRecipientRole = typeof ContactPathObservationRecipientRole[keyof typeof ContactPathObservationRecipientRole];
+
+
+export const ContactPathObservationRecipientRole = {
+  RECORDED_OWNER: 'RECORDED_OWNER',
+  SELLER_SELF_IDENTIFIED: 'SELLER_SELF_IDENTIFIED',
+  AUTHORIZED_AGENT_CLAIM: 'AUTHORIZED_AGENT_CLAIM',
+  DIRECTORY_CONTACT: 'DIRECTORY_CONTACT',
+  UNKNOWN: 'UNKNOWN',
+} as const;
+
+export type ContactPathObservationClassification = typeof ContactPathObservationClassification[keyof typeof ContactPathObservationClassification];
+
+
+export const ContactPathObservationClassification = {
+  OBSERVED: 'OBSERVED',
+  VERIFIED: 'VERIFIED',
+} as const;
+
+export type ContactPathObservationPermissionStatus = typeof ContactPathObservationPermissionStatus[keyof typeof ContactPathObservationPermissionStatus];
+
+
+export const ContactPathObservationPermissionStatus = {
+  NOT_REVIEWED: 'NOT_REVIEWED',
+  PERMITTED: 'PERMITTED',
+  PROHIBITED: 'PROHIBITED',
+} as const;
+
+export type ContactPathObservationRouteVerificationStatus = typeof ContactPathObservationRouteVerificationStatus[keyof typeof ContactPathObservationRouteVerificationStatus];
+
+
+export const ContactPathObservationRouteVerificationStatus = {
+  UNREVIEWED: 'UNREVIEWED',
+  CONFIRMED: 'CONFIRMED',
+  REJECTED: 'REJECTED',
+} as const;
+
+export interface ContactPathObservation {
+  id: string;
+  /** @nullable */
+  recipient: string | null;
+  recipientRole: ContactPathObservationRecipientRole;
+  sourceId: string;
+  sourceName: string;
+  sourceRecordId: string;
+  /** @nullable */
+  sourceUrl: string | null;
+  capturedAt: string;
+  freshUntilAt: string;
+  classification: ContactPathObservationClassification;
+  /**
+     * @minimum 0
+     * @maximum 1
+     */
+  confidence: number;
+  permissionStatus: ContactPathObservationPermissionStatus;
+  /** @nullable */
+  contactPermissionEvidenceUrl: string | null;
+  /** @nullable */
+  permissionReviewedAt: string | null;
+  routeVerificationStatus: ContactPathObservationRouteVerificationStatus;
+  /** @nullable */
+  routeReviewedAt: string | null;
+  /** @nullable */
+  verificationNote: string | null;
+}
+
+export type PropertyContactPathIdentityConflictStatus = typeof PropertyContactPathIdentityConflictStatus[keyof typeof PropertyContactPathIdentityConflictStatus];
+
+
+export const PropertyContactPathIdentityConflictStatus = {
+  NONE: 'NONE',
+  MULTIPLE_RECIPIENTS: 'MULTIPLE_RECIPIENTS',
+  MULTIPLE_ROLES: 'MULTIPLE_ROLES',
+} as const;
+
 export interface PropertyContactPath {
   id: string;
   channel: PropertyContactPathChannel;
@@ -499,6 +575,11 @@ export interface PropertyContactPath {
   signingAuthorityStatus?: PropertyContactPathSigningAuthorityStatus;
   /** @minimum 1 */
   supportingObservationCount?: number;
+  supportingObservations?: ContactPathObservation[];
+  identityConflictStatus?: PropertyContactPathIdentityConflictStatus;
+  /** @minimum 0 */
+  recipientIdentityClaimCount?: number;
+  rankingReasons?: string[];
 }
 
 export interface PublicProperty {
@@ -687,6 +768,8 @@ export type SellerContactObservationInputChannel = typeof SellerContactObservati
 export const SellerContactObservationInputChannel = {
   PHONE: 'PHONE',
   EMAIL: 'EMAIL',
+  WEB: 'WEB',
+  OTHER: 'OTHER',
 } as const;
 
 export type SellerContactObservationInputRecipientRole = typeof SellerContactObservationInputRecipientRole[keyof typeof SellerContactObservationInputRecipientRole];
@@ -743,7 +826,7 @@ export interface SellerContactObservationInput {
   channel: SellerContactObservationInputChannel;
   /**
      * @minLength 3
-     * @maxLength 200
+     * @maxLength 2000
      */
   routeValue: string;
   /**
@@ -799,11 +882,16 @@ export type SellerContactReadinessDirectRouteStatus = typeof SellerContactReadin
 
 export const SellerContactReadinessDirectRouteStatus = {
   NO_DIRECT_ROUTE: 'NO_DIRECT_ROUTE',
+  STALE_ROUTE: 'STALE_ROUTE',
+  CONFLICTING_ROUTE: 'CONFLICTING_ROUTE',
+  NEEDS_REVIEW: 'NEEDS_REVIEW',
   POSTAL_ONLY: 'POSTAL_ONLY',
+  EMAIL_ONLY: 'EMAIL_ONLY',
+  WEB_ROUTE_AVAILABLE: 'WEB_ROUTE_AVAILABLE',
+  OTHER_ROUTE_AVAILABLE: 'OTHER_ROUTE_AVAILABLE',
+  PHONE_ROUTE_AVAILABLE: 'PHONE_ROUTE_AVAILABLE',
   REVIEW_REQUIRED: 'REVIEW_REQUIRED',
   CONFLICT_REVIEW_REQUIRED: 'CONFLICT_REVIEW_REQUIRED',
-  EMAIL_ONLY: 'EMAIL_ONLY',
-  PHONE_ROUTE_AVAILABLE: 'PHONE_ROUTE_AVAILABLE',
 } as const;
 
 export interface SellerContactReadiness {
@@ -2338,12 +2426,13 @@ export interface IntelligenceInput {
   action?: string;
 }
 
-export type Intelligence = IntelligenceInput & {
+export type Intelligence = IntelligenceInput & ({
   id: string;
   leadId: string;
   createdAt: string;
   createdBy: string;
-};
+  contactPath?: PropertyContactPath | null;
+});
 
 export type AnalysisClassification = typeof AnalysisClassification[keyof typeof AnalysisClassification];
 

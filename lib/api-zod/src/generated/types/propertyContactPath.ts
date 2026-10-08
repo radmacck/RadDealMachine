@@ -5,9 +5,11 @@
  * Radical Deal OS seller intake, underwriting, conversations and approved offers
  * OpenAPI spec version: 1.0.0
  */
+import type { ContactPathObservation } from './contactPathObservation';
 import type { PropertyContactPathChannel } from './propertyContactPathChannel';
 import type { PropertyContactPathClassification } from './propertyContactPathClassification';
 import type { PropertyContactPathFreshnessStatus } from './propertyContactPathFreshnessStatus';
+import type { PropertyContactPathIdentityConflictStatus } from './propertyContactPathIdentityConflictStatus';
 import type { PropertyContactPathIdentityStatus } from './propertyContactPathIdentityStatus';
 import type { PropertyContactPathPermissionStatus } from './propertyContactPathPermissionStatus';
 import type { PropertyContactPathRecipientRole } from './propertyContactPathRecipientRole';
@@ -59,4 +61,9 @@ export interface PropertyContactPath {
   signingAuthorityStatus?: PropertyContactPathSigningAuthorityStatus;
   /** @minimum 1 */
   supportingObservationCount?: number;
+  supportingObservations?: ContactPathObservation[];
+  identityConflictStatus?: PropertyContactPathIdentityConflictStatus;
+  /** @minimum 0 */
+  recipientIdentityClaimCount?: number;
+  rankingReasons?: string[];
 }

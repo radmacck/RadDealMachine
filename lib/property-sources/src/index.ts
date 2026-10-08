@@ -244,7 +244,8 @@ export function rankContactPaths(paths: PropertyContactPath[], now = new Date())
       identityConflictStatus: identity.status,
       recipientIdentityClaimCount: identity.claimCount,
     };
-  }).sort((a, b) => {
+  });
+  return unique.sort((a, b) => {
     const permitted = permissionRank(b.permissionStatus) - permissionRank(a.permissionStatus);
     const verification = verificationRank(b.routeVerificationStatus) - verificationRank(a.routeVerificationStatus);
     const fresh = Number(b.freshnessStatus === "CURRENT") - Number(a.freshnessStatus === "CURRENT");

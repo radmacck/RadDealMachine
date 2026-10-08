@@ -1,5 +1,10 @@
 import type { Analysis, Intelligence, Lead, UnderwritingInput } from "./types";
 
+function normalizePhone(value: string) {
+  const digits = value.replace(/\D/g, "");
+  return digits.length === 11 && digits.startsWith("1") ? digits.slice(1) : digits;
+}
+
 /** Review references to existing same-deal evidence; a checkbox is not provenance.
  * This composes with the financial engine, which remains deterministic and offline.
  */
@@ -21,6 +26,7 @@ export function evidenceReadiness(lead: Lead, input: UnderwritingInput|null, ent
       blockers.push(`${label}: sourced public-record/inspection observation is required.`);
     }
     if (mode==="CONTACT") {
+      const route = e.contactPath;
       if (!["OBSERVED","VERIFIED_FACTS"].includes(e.classification)) {
         blockers.push(`${label}: the phone route must be observed or independently verified; an indication is insufficient.`);
       }
@@ -36,6 +42,48 @@ export function evidenceReadiness(lead: Lead, input: UnderwritingInput|null, ent
       }
       if (!/^https:\/\//i.test(e.contactPermissionEvidenceUrl??"")) {
         blockers.push(`${label}: link evidence for permission to use this contact route.`);
+      }
+      if (!route) {
+        blockers.push(`${label}: the selected contact evidence must include a reconciled, source-backed phone route.`);
+      } else {
+        if (route.channel !== "PHONE") blockers.push(`${label}: only a phone route can satisfy the phone-based CALL READY gate.`);
+        if (route.routeVerificationStatus !== "CONFIRMED") blockers.push(`${label}: the route must be owner-confirmed; an unreviewed or rejected route cannot satisfy CALL READY.`);
+        if (route.permissionStatus !== "PERMITTED") blockers.push(`${label}: the selected route's own permission status must be PERMITTED.`);
+        const routeExpiry = Date.parse(route.freshUntilAt);
+        if (route.freshnessStatus !== "CURRENT" || !Number.isFinite(routeExpiry) || routeExpiry <= now.getTime()) {
+          blockers.push(`${label}: the selected phone route is stale and must be re-observed before CALL READY.`);
+        }
+        if (route.identityConflictStatus && route.identityConflictStatus !== "NONE") {
+          blockers.push(`${label}: conflicting recipient identity/role claims require owner review.`);
+        }
+        if (route.identityStatus !== "UNVERIFIED" || route.signingAuthorityStatus !== "NOT_ESTABLISHED") {
+          blockers.push(`${label}: preserve the boundary between a usable contact route, verified legal identity, and signing authority.`);
+        }
+        if (lead.sellerPhone && route.routeValue && normalizePhone(route.routeValue) !== normalizePhone(lead.sellerPhone)) {
+          blockers.push(`${label}: selected phone evidence does not match the current lead contact route.`);
+        }
+
+        const allPhoneRoutes = entries.flatMap(entry => entry.contactPath?.channel === "PHONE" ? [entry.contactPath] : []);
+        const selectedKey = normalizePhone(route.routeValue ?? "");
+        const selectedObservations = allPhoneRoutes.filter(item => normalizePhone(item.routeValue ?? "") === selectedKey);
+        const recipientClaims = new Set(selectedObservations.map(item => (item.recipient ?? "").normalize("NFKD")
+          .replace(/\p{Diacritic}/gu, "").replace(/[^\p{L}\p{N}]/gu, "").toLocaleUpperCase("en-US")).filter(Boolean));
+        const recipientRoles = new Set(selectedObservations.map(item => item.recipientRole ?? "UNKNOWN")
+          .filter(role => role !== "UNKNOWN"));
+        if (recipientClaims.size > 1 || recipientRoles.size > 1) {
+          blockers.push(`${label}: source observations disagree about who the phone route belongs to; reconcile the recipient claims before CALL READY.`);
+        }
+        const eligibleDistinctPhones = new Set(allPhoneRoutes.filter(item =>
+          item.permissionStatus === "PERMITTED" &&
+          item.routeVerificationStatus === "CONFIRMED" &&
+          item.freshnessStatus === "CURRENT" &&
+          Number.isFinite(Date.parse(item.freshUntilAt)) &&
+          Date.parse(item.freshUntilAt) > now.getTime() &&
+          (!item.identityConflictStatus || item.identityConflictStatus === "NONE"),
+        ).map(item => normalizePhone(item.routeValue ?? "")).filter(Boolean));
+        if (eligibleDistinctPhones.size > 1) {
+          blockers.push(`${label}: multiple current permitted phone routes remain; resolve the conflict before CALL READY.`);
+        }
       }
     }
     if (mode!=="CONTACT" && !/^https?:\/\//i.test(e.sourceUrl??"")) blockers.push(`${label}: link the actual source document.`);

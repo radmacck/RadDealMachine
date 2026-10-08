@@ -7,6 +7,7 @@ import { searchProperties } from "@workspace/property-sources";
 import { recordPublicPropertyDiscovery } from "./property-discovery-store";
 import { intakePropertyEvidence } from "./evidence-intake";
 import { callQueue, createLead, leadDetail, recordCall, transitionLeadForActor } from "./deal-store";
+import { recordSellerContactObservation } from "./seller-contact-store";
 const now = new Date();
 const actor = {id:`synthetic-packet:${randomUUID()}`,role:"OWNER"};
 assert.match(process.env.PGOPTIONS??"",/search_path=exercise_[a-f0-9]+/,"This exercise requires the isolated harness.");
@@ -31,8 +32,18 @@ try {
   // Separately labelled synthetic packet demonstrates the fully supplied
   // input adapter. It is NOT claimed as a completed real-property exercise.
   const lead = await createLead({address:"SYNTHETIC PACKET SUBJECT",city:"Synthetic City",state:"TX",county:"Synthetic County",zip:"75001",
-    propertyType:"SINGLE_FAMILY",sqft:1000,beds:3,baths:2,units:1,sellerName:"SYNTHETIC SELLER",sellerPhone:"000-000-0000",
+    propertyType:"SINGLE_FAMILY",sqft:1000,beds:3,baths:2,units:1,sellerName:"SYNTHETIC SELLER",
     askingPrice:100000,source:"SYNTHETIC isolated packet exercise"},actor.id,now);
+  const contactEvidence = await recordSellerContactObservation(lead.id,{
+    version:lead.version,channel:"PHONE",routeValue:"(215) 555-0142",recipient:"SYNTHETIC test seller",
+    recipientRole:"SELLER_SELF_IDENTIFIED",classification:"OBSERVED",confidence:0.9,sourceType:"SELLER",
+    sourceId:"synthetic-packet-contact",sourceName:"SYNTHETIC isolated contact exercise",
+    sourceRecordId:"SYNTHETIC-PACKET-CONTACT-001",permissionStatus:"PERMITTED",
+    contactPermissionEvidenceUrl:"https://example.com/synthetic-contact-permission",
+    routeVerificationStatus:"CONFIRMED",verificationNote:"SYNTHETIC owner-reviewed route; not a real contact or identity.",
+  },{...actor,role:"OWNER" as const},now);
+  assert.equal(contactEvidence.directRouteStatus,"PHONE_ROUTE_AVAILABLE");
+  const persistedLeadVersion=contactEvidence.leadVersion;
   const [leadRow] = await db.select().from(leadsTable).where(eq(leadsTable.id,lead.id));
   const [qualificationDiscovery] = await db.insert(propertyDiscoveriesTable).values({
     identityKey:`synthetic-qualification:${randomUUID()}`,
@@ -59,22 +70,22 @@ try {
     "The synthetic linked qualification must be exposed on the lead before workflow transitions.");
   const entries: (IntelligenceInput&{key:string})[] = [];
   const evidence = (key: string, category: string, contact = false) => {
+    if (contact) throw new Error("Synthetic packets use the persisted contact-route boundary, not a manually re-entered contact claim.");
     entries.push({key,category,classification:contact?"OBSERVED":"VERIFIED_FACTS",sourceType:contact?"SELLER":"INSPECTION",
       statement:"SYNTHETIC reviewed fixture; not a real property fact.",source:"SYNTHETIC exercise",sourceUrl:"https://example.com/synthetic",
-      capturedAt:now.toISOString(),confidence:0.9,verificationNote:"SYNTHETIC review of a fixture, not an actual inspection.",
-      ...(contact?{contactPermissionStatus:"PERMITTED" as const,contactPermissionEvidenceUrl:"https://example.com/synthetic-contact-permission"}:{})});
+      capturedAt:now.toISOString(),confidence:0.9,verificationNote:"SYNTHETIC review of a fixture, not an actual inspection."});
     return key;
   };
-  const input: UnderwritingInput = {version:lead.version,conditionConfirmed:true,repairsComplete:true,
+  const input: UnderwritingInput = {version:persistedLeadVersion,conditionConfirmed:true,repairsComplete:true,
     subjectEvidenceId:evidence("subject","subject_property"),conditionEvidenceId:evidence("condition","subject_condition"),
-    sellerContactEvidenceId:evidence("contact","seller_contact",true),
+    sellerContactEvidenceId:contactEvidence.selectedPhonePath!.id,
     comps:[290000,300000,310000].map((salePrice,i)=>({id:`packet-comp-${i}`,address:`SYNTHETIC COMP ${i}`,salePrice,sqft:1000,
       soldAt:new Date(now.getTime()-10*86400000).toISOString().slice(0,10),distanceMiles:0.5,propertyType:"SINGLE_FAMILY",condition:"RENOVATED",
       source:"SYNTHETIC source",verified:true,saleEvidenceId:evidence(`sale${i}`,`comp_sale:packet-comp-${i}`),
       conditionEvidenceId:evidence(`renovation${i}`,`comp_condition:packet-comp-${i}`)})),
     repairs:[{category:"Roof",low:10000,expected:20000,high:30000,source:"SYNTHETIC scope",confidence:0.9,evidenceId:evidence("repair","repair_scope:roof")}],
   };
-  const packet = {version:lead.version,lead,entries,underwriting:input};
+  const packet = {version:persistedLeadVersion,lead,entries,underwriting:input};
   await assert.rejects(intakePropertyEvidence(lead.id,packet,{...actor,role:"OPERATOR"},now),e=>(e as DomainError).status===403);
   await assert.rejects(intakePropertyEvidence(lead.id,{...packet,entries:[{...entries[0]!,sourceType:"MODEL"}]},actor,now),/Model output/);
   assert.equal((await db.select({n:count()}).from(analysesTable).where(eq(analysesTable.leadId,lead.id)))[0]?.n,0);

@@ -18,7 +18,7 @@ export interface SellerContactObservationInput {
   channel: SellerContactObservationInputChannel;
   /**
      * @minLength 3
-     * @maxLength 200
+     * @maxLength 2000
      */
   routeValue: string;
   /**

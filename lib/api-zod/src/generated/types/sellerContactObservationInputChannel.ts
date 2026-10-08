@@ -12,4 +12,6 @@ export type SellerContactObservationInputChannel = typeof SellerContactObservati
 export const SellerContactObservationInputChannel = {
   PHONE: 'PHONE',
   EMAIL: 'EMAIL',
+  WEB: 'WEB',
+  OTHER: 'OTHER',
 } as const;
