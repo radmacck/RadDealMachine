@@ -1,4 +1,6 @@
+import { createHash } from "node:crypto";
 import { ConnectorRegistry } from "@workspace/property-sources";
+import type { ListingRetentionPolicy } from "@workspace/deal-domain";
 import {
   PHILA_DEMOLITIONS_SOURCE,
   PHILA_LI_PERMITS_SOURCE,
@@ -33,6 +35,19 @@ export type PropertySourceDescriptor = {
   termsUrl: string;
   capabilities: string[];
   limitations: string[];
+  termsReviewedAt?: string;
+  listingTextRetentionPolicy?: ListingRetentionPolicy;
+};
+
+export type ListingDescriptionObservation = {
+  propertyId: string;
+  sourceId: string;
+  sourceRecordId: string;
+  sourceUrl: string;
+  capturedAt: string;
+  description: string;
+  retentionPolicy: ListingRetentionPolicy;
+  contentDigest?: string;
 };
 
 export type PropertyDiscoveryBatch = {
@@ -64,6 +79,7 @@ export type PropertySourceConnector = {
   discoverProperties?: (now: Date) => Promise<PropertyDiscoveryBatch>;
   refreshEvidence?: (ids: string[], now: Date) => Promise<PropertySourceRefresh[]>;
   discoverBuyerActivity?: (now: Date) => Promise<RepeatedTransferBuyer[]>;
+  fetchListingDescriptions?: (properties: PublicProperty[], now: Date) => Promise<ListingDescriptionObservation[]>;
 };
 
 export const propertySourceConnectors = new ConnectorRegistry<PropertySourceConnector>();
@@ -75,11 +91,23 @@ export function registerPropertySourceConnector(connector: PropertySourceConnect
   }
   if (!connector.sources.length) throw new Error(`Connector "${connector.id}" must expose at least one live source descriptor.`);
   if (![connector.searchProperties, connector.propertyById, connector.propertyByAddress, connector.propertiesByIds,
-    connector.nearbySales, connector.discoverProperties, connector.refreshEvidence, connector.discoverBuyerActivity]
+    connector.nearbySales, connector.discoverProperties, connector.refreshEvidence, connector.discoverBuyerActivity,
+    connector.fetchListingDescriptions]
     .some((operation) => typeof operation === "function")) {
     throw new Error(`Connector "${connector.id}" must implement at least one live source operation; metadata-only connectors are not supported.`);
   }
   const sourceIds = new Set<string>();
+  if (connector.fetchListingDescriptions) {
+    const listingSources = connector.sources.filter(source => source.capabilities.includes("LISTING_DESCRIPTION"));
+    if (!listingSources.length) throw new Error(`Connector "${connector.id}" must declare LISTING_DESCRIPTION capability for each remarks adapter.`);
+    for (const source of listingSources) {
+      const reviewedAt = Date.parse(source.termsReviewedAt ?? "");
+      if (!Number.isFinite(reviewedAt) || reviewedAt > Date.now() ||
+        !["FULL_TEXT_PERMITTED", "HASH_ONLY", "DERIVED_ONLY"].includes(source.listingTextRetentionPolicy ?? "")) {
+        throw new Error(`Connector "${connector.id}" must record reviewed source terms and an explicit permitted listing-text retention policy.`);
+      }
+    }
+  }
   for (const source of connector.sources) {
     if (!source.id.trim() || !source.name.trim() || !source.coverage.trim() ||
       !/^https:\/\//.test(source.termsUrl) || !source.capabilities.length || !source.limitations.length) {
@@ -179,6 +207,55 @@ export function allPropertySourceConnectors() {
 
 export function getPropertySourceConnector(id: string) {
   return propertySourceConnectors.get(id);
+}
+
+export function propertySourceConnectorsWithListingDescriptions() {
+  return allPropertySourceConnectors().filter(connector => typeof connector.fetchListingDescriptions === "function");
+}
+
+export async function refreshListingDescriptionsFromRegisteredSources(
+  properties: PublicProperty[],
+  now: Date,
+) {
+  const observations: Array<ListingDescriptionObservation & { connectorId: string; sourceName: string }> = [];
+  const failures: SourceConnectorFailure[] = [];
+  const requested = new Set(properties.map(property => property.id));
+  for (const connector of allPropertySourceConnectors()) {
+    if (!connector.fetchListingDescriptions) continue;
+    try {
+      const results = await connector.fetchListingDescriptions(properties, now);
+      for (const result of results) {
+        const source = connector.sources.find(item => item.id === result.sourceId);
+        if (!source || !source.capabilities.includes("LISTING_DESCRIPTION") ||
+          !requested.has(result.propertyId) || !result.sourceRecordId.trim() ||
+          !/^https:\/\//i.test(result.sourceUrl) ||
+          source.listingTextRetentionPolicy !== result.retentionPolicy ||
+          !Number.isFinite(Date.parse(result.capturedAt)) || Date.parse(result.capturedAt) > now.getTime() + 60_000 ||
+          (result.retentionPolicy === "FULL_TEXT_PERMITTED" && result.description.length > 5_000) ||
+          (result.retentionPolicy === "HASH_ONLY" && result.description.length > 20_000)) {
+          throw new Error(`Connector "${connector.id}" returned listing remarks outside its reviewed source, retention, identity, or timestamp boundaries.`);
+        }
+        const digest = createHash("sha256").update(result.description).digest("hex");
+        if (result.contentDigest && result.contentDigest !== digest) {
+          throw new Error(`Connector "${connector.id}" returned a content digest that does not match its listing text.`);
+        }
+        observations.push({
+          ...result,
+          contentDigest: digest,
+          connectorId: connector.id,
+          sourceName: source.name,
+        });
+      }
+    } catch (error) {
+      failures.push({
+        connectorId: connector.id,
+        sourceIds: connector.sources.filter(source => source.capabilities.includes("LISTING_DESCRIPTION")).map(source => source.id),
+        operation: "REFRESH",
+        message: error instanceof Error ? error.message : "Unknown listing-description source failure",
+      });
+    }
+  }
+  return { observations, failures };
 }
 
 export function listPropertySourceDescriptors(): PropertySourceDescriptor[] {

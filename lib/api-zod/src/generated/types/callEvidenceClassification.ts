@@ -11,4 +11,5 @@ export type CallEvidenceClassification = typeof CallEvidenceClassification[keyof
 
 export const CallEvidenceClassification = {
   INDICATED: 'INDICATED',
+  OBSERVED: 'OBSERVED',
 } as const;

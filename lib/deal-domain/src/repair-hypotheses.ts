@@ -82,8 +82,11 @@ export function estimateConditionRepairHypotheses(
       sourceWarnings.push(`Ignored stale or invalid condition source ${entry.id}; listing/public remarks must be refreshed within 30 days.`);
       continue;
     }
-    if (!/^https?:\/\//i.test(entry.sourceUrl ?? "")) {
-      sourceWarnings.push(`Ignored condition source ${entry.id}; an HTTP(S) source link is required.`);
+    const linkedSellerCall = entry.sourceType === "SELLER" &&
+      typeof entry.sourceRecordId === "string" &&
+      /^[a-f0-9-]{36}$/i.test(entry.sourceRecordId);
+    if (!/^https?:\/\//i.test(entry.sourceUrl ?? "") && !linkedSellerCall) {
+      sourceWarnings.push(`Ignored condition source ${entry.id}; a permitted HTTP(S) source link or linked seller-call evidence record is required.`);
       continue;
     }
     for (const rule of RULES) {
@@ -92,6 +95,7 @@ export function estimateConditionRepairHypotheses(
       hypotheses.push({
         id: `${entry.id}:${rule.id}`,
         evidenceId: entry.id,
+        sourceRecordId: entry.sourceRecordId ?? null,
         category: rule.category,
         severity: rule.severity,
         statement: entry.statement,
@@ -101,7 +105,7 @@ export function estimateConditionRepairHypotheses(
         confidence: roundConfidence(Math.min(0.5, entry.confidence * 0.5)),
         confidenceMethod: "EXPLICIT_PHRASE_RULE_UNCALIBRATED",
         source: entry.source,
-        sourceUrl: entry.sourceUrl!,
+        sourceUrl: entry.sourceUrl ?? null,
         ruleId: rule.id,
         question: `Does a current inspection confirm the reported ${rule.category.toLowerCase()} condition?`,
         action: `Ask for or order a qualified inspection and link reviewed repair_scope:${rule.category} evidence. This hypothesis does not feed MAO.`,

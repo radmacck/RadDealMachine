@@ -10,18 +10,19 @@ import type { AutomationOverview } from './automationOverview';
 import type { Buyer } from './buyer';
 import type { CallBrief } from './callBrief';
 import type { CommandAction } from './commandAction';
+import type { CommandCenterDeal } from './commandCenterDeal';
+import type { CommandCenterOpportunity } from './commandCenterOpportunity';
 import type { DealOperations } from './dealOperations';
-import type { LeadDetail } from './leadDetail';
 import type { PropertyDiscoveryList } from './propertyDiscoveryList';
 import type { WorkerJob } from './workerJob';
 
 export interface CommandCenter {
   generatedAt: string;
   actions: CommandAction[];
-  opportunities: LeadDetail[];
+  opportunities: CommandCenterOpportunity[];
   calls: CallBrief[];
   acquisitionQueue: AcquisitionQueueItem[];
-  deals: LeadDetail[];
+  deals: CommandCenterDeal[];
   operations: DealOperations[];
   buyers: Buyer[];
   jobs: WorkerJob[];

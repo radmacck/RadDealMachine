@@ -5,7 +5,11 @@
  * Radical Deal OS seller intake, underwriting, conversations and approved offers
  * OpenAPI spec version: 1.0.0
  */
+import type { IntelligenceInputClarificationStatus } from './intelligenceInputClarificationStatus';
+import type { IntelligenceInputConfidenceBasis } from './intelligenceInputConfidenceBasis';
 import type { IntelligenceInputContactPermissionStatus } from './intelligenceInputContactPermissionStatus';
+import type { IntelligenceInputReconciliation } from './intelligenceInputReconciliation';
+import type { IntelligenceInputRetentionPolicy } from './intelligenceInputRetentionPolicy';
 import type { IntelligenceInputSourceType } from './intelligenceInputSourceType';
 import type { ProvenanceClass } from './provenanceClass';
 
@@ -35,6 +39,14 @@ export interface IntelligenceInput {
      */
   confidence: number;
   capturedAt: string;
+  /** @maxLength 240 */
+  sourceRecordId?: string;
+  confidenceBasis?: IntelligenceInputConfidenceBasis;
+  clarificationStatus?: IntelligenceInputClarificationStatus;
+  /** @pattern ^[a-f0-9]{64}$ */
+  contentDigest?: string;
+  retentionPolicy?: IntelligenceInputRetentionPolicy;
+  reconciliation?: IntelligenceInputReconciliation;
   /** @maxLength 2000 */
   verificationNote?: string;
   contactPermissionStatus?: IntelligenceInputContactPermissionStatus;

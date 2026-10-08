@@ -26,4 +26,8 @@ export interface RepairObservation {
      * @maxLength 200
      */
   evidenceId: string;
+  /** @maxLength 240 */
+  sourceRecordId?: string;
+  /** @nullable */
+  sourceUrl?: string | null;
 }

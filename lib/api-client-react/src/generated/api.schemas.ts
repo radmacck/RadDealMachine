@@ -2670,6 +2670,42 @@ export const IntelligenceInputSourceType = {
   MODEL: 'MODEL',
 } as const;
 
+export type IntelligenceInputConfidenceBasis = typeof IntelligenceInputConfidenceBasis[keyof typeof IntelligenceInputConfidenceBasis];
+
+
+export const IntelligenceInputConfidenceBasis = {
+  OPERATOR_ASSESSED: 'OPERATOR_ASSESSED',
+  UNASSESSED_CONSERVATIVE_DEFAULT: 'UNASSESSED_CONSERVATIVE_DEFAULT',
+  SOURCE_RELIABILITY: 'SOURCE_RELIABILITY',
+} as const;
+
+export type IntelligenceInputClarificationStatus = typeof IntelligenceInputClarificationStatus[keyof typeof IntelligenceInputClarificationStatus];
+
+
+export const IntelligenceInputClarificationStatus = {
+  UNREVIEWED: 'UNREVIEWED',
+  FOLLOW_UP_REQUIRED: 'FOLLOW_UP_REQUIRED',
+  SELLER_CLARIFIED: 'SELLER_CLARIFIED',
+} as const;
+
+export type IntelligenceInputRetentionPolicy = typeof IntelligenceInputRetentionPolicy[keyof typeof IntelligenceInputRetentionPolicy];
+
+
+export const IntelligenceInputRetentionPolicy = {
+  FULL_TEXT_PERMITTED: 'FULL_TEXT_PERMITTED',
+  HASH_ONLY: 'HASH_ONLY',
+  DERIVED_ONLY: 'DERIVED_ONLY',
+} as const;
+
+export type IntelligenceInputReconciliationState = typeof IntelligenceInputReconciliationState[keyof typeof IntelligenceInputReconciliationState];
+
+
+export const IntelligenceInputReconciliationState = {
+  NO_COMPARABLE_EVIDENCE: 'NO_COMPARABLE_EVIDENCE',
+  NO_CONFLICT_FOUND: 'NO_CONFLICT_FOUND',
+  CONFLICT_REVIEW: 'CONFLICT_REVIEW',
+} as const;
+
 export type IntelligenceInputContactPermissionStatus = typeof IntelligenceInputContactPermissionStatus[keyof typeof IntelligenceInputContactPermissionStatus];
 
 
@@ -2678,6 +2714,14 @@ export const IntelligenceInputContactPermissionStatus = {
   PERMITTED: 'PERMITTED',
   PROHIBITED: 'PROHIBITED',
 } as const;
+
+export type IntelligenceInputReconciliation = {
+  state: IntelligenceInputReconciliationState;
+  /** @maxItems 50 */
+  comparedEvidenceIds: string[];
+  /** @maxLength 1000 */
+  reason: string;
+};
 
 export interface IntelligenceInput {
   classification: ProvenanceClass;
@@ -2705,6 +2749,14 @@ export interface IntelligenceInput {
      */
   confidence: number;
   capturedAt: string;
+  /** @maxLength 240 */
+  sourceRecordId?: string;
+  confidenceBasis?: IntelligenceInputConfidenceBasis;
+  clarificationStatus?: IntelligenceInputClarificationStatus;
+  /** @pattern ^[a-f0-9]{64}$ */
+  contentDigest?: string;
+  retentionPolicy?: IntelligenceInputRetentionPolicy;
+  reconciliation?: IntelligenceInputReconciliation;
   /** @maxLength 2000 */
   verificationNote?: string;
   contactPermissionStatus?: IntelligenceInputContactPermissionStatus;
@@ -2842,6 +2894,8 @@ export const ConditionRepairHypothesisConfidenceMethod = {
 export interface ConditionRepairHypothesis {
   id: string;
   evidenceId: string;
+  /** @nullable */
+  sourceRecordId: string | null;
   category: string;
   severity: ConditionRepairHypothesisSeverity;
   statement: string;
@@ -2859,7 +2913,8 @@ export interface ConditionRepairHypothesis {
   confidence: number;
   confidenceMethod: ConditionRepairHypothesisConfidenceMethod;
   source: string;
-  sourceUrl: string;
+  /** @nullable */
+  sourceUrl: string | null;
   ruleId: string;
   question: string;
   action: string;
@@ -3237,6 +3292,10 @@ export interface RepairObservation {
      * @maxLength 200
      */
   evidenceId: string;
+  /** @maxLength 240 */
+  sourceRecordId?: string;
+  /** @nullable */
+  sourceUrl?: string | null;
 }
 
 export interface UnderwritingInput {
@@ -3269,57 +3328,22 @@ export interface Transition {
   createdAt: string;
 }
 
-export type CallInputOutcome = typeof CallInputOutcome[keyof typeof CallInputOutcome];
+export type CallOutcome = typeof CallOutcome[keyof typeof CallOutcome];
 
 
-export const CallInputOutcome = {
+export const CallOutcome = {
   NO_ANSWER: 'NO_ANSWER',
   VOICEMAIL: 'VOICEMAIL',
   CONNECTED: 'CONNECTED',
   NOT_INTERESTED: 'NOT_INTERESTED',
 } as const;
 
-export type CallInputSellerAnswers = {
-  /** @maxLength 3000 */
-  motivationStatement?: string;
-  /** @maxLength 3000 */
-  conditionDescription?: string;
-  /** @maxLength 1000 */
-  timing?: string;
-  /**
-     * @minimum 0
-     * @maximum 1000000000
-     * @nullable
-     */
-  askingPrice?: number | null;
-  /** @maxLength 2000 */
-  nextStepOutcome?: string;
-};
-
-export interface CallInput {
-  /** @minimum 1 */
-  version: number;
-  outcome: CallInputOutcome;
-  /**
-     * @minLength 1
-     * @maxLength 10000
-     */
-  notes: string;
-  /**
-     * @minLength 3
-     * @maxLength 1000
-     */
-  nextAction: string;
-  /** @nullable */
-  followUpAt: string | null;
-  sellerAnswers?: CallInputSellerAnswers;
-}
-
 export type CallEvidenceSource = typeof CallEvidenceSource[keyof typeof CallEvidenceSource];
 
 
 export const CallEvidenceSource = {
   OPERATOR_ENTERED_SELLER_CONVERSATION: 'OPERATOR_ENTERED_SELLER_CONVERSATION',
+  OPERATOR_CALL_ATTEMPT: 'OPERATOR_CALL_ATTEMPT',
 } as const;
 
 export type CallEvidenceClassification = typeof CallEvidenceClassification[keyof typeof CallEvidenceClassification];
@@ -3327,16 +3351,28 @@ export type CallEvidenceClassification = typeof CallEvidenceClassification[keyof
 
 export const CallEvidenceClassification = {
   INDICATED: 'INDICATED',
+  OBSERVED: 'OBSERVED',
 } as const;
 
-export type Call = CallInput & {
+export interface Call {
   id: string;
   createdAt: string;
   actor: string;
+  version: number;
+  outcome: CallOutcome;
+  /** @maxLength 10000 */
+  notes: string;
+  /** @maxLength 1000 */
+  nextAction: string;
+  /** @nullable */
+  followUpAt: string | null;
   evidenceSource?: CallEvidenceSource;
   evidenceClassification?: CallEvidenceClassification;
   sellerAnswersCapturedAt?: string;
-};
+  evidenceIds?: string[];
+  materialEvidence?: boolean;
+  analysisInvalidated?: boolean;
+}
 
 export type DealWorkGuidanceCategory = typeof DealWorkGuidanceCategory[keyof typeof DealWorkGuidanceCategory];
 
@@ -4370,6 +4406,12 @@ export interface CommandAction {
   workGuidance?: DealWorkGuidance | null;
 }
 
+export interface CommandCenterOpportunity {
+  lead: Lead;
+  intelligence: Intelligence[];
+  analysis: Analysis | null;
+}
+
 export interface CallBrief {
   lead: Lead;
   objective: string;
@@ -4430,6 +4472,11 @@ export interface AcquisitionQueueItem {
   callBrief: CallBrief | null;
 }
 
+export interface CommandCenterDeal {
+  lead: Lead;
+  workGuidance?: DealWorkGuidance | null;
+}
+
 export type AutomationOverviewStatus = typeof AutomationOverviewStatus[keyof typeof AutomationOverviewStatus];
 
 
@@ -4487,10 +4534,10 @@ export interface AutomationOverview {
 export interface CommandCenter {
   generatedAt: string;
   actions: CommandAction[];
-  opportunities: LeadDetail[];
+  opportunities: CommandCenterOpportunity[];
   calls: CallBrief[];
   acquisitionQueue: AcquisitionQueueItem[];
-  deals: LeadDetail[];
+  deals: CommandCenterDeal[];
   operations: DealOperations[];
   buyers: Buyer[];
   jobs: WorkerJob[];
@@ -4580,6 +4627,111 @@ export interface TransitionInput {
   nextAction: string;
   /** @nullable */
   followUpAt?: string | null;
+}
+
+export type CallConditionAnswerCategory = typeof CallConditionAnswerCategory[keyof typeof CallConditionAnswerCategory];
+
+
+export const CallConditionAnswerCategory = {
+  ROOF: 'ROOF',
+  KITCHEN: 'KITCHEN',
+  BATH: 'BATH',
+  HVAC: 'HVAC',
+  ELECTRICAL: 'ELECTRICAL',
+  PLUMBING: 'PLUMBING',
+  FLOORING: 'FLOORING',
+  EXTERIOR: 'EXTERIOR',
+  FOUNDATION: 'FOUNDATION',
+  WINDOWS: 'WINDOWS',
+  OTHER: 'OTHER',
+} as const;
+
+export interface CallConditionAnswer {
+  category: CallConditionAnswerCategory;
+  /**
+     * @minLength 1
+     * @maxLength 2000
+     */
+  statement: string;
+}
+
+export interface CallSellerAnswers {
+  /** @maxLength 3000 */
+  motivationStatement?: string;
+  /** @maxLength 1000 */
+  urgency?: string;
+  /** @maxLength 3000 */
+  conditionDescription?: string;
+  /** @maxItems 12 */
+  conditionByCategory?: CallConditionAnswer[];
+  /** @maxLength 1000 */
+  timing?: string;
+  /**
+     * @minimum 0
+     * @maximum 1000000000
+     * @nullable
+     */
+  askingPrice?: number | null;
+  /** @maxLength 1000 */
+  occupancy?: string;
+  /** @maxLength 2000 */
+  repairsCompleted?: string;
+  /** @maxLength 3000 */
+  knownDefects?: string;
+  /** @maxLength 2000 */
+  titleTenantIssues?: string;
+  /** @maxLength 2000 */
+  accessConstraints?: string;
+  /** @maxLength 2000 */
+  willingnessToAcceptTerms?: string;
+  /** @maxLength 2000 */
+  nextStepOutcome?: string;
+  /** @maxLength 3000 */
+  otherMaterialStatements?: string;
+}
+
+export type CallInputOutcome = typeof CallInputOutcome[keyof typeof CallInputOutcome];
+
+
+export const CallInputOutcome = {
+  NO_ANSWER: 'NO_ANSWER',
+  VOICEMAIL: 'VOICEMAIL',
+  CONNECTED: 'CONNECTED',
+  NOT_INTERESTED: 'NOT_INTERESTED',
+} as const;
+
+export type CallInputClarificationStatus = typeof CallInputClarificationStatus[keyof typeof CallInputClarificationStatus];
+
+
+export const CallInputClarificationStatus = {
+  UNREVIEWED: 'UNREVIEWED',
+  FOLLOW_UP_REQUIRED: 'FOLLOW_UP_REQUIRED',
+  SELLER_CLARIFIED: 'SELLER_CLARIFIED',
+} as const;
+
+export interface CallInput {
+  /** @minimum 1 */
+  version: number;
+  outcome: CallInputOutcome;
+  /**
+     * @minLength 1
+     * @maxLength 10000
+     */
+  notes: string;
+  /**
+     * @minLength 3
+     * @maxLength 1000
+     */
+  nextAction: string;
+  /** @nullable */
+  followUpAt: string | null;
+  /**
+     * @minimum 0
+     * @maximum 1
+     */
+  operatorConfidence?: number;
+  clarificationStatus?: CallInputClarificationStatus;
+  sellerAnswers?: CallSellerAnswers;
 }
 
 export interface AcquisitionQueue {

@@ -2,7 +2,7 @@ import { eq, desc, sql } from "drizzle-orm";
 import { queueJob } from "./operations-records";
 import {
   db, leadsTable, intelligenceTable, analysesTable, callsTable, transitionsTable,
-  auditTable, settingsTable, contractsTable, propertyDiscoveriesTable, type LeadRow,
+  auditTable, settingsTable, contractsTable, propertyDiscoveriesTable, propertyQualificationCriteriaTable, type LeadRow,
 } from "@workspace/db";
 import {
   analyzeDeal, allowedTransitions, buildCallBrief, prioritizeCallQueue, validateProvenance,
@@ -10,7 +10,8 @@ import {
   type Lead, type LeadInput, type LeadDetail, type Intelligence, type IntelligenceInput,
   type UnderwritingInput, type Assumptions, type TransitionInput, type CallInput, type Analysis, type Stage, type OfferActor,
   evidenceReviewedAnalysis, buildDealWorkGuidance,
-  repairMarketKey,
+  repairMarketKey, DEFAULT_PROPERTY_QUALIFICATION_CRITERIA, evaluatePropertyRelevance,
+  type PropertyQualificationCriteria, type PropertyRelevanceSignal,
 } from "@workspace/deal-domain";
 import { CreateLeadResponse, GetLeadResponse, AddIntelligenceResponse, GetAssumptionsResponse } from "@workspace/api-zod";
 import { offersForLead, invalidateOffers, invalidateOffersForPolicyChange } from "./offer-records";
@@ -377,14 +378,230 @@ export async function transitionLead(id: string, input: TransitionInput, actor: 
     return leadDetail(id,tx,now);
   });
 }
+type SellerEvidenceTopic = "MOTIVATION" | "CONDITION" | "OCCUPANCY" | "ASKING_PRICE" | "TITLE_TENANT" | "TIMING" | "OTHER";
+
+function sellerEvidenceTopic(category: string, statement: string): SellerEvidenceTopic {
+  const text = `${category} ${statement}`.toLowerCase();
+  if (/\b(?:motivation|reason for selling|seller_motivation)\b/.test(text)) return "MOTIVATION";
+  if (/\b(?:condition|roof|kitchen|bath|hvac|electrical|plumbing|floor|exterior|foundation|repair|defect|damage)\b/.test(text)) return "CONDITION";
+  if (/\b(?:occupancy|vacan|tenant|occupied|unoccupied)\b/.test(text)) return "OCCUPANCY";
+  if (/\b(?:asking[_ ]?price|seller[_ ]?price)\b/.test(text)) return "ASKING_PRICE";
+  if (/\b(?:title|lien|tenant)\b/.test(text)) return "TITLE_TENANT";
+  if (/\b(?:timing|urgency|closing date|move date)\b/.test(text)) return "TIMING";
+  return "OTHER";
+}
+
+function explicitConditionIssue(value: string) {
+  return /\b(?:leak|leaking|failed|not working|needs? replacement|needs? repair|crack|damage|mold|rott?en|outdated|dated|missing|broken|water intrusion|flood)\b/i.test(value);
+}
+
+function explicitMotivation(value: string) {
+  return /\b(?:reason for selling|selling because|motivated|must sell|needs? to sell|relocat|inherited|estate sale|vacant|behind on (?:mortgage|payments)|foreclosure|urgent)\b/i.test(value);
+}
+
+function contradiction(topic: SellerEvidenceTopic, a: string, b: string): boolean {
+  if (topic === "OCCUPANCY") {
+    const occupancy = (value: string) => ({
+      vacant: /\b(?:vacant|unoccupied|empty)\b/i.test(value),
+      occupied: /\b(?:occupied|tenant|rented|leased)\b/i.test(value),
+    });
+    const first = occupancy(a);
+    const second = occupancy(b);
+    return (first.vacant && second.occupied) || (first.occupied && second.vacant);
+  }
+  if (topic !== "CONDITION") return false;
+  const negative = (value: string) =>
+    /\bno\b.{0,25}\b(?:leak|damage|issue|crack|problem|defect)\b|\bnot\b.{0,20}\b(?:leaking|damaged|cracked|broken|failed|needed)\b|\bwithout\b.{0,20}\b(?:leak|damage|issue|crack|defect)\b|\b(?:sound|good condition|recently replaced)\b/i.test(value);
+  return (explicitConditionIssue(a) && negative(b)) || (explicitConditionIssue(b) && negative(a));
+}
+
+async function qualificationCriteriaFor(tx: Tx, marketKey: string): Promise<PropertyQualificationCriteria> {
+  const [row] = await tx.select().from(propertyQualificationCriteriaTable)
+    .where(eq(propertyQualificationCriteriaTable.marketKey, marketKey));
+  const stored = row ? row.criteria as Record<string, unknown> : {};
+  const storedRules = Array.isArray(stored.signalRules)
+    ? stored.signalRules as PropertyQualificationCriteria["signalRules"] : [];
+  const storedKeys = new Set(storedRules.map(rule => rule.key));
+  return {
+    ...(row ? stored : DEFAULT_PROPERTY_QUALIFICATION_CRITERIA),
+    marketKey,
+    version: row?.version ?? DEFAULT_PROPERTY_QUALIFICATION_CRITERIA.version,
+    signalRules: row
+      ? [...storedRules, ...DEFAULT_PROPERTY_QUALIFICATION_CRITERIA.signalRules.filter(rule => !storedKeys.has(rule.key))]
+      : DEFAULT_PROPERTY_QUALIFICATION_CRITERIA.signalRules,
+  } as PropertyQualificationCriteria;
+}
+
+function makeSellerRelevanceSignals(input: CallInput, callId: string, capturedAt: string): PropertyRelevanceSignal[] {
+  if (!["CONNECTED", "NOT_INTERESTED"].includes(input.outcome)) return [];
+  const answers = input.sellerAnswers;
+  const confidence = input.operatorConfidence ?? 0.5;
+  const signals: PropertyRelevanceSignal[] = [];
+  const motivation = answers?.motivationStatement?.trim() ||
+    (explicitMotivation(input.notes) ? input.notes.trim() : "");
+  if (motivation) signals.push({
+    id: `seller-call:${callId}:motivation`, key: "SELLER_MOTIVATION", group: "MOTIVATION",
+    classification: "INDICATED", sourceType: "SELLER",
+    statement: `Seller-reported reason/intent: ${motivation}`,
+    source: "Operator-recorded seller call", sourceUrl: null,
+    evidenceRef: `seller-call:${callId}:motivation`, capturedAt, confidence,
+  });
+  const conditionStatements = [
+    answers?.conditionDescription,
+    ...(answers?.conditionByCategory ?? []).map(item => `${item.category}: ${item.statement}`),
+    answers?.knownDefects,
+  ].filter((value): value is string => !!value?.trim());
+  if (conditionStatements.some(explicitConditionIssue)) signals.push({
+    id: `seller-call:${callId}:condition`, key: "REPORTED_POOR_CONDITION", group: "CONDITION",
+    classification: "INDICATED", sourceType: "SELLER",
+    statement: "Seller-call answers indicate a condition or repair issue; this is not an inspection finding.",
+    source: "Operator-recorded seller call", sourceUrl: null,
+    evidenceRef: `seller-call:${callId}:condition`, capturedAt, confidence,
+  });
+  const occupancy = answers?.occupancy?.trim();
+  if (occupancy && /\b(?:vacant|unoccupied|empty)\b/i.test(occupancy) &&
+    !/\b(?:not vacant|occupied)\b/i.test(occupancy)) signals.push({
+    id: `seller-call:${callId}:vacancy`, key: "VACANCY", group: "VACANCY",
+    classification: "INDICATED", sourceType: "SELLER",
+    statement: `Seller-reported occupancy: ${occupancy}`,
+    source: "Operator-recorded seller call", sourceUrl: null,
+    evidenceRef: `seller-call:${callId}:vacancy`, capturedAt, confidence,
+  });
+  return signals;
+}
+
+function sellerCallEvidence(input: CallInput, callId: string, now: Date, existing: Intelligence[]) {
+  const sellerContacted = ["CONNECTED", "NOT_INTERESTED"].includes(input.outcome);
+  const sourceType = sellerContacted ? "SELLER" as const : "ANALYST" as const;
+  const classification = sellerContacted ? "INDICATED" as const : "OBSERVED" as const;
+  const confidence = input.operatorConfidence ?? 0.5;
+  const clarificationStatus = input.clarificationStatus ?? "UNREVIEWED";
+  const confidenceBasis = input.operatorConfidence === undefined
+    ? "UNASSESSED_CONSERVATIVE_DEFAULT" as const : "OPERATOR_ASSESSED" as const;
+  const specs: Array<{ field: string; category: string; statement: string }> = [{
+    field: "notes", category: sellerContacted ? "seller_call_note" : "call_attempt_note",
+    statement: input.notes.trim(),
+  }];
+  const answers = input.sellerAnswers;
+  if (answers) {
+    if (answers.motivationStatement?.trim()) specs.push({ field: "motivationStatement", category: "seller_call_motivation", statement: answers.motivationStatement.trim() });
+    if (answers.urgency?.trim()) specs.push({ field: "urgency", category: "seller_call_urgency", statement: answers.urgency.trim() });
+    if (answers.timing?.trim()) specs.push({ field: "timing", category: "seller_call_timing", statement: answers.timing.trim() });
+    if (answers.conditionDescription?.trim()) specs.push({ field: "conditionDescription", category: "seller_call_condition", statement: answers.conditionDescription.trim() });
+    for (const item of answers.conditionByCategory ?? []) specs.push({
+      field: `conditionByCategory.${item.category}`,
+      category: `seller_call_condition_${item.category.toLowerCase()}`,
+      statement: `Seller reported ${item.category.toLowerCase()} condition: ${item.statement.trim()}`,
+    });
+    if (answers.askingPrice != null) specs.push({
+      field: "askingPrice", category: "seller_call_asking_price",
+      statement: `Seller stated an asking price of $${answers.askingPrice.toLocaleString("en-US")}. This report has not been reconciled into underwriting.`,
+    });
+    for (const [field, category, label] of [
+      ["occupancy", "seller_call_occupancy", "Seller-reported occupancy"],
+      ["repairsCompleted", "seller_call_repairs_completed", "Seller-reported completed repairs"],
+      ["knownDefects", "seller_call_known_defects", "Seller-reported defects"],
+      ["titleTenantIssues", "seller_call_title_tenant_issues", "Seller-reported title or tenant issues"],
+      ["accessConstraints", "seller_call_access_constraints", "Seller-reported access constraints"],
+      ["willingnessToAcceptTerms", "seller_call_terms", "Seller-reported terms flexibility"],
+      ["nextStepOutcome", "seller_call_next_step", "Seller-reported next-step outcome"],
+      ["otherMaterialStatements", "seller_call_other_statement", "Other seller-reported material statement"],
+    ] as const) {
+      const value = answers[field];
+      if (typeof value === "string" && value.trim()) specs.push({ field, category, statement: `${label}: ${value.trim()}` });
+    }
+  }
+  return specs.map(spec => {
+    const topic = sellerEvidenceTopic(spec.category, spec.statement);
+    const comparable = existing.filter(item =>
+      item.sourceType !== "MODEL" && item.sourceType !== "ANALYST" &&
+      sellerEvidenceTopic(item.category, item.statement) === topic && topic !== "OTHER");
+    const conflicts = comparable.filter(item => contradiction(topic, item.statement, spec.statement));
+    const conflict = conflicts.length > 0;
+    const conflictQuestion: Partial<IntelligenceInput> = topic === "CONDITION" ? {
+      question: "The seller's statement conflicts with or supplements earlier condition evidence—what current inspection or source can resolve it?",
+      action: "Keep both records; review the conflict and obtain current inspection evidence before using a repair amount.",
+    } : topic === "OCCUPANCY" ? {
+      question: "The seller's occupancy statement differs from prior evidence—who currently occupies the property?",
+      action: "Keep both records and reconcile occupancy before marketing or underwriting.",
+    } : {};
+    const entry: IntelligenceInput = {
+      classification, category: spec.category, statement: spec.statement,
+      source: sellerContacted ? "Operator-recorded seller conversation" : "Operator-recorded call attempt",
+      sourceType, confidence, capturedAt: now.toISOString(), sourceRecordId: callId,
+      confidenceBasis, clarificationStatus,
+      ...(conflictQuestion),
+      reconciliation: {
+        state: conflict ? "CONFLICT_REVIEW" : comparable.length ? "NO_CONFLICT_FOUND" : "NO_COMPARABLE_EVIDENCE",
+        comparedEvidenceIds: comparable.slice(0, 50).map(item => item.id),
+        reason: conflict
+          ? "The new operator-recorded statement contradicts comparable older evidence. Neither statement replaces the other."
+          : comparable.length
+            ? "Comparable evidence was checked; no explicit contradiction was detected."
+            : "No comparable earlier evidence was found; this statement remains uncorroborated.",
+      },
+    };
+    return { field: spec.field, topic, entry };
+  });
+}
+
+async function persistCallRelevance(
+  tx: Tx, row: LeadRow, signals: PropertyRelevanceSignal[], material: boolean, executed: boolean, actor: string, now: Date,
+) {
+  if (!signals.length && !material) return row.payload;
+  const prior = row.payload.propertyQualification;
+  if (!prior || typeof prior !== "object" || Array.isArray(prior)) return row.payload;
+  const qualification = prior as Record<string, unknown>;
+  const city = String(row.payload.city ?? "UNKNOWN").trim().toUpperCase().replace(/[^A-Z0-9]+/g, "_");
+  const state = String(row.payload.state ?? "XX").trim().toUpperCase();
+  const marketKey = typeof qualification.marketKey === "string"
+    ? qualification.marketKey : city === "PHILADELPHIA" ? "PHILADELPHIA_PA" : `${city}_${state}`;
+  const criteria = await qualificationCriteriaFor(tx, marketKey);
+  const storedSignals = Array.isArray(qualification.signals) ? qualification.signals as PropertyRelevanceSignal[] : [];
+  const byId = new Map([...storedSignals, ...signals].map(signal => [signal.id, signal]));
+  const evaluation = evaluatePropertyRelevance([...byId.values()], criteria);
+  const status = material && !executed && qualification.status === "CALL_READY"
+    ? "QUALIFIED_LEAD" : qualification.status;
+  const nextQualification = {
+    ...qualification, status, score: evaluation.score, confidence: evaluation.confidence,
+    criteriaVersion: criteria.version, reason: evaluation.reason,
+    signals: evaluation.scoredSignals.map(({ points, ...signal }) => ({ ...signal, scoreContribution: points })),
+    missingInformation: [...new Set([
+      ...(Array.isArray(qualification.missingInformation)
+        ? qualification.missingInformation.filter((item): item is string => typeof item === "string") : []),
+      ...evaluation.missingInformation,
+      ...(material ? ["Seller-call evidence requires review before refreshed underwriting or another offer."] : []),
+    ])],
+    ...(material ? { evidenceReviewRequired: true, evidenceReviewAt: now.toISOString(), evidenceReviewBy: actor } : {}),
+  };
+  const payload = { ...row.payload, propertyQualification: nextQualification };
+  if (typeof qualification.discoveryId === "string") {
+    const [discovery] = await tx.select().from(propertyDiscoveriesTable)
+      .where(eq(propertyDiscoveriesTable.id, qualification.discoveryId)).for("update");
+    if (discovery) {
+      const discoveryPayload = discovery.payload as Record<string, unknown>;
+      const sourceSignals = Array.isArray(discoveryPayload.signals) ? discoveryPayload.signals as PropertyRelevanceSignal[] : [];
+      const discoveryById = new Map([...sourceSignals, ...signals].map(signal => [signal.id, signal]));
+      const discoveryEvaluation = evaluatePropertyRelevance([...discoveryById.values()], criteria);
+      await tx.update(propertyDiscoveriesTable).set({
+        status: material && !executed && discovery.status === "CALL_READY" ? "QUALIFIED_LEAD" : discovery.status,
+        score: discoveryEvaluation.score, confidence: discoveryEvaluation.confidence,
+        payload: jsonRecord({ ...discoveryPayload, signals: [...discoveryById.values()] }),
+        version: discovery.version + 1, updatedAt: now,
+      }).where(eq(propertyDiscoveriesTable.id, discovery.id));
+    }
+  }
+  return payload;
+}
+
 export async function recordCall(id: string, input: CallInput, actor: string, now = new Date()): Promise<LeadDetail> {
   return db.transaction(async tx => {
     const row = await lockedLead(tx,id,input.version);
     const executed = ["UNDER_CONTRACT","BUYER_MATCHED","BUYER_INTERESTED","BUYER_COMMITTED","CLOSING"].includes(row.stage);
     if (!["CALL_READY","CONTACTED","CONVERSATION","OFFER_READY","OFFER_SENT","NEGOTIATING","CONTRACT_PENDING"].includes(row.stage)&&!executed) throw new DomainError("Calls can only be recorded for call-ready or active seller/closing conversations.");
+    const before = await leadDetail(id,tx,now);
     if (row.stage === "CALL_READY") {
-      const current = await leadDetail(id,tx,now);
-      if (!current.analysis || current.analysis.blockers.length) {
+      if (!before.analysis || before.analysis.blockers.length) {
         throw new DomainError("CALL READY evidence is stale or incomplete. Refresh the seller phone source and underwriting before recording outreach.",409);
       }
       const contact = await getSellerContactPaths(id,now,tx);
@@ -393,29 +610,91 @@ export async function recordCall(id: string, input: CallInput, actor: string, no
       }
     }
     if (executed&&input.outcome==="NOT_INTERESTED") throw new DomainError("A phone response cannot cancel an executed contract. Record the conversation with a follow-up and use the owner-reviewed external cancellation evidence workflow.",409);
+    const sellerContacted = ["CONNECTED", "NOT_INTERESTED"].includes(input.outcome);
+    const sellerAnswersPresent = !!input.sellerAnswers && Object.values(input.sellerAnswers)
+      .some(value => value !== undefined && value !== null && value !== "" && (!Array.isArray(value) || value.length > 0));
+    if (sellerAnswersPresent && !sellerContacted) {
+      throw new DomainError("Seller answers can only be captured after a connected seller response. Record a no-answer/voicemail as an operator call observation.");
+    }
     const followUpAt = followupDate(input.followUpAt,now);
     if (input.outcome !== "NOT_INTERESTED" && !followUpAt) throw new DomainError("Set a future follow-up so the seller conversation does not become a dead end.");
     const stage: Stage = input.outcome === "NOT_INTERESTED" ? "DEAD_DEAL" : input.outcome === "CONNECTED" ? "CONVERSATION" : "CONTACTED";
-    const sellerAnswersPresent = !!input.sellerAnswers && Object.values(input.sellerAnswers)
-      .some(value => value !== undefined && value !== null && value !== "");
-    const persistedCall = {
-      ...input,
-      ...(sellerAnswersPresent ? {
-        evidenceSource: "OPERATOR_ENTERED_SELLER_CONVERSATION" as const,
-        evidenceClassification: "INDICATED" as const,
-        sellerAnswersCapturedAt: iso(now),
-      } : {}),
-    };
     const [savedCall] = await tx.insert(callsTable)
-      .values({leadId:id,payload:jsonRecord(persistedCall),actor,createdAt:now})
+      .values({leadId:id,payload:jsonRecord(input),actor,createdAt:now})
       .returning({id:callsTable.id});
     if (!savedCall) throw new Error("Call result persistence failed.");
-    if (sellerAnswersPresent) {
-      const capturedFields = Object.entries(input.sellerAnswers ?? {})
-        .filter(([, value]) => value !== undefined && value !== null && value !== "")
-        .map(([field]) => field);
+    const evidenceEvents = sellerCallEvidence(input,savedCall.id,now,before.intelligence);
+    const evidenceIds: string[] = [];
+    for (const { entry } of evidenceEvents) {
+      validateProvenance(entry,now);
+      const [savedEvidence] = await tx.insert(intelligenceTable).values({
+        leadId:id,payload:jsonRecord(entry),createdBy:actor,createdAt:now,
+      }).returning({id:intelligenceTable.id});
+      if (savedEvidence) evidenceIds.push(savedEvidence.id);
+    }
+    const materialFields = new Set([
+      "motivationStatement","urgency","timing","askingPrice","conditionDescription","conditionByCategory",
+      "occupancy","repairsCompleted","knownDefects","titleTenantIssues","accessConstraints",
+      "willingnessToAcceptTerms","otherMaterialStatements",
+    ]);
+    const structuredMaterial = Object.keys(input.sellerAnswers ?? {}).some(field => materialFields.has(field));
+    const materialNote = sellerContacted && /\b(?:motivat|reason for selling|selling because|must sell|relocat|inherit|vacant|tenant|occupied|lien|title|roof|kitchen|bath|hvac|electrical|plumb|floor|foundation|repair|defect|damage|as[- ]is|price|asking|urgenc|deadline|access|inspection|foreclosure|tax|closing)\b/i.test(input.notes);
+    const materialEvidence = sellerContacted && (structuredMaterial || materialNote);
+    const conflictFields = evidenceEvents.filter(item => item.entry.reconciliation?.state === "CONFLICT_REVIEW").map(item => item.field);
+    const relevanceSignals = makeSellerRelevanceSignals(input,savedCall.id,now.toISOString());
+    const updatedPayload = await persistCallRelevance(tx,row,relevanceSignals,materialEvidence,executed,actor,now);
+    const effectiveNextAction = materialEvidence && !executed
+      ? conflictFields.length
+        ? "Reconcile conflicting seller-call and source evidence, then refresh underwriting before another offer."
+        : "Review the new seller-reported evidence and refresh current underwriting before another seller action."
+      : executed && materialEvidence
+        ? `${input.nextAction} Review seller-reported evidence against the active agreement; preserve executed terms unless a separately authorized, evidenced amendment is completed.`
+        : input.nextAction;
+    const analysisInvalidated = materialEvidence && !executed && (!!row.analysisSnapshotId || !!row.analysis);
+    if (materialEvidence && !executed) {
+      await invalidateOffers(tx,id,actor,
+        "Material seller-call evidence requires reconciliation and fresh underwriting; prior offer authority and distribution artifacts are stale.",now);
+      const [draft] = await tx.select().from(contractsTable).where(eq(contractsTable.leadId,id)).for("update");
+      if (draft?.payload.status==="DRAFT") {
+        const history = Array.isArray(draft.payload.history) ? draft.payload.history : [];
+        await tx.update(contractsTable).set({
+          payload:{
+            ...draft.payload,
+            status:"CANCELLED",
+            cancelledAt:now.toISOString(),
+            history:[...history,{
+              kind:"CANCELLED_ATTEMPT",recordedAt:now.toISOString(),effectiveAt:now.toISOString(),recordedBy:actor,
+              note:"Unexecuted draft abandoned because new seller-call evidence made its underwriting snapshot stale. No signature or external cancellation is asserted.",
+              previousState:{status:"DRAFT",offerId:draft.payload.offerId ?? null,purchasePrice:draft.payload.purchasePrice ?? null},
+            }],
+          },
+          version:draft.version+1,updatedAt:now,
+        }).where(eq(contractsTable.id,draft.id));
+      }
+      await audit(tx,actor,"SELLER_CALL_EVIDENCE_INVALIDATED_AUTHORITY",id,
+        `Call ${savedCall.id}; material indicated seller evidence captured. Old analysis snapshots remain immutable; live analysis pointer and any unexecuted authorization are invalidated; seller answer values were not copied into economics.`);
+    }
+    if (executed && materialEvidence) {
+      await audit(tx,actor,"SELLER_CALL_EVIDENCE_POST_EXECUTION_REVIEW",id,
+        `Call ${savedCall.id}; material seller-reported evidence retained for review. Executed terms, locked economics, and transaction state were preserved.`);
+    }
+    if (conflictFields.length) {
+      await audit(tx,actor,"SELLER_CALL_EVIDENCE_CONFLICT_REVIEW",id,
+        `Call ${savedCall.id}; conflicting evidence topics: ${conflictFields.join(", ")}. Both source histories were retained; no fact was overwritten.`);
+    }
+    const persistedCall = {
+      ...input,
+      evidenceSource: sellerContacted ? "OPERATOR_ENTERED_SELLER_CONVERSATION" as const : "OPERATOR_CALL_ATTEMPT" as const,
+      evidenceClassification: sellerContacted ? "INDICATED" as const : "OBSERVED" as const,
+      ...(sellerContacted ? { sellerAnswersCapturedAt: iso(now) } : {}),
+      evidenceIds,
+      materialEvidence,
+      analysisInvalidated,
+    };
+    await tx.update(callsTable).set({payload:jsonRecord(persistedCall)}).where(eq(callsTable.id,savedCall.id));
+    if (evidenceIds.length) {
       await audit(tx, actor, "CALL_RESULT_EVIDENCE_CAPTURED", id,
-        `Call ${savedCall.id}; operator-entered seller statements recorded as INDICATED at ${iso(now)}; fields ${capturedFields.join(", ")}. Existing sourced facts and underwriting were not overwritten.`);
+        `Call ${savedCall.id}; ${evidenceIds.length} append-only call evidence event(s) persisted with source record linkage at ${iso(now)}. ${materialEvidence ? "Material evidence invalidated pre-execution analysis/authority, but did not rewrite economics." : "No economic input was changed."}`);
     }
     // A connected first call must preserve CONTACTED before CONVERSATION.
     if (row.stage === "CALL_READY" && stage === "CONVERSATION") {
@@ -423,7 +702,7 @@ export async function recordCall(id: string, input: CallInput, actor: string, no
     }
     // No-answer followups cannot regress an existing CONVERSATION.
     const nextStage: Stage = (executed || ["CONVERSATION","OFFER_READY","OFFER_SENT","NEGOTIATING","CONTRACT_PENDING"].includes(row.stage)) && stage !== "DEAD_DEAL" ? toLead(row).stage : stage;
-    if (nextStage === "DEAD_DEAL") await invalidateOffers(tx,id,actor,"Seller is not interested; deal closed and offer authorization invalidated.",now);
+    if (nextStage === "DEAD_DEAL" && !materialEvidence) await invalidateOffers(tx,id,actor,"Seller is not interested; deal closed and offer authorization invalidated.",now);
     if (nextStage==="DEAD_DEAL") {
       const [draft] = await tx.select().from(contractsTable).where(eq(contractsTable.leadId,id)).for("update");
       if (draft?.payload.status==="DRAFT") await tx.update(contractsTable).set({
@@ -431,8 +710,12 @@ export async function recordCall(id: string, input: CallInput, actor: string, no
         version:draft.version+1,updatedAt:now,
       }).where(eq(contractsTable.id,draft.id));
     }
-    await move(tx,row,nextStage,`Call outcome: ${input.outcome}. ${input.notes}`,input.nextAction,actor,now);
-    await tx.update(leadsTable).set({stage:row.stage,nextAction:input.nextAction,followUpAt,version:row.version+1,updatedAt:now}).where(eq(leadsTable.id,id));
+    await move(tx,row,nextStage,`Call outcome: ${input.outcome}. ${input.notes}`,effectiveNextAction,actor,now);
+    await tx.update(leadsTable).set({
+      stage:row.stage,nextAction:effectiveNextAction,followUpAt,version:row.version+1,updatedAt:now,
+      payload:updatedPayload,
+      ...(analysisInvalidated ? {analysis:null,analysisSnapshotId:null} : {}),
+    }).where(eq(leadsTable.id,id));
     await audit(tx,actor,"CALL_RECORDED",id,`${input.outcome}; follow-up ${followUpAt?.toISOString() ?? "none (terminal)"}; next: ${input.nextAction}`);
     if (input.outcome==="CONNECTED") await queueJob(tx,"PREPARE_BRIEF",id,`conversation-brief:${id}:${row.version+1}`,actor);
     return leadDetail(id,tx,now);

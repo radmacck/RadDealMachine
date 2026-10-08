@@ -5,8 +5,9 @@
  * Radical Deal OS seller intake, underwriting, conversations and approved offers
  * OpenAPI spec version: 1.0.0
  */
+import type { CallInputClarificationStatus } from './callInputClarificationStatus';
 import type { CallInputOutcome } from './callInputOutcome';
-import type { CallInputSellerAnswers } from './callInputSellerAnswers';
+import type { CallSellerAnswers } from './callSellerAnswers';
 
 export interface CallInput {
   /** @minimum 1 */
@@ -24,5 +25,11 @@ export interface CallInput {
   nextAction: string;
   /** @nullable */
   followUpAt: string | null;
-  sellerAnswers?: CallInputSellerAnswers;
+  /**
+     * @minimum 0
+     * @maximum 1
+     */
+  operatorConfidence?: number;
+  clarificationStatus?: CallInputClarificationStatus;
+  sellerAnswers?: CallSellerAnswers;
 }

@@ -2666,15 +2666,32 @@ components:
       properties:
         generatedAt: { type: string }
         actions: { type: array, items: { $ref: "#/components/schemas/CommandAction" } }
-        opportunities: { type: array, items: { $ref: "#/components/schemas/LeadDetail" } }
+        opportunities: { type: array, items: { $ref: "#/components/schemas/CommandCenterOpportunity" } }
         calls: { type: array, items: { $ref: "#/components/schemas/CallBrief" } }
         acquisitionQueue: { type: array, items: { $ref: "#/components/schemas/AcquisitionQueueItem" } }
-        deals: { type: array, items: { $ref: "#/components/schemas/LeadDetail" } }
+        deals: { type: array, items: { $ref: "#/components/schemas/CommandCenterDeal" } }
         operations: { type: array, items: { $ref: "#/components/schemas/DealOperations" } }
         buyers: { type: array, items: { $ref: "#/components/schemas/Buyer" } }
         jobs: { type: array, items: { $ref: "#/components/schemas/WorkerJob" } }
         propertyDiscoveries: { $ref: "#/components/schemas/PropertyDiscoveryList" }
         automation: { $ref: "#/components/schemas/AutomationOverview" }
+    CommandCenterOpportunity:
+      type: object
+      required: [lead, intelligence, analysis]
+      properties:
+        lead: { $ref: "#/components/schemas/Lead" }
+        intelligence: { type: array, items: { $ref: "#/components/schemas/Intelligence" } }
+        analysis:
+          oneOf: [{ $ref: "#/components/schemas/Analysis" }, { type: "null" }]
+    CommandCenterDeal:
+      type: object
+      required: [lead]
+      properties:
+        lead: { $ref: "#/components/schemas/Lead" }
+        workGuidance:
+          oneOf:
+            - { $ref: "#/components/schemas/DealWorkGuidance" }
+            - { type: "null" }
     AutomationOverview:
       type: object
       required: [observedAt, status, queuedJobs, runningJobs, failedJobs, lanes]
@@ -2785,6 +2802,18 @@ components:
         sourceType: { type: string, enum: [PUBLIC_RECORD, PERMITTED_LISTING, SELLER, INSPECTION, PUBLIC_PAGE, ANALYST, MODEL] }
         confidence: { type: number, minimum: 0, maximum: 1 }
         capturedAt: { type: string, format: date-time }
+        sourceRecordId: { type: string, maxLength: 240 }
+        confidenceBasis: { type: string, enum: [OPERATOR_ASSESSED, UNASSESSED_CONSERVATIVE_DEFAULT, SOURCE_RELIABILITY] }
+        clarificationStatus: { type: string, enum: [UNREVIEWED, FOLLOW_UP_REQUIRED, SELLER_CLARIFIED] }
+        contentDigest: { type: string, pattern: "^[a-f0-9]{64}$" }
+        retentionPolicy: { type: string, enum: [FULL_TEXT_PERMITTED, HASH_ONLY, DERIVED_ONLY] }
+        reconciliation:
+          type: object
+          required: [state, comparedEvidenceIds, reason]
+          properties:
+            state: { type: string, enum: [NO_COMPARABLE_EVIDENCE, NO_CONFLICT_FOUND, CONFLICT_REVIEW] }
+            comparedEvidenceIds: { type: array, maxItems: 50, items: { type: string } }
+            reason: { type: string, maxLength: 1000 }
         verificationNote: { type: string, maxLength: 2000 }
         contactPermissionStatus: { type: string, enum: [NOT_REVIEWED, PERMITTED, PROHIBITED] }
         contactPermissionEvidenceUrl: { type: string, format: uri, maxLength: 2000 }
@@ -2859,6 +2888,8 @@ components:
         quantity: { type: number, minimum: 0, maximum: 1000000 }
         unit: { type: string, enum: [SQFT, LINEAR_FT, EACH, LUMP_SUM] }
         evidenceId: { type: string, minLength: 1, maxLength: 200 }
+        sourceRecordId: { type: string, maxLength: 240 }
+        sourceUrl: { type: ["string", "null"], format: uri }
     RepairEstimateLine:
       type: object
       required: [category, severity, quantity, unit, evidenceId, low, expected, high, confidence, source]
@@ -2892,10 +2923,11 @@ components:
         blockers: { type: array, items: { type: string } }
     ConditionRepairHypothesis:
       type: object
-      required: [id, evidenceId, category, severity, statement, evidenceClassification, epistemicStatus, sourceConfidence, confidence, confidenceMethod, source, sourceUrl, ruleId, question, action]
+      required: [id, evidenceId, sourceRecordId, category, severity, statement, evidenceClassification, epistemicStatus, sourceConfidence, confidence, confidenceMethod, source, sourceUrl, ruleId, question, action]
       properties:
         id: { type: string }
         evidenceId: { type: string }
+        sourceRecordId: { type: ["string", "null"] }
         category: { type: string }
         severity: { type: string, enum: [COSMETIC, MODERATE, MAJOR, REPLACEMENT] }
         statement: { type: string }
@@ -2905,7 +2937,7 @@ components:
         confidence: { type: number, minimum: 0, maximum: 0.5 }
         confidenceMethod: { type: string, enum: [EXPLICIT_PHRASE_RULE_UNCALIBRATED] }
         source: { type: string }
-        sourceUrl: { type: string, format: uri }
+        sourceUrl: { type: ["string", "null"], format: uri }
         ruleId: { type: string }
         question: { type: string }
         action: { type: string }
@@ -3050,6 +3082,29 @@ components:
         nextAction: { type: string }
         actor: { type: string }
         createdAt: { type: string }
+    CallConditionAnswer:
+      type: object
+      required: [category, statement]
+      properties:
+        category: { type: string, enum: [ROOF, KITCHEN, BATH, HVAC, ELECTRICAL, PLUMBING, FLOORING, EXTERIOR, FOUNDATION, WINDOWS, OTHER] }
+        statement: { type: string, minLength: 1, maxLength: 2000 }
+    CallSellerAnswers:
+      type: object
+      properties:
+        motivationStatement: { type: string, maxLength: 3000 }
+        urgency: { type: string, maxLength: 1000 }
+        conditionDescription: { type: string, maxLength: 3000 }
+        conditionByCategory: { type: array, maxItems: 12, items: { $ref: "#/components/schemas/CallConditionAnswer" } }
+        timing: { type: string, maxLength: 1000 }
+        askingPrice: { type: ["number", "null"], minimum: 0, maximum: 1000000000 }
+        occupancy: { type: string, maxLength: 1000 }
+        repairsCompleted: { type: string, maxLength: 2000 }
+        knownDefects: { type: string, maxLength: 3000 }
+        titleTenantIssues: { type: string, maxLength: 2000 }
+        accessConstraints: { type: string, maxLength: 2000 }
+        willingnessToAcceptTerms: { type: string, maxLength: 2000 }
+        nextStepOutcome: { type: string, maxLength: 2000 }
+        otherMaterialStatements: { type: string, maxLength: 3000 }
     CallInput:
       type: object
       required: [version, outcome, notes, nextAction, followUpAt]
@@ -3059,26 +3114,27 @@ components:
         notes: { type: string, minLength: 1, maxLength: 10000 }
         nextAction: { type: string, minLength: 3, maxLength: 1000 }
         followUpAt: { type: ["string", "null"], format: date-time }
-        sellerAnswers:
-          type: object
-          properties:
-            motivationStatement: { type: string, maxLength: 3000 }
-            conditionDescription: { type: string, maxLength: 3000 }
-            timing: { type: string, maxLength: 1000 }
-            askingPrice: { type: ["number", "null"], minimum: 0, maximum: 1000000000 }
-            nextStepOutcome: { type: string, maxLength: 2000 }
+        operatorConfidence: { type: number, minimum: 0, maximum: 1 }
+        clarificationStatus: { type: string, enum: [UNREVIEWED, FOLLOW_UP_REQUIRED, SELLER_CLARIFIED] }
+        sellerAnswers: { $ref: "#/components/schemas/CallSellerAnswers" }
     Call:
-      allOf:
-        - { $ref: "#/components/schemas/CallInput" }
-        - type: object
-          required: [id, createdAt, actor]
-          properties:
-            id: { type: string }
-            createdAt: { type: string }
-            actor: { type: string }
-            evidenceSource: { type: string, enum: [OPERATOR_ENTERED_SELLER_CONVERSATION] }
-            evidenceClassification: { type: string, enum: [INDICATED] }
-            sellerAnswersCapturedAt: { type: string, format: date-time }
+      type: object
+      required: [id, createdAt, actor, version, outcome, notes, nextAction, followUpAt]
+      properties:
+        id: { type: string }
+        createdAt: { type: string }
+        actor: { type: string }
+        version: { type: integer }
+        outcome: { type: string, enum: [NO_ANSWER, VOICEMAIL, CONNECTED, NOT_INTERESTED] }
+        notes: { type: string, maxLength: 10000 }
+        nextAction: { type: string, maxLength: 1000 }
+        followUpAt: { type: ["string", "null"], format: date-time }
+        evidenceSource: { type: string, enum: [OPERATOR_ENTERED_SELLER_CONVERSATION, OPERATOR_CALL_ATTEMPT] }
+        evidenceClassification: { type: string, enum: [INDICATED, OBSERVED] }
+        sellerAnswersCapturedAt: { type: string, format: date-time }
+        evidenceIds: { type: array, items: { type: string } }
+        materialEvidence: { type: boolean }
+        analysisInvalidated: { type: boolean }
     AcquisitionQueue:
       type: object
       required: [generatedAt, total, items]

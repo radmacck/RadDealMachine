@@ -1004,6 +1004,13 @@ export const recordTransactionExceptionResponseContractOneCommitmentSnapshotOneD
 export const recordTransactionExceptionResponseContractOneCommitmentSnapshotOneDetailIntelligenceItemOneConfidenceMin = 0;
 export const recordTransactionExceptionResponseContractOneCommitmentSnapshotOneDetailIntelligenceItemOneConfidenceMax = 1;
 
+export const recordTransactionExceptionResponseContractOneCommitmentSnapshotOneDetailIntelligenceItemOneSourceRecordIdMax = 240;
+
+export const recordTransactionExceptionResponseContractOneCommitmentSnapshotOneDetailIntelligenceItemOneContentDigestRegExp = new RegExp('^[a-f0-9]{64}$');
+export const recordTransactionExceptionResponseContractOneCommitmentSnapshotOneDetailIntelligenceItemOneReconciliationComparedEvidenceIdsMax = 50;
+
+export const recordTransactionExceptionResponseContractOneCommitmentSnapshotOneDetailIntelligenceItemOneReconciliationReasonMax = 1000;
+
 export const recordTransactionExceptionResponseContractOneCommitmentSnapshotOneDetailIntelligenceItemOneVerificationNoteMax = 2000;
 
 export const recordTransactionExceptionResponseContractOneCommitmentSnapshotOneDetailIntelligenceItemOneContactPermissionEvidenceUrlMax = 2000;
@@ -1187,6 +1194,8 @@ export const recordTransactionExceptionResponseContractOneCommitmentSnapshotOneD
 
 export const recordTransactionExceptionResponseContractOneCommitmentSnapshotOneDetailUnderwritingOneRepairObservationsItemEvidenceIdMax = 200;
 
+export const recordTransactionExceptionResponseContractOneCommitmentSnapshotOneDetailUnderwritingOneRepairObservationsItemSourceRecordIdMax = 240;
+
 export const recordTransactionExceptionResponseContractOneCommitmentSnapshotOneDetailUnderwritingOneRepairObservationsMax = 50;
 
 export const recordTransactionExceptionResponseContractOneCommitmentSnapshotOneDetailUnderwritingOneRepairEstimateCatalogVersionMin = 0;
@@ -1208,22 +1217,9 @@ export const recordTransactionExceptionResponseContractOneCommitmentSnapshotOneD
 
 export const recordTransactionExceptionResponseContractOneCommitmentSnapshotOneDetailUnderwritingOneSellerContactEvidenceIdMax = 200;
 
+export const recordTransactionExceptionResponseContractOneCommitmentSnapshotOneDetailCallsItemNotesMax = 10000;
 
-export const recordTransactionExceptionResponseContractOneCommitmentSnapshotOneDetailCallsItemOneNotesMax = 10000;
-
-export const recordTransactionExceptionResponseContractOneCommitmentSnapshotOneDetailCallsItemOneNextActionMin = 3;
-export const recordTransactionExceptionResponseContractOneCommitmentSnapshotOneDetailCallsItemOneNextActionMax = 1000;
-
-export const recordTransactionExceptionResponseContractOneCommitmentSnapshotOneDetailCallsItemOneSellerAnswersMotivationStatementMax = 3000;
-
-export const recordTransactionExceptionResponseContractOneCommitmentSnapshotOneDetailCallsItemOneSellerAnswersConditionDescriptionMax = 3000;
-
-export const recordTransactionExceptionResponseContractOneCommitmentSnapshotOneDetailCallsItemOneSellerAnswersTimingMax = 1000;
-
-export const recordTransactionExceptionResponseContractOneCommitmentSnapshotOneDetailCallsItemOneSellerAnswersAskingPriceMin = 0;
-export const recordTransactionExceptionResponseContractOneCommitmentSnapshotOneDetailCallsItemOneSellerAnswersAskingPriceMax = 1000000000;
-
-export const recordTransactionExceptionResponseContractOneCommitmentSnapshotOneDetailCallsItemOneSellerAnswersNextStepOutcomeMax = 2000;
+export const recordTransactionExceptionResponseContractOneCommitmentSnapshotOneDetailCallsItemNextActionMax = 1000;
 
 export const recordTransactionExceptionResponseContractOneMilestonesItemAmountMin = 0;
 export const recordTransactionExceptionResponseContractOneMilestonesItemAmountMax = 1000000000;
@@ -1556,6 +1552,16 @@ export const RecordTransactionExceptionResponse = zod.object({
   "sourceType": zod.enum(['PUBLIC_RECORD', 'PERMITTED_LISTING', 'SELLER', 'INSPECTION', 'PUBLIC_PAGE', 'ANALYST', 'MODEL']),
   "confidence": zod.number().min(recordTransactionExceptionResponseContractOneCommitmentSnapshotOneDetailIntelligenceItemOneConfidenceMin).max(recordTransactionExceptionResponseContractOneCommitmentSnapshotOneDetailIntelligenceItemOneConfidenceMax),
   "capturedAt": zod.string().datetime({"offset":true}),
+  "sourceRecordId": zod.string().max(recordTransactionExceptionResponseContractOneCommitmentSnapshotOneDetailIntelligenceItemOneSourceRecordIdMax).optional(),
+  "confidenceBasis": zod.enum(['OPERATOR_ASSESSED', 'UNASSESSED_CONSERVATIVE_DEFAULT', 'SOURCE_RELIABILITY']).optional(),
+  "clarificationStatus": zod.enum(['UNREVIEWED', 'FOLLOW_UP_REQUIRED', 'SELLER_CLARIFIED']).optional(),
+  "contentDigest": zod.string().regex(recordTransactionExceptionResponseContractOneCommitmentSnapshotOneDetailIntelligenceItemOneContentDigestRegExp).optional(),
+  "retentionPolicy": zod.enum(['FULL_TEXT_PERMITTED', 'HASH_ONLY', 'DERIVED_ONLY']).optional(),
+  "reconciliation": zod.object({
+  "state": zod.enum(['NO_COMPARABLE_EVIDENCE', 'NO_CONFLICT_FOUND', 'CONFLICT_REVIEW']),
+  "comparedEvidenceIds": zod.array(zod.string()).max(recordTransactionExceptionResponseContractOneCommitmentSnapshotOneDetailIntelligenceItemOneReconciliationComparedEvidenceIdsMax),
+  "reason": zod.string().max(recordTransactionExceptionResponseContractOneCommitmentSnapshotOneDetailIntelligenceItemOneReconciliationReasonMax)
+}).optional(),
   "verificationNote": zod.string().max(recordTransactionExceptionResponseContractOneCommitmentSnapshotOneDetailIntelligenceItemOneVerificationNoteMax).optional(),
   "contactPermissionStatus": zod.enum(['NOT_REVIEWED', 'PERMITTED', 'PROHIBITED']).optional(),
   "contactPermissionEvidenceUrl": zod.string().url().max(recordTransactionExceptionResponseContractOneCommitmentSnapshotOneDetailIntelligenceItemOneContactPermissionEvidenceUrlMax).optional(),
@@ -1686,6 +1692,7 @@ export const RecordTransactionExceptionResponse = zod.object({
   "hypotheses": zod.array(zod.object({
   "id": zod.string(),
   "evidenceId": zod.string(),
+  "sourceRecordId": zod.string().nullable(),
   "category": zod.string(),
   "severity": zod.enum(['COSMETIC', 'MODERATE', 'MAJOR', 'REPLACEMENT']),
   "statement": zod.string(),
@@ -1695,7 +1702,7 @@ export const RecordTransactionExceptionResponse = zod.object({
   "confidence": zod.number().min(recordTransactionExceptionResponseContractOneCommitmentSnapshotOneDetailAnalysisOnePreliminaryRepairEstimateHypothesesItemConfidenceMin).max(recordTransactionExceptionResponseContractOneCommitmentSnapshotOneDetailAnalysisOnePreliminaryRepairEstimateHypothesesItemConfidenceMax),
   "confidenceMethod": zod.enum(['EXPLICIT_PHRASE_RULE_UNCALIBRATED']),
   "source": zod.string(),
-  "sourceUrl": zod.string().url(),
+  "sourceUrl": zod.string().url().nullable(),
   "ruleId": zod.string(),
   "question": zod.string(),
   "action": zod.string()
@@ -1835,7 +1842,9 @@ export const RecordTransactionExceptionResponse = zod.object({
   "severity": zod.enum(['NO_REPAIR', 'COSMETIC', 'MODERATE', 'MAJOR', 'REPLACEMENT']),
   "quantity": zod.number().min(recordTransactionExceptionResponseContractOneCommitmentSnapshotOneDetailUnderwritingOneRepairObservationsItemQuantityMin).max(recordTransactionExceptionResponseContractOneCommitmentSnapshotOneDetailUnderwritingOneRepairObservationsItemQuantityMax),
   "unit": zod.enum(['SQFT', 'LINEAR_FT', 'EACH', 'LUMP_SUM']),
-  "evidenceId": zod.string().min(1).max(recordTransactionExceptionResponseContractOneCommitmentSnapshotOneDetailUnderwritingOneRepairObservationsItemEvidenceIdMax)
+  "evidenceId": zod.string().min(1).max(recordTransactionExceptionResponseContractOneCommitmentSnapshotOneDetailUnderwritingOneRepairObservationsItemEvidenceIdMax),
+  "sourceRecordId": zod.string().max(recordTransactionExceptionResponseContractOneCommitmentSnapshotOneDetailUnderwritingOneRepairObservationsItemSourceRecordIdMax).optional(),
+  "sourceUrl": zod.string().url().nullish()
 })).max(recordTransactionExceptionResponseContractOneCommitmentSnapshotOneDetailUnderwritingOneRepairObservationsMax).optional(),
   "repairEstimate": zod.object({
   "status": zod.enum(['NOT_USED', 'CALCULATED', 'BLOCKED']),
@@ -1879,26 +1888,21 @@ export const RecordTransactionExceptionResponse = zod.object({
   "createdAt": zod.string()
 })),
   "calls": zod.array(zod.object({
-  "version": zod.number().int().min(1),
-  "outcome": zod.enum(['NO_ANSWER', 'VOICEMAIL', 'CONNECTED', 'NOT_INTERESTED']),
-  "notes": zod.string().min(1).max(recordTransactionExceptionResponseContractOneCommitmentSnapshotOneDetailCallsItemOneNotesMax),
-  "nextAction": zod.string().min(recordTransactionExceptionResponseContractOneCommitmentSnapshotOneDetailCallsItemOneNextActionMin).max(recordTransactionExceptionResponseContractOneCommitmentSnapshotOneDetailCallsItemOneNextActionMax),
-  "followUpAt": zod.string().datetime({"offset":true}).nullable(),
-  "sellerAnswers": zod.object({
-  "motivationStatement": zod.string().max(recordTransactionExceptionResponseContractOneCommitmentSnapshotOneDetailCallsItemOneSellerAnswersMotivationStatementMax).optional(),
-  "conditionDescription": zod.string().max(recordTransactionExceptionResponseContractOneCommitmentSnapshotOneDetailCallsItemOneSellerAnswersConditionDescriptionMax).optional(),
-  "timing": zod.string().max(recordTransactionExceptionResponseContractOneCommitmentSnapshotOneDetailCallsItemOneSellerAnswersTimingMax).optional(),
-  "askingPrice": zod.number().min(recordTransactionExceptionResponseContractOneCommitmentSnapshotOneDetailCallsItemOneSellerAnswersAskingPriceMin).max(recordTransactionExceptionResponseContractOneCommitmentSnapshotOneDetailCallsItemOneSellerAnswersAskingPriceMax).nullish(),
-  "nextStepOutcome": zod.string().max(recordTransactionExceptionResponseContractOneCommitmentSnapshotOneDetailCallsItemOneSellerAnswersNextStepOutcomeMax).optional()
-}).optional()
-}).and(zod.object({
   "id": zod.string(),
   "createdAt": zod.string(),
   "actor": zod.string(),
-  "evidenceSource": zod.enum(['OPERATOR_ENTERED_SELLER_CONVERSATION']).optional(),
-  "evidenceClassification": zod.enum(['INDICATED']).optional(),
-  "sellerAnswersCapturedAt": zod.string().datetime({"offset":true}).optional()
-}))),
+  "version": zod.number().int(),
+  "outcome": zod.enum(['NO_ANSWER', 'VOICEMAIL', 'CONNECTED', 'NOT_INTERESTED']),
+  "notes": zod.string().max(recordTransactionExceptionResponseContractOneCommitmentSnapshotOneDetailCallsItemNotesMax),
+  "nextAction": zod.string().max(recordTransactionExceptionResponseContractOneCommitmentSnapshotOneDetailCallsItemNextActionMax),
+  "followUpAt": zod.string().datetime({"offset":true}).nullable(),
+  "evidenceSource": zod.enum(['OPERATOR_ENTERED_SELLER_CONVERSATION', 'OPERATOR_CALL_ATTEMPT']).optional(),
+  "evidenceClassification": zod.enum(['INDICATED', 'OBSERVED']).optional(),
+  "sellerAnswersCapturedAt": zod.string().datetime({"offset":true}).optional(),
+  "evidenceIds": zod.array(zod.string()).optional(),
+  "materialEvidence": zod.boolean().optional(),
+  "analysisInvalidated": zod.boolean().optional()
+})),
   "allowedTransitions": zod.array(zod.enum(['DISCOVERED', 'ENRICHING', 'ANALYZED', 'STRONG', 'NEGOTIABLE', 'PASS', 'CALL_READY', 'CONTACTED', 'CONVERSATION', 'OFFER_READY', 'OFFER_SENT', 'NEGOTIATING', 'CONTRACT_PENDING', 'UNDER_CONTRACT', 'BUYER_MATCHED', 'BUYER_INTERESTED', 'BUYER_COMMITTED', 'CLOSING', 'CLOSED', 'DEAD_DEAL'])),
   "workGuidance": zod.union([zod.object({
   "category": zod.enum(['RESEARCH', 'CALL', 'FOLLOW_UP', 'OFFER_APPROVAL', 'NEGOTIATION', 'CONTRACT', 'BUYER_MATCH', 'DEADLINE', 'CLOSING', 'DISCOVERY_REVIEW', 'BUYER_VERIFICATION', 'WORKER']),
@@ -2077,6 +2081,13 @@ export const intakePropertyEvidenceBodyEntriesItemOneSourceUrlMax = 2000;
 export const intakePropertyEvidenceBodyEntriesItemOneConfidenceMin = 0;
 export const intakePropertyEvidenceBodyEntriesItemOneConfidenceMax = 1;
 
+export const intakePropertyEvidenceBodyEntriesItemOneSourceRecordIdMax = 240;
+
+export const intakePropertyEvidenceBodyEntriesItemOneContentDigestRegExp = new RegExp('^[a-f0-9]{64}$');
+export const intakePropertyEvidenceBodyEntriesItemOneReconciliationComparedEvidenceIdsMax = 50;
+
+export const intakePropertyEvidenceBodyEntriesItemOneReconciliationReasonMax = 1000;
+
 export const intakePropertyEvidenceBodyEntriesItemOneVerificationNoteMax = 2000;
 
 export const intakePropertyEvidenceBodyEntriesItemOneContactPermissionEvidenceUrlMax = 2000;
@@ -2134,6 +2145,8 @@ export const intakePropertyEvidenceBodyUnderwritingRepairObservationsItemQuantit
 
 export const intakePropertyEvidenceBodyUnderwritingRepairObservationsItemEvidenceIdMax = 200;
 
+export const intakePropertyEvidenceBodyUnderwritingRepairObservationsItemSourceRecordIdMax = 240;
+
 export const intakePropertyEvidenceBodyUnderwritingRepairObservationsMax = 50;
 
 export const intakePropertyEvidenceBodyUnderwritingRepairEstimateCatalogVersionMin = 0;
@@ -2189,6 +2202,16 @@ export const IntakePropertyEvidenceBody = zod.object({
   "sourceType": zod.enum(['PUBLIC_RECORD', 'PERMITTED_LISTING', 'SELLER', 'INSPECTION', 'PUBLIC_PAGE', 'ANALYST', 'MODEL']),
   "confidence": zod.number().min(intakePropertyEvidenceBodyEntriesItemOneConfidenceMin).max(intakePropertyEvidenceBodyEntriesItemOneConfidenceMax),
   "capturedAt": zod.string().datetime({"offset":true}),
+  "sourceRecordId": zod.string().max(intakePropertyEvidenceBodyEntriesItemOneSourceRecordIdMax).optional(),
+  "confidenceBasis": zod.enum(['OPERATOR_ASSESSED', 'UNASSESSED_CONSERVATIVE_DEFAULT', 'SOURCE_RELIABILITY']).optional(),
+  "clarificationStatus": zod.enum(['UNREVIEWED', 'FOLLOW_UP_REQUIRED', 'SELLER_CLARIFIED']).optional(),
+  "contentDigest": zod.string().regex(intakePropertyEvidenceBodyEntriesItemOneContentDigestRegExp).optional(),
+  "retentionPolicy": zod.enum(['FULL_TEXT_PERMITTED', 'HASH_ONLY', 'DERIVED_ONLY']).optional(),
+  "reconciliation": zod.object({
+  "state": zod.enum(['NO_COMPARABLE_EVIDENCE', 'NO_CONFLICT_FOUND', 'CONFLICT_REVIEW']),
+  "comparedEvidenceIds": zod.array(zod.string()).max(intakePropertyEvidenceBodyEntriesItemOneReconciliationComparedEvidenceIdsMax),
+  "reason": zod.string().max(intakePropertyEvidenceBodyEntriesItemOneReconciliationReasonMax)
+}).optional(),
   "verificationNote": zod.string().max(intakePropertyEvidenceBodyEntriesItemOneVerificationNoteMax).optional(),
   "contactPermissionStatus": zod.enum(['NOT_REVIEWED', 'PERMITTED', 'PROHIBITED']).optional(),
   "contactPermissionEvidenceUrl": zod.string().url().max(intakePropertyEvidenceBodyEntriesItemOneContactPermissionEvidenceUrlMax).optional(),
@@ -2229,7 +2252,9 @@ export const IntakePropertyEvidenceBody = zod.object({
   "severity": zod.enum(['NO_REPAIR', 'COSMETIC', 'MODERATE', 'MAJOR', 'REPLACEMENT']),
   "quantity": zod.number().min(intakePropertyEvidenceBodyUnderwritingRepairObservationsItemQuantityMin).max(intakePropertyEvidenceBodyUnderwritingRepairObservationsItemQuantityMax),
   "unit": zod.enum(['SQFT', 'LINEAR_FT', 'EACH', 'LUMP_SUM']),
-  "evidenceId": zod.string().min(1).max(intakePropertyEvidenceBodyUnderwritingRepairObservationsItemEvidenceIdMax)
+  "evidenceId": zod.string().min(1).max(intakePropertyEvidenceBodyUnderwritingRepairObservationsItemEvidenceIdMax),
+  "sourceRecordId": zod.string().max(intakePropertyEvidenceBodyUnderwritingRepairObservationsItemSourceRecordIdMax).optional(),
+  "sourceUrl": zod.string().url().nullish()
 })).max(intakePropertyEvidenceBodyUnderwritingRepairObservationsMax).optional(),
   "repairEstimate": zod.object({
   "status": zod.enum(['NOT_USED', 'CALCULATED', 'BLOCKED']),
@@ -2327,6 +2352,13 @@ export const intakePropertyEvidenceResponseIntelligenceItemOneSourceUrlMax = 200
 
 export const intakePropertyEvidenceResponseIntelligenceItemOneConfidenceMin = 0;
 export const intakePropertyEvidenceResponseIntelligenceItemOneConfidenceMax = 1;
+
+export const intakePropertyEvidenceResponseIntelligenceItemOneSourceRecordIdMax = 240;
+
+export const intakePropertyEvidenceResponseIntelligenceItemOneContentDigestRegExp = new RegExp('^[a-f0-9]{64}$');
+export const intakePropertyEvidenceResponseIntelligenceItemOneReconciliationComparedEvidenceIdsMax = 50;
+
+export const intakePropertyEvidenceResponseIntelligenceItemOneReconciliationReasonMax = 1000;
 
 export const intakePropertyEvidenceResponseIntelligenceItemOneVerificationNoteMax = 2000;
 
@@ -2511,6 +2543,8 @@ export const intakePropertyEvidenceResponseUnderwritingOneRepairObservationsItem
 
 export const intakePropertyEvidenceResponseUnderwritingOneRepairObservationsItemEvidenceIdMax = 200;
 
+export const intakePropertyEvidenceResponseUnderwritingOneRepairObservationsItemSourceRecordIdMax = 240;
+
 export const intakePropertyEvidenceResponseUnderwritingOneRepairObservationsMax = 50;
 
 export const intakePropertyEvidenceResponseUnderwritingOneRepairEstimateCatalogVersionMin = 0;
@@ -2532,22 +2566,9 @@ export const intakePropertyEvidenceResponseUnderwritingOneConditionEvidenceIdMax
 
 export const intakePropertyEvidenceResponseUnderwritingOneSellerContactEvidenceIdMax = 200;
 
+export const intakePropertyEvidenceResponseCallsItemNotesMax = 10000;
 
-export const intakePropertyEvidenceResponseCallsItemOneNotesMax = 10000;
-
-export const intakePropertyEvidenceResponseCallsItemOneNextActionMin = 3;
-export const intakePropertyEvidenceResponseCallsItemOneNextActionMax = 1000;
-
-export const intakePropertyEvidenceResponseCallsItemOneSellerAnswersMotivationStatementMax = 3000;
-
-export const intakePropertyEvidenceResponseCallsItemOneSellerAnswersConditionDescriptionMax = 3000;
-
-export const intakePropertyEvidenceResponseCallsItemOneSellerAnswersTimingMax = 1000;
-
-export const intakePropertyEvidenceResponseCallsItemOneSellerAnswersAskingPriceMin = 0;
-export const intakePropertyEvidenceResponseCallsItemOneSellerAnswersAskingPriceMax = 1000000000;
-
-export const intakePropertyEvidenceResponseCallsItemOneSellerAnswersNextStepOutcomeMax = 2000;
+export const intakePropertyEvidenceResponseCallsItemNextActionMax = 1000;
 
 
 
@@ -2617,6 +2638,16 @@ export const IntakePropertyEvidenceResponse = zod.object({
   "sourceType": zod.enum(['PUBLIC_RECORD', 'PERMITTED_LISTING', 'SELLER', 'INSPECTION', 'PUBLIC_PAGE', 'ANALYST', 'MODEL']),
   "confidence": zod.number().min(intakePropertyEvidenceResponseIntelligenceItemOneConfidenceMin).max(intakePropertyEvidenceResponseIntelligenceItemOneConfidenceMax),
   "capturedAt": zod.string().datetime({"offset":true}),
+  "sourceRecordId": zod.string().max(intakePropertyEvidenceResponseIntelligenceItemOneSourceRecordIdMax).optional(),
+  "confidenceBasis": zod.enum(['OPERATOR_ASSESSED', 'UNASSESSED_CONSERVATIVE_DEFAULT', 'SOURCE_RELIABILITY']).optional(),
+  "clarificationStatus": zod.enum(['UNREVIEWED', 'FOLLOW_UP_REQUIRED', 'SELLER_CLARIFIED']).optional(),
+  "contentDigest": zod.string().regex(intakePropertyEvidenceResponseIntelligenceItemOneContentDigestRegExp).optional(),
+  "retentionPolicy": zod.enum(['FULL_TEXT_PERMITTED', 'HASH_ONLY', 'DERIVED_ONLY']).optional(),
+  "reconciliation": zod.object({
+  "state": zod.enum(['NO_COMPARABLE_EVIDENCE', 'NO_CONFLICT_FOUND', 'CONFLICT_REVIEW']),
+  "comparedEvidenceIds": zod.array(zod.string()).max(intakePropertyEvidenceResponseIntelligenceItemOneReconciliationComparedEvidenceIdsMax),
+  "reason": zod.string().max(intakePropertyEvidenceResponseIntelligenceItemOneReconciliationReasonMax)
+}).optional(),
   "verificationNote": zod.string().max(intakePropertyEvidenceResponseIntelligenceItemOneVerificationNoteMax).optional(),
   "contactPermissionStatus": zod.enum(['NOT_REVIEWED', 'PERMITTED', 'PROHIBITED']).optional(),
   "contactPermissionEvidenceUrl": zod.string().url().max(intakePropertyEvidenceResponseIntelligenceItemOneContactPermissionEvidenceUrlMax).optional(),
@@ -2747,6 +2778,7 @@ export const IntakePropertyEvidenceResponse = zod.object({
   "hypotheses": zod.array(zod.object({
   "id": zod.string(),
   "evidenceId": zod.string(),
+  "sourceRecordId": zod.string().nullable(),
   "category": zod.string(),
   "severity": zod.enum(['COSMETIC', 'MODERATE', 'MAJOR', 'REPLACEMENT']),
   "statement": zod.string(),
@@ -2756,7 +2788,7 @@ export const IntakePropertyEvidenceResponse = zod.object({
   "confidence": zod.number().min(intakePropertyEvidenceResponseAnalysisOnePreliminaryRepairEstimateHypothesesItemConfidenceMin).max(intakePropertyEvidenceResponseAnalysisOnePreliminaryRepairEstimateHypothesesItemConfidenceMax),
   "confidenceMethod": zod.enum(['EXPLICIT_PHRASE_RULE_UNCALIBRATED']),
   "source": zod.string(),
-  "sourceUrl": zod.string().url(),
+  "sourceUrl": zod.string().url().nullable(),
   "ruleId": zod.string(),
   "question": zod.string(),
   "action": zod.string()
@@ -2896,7 +2928,9 @@ export const IntakePropertyEvidenceResponse = zod.object({
   "severity": zod.enum(['NO_REPAIR', 'COSMETIC', 'MODERATE', 'MAJOR', 'REPLACEMENT']),
   "quantity": zod.number().min(intakePropertyEvidenceResponseUnderwritingOneRepairObservationsItemQuantityMin).max(intakePropertyEvidenceResponseUnderwritingOneRepairObservationsItemQuantityMax),
   "unit": zod.enum(['SQFT', 'LINEAR_FT', 'EACH', 'LUMP_SUM']),
-  "evidenceId": zod.string().min(1).max(intakePropertyEvidenceResponseUnderwritingOneRepairObservationsItemEvidenceIdMax)
+  "evidenceId": zod.string().min(1).max(intakePropertyEvidenceResponseUnderwritingOneRepairObservationsItemEvidenceIdMax),
+  "sourceRecordId": zod.string().max(intakePropertyEvidenceResponseUnderwritingOneRepairObservationsItemSourceRecordIdMax).optional(),
+  "sourceUrl": zod.string().url().nullish()
 })).max(intakePropertyEvidenceResponseUnderwritingOneRepairObservationsMax).optional(),
   "repairEstimate": zod.object({
   "status": zod.enum(['NOT_USED', 'CALCULATED', 'BLOCKED']),
@@ -2940,26 +2974,21 @@ export const IntakePropertyEvidenceResponse = zod.object({
   "createdAt": zod.string()
 })),
   "calls": zod.array(zod.object({
-  "version": zod.number().int().min(1),
-  "outcome": zod.enum(['NO_ANSWER', 'VOICEMAIL', 'CONNECTED', 'NOT_INTERESTED']),
-  "notes": zod.string().min(1).max(intakePropertyEvidenceResponseCallsItemOneNotesMax),
-  "nextAction": zod.string().min(intakePropertyEvidenceResponseCallsItemOneNextActionMin).max(intakePropertyEvidenceResponseCallsItemOneNextActionMax),
-  "followUpAt": zod.string().datetime({"offset":true}).nullable(),
-  "sellerAnswers": zod.object({
-  "motivationStatement": zod.string().max(intakePropertyEvidenceResponseCallsItemOneSellerAnswersMotivationStatementMax).optional(),
-  "conditionDescription": zod.string().max(intakePropertyEvidenceResponseCallsItemOneSellerAnswersConditionDescriptionMax).optional(),
-  "timing": zod.string().max(intakePropertyEvidenceResponseCallsItemOneSellerAnswersTimingMax).optional(),
-  "askingPrice": zod.number().min(intakePropertyEvidenceResponseCallsItemOneSellerAnswersAskingPriceMin).max(intakePropertyEvidenceResponseCallsItemOneSellerAnswersAskingPriceMax).nullish(),
-  "nextStepOutcome": zod.string().max(intakePropertyEvidenceResponseCallsItemOneSellerAnswersNextStepOutcomeMax).optional()
-}).optional()
-}).and(zod.object({
   "id": zod.string(),
   "createdAt": zod.string(),
   "actor": zod.string(),
-  "evidenceSource": zod.enum(['OPERATOR_ENTERED_SELLER_CONVERSATION']).optional(),
-  "evidenceClassification": zod.enum(['INDICATED']).optional(),
-  "sellerAnswersCapturedAt": zod.string().datetime({"offset":true}).optional()
-}))),
+  "version": zod.number().int(),
+  "outcome": zod.enum(['NO_ANSWER', 'VOICEMAIL', 'CONNECTED', 'NOT_INTERESTED']),
+  "notes": zod.string().max(intakePropertyEvidenceResponseCallsItemNotesMax),
+  "nextAction": zod.string().max(intakePropertyEvidenceResponseCallsItemNextActionMax),
+  "followUpAt": zod.string().datetime({"offset":true}).nullable(),
+  "evidenceSource": zod.enum(['OPERATOR_ENTERED_SELLER_CONVERSATION', 'OPERATOR_CALL_ATTEMPT']).optional(),
+  "evidenceClassification": zod.enum(['INDICATED', 'OBSERVED']).optional(),
+  "sellerAnswersCapturedAt": zod.string().datetime({"offset":true}).optional(),
+  "evidenceIds": zod.array(zod.string()).optional(),
+  "materialEvidence": zod.boolean().optional(),
+  "analysisInvalidated": zod.boolean().optional()
+})),
   "allowedTransitions": zod.array(zod.enum(['DISCOVERED', 'ENRICHING', 'ANALYZED', 'STRONG', 'NEGOTIABLE', 'PASS', 'CALL_READY', 'CONTACTED', 'CONVERSATION', 'OFFER_READY', 'OFFER_SENT', 'NEGOTIATING', 'CONTRACT_PENDING', 'UNDER_CONTRACT', 'BUYER_MATCHED', 'BUYER_INTERESTED', 'BUYER_COMMITTED', 'CLOSING', 'CLOSED', 'DEAD_DEAL'])),
   "workGuidance": zod.union([zod.object({
   "category": zod.enum(['RESEARCH', 'CALL', 'FOLLOW_UP', 'OFFER_APPROVAL', 'NEGOTIATION', 'CONTRACT', 'BUYER_MATCH', 'DEADLINE', 'CLOSING', 'DISCOVERY_REVIEW', 'BUYER_VERIFICATION', 'WORKER']),
@@ -3402,6 +3431,13 @@ export const getLeadResponseIntelligenceItemOneSourceUrlMax = 2000;
 export const getLeadResponseIntelligenceItemOneConfidenceMin = 0;
 export const getLeadResponseIntelligenceItemOneConfidenceMax = 1;
 
+export const getLeadResponseIntelligenceItemOneSourceRecordIdMax = 240;
+
+export const getLeadResponseIntelligenceItemOneContentDigestRegExp = new RegExp('^[a-f0-9]{64}$');
+export const getLeadResponseIntelligenceItemOneReconciliationComparedEvidenceIdsMax = 50;
+
+export const getLeadResponseIntelligenceItemOneReconciliationReasonMax = 1000;
+
 export const getLeadResponseIntelligenceItemOneVerificationNoteMax = 2000;
 
 export const getLeadResponseIntelligenceItemOneContactPermissionEvidenceUrlMax = 2000;
@@ -3585,6 +3621,8 @@ export const getLeadResponseUnderwritingOneRepairObservationsItemQuantityMax = 1
 
 export const getLeadResponseUnderwritingOneRepairObservationsItemEvidenceIdMax = 200;
 
+export const getLeadResponseUnderwritingOneRepairObservationsItemSourceRecordIdMax = 240;
+
 export const getLeadResponseUnderwritingOneRepairObservationsMax = 50;
 
 export const getLeadResponseUnderwritingOneRepairEstimateCatalogVersionMin = 0;
@@ -3606,22 +3644,9 @@ export const getLeadResponseUnderwritingOneConditionEvidenceIdMax = 200;
 
 export const getLeadResponseUnderwritingOneSellerContactEvidenceIdMax = 200;
 
+export const getLeadResponseCallsItemNotesMax = 10000;
 
-export const getLeadResponseCallsItemOneNotesMax = 10000;
-
-export const getLeadResponseCallsItemOneNextActionMin = 3;
-export const getLeadResponseCallsItemOneNextActionMax = 1000;
-
-export const getLeadResponseCallsItemOneSellerAnswersMotivationStatementMax = 3000;
-
-export const getLeadResponseCallsItemOneSellerAnswersConditionDescriptionMax = 3000;
-
-export const getLeadResponseCallsItemOneSellerAnswersTimingMax = 1000;
-
-export const getLeadResponseCallsItemOneSellerAnswersAskingPriceMin = 0;
-export const getLeadResponseCallsItemOneSellerAnswersAskingPriceMax = 1000000000;
-
-export const getLeadResponseCallsItemOneSellerAnswersNextStepOutcomeMax = 2000;
+export const getLeadResponseCallsItemNextActionMax = 1000;
 
 
 
@@ -3691,6 +3716,16 @@ export const GetLeadResponse = zod.object({
   "sourceType": zod.enum(['PUBLIC_RECORD', 'PERMITTED_LISTING', 'SELLER', 'INSPECTION', 'PUBLIC_PAGE', 'ANALYST', 'MODEL']),
   "confidence": zod.number().min(getLeadResponseIntelligenceItemOneConfidenceMin).max(getLeadResponseIntelligenceItemOneConfidenceMax),
   "capturedAt": zod.string().datetime({"offset":true}),
+  "sourceRecordId": zod.string().max(getLeadResponseIntelligenceItemOneSourceRecordIdMax).optional(),
+  "confidenceBasis": zod.enum(['OPERATOR_ASSESSED', 'UNASSESSED_CONSERVATIVE_DEFAULT', 'SOURCE_RELIABILITY']).optional(),
+  "clarificationStatus": zod.enum(['UNREVIEWED', 'FOLLOW_UP_REQUIRED', 'SELLER_CLARIFIED']).optional(),
+  "contentDigest": zod.string().regex(getLeadResponseIntelligenceItemOneContentDigestRegExp).optional(),
+  "retentionPolicy": zod.enum(['FULL_TEXT_PERMITTED', 'HASH_ONLY', 'DERIVED_ONLY']).optional(),
+  "reconciliation": zod.object({
+  "state": zod.enum(['NO_COMPARABLE_EVIDENCE', 'NO_CONFLICT_FOUND', 'CONFLICT_REVIEW']),
+  "comparedEvidenceIds": zod.array(zod.string()).max(getLeadResponseIntelligenceItemOneReconciliationComparedEvidenceIdsMax),
+  "reason": zod.string().max(getLeadResponseIntelligenceItemOneReconciliationReasonMax)
+}).optional(),
   "verificationNote": zod.string().max(getLeadResponseIntelligenceItemOneVerificationNoteMax).optional(),
   "contactPermissionStatus": zod.enum(['NOT_REVIEWED', 'PERMITTED', 'PROHIBITED']).optional(),
   "contactPermissionEvidenceUrl": zod.string().url().max(getLeadResponseIntelligenceItemOneContactPermissionEvidenceUrlMax).optional(),
@@ -3821,6 +3856,7 @@ export const GetLeadResponse = zod.object({
   "hypotheses": zod.array(zod.object({
   "id": zod.string(),
   "evidenceId": zod.string(),
+  "sourceRecordId": zod.string().nullable(),
   "category": zod.string(),
   "severity": zod.enum(['COSMETIC', 'MODERATE', 'MAJOR', 'REPLACEMENT']),
   "statement": zod.string(),
@@ -3830,7 +3866,7 @@ export const GetLeadResponse = zod.object({
   "confidence": zod.number().min(getLeadResponseAnalysisOnePreliminaryRepairEstimateHypothesesItemConfidenceMin).max(getLeadResponseAnalysisOnePreliminaryRepairEstimateHypothesesItemConfidenceMax),
   "confidenceMethod": zod.enum(['EXPLICIT_PHRASE_RULE_UNCALIBRATED']),
   "source": zod.string(),
-  "sourceUrl": zod.string().url(),
+  "sourceUrl": zod.string().url().nullable(),
   "ruleId": zod.string(),
   "question": zod.string(),
   "action": zod.string()
@@ -3970,7 +4006,9 @@ export const GetLeadResponse = zod.object({
   "severity": zod.enum(['NO_REPAIR', 'COSMETIC', 'MODERATE', 'MAJOR', 'REPLACEMENT']),
   "quantity": zod.number().min(getLeadResponseUnderwritingOneRepairObservationsItemQuantityMin).max(getLeadResponseUnderwritingOneRepairObservationsItemQuantityMax),
   "unit": zod.enum(['SQFT', 'LINEAR_FT', 'EACH', 'LUMP_SUM']),
-  "evidenceId": zod.string().min(1).max(getLeadResponseUnderwritingOneRepairObservationsItemEvidenceIdMax)
+  "evidenceId": zod.string().min(1).max(getLeadResponseUnderwritingOneRepairObservationsItemEvidenceIdMax),
+  "sourceRecordId": zod.string().max(getLeadResponseUnderwritingOneRepairObservationsItemSourceRecordIdMax).optional(),
+  "sourceUrl": zod.string().url().nullish()
 })).max(getLeadResponseUnderwritingOneRepairObservationsMax).optional(),
   "repairEstimate": zod.object({
   "status": zod.enum(['NOT_USED', 'CALCULATED', 'BLOCKED']),
@@ -4014,26 +4052,21 @@ export const GetLeadResponse = zod.object({
   "createdAt": zod.string()
 })),
   "calls": zod.array(zod.object({
-  "version": zod.number().int().min(1),
-  "outcome": zod.enum(['NO_ANSWER', 'VOICEMAIL', 'CONNECTED', 'NOT_INTERESTED']),
-  "notes": zod.string().min(1).max(getLeadResponseCallsItemOneNotesMax),
-  "nextAction": zod.string().min(getLeadResponseCallsItemOneNextActionMin).max(getLeadResponseCallsItemOneNextActionMax),
-  "followUpAt": zod.string().datetime({"offset":true}).nullable(),
-  "sellerAnswers": zod.object({
-  "motivationStatement": zod.string().max(getLeadResponseCallsItemOneSellerAnswersMotivationStatementMax).optional(),
-  "conditionDescription": zod.string().max(getLeadResponseCallsItemOneSellerAnswersConditionDescriptionMax).optional(),
-  "timing": zod.string().max(getLeadResponseCallsItemOneSellerAnswersTimingMax).optional(),
-  "askingPrice": zod.number().min(getLeadResponseCallsItemOneSellerAnswersAskingPriceMin).max(getLeadResponseCallsItemOneSellerAnswersAskingPriceMax).nullish(),
-  "nextStepOutcome": zod.string().max(getLeadResponseCallsItemOneSellerAnswersNextStepOutcomeMax).optional()
-}).optional()
-}).and(zod.object({
   "id": zod.string(),
   "createdAt": zod.string(),
   "actor": zod.string(),
-  "evidenceSource": zod.enum(['OPERATOR_ENTERED_SELLER_CONVERSATION']).optional(),
-  "evidenceClassification": zod.enum(['INDICATED']).optional(),
-  "sellerAnswersCapturedAt": zod.string().datetime({"offset":true}).optional()
-}))),
+  "version": zod.number().int(),
+  "outcome": zod.enum(['NO_ANSWER', 'VOICEMAIL', 'CONNECTED', 'NOT_INTERESTED']),
+  "notes": zod.string().max(getLeadResponseCallsItemNotesMax),
+  "nextAction": zod.string().max(getLeadResponseCallsItemNextActionMax),
+  "followUpAt": zod.string().datetime({"offset":true}).nullable(),
+  "evidenceSource": zod.enum(['OPERATOR_ENTERED_SELLER_CONVERSATION', 'OPERATOR_CALL_ATTEMPT']).optional(),
+  "evidenceClassification": zod.enum(['INDICATED', 'OBSERVED']).optional(),
+  "sellerAnswersCapturedAt": zod.string().datetime({"offset":true}).optional(),
+  "evidenceIds": zod.array(zod.string()).optional(),
+  "materialEvidence": zod.boolean().optional(),
+  "analysisInvalidated": zod.boolean().optional()
+})),
   "allowedTransitions": zod.array(zod.enum(['DISCOVERED', 'ENRICHING', 'ANALYZED', 'STRONG', 'NEGOTIABLE', 'PASS', 'CALL_READY', 'CONTACTED', 'CONVERSATION', 'OFFER_READY', 'OFFER_SENT', 'NEGOTIATING', 'CONTRACT_PENDING', 'UNDER_CONTRACT', 'BUYER_MATCHED', 'BUYER_INTERESTED', 'BUYER_COMMITTED', 'CLOSING', 'CLOSED', 'DEAD_DEAL'])),
   "workGuidance": zod.union([zod.object({
   "category": zod.enum(['RESEARCH', 'CALL', 'FOLLOW_UP', 'OFFER_APPROVAL', 'NEGOTIATION', 'CONTRACT', 'BUYER_MATCH', 'DEADLINE', 'CLOSING', 'DISCOVERY_REVIEW', 'BUYER_VERIFICATION', 'WORKER']),
@@ -4253,6 +4286,13 @@ export const addIntelligenceBodySourceUrlMax = 2000;
 export const addIntelligenceBodyConfidenceMin = 0;
 export const addIntelligenceBodyConfidenceMax = 1;
 
+export const addIntelligenceBodySourceRecordIdMax = 240;
+
+export const addIntelligenceBodyContentDigestRegExp = new RegExp('^[a-f0-9]{64}$');
+export const addIntelligenceBodyReconciliationComparedEvidenceIdsMax = 50;
+
+export const addIntelligenceBodyReconciliationReasonMax = 1000;
+
 export const addIntelligenceBodyVerificationNoteMax = 2000;
 
 export const addIntelligenceBodyContactPermissionEvidenceUrlMax = 2000;
@@ -4272,6 +4312,16 @@ export const AddIntelligenceBody = zod.object({
   "sourceType": zod.enum(['PUBLIC_RECORD', 'PERMITTED_LISTING', 'SELLER', 'INSPECTION', 'PUBLIC_PAGE', 'ANALYST', 'MODEL']),
   "confidence": zod.number().min(addIntelligenceBodyConfidenceMin).max(addIntelligenceBodyConfidenceMax),
   "capturedAt": zod.string().datetime({"offset":true}),
+  "sourceRecordId": zod.string().max(addIntelligenceBodySourceRecordIdMax).optional(),
+  "confidenceBasis": zod.enum(['OPERATOR_ASSESSED', 'UNASSESSED_CONSERVATIVE_DEFAULT', 'SOURCE_RELIABILITY']).optional(),
+  "clarificationStatus": zod.enum(['UNREVIEWED', 'FOLLOW_UP_REQUIRED', 'SELLER_CLARIFIED']).optional(),
+  "contentDigest": zod.string().regex(addIntelligenceBodyContentDigestRegExp).optional(),
+  "retentionPolicy": zod.enum(['FULL_TEXT_PERMITTED', 'HASH_ONLY', 'DERIVED_ONLY']).optional(),
+  "reconciliation": zod.object({
+  "state": zod.enum(['NO_COMPARABLE_EVIDENCE', 'NO_CONFLICT_FOUND', 'CONFLICT_REVIEW']),
+  "comparedEvidenceIds": zod.array(zod.string()).max(addIntelligenceBodyReconciliationComparedEvidenceIdsMax),
+  "reason": zod.string().max(addIntelligenceBodyReconciliationReasonMax)
+}).optional(),
   "verificationNote": zod.string().max(addIntelligenceBodyVerificationNoteMax).optional(),
   "contactPermissionStatus": zod.enum(['NOT_REVIEWED', 'PERMITTED', 'PROHIBITED']).optional(),
   "contactPermissionEvidenceUrl": zod.string().url().max(addIntelligenceBodyContactPermissionEvidenceUrlMax).optional(),
@@ -4289,6 +4339,13 @@ export const addIntelligenceResponseOneSourceUrlMax = 2000;
 
 export const addIntelligenceResponseOneConfidenceMin = 0;
 export const addIntelligenceResponseOneConfidenceMax = 1;
+
+export const addIntelligenceResponseOneSourceRecordIdMax = 240;
+
+export const addIntelligenceResponseOneContentDigestRegExp = new RegExp('^[a-f0-9]{64}$');
+export const addIntelligenceResponseOneReconciliationComparedEvidenceIdsMax = 50;
+
+export const addIntelligenceResponseOneReconciliationReasonMax = 1000;
 
 export const addIntelligenceResponseOneVerificationNoteMax = 2000;
 
@@ -4320,6 +4377,16 @@ export const AddIntelligenceResponse = zod.object({
   "sourceType": zod.enum(['PUBLIC_RECORD', 'PERMITTED_LISTING', 'SELLER', 'INSPECTION', 'PUBLIC_PAGE', 'ANALYST', 'MODEL']),
   "confidence": zod.number().min(addIntelligenceResponseOneConfidenceMin).max(addIntelligenceResponseOneConfidenceMax),
   "capturedAt": zod.string().datetime({"offset":true}),
+  "sourceRecordId": zod.string().max(addIntelligenceResponseOneSourceRecordIdMax).optional(),
+  "confidenceBasis": zod.enum(['OPERATOR_ASSESSED', 'UNASSESSED_CONSERVATIVE_DEFAULT', 'SOURCE_RELIABILITY']).optional(),
+  "clarificationStatus": zod.enum(['UNREVIEWED', 'FOLLOW_UP_REQUIRED', 'SELLER_CLARIFIED']).optional(),
+  "contentDigest": zod.string().regex(addIntelligenceResponseOneContentDigestRegExp).optional(),
+  "retentionPolicy": zod.enum(['FULL_TEXT_PERMITTED', 'HASH_ONLY', 'DERIVED_ONLY']).optional(),
+  "reconciliation": zod.object({
+  "state": zod.enum(['NO_COMPARABLE_EVIDENCE', 'NO_CONFLICT_FOUND', 'CONFLICT_REVIEW']),
+  "comparedEvidenceIds": zod.array(zod.string()).max(addIntelligenceResponseOneReconciliationComparedEvidenceIdsMax),
+  "reason": zod.string().max(addIntelligenceResponseOneReconciliationReasonMax)
+}).optional(),
   "verificationNote": zod.string().max(addIntelligenceResponseOneVerificationNoteMax).optional(),
   "contactPermissionStatus": zod.enum(['NOT_REVIEWED', 'PERMITTED', 'PROHIBITED']).optional(),
   "contactPermissionEvidenceUrl": zod.string().url().max(addIntelligenceResponseOneContactPermissionEvidenceUrlMax).optional(),
@@ -4449,6 +4516,8 @@ export const saveUnderwritingBodyRepairObservationsItemQuantityMax = 1000000;
 
 export const saveUnderwritingBodyRepairObservationsItemEvidenceIdMax = 200;
 
+export const saveUnderwritingBodyRepairObservationsItemSourceRecordIdMax = 240;
+
 export const saveUnderwritingBodyRepairObservationsMax = 50;
 
 export const saveUnderwritingBodyRepairEstimateCatalogVersionMin = 0;
@@ -4504,7 +4573,9 @@ export const SaveUnderwritingBody = zod.object({
   "severity": zod.enum(['NO_REPAIR', 'COSMETIC', 'MODERATE', 'MAJOR', 'REPLACEMENT']),
   "quantity": zod.number().min(saveUnderwritingBodyRepairObservationsItemQuantityMin).max(saveUnderwritingBodyRepairObservationsItemQuantityMax),
   "unit": zod.enum(['SQFT', 'LINEAR_FT', 'EACH', 'LUMP_SUM']),
-  "evidenceId": zod.string().min(1).max(saveUnderwritingBodyRepairObservationsItemEvidenceIdMax)
+  "evidenceId": zod.string().min(1).max(saveUnderwritingBodyRepairObservationsItemEvidenceIdMax),
+  "sourceRecordId": zod.string().max(saveUnderwritingBodyRepairObservationsItemSourceRecordIdMax).optional(),
+  "sourceUrl": zod.string().url().nullish()
 })).max(saveUnderwritingBodyRepairObservationsMax).optional(),
   "repairEstimate": zod.object({
   "status": zod.enum(['NOT_USED', 'CALCULATED', 'BLOCKED']),
@@ -4601,6 +4672,13 @@ export const saveUnderwritingResponseIntelligenceItemOneSourceUrlMax = 2000;
 
 export const saveUnderwritingResponseIntelligenceItemOneConfidenceMin = 0;
 export const saveUnderwritingResponseIntelligenceItemOneConfidenceMax = 1;
+
+export const saveUnderwritingResponseIntelligenceItemOneSourceRecordIdMax = 240;
+
+export const saveUnderwritingResponseIntelligenceItemOneContentDigestRegExp = new RegExp('^[a-f0-9]{64}$');
+export const saveUnderwritingResponseIntelligenceItemOneReconciliationComparedEvidenceIdsMax = 50;
+
+export const saveUnderwritingResponseIntelligenceItemOneReconciliationReasonMax = 1000;
 
 export const saveUnderwritingResponseIntelligenceItemOneVerificationNoteMax = 2000;
 
@@ -4785,6 +4863,8 @@ export const saveUnderwritingResponseUnderwritingOneRepairObservationsItemQuanti
 
 export const saveUnderwritingResponseUnderwritingOneRepairObservationsItemEvidenceIdMax = 200;
 
+export const saveUnderwritingResponseUnderwritingOneRepairObservationsItemSourceRecordIdMax = 240;
+
 export const saveUnderwritingResponseUnderwritingOneRepairObservationsMax = 50;
 
 export const saveUnderwritingResponseUnderwritingOneRepairEstimateCatalogVersionMin = 0;
@@ -4806,22 +4886,9 @@ export const saveUnderwritingResponseUnderwritingOneConditionEvidenceIdMax = 200
 
 export const saveUnderwritingResponseUnderwritingOneSellerContactEvidenceIdMax = 200;
 
+export const saveUnderwritingResponseCallsItemNotesMax = 10000;
 
-export const saveUnderwritingResponseCallsItemOneNotesMax = 10000;
-
-export const saveUnderwritingResponseCallsItemOneNextActionMin = 3;
-export const saveUnderwritingResponseCallsItemOneNextActionMax = 1000;
-
-export const saveUnderwritingResponseCallsItemOneSellerAnswersMotivationStatementMax = 3000;
-
-export const saveUnderwritingResponseCallsItemOneSellerAnswersConditionDescriptionMax = 3000;
-
-export const saveUnderwritingResponseCallsItemOneSellerAnswersTimingMax = 1000;
-
-export const saveUnderwritingResponseCallsItemOneSellerAnswersAskingPriceMin = 0;
-export const saveUnderwritingResponseCallsItemOneSellerAnswersAskingPriceMax = 1000000000;
-
-export const saveUnderwritingResponseCallsItemOneSellerAnswersNextStepOutcomeMax = 2000;
+export const saveUnderwritingResponseCallsItemNextActionMax = 1000;
 
 
 
@@ -4891,6 +4958,16 @@ export const SaveUnderwritingResponse = zod.object({
   "sourceType": zod.enum(['PUBLIC_RECORD', 'PERMITTED_LISTING', 'SELLER', 'INSPECTION', 'PUBLIC_PAGE', 'ANALYST', 'MODEL']),
   "confidence": zod.number().min(saveUnderwritingResponseIntelligenceItemOneConfidenceMin).max(saveUnderwritingResponseIntelligenceItemOneConfidenceMax),
   "capturedAt": zod.string().datetime({"offset":true}),
+  "sourceRecordId": zod.string().max(saveUnderwritingResponseIntelligenceItemOneSourceRecordIdMax).optional(),
+  "confidenceBasis": zod.enum(['OPERATOR_ASSESSED', 'UNASSESSED_CONSERVATIVE_DEFAULT', 'SOURCE_RELIABILITY']).optional(),
+  "clarificationStatus": zod.enum(['UNREVIEWED', 'FOLLOW_UP_REQUIRED', 'SELLER_CLARIFIED']).optional(),
+  "contentDigest": zod.string().regex(saveUnderwritingResponseIntelligenceItemOneContentDigestRegExp).optional(),
+  "retentionPolicy": zod.enum(['FULL_TEXT_PERMITTED', 'HASH_ONLY', 'DERIVED_ONLY']).optional(),
+  "reconciliation": zod.object({
+  "state": zod.enum(['NO_COMPARABLE_EVIDENCE', 'NO_CONFLICT_FOUND', 'CONFLICT_REVIEW']),
+  "comparedEvidenceIds": zod.array(zod.string()).max(saveUnderwritingResponseIntelligenceItemOneReconciliationComparedEvidenceIdsMax),
+  "reason": zod.string().max(saveUnderwritingResponseIntelligenceItemOneReconciliationReasonMax)
+}).optional(),
   "verificationNote": zod.string().max(saveUnderwritingResponseIntelligenceItemOneVerificationNoteMax).optional(),
   "contactPermissionStatus": zod.enum(['NOT_REVIEWED', 'PERMITTED', 'PROHIBITED']).optional(),
   "contactPermissionEvidenceUrl": zod.string().url().max(saveUnderwritingResponseIntelligenceItemOneContactPermissionEvidenceUrlMax).optional(),
@@ -5021,6 +5098,7 @@ export const SaveUnderwritingResponse = zod.object({
   "hypotheses": zod.array(zod.object({
   "id": zod.string(),
   "evidenceId": zod.string(),
+  "sourceRecordId": zod.string().nullable(),
   "category": zod.string(),
   "severity": zod.enum(['COSMETIC', 'MODERATE', 'MAJOR', 'REPLACEMENT']),
   "statement": zod.string(),
@@ -5030,7 +5108,7 @@ export const SaveUnderwritingResponse = zod.object({
   "confidence": zod.number().min(saveUnderwritingResponseAnalysisOnePreliminaryRepairEstimateHypothesesItemConfidenceMin).max(saveUnderwritingResponseAnalysisOnePreliminaryRepairEstimateHypothesesItemConfidenceMax),
   "confidenceMethod": zod.enum(['EXPLICIT_PHRASE_RULE_UNCALIBRATED']),
   "source": zod.string(),
-  "sourceUrl": zod.string().url(),
+  "sourceUrl": zod.string().url().nullable(),
   "ruleId": zod.string(),
   "question": zod.string(),
   "action": zod.string()
@@ -5170,7 +5248,9 @@ export const SaveUnderwritingResponse = zod.object({
   "severity": zod.enum(['NO_REPAIR', 'COSMETIC', 'MODERATE', 'MAJOR', 'REPLACEMENT']),
   "quantity": zod.number().min(saveUnderwritingResponseUnderwritingOneRepairObservationsItemQuantityMin).max(saveUnderwritingResponseUnderwritingOneRepairObservationsItemQuantityMax),
   "unit": zod.enum(['SQFT', 'LINEAR_FT', 'EACH', 'LUMP_SUM']),
-  "evidenceId": zod.string().min(1).max(saveUnderwritingResponseUnderwritingOneRepairObservationsItemEvidenceIdMax)
+  "evidenceId": zod.string().min(1).max(saveUnderwritingResponseUnderwritingOneRepairObservationsItemEvidenceIdMax),
+  "sourceRecordId": zod.string().max(saveUnderwritingResponseUnderwritingOneRepairObservationsItemSourceRecordIdMax).optional(),
+  "sourceUrl": zod.string().url().nullish()
 })).max(saveUnderwritingResponseUnderwritingOneRepairObservationsMax).optional(),
   "repairEstimate": zod.object({
   "status": zod.enum(['NOT_USED', 'CALCULATED', 'BLOCKED']),
@@ -5214,26 +5294,21 @@ export const SaveUnderwritingResponse = zod.object({
   "createdAt": zod.string()
 })),
   "calls": zod.array(zod.object({
-  "version": zod.number().int().min(1),
-  "outcome": zod.enum(['NO_ANSWER', 'VOICEMAIL', 'CONNECTED', 'NOT_INTERESTED']),
-  "notes": zod.string().min(1).max(saveUnderwritingResponseCallsItemOneNotesMax),
-  "nextAction": zod.string().min(saveUnderwritingResponseCallsItemOneNextActionMin).max(saveUnderwritingResponseCallsItemOneNextActionMax),
-  "followUpAt": zod.string().datetime({"offset":true}).nullable(),
-  "sellerAnswers": zod.object({
-  "motivationStatement": zod.string().max(saveUnderwritingResponseCallsItemOneSellerAnswersMotivationStatementMax).optional(),
-  "conditionDescription": zod.string().max(saveUnderwritingResponseCallsItemOneSellerAnswersConditionDescriptionMax).optional(),
-  "timing": zod.string().max(saveUnderwritingResponseCallsItemOneSellerAnswersTimingMax).optional(),
-  "askingPrice": zod.number().min(saveUnderwritingResponseCallsItemOneSellerAnswersAskingPriceMin).max(saveUnderwritingResponseCallsItemOneSellerAnswersAskingPriceMax).nullish(),
-  "nextStepOutcome": zod.string().max(saveUnderwritingResponseCallsItemOneSellerAnswersNextStepOutcomeMax).optional()
-}).optional()
-}).and(zod.object({
   "id": zod.string(),
   "createdAt": zod.string(),
   "actor": zod.string(),
-  "evidenceSource": zod.enum(['OPERATOR_ENTERED_SELLER_CONVERSATION']).optional(),
-  "evidenceClassification": zod.enum(['INDICATED']).optional(),
-  "sellerAnswersCapturedAt": zod.string().datetime({"offset":true}).optional()
-}))),
+  "version": zod.number().int(),
+  "outcome": zod.enum(['NO_ANSWER', 'VOICEMAIL', 'CONNECTED', 'NOT_INTERESTED']),
+  "notes": zod.string().max(saveUnderwritingResponseCallsItemNotesMax),
+  "nextAction": zod.string().max(saveUnderwritingResponseCallsItemNextActionMax),
+  "followUpAt": zod.string().datetime({"offset":true}).nullable(),
+  "evidenceSource": zod.enum(['OPERATOR_ENTERED_SELLER_CONVERSATION', 'OPERATOR_CALL_ATTEMPT']).optional(),
+  "evidenceClassification": zod.enum(['INDICATED', 'OBSERVED']).optional(),
+  "sellerAnswersCapturedAt": zod.string().datetime({"offset":true}).optional(),
+  "evidenceIds": zod.array(zod.string()).optional(),
+  "materialEvidence": zod.boolean().optional(),
+  "analysisInvalidated": zod.boolean().optional()
+})),
   "allowedTransitions": zod.array(zod.enum(['DISCOVERED', 'ENRICHING', 'ANALYZED', 'STRONG', 'NEGOTIABLE', 'PASS', 'CALL_READY', 'CONTACTED', 'CONVERSATION', 'OFFER_READY', 'OFFER_SENT', 'NEGOTIATING', 'CONTRACT_PENDING', 'UNDER_CONTRACT', 'BUYER_MATCHED', 'BUYER_INTERESTED', 'BUYER_COMMITTED', 'CLOSING', 'CLOSED', 'DEAD_DEAL'])),
   "workGuidance": zod.union([zod.object({
   "category": zod.enum(['RESEARCH', 'CALL', 'FOLLOW_UP', 'OFFER_APPROVAL', 'NEGOTIATION', 'CONTRACT', 'BUYER_MATCH', 'DEADLINE', 'CLOSING', 'DISCOVERY_REVIEW', 'BUYER_VERIFICATION', 'WORKER']),
@@ -5339,6 +5414,13 @@ export const transitionLeadResponseIntelligenceItemOneSourceUrlMax = 2000;
 
 export const transitionLeadResponseIntelligenceItemOneConfidenceMin = 0;
 export const transitionLeadResponseIntelligenceItemOneConfidenceMax = 1;
+
+export const transitionLeadResponseIntelligenceItemOneSourceRecordIdMax = 240;
+
+export const transitionLeadResponseIntelligenceItemOneContentDigestRegExp = new RegExp('^[a-f0-9]{64}$');
+export const transitionLeadResponseIntelligenceItemOneReconciliationComparedEvidenceIdsMax = 50;
+
+export const transitionLeadResponseIntelligenceItemOneReconciliationReasonMax = 1000;
 
 export const transitionLeadResponseIntelligenceItemOneVerificationNoteMax = 2000;
 
@@ -5523,6 +5605,8 @@ export const transitionLeadResponseUnderwritingOneRepairObservationsItemQuantity
 
 export const transitionLeadResponseUnderwritingOneRepairObservationsItemEvidenceIdMax = 200;
 
+export const transitionLeadResponseUnderwritingOneRepairObservationsItemSourceRecordIdMax = 240;
+
 export const transitionLeadResponseUnderwritingOneRepairObservationsMax = 50;
 
 export const transitionLeadResponseUnderwritingOneRepairEstimateCatalogVersionMin = 0;
@@ -5544,22 +5628,9 @@ export const transitionLeadResponseUnderwritingOneConditionEvidenceIdMax = 200;
 
 export const transitionLeadResponseUnderwritingOneSellerContactEvidenceIdMax = 200;
 
+export const transitionLeadResponseCallsItemNotesMax = 10000;
 
-export const transitionLeadResponseCallsItemOneNotesMax = 10000;
-
-export const transitionLeadResponseCallsItemOneNextActionMin = 3;
-export const transitionLeadResponseCallsItemOneNextActionMax = 1000;
-
-export const transitionLeadResponseCallsItemOneSellerAnswersMotivationStatementMax = 3000;
-
-export const transitionLeadResponseCallsItemOneSellerAnswersConditionDescriptionMax = 3000;
-
-export const transitionLeadResponseCallsItemOneSellerAnswersTimingMax = 1000;
-
-export const transitionLeadResponseCallsItemOneSellerAnswersAskingPriceMin = 0;
-export const transitionLeadResponseCallsItemOneSellerAnswersAskingPriceMax = 1000000000;
-
-export const transitionLeadResponseCallsItemOneSellerAnswersNextStepOutcomeMax = 2000;
+export const transitionLeadResponseCallsItemNextActionMax = 1000;
 
 
 
@@ -5629,6 +5700,16 @@ export const TransitionLeadResponse = zod.object({
   "sourceType": zod.enum(['PUBLIC_RECORD', 'PERMITTED_LISTING', 'SELLER', 'INSPECTION', 'PUBLIC_PAGE', 'ANALYST', 'MODEL']),
   "confidence": zod.number().min(transitionLeadResponseIntelligenceItemOneConfidenceMin).max(transitionLeadResponseIntelligenceItemOneConfidenceMax),
   "capturedAt": zod.string().datetime({"offset":true}),
+  "sourceRecordId": zod.string().max(transitionLeadResponseIntelligenceItemOneSourceRecordIdMax).optional(),
+  "confidenceBasis": zod.enum(['OPERATOR_ASSESSED', 'UNASSESSED_CONSERVATIVE_DEFAULT', 'SOURCE_RELIABILITY']).optional(),
+  "clarificationStatus": zod.enum(['UNREVIEWED', 'FOLLOW_UP_REQUIRED', 'SELLER_CLARIFIED']).optional(),
+  "contentDigest": zod.string().regex(transitionLeadResponseIntelligenceItemOneContentDigestRegExp).optional(),
+  "retentionPolicy": zod.enum(['FULL_TEXT_PERMITTED', 'HASH_ONLY', 'DERIVED_ONLY']).optional(),
+  "reconciliation": zod.object({
+  "state": zod.enum(['NO_COMPARABLE_EVIDENCE', 'NO_CONFLICT_FOUND', 'CONFLICT_REVIEW']),
+  "comparedEvidenceIds": zod.array(zod.string()).max(transitionLeadResponseIntelligenceItemOneReconciliationComparedEvidenceIdsMax),
+  "reason": zod.string().max(transitionLeadResponseIntelligenceItemOneReconciliationReasonMax)
+}).optional(),
   "verificationNote": zod.string().max(transitionLeadResponseIntelligenceItemOneVerificationNoteMax).optional(),
   "contactPermissionStatus": zod.enum(['NOT_REVIEWED', 'PERMITTED', 'PROHIBITED']).optional(),
   "contactPermissionEvidenceUrl": zod.string().url().max(transitionLeadResponseIntelligenceItemOneContactPermissionEvidenceUrlMax).optional(),
@@ -5759,6 +5840,7 @@ export const TransitionLeadResponse = zod.object({
   "hypotheses": zod.array(zod.object({
   "id": zod.string(),
   "evidenceId": zod.string(),
+  "sourceRecordId": zod.string().nullable(),
   "category": zod.string(),
   "severity": zod.enum(['COSMETIC', 'MODERATE', 'MAJOR', 'REPLACEMENT']),
   "statement": zod.string(),
@@ -5768,7 +5850,7 @@ export const TransitionLeadResponse = zod.object({
   "confidence": zod.number().min(transitionLeadResponseAnalysisOnePreliminaryRepairEstimateHypothesesItemConfidenceMin).max(transitionLeadResponseAnalysisOnePreliminaryRepairEstimateHypothesesItemConfidenceMax),
   "confidenceMethod": zod.enum(['EXPLICIT_PHRASE_RULE_UNCALIBRATED']),
   "source": zod.string(),
-  "sourceUrl": zod.string().url(),
+  "sourceUrl": zod.string().url().nullable(),
   "ruleId": zod.string(),
   "question": zod.string(),
   "action": zod.string()
@@ -5908,7 +5990,9 @@ export const TransitionLeadResponse = zod.object({
   "severity": zod.enum(['NO_REPAIR', 'COSMETIC', 'MODERATE', 'MAJOR', 'REPLACEMENT']),
   "quantity": zod.number().min(transitionLeadResponseUnderwritingOneRepairObservationsItemQuantityMin).max(transitionLeadResponseUnderwritingOneRepairObservationsItemQuantityMax),
   "unit": zod.enum(['SQFT', 'LINEAR_FT', 'EACH', 'LUMP_SUM']),
-  "evidenceId": zod.string().min(1).max(transitionLeadResponseUnderwritingOneRepairObservationsItemEvidenceIdMax)
+  "evidenceId": zod.string().min(1).max(transitionLeadResponseUnderwritingOneRepairObservationsItemEvidenceIdMax),
+  "sourceRecordId": zod.string().max(transitionLeadResponseUnderwritingOneRepairObservationsItemSourceRecordIdMax).optional(),
+  "sourceUrl": zod.string().url().nullish()
 })).max(transitionLeadResponseUnderwritingOneRepairObservationsMax).optional(),
   "repairEstimate": zod.object({
   "status": zod.enum(['NOT_USED', 'CALCULATED', 'BLOCKED']),
@@ -5952,26 +6036,21 @@ export const TransitionLeadResponse = zod.object({
   "createdAt": zod.string()
 })),
   "calls": zod.array(zod.object({
-  "version": zod.number().int().min(1),
-  "outcome": zod.enum(['NO_ANSWER', 'VOICEMAIL', 'CONNECTED', 'NOT_INTERESTED']),
-  "notes": zod.string().min(1).max(transitionLeadResponseCallsItemOneNotesMax),
-  "nextAction": zod.string().min(transitionLeadResponseCallsItemOneNextActionMin).max(transitionLeadResponseCallsItemOneNextActionMax),
-  "followUpAt": zod.string().datetime({"offset":true}).nullable(),
-  "sellerAnswers": zod.object({
-  "motivationStatement": zod.string().max(transitionLeadResponseCallsItemOneSellerAnswersMotivationStatementMax).optional(),
-  "conditionDescription": zod.string().max(transitionLeadResponseCallsItemOneSellerAnswersConditionDescriptionMax).optional(),
-  "timing": zod.string().max(transitionLeadResponseCallsItemOneSellerAnswersTimingMax).optional(),
-  "askingPrice": zod.number().min(transitionLeadResponseCallsItemOneSellerAnswersAskingPriceMin).max(transitionLeadResponseCallsItemOneSellerAnswersAskingPriceMax).nullish(),
-  "nextStepOutcome": zod.string().max(transitionLeadResponseCallsItemOneSellerAnswersNextStepOutcomeMax).optional()
-}).optional()
-}).and(zod.object({
   "id": zod.string(),
   "createdAt": zod.string(),
   "actor": zod.string(),
-  "evidenceSource": zod.enum(['OPERATOR_ENTERED_SELLER_CONVERSATION']).optional(),
-  "evidenceClassification": zod.enum(['INDICATED']).optional(),
-  "sellerAnswersCapturedAt": zod.string().datetime({"offset":true}).optional()
-}))),
+  "version": zod.number().int(),
+  "outcome": zod.enum(['NO_ANSWER', 'VOICEMAIL', 'CONNECTED', 'NOT_INTERESTED']),
+  "notes": zod.string().max(transitionLeadResponseCallsItemNotesMax),
+  "nextAction": zod.string().max(transitionLeadResponseCallsItemNextActionMax),
+  "followUpAt": zod.string().datetime({"offset":true}).nullable(),
+  "evidenceSource": zod.enum(['OPERATOR_ENTERED_SELLER_CONVERSATION', 'OPERATOR_CALL_ATTEMPT']).optional(),
+  "evidenceClassification": zod.enum(['INDICATED', 'OBSERVED']).optional(),
+  "sellerAnswersCapturedAt": zod.string().datetime({"offset":true}).optional(),
+  "evidenceIds": zod.array(zod.string()).optional(),
+  "materialEvidence": zod.boolean().optional(),
+  "analysisInvalidated": zod.boolean().optional()
+})),
   "allowedTransitions": zod.array(zod.enum(['DISCOVERED', 'ENRICHING', 'ANALYZED', 'STRONG', 'NEGOTIABLE', 'PASS', 'CALL_READY', 'CONTACTED', 'CONVERSATION', 'OFFER_READY', 'OFFER_SENT', 'NEGOTIATING', 'CONTRACT_PENDING', 'UNDER_CONTRACT', 'BUYER_MATCHED', 'BUYER_INTERESTED', 'BUYER_COMMITTED', 'CLOSING', 'CLOSED', 'DEAD_DEAL'])),
   "workGuidance": zod.union([zod.object({
   "category": zod.enum(['RESEARCH', 'CALL', 'FOLLOW_UP', 'OFFER_APPROVAL', 'NEGOTIATION', 'CONTRACT', 'BUYER_MATCH', 'DEADLINE', 'CLOSING', 'DISCOVERY_REVIEW', 'BUYER_VERIFICATION', 'WORKER']),
@@ -6004,16 +6083,39 @@ export const recordCallBodyNotesMax = 10000;
 export const recordCallBodyNextActionMin = 3;
 export const recordCallBodyNextActionMax = 1000;
 
+export const recordCallBodyOperatorConfidenceMin = 0;
+export const recordCallBodyOperatorConfidenceMax = 1;
+
 export const recordCallBodySellerAnswersMotivationStatementMax = 3000;
 
+export const recordCallBodySellerAnswersUrgencyMax = 1000;
+
 export const recordCallBodySellerAnswersConditionDescriptionMax = 3000;
+
+export const recordCallBodySellerAnswersConditionByCategoryItemStatementMax = 2000;
+
+export const recordCallBodySellerAnswersConditionByCategoryMax = 12;
 
 export const recordCallBodySellerAnswersTimingMax = 1000;
 
 export const recordCallBodySellerAnswersAskingPriceMin = 0;
 export const recordCallBodySellerAnswersAskingPriceMax = 1000000000;
 
+export const recordCallBodySellerAnswersOccupancyMax = 1000;
+
+export const recordCallBodySellerAnswersRepairsCompletedMax = 2000;
+
+export const recordCallBodySellerAnswersKnownDefectsMax = 3000;
+
+export const recordCallBodySellerAnswersTitleTenantIssuesMax = 2000;
+
+export const recordCallBodySellerAnswersAccessConstraintsMax = 2000;
+
+export const recordCallBodySellerAnswersWillingnessToAcceptTermsMax = 2000;
+
 export const recordCallBodySellerAnswersNextStepOutcomeMax = 2000;
+
+export const recordCallBodySellerAnswersOtherMaterialStatementsMax = 3000;
 
 
 
@@ -6023,12 +6125,26 @@ export const RecordCallBody = zod.object({
   "notes": zod.string().min(1).max(recordCallBodyNotesMax),
   "nextAction": zod.string().min(recordCallBodyNextActionMin).max(recordCallBodyNextActionMax),
   "followUpAt": zod.string().datetime({"offset":true}).nullable(),
+  "operatorConfidence": zod.number().min(recordCallBodyOperatorConfidenceMin).max(recordCallBodyOperatorConfidenceMax).optional(),
+  "clarificationStatus": zod.enum(['UNREVIEWED', 'FOLLOW_UP_REQUIRED', 'SELLER_CLARIFIED']).optional(),
   "sellerAnswers": zod.object({
   "motivationStatement": zod.string().max(recordCallBodySellerAnswersMotivationStatementMax).optional(),
+  "urgency": zod.string().max(recordCallBodySellerAnswersUrgencyMax).optional(),
   "conditionDescription": zod.string().max(recordCallBodySellerAnswersConditionDescriptionMax).optional(),
+  "conditionByCategory": zod.array(zod.object({
+  "category": zod.enum(['ROOF', 'KITCHEN', 'BATH', 'HVAC', 'ELECTRICAL', 'PLUMBING', 'FLOORING', 'EXTERIOR', 'FOUNDATION', 'WINDOWS', 'OTHER']),
+  "statement": zod.string().min(1).max(recordCallBodySellerAnswersConditionByCategoryItemStatementMax)
+})).max(recordCallBodySellerAnswersConditionByCategoryMax).optional(),
   "timing": zod.string().max(recordCallBodySellerAnswersTimingMax).optional(),
   "askingPrice": zod.number().min(recordCallBodySellerAnswersAskingPriceMin).max(recordCallBodySellerAnswersAskingPriceMax).nullish(),
-  "nextStepOutcome": zod.string().max(recordCallBodySellerAnswersNextStepOutcomeMax).optional()
+  "occupancy": zod.string().max(recordCallBodySellerAnswersOccupancyMax).optional(),
+  "repairsCompleted": zod.string().max(recordCallBodySellerAnswersRepairsCompletedMax).optional(),
+  "knownDefects": zod.string().max(recordCallBodySellerAnswersKnownDefectsMax).optional(),
+  "titleTenantIssues": zod.string().max(recordCallBodySellerAnswersTitleTenantIssuesMax).optional(),
+  "accessConstraints": zod.string().max(recordCallBodySellerAnswersAccessConstraintsMax).optional(),
+  "willingnessToAcceptTerms": zod.string().max(recordCallBodySellerAnswersWillingnessToAcceptTermsMax).optional(),
+  "nextStepOutcome": zod.string().max(recordCallBodySellerAnswersNextStepOutcomeMax).optional(),
+  "otherMaterialStatements": zod.string().max(recordCallBodySellerAnswersOtherMaterialStatementsMax).optional()
 }).optional()
 })
 
@@ -6094,6 +6210,13 @@ export const recordCallResponseIntelligenceItemOneSourceUrlMax = 2000;
 
 export const recordCallResponseIntelligenceItemOneConfidenceMin = 0;
 export const recordCallResponseIntelligenceItemOneConfidenceMax = 1;
+
+export const recordCallResponseIntelligenceItemOneSourceRecordIdMax = 240;
+
+export const recordCallResponseIntelligenceItemOneContentDigestRegExp = new RegExp('^[a-f0-9]{64}$');
+export const recordCallResponseIntelligenceItemOneReconciliationComparedEvidenceIdsMax = 50;
+
+export const recordCallResponseIntelligenceItemOneReconciliationReasonMax = 1000;
 
 export const recordCallResponseIntelligenceItemOneVerificationNoteMax = 2000;
 
@@ -6278,6 +6401,8 @@ export const recordCallResponseUnderwritingOneRepairObservationsItemQuantityMax 
 
 export const recordCallResponseUnderwritingOneRepairObservationsItemEvidenceIdMax = 200;
 
+export const recordCallResponseUnderwritingOneRepairObservationsItemSourceRecordIdMax = 240;
+
 export const recordCallResponseUnderwritingOneRepairObservationsMax = 50;
 
 export const recordCallResponseUnderwritingOneRepairEstimateCatalogVersionMin = 0;
@@ -6299,22 +6424,9 @@ export const recordCallResponseUnderwritingOneConditionEvidenceIdMax = 200;
 
 export const recordCallResponseUnderwritingOneSellerContactEvidenceIdMax = 200;
 
+export const recordCallResponseCallsItemNotesMax = 10000;
 
-export const recordCallResponseCallsItemOneNotesMax = 10000;
-
-export const recordCallResponseCallsItemOneNextActionMin = 3;
-export const recordCallResponseCallsItemOneNextActionMax = 1000;
-
-export const recordCallResponseCallsItemOneSellerAnswersMotivationStatementMax = 3000;
-
-export const recordCallResponseCallsItemOneSellerAnswersConditionDescriptionMax = 3000;
-
-export const recordCallResponseCallsItemOneSellerAnswersTimingMax = 1000;
-
-export const recordCallResponseCallsItemOneSellerAnswersAskingPriceMin = 0;
-export const recordCallResponseCallsItemOneSellerAnswersAskingPriceMax = 1000000000;
-
-export const recordCallResponseCallsItemOneSellerAnswersNextStepOutcomeMax = 2000;
+export const recordCallResponseCallsItemNextActionMax = 1000;
 
 
 
@@ -6384,6 +6496,16 @@ export const RecordCallResponse = zod.object({
   "sourceType": zod.enum(['PUBLIC_RECORD', 'PERMITTED_LISTING', 'SELLER', 'INSPECTION', 'PUBLIC_PAGE', 'ANALYST', 'MODEL']),
   "confidence": zod.number().min(recordCallResponseIntelligenceItemOneConfidenceMin).max(recordCallResponseIntelligenceItemOneConfidenceMax),
   "capturedAt": zod.string().datetime({"offset":true}),
+  "sourceRecordId": zod.string().max(recordCallResponseIntelligenceItemOneSourceRecordIdMax).optional(),
+  "confidenceBasis": zod.enum(['OPERATOR_ASSESSED', 'UNASSESSED_CONSERVATIVE_DEFAULT', 'SOURCE_RELIABILITY']).optional(),
+  "clarificationStatus": zod.enum(['UNREVIEWED', 'FOLLOW_UP_REQUIRED', 'SELLER_CLARIFIED']).optional(),
+  "contentDigest": zod.string().regex(recordCallResponseIntelligenceItemOneContentDigestRegExp).optional(),
+  "retentionPolicy": zod.enum(['FULL_TEXT_PERMITTED', 'HASH_ONLY', 'DERIVED_ONLY']).optional(),
+  "reconciliation": zod.object({
+  "state": zod.enum(['NO_COMPARABLE_EVIDENCE', 'NO_CONFLICT_FOUND', 'CONFLICT_REVIEW']),
+  "comparedEvidenceIds": zod.array(zod.string()).max(recordCallResponseIntelligenceItemOneReconciliationComparedEvidenceIdsMax),
+  "reason": zod.string().max(recordCallResponseIntelligenceItemOneReconciliationReasonMax)
+}).optional(),
   "verificationNote": zod.string().max(recordCallResponseIntelligenceItemOneVerificationNoteMax).optional(),
   "contactPermissionStatus": zod.enum(['NOT_REVIEWED', 'PERMITTED', 'PROHIBITED']).optional(),
   "contactPermissionEvidenceUrl": zod.string().url().max(recordCallResponseIntelligenceItemOneContactPermissionEvidenceUrlMax).optional(),
@@ -6514,6 +6636,7 @@ export const RecordCallResponse = zod.object({
   "hypotheses": zod.array(zod.object({
   "id": zod.string(),
   "evidenceId": zod.string(),
+  "sourceRecordId": zod.string().nullable(),
   "category": zod.string(),
   "severity": zod.enum(['COSMETIC', 'MODERATE', 'MAJOR', 'REPLACEMENT']),
   "statement": zod.string(),
@@ -6523,7 +6646,7 @@ export const RecordCallResponse = zod.object({
   "confidence": zod.number().min(recordCallResponseAnalysisOnePreliminaryRepairEstimateHypothesesItemConfidenceMin).max(recordCallResponseAnalysisOnePreliminaryRepairEstimateHypothesesItemConfidenceMax),
   "confidenceMethod": zod.enum(['EXPLICIT_PHRASE_RULE_UNCALIBRATED']),
   "source": zod.string(),
-  "sourceUrl": zod.string().url(),
+  "sourceUrl": zod.string().url().nullable(),
   "ruleId": zod.string(),
   "question": zod.string(),
   "action": zod.string()
@@ -6663,7 +6786,9 @@ export const RecordCallResponse = zod.object({
   "severity": zod.enum(['NO_REPAIR', 'COSMETIC', 'MODERATE', 'MAJOR', 'REPLACEMENT']),
   "quantity": zod.number().min(recordCallResponseUnderwritingOneRepairObservationsItemQuantityMin).max(recordCallResponseUnderwritingOneRepairObservationsItemQuantityMax),
   "unit": zod.enum(['SQFT', 'LINEAR_FT', 'EACH', 'LUMP_SUM']),
-  "evidenceId": zod.string().min(1).max(recordCallResponseUnderwritingOneRepairObservationsItemEvidenceIdMax)
+  "evidenceId": zod.string().min(1).max(recordCallResponseUnderwritingOneRepairObservationsItemEvidenceIdMax),
+  "sourceRecordId": zod.string().max(recordCallResponseUnderwritingOneRepairObservationsItemSourceRecordIdMax).optional(),
+  "sourceUrl": zod.string().url().nullish()
 })).max(recordCallResponseUnderwritingOneRepairObservationsMax).optional(),
   "repairEstimate": zod.object({
   "status": zod.enum(['NOT_USED', 'CALCULATED', 'BLOCKED']),
@@ -6707,26 +6832,21 @@ export const RecordCallResponse = zod.object({
   "createdAt": zod.string()
 })),
   "calls": zod.array(zod.object({
-  "version": zod.number().int().min(1),
-  "outcome": zod.enum(['NO_ANSWER', 'VOICEMAIL', 'CONNECTED', 'NOT_INTERESTED']),
-  "notes": zod.string().min(1).max(recordCallResponseCallsItemOneNotesMax),
-  "nextAction": zod.string().min(recordCallResponseCallsItemOneNextActionMin).max(recordCallResponseCallsItemOneNextActionMax),
-  "followUpAt": zod.string().datetime({"offset":true}).nullable(),
-  "sellerAnswers": zod.object({
-  "motivationStatement": zod.string().max(recordCallResponseCallsItemOneSellerAnswersMotivationStatementMax).optional(),
-  "conditionDescription": zod.string().max(recordCallResponseCallsItemOneSellerAnswersConditionDescriptionMax).optional(),
-  "timing": zod.string().max(recordCallResponseCallsItemOneSellerAnswersTimingMax).optional(),
-  "askingPrice": zod.number().min(recordCallResponseCallsItemOneSellerAnswersAskingPriceMin).max(recordCallResponseCallsItemOneSellerAnswersAskingPriceMax).nullish(),
-  "nextStepOutcome": zod.string().max(recordCallResponseCallsItemOneSellerAnswersNextStepOutcomeMax).optional()
-}).optional()
-}).and(zod.object({
   "id": zod.string(),
   "createdAt": zod.string(),
   "actor": zod.string(),
-  "evidenceSource": zod.enum(['OPERATOR_ENTERED_SELLER_CONVERSATION']).optional(),
-  "evidenceClassification": zod.enum(['INDICATED']).optional(),
-  "sellerAnswersCapturedAt": zod.string().datetime({"offset":true}).optional()
-}))),
+  "version": zod.number().int(),
+  "outcome": zod.enum(['NO_ANSWER', 'VOICEMAIL', 'CONNECTED', 'NOT_INTERESTED']),
+  "notes": zod.string().max(recordCallResponseCallsItemNotesMax),
+  "nextAction": zod.string().max(recordCallResponseCallsItemNextActionMax),
+  "followUpAt": zod.string().datetime({"offset":true}).nullable(),
+  "evidenceSource": zod.enum(['OPERATOR_ENTERED_SELLER_CONVERSATION', 'OPERATOR_CALL_ATTEMPT']).optional(),
+  "evidenceClassification": zod.enum(['INDICATED', 'OBSERVED']).optional(),
+  "sellerAnswersCapturedAt": zod.string().datetime({"offset":true}).optional(),
+  "evidenceIds": zod.array(zod.string()).optional(),
+  "materialEvidence": zod.boolean().optional(),
+  "analysisInvalidated": zod.boolean().optional()
+})),
   "allowedTransitions": zod.array(zod.enum(['DISCOVERED', 'ENRICHING', 'ANALYZED', 'STRONG', 'NEGOTIABLE', 'PASS', 'CALL_READY', 'CONTACTED', 'CONVERSATION', 'OFFER_READY', 'OFFER_SENT', 'NEGOTIATING', 'CONTRACT_PENDING', 'UNDER_CONTRACT', 'BUYER_MATCHED', 'BUYER_INTERESTED', 'BUYER_COMMITTED', 'CLOSING', 'CLOSED', 'DEAD_DEAL'])),
   "workGuidance": zod.union([zod.object({
   "category": zod.enum(['RESEARCH', 'CALL', 'FOLLOW_UP', 'OFFER_APPROVAL', 'NEGOTIATION', 'CONTRACT', 'BUYER_MATCH', 'DEADLINE', 'CLOSING', 'DISCOVERY_REVIEW', 'BUYER_VERIFICATION', 'WORKER']),
@@ -6843,6 +6963,13 @@ export const createOfferDraftResponseIntelligenceItemOneSourceUrlMax = 2000;
 
 export const createOfferDraftResponseIntelligenceItemOneConfidenceMin = 0;
 export const createOfferDraftResponseIntelligenceItemOneConfidenceMax = 1;
+
+export const createOfferDraftResponseIntelligenceItemOneSourceRecordIdMax = 240;
+
+export const createOfferDraftResponseIntelligenceItemOneContentDigestRegExp = new RegExp('^[a-f0-9]{64}$');
+export const createOfferDraftResponseIntelligenceItemOneReconciliationComparedEvidenceIdsMax = 50;
+
+export const createOfferDraftResponseIntelligenceItemOneReconciliationReasonMax = 1000;
 
 export const createOfferDraftResponseIntelligenceItemOneVerificationNoteMax = 2000;
 
@@ -7027,6 +7154,8 @@ export const createOfferDraftResponseUnderwritingOneRepairObservationsItemQuanti
 
 export const createOfferDraftResponseUnderwritingOneRepairObservationsItemEvidenceIdMax = 200;
 
+export const createOfferDraftResponseUnderwritingOneRepairObservationsItemSourceRecordIdMax = 240;
+
 export const createOfferDraftResponseUnderwritingOneRepairObservationsMax = 50;
 
 export const createOfferDraftResponseUnderwritingOneRepairEstimateCatalogVersionMin = 0;
@@ -7048,22 +7177,9 @@ export const createOfferDraftResponseUnderwritingOneConditionEvidenceIdMax = 200
 
 export const createOfferDraftResponseUnderwritingOneSellerContactEvidenceIdMax = 200;
 
+export const createOfferDraftResponseCallsItemNotesMax = 10000;
 
-export const createOfferDraftResponseCallsItemOneNotesMax = 10000;
-
-export const createOfferDraftResponseCallsItemOneNextActionMin = 3;
-export const createOfferDraftResponseCallsItemOneNextActionMax = 1000;
-
-export const createOfferDraftResponseCallsItemOneSellerAnswersMotivationStatementMax = 3000;
-
-export const createOfferDraftResponseCallsItemOneSellerAnswersConditionDescriptionMax = 3000;
-
-export const createOfferDraftResponseCallsItemOneSellerAnswersTimingMax = 1000;
-
-export const createOfferDraftResponseCallsItemOneSellerAnswersAskingPriceMin = 0;
-export const createOfferDraftResponseCallsItemOneSellerAnswersAskingPriceMax = 1000000000;
-
-export const createOfferDraftResponseCallsItemOneSellerAnswersNextStepOutcomeMax = 2000;
+export const createOfferDraftResponseCallsItemNextActionMax = 1000;
 
 
 
@@ -7133,6 +7249,16 @@ export const CreateOfferDraftResponse = zod.object({
   "sourceType": zod.enum(['PUBLIC_RECORD', 'PERMITTED_LISTING', 'SELLER', 'INSPECTION', 'PUBLIC_PAGE', 'ANALYST', 'MODEL']),
   "confidence": zod.number().min(createOfferDraftResponseIntelligenceItemOneConfidenceMin).max(createOfferDraftResponseIntelligenceItemOneConfidenceMax),
   "capturedAt": zod.string().datetime({"offset":true}),
+  "sourceRecordId": zod.string().max(createOfferDraftResponseIntelligenceItemOneSourceRecordIdMax).optional(),
+  "confidenceBasis": zod.enum(['OPERATOR_ASSESSED', 'UNASSESSED_CONSERVATIVE_DEFAULT', 'SOURCE_RELIABILITY']).optional(),
+  "clarificationStatus": zod.enum(['UNREVIEWED', 'FOLLOW_UP_REQUIRED', 'SELLER_CLARIFIED']).optional(),
+  "contentDigest": zod.string().regex(createOfferDraftResponseIntelligenceItemOneContentDigestRegExp).optional(),
+  "retentionPolicy": zod.enum(['FULL_TEXT_PERMITTED', 'HASH_ONLY', 'DERIVED_ONLY']).optional(),
+  "reconciliation": zod.object({
+  "state": zod.enum(['NO_COMPARABLE_EVIDENCE', 'NO_CONFLICT_FOUND', 'CONFLICT_REVIEW']),
+  "comparedEvidenceIds": zod.array(zod.string()).max(createOfferDraftResponseIntelligenceItemOneReconciliationComparedEvidenceIdsMax),
+  "reason": zod.string().max(createOfferDraftResponseIntelligenceItemOneReconciliationReasonMax)
+}).optional(),
   "verificationNote": zod.string().max(createOfferDraftResponseIntelligenceItemOneVerificationNoteMax).optional(),
   "contactPermissionStatus": zod.enum(['NOT_REVIEWED', 'PERMITTED', 'PROHIBITED']).optional(),
   "contactPermissionEvidenceUrl": zod.string().url().max(createOfferDraftResponseIntelligenceItemOneContactPermissionEvidenceUrlMax).optional(),
@@ -7263,6 +7389,7 @@ export const CreateOfferDraftResponse = zod.object({
   "hypotheses": zod.array(zod.object({
   "id": zod.string(),
   "evidenceId": zod.string(),
+  "sourceRecordId": zod.string().nullable(),
   "category": zod.string(),
   "severity": zod.enum(['COSMETIC', 'MODERATE', 'MAJOR', 'REPLACEMENT']),
   "statement": zod.string(),
@@ -7272,7 +7399,7 @@ export const CreateOfferDraftResponse = zod.object({
   "confidence": zod.number().min(createOfferDraftResponseAnalysisOnePreliminaryRepairEstimateHypothesesItemConfidenceMin).max(createOfferDraftResponseAnalysisOnePreliminaryRepairEstimateHypothesesItemConfidenceMax),
   "confidenceMethod": zod.enum(['EXPLICIT_PHRASE_RULE_UNCALIBRATED']),
   "source": zod.string(),
-  "sourceUrl": zod.string().url(),
+  "sourceUrl": zod.string().url().nullable(),
   "ruleId": zod.string(),
   "question": zod.string(),
   "action": zod.string()
@@ -7412,7 +7539,9 @@ export const CreateOfferDraftResponse = zod.object({
   "severity": zod.enum(['NO_REPAIR', 'COSMETIC', 'MODERATE', 'MAJOR', 'REPLACEMENT']),
   "quantity": zod.number().min(createOfferDraftResponseUnderwritingOneRepairObservationsItemQuantityMin).max(createOfferDraftResponseUnderwritingOneRepairObservationsItemQuantityMax),
   "unit": zod.enum(['SQFT', 'LINEAR_FT', 'EACH', 'LUMP_SUM']),
-  "evidenceId": zod.string().min(1).max(createOfferDraftResponseUnderwritingOneRepairObservationsItemEvidenceIdMax)
+  "evidenceId": zod.string().min(1).max(createOfferDraftResponseUnderwritingOneRepairObservationsItemEvidenceIdMax),
+  "sourceRecordId": zod.string().max(createOfferDraftResponseUnderwritingOneRepairObservationsItemSourceRecordIdMax).optional(),
+  "sourceUrl": zod.string().url().nullish()
 })).max(createOfferDraftResponseUnderwritingOneRepairObservationsMax).optional(),
   "repairEstimate": zod.object({
   "status": zod.enum(['NOT_USED', 'CALCULATED', 'BLOCKED']),
@@ -7456,26 +7585,21 @@ export const CreateOfferDraftResponse = zod.object({
   "createdAt": zod.string()
 })),
   "calls": zod.array(zod.object({
-  "version": zod.number().int().min(1),
-  "outcome": zod.enum(['NO_ANSWER', 'VOICEMAIL', 'CONNECTED', 'NOT_INTERESTED']),
-  "notes": zod.string().min(1).max(createOfferDraftResponseCallsItemOneNotesMax),
-  "nextAction": zod.string().min(createOfferDraftResponseCallsItemOneNextActionMin).max(createOfferDraftResponseCallsItemOneNextActionMax),
-  "followUpAt": zod.string().datetime({"offset":true}).nullable(),
-  "sellerAnswers": zod.object({
-  "motivationStatement": zod.string().max(createOfferDraftResponseCallsItemOneSellerAnswersMotivationStatementMax).optional(),
-  "conditionDescription": zod.string().max(createOfferDraftResponseCallsItemOneSellerAnswersConditionDescriptionMax).optional(),
-  "timing": zod.string().max(createOfferDraftResponseCallsItemOneSellerAnswersTimingMax).optional(),
-  "askingPrice": zod.number().min(createOfferDraftResponseCallsItemOneSellerAnswersAskingPriceMin).max(createOfferDraftResponseCallsItemOneSellerAnswersAskingPriceMax).nullish(),
-  "nextStepOutcome": zod.string().max(createOfferDraftResponseCallsItemOneSellerAnswersNextStepOutcomeMax).optional()
-}).optional()
-}).and(zod.object({
   "id": zod.string(),
   "createdAt": zod.string(),
   "actor": zod.string(),
-  "evidenceSource": zod.enum(['OPERATOR_ENTERED_SELLER_CONVERSATION']).optional(),
-  "evidenceClassification": zod.enum(['INDICATED']).optional(),
-  "sellerAnswersCapturedAt": zod.string().datetime({"offset":true}).optional()
-}))),
+  "version": zod.number().int(),
+  "outcome": zod.enum(['NO_ANSWER', 'VOICEMAIL', 'CONNECTED', 'NOT_INTERESTED']),
+  "notes": zod.string().max(createOfferDraftResponseCallsItemNotesMax),
+  "nextAction": zod.string().max(createOfferDraftResponseCallsItemNextActionMax),
+  "followUpAt": zod.string().datetime({"offset":true}).nullable(),
+  "evidenceSource": zod.enum(['OPERATOR_ENTERED_SELLER_CONVERSATION', 'OPERATOR_CALL_ATTEMPT']).optional(),
+  "evidenceClassification": zod.enum(['INDICATED', 'OBSERVED']).optional(),
+  "sellerAnswersCapturedAt": zod.string().datetime({"offset":true}).optional(),
+  "evidenceIds": zod.array(zod.string()).optional(),
+  "materialEvidence": zod.boolean().optional(),
+  "analysisInvalidated": zod.boolean().optional()
+})),
   "allowedTransitions": zod.array(zod.enum(['DISCOVERED', 'ENRICHING', 'ANALYZED', 'STRONG', 'NEGOTIABLE', 'PASS', 'CALL_READY', 'CONTACTED', 'CONVERSATION', 'OFFER_READY', 'OFFER_SENT', 'NEGOTIATING', 'CONTRACT_PENDING', 'UNDER_CONTRACT', 'BUYER_MATCHED', 'BUYER_INTERESTED', 'BUYER_COMMITTED', 'CLOSING', 'CLOSED', 'DEAD_DEAL'])),
   "workGuidance": zod.union([zod.object({
   "category": zod.enum(['RESEARCH', 'CALL', 'FOLLOW_UP', 'OFFER_APPROVAL', 'NEGOTIATION', 'CONTRACT', 'BUYER_MATCH', 'DEADLINE', 'CLOSING', 'DISCOVERY_REVIEW', 'BUYER_VERIFICATION', 'WORKER']),
@@ -7587,6 +7711,13 @@ export const authorizeOfferResponseIntelligenceItemOneSourceUrlMax = 2000;
 
 export const authorizeOfferResponseIntelligenceItemOneConfidenceMin = 0;
 export const authorizeOfferResponseIntelligenceItemOneConfidenceMax = 1;
+
+export const authorizeOfferResponseIntelligenceItemOneSourceRecordIdMax = 240;
+
+export const authorizeOfferResponseIntelligenceItemOneContentDigestRegExp = new RegExp('^[a-f0-9]{64}$');
+export const authorizeOfferResponseIntelligenceItemOneReconciliationComparedEvidenceIdsMax = 50;
+
+export const authorizeOfferResponseIntelligenceItemOneReconciliationReasonMax = 1000;
 
 export const authorizeOfferResponseIntelligenceItemOneVerificationNoteMax = 2000;
 
@@ -7771,6 +7902,8 @@ export const authorizeOfferResponseUnderwritingOneRepairObservationsItemQuantity
 
 export const authorizeOfferResponseUnderwritingOneRepairObservationsItemEvidenceIdMax = 200;
 
+export const authorizeOfferResponseUnderwritingOneRepairObservationsItemSourceRecordIdMax = 240;
+
 export const authorizeOfferResponseUnderwritingOneRepairObservationsMax = 50;
 
 export const authorizeOfferResponseUnderwritingOneRepairEstimateCatalogVersionMin = 0;
@@ -7792,22 +7925,9 @@ export const authorizeOfferResponseUnderwritingOneConditionEvidenceIdMax = 200;
 
 export const authorizeOfferResponseUnderwritingOneSellerContactEvidenceIdMax = 200;
 
+export const authorizeOfferResponseCallsItemNotesMax = 10000;
 
-export const authorizeOfferResponseCallsItemOneNotesMax = 10000;
-
-export const authorizeOfferResponseCallsItemOneNextActionMin = 3;
-export const authorizeOfferResponseCallsItemOneNextActionMax = 1000;
-
-export const authorizeOfferResponseCallsItemOneSellerAnswersMotivationStatementMax = 3000;
-
-export const authorizeOfferResponseCallsItemOneSellerAnswersConditionDescriptionMax = 3000;
-
-export const authorizeOfferResponseCallsItemOneSellerAnswersTimingMax = 1000;
-
-export const authorizeOfferResponseCallsItemOneSellerAnswersAskingPriceMin = 0;
-export const authorizeOfferResponseCallsItemOneSellerAnswersAskingPriceMax = 1000000000;
-
-export const authorizeOfferResponseCallsItemOneSellerAnswersNextStepOutcomeMax = 2000;
+export const authorizeOfferResponseCallsItemNextActionMax = 1000;
 
 
 
@@ -7877,6 +7997,16 @@ export const AuthorizeOfferResponse = zod.object({
   "sourceType": zod.enum(['PUBLIC_RECORD', 'PERMITTED_LISTING', 'SELLER', 'INSPECTION', 'PUBLIC_PAGE', 'ANALYST', 'MODEL']),
   "confidence": zod.number().min(authorizeOfferResponseIntelligenceItemOneConfidenceMin).max(authorizeOfferResponseIntelligenceItemOneConfidenceMax),
   "capturedAt": zod.string().datetime({"offset":true}),
+  "sourceRecordId": zod.string().max(authorizeOfferResponseIntelligenceItemOneSourceRecordIdMax).optional(),
+  "confidenceBasis": zod.enum(['OPERATOR_ASSESSED', 'UNASSESSED_CONSERVATIVE_DEFAULT', 'SOURCE_RELIABILITY']).optional(),
+  "clarificationStatus": zod.enum(['UNREVIEWED', 'FOLLOW_UP_REQUIRED', 'SELLER_CLARIFIED']).optional(),
+  "contentDigest": zod.string().regex(authorizeOfferResponseIntelligenceItemOneContentDigestRegExp).optional(),
+  "retentionPolicy": zod.enum(['FULL_TEXT_PERMITTED', 'HASH_ONLY', 'DERIVED_ONLY']).optional(),
+  "reconciliation": zod.object({
+  "state": zod.enum(['NO_COMPARABLE_EVIDENCE', 'NO_CONFLICT_FOUND', 'CONFLICT_REVIEW']),
+  "comparedEvidenceIds": zod.array(zod.string()).max(authorizeOfferResponseIntelligenceItemOneReconciliationComparedEvidenceIdsMax),
+  "reason": zod.string().max(authorizeOfferResponseIntelligenceItemOneReconciliationReasonMax)
+}).optional(),
   "verificationNote": zod.string().max(authorizeOfferResponseIntelligenceItemOneVerificationNoteMax).optional(),
   "contactPermissionStatus": zod.enum(['NOT_REVIEWED', 'PERMITTED', 'PROHIBITED']).optional(),
   "contactPermissionEvidenceUrl": zod.string().url().max(authorizeOfferResponseIntelligenceItemOneContactPermissionEvidenceUrlMax).optional(),
@@ -8007,6 +8137,7 @@ export const AuthorizeOfferResponse = zod.object({
   "hypotheses": zod.array(zod.object({
   "id": zod.string(),
   "evidenceId": zod.string(),
+  "sourceRecordId": zod.string().nullable(),
   "category": zod.string(),
   "severity": zod.enum(['COSMETIC', 'MODERATE', 'MAJOR', 'REPLACEMENT']),
   "statement": zod.string(),
@@ -8016,7 +8147,7 @@ export const AuthorizeOfferResponse = zod.object({
   "confidence": zod.number().min(authorizeOfferResponseAnalysisOnePreliminaryRepairEstimateHypothesesItemConfidenceMin).max(authorizeOfferResponseAnalysisOnePreliminaryRepairEstimateHypothesesItemConfidenceMax),
   "confidenceMethod": zod.enum(['EXPLICIT_PHRASE_RULE_UNCALIBRATED']),
   "source": zod.string(),
-  "sourceUrl": zod.string().url(),
+  "sourceUrl": zod.string().url().nullable(),
   "ruleId": zod.string(),
   "question": zod.string(),
   "action": zod.string()
@@ -8156,7 +8287,9 @@ export const AuthorizeOfferResponse = zod.object({
   "severity": zod.enum(['NO_REPAIR', 'COSMETIC', 'MODERATE', 'MAJOR', 'REPLACEMENT']),
   "quantity": zod.number().min(authorizeOfferResponseUnderwritingOneRepairObservationsItemQuantityMin).max(authorizeOfferResponseUnderwritingOneRepairObservationsItemQuantityMax),
   "unit": zod.enum(['SQFT', 'LINEAR_FT', 'EACH', 'LUMP_SUM']),
-  "evidenceId": zod.string().min(1).max(authorizeOfferResponseUnderwritingOneRepairObservationsItemEvidenceIdMax)
+  "evidenceId": zod.string().min(1).max(authorizeOfferResponseUnderwritingOneRepairObservationsItemEvidenceIdMax),
+  "sourceRecordId": zod.string().max(authorizeOfferResponseUnderwritingOneRepairObservationsItemSourceRecordIdMax).optional(),
+  "sourceUrl": zod.string().url().nullish()
 })).max(authorizeOfferResponseUnderwritingOneRepairObservationsMax).optional(),
   "repairEstimate": zod.object({
   "status": zod.enum(['NOT_USED', 'CALCULATED', 'BLOCKED']),
@@ -8200,26 +8333,21 @@ export const AuthorizeOfferResponse = zod.object({
   "createdAt": zod.string()
 })),
   "calls": zod.array(zod.object({
-  "version": zod.number().int().min(1),
-  "outcome": zod.enum(['NO_ANSWER', 'VOICEMAIL', 'CONNECTED', 'NOT_INTERESTED']),
-  "notes": zod.string().min(1).max(authorizeOfferResponseCallsItemOneNotesMax),
-  "nextAction": zod.string().min(authorizeOfferResponseCallsItemOneNextActionMin).max(authorizeOfferResponseCallsItemOneNextActionMax),
-  "followUpAt": zod.string().datetime({"offset":true}).nullable(),
-  "sellerAnswers": zod.object({
-  "motivationStatement": zod.string().max(authorizeOfferResponseCallsItemOneSellerAnswersMotivationStatementMax).optional(),
-  "conditionDescription": zod.string().max(authorizeOfferResponseCallsItemOneSellerAnswersConditionDescriptionMax).optional(),
-  "timing": zod.string().max(authorizeOfferResponseCallsItemOneSellerAnswersTimingMax).optional(),
-  "askingPrice": zod.number().min(authorizeOfferResponseCallsItemOneSellerAnswersAskingPriceMin).max(authorizeOfferResponseCallsItemOneSellerAnswersAskingPriceMax).nullish(),
-  "nextStepOutcome": zod.string().max(authorizeOfferResponseCallsItemOneSellerAnswersNextStepOutcomeMax).optional()
-}).optional()
-}).and(zod.object({
   "id": zod.string(),
   "createdAt": zod.string(),
   "actor": zod.string(),
-  "evidenceSource": zod.enum(['OPERATOR_ENTERED_SELLER_CONVERSATION']).optional(),
-  "evidenceClassification": zod.enum(['INDICATED']).optional(),
-  "sellerAnswersCapturedAt": zod.string().datetime({"offset":true}).optional()
-}))),
+  "version": zod.number().int(),
+  "outcome": zod.enum(['NO_ANSWER', 'VOICEMAIL', 'CONNECTED', 'NOT_INTERESTED']),
+  "notes": zod.string().max(authorizeOfferResponseCallsItemNotesMax),
+  "nextAction": zod.string().max(authorizeOfferResponseCallsItemNextActionMax),
+  "followUpAt": zod.string().datetime({"offset":true}).nullable(),
+  "evidenceSource": zod.enum(['OPERATOR_ENTERED_SELLER_CONVERSATION', 'OPERATOR_CALL_ATTEMPT']).optional(),
+  "evidenceClassification": zod.enum(['INDICATED', 'OBSERVED']).optional(),
+  "sellerAnswersCapturedAt": zod.string().datetime({"offset":true}).optional(),
+  "evidenceIds": zod.array(zod.string()).optional(),
+  "materialEvidence": zod.boolean().optional(),
+  "analysisInvalidated": zod.boolean().optional()
+})),
   "allowedTransitions": zod.array(zod.enum(['DISCOVERED', 'ENRICHING', 'ANALYZED', 'STRONG', 'NEGOTIABLE', 'PASS', 'CALL_READY', 'CONTACTED', 'CONVERSATION', 'OFFER_READY', 'OFFER_SENT', 'NEGOTIATING', 'CONTRACT_PENDING', 'UNDER_CONTRACT', 'BUYER_MATCHED', 'BUYER_INTERESTED', 'BUYER_COMMITTED', 'CLOSING', 'CLOSED', 'DEAD_DEAL'])),
   "workGuidance": zod.union([zod.object({
   "category": zod.enum(['RESEARCH', 'CALL', 'FOLLOW_UP', 'OFFER_APPROVAL', 'NEGOTIATION', 'CONTRACT', 'BUYER_MATCH', 'DEADLINE', 'CLOSING', 'DISCOVERY_REVIEW', 'BUYER_VERIFICATION', 'WORKER']),
@@ -8330,6 +8458,13 @@ export const communicateOfferResponseIntelligenceItemOneSourceUrlMax = 2000;
 
 export const communicateOfferResponseIntelligenceItemOneConfidenceMin = 0;
 export const communicateOfferResponseIntelligenceItemOneConfidenceMax = 1;
+
+export const communicateOfferResponseIntelligenceItemOneSourceRecordIdMax = 240;
+
+export const communicateOfferResponseIntelligenceItemOneContentDigestRegExp = new RegExp('^[a-f0-9]{64}$');
+export const communicateOfferResponseIntelligenceItemOneReconciliationComparedEvidenceIdsMax = 50;
+
+export const communicateOfferResponseIntelligenceItemOneReconciliationReasonMax = 1000;
 
 export const communicateOfferResponseIntelligenceItemOneVerificationNoteMax = 2000;
 
@@ -8514,6 +8649,8 @@ export const communicateOfferResponseUnderwritingOneRepairObservationsItemQuanti
 
 export const communicateOfferResponseUnderwritingOneRepairObservationsItemEvidenceIdMax = 200;
 
+export const communicateOfferResponseUnderwritingOneRepairObservationsItemSourceRecordIdMax = 240;
+
 export const communicateOfferResponseUnderwritingOneRepairObservationsMax = 50;
 
 export const communicateOfferResponseUnderwritingOneRepairEstimateCatalogVersionMin = 0;
@@ -8535,22 +8672,9 @@ export const communicateOfferResponseUnderwritingOneConditionEvidenceIdMax = 200
 
 export const communicateOfferResponseUnderwritingOneSellerContactEvidenceIdMax = 200;
 
+export const communicateOfferResponseCallsItemNotesMax = 10000;
 
-export const communicateOfferResponseCallsItemOneNotesMax = 10000;
-
-export const communicateOfferResponseCallsItemOneNextActionMin = 3;
-export const communicateOfferResponseCallsItemOneNextActionMax = 1000;
-
-export const communicateOfferResponseCallsItemOneSellerAnswersMotivationStatementMax = 3000;
-
-export const communicateOfferResponseCallsItemOneSellerAnswersConditionDescriptionMax = 3000;
-
-export const communicateOfferResponseCallsItemOneSellerAnswersTimingMax = 1000;
-
-export const communicateOfferResponseCallsItemOneSellerAnswersAskingPriceMin = 0;
-export const communicateOfferResponseCallsItemOneSellerAnswersAskingPriceMax = 1000000000;
-
-export const communicateOfferResponseCallsItemOneSellerAnswersNextStepOutcomeMax = 2000;
+export const communicateOfferResponseCallsItemNextActionMax = 1000;
 
 
 
@@ -8620,6 +8744,16 @@ export const CommunicateOfferResponse = zod.object({
   "sourceType": zod.enum(['PUBLIC_RECORD', 'PERMITTED_LISTING', 'SELLER', 'INSPECTION', 'PUBLIC_PAGE', 'ANALYST', 'MODEL']),
   "confidence": zod.number().min(communicateOfferResponseIntelligenceItemOneConfidenceMin).max(communicateOfferResponseIntelligenceItemOneConfidenceMax),
   "capturedAt": zod.string().datetime({"offset":true}),
+  "sourceRecordId": zod.string().max(communicateOfferResponseIntelligenceItemOneSourceRecordIdMax).optional(),
+  "confidenceBasis": zod.enum(['OPERATOR_ASSESSED', 'UNASSESSED_CONSERVATIVE_DEFAULT', 'SOURCE_RELIABILITY']).optional(),
+  "clarificationStatus": zod.enum(['UNREVIEWED', 'FOLLOW_UP_REQUIRED', 'SELLER_CLARIFIED']).optional(),
+  "contentDigest": zod.string().regex(communicateOfferResponseIntelligenceItemOneContentDigestRegExp).optional(),
+  "retentionPolicy": zod.enum(['FULL_TEXT_PERMITTED', 'HASH_ONLY', 'DERIVED_ONLY']).optional(),
+  "reconciliation": zod.object({
+  "state": zod.enum(['NO_COMPARABLE_EVIDENCE', 'NO_CONFLICT_FOUND', 'CONFLICT_REVIEW']),
+  "comparedEvidenceIds": zod.array(zod.string()).max(communicateOfferResponseIntelligenceItemOneReconciliationComparedEvidenceIdsMax),
+  "reason": zod.string().max(communicateOfferResponseIntelligenceItemOneReconciliationReasonMax)
+}).optional(),
   "verificationNote": zod.string().max(communicateOfferResponseIntelligenceItemOneVerificationNoteMax).optional(),
   "contactPermissionStatus": zod.enum(['NOT_REVIEWED', 'PERMITTED', 'PROHIBITED']).optional(),
   "contactPermissionEvidenceUrl": zod.string().url().max(communicateOfferResponseIntelligenceItemOneContactPermissionEvidenceUrlMax).optional(),
@@ -8750,6 +8884,7 @@ export const CommunicateOfferResponse = zod.object({
   "hypotheses": zod.array(zod.object({
   "id": zod.string(),
   "evidenceId": zod.string(),
+  "sourceRecordId": zod.string().nullable(),
   "category": zod.string(),
   "severity": zod.enum(['COSMETIC', 'MODERATE', 'MAJOR', 'REPLACEMENT']),
   "statement": zod.string(),
@@ -8759,7 +8894,7 @@ export const CommunicateOfferResponse = zod.object({
   "confidence": zod.number().min(communicateOfferResponseAnalysisOnePreliminaryRepairEstimateHypothesesItemConfidenceMin).max(communicateOfferResponseAnalysisOnePreliminaryRepairEstimateHypothesesItemConfidenceMax),
   "confidenceMethod": zod.enum(['EXPLICIT_PHRASE_RULE_UNCALIBRATED']),
   "source": zod.string(),
-  "sourceUrl": zod.string().url(),
+  "sourceUrl": zod.string().url().nullable(),
   "ruleId": zod.string(),
   "question": zod.string(),
   "action": zod.string()
@@ -8899,7 +9034,9 @@ export const CommunicateOfferResponse = zod.object({
   "severity": zod.enum(['NO_REPAIR', 'COSMETIC', 'MODERATE', 'MAJOR', 'REPLACEMENT']),
   "quantity": zod.number().min(communicateOfferResponseUnderwritingOneRepairObservationsItemQuantityMin).max(communicateOfferResponseUnderwritingOneRepairObservationsItemQuantityMax),
   "unit": zod.enum(['SQFT', 'LINEAR_FT', 'EACH', 'LUMP_SUM']),
-  "evidenceId": zod.string().min(1).max(communicateOfferResponseUnderwritingOneRepairObservationsItemEvidenceIdMax)
+  "evidenceId": zod.string().min(1).max(communicateOfferResponseUnderwritingOneRepairObservationsItemEvidenceIdMax),
+  "sourceRecordId": zod.string().max(communicateOfferResponseUnderwritingOneRepairObservationsItemSourceRecordIdMax).optional(),
+  "sourceUrl": zod.string().url().nullish()
 })).max(communicateOfferResponseUnderwritingOneRepairObservationsMax).optional(),
   "repairEstimate": zod.object({
   "status": zod.enum(['NOT_USED', 'CALCULATED', 'BLOCKED']),
@@ -8943,26 +9080,21 @@ export const CommunicateOfferResponse = zod.object({
   "createdAt": zod.string()
 })),
   "calls": zod.array(zod.object({
-  "version": zod.number().int().min(1),
-  "outcome": zod.enum(['NO_ANSWER', 'VOICEMAIL', 'CONNECTED', 'NOT_INTERESTED']),
-  "notes": zod.string().min(1).max(communicateOfferResponseCallsItemOneNotesMax),
-  "nextAction": zod.string().min(communicateOfferResponseCallsItemOneNextActionMin).max(communicateOfferResponseCallsItemOneNextActionMax),
-  "followUpAt": zod.string().datetime({"offset":true}).nullable(),
-  "sellerAnswers": zod.object({
-  "motivationStatement": zod.string().max(communicateOfferResponseCallsItemOneSellerAnswersMotivationStatementMax).optional(),
-  "conditionDescription": zod.string().max(communicateOfferResponseCallsItemOneSellerAnswersConditionDescriptionMax).optional(),
-  "timing": zod.string().max(communicateOfferResponseCallsItemOneSellerAnswersTimingMax).optional(),
-  "askingPrice": zod.number().min(communicateOfferResponseCallsItemOneSellerAnswersAskingPriceMin).max(communicateOfferResponseCallsItemOneSellerAnswersAskingPriceMax).nullish(),
-  "nextStepOutcome": zod.string().max(communicateOfferResponseCallsItemOneSellerAnswersNextStepOutcomeMax).optional()
-}).optional()
-}).and(zod.object({
   "id": zod.string(),
   "createdAt": zod.string(),
   "actor": zod.string(),
-  "evidenceSource": zod.enum(['OPERATOR_ENTERED_SELLER_CONVERSATION']).optional(),
-  "evidenceClassification": zod.enum(['INDICATED']).optional(),
-  "sellerAnswersCapturedAt": zod.string().datetime({"offset":true}).optional()
-}))),
+  "version": zod.number().int(),
+  "outcome": zod.enum(['NO_ANSWER', 'VOICEMAIL', 'CONNECTED', 'NOT_INTERESTED']),
+  "notes": zod.string().max(communicateOfferResponseCallsItemNotesMax),
+  "nextAction": zod.string().max(communicateOfferResponseCallsItemNextActionMax),
+  "followUpAt": zod.string().datetime({"offset":true}).nullable(),
+  "evidenceSource": zod.enum(['OPERATOR_ENTERED_SELLER_CONVERSATION', 'OPERATOR_CALL_ATTEMPT']).optional(),
+  "evidenceClassification": zod.enum(['INDICATED', 'OBSERVED']).optional(),
+  "sellerAnswersCapturedAt": zod.string().datetime({"offset":true}).optional(),
+  "evidenceIds": zod.array(zod.string()).optional(),
+  "materialEvidence": zod.boolean().optional(),
+  "analysisInvalidated": zod.boolean().optional()
+})),
   "allowedTransitions": zod.array(zod.enum(['DISCOVERED', 'ENRICHING', 'ANALYZED', 'STRONG', 'NEGOTIABLE', 'PASS', 'CALL_READY', 'CONTACTED', 'CONVERSATION', 'OFFER_READY', 'OFFER_SENT', 'NEGOTIATING', 'CONTRACT_PENDING', 'UNDER_CONTRACT', 'BUYER_MATCHED', 'BUYER_INTERESTED', 'BUYER_COMMITTED', 'CLOSING', 'CLOSED', 'DEAD_DEAL'])),
   "workGuidance": zod.union([zod.object({
   "category": zod.enum(['RESEARCH', 'CALL', 'FOLLOW_UP', 'OFFER_APPROVAL', 'NEGOTIATION', 'CONTRACT', 'BUYER_MATCH', 'DEADLINE', 'CLOSING', 'DISCOVERY_REVIEW', 'BUYER_VERIFICATION', 'WORKER']),
@@ -9068,6 +9200,13 @@ export const withdrawOfferResponseIntelligenceItemOneSourceUrlMax = 2000;
 
 export const withdrawOfferResponseIntelligenceItemOneConfidenceMin = 0;
 export const withdrawOfferResponseIntelligenceItemOneConfidenceMax = 1;
+
+export const withdrawOfferResponseIntelligenceItemOneSourceRecordIdMax = 240;
+
+export const withdrawOfferResponseIntelligenceItemOneContentDigestRegExp = new RegExp('^[a-f0-9]{64}$');
+export const withdrawOfferResponseIntelligenceItemOneReconciliationComparedEvidenceIdsMax = 50;
+
+export const withdrawOfferResponseIntelligenceItemOneReconciliationReasonMax = 1000;
 
 export const withdrawOfferResponseIntelligenceItemOneVerificationNoteMax = 2000;
 
@@ -9252,6 +9391,8 @@ export const withdrawOfferResponseUnderwritingOneRepairObservationsItemQuantityM
 
 export const withdrawOfferResponseUnderwritingOneRepairObservationsItemEvidenceIdMax = 200;
 
+export const withdrawOfferResponseUnderwritingOneRepairObservationsItemSourceRecordIdMax = 240;
+
 export const withdrawOfferResponseUnderwritingOneRepairObservationsMax = 50;
 
 export const withdrawOfferResponseUnderwritingOneRepairEstimateCatalogVersionMin = 0;
@@ -9273,22 +9414,9 @@ export const withdrawOfferResponseUnderwritingOneConditionEvidenceIdMax = 200;
 
 export const withdrawOfferResponseUnderwritingOneSellerContactEvidenceIdMax = 200;
 
+export const withdrawOfferResponseCallsItemNotesMax = 10000;
 
-export const withdrawOfferResponseCallsItemOneNotesMax = 10000;
-
-export const withdrawOfferResponseCallsItemOneNextActionMin = 3;
-export const withdrawOfferResponseCallsItemOneNextActionMax = 1000;
-
-export const withdrawOfferResponseCallsItemOneSellerAnswersMotivationStatementMax = 3000;
-
-export const withdrawOfferResponseCallsItemOneSellerAnswersConditionDescriptionMax = 3000;
-
-export const withdrawOfferResponseCallsItemOneSellerAnswersTimingMax = 1000;
-
-export const withdrawOfferResponseCallsItemOneSellerAnswersAskingPriceMin = 0;
-export const withdrawOfferResponseCallsItemOneSellerAnswersAskingPriceMax = 1000000000;
-
-export const withdrawOfferResponseCallsItemOneSellerAnswersNextStepOutcomeMax = 2000;
+export const withdrawOfferResponseCallsItemNextActionMax = 1000;
 
 
 
@@ -9358,6 +9486,16 @@ export const WithdrawOfferResponse = zod.object({
   "sourceType": zod.enum(['PUBLIC_RECORD', 'PERMITTED_LISTING', 'SELLER', 'INSPECTION', 'PUBLIC_PAGE', 'ANALYST', 'MODEL']),
   "confidence": zod.number().min(withdrawOfferResponseIntelligenceItemOneConfidenceMin).max(withdrawOfferResponseIntelligenceItemOneConfidenceMax),
   "capturedAt": zod.string().datetime({"offset":true}),
+  "sourceRecordId": zod.string().max(withdrawOfferResponseIntelligenceItemOneSourceRecordIdMax).optional(),
+  "confidenceBasis": zod.enum(['OPERATOR_ASSESSED', 'UNASSESSED_CONSERVATIVE_DEFAULT', 'SOURCE_RELIABILITY']).optional(),
+  "clarificationStatus": zod.enum(['UNREVIEWED', 'FOLLOW_UP_REQUIRED', 'SELLER_CLARIFIED']).optional(),
+  "contentDigest": zod.string().regex(withdrawOfferResponseIntelligenceItemOneContentDigestRegExp).optional(),
+  "retentionPolicy": zod.enum(['FULL_TEXT_PERMITTED', 'HASH_ONLY', 'DERIVED_ONLY']).optional(),
+  "reconciliation": zod.object({
+  "state": zod.enum(['NO_COMPARABLE_EVIDENCE', 'NO_CONFLICT_FOUND', 'CONFLICT_REVIEW']),
+  "comparedEvidenceIds": zod.array(zod.string()).max(withdrawOfferResponseIntelligenceItemOneReconciliationComparedEvidenceIdsMax),
+  "reason": zod.string().max(withdrawOfferResponseIntelligenceItemOneReconciliationReasonMax)
+}).optional(),
   "verificationNote": zod.string().max(withdrawOfferResponseIntelligenceItemOneVerificationNoteMax).optional(),
   "contactPermissionStatus": zod.enum(['NOT_REVIEWED', 'PERMITTED', 'PROHIBITED']).optional(),
   "contactPermissionEvidenceUrl": zod.string().url().max(withdrawOfferResponseIntelligenceItemOneContactPermissionEvidenceUrlMax).optional(),
@@ -9488,6 +9626,7 @@ export const WithdrawOfferResponse = zod.object({
   "hypotheses": zod.array(zod.object({
   "id": zod.string(),
   "evidenceId": zod.string(),
+  "sourceRecordId": zod.string().nullable(),
   "category": zod.string(),
   "severity": zod.enum(['COSMETIC', 'MODERATE', 'MAJOR', 'REPLACEMENT']),
   "statement": zod.string(),
@@ -9497,7 +9636,7 @@ export const WithdrawOfferResponse = zod.object({
   "confidence": zod.number().min(withdrawOfferResponseAnalysisOnePreliminaryRepairEstimateHypothesesItemConfidenceMin).max(withdrawOfferResponseAnalysisOnePreliminaryRepairEstimateHypothesesItemConfidenceMax),
   "confidenceMethod": zod.enum(['EXPLICIT_PHRASE_RULE_UNCALIBRATED']),
   "source": zod.string(),
-  "sourceUrl": zod.string().url(),
+  "sourceUrl": zod.string().url().nullable(),
   "ruleId": zod.string(),
   "question": zod.string(),
   "action": zod.string()
@@ -9637,7 +9776,9 @@ export const WithdrawOfferResponse = zod.object({
   "severity": zod.enum(['NO_REPAIR', 'COSMETIC', 'MODERATE', 'MAJOR', 'REPLACEMENT']),
   "quantity": zod.number().min(withdrawOfferResponseUnderwritingOneRepairObservationsItemQuantityMin).max(withdrawOfferResponseUnderwritingOneRepairObservationsItemQuantityMax),
   "unit": zod.enum(['SQFT', 'LINEAR_FT', 'EACH', 'LUMP_SUM']),
-  "evidenceId": zod.string().min(1).max(withdrawOfferResponseUnderwritingOneRepairObservationsItemEvidenceIdMax)
+  "evidenceId": zod.string().min(1).max(withdrawOfferResponseUnderwritingOneRepairObservationsItemEvidenceIdMax),
+  "sourceRecordId": zod.string().max(withdrawOfferResponseUnderwritingOneRepairObservationsItemSourceRecordIdMax).optional(),
+  "sourceUrl": zod.string().url().nullish()
 })).max(withdrawOfferResponseUnderwritingOneRepairObservationsMax).optional(),
   "repairEstimate": zod.object({
   "status": zod.enum(['NOT_USED', 'CALCULATED', 'BLOCKED']),
@@ -9681,26 +9822,21 @@ export const WithdrawOfferResponse = zod.object({
   "createdAt": zod.string()
 })),
   "calls": zod.array(zod.object({
-  "version": zod.number().int().min(1),
-  "outcome": zod.enum(['NO_ANSWER', 'VOICEMAIL', 'CONNECTED', 'NOT_INTERESTED']),
-  "notes": zod.string().min(1).max(withdrawOfferResponseCallsItemOneNotesMax),
-  "nextAction": zod.string().min(withdrawOfferResponseCallsItemOneNextActionMin).max(withdrawOfferResponseCallsItemOneNextActionMax),
-  "followUpAt": zod.string().datetime({"offset":true}).nullable(),
-  "sellerAnswers": zod.object({
-  "motivationStatement": zod.string().max(withdrawOfferResponseCallsItemOneSellerAnswersMotivationStatementMax).optional(),
-  "conditionDescription": zod.string().max(withdrawOfferResponseCallsItemOneSellerAnswersConditionDescriptionMax).optional(),
-  "timing": zod.string().max(withdrawOfferResponseCallsItemOneSellerAnswersTimingMax).optional(),
-  "askingPrice": zod.number().min(withdrawOfferResponseCallsItemOneSellerAnswersAskingPriceMin).max(withdrawOfferResponseCallsItemOneSellerAnswersAskingPriceMax).nullish(),
-  "nextStepOutcome": zod.string().max(withdrawOfferResponseCallsItemOneSellerAnswersNextStepOutcomeMax).optional()
-}).optional()
-}).and(zod.object({
   "id": zod.string(),
   "createdAt": zod.string(),
   "actor": zod.string(),
-  "evidenceSource": zod.enum(['OPERATOR_ENTERED_SELLER_CONVERSATION']).optional(),
-  "evidenceClassification": zod.enum(['INDICATED']).optional(),
-  "sellerAnswersCapturedAt": zod.string().datetime({"offset":true}).optional()
-}))),
+  "version": zod.number().int(),
+  "outcome": zod.enum(['NO_ANSWER', 'VOICEMAIL', 'CONNECTED', 'NOT_INTERESTED']),
+  "notes": zod.string().max(withdrawOfferResponseCallsItemNotesMax),
+  "nextAction": zod.string().max(withdrawOfferResponseCallsItemNextActionMax),
+  "followUpAt": zod.string().datetime({"offset":true}).nullable(),
+  "evidenceSource": zod.enum(['OPERATOR_ENTERED_SELLER_CONVERSATION', 'OPERATOR_CALL_ATTEMPT']).optional(),
+  "evidenceClassification": zod.enum(['INDICATED', 'OBSERVED']).optional(),
+  "sellerAnswersCapturedAt": zod.string().datetime({"offset":true}).optional(),
+  "evidenceIds": zod.array(zod.string()).optional(),
+  "materialEvidence": zod.boolean().optional(),
+  "analysisInvalidated": zod.boolean().optional()
+})),
   "allowedTransitions": zod.array(zod.enum(['DISCOVERED', 'ENRICHING', 'ANALYZED', 'STRONG', 'NEGOTIABLE', 'PASS', 'CALL_READY', 'CONTACTED', 'CONVERSATION', 'OFFER_READY', 'OFFER_SENT', 'NEGOTIATING', 'CONTRACT_PENDING', 'UNDER_CONTRACT', 'BUYER_MATCHED', 'BUYER_INTERESTED', 'BUYER_COMMITTED', 'CLOSING', 'CLOSED', 'DEAD_DEAL'])),
   "workGuidance": zod.union([zod.object({
   "category": zod.enum(['RESEARCH', 'CALL', 'FOLLOW_UP', 'OFFER_APPROVAL', 'NEGOTIATION', 'CONTRACT', 'BUYER_MATCH', 'DEADLINE', 'CLOSING', 'DISCOVERY_REVIEW', 'BUYER_VERIFICATION', 'WORKER']),
@@ -9961,6 +10097,13 @@ export const getCallQueueResponseIntelligenceItemOneSourceUrlMax = 2000;
 export const getCallQueueResponseIntelligenceItemOneConfidenceMin = 0;
 export const getCallQueueResponseIntelligenceItemOneConfidenceMax = 1;
 
+export const getCallQueueResponseIntelligenceItemOneSourceRecordIdMax = 240;
+
+export const getCallQueueResponseIntelligenceItemOneContentDigestRegExp = new RegExp('^[a-f0-9]{64}$');
+export const getCallQueueResponseIntelligenceItemOneReconciliationComparedEvidenceIdsMax = 50;
+
+export const getCallQueueResponseIntelligenceItemOneReconciliationReasonMax = 1000;
+
 export const getCallQueueResponseIntelligenceItemOneVerificationNoteMax = 2000;
 
 export const getCallQueueResponseIntelligenceItemOneContactPermissionEvidenceUrlMax = 2000;
@@ -10168,6 +10311,16 @@ export const GetCallQueueResponseItem = zod.object({
   "sourceType": zod.enum(['PUBLIC_RECORD', 'PERMITTED_LISTING', 'SELLER', 'INSPECTION', 'PUBLIC_PAGE', 'ANALYST', 'MODEL']),
   "confidence": zod.number().min(getCallQueueResponseIntelligenceItemOneConfidenceMin).max(getCallQueueResponseIntelligenceItemOneConfidenceMax),
   "capturedAt": zod.string().datetime({"offset":true}),
+  "sourceRecordId": zod.string().max(getCallQueueResponseIntelligenceItemOneSourceRecordIdMax).optional(),
+  "confidenceBasis": zod.enum(['OPERATOR_ASSESSED', 'UNASSESSED_CONSERVATIVE_DEFAULT', 'SOURCE_RELIABILITY']).optional(),
+  "clarificationStatus": zod.enum(['UNREVIEWED', 'FOLLOW_UP_REQUIRED', 'SELLER_CLARIFIED']).optional(),
+  "contentDigest": zod.string().regex(getCallQueueResponseIntelligenceItemOneContentDigestRegExp).optional(),
+  "retentionPolicy": zod.enum(['FULL_TEXT_PERMITTED', 'HASH_ONLY', 'DERIVED_ONLY']).optional(),
+  "reconciliation": zod.object({
+  "state": zod.enum(['NO_COMPARABLE_EVIDENCE', 'NO_CONFLICT_FOUND', 'CONFLICT_REVIEW']),
+  "comparedEvidenceIds": zod.array(zod.string()).max(getCallQueueResponseIntelligenceItemOneReconciliationComparedEvidenceIdsMax),
+  "reason": zod.string().max(getCallQueueResponseIntelligenceItemOneReconciliationReasonMax)
+}).optional(),
   "verificationNote": zod.string().max(getCallQueueResponseIntelligenceItemOneVerificationNoteMax).optional(),
   "contactPermissionStatus": zod.enum(['NOT_REVIEWED', 'PERMITTED', 'PROHIBITED']).optional(),
   "contactPermissionEvidenceUrl": zod.string().url().max(getCallQueueResponseIntelligenceItemOneContactPermissionEvidenceUrlMax).optional(),
@@ -10301,6 +10454,7 @@ export const GetCallQueueResponseItem = zod.object({
   "hypotheses": zod.array(zod.object({
   "id": zod.string(),
   "evidenceId": zod.string(),
+  "sourceRecordId": zod.string().nullable(),
   "category": zod.string(),
   "severity": zod.enum(['COSMETIC', 'MODERATE', 'MAJOR', 'REPLACEMENT']),
   "statement": zod.string(),
@@ -10310,7 +10464,7 @@ export const GetCallQueueResponseItem = zod.object({
   "confidence": zod.number().min(getCallQueueResponseAnalysisPreliminaryRepairEstimateHypothesesItemConfidenceMin).max(getCallQueueResponseAnalysisPreliminaryRepairEstimateHypothesesItemConfidenceMax),
   "confidenceMethod": zod.enum(['EXPLICIT_PHRASE_RULE_UNCALIBRATED']),
   "source": zod.string(),
-  "sourceUrl": zod.string().url(),
+  "sourceUrl": zod.string().url().nullable(),
   "ruleId": zod.string(),
   "question": zod.string(),
   "action": zod.string()
@@ -10585,6 +10739,13 @@ export const getAcquisitionQueueResponseItemsItemCallBriefOneIntelligenceItemOne
 
 export const getAcquisitionQueueResponseItemsItemCallBriefOneIntelligenceItemOneConfidenceMin = 0;
 export const getAcquisitionQueueResponseItemsItemCallBriefOneIntelligenceItemOneConfidenceMax = 1;
+
+export const getAcquisitionQueueResponseItemsItemCallBriefOneIntelligenceItemOneSourceRecordIdMax = 240;
+
+export const getAcquisitionQueueResponseItemsItemCallBriefOneIntelligenceItemOneContentDigestRegExp = new RegExp('^[a-f0-9]{64}$');
+export const getAcquisitionQueueResponseItemsItemCallBriefOneIntelligenceItemOneReconciliationComparedEvidenceIdsMax = 50;
+
+export const getAcquisitionQueueResponseItemsItemCallBriefOneIntelligenceItemOneReconciliationReasonMax = 1000;
 
 export const getAcquisitionQueueResponseItemsItemCallBriefOneIntelligenceItemOneVerificationNoteMax = 2000;
 
@@ -11084,6 +11245,16 @@ export const GetAcquisitionQueueResponse = zod.object({
   "sourceType": zod.enum(['PUBLIC_RECORD', 'PERMITTED_LISTING', 'SELLER', 'INSPECTION', 'PUBLIC_PAGE', 'ANALYST', 'MODEL']),
   "confidence": zod.number().min(getAcquisitionQueueResponseItemsItemCallBriefOneIntelligenceItemOneConfidenceMin).max(getAcquisitionQueueResponseItemsItemCallBriefOneIntelligenceItemOneConfidenceMax),
   "capturedAt": zod.string().datetime({"offset":true}),
+  "sourceRecordId": zod.string().max(getAcquisitionQueueResponseItemsItemCallBriefOneIntelligenceItemOneSourceRecordIdMax).optional(),
+  "confidenceBasis": zod.enum(['OPERATOR_ASSESSED', 'UNASSESSED_CONSERVATIVE_DEFAULT', 'SOURCE_RELIABILITY']).optional(),
+  "clarificationStatus": zod.enum(['UNREVIEWED', 'FOLLOW_UP_REQUIRED', 'SELLER_CLARIFIED']).optional(),
+  "contentDigest": zod.string().regex(getAcquisitionQueueResponseItemsItemCallBriefOneIntelligenceItemOneContentDigestRegExp).optional(),
+  "retentionPolicy": zod.enum(['FULL_TEXT_PERMITTED', 'HASH_ONLY', 'DERIVED_ONLY']).optional(),
+  "reconciliation": zod.object({
+  "state": zod.enum(['NO_COMPARABLE_EVIDENCE', 'NO_CONFLICT_FOUND', 'CONFLICT_REVIEW']),
+  "comparedEvidenceIds": zod.array(zod.string()).max(getAcquisitionQueueResponseItemsItemCallBriefOneIntelligenceItemOneReconciliationComparedEvidenceIdsMax),
+  "reason": zod.string().max(getAcquisitionQueueResponseItemsItemCallBriefOneIntelligenceItemOneReconciliationReasonMax)
+}).optional(),
   "verificationNote": zod.string().max(getAcquisitionQueueResponseItemsItemCallBriefOneIntelligenceItemOneVerificationNoteMax).optional(),
   "contactPermissionStatus": zod.enum(['NOT_REVIEWED', 'PERMITTED', 'PROHIBITED']).optional(),
   "contactPermissionEvidenceUrl": zod.string().url().max(getAcquisitionQueueResponseItemsItemCallBriefOneIntelligenceItemOneContactPermissionEvidenceUrlMax).optional(),
@@ -11217,6 +11388,7 @@ export const GetAcquisitionQueueResponse = zod.object({
   "hypotheses": zod.array(zod.object({
   "id": zod.string(),
   "evidenceId": zod.string(),
+  "sourceRecordId": zod.string().nullable(),
   "category": zod.string(),
   "severity": zod.enum(['COSMETIC', 'MODERATE', 'MAJOR', 'REPLACEMENT']),
   "statement": zod.string(),
@@ -11226,7 +11398,7 @@ export const GetAcquisitionQueueResponse = zod.object({
   "confidence": zod.number().min(getAcquisitionQueueResponseItemsItemCallBriefOneAnalysisPreliminaryRepairEstimateHypothesesItemConfidenceMin).max(getAcquisitionQueueResponseItemsItemCallBriefOneAnalysisPreliminaryRepairEstimateHypothesesItemConfidenceMax),
   "confidenceMethod": zod.enum(['EXPLICIT_PHRASE_RULE_UNCALIBRATED']),
   "source": zod.string(),
-  "sourceUrl": zod.string().url(),
+  "sourceUrl": zod.string().url().nullable(),
   "ruleId": zod.string(),
   "question": zod.string(),
   "action": zod.string()
@@ -11789,6 +11961,13 @@ export const getCommandCenterResponseOpportunitiesItemIntelligenceItemOneSourceU
 export const getCommandCenterResponseOpportunitiesItemIntelligenceItemOneConfidenceMin = 0;
 export const getCommandCenterResponseOpportunitiesItemIntelligenceItemOneConfidenceMax = 1;
 
+export const getCommandCenterResponseOpportunitiesItemIntelligenceItemOneSourceRecordIdMax = 240;
+
+export const getCommandCenterResponseOpportunitiesItemIntelligenceItemOneContentDigestRegExp = new RegExp('^[a-f0-9]{64}$');
+export const getCommandCenterResponseOpportunitiesItemIntelligenceItemOneReconciliationComparedEvidenceIdsMax = 50;
+
+export const getCommandCenterResponseOpportunitiesItemIntelligenceItemOneReconciliationReasonMax = 1000;
+
 export const getCommandCenterResponseOpportunitiesItemIntelligenceItemOneVerificationNoteMax = 2000;
 
 export const getCommandCenterResponseOpportunitiesItemIntelligenceItemOneContactPermissionEvidenceUrlMax = 2000;
@@ -11916,100 +12095,6 @@ export const getCommandCenterResponseOpportunitiesItemAnalysisOneAssumptionsRepa
 
 export const getCommandCenterResponseOpportunitiesItemAnalysisOneAssumptionsRepairRatesMax = 1000;
 
-export const getCommandCenterResponseOpportunitiesItemOffersItemOneAmountExclusiveMin = 0;
-export const getCommandCenterResponseOpportunitiesItemOffersItemOneAmountMax = 1000000000;
-
-export const getCommandCenterResponseOpportunitiesItemOffersItemOneEarnestMoneyMin = 0;
-export const getCommandCenterResponseOpportunitiesItemOffersItemOneEarnestMoneyMax = 1000000000;
-
-export const getCommandCenterResponseOpportunitiesItemOffersItemOneClosingDaysMax = 180;
-
-export const getCommandCenterResponseOpportunitiesItemOffersItemOneContingenciesMin = 3;
-export const getCommandCenterResponseOpportunitiesItemOffersItemOneContingenciesMax = 5000;
-
-
-
-export const getCommandCenterResponseOpportunitiesItemUnderwritingOneCompsItemAddressMin = 3;
-
-export const getCommandCenterResponseOpportunitiesItemUnderwritingOneCompsItemSalePriceExclusiveMin = 0;
-export const getCommandCenterResponseOpportunitiesItemUnderwritingOneCompsItemSalePriceMax = 1000000000;
-
-export const getCommandCenterResponseOpportunitiesItemUnderwritingOneCompsItemSqftExclusiveMin = 0;
-export const getCommandCenterResponseOpportunitiesItemUnderwritingOneCompsItemSqftMax = 1000000;
-
-export const getCommandCenterResponseOpportunitiesItemUnderwritingOneCompsItemDistanceMilesMin = 0;
-export const getCommandCenterResponseOpportunitiesItemUnderwritingOneCompsItemDistanceMilesMax = 10000;
-
-
-export const getCommandCenterResponseOpportunitiesItemUnderwritingOneCompsItemSaleEvidenceIdMax = 200;
-
-export const getCommandCenterResponseOpportunitiesItemUnderwritingOneCompsItemConditionEvidenceIdMax = 200;
-
-export const getCommandCenterResponseOpportunitiesItemUnderwritingOneCompsMax = 100;
-
-
-export const getCommandCenterResponseOpportunitiesItemUnderwritingOneRepairsItemLowMin = 0;
-export const getCommandCenterResponseOpportunitiesItemUnderwritingOneRepairsItemLowMax = 1000000000;
-
-export const getCommandCenterResponseOpportunitiesItemUnderwritingOneRepairsItemExpectedMin = 0;
-export const getCommandCenterResponseOpportunitiesItemUnderwritingOneRepairsItemExpectedMax = 1000000000;
-
-export const getCommandCenterResponseOpportunitiesItemUnderwritingOneRepairsItemHighMin = 0;
-export const getCommandCenterResponseOpportunitiesItemUnderwritingOneRepairsItemHighMax = 1000000000;
-
-export const getCommandCenterResponseOpportunitiesItemUnderwritingOneRepairsItemConfidenceMin = 0;
-export const getCommandCenterResponseOpportunitiesItemUnderwritingOneRepairsItemConfidenceMax = 1;
-
-
-export const getCommandCenterResponseOpportunitiesItemUnderwritingOneRepairsItemEvidenceIdMax = 200;
-
-export const getCommandCenterResponseOpportunitiesItemUnderwritingOneRepairsMax = 50;
-
-export const getCommandCenterResponseOpportunitiesItemUnderwritingOneRepairObservationsItemCategoryMax = 100;
-
-export const getCommandCenterResponseOpportunitiesItemUnderwritingOneRepairObservationsItemQuantityMin = 0;
-export const getCommandCenterResponseOpportunitiesItemUnderwritingOneRepairObservationsItemQuantityMax = 1000000;
-
-export const getCommandCenterResponseOpportunitiesItemUnderwritingOneRepairObservationsItemEvidenceIdMax = 200;
-
-export const getCommandCenterResponseOpportunitiesItemUnderwritingOneRepairObservationsMax = 50;
-
-export const getCommandCenterResponseOpportunitiesItemUnderwritingOneRepairEstimateCatalogVersionMin = 0;
-
-export const getCommandCenterResponseOpportunitiesItemUnderwritingOneRepairEstimateLinesItemLowMin = 0;
-
-export const getCommandCenterResponseOpportunitiesItemUnderwritingOneRepairEstimateLinesItemExpectedMin = 0;
-
-export const getCommandCenterResponseOpportunitiesItemUnderwritingOneRepairEstimateLinesItemHighMin = 0;
-
-export const getCommandCenterResponseOpportunitiesItemUnderwritingOneRepairEstimateLinesItemConfidenceMin = 0;
-export const getCommandCenterResponseOpportunitiesItemUnderwritingOneRepairEstimateLinesItemConfidenceMax = 1;
-
-export const getCommandCenterResponseOpportunitiesItemUnderwritingOneRepairEstimateLinesMax = 50;
-
-export const getCommandCenterResponseOpportunitiesItemUnderwritingOneSubjectEvidenceIdMax = 200;
-
-export const getCommandCenterResponseOpportunitiesItemUnderwritingOneConditionEvidenceIdMax = 200;
-
-export const getCommandCenterResponseOpportunitiesItemUnderwritingOneSellerContactEvidenceIdMax = 200;
-
-
-export const getCommandCenterResponseOpportunitiesItemCallsItemOneNotesMax = 10000;
-
-export const getCommandCenterResponseOpportunitiesItemCallsItemOneNextActionMin = 3;
-export const getCommandCenterResponseOpportunitiesItemCallsItemOneNextActionMax = 1000;
-
-export const getCommandCenterResponseOpportunitiesItemCallsItemOneSellerAnswersMotivationStatementMax = 3000;
-
-export const getCommandCenterResponseOpportunitiesItemCallsItemOneSellerAnswersConditionDescriptionMax = 3000;
-
-export const getCommandCenterResponseOpportunitiesItemCallsItemOneSellerAnswersTimingMax = 1000;
-
-export const getCommandCenterResponseOpportunitiesItemCallsItemOneSellerAnswersAskingPriceMin = 0;
-export const getCommandCenterResponseOpportunitiesItemCallsItemOneSellerAnswersAskingPriceMax = 1000000000;
-
-export const getCommandCenterResponseOpportunitiesItemCallsItemOneSellerAnswersNextStepOutcomeMax = 2000;
-
 export const getCommandCenterResponseCallsItemLeadOneAddressMin = 3;
 export const getCommandCenterResponseCallsItemLeadOneAddressMax = 250;
 
@@ -12072,6 +12157,13 @@ export const getCommandCenterResponseCallsItemIntelligenceItemOneSourceUrlMax = 
 
 export const getCommandCenterResponseCallsItemIntelligenceItemOneConfidenceMin = 0;
 export const getCommandCenterResponseCallsItemIntelligenceItemOneConfidenceMax = 1;
+
+export const getCommandCenterResponseCallsItemIntelligenceItemOneSourceRecordIdMax = 240;
+
+export const getCommandCenterResponseCallsItemIntelligenceItemOneContentDigestRegExp = new RegExp('^[a-f0-9]{64}$');
+export const getCommandCenterResponseCallsItemIntelligenceItemOneReconciliationComparedEvidenceIdsMax = 50;
+
+export const getCommandCenterResponseCallsItemIntelligenceItemOneReconciliationReasonMax = 1000;
 
 export const getCommandCenterResponseCallsItemIntelligenceItemOneVerificationNoteMax = 2000;
 
@@ -12374,6 +12466,13 @@ export const getCommandCenterResponseAcquisitionQueueItemCallBriefOneIntelligenc
 export const getCommandCenterResponseAcquisitionQueueItemCallBriefOneIntelligenceItemOneConfidenceMin = 0;
 export const getCommandCenterResponseAcquisitionQueueItemCallBriefOneIntelligenceItemOneConfidenceMax = 1;
 
+export const getCommandCenterResponseAcquisitionQueueItemCallBriefOneIntelligenceItemOneSourceRecordIdMax = 240;
+
+export const getCommandCenterResponseAcquisitionQueueItemCallBriefOneIntelligenceItemOneContentDigestRegExp = new RegExp('^[a-f0-9]{64}$');
+export const getCommandCenterResponseAcquisitionQueueItemCallBriefOneIntelligenceItemOneReconciliationComparedEvidenceIdsMax = 50;
+
+export const getCommandCenterResponseAcquisitionQueueItemCallBriefOneIntelligenceItemOneReconciliationReasonMax = 1000;
+
 export const getCommandCenterResponseAcquisitionQueueItemCallBriefOneIntelligenceItemOneVerificationNoteMax = 2000;
 
 export const getCommandCenterResponseAcquisitionQueueItemCallBriefOneIntelligenceItemOneContactPermissionEvidenceUrlMax = 2000;
@@ -12563,238 +12662,6 @@ export const getCommandCenterResponseDealsItemLeadTwoPropertyQualificationSignal
 
 export const getCommandCenterResponseDealsItemLeadTwoPropertyQualificationSignalsItemScoreContributionMin = 0;
 export const getCommandCenterResponseDealsItemLeadTwoPropertyQualificationSignalsItemScoreContributionMax = 100;
-
-export const getCommandCenterResponseDealsItemIntelligenceItemOneCategoryMax = 100;
-
-export const getCommandCenterResponseDealsItemIntelligenceItemOneStatementMax = 5000;
-
-export const getCommandCenterResponseDealsItemIntelligenceItemOneSourceMax = 2000;
-
-export const getCommandCenterResponseDealsItemIntelligenceItemOneSourceUrlMax = 2000;
-
-export const getCommandCenterResponseDealsItemIntelligenceItemOneConfidenceMin = 0;
-export const getCommandCenterResponseDealsItemIntelligenceItemOneConfidenceMax = 1;
-
-export const getCommandCenterResponseDealsItemIntelligenceItemOneVerificationNoteMax = 2000;
-
-export const getCommandCenterResponseDealsItemIntelligenceItemOneContactPermissionEvidenceUrlMax = 2000;
-
-export const getCommandCenterResponseDealsItemIntelligenceItemOneQuestionMax = 2000;
-
-export const getCommandCenterResponseDealsItemIntelligenceItemOneActionMax = 2000;
-
-export const getCommandCenterResponseDealsItemIntelligenceItemTwoContactPathOneRouteValueMax = 2000;
-
-export const getCommandCenterResponseDealsItemIntelligenceItemTwoContactPathOneConfidenceMin = 0;
-export const getCommandCenterResponseDealsItemIntelligenceItemTwoContactPathOneConfidenceMax = 1;
-
-
-export const getCommandCenterResponseDealsItemIntelligenceItemTwoContactPathOneSupportingObservationsItemConfidenceMin = 0;
-export const getCommandCenterResponseDealsItemIntelligenceItemTwoContactPathOneSupportingObservationsItemConfidenceMax = 1;
-
-export const getCommandCenterResponseDealsItemIntelligenceItemTwoContactPathOneRecipientIdentityClaimCountMin = 0;
-
-export const getCommandCenterResponseDealsItemAnalysisOneRepairEstimateCatalogVersionMin = 0;
-
-export const getCommandCenterResponseDealsItemAnalysisOneRepairEstimateLinesItemLowMin = 0;
-
-export const getCommandCenterResponseDealsItemAnalysisOneRepairEstimateLinesItemExpectedMin = 0;
-
-export const getCommandCenterResponseDealsItemAnalysisOneRepairEstimateLinesItemHighMin = 0;
-
-export const getCommandCenterResponseDealsItemAnalysisOneRepairEstimateLinesItemConfidenceMin = 0;
-export const getCommandCenterResponseDealsItemAnalysisOneRepairEstimateLinesItemConfidenceMax = 1;
-
-export const getCommandCenterResponseDealsItemAnalysisOneRepairEstimateLinesMax = 50;
-
-export const getCommandCenterResponseDealsItemAnalysisOnePreliminaryRepairEstimateCatalogVersionMin = 0;
-
-export const getCommandCenterResponseDealsItemAnalysisOnePreliminaryRepairEstimateHypothesesItemSourceConfidenceMin = 0;
-export const getCommandCenterResponseDealsItemAnalysisOnePreliminaryRepairEstimateHypothesesItemSourceConfidenceMax = 1;
-
-export const getCommandCenterResponseDealsItemAnalysisOnePreliminaryRepairEstimateHypothesesItemConfidenceMin = 0;
-export const getCommandCenterResponseDealsItemAnalysisOnePreliminaryRepairEstimateHypothesesItemConfidenceMax = 0.5;
-
-export const getCommandCenterResponseDealsItemAnalysisOnePreliminaryRepairEstimateHypothesesMax = 100;
-
-export const getCommandCenterResponseDealsItemAnalysisOnePreliminaryRepairEstimateLinesItemLowMin = 0;
-
-export const getCommandCenterResponseDealsItemAnalysisOnePreliminaryRepairEstimateLinesItemExpectedMin = 0;
-
-export const getCommandCenterResponseDealsItemAnalysisOnePreliminaryRepairEstimateLinesItemHighMin = 0;
-
-export const getCommandCenterResponseDealsItemAnalysisOnePreliminaryRepairEstimateLinesItemConfidenceMin = 0;
-export const getCommandCenterResponseDealsItemAnalysisOnePreliminaryRepairEstimateLinesItemConfidenceMax = 0.5;
-
-
-
-export const getCommandCenterResponseDealsItemAnalysisOnePreliminaryRepairEstimateLinesMax = 50;
-
-export const getCommandCenterResponseDealsItemAnalysisOneAssumptionsArvMultiplierMin = 0.1;
-export const getCommandCenterResponseDealsItemAnalysisOneAssumptionsArvMultiplierMax = 1;
-
-export const getCommandCenterResponseDealsItemAnalysisOneAssumptionsSellingCostPctMin = 0;
-export const getCommandCenterResponseDealsItemAnalysisOneAssumptionsSellingCostPctMax = 0.5;
-
-export const getCommandCenterResponseDealsItemAnalysisOneAssumptionsAcquisitionCostMin = 0;
-export const getCommandCenterResponseDealsItemAnalysisOneAssumptionsAcquisitionCostMax = 1000000000;
-
-export const getCommandCenterResponseDealsItemAnalysisOneAssumptionsHoldingMonthlyMin = 0;
-export const getCommandCenterResponseDealsItemAnalysisOneAssumptionsHoldingMonthlyMax = 1000000000;
-
-export const getCommandCenterResponseDealsItemAnalysisOneAssumptionsHoldingMonthsMin = 0;
-export const getCommandCenterResponseDealsItemAnalysisOneAssumptionsHoldingMonthsMax = 120;
-
-export const getCommandCenterResponseDealsItemAnalysisOneAssumptionsAssignmentTargetMin = 0;
-export const getCommandCenterResponseDealsItemAnalysisOneAssumptionsAssignmentTargetMax = 1000000000;
-
-export const getCommandCenterResponseDealsItemAnalysisOneAssumptionsContingencyPctMin = 0;
-export const getCommandCenterResponseDealsItemAnalysisOneAssumptionsContingencyPctMax = 1;
-
-export const getCommandCenterResponseDealsItemAnalysisOneAssumptionsStrongMarginMin = 0;
-export const getCommandCenterResponseDealsItemAnalysisOneAssumptionsStrongMarginMax = 1000000000;
-
-export const getCommandCenterResponseDealsItemAnalysisOneAssumptionsOpeningLowPctMin = 0;
-export const getCommandCenterResponseDealsItemAnalysisOneAssumptionsOpeningLowPctMax = 1;
-
-export const getCommandCenterResponseDealsItemAnalysisOneAssumptionsOpeningHighPctMin = 0;
-export const getCommandCenterResponseDealsItemAnalysisOneAssumptionsOpeningHighPctMax = 1;
-
-export const getCommandCenterResponseDealsItemAnalysisOneAssumptionsMaxCompAgeDaysMax = 1095;
-
-export const getCommandCenterResponseDealsItemAnalysisOneAssumptionsMaxDistanceMilesExclusiveMin = 0;
-export const getCommandCenterResponseDealsItemAnalysisOneAssumptionsMaxDistanceMilesMax = 100;
-
-export const getCommandCenterResponseDealsItemAnalysisOneAssumptionsMaxSqftDifferencePctMin = 0;
-export const getCommandCenterResponseDealsItemAnalysisOneAssumptionsMaxSqftDifferencePctMax = 1;
-
-export const getCommandCenterResponseDealsItemAnalysisOneAssumptionsMinCompsMin = 3;
-export const getCommandCenterResponseDealsItemAnalysisOneAssumptionsMinCompsMax = 20;
-
-export const getCommandCenterResponseDealsItemAnalysisOneAssumptionsMinConfidenceMin = 0.3;
-export const getCommandCenterResponseDealsItemAnalysisOneAssumptionsMinConfidenceMax = 1;
-
-export const getCommandCenterResponseDealsItemAnalysisOneAssumptionsRepairRateCatalogVersionMin = 0;
-
-export const getCommandCenterResponseDealsItemAnalysisOneAssumptionsRepairRatesItemIdMax = 100;
-
-
-export const getCommandCenterResponseDealsItemAnalysisOneAssumptionsRepairRatesItemMarketKeyMin = 2;
-export const getCommandCenterResponseDealsItemAnalysisOneAssumptionsRepairRatesItemMarketKeyMax = 100;
-
-export const getCommandCenterResponseDealsItemAnalysisOneAssumptionsRepairRatesItemCategoryMax = 100;
-
-export const getCommandCenterResponseDealsItemAnalysisOneAssumptionsRepairRatesItemLowRateMin = 0;
-export const getCommandCenterResponseDealsItemAnalysisOneAssumptionsRepairRatesItemLowRateMax = 100000000;
-
-export const getCommandCenterResponseDealsItemAnalysisOneAssumptionsRepairRatesItemExpectedRateMin = 0;
-export const getCommandCenterResponseDealsItemAnalysisOneAssumptionsRepairRatesItemExpectedRateMax = 100000000;
-
-export const getCommandCenterResponseDealsItemAnalysisOneAssumptionsRepairRatesItemHighRateMin = 0;
-export const getCommandCenterResponseDealsItemAnalysisOneAssumptionsRepairRatesItemHighRateMax = 100000000;
-
-export const getCommandCenterResponseDealsItemAnalysisOneAssumptionsRepairRatesItemConfidenceMin = 0;
-export const getCommandCenterResponseDealsItemAnalysisOneAssumptionsRepairRatesItemConfidenceMax = 1;
-
-export const getCommandCenterResponseDealsItemAnalysisOneAssumptionsRepairRatesItemSourceMax = 2000;
-
-export const getCommandCenterResponseDealsItemAnalysisOneAssumptionsRepairRatesItemSourceUrlMax = 2000;
-
-export const getCommandCenterResponseDealsItemAnalysisOneAssumptionsRepairRatesMax = 1000;
-
-export const getCommandCenterResponseDealsItemOffersItemOneAmountExclusiveMin = 0;
-export const getCommandCenterResponseDealsItemOffersItemOneAmountMax = 1000000000;
-
-export const getCommandCenterResponseDealsItemOffersItemOneEarnestMoneyMin = 0;
-export const getCommandCenterResponseDealsItemOffersItemOneEarnestMoneyMax = 1000000000;
-
-export const getCommandCenterResponseDealsItemOffersItemOneClosingDaysMax = 180;
-
-export const getCommandCenterResponseDealsItemOffersItemOneContingenciesMin = 3;
-export const getCommandCenterResponseDealsItemOffersItemOneContingenciesMax = 5000;
-
-
-
-export const getCommandCenterResponseDealsItemUnderwritingOneCompsItemAddressMin = 3;
-
-export const getCommandCenterResponseDealsItemUnderwritingOneCompsItemSalePriceExclusiveMin = 0;
-export const getCommandCenterResponseDealsItemUnderwritingOneCompsItemSalePriceMax = 1000000000;
-
-export const getCommandCenterResponseDealsItemUnderwritingOneCompsItemSqftExclusiveMin = 0;
-export const getCommandCenterResponseDealsItemUnderwritingOneCompsItemSqftMax = 1000000;
-
-export const getCommandCenterResponseDealsItemUnderwritingOneCompsItemDistanceMilesMin = 0;
-export const getCommandCenterResponseDealsItemUnderwritingOneCompsItemDistanceMilesMax = 10000;
-
-
-export const getCommandCenterResponseDealsItemUnderwritingOneCompsItemSaleEvidenceIdMax = 200;
-
-export const getCommandCenterResponseDealsItemUnderwritingOneCompsItemConditionEvidenceIdMax = 200;
-
-export const getCommandCenterResponseDealsItemUnderwritingOneCompsMax = 100;
-
-
-export const getCommandCenterResponseDealsItemUnderwritingOneRepairsItemLowMin = 0;
-export const getCommandCenterResponseDealsItemUnderwritingOneRepairsItemLowMax = 1000000000;
-
-export const getCommandCenterResponseDealsItemUnderwritingOneRepairsItemExpectedMin = 0;
-export const getCommandCenterResponseDealsItemUnderwritingOneRepairsItemExpectedMax = 1000000000;
-
-export const getCommandCenterResponseDealsItemUnderwritingOneRepairsItemHighMin = 0;
-export const getCommandCenterResponseDealsItemUnderwritingOneRepairsItemHighMax = 1000000000;
-
-export const getCommandCenterResponseDealsItemUnderwritingOneRepairsItemConfidenceMin = 0;
-export const getCommandCenterResponseDealsItemUnderwritingOneRepairsItemConfidenceMax = 1;
-
-
-export const getCommandCenterResponseDealsItemUnderwritingOneRepairsItemEvidenceIdMax = 200;
-
-export const getCommandCenterResponseDealsItemUnderwritingOneRepairsMax = 50;
-
-export const getCommandCenterResponseDealsItemUnderwritingOneRepairObservationsItemCategoryMax = 100;
-
-export const getCommandCenterResponseDealsItemUnderwritingOneRepairObservationsItemQuantityMin = 0;
-export const getCommandCenterResponseDealsItemUnderwritingOneRepairObservationsItemQuantityMax = 1000000;
-
-export const getCommandCenterResponseDealsItemUnderwritingOneRepairObservationsItemEvidenceIdMax = 200;
-
-export const getCommandCenterResponseDealsItemUnderwritingOneRepairObservationsMax = 50;
-
-export const getCommandCenterResponseDealsItemUnderwritingOneRepairEstimateCatalogVersionMin = 0;
-
-export const getCommandCenterResponseDealsItemUnderwritingOneRepairEstimateLinesItemLowMin = 0;
-
-export const getCommandCenterResponseDealsItemUnderwritingOneRepairEstimateLinesItemExpectedMin = 0;
-
-export const getCommandCenterResponseDealsItemUnderwritingOneRepairEstimateLinesItemHighMin = 0;
-
-export const getCommandCenterResponseDealsItemUnderwritingOneRepairEstimateLinesItemConfidenceMin = 0;
-export const getCommandCenterResponseDealsItemUnderwritingOneRepairEstimateLinesItemConfidenceMax = 1;
-
-export const getCommandCenterResponseDealsItemUnderwritingOneRepairEstimateLinesMax = 50;
-
-export const getCommandCenterResponseDealsItemUnderwritingOneSubjectEvidenceIdMax = 200;
-
-export const getCommandCenterResponseDealsItemUnderwritingOneConditionEvidenceIdMax = 200;
-
-export const getCommandCenterResponseDealsItemUnderwritingOneSellerContactEvidenceIdMax = 200;
-
-
-export const getCommandCenterResponseDealsItemCallsItemOneNotesMax = 10000;
-
-export const getCommandCenterResponseDealsItemCallsItemOneNextActionMin = 3;
-export const getCommandCenterResponseDealsItemCallsItemOneNextActionMax = 1000;
-
-export const getCommandCenterResponseDealsItemCallsItemOneSellerAnswersMotivationStatementMax = 3000;
-
-export const getCommandCenterResponseDealsItemCallsItemOneSellerAnswersConditionDescriptionMax = 3000;
-
-export const getCommandCenterResponseDealsItemCallsItemOneSellerAnswersTimingMax = 1000;
-
-export const getCommandCenterResponseDealsItemCallsItemOneSellerAnswersAskingPriceMin = 0;
-export const getCommandCenterResponseDealsItemCallsItemOneSellerAnswersAskingPriceMax = 1000000000;
-
-export const getCommandCenterResponseDealsItemCallsItemOneSellerAnswersNextStepOutcomeMax = 2000;
 
 
 export const getCommandCenterResponseOperationsItemContractOneCommitmentSnapshotOneBuyerOneNameMax = 200;
@@ -13086,6 +12953,13 @@ export const getCommandCenterResponseOperationsItemContractOneCommitmentSnapshot
 export const getCommandCenterResponseOperationsItemContractOneCommitmentSnapshotOneDetailIntelligenceItemOneConfidenceMin = 0;
 export const getCommandCenterResponseOperationsItemContractOneCommitmentSnapshotOneDetailIntelligenceItemOneConfidenceMax = 1;
 
+export const getCommandCenterResponseOperationsItemContractOneCommitmentSnapshotOneDetailIntelligenceItemOneSourceRecordIdMax = 240;
+
+export const getCommandCenterResponseOperationsItemContractOneCommitmentSnapshotOneDetailIntelligenceItemOneContentDigestRegExp = new RegExp('^[a-f0-9]{64}$');
+export const getCommandCenterResponseOperationsItemContractOneCommitmentSnapshotOneDetailIntelligenceItemOneReconciliationComparedEvidenceIdsMax = 50;
+
+export const getCommandCenterResponseOperationsItemContractOneCommitmentSnapshotOneDetailIntelligenceItemOneReconciliationReasonMax = 1000;
+
 export const getCommandCenterResponseOperationsItemContractOneCommitmentSnapshotOneDetailIntelligenceItemOneVerificationNoteMax = 2000;
 
 export const getCommandCenterResponseOperationsItemContractOneCommitmentSnapshotOneDetailIntelligenceItemOneContactPermissionEvidenceUrlMax = 2000;
@@ -13269,6 +13143,8 @@ export const getCommandCenterResponseOperationsItemContractOneCommitmentSnapshot
 
 export const getCommandCenterResponseOperationsItemContractOneCommitmentSnapshotOneDetailUnderwritingOneRepairObservationsItemEvidenceIdMax = 200;
 
+export const getCommandCenterResponseOperationsItemContractOneCommitmentSnapshotOneDetailUnderwritingOneRepairObservationsItemSourceRecordIdMax = 240;
+
 export const getCommandCenterResponseOperationsItemContractOneCommitmentSnapshotOneDetailUnderwritingOneRepairObservationsMax = 50;
 
 export const getCommandCenterResponseOperationsItemContractOneCommitmentSnapshotOneDetailUnderwritingOneRepairEstimateCatalogVersionMin = 0;
@@ -13290,22 +13166,9 @@ export const getCommandCenterResponseOperationsItemContractOneCommitmentSnapshot
 
 export const getCommandCenterResponseOperationsItemContractOneCommitmentSnapshotOneDetailUnderwritingOneSellerContactEvidenceIdMax = 200;
 
+export const getCommandCenterResponseOperationsItemContractOneCommitmentSnapshotOneDetailCallsItemNotesMax = 10000;
 
-export const getCommandCenterResponseOperationsItemContractOneCommitmentSnapshotOneDetailCallsItemOneNotesMax = 10000;
-
-export const getCommandCenterResponseOperationsItemContractOneCommitmentSnapshotOneDetailCallsItemOneNextActionMin = 3;
-export const getCommandCenterResponseOperationsItemContractOneCommitmentSnapshotOneDetailCallsItemOneNextActionMax = 1000;
-
-export const getCommandCenterResponseOperationsItemContractOneCommitmentSnapshotOneDetailCallsItemOneSellerAnswersMotivationStatementMax = 3000;
-
-export const getCommandCenterResponseOperationsItemContractOneCommitmentSnapshotOneDetailCallsItemOneSellerAnswersConditionDescriptionMax = 3000;
-
-export const getCommandCenterResponseOperationsItemContractOneCommitmentSnapshotOneDetailCallsItemOneSellerAnswersTimingMax = 1000;
-
-export const getCommandCenterResponseOperationsItemContractOneCommitmentSnapshotOneDetailCallsItemOneSellerAnswersAskingPriceMin = 0;
-export const getCommandCenterResponseOperationsItemContractOneCommitmentSnapshotOneDetailCallsItemOneSellerAnswersAskingPriceMax = 1000000000;
-
-export const getCommandCenterResponseOperationsItemContractOneCommitmentSnapshotOneDetailCallsItemOneSellerAnswersNextStepOutcomeMax = 2000;
+export const getCommandCenterResponseOperationsItemContractOneCommitmentSnapshotOneDetailCallsItemNextActionMax = 1000;
 
 export const getCommandCenterResponseOperationsItemContractOneMilestonesItemAmountMin = 0;
 export const getCommandCenterResponseOperationsItemContractOneMilestonesItemAmountMax = 1000000000;
@@ -13760,6 +13623,16 @@ export const GetCommandCenterResponse = zod.object({
   "sourceType": zod.enum(['PUBLIC_RECORD', 'PERMITTED_LISTING', 'SELLER', 'INSPECTION', 'PUBLIC_PAGE', 'ANALYST', 'MODEL']),
   "confidence": zod.number().min(getCommandCenterResponseOpportunitiesItemIntelligenceItemOneConfidenceMin).max(getCommandCenterResponseOpportunitiesItemIntelligenceItemOneConfidenceMax),
   "capturedAt": zod.string().datetime({"offset":true}),
+  "sourceRecordId": zod.string().max(getCommandCenterResponseOpportunitiesItemIntelligenceItemOneSourceRecordIdMax).optional(),
+  "confidenceBasis": zod.enum(['OPERATOR_ASSESSED', 'UNASSESSED_CONSERVATIVE_DEFAULT', 'SOURCE_RELIABILITY']).optional(),
+  "clarificationStatus": zod.enum(['UNREVIEWED', 'FOLLOW_UP_REQUIRED', 'SELLER_CLARIFIED']).optional(),
+  "contentDigest": zod.string().regex(getCommandCenterResponseOpportunitiesItemIntelligenceItemOneContentDigestRegExp).optional(),
+  "retentionPolicy": zod.enum(['FULL_TEXT_PERMITTED', 'HASH_ONLY', 'DERIVED_ONLY']).optional(),
+  "reconciliation": zod.object({
+  "state": zod.enum(['NO_COMPARABLE_EVIDENCE', 'NO_CONFLICT_FOUND', 'CONFLICT_REVIEW']),
+  "comparedEvidenceIds": zod.array(zod.string()).max(getCommandCenterResponseOpportunitiesItemIntelligenceItemOneReconciliationComparedEvidenceIdsMax),
+  "reason": zod.string().max(getCommandCenterResponseOpportunitiesItemIntelligenceItemOneReconciliationReasonMax)
+}).optional(),
   "verificationNote": zod.string().max(getCommandCenterResponseOpportunitiesItemIntelligenceItemOneVerificationNoteMax).optional(),
   "contactPermissionStatus": zod.enum(['NOT_REVIEWED', 'PERMITTED', 'PROHIBITED']).optional(),
   "contactPermissionEvidenceUrl": zod.string().url().max(getCommandCenterResponseOpportunitiesItemIntelligenceItemOneContactPermissionEvidenceUrlMax).optional(),
@@ -13890,6 +13763,7 @@ export const GetCommandCenterResponse = zod.object({
   "hypotheses": zod.array(zod.object({
   "id": zod.string(),
   "evidenceId": zod.string(),
+  "sourceRecordId": zod.string().nullable(),
   "category": zod.string(),
   "severity": zod.enum(['COSMETIC', 'MODERATE', 'MAJOR', 'REPLACEMENT']),
   "statement": zod.string(),
@@ -13899,7 +13773,7 @@ export const GetCommandCenterResponse = zod.object({
   "confidence": zod.number().min(getCommandCenterResponseOpportunitiesItemAnalysisOnePreliminaryRepairEstimateHypothesesItemConfidenceMin).max(getCommandCenterResponseOpportunitiesItemAnalysisOnePreliminaryRepairEstimateHypothesesItemConfidenceMax),
   "confidenceMethod": zod.enum(['EXPLICIT_PHRASE_RULE_UNCALIBRATED']),
   "source": zod.string(),
-  "sourceUrl": zod.string().url(),
+  "sourceUrl": zod.string().url().nullable(),
   "ruleId": zod.string(),
   "question": zod.string(),
   "action": zod.string()
@@ -13975,152 +13849,6 @@ export const GetCommandCenterResponse = zod.object({
   "reasons": zod.array(zod.string())
 })),
   "formula": zod.string()
-}),zod.null()]),
-  "analysisSnapshotId": zod.string().nullable(),
-  "offers": zod.array(zod.object({
-  "amount": zod.number().gt(getCommandCenterResponseOpportunitiesItemOffersItemOneAmountExclusiveMin).max(getCommandCenterResponseOpportunitiesItemOffersItemOneAmountMax),
-  "earnestMoney": zod.number().min(getCommandCenterResponseOpportunitiesItemOffersItemOneEarnestMoneyMin).max(getCommandCenterResponseOpportunitiesItemOffersItemOneEarnestMoneyMax),
-  "closingDays": zod.number().int().min(1).max(getCommandCenterResponseOpportunitiesItemOffersItemOneClosingDaysMax),
-  "contingencies": zod.string().min(getCommandCenterResponseOpportunitiesItemOffersItemOneContingenciesMin).max(getCommandCenterResponseOpportunitiesItemOffersItemOneContingenciesMax),
-  "assignmentIntent": zod.boolean()
-}).and(zod.object({
-  "id": zod.string().uuid(),
-  "leadId": zod.string().uuid(),
-  "analysisSnapshotId": zod.string().uuid(),
-  "status": zod.enum(['DRAFT', 'AUTHORIZED', 'COMMUNICATED', 'REVOKED', 'INVALIDATED', 'EXPIRED']),
-  "effectiveStatus": zod.enum(['DRAFT', 'AUTHORIZED', 'COMMUNICATED', 'REVOKED', 'INVALIDATED', 'EXPIRED']),
-  "blockers": zod.array(zod.string()),
-  "reason": zod.string(),
-  "createdBy": zod.string(),
-  "createdAt": zod.string().datetime({"offset":true}),
-  "updatedAt": zod.string().datetime({"offset":true}),
-  "maximumApprovedAcquisitionPrice": zod.number().nullable(),
-  "authorityEvidenceId": zod.string().nullable(),
-  "approvedBy": zod.string().nullable(),
-  "approvedAt": zod.string().nullable(),
-  "approvalReason": zod.string().nullable(),
-  "expiresAt": zod.string().nullable(),
-  "communicatedBy": zod.string().nullable(),
-  "communicatedAt": zod.string().nullable(),
-  "communicatedAmount": zod.number().nullable(),
-  "channel": zod.string().nullable(),
-  "evidence": zod.string().nullable(),
-  "withdrawalReason": zod.string().nullable()
-}))),
-  "underwriting": zod.union([zod.object({
-  "version": zod.number().int().min(1),
-  "comps": zod.array(zod.object({
-  "id": zod.string().min(1),
-  "address": zod.string().min(getCommandCenterResponseOpportunitiesItemUnderwritingOneCompsItemAddressMin),
-  "salePrice": zod.number().gt(getCommandCenterResponseOpportunitiesItemUnderwritingOneCompsItemSalePriceExclusiveMin).max(getCommandCenterResponseOpportunitiesItemUnderwritingOneCompsItemSalePriceMax),
-  "sqft": zod.number().gt(getCommandCenterResponseOpportunitiesItemUnderwritingOneCompsItemSqftExclusiveMin).max(getCommandCenterResponseOpportunitiesItemUnderwritingOneCompsItemSqftMax),
-  "soldAt": zod.string().date(),
-  "distanceMiles": zod.number().min(getCommandCenterResponseOpportunitiesItemUnderwritingOneCompsItemDistanceMilesMin).max(getCommandCenterResponseOpportunitiesItemUnderwritingOneCompsItemDistanceMilesMax),
-  "propertyType": zod.string(),
-  "condition": zod.enum(['RENOVATED', 'SIMILAR', 'UNKNOWN']),
-  "source": zod.string().min(1),
-  "verified": zod.boolean(),
-  "saleEvidenceId": zod.string().max(getCommandCenterResponseOpportunitiesItemUnderwritingOneCompsItemSaleEvidenceIdMax).optional(),
-  "conditionEvidenceId": zod.string().max(getCommandCenterResponseOpportunitiesItemUnderwritingOneCompsItemConditionEvidenceIdMax).optional()
-})).max(getCommandCenterResponseOpportunitiesItemUnderwritingOneCompsMax),
-  "repairs": zod.array(zod.object({
-  "category": zod.string().min(1),
-  "low": zod.number().min(getCommandCenterResponseOpportunitiesItemUnderwritingOneRepairsItemLowMin).max(getCommandCenterResponseOpportunitiesItemUnderwritingOneRepairsItemLowMax),
-  "expected": zod.number().min(getCommandCenterResponseOpportunitiesItemUnderwritingOneRepairsItemExpectedMin).max(getCommandCenterResponseOpportunitiesItemUnderwritingOneRepairsItemExpectedMax),
-  "high": zod.number().min(getCommandCenterResponseOpportunitiesItemUnderwritingOneRepairsItemHighMin).max(getCommandCenterResponseOpportunitiesItemUnderwritingOneRepairsItemHighMax),
-  "confidence": zod.number().min(getCommandCenterResponseOpportunitiesItemUnderwritingOneRepairsItemConfidenceMin).max(getCommandCenterResponseOpportunitiesItemUnderwritingOneRepairsItemConfidenceMax),
-  "source": zod.string().min(1),
-  "evidenceId": zod.string().max(getCommandCenterResponseOpportunitiesItemUnderwritingOneRepairsItemEvidenceIdMax).optional()
-})).max(getCommandCenterResponseOpportunitiesItemUnderwritingOneRepairsMax),
-  "repairsComplete": zod.boolean(),
-  "conditionConfirmed": zod.boolean(),
-  "repairObservations": zod.array(zod.object({
-  "category": zod.string().min(1).max(getCommandCenterResponseOpportunitiesItemUnderwritingOneRepairObservationsItemCategoryMax),
-  "severity": zod.enum(['NO_REPAIR', 'COSMETIC', 'MODERATE', 'MAJOR', 'REPLACEMENT']),
-  "quantity": zod.number().min(getCommandCenterResponseOpportunitiesItemUnderwritingOneRepairObservationsItemQuantityMin).max(getCommandCenterResponseOpportunitiesItemUnderwritingOneRepairObservationsItemQuantityMax),
-  "unit": zod.enum(['SQFT', 'LINEAR_FT', 'EACH', 'LUMP_SUM']),
-  "evidenceId": zod.string().min(1).max(getCommandCenterResponseOpportunitiesItemUnderwritingOneRepairObservationsItemEvidenceIdMax)
-})).max(getCommandCenterResponseOpportunitiesItemUnderwritingOneRepairObservationsMax).optional(),
-  "repairEstimate": zod.object({
-  "status": zod.enum(['NOT_USED', 'CALCULATED', 'BLOCKED']),
-  "marketKey": zod.string(),
-  "catalogVersion": zod.number().int().min(getCommandCenterResponseOpportunitiesItemUnderwritingOneRepairEstimateCatalogVersionMin),
-  "calculatedAt": zod.string().datetime({"offset":true}),
-  "lines": zod.array(zod.object({
-  "category": zod.string(),
-  "severity": zod.enum(['NO_REPAIR', 'COSMETIC', 'MODERATE', 'MAJOR', 'REPLACEMENT']),
-  "quantity": zod.number(),
-  "unit": zod.enum(['SQFT', 'LINEAR_FT', 'EACH', 'LUMP_SUM']),
-  "evidenceId": zod.string(),
-  "rateCardId": zod.string().optional(),
-  "rateCardVersion": zod.number().int().optional(),
-  "low": zod.number().min(getCommandCenterResponseOpportunitiesItemUnderwritingOneRepairEstimateLinesItemLowMin),
-  "expected": zod.number().min(getCommandCenterResponseOpportunitiesItemUnderwritingOneRepairEstimateLinesItemExpectedMin),
-  "high": zod.number().min(getCommandCenterResponseOpportunitiesItemUnderwritingOneRepairEstimateLinesItemHighMin),
-  "confidence": zod.number().min(getCommandCenterResponseOpportunitiesItemUnderwritingOneRepairEstimateLinesItemConfidenceMin).max(getCommandCenterResponseOpportunitiesItemUnderwritingOneRepairEstimateLinesItemConfidenceMax),
-  "source": zod.string(),
-  "sourceUrl": zod.string().url().optional()
-})).max(getCommandCenterResponseOpportunitiesItemUnderwritingOneRepairEstimateLinesMax),
-  "total": zod.union([zod.object({
-  "low": zod.number(),
-  "expected": zod.number(),
-  "high": zod.number(),
-  "confidence": zod.number()
-}),zod.null()]),
-  "blockers": zod.array(zod.string())
-}).optional(),
-  "subjectEvidenceId": zod.string().max(getCommandCenterResponseOpportunitiesItemUnderwritingOneSubjectEvidenceIdMax).optional(),
-  "conditionEvidenceId": zod.string().max(getCommandCenterResponseOpportunitiesItemUnderwritingOneConditionEvidenceIdMax).optional(),
-  "sellerContactEvidenceId": zod.string().max(getCommandCenterResponseOpportunitiesItemUnderwritingOneSellerContactEvidenceIdMax).optional()
-}),zod.null()]),
-  "transitions": zod.array(zod.object({
-  "id": zod.string(),
-  "from": zod.string(),
-  "to": zod.string(),
-  "reason": zod.string(),
-  "nextAction": zod.string(),
-  "actor": zod.string(),
-  "createdAt": zod.string()
-})),
-  "calls": zod.array(zod.object({
-  "version": zod.number().int().min(1),
-  "outcome": zod.enum(['NO_ANSWER', 'VOICEMAIL', 'CONNECTED', 'NOT_INTERESTED']),
-  "notes": zod.string().min(1).max(getCommandCenterResponseOpportunitiesItemCallsItemOneNotesMax),
-  "nextAction": zod.string().min(getCommandCenterResponseOpportunitiesItemCallsItemOneNextActionMin).max(getCommandCenterResponseOpportunitiesItemCallsItemOneNextActionMax),
-  "followUpAt": zod.string().datetime({"offset":true}).nullable(),
-  "sellerAnswers": zod.object({
-  "motivationStatement": zod.string().max(getCommandCenterResponseOpportunitiesItemCallsItemOneSellerAnswersMotivationStatementMax).optional(),
-  "conditionDescription": zod.string().max(getCommandCenterResponseOpportunitiesItemCallsItemOneSellerAnswersConditionDescriptionMax).optional(),
-  "timing": zod.string().max(getCommandCenterResponseOpportunitiesItemCallsItemOneSellerAnswersTimingMax).optional(),
-  "askingPrice": zod.number().min(getCommandCenterResponseOpportunitiesItemCallsItemOneSellerAnswersAskingPriceMin).max(getCommandCenterResponseOpportunitiesItemCallsItemOneSellerAnswersAskingPriceMax).nullish(),
-  "nextStepOutcome": zod.string().max(getCommandCenterResponseOpportunitiesItemCallsItemOneSellerAnswersNextStepOutcomeMax).optional()
-}).optional()
-}).and(zod.object({
-  "id": zod.string(),
-  "createdAt": zod.string(),
-  "actor": zod.string(),
-  "evidenceSource": zod.enum(['OPERATOR_ENTERED_SELLER_CONVERSATION']).optional(),
-  "evidenceClassification": zod.enum(['INDICATED']).optional(),
-  "sellerAnswersCapturedAt": zod.string().datetime({"offset":true}).optional()
-}))),
-  "allowedTransitions": zod.array(zod.enum(['DISCOVERED', 'ENRICHING', 'ANALYZED', 'STRONG', 'NEGOTIABLE', 'PASS', 'CALL_READY', 'CONTACTED', 'CONVERSATION', 'OFFER_READY', 'OFFER_SENT', 'NEGOTIATING', 'CONTRACT_PENDING', 'UNDER_CONTRACT', 'BUYER_MATCHED', 'BUYER_INTERESTED', 'BUYER_COMMITTED', 'CLOSING', 'CLOSED', 'DEAD_DEAL'])),
-  "workGuidance": zod.union([zod.object({
-  "category": zod.enum(['RESEARCH', 'CALL', 'FOLLOW_UP', 'OFFER_APPROVAL', 'NEGOTIATION', 'CONTRACT', 'BUYER_MATCH', 'DEADLINE', 'CLOSING', 'DISCOVERY_REVIEW', 'BUYER_VERIFICATION', 'WORKER']),
-  "priority": zod.number().int(),
-  "title": zod.string(),
-  "href": zod.string(),
-  "cta": zod.string(),
-  "currentState": zod.string(),
-  "responsibleRole": zod.enum(['OWNER', 'OPERATOR', 'ANALYST']),
-  "dueAt": zod.string().nullable(),
-  "dueLabel": zod.string(),
-  "knownFacts": zod.array(zod.string()),
-  "missingFacts": zod.array(zod.string()),
-  "why": zod.string(),
-  "systemCanDo": zod.string(),
-  "humanMustDo": zod.string(),
-  "requiredEvidence": zod.array(zod.string()),
-  "completionRecord": zod.string()
 }),zod.null()])
 })),
   "calls": zod.array(zod.object({
@@ -14190,6 +13918,16 @@ export const GetCommandCenterResponse = zod.object({
   "sourceType": zod.enum(['PUBLIC_RECORD', 'PERMITTED_LISTING', 'SELLER', 'INSPECTION', 'PUBLIC_PAGE', 'ANALYST', 'MODEL']),
   "confidence": zod.number().min(getCommandCenterResponseCallsItemIntelligenceItemOneConfidenceMin).max(getCommandCenterResponseCallsItemIntelligenceItemOneConfidenceMax),
   "capturedAt": zod.string().datetime({"offset":true}),
+  "sourceRecordId": zod.string().max(getCommandCenterResponseCallsItemIntelligenceItemOneSourceRecordIdMax).optional(),
+  "confidenceBasis": zod.enum(['OPERATOR_ASSESSED', 'UNASSESSED_CONSERVATIVE_DEFAULT', 'SOURCE_RELIABILITY']).optional(),
+  "clarificationStatus": zod.enum(['UNREVIEWED', 'FOLLOW_UP_REQUIRED', 'SELLER_CLARIFIED']).optional(),
+  "contentDigest": zod.string().regex(getCommandCenterResponseCallsItemIntelligenceItemOneContentDigestRegExp).optional(),
+  "retentionPolicy": zod.enum(['FULL_TEXT_PERMITTED', 'HASH_ONLY', 'DERIVED_ONLY']).optional(),
+  "reconciliation": zod.object({
+  "state": zod.enum(['NO_COMPARABLE_EVIDENCE', 'NO_CONFLICT_FOUND', 'CONFLICT_REVIEW']),
+  "comparedEvidenceIds": zod.array(zod.string()).max(getCommandCenterResponseCallsItemIntelligenceItemOneReconciliationComparedEvidenceIdsMax),
+  "reason": zod.string().max(getCommandCenterResponseCallsItemIntelligenceItemOneReconciliationReasonMax)
+}).optional(),
   "verificationNote": zod.string().max(getCommandCenterResponseCallsItemIntelligenceItemOneVerificationNoteMax).optional(),
   "contactPermissionStatus": zod.enum(['NOT_REVIEWED', 'PERMITTED', 'PROHIBITED']).optional(),
   "contactPermissionEvidenceUrl": zod.string().url().max(getCommandCenterResponseCallsItemIntelligenceItemOneContactPermissionEvidenceUrlMax).optional(),
@@ -14323,6 +14061,7 @@ export const GetCommandCenterResponse = zod.object({
   "hypotheses": zod.array(zod.object({
   "id": zod.string(),
   "evidenceId": zod.string(),
+  "sourceRecordId": zod.string().nullable(),
   "category": zod.string(),
   "severity": zod.enum(['COSMETIC', 'MODERATE', 'MAJOR', 'REPLACEMENT']),
   "statement": zod.string(),
@@ -14332,7 +14071,7 @@ export const GetCommandCenterResponse = zod.object({
   "confidence": zod.number().min(getCommandCenterResponseCallsItemAnalysisPreliminaryRepairEstimateHypothesesItemConfidenceMin).max(getCommandCenterResponseCallsItemAnalysisPreliminaryRepairEstimateHypothesesItemConfidenceMax),
   "confidenceMethod": zod.enum(['EXPLICIT_PHRASE_RULE_UNCALIBRATED']),
   "source": zod.string(),
-  "sourceUrl": zod.string().url(),
+  "sourceUrl": zod.string().url().nullable(),
   "ruleId": zod.string(),
   "question": zod.string(),
   "action": zod.string()
@@ -14795,6 +14534,16 @@ export const GetCommandCenterResponse = zod.object({
   "sourceType": zod.enum(['PUBLIC_RECORD', 'PERMITTED_LISTING', 'SELLER', 'INSPECTION', 'PUBLIC_PAGE', 'ANALYST', 'MODEL']),
   "confidence": zod.number().min(getCommandCenterResponseAcquisitionQueueItemCallBriefOneIntelligenceItemOneConfidenceMin).max(getCommandCenterResponseAcquisitionQueueItemCallBriefOneIntelligenceItemOneConfidenceMax),
   "capturedAt": zod.string().datetime({"offset":true}),
+  "sourceRecordId": zod.string().max(getCommandCenterResponseAcquisitionQueueItemCallBriefOneIntelligenceItemOneSourceRecordIdMax).optional(),
+  "confidenceBasis": zod.enum(['OPERATOR_ASSESSED', 'UNASSESSED_CONSERVATIVE_DEFAULT', 'SOURCE_RELIABILITY']).optional(),
+  "clarificationStatus": zod.enum(['UNREVIEWED', 'FOLLOW_UP_REQUIRED', 'SELLER_CLARIFIED']).optional(),
+  "contentDigest": zod.string().regex(getCommandCenterResponseAcquisitionQueueItemCallBriefOneIntelligenceItemOneContentDigestRegExp).optional(),
+  "retentionPolicy": zod.enum(['FULL_TEXT_PERMITTED', 'HASH_ONLY', 'DERIVED_ONLY']).optional(),
+  "reconciliation": zod.object({
+  "state": zod.enum(['NO_COMPARABLE_EVIDENCE', 'NO_CONFLICT_FOUND', 'CONFLICT_REVIEW']),
+  "comparedEvidenceIds": zod.array(zod.string()).max(getCommandCenterResponseAcquisitionQueueItemCallBriefOneIntelligenceItemOneReconciliationComparedEvidenceIdsMax),
+  "reason": zod.string().max(getCommandCenterResponseAcquisitionQueueItemCallBriefOneIntelligenceItemOneReconciliationReasonMax)
+}).optional(),
   "verificationNote": zod.string().max(getCommandCenterResponseAcquisitionQueueItemCallBriefOneIntelligenceItemOneVerificationNoteMax).optional(),
   "contactPermissionStatus": zod.enum(['NOT_REVIEWED', 'PERMITTED', 'PROHIBITED']).optional(),
   "contactPermissionEvidenceUrl": zod.string().url().max(getCommandCenterResponseAcquisitionQueueItemCallBriefOneIntelligenceItemOneContactPermissionEvidenceUrlMax).optional(),
@@ -14928,6 +14677,7 @@ export const GetCommandCenterResponse = zod.object({
   "hypotheses": zod.array(zod.object({
   "id": zod.string(),
   "evidenceId": zod.string(),
+  "sourceRecordId": zod.string().nullable(),
   "category": zod.string(),
   "severity": zod.enum(['COSMETIC', 'MODERATE', 'MAJOR', 'REPLACEMENT']),
   "statement": zod.string(),
@@ -14937,7 +14687,7 @@ export const GetCommandCenterResponse = zod.object({
   "confidence": zod.number().min(getCommandCenterResponseAcquisitionQueueItemCallBriefOneAnalysisPreliminaryRepairEstimateHypothesesItemConfidenceMin).max(getCommandCenterResponseAcquisitionQueueItemCallBriefOneAnalysisPreliminaryRepairEstimateHypothesesItemConfidenceMax),
   "confidenceMethod": zod.enum(['EXPLICIT_PHRASE_RULE_UNCALIBRATED']),
   "source": zod.string(),
-  "sourceUrl": zod.string().url(),
+  "sourceUrl": zod.string().url().nullable(),
   "ruleId": zod.string(),
   "question": zod.string(),
   "action": zod.string()
@@ -15103,359 +14853,6 @@ export const GetCommandCenterResponse = zod.object({
   "nextAction": zod.string()
 }).optional()
 })),
-  "intelligence": zod.array(zod.object({
-  "classification": zod.enum(['VERIFIED_FACTS', 'OBSERVED', 'INDICATED', 'AI_HYPOTHESIS']),
-  "category": zod.string().min(1).max(getCommandCenterResponseDealsItemIntelligenceItemOneCategoryMax),
-  "statement": zod.string().min(1).max(getCommandCenterResponseDealsItemIntelligenceItemOneStatementMax),
-  "source": zod.string().min(1).max(getCommandCenterResponseDealsItemIntelligenceItemOneSourceMax),
-  "sourceUrl": zod.string().max(getCommandCenterResponseDealsItemIntelligenceItemOneSourceUrlMax).optional(),
-  "sourceType": zod.enum(['PUBLIC_RECORD', 'PERMITTED_LISTING', 'SELLER', 'INSPECTION', 'PUBLIC_PAGE', 'ANALYST', 'MODEL']),
-  "confidence": zod.number().min(getCommandCenterResponseDealsItemIntelligenceItemOneConfidenceMin).max(getCommandCenterResponseDealsItemIntelligenceItemOneConfidenceMax),
-  "capturedAt": zod.string().datetime({"offset":true}),
-  "verificationNote": zod.string().max(getCommandCenterResponseDealsItemIntelligenceItemOneVerificationNoteMax).optional(),
-  "contactPermissionStatus": zod.enum(['NOT_REVIEWED', 'PERMITTED', 'PROHIBITED']).optional(),
-  "contactPermissionEvidenceUrl": zod.string().url().max(getCommandCenterResponseDealsItemIntelligenceItemOneContactPermissionEvidenceUrlMax).optional(),
-  "question": zod.string().max(getCommandCenterResponseDealsItemIntelligenceItemOneQuestionMax).optional(),
-  "action": zod.string().max(getCommandCenterResponseDealsItemIntelligenceItemOneActionMax).optional()
-}).and(zod.object({
-  "id": zod.string(),
-  "leadId": zod.string(),
-  "createdAt": zod.string(),
-  "createdBy": zod.string(),
-  "contactPath": zod.union([zod.object({
-  "id": zod.string(),
-  "channel": zod.enum(['POSTAL', 'PHONE', 'EMAIL', 'WEB', 'OTHER']),
-  "recipient": zod.string().nullish(),
-  "routeValue": zod.string().max(getCommandCenterResponseDealsItemIntelligenceItemTwoContactPathOneRouteValueMax).nullish(),
-  "addressLines": zod.array(zod.string()).optional(),
-  "cityState": zod.string().nullish(),
-  "postalCode": zod.string().nullish(),
-  "classification": zod.enum(['OBSERVED', 'VERIFIED']),
-  "confidence": zod.number().min(getCommandCenterResponseDealsItemIntelligenceItemTwoContactPathOneConfidenceMin).max(getCommandCenterResponseDealsItemIntelligenceItemTwoContactPathOneConfidenceMax),
-  "sourceId": zod.string(),
-  "sourceName": zod.string(),
-  "sourceRecordId": zod.string(),
-  "sourceUrl": zod.string().url().optional(),
-  "capturedAt": zod.string().datetime({"offset":true}),
-  "freshUntilAt": zod.string().datetime({"offset":true}),
-  "freshnessStatus": zod.enum(['CURRENT', 'STALE']),
-  "permissionStatus": zod.enum(['NOT_REVIEWED', 'PERMITTED', 'PROHIBITED']),
-  "permissionEvidenceStatus": zod.union([zod.literal('SUPPORTS_ALLOWED'),zod.literal('UNKNOWN'),zod.literal('BLOCKED'),zod.literal(null)]).nullish(),
-  "legalBasis": zod.union([zod.literal('CONSENT'),zod.literal('PUBLIC_SOURCE_TERMS'),zod.literal('PUBLIC_DATA_REUSE'),zod.literal('OTHER_DOCUMENTED'),zod.literal('UNKNOWN'),zod.literal(null)]).nullish(),
-  "legalBasisScope": zod.string().nullish(),
-  "legalBasisEvidenceUrl": zod.string().url().nullish(),
-  "providerId": zod.string().nullish(),
-  "epistemicStatus": zod.union([zod.literal('OBSERVED'),zod.literal('INDICATED'),zod.literal('AI_HYPOTHESIS'),zod.literal(null)]).nullish(),
-  "recipientIdentityEvidenceStatus": zod.union([zod.literal('NONE'),zod.literal('CLAIMED'),zod.literal('SUPPORTING_RECORD'),zod.literal(null)]).nullish(),
-  "recipientIdentityEvidenceRef": zod.string().nullish(),
-  "contactPermissionEvidenceUrl": zod.string().url().nullish(),
-  "permissionReviewedAt": zod.string().datetime({"offset":true}).nullish(),
-  "sourceType": zod.enum(['PUBLIC_RECORD', 'PUBLIC_PAGE', 'PERMITTED_LISTING', 'SELLER', 'ANALYST']).optional(),
-  "recipientRole": zod.enum(['RECORDED_OWNER', 'SELLER_SELF_IDENTIFIED', 'AUTHORIZED_AGENT_CLAIM', 'DIRECTORY_CONTACT', 'UNKNOWN']).optional(),
-  "routeVerificationStatus": zod.enum(['UNREVIEWED', 'CONFIRMED', 'REJECTED']).optional(),
-  "routeReviewedAt": zod.string().datetime({"offset":true}).nullish(),
-  "verificationNote": zod.string().nullish(),
-  "identityStatus": zod.enum(['UNVERIFIED']).optional(),
-  "signingAuthorityStatus": zod.enum(['NOT_ESTABLISHED']).optional(),
-  "supportingObservationCount": zod.number().int().min(1).optional(),
-  "supportingObservations": zod.array(zod.object({
-  "id": zod.string(),
-  "recipient": zod.string().nullable(),
-  "recipientRole": zod.enum(['RECORDED_OWNER', 'SELLER_SELF_IDENTIFIED', 'AUTHORIZED_AGENT_CLAIM', 'DIRECTORY_CONTACT', 'UNKNOWN']),
-  "sourceId": zod.string(),
-  "sourceName": zod.string(),
-  "sourceRecordId": zod.string(),
-  "sourceUrl": zod.string().url().nullable(),
-  "capturedAt": zod.string().datetime({"offset":true}),
-  "freshUntilAt": zod.string().datetime({"offset":true}),
-  "classification": zod.enum(['OBSERVED', 'VERIFIED']),
-  "confidence": zod.number().min(getCommandCenterResponseDealsItemIntelligenceItemTwoContactPathOneSupportingObservationsItemConfidenceMin).max(getCommandCenterResponseDealsItemIntelligenceItemTwoContactPathOneSupportingObservationsItemConfidenceMax),
-  "permissionStatus": zod.enum(['NOT_REVIEWED', 'PERMITTED', 'PROHIBITED']),
-  "permissionEvidenceStatus": zod.union([zod.literal('SUPPORTS_ALLOWED'),zod.literal('UNKNOWN'),zod.literal('BLOCKED'),zod.literal(null)]).nullable(),
-  "legalBasis": zod.union([zod.literal('CONSENT'),zod.literal('PUBLIC_SOURCE_TERMS'),zod.literal('PUBLIC_DATA_REUSE'),zod.literal('OTHER_DOCUMENTED'),zod.literal('UNKNOWN'),zod.literal(null)]).nullable(),
-  "legalBasisScope": zod.string().nullable(),
-  "legalBasisEvidenceUrl": zod.string().url().nullable(),
-  "providerId": zod.string().nullable(),
-  "epistemicStatus": zod.union([zod.literal('OBSERVED'),zod.literal('INDICATED'),zod.literal('AI_HYPOTHESIS'),zod.literal(null)]).nullable(),
-  "recipientIdentityEvidenceStatus": zod.union([zod.literal('NONE'),zod.literal('CLAIMED'),zod.literal('SUPPORTING_RECORD'),zod.literal(null)]).nullable(),
-  "recipientIdentityEvidenceRef": zod.string().nullable(),
-  "contactPermissionEvidenceUrl": zod.string().url().nullable(),
-  "permissionReviewedAt": zod.string().datetime({"offset":true}).nullable(),
-  "routeVerificationStatus": zod.enum(['UNREVIEWED', 'CONFIRMED', 'REJECTED']),
-  "routeReviewedAt": zod.string().datetime({"offset":true}).nullable(),
-  "verificationNote": zod.string().nullable()
-})).optional(),
-  "identityConflictStatus": zod.enum(['NONE', 'MULTIPLE_RECIPIENTS', 'MULTIPLE_ROLES']).optional(),
-  "recipientIdentityClaimCount": zod.number().int().min(getCommandCenterResponseDealsItemIntelligenceItemTwoContactPathOneRecipientIdentityClaimCountMin).optional(),
-  "rankingReasons": zod.array(zod.string()).optional()
-}),zod.null()]).optional()
-}))),
-  "analysis": zod.union([zod.object({
-  "engineVersion": zod.string(),
-  "calculatedAt": zod.string(),
-  "classification": zod.enum(['STRONG', 'NEGOTIABLE', 'PASS', 'INCOMPLETE']),
-  "arv": zod.object({
-  "low": zod.number(),
-  "expected": zod.number(),
-  "high": zod.number(),
-  "confidence": zod.number()
-}),
-  "repairs": zod.object({
-  "low": zod.number(),
-  "expected": zod.number(),
-  "high": zod.number(),
-  "confidence": zod.number()
-}),
-  "repairEstimate": zod.object({
-  "status": zod.enum(['NOT_USED', 'CALCULATED', 'BLOCKED']),
-  "marketKey": zod.string(),
-  "catalogVersion": zod.number().int().min(getCommandCenterResponseDealsItemAnalysisOneRepairEstimateCatalogVersionMin),
-  "calculatedAt": zod.string().datetime({"offset":true}),
-  "lines": zod.array(zod.object({
-  "category": zod.string(),
-  "severity": zod.enum(['NO_REPAIR', 'COSMETIC', 'MODERATE', 'MAJOR', 'REPLACEMENT']),
-  "quantity": zod.number(),
-  "unit": zod.enum(['SQFT', 'LINEAR_FT', 'EACH', 'LUMP_SUM']),
-  "evidenceId": zod.string(),
-  "rateCardId": zod.string().optional(),
-  "rateCardVersion": zod.number().int().optional(),
-  "low": zod.number().min(getCommandCenterResponseDealsItemAnalysisOneRepairEstimateLinesItemLowMin),
-  "expected": zod.number().min(getCommandCenterResponseDealsItemAnalysisOneRepairEstimateLinesItemExpectedMin),
-  "high": zod.number().min(getCommandCenterResponseDealsItemAnalysisOneRepairEstimateLinesItemHighMin),
-  "confidence": zod.number().min(getCommandCenterResponseDealsItemAnalysisOneRepairEstimateLinesItemConfidenceMin).max(getCommandCenterResponseDealsItemAnalysisOneRepairEstimateLinesItemConfidenceMax),
-  "source": zod.string(),
-  "sourceUrl": zod.string().url().optional()
-})).max(getCommandCenterResponseDealsItemAnalysisOneRepairEstimateLinesMax),
-  "total": zod.union([zod.object({
-  "low": zod.number(),
-  "expected": zod.number(),
-  "high": zod.number(),
-  "confidence": zod.number()
-}),zod.null()]),
-  "blockers": zod.array(zod.string())
-}),
-  "preliminaryRepairEstimate": zod.object({
-  "status": zod.enum(['NOT_USED', 'CALCULATED', 'BLOCKED']),
-  "marketKey": zod.string(),
-  "catalogVersion": zod.number().int().min(getCommandCenterResponseDealsItemAnalysisOnePreliminaryRepairEstimateCatalogVersionMin),
-  "calculatedAt": zod.string().datetime({"offset":true}),
-  "hypotheses": zod.array(zod.object({
-  "id": zod.string(),
-  "evidenceId": zod.string(),
-  "category": zod.string(),
-  "severity": zod.enum(['COSMETIC', 'MODERATE', 'MAJOR', 'REPLACEMENT']),
-  "statement": zod.string(),
-  "evidenceClassification": zod.enum(['VERIFIED_FACTS', 'OBSERVED', 'INDICATED', 'AI_HYPOTHESIS']),
-  "epistemicStatus": zod.enum(['AI_HYPOTHESIS']),
-  "sourceConfidence": zod.number().min(getCommandCenterResponseDealsItemAnalysisOnePreliminaryRepairEstimateHypothesesItemSourceConfidenceMin).max(getCommandCenterResponseDealsItemAnalysisOnePreliminaryRepairEstimateHypothesesItemSourceConfidenceMax),
-  "confidence": zod.number().min(getCommandCenterResponseDealsItemAnalysisOnePreliminaryRepairEstimateHypothesesItemConfidenceMin).max(getCommandCenterResponseDealsItemAnalysisOnePreliminaryRepairEstimateHypothesesItemConfidenceMax),
-  "confidenceMethod": zod.enum(['EXPLICIT_PHRASE_RULE_UNCALIBRATED']),
-  "source": zod.string(),
-  "sourceUrl": zod.string().url(),
-  "ruleId": zod.string(),
-  "question": zod.string(),
-  "action": zod.string()
-})).max(getCommandCenterResponseDealsItemAnalysisOnePreliminaryRepairEstimateHypothesesMax),
-  "lines": zod.array(zod.object({
-  "category": zod.string(),
-  "severity": zod.enum(['COSMETIC', 'MODERATE', 'MAJOR', 'REPLACEMENT']),
-  "low": zod.number().min(getCommandCenterResponseDealsItemAnalysisOnePreliminaryRepairEstimateLinesItemLowMin),
-  "expected": zod.number().min(getCommandCenterResponseDealsItemAnalysisOnePreliminaryRepairEstimateLinesItemExpectedMin),
-  "high": zod.number().min(getCommandCenterResponseDealsItemAnalysisOnePreliminaryRepairEstimateLinesItemHighMin),
-  "confidence": zod.number().min(getCommandCenterResponseDealsItemAnalysisOnePreliminaryRepairEstimateLinesItemConfidenceMin).max(getCommandCenterResponseDealsItemAnalysisOnePreliminaryRepairEstimateLinesItemConfidenceMax),
-  "rateCardId": zod.string(),
-  "rateCardVersion": zod.number().int().min(1),
-  "hypothesisIds": zod.array(zod.string()).min(1),
-  "source": zod.string(),
-  "sourceUrl": zod.string().url()
-})).max(getCommandCenterResponseDealsItemAnalysisOnePreliminaryRepairEstimateLinesMax),
-  "total": zod.union([zod.object({
-  "low": zod.number(),
-  "expected": zod.number(),
-  "high": zod.number(),
-  "confidence": zod.number()
-}),zod.null()]),
-  "blockers": zod.array(zod.string()),
-  "sourceWarnings": zod.array(zod.string())
-}),
-  "mao": zod.number(),
-  "openingLow": zod.number(),
-  "openingHigh": zod.number(),
-  "maximumApprovedAcquisitionPrice": zod.number().nullable(),
-  "spreadAtAsking": zod.number().nullable(),
-  "assumptions": zod.object({
-  "arvMultiplier": zod.number().min(getCommandCenterResponseDealsItemAnalysisOneAssumptionsArvMultiplierMin).max(getCommandCenterResponseDealsItemAnalysisOneAssumptionsArvMultiplierMax),
-  "sellingCostPct": zod.number().min(getCommandCenterResponseDealsItemAnalysisOneAssumptionsSellingCostPctMin).max(getCommandCenterResponseDealsItemAnalysisOneAssumptionsSellingCostPctMax),
-  "acquisitionCost": zod.number().min(getCommandCenterResponseDealsItemAnalysisOneAssumptionsAcquisitionCostMin).max(getCommandCenterResponseDealsItemAnalysisOneAssumptionsAcquisitionCostMax),
-  "holdingMonthly": zod.number().min(getCommandCenterResponseDealsItemAnalysisOneAssumptionsHoldingMonthlyMin).max(getCommandCenterResponseDealsItemAnalysisOneAssumptionsHoldingMonthlyMax),
-  "holdingMonths": zod.number().min(getCommandCenterResponseDealsItemAnalysisOneAssumptionsHoldingMonthsMin).max(getCommandCenterResponseDealsItemAnalysisOneAssumptionsHoldingMonthsMax),
-  "assignmentTarget": zod.number().min(getCommandCenterResponseDealsItemAnalysisOneAssumptionsAssignmentTargetMin).max(getCommandCenterResponseDealsItemAnalysisOneAssumptionsAssignmentTargetMax),
-  "contingencyPct": zod.number().min(getCommandCenterResponseDealsItemAnalysisOneAssumptionsContingencyPctMin).max(getCommandCenterResponseDealsItemAnalysisOneAssumptionsContingencyPctMax),
-  "strongMargin": zod.number().min(getCommandCenterResponseDealsItemAnalysisOneAssumptionsStrongMarginMin).max(getCommandCenterResponseDealsItemAnalysisOneAssumptionsStrongMarginMax),
-  "openingLowPct": zod.number().min(getCommandCenterResponseDealsItemAnalysisOneAssumptionsOpeningLowPctMin).max(getCommandCenterResponseDealsItemAnalysisOneAssumptionsOpeningLowPctMax),
-  "openingHighPct": zod.number().min(getCommandCenterResponseDealsItemAnalysisOneAssumptionsOpeningHighPctMin).max(getCommandCenterResponseDealsItemAnalysisOneAssumptionsOpeningHighPctMax),
-  "maxCompAgeDays": zod.number().int().min(1).max(getCommandCenterResponseDealsItemAnalysisOneAssumptionsMaxCompAgeDaysMax),
-  "maxDistanceMiles": zod.number().gt(getCommandCenterResponseDealsItemAnalysisOneAssumptionsMaxDistanceMilesExclusiveMin).max(getCommandCenterResponseDealsItemAnalysisOneAssumptionsMaxDistanceMilesMax),
-  "maxSqftDifferencePct": zod.number().min(getCommandCenterResponseDealsItemAnalysisOneAssumptionsMaxSqftDifferencePctMin).max(getCommandCenterResponseDealsItemAnalysisOneAssumptionsMaxSqftDifferencePctMax),
-  "minComps": zod.number().int().min(getCommandCenterResponseDealsItemAnalysisOneAssumptionsMinCompsMin).max(getCommandCenterResponseDealsItemAnalysisOneAssumptionsMinCompsMax),
-  "minConfidence": zod.number().min(getCommandCenterResponseDealsItemAnalysisOneAssumptionsMinConfidenceMin).max(getCommandCenterResponseDealsItemAnalysisOneAssumptionsMinConfidenceMax),
-  "approvalRequired": zod.boolean(),
-  "repairRateCatalogVersion": zod.number().int().min(getCommandCenterResponseDealsItemAnalysisOneAssumptionsRepairRateCatalogVersionMin),
-  "repairRates": zod.array(zod.object({
-  "id": zod.string().min(1).max(getCommandCenterResponseDealsItemAnalysisOneAssumptionsRepairRatesItemIdMax),
-  "version": zod.number().int().min(1),
-  "marketKey": zod.string().min(getCommandCenterResponseDealsItemAnalysisOneAssumptionsRepairRatesItemMarketKeyMin).max(getCommandCenterResponseDealsItemAnalysisOneAssumptionsRepairRatesItemMarketKeyMax),
-  "category": zod.string().min(1).max(getCommandCenterResponseDealsItemAnalysisOneAssumptionsRepairRatesItemCategoryMax),
-  "severity": zod.enum(['COSMETIC', 'MODERATE', 'MAJOR', 'REPLACEMENT']),
-  "unit": zod.enum(['SQFT', 'LINEAR_FT', 'EACH', 'LUMP_SUM']),
-  "lowRate": zod.number().min(getCommandCenterResponseDealsItemAnalysisOneAssumptionsRepairRatesItemLowRateMin).max(getCommandCenterResponseDealsItemAnalysisOneAssumptionsRepairRatesItemLowRateMax),
-  "expectedRate": zod.number().min(getCommandCenterResponseDealsItemAnalysisOneAssumptionsRepairRatesItemExpectedRateMin).max(getCommandCenterResponseDealsItemAnalysisOneAssumptionsRepairRatesItemExpectedRateMax),
-  "highRate": zod.number().min(getCommandCenterResponseDealsItemAnalysisOneAssumptionsRepairRatesItemHighRateMin).max(getCommandCenterResponseDealsItemAnalysisOneAssumptionsRepairRatesItemHighRateMax),
-  "confidence": zod.number().min(getCommandCenterResponseDealsItemAnalysisOneAssumptionsRepairRatesItemConfidenceMin).max(getCommandCenterResponseDealsItemAnalysisOneAssumptionsRepairRatesItemConfidenceMax),
-  "source": zod.string().min(1).max(getCommandCenterResponseDealsItemAnalysisOneAssumptionsRepairRatesItemSourceMax),
-  "sourceUrl": zod.string().url().max(getCommandCenterResponseDealsItemAnalysisOneAssumptionsRepairRatesItemSourceUrlMax),
-  "capturedOn": zod.string().date(),
-  "validThrough": zod.string().date(),
-  "active": zod.boolean()
-})).max(getCommandCenterResponseDealsItemAnalysisOneAssumptionsRepairRatesMax)
-}),
-  "risks": zod.array(zod.string()),
-  "blockers": zod.array(zod.string()),
-  "compDecisions": zod.array(zod.object({
-  "id": zod.string(),
-  "included": zod.boolean(),
-  "reasons": zod.array(zod.string())
-})),
-  "formula": zod.string()
-}),zod.null()]),
-  "analysisSnapshotId": zod.string().nullable(),
-  "offers": zod.array(zod.object({
-  "amount": zod.number().gt(getCommandCenterResponseDealsItemOffersItemOneAmountExclusiveMin).max(getCommandCenterResponseDealsItemOffersItemOneAmountMax),
-  "earnestMoney": zod.number().min(getCommandCenterResponseDealsItemOffersItemOneEarnestMoneyMin).max(getCommandCenterResponseDealsItemOffersItemOneEarnestMoneyMax),
-  "closingDays": zod.number().int().min(1).max(getCommandCenterResponseDealsItemOffersItemOneClosingDaysMax),
-  "contingencies": zod.string().min(getCommandCenterResponseDealsItemOffersItemOneContingenciesMin).max(getCommandCenterResponseDealsItemOffersItemOneContingenciesMax),
-  "assignmentIntent": zod.boolean()
-}).and(zod.object({
-  "id": zod.string().uuid(),
-  "leadId": zod.string().uuid(),
-  "analysisSnapshotId": zod.string().uuid(),
-  "status": zod.enum(['DRAFT', 'AUTHORIZED', 'COMMUNICATED', 'REVOKED', 'INVALIDATED', 'EXPIRED']),
-  "effectiveStatus": zod.enum(['DRAFT', 'AUTHORIZED', 'COMMUNICATED', 'REVOKED', 'INVALIDATED', 'EXPIRED']),
-  "blockers": zod.array(zod.string()),
-  "reason": zod.string(),
-  "createdBy": zod.string(),
-  "createdAt": zod.string().datetime({"offset":true}),
-  "updatedAt": zod.string().datetime({"offset":true}),
-  "maximumApprovedAcquisitionPrice": zod.number().nullable(),
-  "authorityEvidenceId": zod.string().nullable(),
-  "approvedBy": zod.string().nullable(),
-  "approvedAt": zod.string().nullable(),
-  "approvalReason": zod.string().nullable(),
-  "expiresAt": zod.string().nullable(),
-  "communicatedBy": zod.string().nullable(),
-  "communicatedAt": zod.string().nullable(),
-  "communicatedAmount": zod.number().nullable(),
-  "channel": zod.string().nullable(),
-  "evidence": zod.string().nullable(),
-  "withdrawalReason": zod.string().nullable()
-}))),
-  "underwriting": zod.union([zod.object({
-  "version": zod.number().int().min(1),
-  "comps": zod.array(zod.object({
-  "id": zod.string().min(1),
-  "address": zod.string().min(getCommandCenterResponseDealsItemUnderwritingOneCompsItemAddressMin),
-  "salePrice": zod.number().gt(getCommandCenterResponseDealsItemUnderwritingOneCompsItemSalePriceExclusiveMin).max(getCommandCenterResponseDealsItemUnderwritingOneCompsItemSalePriceMax),
-  "sqft": zod.number().gt(getCommandCenterResponseDealsItemUnderwritingOneCompsItemSqftExclusiveMin).max(getCommandCenterResponseDealsItemUnderwritingOneCompsItemSqftMax),
-  "soldAt": zod.string().date(),
-  "distanceMiles": zod.number().min(getCommandCenterResponseDealsItemUnderwritingOneCompsItemDistanceMilesMin).max(getCommandCenterResponseDealsItemUnderwritingOneCompsItemDistanceMilesMax),
-  "propertyType": zod.string(),
-  "condition": zod.enum(['RENOVATED', 'SIMILAR', 'UNKNOWN']),
-  "source": zod.string().min(1),
-  "verified": zod.boolean(),
-  "saleEvidenceId": zod.string().max(getCommandCenterResponseDealsItemUnderwritingOneCompsItemSaleEvidenceIdMax).optional(),
-  "conditionEvidenceId": zod.string().max(getCommandCenterResponseDealsItemUnderwritingOneCompsItemConditionEvidenceIdMax).optional()
-})).max(getCommandCenterResponseDealsItemUnderwritingOneCompsMax),
-  "repairs": zod.array(zod.object({
-  "category": zod.string().min(1),
-  "low": zod.number().min(getCommandCenterResponseDealsItemUnderwritingOneRepairsItemLowMin).max(getCommandCenterResponseDealsItemUnderwritingOneRepairsItemLowMax),
-  "expected": zod.number().min(getCommandCenterResponseDealsItemUnderwritingOneRepairsItemExpectedMin).max(getCommandCenterResponseDealsItemUnderwritingOneRepairsItemExpectedMax),
-  "high": zod.number().min(getCommandCenterResponseDealsItemUnderwritingOneRepairsItemHighMin).max(getCommandCenterResponseDealsItemUnderwritingOneRepairsItemHighMax),
-  "confidence": zod.number().min(getCommandCenterResponseDealsItemUnderwritingOneRepairsItemConfidenceMin).max(getCommandCenterResponseDealsItemUnderwritingOneRepairsItemConfidenceMax),
-  "source": zod.string().min(1),
-  "evidenceId": zod.string().max(getCommandCenterResponseDealsItemUnderwritingOneRepairsItemEvidenceIdMax).optional()
-})).max(getCommandCenterResponseDealsItemUnderwritingOneRepairsMax),
-  "repairsComplete": zod.boolean(),
-  "conditionConfirmed": zod.boolean(),
-  "repairObservations": zod.array(zod.object({
-  "category": zod.string().min(1).max(getCommandCenterResponseDealsItemUnderwritingOneRepairObservationsItemCategoryMax),
-  "severity": zod.enum(['NO_REPAIR', 'COSMETIC', 'MODERATE', 'MAJOR', 'REPLACEMENT']),
-  "quantity": zod.number().min(getCommandCenterResponseDealsItemUnderwritingOneRepairObservationsItemQuantityMin).max(getCommandCenterResponseDealsItemUnderwritingOneRepairObservationsItemQuantityMax),
-  "unit": zod.enum(['SQFT', 'LINEAR_FT', 'EACH', 'LUMP_SUM']),
-  "evidenceId": zod.string().min(1).max(getCommandCenterResponseDealsItemUnderwritingOneRepairObservationsItemEvidenceIdMax)
-})).max(getCommandCenterResponseDealsItemUnderwritingOneRepairObservationsMax).optional(),
-  "repairEstimate": zod.object({
-  "status": zod.enum(['NOT_USED', 'CALCULATED', 'BLOCKED']),
-  "marketKey": zod.string(),
-  "catalogVersion": zod.number().int().min(getCommandCenterResponseDealsItemUnderwritingOneRepairEstimateCatalogVersionMin),
-  "calculatedAt": zod.string().datetime({"offset":true}),
-  "lines": zod.array(zod.object({
-  "category": zod.string(),
-  "severity": zod.enum(['NO_REPAIR', 'COSMETIC', 'MODERATE', 'MAJOR', 'REPLACEMENT']),
-  "quantity": zod.number(),
-  "unit": zod.enum(['SQFT', 'LINEAR_FT', 'EACH', 'LUMP_SUM']),
-  "evidenceId": zod.string(),
-  "rateCardId": zod.string().optional(),
-  "rateCardVersion": zod.number().int().optional(),
-  "low": zod.number().min(getCommandCenterResponseDealsItemUnderwritingOneRepairEstimateLinesItemLowMin),
-  "expected": zod.number().min(getCommandCenterResponseDealsItemUnderwritingOneRepairEstimateLinesItemExpectedMin),
-  "high": zod.number().min(getCommandCenterResponseDealsItemUnderwritingOneRepairEstimateLinesItemHighMin),
-  "confidence": zod.number().min(getCommandCenterResponseDealsItemUnderwritingOneRepairEstimateLinesItemConfidenceMin).max(getCommandCenterResponseDealsItemUnderwritingOneRepairEstimateLinesItemConfidenceMax),
-  "source": zod.string(),
-  "sourceUrl": zod.string().url().optional()
-})).max(getCommandCenterResponseDealsItemUnderwritingOneRepairEstimateLinesMax),
-  "total": zod.union([zod.object({
-  "low": zod.number(),
-  "expected": zod.number(),
-  "high": zod.number(),
-  "confidence": zod.number()
-}),zod.null()]),
-  "blockers": zod.array(zod.string())
-}).optional(),
-  "subjectEvidenceId": zod.string().max(getCommandCenterResponseDealsItemUnderwritingOneSubjectEvidenceIdMax).optional(),
-  "conditionEvidenceId": zod.string().max(getCommandCenterResponseDealsItemUnderwritingOneConditionEvidenceIdMax).optional(),
-  "sellerContactEvidenceId": zod.string().max(getCommandCenterResponseDealsItemUnderwritingOneSellerContactEvidenceIdMax).optional()
-}),zod.null()]),
-  "transitions": zod.array(zod.object({
-  "id": zod.string(),
-  "from": zod.string(),
-  "to": zod.string(),
-  "reason": zod.string(),
-  "nextAction": zod.string(),
-  "actor": zod.string(),
-  "createdAt": zod.string()
-})),
-  "calls": zod.array(zod.object({
-  "version": zod.number().int().min(1),
-  "outcome": zod.enum(['NO_ANSWER', 'VOICEMAIL', 'CONNECTED', 'NOT_INTERESTED']),
-  "notes": zod.string().min(1).max(getCommandCenterResponseDealsItemCallsItemOneNotesMax),
-  "nextAction": zod.string().min(getCommandCenterResponseDealsItemCallsItemOneNextActionMin).max(getCommandCenterResponseDealsItemCallsItemOneNextActionMax),
-  "followUpAt": zod.string().datetime({"offset":true}).nullable(),
-  "sellerAnswers": zod.object({
-  "motivationStatement": zod.string().max(getCommandCenterResponseDealsItemCallsItemOneSellerAnswersMotivationStatementMax).optional(),
-  "conditionDescription": zod.string().max(getCommandCenterResponseDealsItemCallsItemOneSellerAnswersConditionDescriptionMax).optional(),
-  "timing": zod.string().max(getCommandCenterResponseDealsItemCallsItemOneSellerAnswersTimingMax).optional(),
-  "askingPrice": zod.number().min(getCommandCenterResponseDealsItemCallsItemOneSellerAnswersAskingPriceMin).max(getCommandCenterResponseDealsItemCallsItemOneSellerAnswersAskingPriceMax).nullish(),
-  "nextStepOutcome": zod.string().max(getCommandCenterResponseDealsItemCallsItemOneSellerAnswersNextStepOutcomeMax).optional()
-}).optional()
-}).and(zod.object({
-  "id": zod.string(),
-  "createdAt": zod.string(),
-  "actor": zod.string(),
-  "evidenceSource": zod.enum(['OPERATOR_ENTERED_SELLER_CONVERSATION']).optional(),
-  "evidenceClassification": zod.enum(['INDICATED']).optional(),
-  "sellerAnswersCapturedAt": zod.string().datetime({"offset":true}).optional()
-}))),
-  "allowedTransitions": zod.array(zod.enum(['DISCOVERED', 'ENRICHING', 'ANALYZED', 'STRONG', 'NEGOTIABLE', 'PASS', 'CALL_READY', 'CONTACTED', 'CONVERSATION', 'OFFER_READY', 'OFFER_SENT', 'NEGOTIATING', 'CONTRACT_PENDING', 'UNDER_CONTRACT', 'BUYER_MATCHED', 'BUYER_INTERESTED', 'BUYER_COMMITTED', 'CLOSING', 'CLOSED', 'DEAD_DEAL'])),
   "workGuidance": zod.union([zod.object({
   "category": zod.enum(['RESEARCH', 'CALL', 'FOLLOW_UP', 'OFFER_APPROVAL', 'NEGOTIATION', 'CONTRACT', 'BUYER_MATCH', 'DEADLINE', 'CLOSING', 'DISCOVERY_REVIEW', 'BUYER_VERIFICATION', 'WORKER']),
   "priority": zod.number().int(),
@@ -15473,7 +14870,7 @@ export const GetCommandCenterResponse = zod.object({
   "humanMustDo": zod.string(),
   "requiredEvidence": zod.array(zod.string()),
   "completionRecord": zod.string()
-}),zod.null()])
+}),zod.null()]).optional()
 })),
   "operations": zod.array(zod.object({
   "leadId": zod.string(),
@@ -15789,6 +15186,16 @@ export const GetCommandCenterResponse = zod.object({
   "sourceType": zod.enum(['PUBLIC_RECORD', 'PERMITTED_LISTING', 'SELLER', 'INSPECTION', 'PUBLIC_PAGE', 'ANALYST', 'MODEL']),
   "confidence": zod.number().min(getCommandCenterResponseOperationsItemContractOneCommitmentSnapshotOneDetailIntelligenceItemOneConfidenceMin).max(getCommandCenterResponseOperationsItemContractOneCommitmentSnapshotOneDetailIntelligenceItemOneConfidenceMax),
   "capturedAt": zod.string().datetime({"offset":true}),
+  "sourceRecordId": zod.string().max(getCommandCenterResponseOperationsItemContractOneCommitmentSnapshotOneDetailIntelligenceItemOneSourceRecordIdMax).optional(),
+  "confidenceBasis": zod.enum(['OPERATOR_ASSESSED', 'UNASSESSED_CONSERVATIVE_DEFAULT', 'SOURCE_RELIABILITY']).optional(),
+  "clarificationStatus": zod.enum(['UNREVIEWED', 'FOLLOW_UP_REQUIRED', 'SELLER_CLARIFIED']).optional(),
+  "contentDigest": zod.string().regex(getCommandCenterResponseOperationsItemContractOneCommitmentSnapshotOneDetailIntelligenceItemOneContentDigestRegExp).optional(),
+  "retentionPolicy": zod.enum(['FULL_TEXT_PERMITTED', 'HASH_ONLY', 'DERIVED_ONLY']).optional(),
+  "reconciliation": zod.object({
+  "state": zod.enum(['NO_COMPARABLE_EVIDENCE', 'NO_CONFLICT_FOUND', 'CONFLICT_REVIEW']),
+  "comparedEvidenceIds": zod.array(zod.string()).max(getCommandCenterResponseOperationsItemContractOneCommitmentSnapshotOneDetailIntelligenceItemOneReconciliationComparedEvidenceIdsMax),
+  "reason": zod.string().max(getCommandCenterResponseOperationsItemContractOneCommitmentSnapshotOneDetailIntelligenceItemOneReconciliationReasonMax)
+}).optional(),
   "verificationNote": zod.string().max(getCommandCenterResponseOperationsItemContractOneCommitmentSnapshotOneDetailIntelligenceItemOneVerificationNoteMax).optional(),
   "contactPermissionStatus": zod.enum(['NOT_REVIEWED', 'PERMITTED', 'PROHIBITED']).optional(),
   "contactPermissionEvidenceUrl": zod.string().url().max(getCommandCenterResponseOperationsItemContractOneCommitmentSnapshotOneDetailIntelligenceItemOneContactPermissionEvidenceUrlMax).optional(),
@@ -15919,6 +15326,7 @@ export const GetCommandCenterResponse = zod.object({
   "hypotheses": zod.array(zod.object({
   "id": zod.string(),
   "evidenceId": zod.string(),
+  "sourceRecordId": zod.string().nullable(),
   "category": zod.string(),
   "severity": zod.enum(['COSMETIC', 'MODERATE', 'MAJOR', 'REPLACEMENT']),
   "statement": zod.string(),
@@ -15928,7 +15336,7 @@ export const GetCommandCenterResponse = zod.object({
   "confidence": zod.number().min(getCommandCenterResponseOperationsItemContractOneCommitmentSnapshotOneDetailAnalysisOnePreliminaryRepairEstimateHypothesesItemConfidenceMin).max(getCommandCenterResponseOperationsItemContractOneCommitmentSnapshotOneDetailAnalysisOnePreliminaryRepairEstimateHypothesesItemConfidenceMax),
   "confidenceMethod": zod.enum(['EXPLICIT_PHRASE_RULE_UNCALIBRATED']),
   "source": zod.string(),
-  "sourceUrl": zod.string().url(),
+  "sourceUrl": zod.string().url().nullable(),
   "ruleId": zod.string(),
   "question": zod.string(),
   "action": zod.string()
@@ -16068,7 +15476,9 @@ export const GetCommandCenterResponse = zod.object({
   "severity": zod.enum(['NO_REPAIR', 'COSMETIC', 'MODERATE', 'MAJOR', 'REPLACEMENT']),
   "quantity": zod.number().min(getCommandCenterResponseOperationsItemContractOneCommitmentSnapshotOneDetailUnderwritingOneRepairObservationsItemQuantityMin).max(getCommandCenterResponseOperationsItemContractOneCommitmentSnapshotOneDetailUnderwritingOneRepairObservationsItemQuantityMax),
   "unit": zod.enum(['SQFT', 'LINEAR_FT', 'EACH', 'LUMP_SUM']),
-  "evidenceId": zod.string().min(1).max(getCommandCenterResponseOperationsItemContractOneCommitmentSnapshotOneDetailUnderwritingOneRepairObservationsItemEvidenceIdMax)
+  "evidenceId": zod.string().min(1).max(getCommandCenterResponseOperationsItemContractOneCommitmentSnapshotOneDetailUnderwritingOneRepairObservationsItemEvidenceIdMax),
+  "sourceRecordId": zod.string().max(getCommandCenterResponseOperationsItemContractOneCommitmentSnapshotOneDetailUnderwritingOneRepairObservationsItemSourceRecordIdMax).optional(),
+  "sourceUrl": zod.string().url().nullish()
 })).max(getCommandCenterResponseOperationsItemContractOneCommitmentSnapshotOneDetailUnderwritingOneRepairObservationsMax).optional(),
   "repairEstimate": zod.object({
   "status": zod.enum(['NOT_USED', 'CALCULATED', 'BLOCKED']),
@@ -16112,26 +15522,21 @@ export const GetCommandCenterResponse = zod.object({
   "createdAt": zod.string()
 })),
   "calls": zod.array(zod.object({
-  "version": zod.number().int().min(1),
-  "outcome": zod.enum(['NO_ANSWER', 'VOICEMAIL', 'CONNECTED', 'NOT_INTERESTED']),
-  "notes": zod.string().min(1).max(getCommandCenterResponseOperationsItemContractOneCommitmentSnapshotOneDetailCallsItemOneNotesMax),
-  "nextAction": zod.string().min(getCommandCenterResponseOperationsItemContractOneCommitmentSnapshotOneDetailCallsItemOneNextActionMin).max(getCommandCenterResponseOperationsItemContractOneCommitmentSnapshotOneDetailCallsItemOneNextActionMax),
-  "followUpAt": zod.string().datetime({"offset":true}).nullable(),
-  "sellerAnswers": zod.object({
-  "motivationStatement": zod.string().max(getCommandCenterResponseOperationsItemContractOneCommitmentSnapshotOneDetailCallsItemOneSellerAnswersMotivationStatementMax).optional(),
-  "conditionDescription": zod.string().max(getCommandCenterResponseOperationsItemContractOneCommitmentSnapshotOneDetailCallsItemOneSellerAnswersConditionDescriptionMax).optional(),
-  "timing": zod.string().max(getCommandCenterResponseOperationsItemContractOneCommitmentSnapshotOneDetailCallsItemOneSellerAnswersTimingMax).optional(),
-  "askingPrice": zod.number().min(getCommandCenterResponseOperationsItemContractOneCommitmentSnapshotOneDetailCallsItemOneSellerAnswersAskingPriceMin).max(getCommandCenterResponseOperationsItemContractOneCommitmentSnapshotOneDetailCallsItemOneSellerAnswersAskingPriceMax).nullish(),
-  "nextStepOutcome": zod.string().max(getCommandCenterResponseOperationsItemContractOneCommitmentSnapshotOneDetailCallsItemOneSellerAnswersNextStepOutcomeMax).optional()
-}).optional()
-}).and(zod.object({
   "id": zod.string(),
   "createdAt": zod.string(),
   "actor": zod.string(),
-  "evidenceSource": zod.enum(['OPERATOR_ENTERED_SELLER_CONVERSATION']).optional(),
-  "evidenceClassification": zod.enum(['INDICATED']).optional(),
-  "sellerAnswersCapturedAt": zod.string().datetime({"offset":true}).optional()
-}))),
+  "version": zod.number().int(),
+  "outcome": zod.enum(['NO_ANSWER', 'VOICEMAIL', 'CONNECTED', 'NOT_INTERESTED']),
+  "notes": zod.string().max(getCommandCenterResponseOperationsItemContractOneCommitmentSnapshotOneDetailCallsItemNotesMax),
+  "nextAction": zod.string().max(getCommandCenterResponseOperationsItemContractOneCommitmentSnapshotOneDetailCallsItemNextActionMax),
+  "followUpAt": zod.string().datetime({"offset":true}).nullable(),
+  "evidenceSource": zod.enum(['OPERATOR_ENTERED_SELLER_CONVERSATION', 'OPERATOR_CALL_ATTEMPT']).optional(),
+  "evidenceClassification": zod.enum(['INDICATED', 'OBSERVED']).optional(),
+  "sellerAnswersCapturedAt": zod.string().datetime({"offset":true}).optional(),
+  "evidenceIds": zod.array(zod.string()).optional(),
+  "materialEvidence": zod.boolean().optional(),
+  "analysisInvalidated": zod.boolean().optional()
+})),
   "allowedTransitions": zod.array(zod.enum(['DISCOVERED', 'ENRICHING', 'ANALYZED', 'STRONG', 'NEGOTIABLE', 'PASS', 'CALL_READY', 'CONTACTED', 'CONVERSATION', 'OFFER_READY', 'OFFER_SENT', 'NEGOTIATING', 'CONTRACT_PENDING', 'UNDER_CONTRACT', 'BUYER_MATCHED', 'BUYER_INTERESTED', 'BUYER_COMMITTED', 'CLOSING', 'CLOSED', 'DEAD_DEAL'])),
   "workGuidance": zod.union([zod.object({
   "category": zod.enum(['RESEARCH', 'CALL', 'FOLLOW_UP', 'OFFER_APPROVAL', 'NEGOTIATION', 'CONTRACT', 'BUYER_MATCH', 'DEADLINE', 'CLOSING', 'DISCOVERY_REVIEW', 'BUYER_VERIFICATION', 'WORKER']),
@@ -20028,6 +19433,13 @@ export const getDealOperationsResponseContractOneCommitmentSnapshotOneDetailInte
 export const getDealOperationsResponseContractOneCommitmentSnapshotOneDetailIntelligenceItemOneConfidenceMin = 0;
 export const getDealOperationsResponseContractOneCommitmentSnapshotOneDetailIntelligenceItemOneConfidenceMax = 1;
 
+export const getDealOperationsResponseContractOneCommitmentSnapshotOneDetailIntelligenceItemOneSourceRecordIdMax = 240;
+
+export const getDealOperationsResponseContractOneCommitmentSnapshotOneDetailIntelligenceItemOneContentDigestRegExp = new RegExp('^[a-f0-9]{64}$');
+export const getDealOperationsResponseContractOneCommitmentSnapshotOneDetailIntelligenceItemOneReconciliationComparedEvidenceIdsMax = 50;
+
+export const getDealOperationsResponseContractOneCommitmentSnapshotOneDetailIntelligenceItemOneReconciliationReasonMax = 1000;
+
 export const getDealOperationsResponseContractOneCommitmentSnapshotOneDetailIntelligenceItemOneVerificationNoteMax = 2000;
 
 export const getDealOperationsResponseContractOneCommitmentSnapshotOneDetailIntelligenceItemOneContactPermissionEvidenceUrlMax = 2000;
@@ -20211,6 +19623,8 @@ export const getDealOperationsResponseContractOneCommitmentSnapshotOneDetailUnde
 
 export const getDealOperationsResponseContractOneCommitmentSnapshotOneDetailUnderwritingOneRepairObservationsItemEvidenceIdMax = 200;
 
+export const getDealOperationsResponseContractOneCommitmentSnapshotOneDetailUnderwritingOneRepairObservationsItemSourceRecordIdMax = 240;
+
 export const getDealOperationsResponseContractOneCommitmentSnapshotOneDetailUnderwritingOneRepairObservationsMax = 50;
 
 export const getDealOperationsResponseContractOneCommitmentSnapshotOneDetailUnderwritingOneRepairEstimateCatalogVersionMin = 0;
@@ -20232,22 +19646,9 @@ export const getDealOperationsResponseContractOneCommitmentSnapshotOneDetailUnde
 
 export const getDealOperationsResponseContractOneCommitmentSnapshotOneDetailUnderwritingOneSellerContactEvidenceIdMax = 200;
 
+export const getDealOperationsResponseContractOneCommitmentSnapshotOneDetailCallsItemNotesMax = 10000;
 
-export const getDealOperationsResponseContractOneCommitmentSnapshotOneDetailCallsItemOneNotesMax = 10000;
-
-export const getDealOperationsResponseContractOneCommitmentSnapshotOneDetailCallsItemOneNextActionMin = 3;
-export const getDealOperationsResponseContractOneCommitmentSnapshotOneDetailCallsItemOneNextActionMax = 1000;
-
-export const getDealOperationsResponseContractOneCommitmentSnapshotOneDetailCallsItemOneSellerAnswersMotivationStatementMax = 3000;
-
-export const getDealOperationsResponseContractOneCommitmentSnapshotOneDetailCallsItemOneSellerAnswersConditionDescriptionMax = 3000;
-
-export const getDealOperationsResponseContractOneCommitmentSnapshotOneDetailCallsItemOneSellerAnswersTimingMax = 1000;
-
-export const getDealOperationsResponseContractOneCommitmentSnapshotOneDetailCallsItemOneSellerAnswersAskingPriceMin = 0;
-export const getDealOperationsResponseContractOneCommitmentSnapshotOneDetailCallsItemOneSellerAnswersAskingPriceMax = 1000000000;
-
-export const getDealOperationsResponseContractOneCommitmentSnapshotOneDetailCallsItemOneSellerAnswersNextStepOutcomeMax = 2000;
+export const getDealOperationsResponseContractOneCommitmentSnapshotOneDetailCallsItemNextActionMax = 1000;
 
 export const getDealOperationsResponseContractOneMilestonesItemAmountMin = 0;
 export const getDealOperationsResponseContractOneMilestonesItemAmountMax = 1000000000;
@@ -20580,6 +19981,16 @@ export const GetDealOperationsResponse = zod.object({
   "sourceType": zod.enum(['PUBLIC_RECORD', 'PERMITTED_LISTING', 'SELLER', 'INSPECTION', 'PUBLIC_PAGE', 'ANALYST', 'MODEL']),
   "confidence": zod.number().min(getDealOperationsResponseContractOneCommitmentSnapshotOneDetailIntelligenceItemOneConfidenceMin).max(getDealOperationsResponseContractOneCommitmentSnapshotOneDetailIntelligenceItemOneConfidenceMax),
   "capturedAt": zod.string().datetime({"offset":true}),
+  "sourceRecordId": zod.string().max(getDealOperationsResponseContractOneCommitmentSnapshotOneDetailIntelligenceItemOneSourceRecordIdMax).optional(),
+  "confidenceBasis": zod.enum(['OPERATOR_ASSESSED', 'UNASSESSED_CONSERVATIVE_DEFAULT', 'SOURCE_RELIABILITY']).optional(),
+  "clarificationStatus": zod.enum(['UNREVIEWED', 'FOLLOW_UP_REQUIRED', 'SELLER_CLARIFIED']).optional(),
+  "contentDigest": zod.string().regex(getDealOperationsResponseContractOneCommitmentSnapshotOneDetailIntelligenceItemOneContentDigestRegExp).optional(),
+  "retentionPolicy": zod.enum(['FULL_TEXT_PERMITTED', 'HASH_ONLY', 'DERIVED_ONLY']).optional(),
+  "reconciliation": zod.object({
+  "state": zod.enum(['NO_COMPARABLE_EVIDENCE', 'NO_CONFLICT_FOUND', 'CONFLICT_REVIEW']),
+  "comparedEvidenceIds": zod.array(zod.string()).max(getDealOperationsResponseContractOneCommitmentSnapshotOneDetailIntelligenceItemOneReconciliationComparedEvidenceIdsMax),
+  "reason": zod.string().max(getDealOperationsResponseContractOneCommitmentSnapshotOneDetailIntelligenceItemOneReconciliationReasonMax)
+}).optional(),
   "verificationNote": zod.string().max(getDealOperationsResponseContractOneCommitmentSnapshotOneDetailIntelligenceItemOneVerificationNoteMax).optional(),
   "contactPermissionStatus": zod.enum(['NOT_REVIEWED', 'PERMITTED', 'PROHIBITED']).optional(),
   "contactPermissionEvidenceUrl": zod.string().url().max(getDealOperationsResponseContractOneCommitmentSnapshotOneDetailIntelligenceItemOneContactPermissionEvidenceUrlMax).optional(),
@@ -20710,6 +20121,7 @@ export const GetDealOperationsResponse = zod.object({
   "hypotheses": zod.array(zod.object({
   "id": zod.string(),
   "evidenceId": zod.string(),
+  "sourceRecordId": zod.string().nullable(),
   "category": zod.string(),
   "severity": zod.enum(['COSMETIC', 'MODERATE', 'MAJOR', 'REPLACEMENT']),
   "statement": zod.string(),
@@ -20719,7 +20131,7 @@ export const GetDealOperationsResponse = zod.object({
   "confidence": zod.number().min(getDealOperationsResponseContractOneCommitmentSnapshotOneDetailAnalysisOnePreliminaryRepairEstimateHypothesesItemConfidenceMin).max(getDealOperationsResponseContractOneCommitmentSnapshotOneDetailAnalysisOnePreliminaryRepairEstimateHypothesesItemConfidenceMax),
   "confidenceMethod": zod.enum(['EXPLICIT_PHRASE_RULE_UNCALIBRATED']),
   "source": zod.string(),
-  "sourceUrl": zod.string().url(),
+  "sourceUrl": zod.string().url().nullable(),
   "ruleId": zod.string(),
   "question": zod.string(),
   "action": zod.string()
@@ -20859,7 +20271,9 @@ export const GetDealOperationsResponse = zod.object({
   "severity": zod.enum(['NO_REPAIR', 'COSMETIC', 'MODERATE', 'MAJOR', 'REPLACEMENT']),
   "quantity": zod.number().min(getDealOperationsResponseContractOneCommitmentSnapshotOneDetailUnderwritingOneRepairObservationsItemQuantityMin).max(getDealOperationsResponseContractOneCommitmentSnapshotOneDetailUnderwritingOneRepairObservationsItemQuantityMax),
   "unit": zod.enum(['SQFT', 'LINEAR_FT', 'EACH', 'LUMP_SUM']),
-  "evidenceId": zod.string().min(1).max(getDealOperationsResponseContractOneCommitmentSnapshotOneDetailUnderwritingOneRepairObservationsItemEvidenceIdMax)
+  "evidenceId": zod.string().min(1).max(getDealOperationsResponseContractOneCommitmentSnapshotOneDetailUnderwritingOneRepairObservationsItemEvidenceIdMax),
+  "sourceRecordId": zod.string().max(getDealOperationsResponseContractOneCommitmentSnapshotOneDetailUnderwritingOneRepairObservationsItemSourceRecordIdMax).optional(),
+  "sourceUrl": zod.string().url().nullish()
 })).max(getDealOperationsResponseContractOneCommitmentSnapshotOneDetailUnderwritingOneRepairObservationsMax).optional(),
   "repairEstimate": zod.object({
   "status": zod.enum(['NOT_USED', 'CALCULATED', 'BLOCKED']),
@@ -20903,26 +20317,21 @@ export const GetDealOperationsResponse = zod.object({
   "createdAt": zod.string()
 })),
   "calls": zod.array(zod.object({
-  "version": zod.number().int().min(1),
-  "outcome": zod.enum(['NO_ANSWER', 'VOICEMAIL', 'CONNECTED', 'NOT_INTERESTED']),
-  "notes": zod.string().min(1).max(getDealOperationsResponseContractOneCommitmentSnapshotOneDetailCallsItemOneNotesMax),
-  "nextAction": zod.string().min(getDealOperationsResponseContractOneCommitmentSnapshotOneDetailCallsItemOneNextActionMin).max(getDealOperationsResponseContractOneCommitmentSnapshotOneDetailCallsItemOneNextActionMax),
-  "followUpAt": zod.string().datetime({"offset":true}).nullable(),
-  "sellerAnswers": zod.object({
-  "motivationStatement": zod.string().max(getDealOperationsResponseContractOneCommitmentSnapshotOneDetailCallsItemOneSellerAnswersMotivationStatementMax).optional(),
-  "conditionDescription": zod.string().max(getDealOperationsResponseContractOneCommitmentSnapshotOneDetailCallsItemOneSellerAnswersConditionDescriptionMax).optional(),
-  "timing": zod.string().max(getDealOperationsResponseContractOneCommitmentSnapshotOneDetailCallsItemOneSellerAnswersTimingMax).optional(),
-  "askingPrice": zod.number().min(getDealOperationsResponseContractOneCommitmentSnapshotOneDetailCallsItemOneSellerAnswersAskingPriceMin).max(getDealOperationsResponseContractOneCommitmentSnapshotOneDetailCallsItemOneSellerAnswersAskingPriceMax).nullish(),
-  "nextStepOutcome": zod.string().max(getDealOperationsResponseContractOneCommitmentSnapshotOneDetailCallsItemOneSellerAnswersNextStepOutcomeMax).optional()
-}).optional()
-}).and(zod.object({
   "id": zod.string(),
   "createdAt": zod.string(),
   "actor": zod.string(),
-  "evidenceSource": zod.enum(['OPERATOR_ENTERED_SELLER_CONVERSATION']).optional(),
-  "evidenceClassification": zod.enum(['INDICATED']).optional(),
-  "sellerAnswersCapturedAt": zod.string().datetime({"offset":true}).optional()
-}))),
+  "version": zod.number().int(),
+  "outcome": zod.enum(['NO_ANSWER', 'VOICEMAIL', 'CONNECTED', 'NOT_INTERESTED']),
+  "notes": zod.string().max(getDealOperationsResponseContractOneCommitmentSnapshotOneDetailCallsItemNotesMax),
+  "nextAction": zod.string().max(getDealOperationsResponseContractOneCommitmentSnapshotOneDetailCallsItemNextActionMax),
+  "followUpAt": zod.string().datetime({"offset":true}).nullable(),
+  "evidenceSource": zod.enum(['OPERATOR_ENTERED_SELLER_CONVERSATION', 'OPERATOR_CALL_ATTEMPT']).optional(),
+  "evidenceClassification": zod.enum(['INDICATED', 'OBSERVED']).optional(),
+  "sellerAnswersCapturedAt": zod.string().datetime({"offset":true}).optional(),
+  "evidenceIds": zod.array(zod.string()).optional(),
+  "materialEvidence": zod.boolean().optional(),
+  "analysisInvalidated": zod.boolean().optional()
+})),
   "allowedTransitions": zod.array(zod.enum(['DISCOVERED', 'ENRICHING', 'ANALYZED', 'STRONG', 'NEGOTIABLE', 'PASS', 'CALL_READY', 'CONTACTED', 'CONVERSATION', 'OFFER_READY', 'OFFER_SENT', 'NEGOTIATING', 'CONTRACT_PENDING', 'UNDER_CONTRACT', 'BUYER_MATCHED', 'BUYER_INTERESTED', 'BUYER_COMMITTED', 'CLOSING', 'CLOSED', 'DEAD_DEAL'])),
   "workGuidance": zod.union([zod.object({
   "category": zod.enum(['RESEARCH', 'CALL', 'FOLLOW_UP', 'OFFER_APPROVAL', 'NEGOTIATION', 'CONTRACT', 'BUYER_MATCH', 'DEADLINE', 'CLOSING', 'DISCOVERY_REVIEW', 'BUYER_VERIFICATION', 'WORKER']),
@@ -21340,6 +20749,13 @@ export const refreshMatchesResponseContractOneCommitmentSnapshotOneDetailIntelli
 export const refreshMatchesResponseContractOneCommitmentSnapshotOneDetailIntelligenceItemOneConfidenceMin = 0;
 export const refreshMatchesResponseContractOneCommitmentSnapshotOneDetailIntelligenceItemOneConfidenceMax = 1;
 
+export const refreshMatchesResponseContractOneCommitmentSnapshotOneDetailIntelligenceItemOneSourceRecordIdMax = 240;
+
+export const refreshMatchesResponseContractOneCommitmentSnapshotOneDetailIntelligenceItemOneContentDigestRegExp = new RegExp('^[a-f0-9]{64}$');
+export const refreshMatchesResponseContractOneCommitmentSnapshotOneDetailIntelligenceItemOneReconciliationComparedEvidenceIdsMax = 50;
+
+export const refreshMatchesResponseContractOneCommitmentSnapshotOneDetailIntelligenceItemOneReconciliationReasonMax = 1000;
+
 export const refreshMatchesResponseContractOneCommitmentSnapshotOneDetailIntelligenceItemOneVerificationNoteMax = 2000;
 
 export const refreshMatchesResponseContractOneCommitmentSnapshotOneDetailIntelligenceItemOneContactPermissionEvidenceUrlMax = 2000;
@@ -21523,6 +20939,8 @@ export const refreshMatchesResponseContractOneCommitmentSnapshotOneDetailUnderwr
 
 export const refreshMatchesResponseContractOneCommitmentSnapshotOneDetailUnderwritingOneRepairObservationsItemEvidenceIdMax = 200;
 
+export const refreshMatchesResponseContractOneCommitmentSnapshotOneDetailUnderwritingOneRepairObservationsItemSourceRecordIdMax = 240;
+
 export const refreshMatchesResponseContractOneCommitmentSnapshotOneDetailUnderwritingOneRepairObservationsMax = 50;
 
 export const refreshMatchesResponseContractOneCommitmentSnapshotOneDetailUnderwritingOneRepairEstimateCatalogVersionMin = 0;
@@ -21544,22 +20962,9 @@ export const refreshMatchesResponseContractOneCommitmentSnapshotOneDetailUnderwr
 
 export const refreshMatchesResponseContractOneCommitmentSnapshotOneDetailUnderwritingOneSellerContactEvidenceIdMax = 200;
 
+export const refreshMatchesResponseContractOneCommitmentSnapshotOneDetailCallsItemNotesMax = 10000;
 
-export const refreshMatchesResponseContractOneCommitmentSnapshotOneDetailCallsItemOneNotesMax = 10000;
-
-export const refreshMatchesResponseContractOneCommitmentSnapshotOneDetailCallsItemOneNextActionMin = 3;
-export const refreshMatchesResponseContractOneCommitmentSnapshotOneDetailCallsItemOneNextActionMax = 1000;
-
-export const refreshMatchesResponseContractOneCommitmentSnapshotOneDetailCallsItemOneSellerAnswersMotivationStatementMax = 3000;
-
-export const refreshMatchesResponseContractOneCommitmentSnapshotOneDetailCallsItemOneSellerAnswersConditionDescriptionMax = 3000;
-
-export const refreshMatchesResponseContractOneCommitmentSnapshotOneDetailCallsItemOneSellerAnswersTimingMax = 1000;
-
-export const refreshMatchesResponseContractOneCommitmentSnapshotOneDetailCallsItemOneSellerAnswersAskingPriceMin = 0;
-export const refreshMatchesResponseContractOneCommitmentSnapshotOneDetailCallsItemOneSellerAnswersAskingPriceMax = 1000000000;
-
-export const refreshMatchesResponseContractOneCommitmentSnapshotOneDetailCallsItemOneSellerAnswersNextStepOutcomeMax = 2000;
+export const refreshMatchesResponseContractOneCommitmentSnapshotOneDetailCallsItemNextActionMax = 1000;
 
 export const refreshMatchesResponseContractOneMilestonesItemAmountMin = 0;
 export const refreshMatchesResponseContractOneMilestonesItemAmountMax = 1000000000;
@@ -21892,6 +21297,16 @@ export const RefreshMatchesResponse = zod.object({
   "sourceType": zod.enum(['PUBLIC_RECORD', 'PERMITTED_LISTING', 'SELLER', 'INSPECTION', 'PUBLIC_PAGE', 'ANALYST', 'MODEL']),
   "confidence": zod.number().min(refreshMatchesResponseContractOneCommitmentSnapshotOneDetailIntelligenceItemOneConfidenceMin).max(refreshMatchesResponseContractOneCommitmentSnapshotOneDetailIntelligenceItemOneConfidenceMax),
   "capturedAt": zod.string().datetime({"offset":true}),
+  "sourceRecordId": zod.string().max(refreshMatchesResponseContractOneCommitmentSnapshotOneDetailIntelligenceItemOneSourceRecordIdMax).optional(),
+  "confidenceBasis": zod.enum(['OPERATOR_ASSESSED', 'UNASSESSED_CONSERVATIVE_DEFAULT', 'SOURCE_RELIABILITY']).optional(),
+  "clarificationStatus": zod.enum(['UNREVIEWED', 'FOLLOW_UP_REQUIRED', 'SELLER_CLARIFIED']).optional(),
+  "contentDigest": zod.string().regex(refreshMatchesResponseContractOneCommitmentSnapshotOneDetailIntelligenceItemOneContentDigestRegExp).optional(),
+  "retentionPolicy": zod.enum(['FULL_TEXT_PERMITTED', 'HASH_ONLY', 'DERIVED_ONLY']).optional(),
+  "reconciliation": zod.object({
+  "state": zod.enum(['NO_COMPARABLE_EVIDENCE', 'NO_CONFLICT_FOUND', 'CONFLICT_REVIEW']),
+  "comparedEvidenceIds": zod.array(zod.string()).max(refreshMatchesResponseContractOneCommitmentSnapshotOneDetailIntelligenceItemOneReconciliationComparedEvidenceIdsMax),
+  "reason": zod.string().max(refreshMatchesResponseContractOneCommitmentSnapshotOneDetailIntelligenceItemOneReconciliationReasonMax)
+}).optional(),
   "verificationNote": zod.string().max(refreshMatchesResponseContractOneCommitmentSnapshotOneDetailIntelligenceItemOneVerificationNoteMax).optional(),
   "contactPermissionStatus": zod.enum(['NOT_REVIEWED', 'PERMITTED', 'PROHIBITED']).optional(),
   "contactPermissionEvidenceUrl": zod.string().url().max(refreshMatchesResponseContractOneCommitmentSnapshotOneDetailIntelligenceItemOneContactPermissionEvidenceUrlMax).optional(),
@@ -22022,6 +21437,7 @@ export const RefreshMatchesResponse = zod.object({
   "hypotheses": zod.array(zod.object({
   "id": zod.string(),
   "evidenceId": zod.string(),
+  "sourceRecordId": zod.string().nullable(),
   "category": zod.string(),
   "severity": zod.enum(['COSMETIC', 'MODERATE', 'MAJOR', 'REPLACEMENT']),
   "statement": zod.string(),
@@ -22031,7 +21447,7 @@ export const RefreshMatchesResponse = zod.object({
   "confidence": zod.number().min(refreshMatchesResponseContractOneCommitmentSnapshotOneDetailAnalysisOnePreliminaryRepairEstimateHypothesesItemConfidenceMin).max(refreshMatchesResponseContractOneCommitmentSnapshotOneDetailAnalysisOnePreliminaryRepairEstimateHypothesesItemConfidenceMax),
   "confidenceMethod": zod.enum(['EXPLICIT_PHRASE_RULE_UNCALIBRATED']),
   "source": zod.string(),
-  "sourceUrl": zod.string().url(),
+  "sourceUrl": zod.string().url().nullable(),
   "ruleId": zod.string(),
   "question": zod.string(),
   "action": zod.string()
@@ -22171,7 +21587,9 @@ export const RefreshMatchesResponse = zod.object({
   "severity": zod.enum(['NO_REPAIR', 'COSMETIC', 'MODERATE', 'MAJOR', 'REPLACEMENT']),
   "quantity": zod.number().min(refreshMatchesResponseContractOneCommitmentSnapshotOneDetailUnderwritingOneRepairObservationsItemQuantityMin).max(refreshMatchesResponseContractOneCommitmentSnapshotOneDetailUnderwritingOneRepairObservationsItemQuantityMax),
   "unit": zod.enum(['SQFT', 'LINEAR_FT', 'EACH', 'LUMP_SUM']),
-  "evidenceId": zod.string().min(1).max(refreshMatchesResponseContractOneCommitmentSnapshotOneDetailUnderwritingOneRepairObservationsItemEvidenceIdMax)
+  "evidenceId": zod.string().min(1).max(refreshMatchesResponseContractOneCommitmentSnapshotOneDetailUnderwritingOneRepairObservationsItemEvidenceIdMax),
+  "sourceRecordId": zod.string().max(refreshMatchesResponseContractOneCommitmentSnapshotOneDetailUnderwritingOneRepairObservationsItemSourceRecordIdMax).optional(),
+  "sourceUrl": zod.string().url().nullish()
 })).max(refreshMatchesResponseContractOneCommitmentSnapshotOneDetailUnderwritingOneRepairObservationsMax).optional(),
   "repairEstimate": zod.object({
   "status": zod.enum(['NOT_USED', 'CALCULATED', 'BLOCKED']),
@@ -22215,26 +21633,21 @@ export const RefreshMatchesResponse = zod.object({
   "createdAt": zod.string()
 })),
   "calls": zod.array(zod.object({
-  "version": zod.number().int().min(1),
-  "outcome": zod.enum(['NO_ANSWER', 'VOICEMAIL', 'CONNECTED', 'NOT_INTERESTED']),
-  "notes": zod.string().min(1).max(refreshMatchesResponseContractOneCommitmentSnapshotOneDetailCallsItemOneNotesMax),
-  "nextAction": zod.string().min(refreshMatchesResponseContractOneCommitmentSnapshotOneDetailCallsItemOneNextActionMin).max(refreshMatchesResponseContractOneCommitmentSnapshotOneDetailCallsItemOneNextActionMax),
-  "followUpAt": zod.string().datetime({"offset":true}).nullable(),
-  "sellerAnswers": zod.object({
-  "motivationStatement": zod.string().max(refreshMatchesResponseContractOneCommitmentSnapshotOneDetailCallsItemOneSellerAnswersMotivationStatementMax).optional(),
-  "conditionDescription": zod.string().max(refreshMatchesResponseContractOneCommitmentSnapshotOneDetailCallsItemOneSellerAnswersConditionDescriptionMax).optional(),
-  "timing": zod.string().max(refreshMatchesResponseContractOneCommitmentSnapshotOneDetailCallsItemOneSellerAnswersTimingMax).optional(),
-  "askingPrice": zod.number().min(refreshMatchesResponseContractOneCommitmentSnapshotOneDetailCallsItemOneSellerAnswersAskingPriceMin).max(refreshMatchesResponseContractOneCommitmentSnapshotOneDetailCallsItemOneSellerAnswersAskingPriceMax).nullish(),
-  "nextStepOutcome": zod.string().max(refreshMatchesResponseContractOneCommitmentSnapshotOneDetailCallsItemOneSellerAnswersNextStepOutcomeMax).optional()
-}).optional()
-}).and(zod.object({
   "id": zod.string(),
   "createdAt": zod.string(),
   "actor": zod.string(),
-  "evidenceSource": zod.enum(['OPERATOR_ENTERED_SELLER_CONVERSATION']).optional(),
-  "evidenceClassification": zod.enum(['INDICATED']).optional(),
-  "sellerAnswersCapturedAt": zod.string().datetime({"offset":true}).optional()
-}))),
+  "version": zod.number().int(),
+  "outcome": zod.enum(['NO_ANSWER', 'VOICEMAIL', 'CONNECTED', 'NOT_INTERESTED']),
+  "notes": zod.string().max(refreshMatchesResponseContractOneCommitmentSnapshotOneDetailCallsItemNotesMax),
+  "nextAction": zod.string().max(refreshMatchesResponseContractOneCommitmentSnapshotOneDetailCallsItemNextActionMax),
+  "followUpAt": zod.string().datetime({"offset":true}).nullable(),
+  "evidenceSource": zod.enum(['OPERATOR_ENTERED_SELLER_CONVERSATION', 'OPERATOR_CALL_ATTEMPT']).optional(),
+  "evidenceClassification": zod.enum(['INDICATED', 'OBSERVED']).optional(),
+  "sellerAnswersCapturedAt": zod.string().datetime({"offset":true}).optional(),
+  "evidenceIds": zod.array(zod.string()).optional(),
+  "materialEvidence": zod.boolean().optional(),
+  "analysisInvalidated": zod.boolean().optional()
+})),
   "allowedTransitions": zod.array(zod.enum(['DISCOVERED', 'ENRICHING', 'ANALYZED', 'STRONG', 'NEGOTIABLE', 'PASS', 'CALL_READY', 'CONTACTED', 'CONVERSATION', 'OFFER_READY', 'OFFER_SENT', 'NEGOTIATING', 'CONTRACT_PENDING', 'UNDER_CONTRACT', 'BUYER_MATCHED', 'BUYER_INTERESTED', 'BUYER_COMMITTED', 'CLOSING', 'CLOSED', 'DEAD_DEAL'])),
   "workGuidance": zod.union([zod.object({
   "category": zod.enum(['RESEARCH', 'CALL', 'FOLLOW_UP', 'OFFER_APPROVAL', 'NEGOTIATION', 'CONTRACT', 'BUYER_MATCH', 'DEADLINE', 'CLOSING', 'DISCOVERY_REVIEW', 'BUYER_VERIFICATION', 'WORKER']),
@@ -22674,6 +22087,13 @@ export const recordBuyerResponseResponseContractOneCommitmentSnapshotOneDetailIn
 export const recordBuyerResponseResponseContractOneCommitmentSnapshotOneDetailIntelligenceItemOneConfidenceMin = 0;
 export const recordBuyerResponseResponseContractOneCommitmentSnapshotOneDetailIntelligenceItemOneConfidenceMax = 1;
 
+export const recordBuyerResponseResponseContractOneCommitmentSnapshotOneDetailIntelligenceItemOneSourceRecordIdMax = 240;
+
+export const recordBuyerResponseResponseContractOneCommitmentSnapshotOneDetailIntelligenceItemOneContentDigestRegExp = new RegExp('^[a-f0-9]{64}$');
+export const recordBuyerResponseResponseContractOneCommitmentSnapshotOneDetailIntelligenceItemOneReconciliationComparedEvidenceIdsMax = 50;
+
+export const recordBuyerResponseResponseContractOneCommitmentSnapshotOneDetailIntelligenceItemOneReconciliationReasonMax = 1000;
+
 export const recordBuyerResponseResponseContractOneCommitmentSnapshotOneDetailIntelligenceItemOneVerificationNoteMax = 2000;
 
 export const recordBuyerResponseResponseContractOneCommitmentSnapshotOneDetailIntelligenceItemOneContactPermissionEvidenceUrlMax = 2000;
@@ -22857,6 +22277,8 @@ export const recordBuyerResponseResponseContractOneCommitmentSnapshotOneDetailUn
 
 export const recordBuyerResponseResponseContractOneCommitmentSnapshotOneDetailUnderwritingOneRepairObservationsItemEvidenceIdMax = 200;
 
+export const recordBuyerResponseResponseContractOneCommitmentSnapshotOneDetailUnderwritingOneRepairObservationsItemSourceRecordIdMax = 240;
+
 export const recordBuyerResponseResponseContractOneCommitmentSnapshotOneDetailUnderwritingOneRepairObservationsMax = 50;
 
 export const recordBuyerResponseResponseContractOneCommitmentSnapshotOneDetailUnderwritingOneRepairEstimateCatalogVersionMin = 0;
@@ -22878,22 +22300,9 @@ export const recordBuyerResponseResponseContractOneCommitmentSnapshotOneDetailUn
 
 export const recordBuyerResponseResponseContractOneCommitmentSnapshotOneDetailUnderwritingOneSellerContactEvidenceIdMax = 200;
 
+export const recordBuyerResponseResponseContractOneCommitmentSnapshotOneDetailCallsItemNotesMax = 10000;
 
-export const recordBuyerResponseResponseContractOneCommitmentSnapshotOneDetailCallsItemOneNotesMax = 10000;
-
-export const recordBuyerResponseResponseContractOneCommitmentSnapshotOneDetailCallsItemOneNextActionMin = 3;
-export const recordBuyerResponseResponseContractOneCommitmentSnapshotOneDetailCallsItemOneNextActionMax = 1000;
-
-export const recordBuyerResponseResponseContractOneCommitmentSnapshotOneDetailCallsItemOneSellerAnswersMotivationStatementMax = 3000;
-
-export const recordBuyerResponseResponseContractOneCommitmentSnapshotOneDetailCallsItemOneSellerAnswersConditionDescriptionMax = 3000;
-
-export const recordBuyerResponseResponseContractOneCommitmentSnapshotOneDetailCallsItemOneSellerAnswersTimingMax = 1000;
-
-export const recordBuyerResponseResponseContractOneCommitmentSnapshotOneDetailCallsItemOneSellerAnswersAskingPriceMin = 0;
-export const recordBuyerResponseResponseContractOneCommitmentSnapshotOneDetailCallsItemOneSellerAnswersAskingPriceMax = 1000000000;
-
-export const recordBuyerResponseResponseContractOneCommitmentSnapshotOneDetailCallsItemOneSellerAnswersNextStepOutcomeMax = 2000;
+export const recordBuyerResponseResponseContractOneCommitmentSnapshotOneDetailCallsItemNextActionMax = 1000;
 
 export const recordBuyerResponseResponseContractOneMilestonesItemAmountMin = 0;
 export const recordBuyerResponseResponseContractOneMilestonesItemAmountMax = 1000000000;
@@ -23226,6 +22635,16 @@ export const RecordBuyerResponseResponse = zod.object({
   "sourceType": zod.enum(['PUBLIC_RECORD', 'PERMITTED_LISTING', 'SELLER', 'INSPECTION', 'PUBLIC_PAGE', 'ANALYST', 'MODEL']),
   "confidence": zod.number().min(recordBuyerResponseResponseContractOneCommitmentSnapshotOneDetailIntelligenceItemOneConfidenceMin).max(recordBuyerResponseResponseContractOneCommitmentSnapshotOneDetailIntelligenceItemOneConfidenceMax),
   "capturedAt": zod.string().datetime({"offset":true}),
+  "sourceRecordId": zod.string().max(recordBuyerResponseResponseContractOneCommitmentSnapshotOneDetailIntelligenceItemOneSourceRecordIdMax).optional(),
+  "confidenceBasis": zod.enum(['OPERATOR_ASSESSED', 'UNASSESSED_CONSERVATIVE_DEFAULT', 'SOURCE_RELIABILITY']).optional(),
+  "clarificationStatus": zod.enum(['UNREVIEWED', 'FOLLOW_UP_REQUIRED', 'SELLER_CLARIFIED']).optional(),
+  "contentDigest": zod.string().regex(recordBuyerResponseResponseContractOneCommitmentSnapshotOneDetailIntelligenceItemOneContentDigestRegExp).optional(),
+  "retentionPolicy": zod.enum(['FULL_TEXT_PERMITTED', 'HASH_ONLY', 'DERIVED_ONLY']).optional(),
+  "reconciliation": zod.object({
+  "state": zod.enum(['NO_COMPARABLE_EVIDENCE', 'NO_CONFLICT_FOUND', 'CONFLICT_REVIEW']),
+  "comparedEvidenceIds": zod.array(zod.string()).max(recordBuyerResponseResponseContractOneCommitmentSnapshotOneDetailIntelligenceItemOneReconciliationComparedEvidenceIdsMax),
+  "reason": zod.string().max(recordBuyerResponseResponseContractOneCommitmentSnapshotOneDetailIntelligenceItemOneReconciliationReasonMax)
+}).optional(),
   "verificationNote": zod.string().max(recordBuyerResponseResponseContractOneCommitmentSnapshotOneDetailIntelligenceItemOneVerificationNoteMax).optional(),
   "contactPermissionStatus": zod.enum(['NOT_REVIEWED', 'PERMITTED', 'PROHIBITED']).optional(),
   "contactPermissionEvidenceUrl": zod.string().url().max(recordBuyerResponseResponseContractOneCommitmentSnapshotOneDetailIntelligenceItemOneContactPermissionEvidenceUrlMax).optional(),
@@ -23356,6 +22775,7 @@ export const RecordBuyerResponseResponse = zod.object({
   "hypotheses": zod.array(zod.object({
   "id": zod.string(),
   "evidenceId": zod.string(),
+  "sourceRecordId": zod.string().nullable(),
   "category": zod.string(),
   "severity": zod.enum(['COSMETIC', 'MODERATE', 'MAJOR', 'REPLACEMENT']),
   "statement": zod.string(),
@@ -23365,7 +22785,7 @@ export const RecordBuyerResponseResponse = zod.object({
   "confidence": zod.number().min(recordBuyerResponseResponseContractOneCommitmentSnapshotOneDetailAnalysisOnePreliminaryRepairEstimateHypothesesItemConfidenceMin).max(recordBuyerResponseResponseContractOneCommitmentSnapshotOneDetailAnalysisOnePreliminaryRepairEstimateHypothesesItemConfidenceMax),
   "confidenceMethod": zod.enum(['EXPLICIT_PHRASE_RULE_UNCALIBRATED']),
   "source": zod.string(),
-  "sourceUrl": zod.string().url(),
+  "sourceUrl": zod.string().url().nullable(),
   "ruleId": zod.string(),
   "question": zod.string(),
   "action": zod.string()
@@ -23505,7 +22925,9 @@ export const RecordBuyerResponseResponse = zod.object({
   "severity": zod.enum(['NO_REPAIR', 'COSMETIC', 'MODERATE', 'MAJOR', 'REPLACEMENT']),
   "quantity": zod.number().min(recordBuyerResponseResponseContractOneCommitmentSnapshotOneDetailUnderwritingOneRepairObservationsItemQuantityMin).max(recordBuyerResponseResponseContractOneCommitmentSnapshotOneDetailUnderwritingOneRepairObservationsItemQuantityMax),
   "unit": zod.enum(['SQFT', 'LINEAR_FT', 'EACH', 'LUMP_SUM']),
-  "evidenceId": zod.string().min(1).max(recordBuyerResponseResponseContractOneCommitmentSnapshotOneDetailUnderwritingOneRepairObservationsItemEvidenceIdMax)
+  "evidenceId": zod.string().min(1).max(recordBuyerResponseResponseContractOneCommitmentSnapshotOneDetailUnderwritingOneRepairObservationsItemEvidenceIdMax),
+  "sourceRecordId": zod.string().max(recordBuyerResponseResponseContractOneCommitmentSnapshotOneDetailUnderwritingOneRepairObservationsItemSourceRecordIdMax).optional(),
+  "sourceUrl": zod.string().url().nullish()
 })).max(recordBuyerResponseResponseContractOneCommitmentSnapshotOneDetailUnderwritingOneRepairObservationsMax).optional(),
   "repairEstimate": zod.object({
   "status": zod.enum(['NOT_USED', 'CALCULATED', 'BLOCKED']),
@@ -23549,26 +22971,21 @@ export const RecordBuyerResponseResponse = zod.object({
   "createdAt": zod.string()
 })),
   "calls": zod.array(zod.object({
-  "version": zod.number().int().min(1),
-  "outcome": zod.enum(['NO_ANSWER', 'VOICEMAIL', 'CONNECTED', 'NOT_INTERESTED']),
-  "notes": zod.string().min(1).max(recordBuyerResponseResponseContractOneCommitmentSnapshotOneDetailCallsItemOneNotesMax),
-  "nextAction": zod.string().min(recordBuyerResponseResponseContractOneCommitmentSnapshotOneDetailCallsItemOneNextActionMin).max(recordBuyerResponseResponseContractOneCommitmentSnapshotOneDetailCallsItemOneNextActionMax),
-  "followUpAt": zod.string().datetime({"offset":true}).nullable(),
-  "sellerAnswers": zod.object({
-  "motivationStatement": zod.string().max(recordBuyerResponseResponseContractOneCommitmentSnapshotOneDetailCallsItemOneSellerAnswersMotivationStatementMax).optional(),
-  "conditionDescription": zod.string().max(recordBuyerResponseResponseContractOneCommitmentSnapshotOneDetailCallsItemOneSellerAnswersConditionDescriptionMax).optional(),
-  "timing": zod.string().max(recordBuyerResponseResponseContractOneCommitmentSnapshotOneDetailCallsItemOneSellerAnswersTimingMax).optional(),
-  "askingPrice": zod.number().min(recordBuyerResponseResponseContractOneCommitmentSnapshotOneDetailCallsItemOneSellerAnswersAskingPriceMin).max(recordBuyerResponseResponseContractOneCommitmentSnapshotOneDetailCallsItemOneSellerAnswersAskingPriceMax).nullish(),
-  "nextStepOutcome": zod.string().max(recordBuyerResponseResponseContractOneCommitmentSnapshotOneDetailCallsItemOneSellerAnswersNextStepOutcomeMax).optional()
-}).optional()
-}).and(zod.object({
   "id": zod.string(),
   "createdAt": zod.string(),
   "actor": zod.string(),
-  "evidenceSource": zod.enum(['OPERATOR_ENTERED_SELLER_CONVERSATION']).optional(),
-  "evidenceClassification": zod.enum(['INDICATED']).optional(),
-  "sellerAnswersCapturedAt": zod.string().datetime({"offset":true}).optional()
-}))),
+  "version": zod.number().int(),
+  "outcome": zod.enum(['NO_ANSWER', 'VOICEMAIL', 'CONNECTED', 'NOT_INTERESTED']),
+  "notes": zod.string().max(recordBuyerResponseResponseContractOneCommitmentSnapshotOneDetailCallsItemNotesMax),
+  "nextAction": zod.string().max(recordBuyerResponseResponseContractOneCommitmentSnapshotOneDetailCallsItemNextActionMax),
+  "followUpAt": zod.string().datetime({"offset":true}).nullable(),
+  "evidenceSource": zod.enum(['OPERATOR_ENTERED_SELLER_CONVERSATION', 'OPERATOR_CALL_ATTEMPT']).optional(),
+  "evidenceClassification": zod.enum(['INDICATED', 'OBSERVED']).optional(),
+  "sellerAnswersCapturedAt": zod.string().datetime({"offset":true}).optional(),
+  "evidenceIds": zod.array(zod.string()).optional(),
+  "materialEvidence": zod.boolean().optional(),
+  "analysisInvalidated": zod.boolean().optional()
+})),
   "allowedTransitions": zod.array(zod.enum(['DISCOVERED', 'ENRICHING', 'ANALYZED', 'STRONG', 'NEGOTIABLE', 'PASS', 'CALL_READY', 'CONTACTED', 'CONVERSATION', 'OFFER_READY', 'OFFER_SENT', 'NEGOTIATING', 'CONTRACT_PENDING', 'UNDER_CONTRACT', 'BUYER_MATCHED', 'BUYER_INTERESTED', 'BUYER_COMMITTED', 'CLOSING', 'CLOSED', 'DEAD_DEAL'])),
   "workGuidance": zod.union([zod.object({
   "category": zod.enum(['RESEARCH', 'CALL', 'FOLLOW_UP', 'OFFER_APPROVAL', 'NEGOTIATION', 'CONTRACT', 'BUYER_MATCH', 'DEADLINE', 'CLOSING', 'DISCOVERY_REVIEW', 'BUYER_VERIFICATION', 'WORKER']),
@@ -25225,6 +24642,13 @@ export const recordDestinationActivityResponseContractOneCommitmentSnapshotOneDe
 export const recordDestinationActivityResponseContractOneCommitmentSnapshotOneDetailIntelligenceItemOneConfidenceMin = 0;
 export const recordDestinationActivityResponseContractOneCommitmentSnapshotOneDetailIntelligenceItemOneConfidenceMax = 1;
 
+export const recordDestinationActivityResponseContractOneCommitmentSnapshotOneDetailIntelligenceItemOneSourceRecordIdMax = 240;
+
+export const recordDestinationActivityResponseContractOneCommitmentSnapshotOneDetailIntelligenceItemOneContentDigestRegExp = new RegExp('^[a-f0-9]{64}$');
+export const recordDestinationActivityResponseContractOneCommitmentSnapshotOneDetailIntelligenceItemOneReconciliationComparedEvidenceIdsMax = 50;
+
+export const recordDestinationActivityResponseContractOneCommitmentSnapshotOneDetailIntelligenceItemOneReconciliationReasonMax = 1000;
+
 export const recordDestinationActivityResponseContractOneCommitmentSnapshotOneDetailIntelligenceItemOneVerificationNoteMax = 2000;
 
 export const recordDestinationActivityResponseContractOneCommitmentSnapshotOneDetailIntelligenceItemOneContactPermissionEvidenceUrlMax = 2000;
@@ -25408,6 +24832,8 @@ export const recordDestinationActivityResponseContractOneCommitmentSnapshotOneDe
 
 export const recordDestinationActivityResponseContractOneCommitmentSnapshotOneDetailUnderwritingOneRepairObservationsItemEvidenceIdMax = 200;
 
+export const recordDestinationActivityResponseContractOneCommitmentSnapshotOneDetailUnderwritingOneRepairObservationsItemSourceRecordIdMax = 240;
+
 export const recordDestinationActivityResponseContractOneCommitmentSnapshotOneDetailUnderwritingOneRepairObservationsMax = 50;
 
 export const recordDestinationActivityResponseContractOneCommitmentSnapshotOneDetailUnderwritingOneRepairEstimateCatalogVersionMin = 0;
@@ -25429,22 +24855,9 @@ export const recordDestinationActivityResponseContractOneCommitmentSnapshotOneDe
 
 export const recordDestinationActivityResponseContractOneCommitmentSnapshotOneDetailUnderwritingOneSellerContactEvidenceIdMax = 200;
 
+export const recordDestinationActivityResponseContractOneCommitmentSnapshotOneDetailCallsItemNotesMax = 10000;
 
-export const recordDestinationActivityResponseContractOneCommitmentSnapshotOneDetailCallsItemOneNotesMax = 10000;
-
-export const recordDestinationActivityResponseContractOneCommitmentSnapshotOneDetailCallsItemOneNextActionMin = 3;
-export const recordDestinationActivityResponseContractOneCommitmentSnapshotOneDetailCallsItemOneNextActionMax = 1000;
-
-export const recordDestinationActivityResponseContractOneCommitmentSnapshotOneDetailCallsItemOneSellerAnswersMotivationStatementMax = 3000;
-
-export const recordDestinationActivityResponseContractOneCommitmentSnapshotOneDetailCallsItemOneSellerAnswersConditionDescriptionMax = 3000;
-
-export const recordDestinationActivityResponseContractOneCommitmentSnapshotOneDetailCallsItemOneSellerAnswersTimingMax = 1000;
-
-export const recordDestinationActivityResponseContractOneCommitmentSnapshotOneDetailCallsItemOneSellerAnswersAskingPriceMin = 0;
-export const recordDestinationActivityResponseContractOneCommitmentSnapshotOneDetailCallsItemOneSellerAnswersAskingPriceMax = 1000000000;
-
-export const recordDestinationActivityResponseContractOneCommitmentSnapshotOneDetailCallsItemOneSellerAnswersNextStepOutcomeMax = 2000;
+export const recordDestinationActivityResponseContractOneCommitmentSnapshotOneDetailCallsItemNextActionMax = 1000;
 
 export const recordDestinationActivityResponseContractOneMilestonesItemAmountMin = 0;
 export const recordDestinationActivityResponseContractOneMilestonesItemAmountMax = 1000000000;
@@ -25777,6 +25190,16 @@ export const RecordDestinationActivityResponse = zod.object({
   "sourceType": zod.enum(['PUBLIC_RECORD', 'PERMITTED_LISTING', 'SELLER', 'INSPECTION', 'PUBLIC_PAGE', 'ANALYST', 'MODEL']),
   "confidence": zod.number().min(recordDestinationActivityResponseContractOneCommitmentSnapshotOneDetailIntelligenceItemOneConfidenceMin).max(recordDestinationActivityResponseContractOneCommitmentSnapshotOneDetailIntelligenceItemOneConfidenceMax),
   "capturedAt": zod.string().datetime({"offset":true}),
+  "sourceRecordId": zod.string().max(recordDestinationActivityResponseContractOneCommitmentSnapshotOneDetailIntelligenceItemOneSourceRecordIdMax).optional(),
+  "confidenceBasis": zod.enum(['OPERATOR_ASSESSED', 'UNASSESSED_CONSERVATIVE_DEFAULT', 'SOURCE_RELIABILITY']).optional(),
+  "clarificationStatus": zod.enum(['UNREVIEWED', 'FOLLOW_UP_REQUIRED', 'SELLER_CLARIFIED']).optional(),
+  "contentDigest": zod.string().regex(recordDestinationActivityResponseContractOneCommitmentSnapshotOneDetailIntelligenceItemOneContentDigestRegExp).optional(),
+  "retentionPolicy": zod.enum(['FULL_TEXT_PERMITTED', 'HASH_ONLY', 'DERIVED_ONLY']).optional(),
+  "reconciliation": zod.object({
+  "state": zod.enum(['NO_COMPARABLE_EVIDENCE', 'NO_CONFLICT_FOUND', 'CONFLICT_REVIEW']),
+  "comparedEvidenceIds": zod.array(zod.string()).max(recordDestinationActivityResponseContractOneCommitmentSnapshotOneDetailIntelligenceItemOneReconciliationComparedEvidenceIdsMax),
+  "reason": zod.string().max(recordDestinationActivityResponseContractOneCommitmentSnapshotOneDetailIntelligenceItemOneReconciliationReasonMax)
+}).optional(),
   "verificationNote": zod.string().max(recordDestinationActivityResponseContractOneCommitmentSnapshotOneDetailIntelligenceItemOneVerificationNoteMax).optional(),
   "contactPermissionStatus": zod.enum(['NOT_REVIEWED', 'PERMITTED', 'PROHIBITED']).optional(),
   "contactPermissionEvidenceUrl": zod.string().url().max(recordDestinationActivityResponseContractOneCommitmentSnapshotOneDetailIntelligenceItemOneContactPermissionEvidenceUrlMax).optional(),
@@ -25907,6 +25330,7 @@ export const RecordDestinationActivityResponse = zod.object({
   "hypotheses": zod.array(zod.object({
   "id": zod.string(),
   "evidenceId": zod.string(),
+  "sourceRecordId": zod.string().nullable(),
   "category": zod.string(),
   "severity": zod.enum(['COSMETIC', 'MODERATE', 'MAJOR', 'REPLACEMENT']),
   "statement": zod.string(),
@@ -25916,7 +25340,7 @@ export const RecordDestinationActivityResponse = zod.object({
   "confidence": zod.number().min(recordDestinationActivityResponseContractOneCommitmentSnapshotOneDetailAnalysisOnePreliminaryRepairEstimateHypothesesItemConfidenceMin).max(recordDestinationActivityResponseContractOneCommitmentSnapshotOneDetailAnalysisOnePreliminaryRepairEstimateHypothesesItemConfidenceMax),
   "confidenceMethod": zod.enum(['EXPLICIT_PHRASE_RULE_UNCALIBRATED']),
   "source": zod.string(),
-  "sourceUrl": zod.string().url(),
+  "sourceUrl": zod.string().url().nullable(),
   "ruleId": zod.string(),
   "question": zod.string(),
   "action": zod.string()
@@ -26056,7 +25480,9 @@ export const RecordDestinationActivityResponse = zod.object({
   "severity": zod.enum(['NO_REPAIR', 'COSMETIC', 'MODERATE', 'MAJOR', 'REPLACEMENT']),
   "quantity": zod.number().min(recordDestinationActivityResponseContractOneCommitmentSnapshotOneDetailUnderwritingOneRepairObservationsItemQuantityMin).max(recordDestinationActivityResponseContractOneCommitmentSnapshotOneDetailUnderwritingOneRepairObservationsItemQuantityMax),
   "unit": zod.enum(['SQFT', 'LINEAR_FT', 'EACH', 'LUMP_SUM']),
-  "evidenceId": zod.string().min(1).max(recordDestinationActivityResponseContractOneCommitmentSnapshotOneDetailUnderwritingOneRepairObservationsItemEvidenceIdMax)
+  "evidenceId": zod.string().min(1).max(recordDestinationActivityResponseContractOneCommitmentSnapshotOneDetailUnderwritingOneRepairObservationsItemEvidenceIdMax),
+  "sourceRecordId": zod.string().max(recordDestinationActivityResponseContractOneCommitmentSnapshotOneDetailUnderwritingOneRepairObservationsItemSourceRecordIdMax).optional(),
+  "sourceUrl": zod.string().url().nullish()
 })).max(recordDestinationActivityResponseContractOneCommitmentSnapshotOneDetailUnderwritingOneRepairObservationsMax).optional(),
   "repairEstimate": zod.object({
   "status": zod.enum(['NOT_USED', 'CALCULATED', 'BLOCKED']),
@@ -26100,26 +25526,21 @@ export const RecordDestinationActivityResponse = zod.object({
   "createdAt": zod.string()
 })),
   "calls": zod.array(zod.object({
-  "version": zod.number().int().min(1),
-  "outcome": zod.enum(['NO_ANSWER', 'VOICEMAIL', 'CONNECTED', 'NOT_INTERESTED']),
-  "notes": zod.string().min(1).max(recordDestinationActivityResponseContractOneCommitmentSnapshotOneDetailCallsItemOneNotesMax),
-  "nextAction": zod.string().min(recordDestinationActivityResponseContractOneCommitmentSnapshotOneDetailCallsItemOneNextActionMin).max(recordDestinationActivityResponseContractOneCommitmentSnapshotOneDetailCallsItemOneNextActionMax),
-  "followUpAt": zod.string().datetime({"offset":true}).nullable(),
-  "sellerAnswers": zod.object({
-  "motivationStatement": zod.string().max(recordDestinationActivityResponseContractOneCommitmentSnapshotOneDetailCallsItemOneSellerAnswersMotivationStatementMax).optional(),
-  "conditionDescription": zod.string().max(recordDestinationActivityResponseContractOneCommitmentSnapshotOneDetailCallsItemOneSellerAnswersConditionDescriptionMax).optional(),
-  "timing": zod.string().max(recordDestinationActivityResponseContractOneCommitmentSnapshotOneDetailCallsItemOneSellerAnswersTimingMax).optional(),
-  "askingPrice": zod.number().min(recordDestinationActivityResponseContractOneCommitmentSnapshotOneDetailCallsItemOneSellerAnswersAskingPriceMin).max(recordDestinationActivityResponseContractOneCommitmentSnapshotOneDetailCallsItemOneSellerAnswersAskingPriceMax).nullish(),
-  "nextStepOutcome": zod.string().max(recordDestinationActivityResponseContractOneCommitmentSnapshotOneDetailCallsItemOneSellerAnswersNextStepOutcomeMax).optional()
-}).optional()
-}).and(zod.object({
   "id": zod.string(),
   "createdAt": zod.string(),
   "actor": zod.string(),
-  "evidenceSource": zod.enum(['OPERATOR_ENTERED_SELLER_CONVERSATION']).optional(),
-  "evidenceClassification": zod.enum(['INDICATED']).optional(),
-  "sellerAnswersCapturedAt": zod.string().datetime({"offset":true}).optional()
-}))),
+  "version": zod.number().int(),
+  "outcome": zod.enum(['NO_ANSWER', 'VOICEMAIL', 'CONNECTED', 'NOT_INTERESTED']),
+  "notes": zod.string().max(recordDestinationActivityResponseContractOneCommitmentSnapshotOneDetailCallsItemNotesMax),
+  "nextAction": zod.string().max(recordDestinationActivityResponseContractOneCommitmentSnapshotOneDetailCallsItemNextActionMax),
+  "followUpAt": zod.string().datetime({"offset":true}).nullable(),
+  "evidenceSource": zod.enum(['OPERATOR_ENTERED_SELLER_CONVERSATION', 'OPERATOR_CALL_ATTEMPT']).optional(),
+  "evidenceClassification": zod.enum(['INDICATED', 'OBSERVED']).optional(),
+  "sellerAnswersCapturedAt": zod.string().datetime({"offset":true}).optional(),
+  "evidenceIds": zod.array(zod.string()).optional(),
+  "materialEvidence": zod.boolean().optional(),
+  "analysisInvalidated": zod.boolean().optional()
+})),
   "allowedTransitions": zod.array(zod.enum(['DISCOVERED', 'ENRICHING', 'ANALYZED', 'STRONG', 'NEGOTIABLE', 'PASS', 'CALL_READY', 'CONTACTED', 'CONVERSATION', 'OFFER_READY', 'OFFER_SENT', 'NEGOTIATING', 'CONTRACT_PENDING', 'UNDER_CONTRACT', 'BUYER_MATCHED', 'BUYER_INTERESTED', 'BUYER_COMMITTED', 'CLOSING', 'CLOSED', 'DEAD_DEAL'])),
   "workGuidance": zod.union([zod.object({
   "category": zod.enum(['RESEARCH', 'CALL', 'FOLLOW_UP', 'OFFER_APPROVAL', 'NEGOTIATION', 'CONTRACT', 'BUYER_MATCH', 'DEADLINE', 'CLOSING', 'DISCOVERY_REVIEW', 'BUYER_VERIFICATION', 'WORKER']),
@@ -26546,6 +25967,13 @@ export const createContractResponseContractOneCommitmentSnapshotOneDetailIntelli
 export const createContractResponseContractOneCommitmentSnapshotOneDetailIntelligenceItemOneConfidenceMin = 0;
 export const createContractResponseContractOneCommitmentSnapshotOneDetailIntelligenceItemOneConfidenceMax = 1;
 
+export const createContractResponseContractOneCommitmentSnapshotOneDetailIntelligenceItemOneSourceRecordIdMax = 240;
+
+export const createContractResponseContractOneCommitmentSnapshotOneDetailIntelligenceItemOneContentDigestRegExp = new RegExp('^[a-f0-9]{64}$');
+export const createContractResponseContractOneCommitmentSnapshotOneDetailIntelligenceItemOneReconciliationComparedEvidenceIdsMax = 50;
+
+export const createContractResponseContractOneCommitmentSnapshotOneDetailIntelligenceItemOneReconciliationReasonMax = 1000;
+
 export const createContractResponseContractOneCommitmentSnapshotOneDetailIntelligenceItemOneVerificationNoteMax = 2000;
 
 export const createContractResponseContractOneCommitmentSnapshotOneDetailIntelligenceItemOneContactPermissionEvidenceUrlMax = 2000;
@@ -26729,6 +26157,8 @@ export const createContractResponseContractOneCommitmentSnapshotOneDetailUnderwr
 
 export const createContractResponseContractOneCommitmentSnapshotOneDetailUnderwritingOneRepairObservationsItemEvidenceIdMax = 200;
 
+export const createContractResponseContractOneCommitmentSnapshotOneDetailUnderwritingOneRepairObservationsItemSourceRecordIdMax = 240;
+
 export const createContractResponseContractOneCommitmentSnapshotOneDetailUnderwritingOneRepairObservationsMax = 50;
 
 export const createContractResponseContractOneCommitmentSnapshotOneDetailUnderwritingOneRepairEstimateCatalogVersionMin = 0;
@@ -26750,22 +26180,9 @@ export const createContractResponseContractOneCommitmentSnapshotOneDetailUnderwr
 
 export const createContractResponseContractOneCommitmentSnapshotOneDetailUnderwritingOneSellerContactEvidenceIdMax = 200;
 
+export const createContractResponseContractOneCommitmentSnapshotOneDetailCallsItemNotesMax = 10000;
 
-export const createContractResponseContractOneCommitmentSnapshotOneDetailCallsItemOneNotesMax = 10000;
-
-export const createContractResponseContractOneCommitmentSnapshotOneDetailCallsItemOneNextActionMin = 3;
-export const createContractResponseContractOneCommitmentSnapshotOneDetailCallsItemOneNextActionMax = 1000;
-
-export const createContractResponseContractOneCommitmentSnapshotOneDetailCallsItemOneSellerAnswersMotivationStatementMax = 3000;
-
-export const createContractResponseContractOneCommitmentSnapshotOneDetailCallsItemOneSellerAnswersConditionDescriptionMax = 3000;
-
-export const createContractResponseContractOneCommitmentSnapshotOneDetailCallsItemOneSellerAnswersTimingMax = 1000;
-
-export const createContractResponseContractOneCommitmentSnapshotOneDetailCallsItemOneSellerAnswersAskingPriceMin = 0;
-export const createContractResponseContractOneCommitmentSnapshotOneDetailCallsItemOneSellerAnswersAskingPriceMax = 1000000000;
-
-export const createContractResponseContractOneCommitmentSnapshotOneDetailCallsItemOneSellerAnswersNextStepOutcomeMax = 2000;
+export const createContractResponseContractOneCommitmentSnapshotOneDetailCallsItemNextActionMax = 1000;
 
 export const createContractResponseContractOneMilestonesItemAmountMin = 0;
 export const createContractResponseContractOneMilestonesItemAmountMax = 1000000000;
@@ -27098,6 +26515,16 @@ export const CreateContractResponse = zod.object({
   "sourceType": zod.enum(['PUBLIC_RECORD', 'PERMITTED_LISTING', 'SELLER', 'INSPECTION', 'PUBLIC_PAGE', 'ANALYST', 'MODEL']),
   "confidence": zod.number().min(createContractResponseContractOneCommitmentSnapshotOneDetailIntelligenceItemOneConfidenceMin).max(createContractResponseContractOneCommitmentSnapshotOneDetailIntelligenceItemOneConfidenceMax),
   "capturedAt": zod.string().datetime({"offset":true}),
+  "sourceRecordId": zod.string().max(createContractResponseContractOneCommitmentSnapshotOneDetailIntelligenceItemOneSourceRecordIdMax).optional(),
+  "confidenceBasis": zod.enum(['OPERATOR_ASSESSED', 'UNASSESSED_CONSERVATIVE_DEFAULT', 'SOURCE_RELIABILITY']).optional(),
+  "clarificationStatus": zod.enum(['UNREVIEWED', 'FOLLOW_UP_REQUIRED', 'SELLER_CLARIFIED']).optional(),
+  "contentDigest": zod.string().regex(createContractResponseContractOneCommitmentSnapshotOneDetailIntelligenceItemOneContentDigestRegExp).optional(),
+  "retentionPolicy": zod.enum(['FULL_TEXT_PERMITTED', 'HASH_ONLY', 'DERIVED_ONLY']).optional(),
+  "reconciliation": zod.object({
+  "state": zod.enum(['NO_COMPARABLE_EVIDENCE', 'NO_CONFLICT_FOUND', 'CONFLICT_REVIEW']),
+  "comparedEvidenceIds": zod.array(zod.string()).max(createContractResponseContractOneCommitmentSnapshotOneDetailIntelligenceItemOneReconciliationComparedEvidenceIdsMax),
+  "reason": zod.string().max(createContractResponseContractOneCommitmentSnapshotOneDetailIntelligenceItemOneReconciliationReasonMax)
+}).optional(),
   "verificationNote": zod.string().max(createContractResponseContractOneCommitmentSnapshotOneDetailIntelligenceItemOneVerificationNoteMax).optional(),
   "contactPermissionStatus": zod.enum(['NOT_REVIEWED', 'PERMITTED', 'PROHIBITED']).optional(),
   "contactPermissionEvidenceUrl": zod.string().url().max(createContractResponseContractOneCommitmentSnapshotOneDetailIntelligenceItemOneContactPermissionEvidenceUrlMax).optional(),
@@ -27228,6 +26655,7 @@ export const CreateContractResponse = zod.object({
   "hypotheses": zod.array(zod.object({
   "id": zod.string(),
   "evidenceId": zod.string(),
+  "sourceRecordId": zod.string().nullable(),
   "category": zod.string(),
   "severity": zod.enum(['COSMETIC', 'MODERATE', 'MAJOR', 'REPLACEMENT']),
   "statement": zod.string(),
@@ -27237,7 +26665,7 @@ export const CreateContractResponse = zod.object({
   "confidence": zod.number().min(createContractResponseContractOneCommitmentSnapshotOneDetailAnalysisOnePreliminaryRepairEstimateHypothesesItemConfidenceMin).max(createContractResponseContractOneCommitmentSnapshotOneDetailAnalysisOnePreliminaryRepairEstimateHypothesesItemConfidenceMax),
   "confidenceMethod": zod.enum(['EXPLICIT_PHRASE_RULE_UNCALIBRATED']),
   "source": zod.string(),
-  "sourceUrl": zod.string().url(),
+  "sourceUrl": zod.string().url().nullable(),
   "ruleId": zod.string(),
   "question": zod.string(),
   "action": zod.string()
@@ -27377,7 +26805,9 @@ export const CreateContractResponse = zod.object({
   "severity": zod.enum(['NO_REPAIR', 'COSMETIC', 'MODERATE', 'MAJOR', 'REPLACEMENT']),
   "quantity": zod.number().min(createContractResponseContractOneCommitmentSnapshotOneDetailUnderwritingOneRepairObservationsItemQuantityMin).max(createContractResponseContractOneCommitmentSnapshotOneDetailUnderwritingOneRepairObservationsItemQuantityMax),
   "unit": zod.enum(['SQFT', 'LINEAR_FT', 'EACH', 'LUMP_SUM']),
-  "evidenceId": zod.string().min(1).max(createContractResponseContractOneCommitmentSnapshotOneDetailUnderwritingOneRepairObservationsItemEvidenceIdMax)
+  "evidenceId": zod.string().min(1).max(createContractResponseContractOneCommitmentSnapshotOneDetailUnderwritingOneRepairObservationsItemEvidenceIdMax),
+  "sourceRecordId": zod.string().max(createContractResponseContractOneCommitmentSnapshotOneDetailUnderwritingOneRepairObservationsItemSourceRecordIdMax).optional(),
+  "sourceUrl": zod.string().url().nullish()
 })).max(createContractResponseContractOneCommitmentSnapshotOneDetailUnderwritingOneRepairObservationsMax).optional(),
   "repairEstimate": zod.object({
   "status": zod.enum(['NOT_USED', 'CALCULATED', 'BLOCKED']),
@@ -27421,26 +26851,21 @@ export const CreateContractResponse = zod.object({
   "createdAt": zod.string()
 })),
   "calls": zod.array(zod.object({
-  "version": zod.number().int().min(1),
-  "outcome": zod.enum(['NO_ANSWER', 'VOICEMAIL', 'CONNECTED', 'NOT_INTERESTED']),
-  "notes": zod.string().min(1).max(createContractResponseContractOneCommitmentSnapshotOneDetailCallsItemOneNotesMax),
-  "nextAction": zod.string().min(createContractResponseContractOneCommitmentSnapshotOneDetailCallsItemOneNextActionMin).max(createContractResponseContractOneCommitmentSnapshotOneDetailCallsItemOneNextActionMax),
-  "followUpAt": zod.string().datetime({"offset":true}).nullable(),
-  "sellerAnswers": zod.object({
-  "motivationStatement": zod.string().max(createContractResponseContractOneCommitmentSnapshotOneDetailCallsItemOneSellerAnswersMotivationStatementMax).optional(),
-  "conditionDescription": zod.string().max(createContractResponseContractOneCommitmentSnapshotOneDetailCallsItemOneSellerAnswersConditionDescriptionMax).optional(),
-  "timing": zod.string().max(createContractResponseContractOneCommitmentSnapshotOneDetailCallsItemOneSellerAnswersTimingMax).optional(),
-  "askingPrice": zod.number().min(createContractResponseContractOneCommitmentSnapshotOneDetailCallsItemOneSellerAnswersAskingPriceMin).max(createContractResponseContractOneCommitmentSnapshotOneDetailCallsItemOneSellerAnswersAskingPriceMax).nullish(),
-  "nextStepOutcome": zod.string().max(createContractResponseContractOneCommitmentSnapshotOneDetailCallsItemOneSellerAnswersNextStepOutcomeMax).optional()
-}).optional()
-}).and(zod.object({
   "id": zod.string(),
   "createdAt": zod.string(),
   "actor": zod.string(),
-  "evidenceSource": zod.enum(['OPERATOR_ENTERED_SELLER_CONVERSATION']).optional(),
-  "evidenceClassification": zod.enum(['INDICATED']).optional(),
-  "sellerAnswersCapturedAt": zod.string().datetime({"offset":true}).optional()
-}))),
+  "version": zod.number().int(),
+  "outcome": zod.enum(['NO_ANSWER', 'VOICEMAIL', 'CONNECTED', 'NOT_INTERESTED']),
+  "notes": zod.string().max(createContractResponseContractOneCommitmentSnapshotOneDetailCallsItemNotesMax),
+  "nextAction": zod.string().max(createContractResponseContractOneCommitmentSnapshotOneDetailCallsItemNextActionMax),
+  "followUpAt": zod.string().datetime({"offset":true}).nullable(),
+  "evidenceSource": zod.enum(['OPERATOR_ENTERED_SELLER_CONVERSATION', 'OPERATOR_CALL_ATTEMPT']).optional(),
+  "evidenceClassification": zod.enum(['INDICATED', 'OBSERVED']).optional(),
+  "sellerAnswersCapturedAt": zod.string().datetime({"offset":true}).optional(),
+  "evidenceIds": zod.array(zod.string()).optional(),
+  "materialEvidence": zod.boolean().optional(),
+  "analysisInvalidated": zod.boolean().optional()
+})),
   "allowedTransitions": zod.array(zod.enum(['DISCOVERED', 'ENRICHING', 'ANALYZED', 'STRONG', 'NEGOTIABLE', 'PASS', 'CALL_READY', 'CONTACTED', 'CONVERSATION', 'OFFER_READY', 'OFFER_SENT', 'NEGOTIATING', 'CONTRACT_PENDING', 'UNDER_CONTRACT', 'BUYER_MATCHED', 'BUYER_INTERESTED', 'BUYER_COMMITTED', 'CLOSING', 'CLOSED', 'DEAD_DEAL'])),
   "workGuidance": zod.union([zod.object({
   "category": zod.enum(['RESEARCH', 'CALL', 'FOLLOW_UP', 'OFFER_APPROVAL', 'NEGOTIATION', 'CONTRACT', 'BUYER_MATCH', 'DEADLINE', 'CLOSING', 'DISCOVERY_REVIEW', 'BUYER_VERIFICATION', 'WORKER']),
@@ -27865,6 +27290,13 @@ export const preparePurchaseReviewDocumentResponseContractOneCommitmentSnapshotO
 export const preparePurchaseReviewDocumentResponseContractOneCommitmentSnapshotOneDetailIntelligenceItemOneConfidenceMin = 0;
 export const preparePurchaseReviewDocumentResponseContractOneCommitmentSnapshotOneDetailIntelligenceItemOneConfidenceMax = 1;
 
+export const preparePurchaseReviewDocumentResponseContractOneCommitmentSnapshotOneDetailIntelligenceItemOneSourceRecordIdMax = 240;
+
+export const preparePurchaseReviewDocumentResponseContractOneCommitmentSnapshotOneDetailIntelligenceItemOneContentDigestRegExp = new RegExp('^[a-f0-9]{64}$');
+export const preparePurchaseReviewDocumentResponseContractOneCommitmentSnapshotOneDetailIntelligenceItemOneReconciliationComparedEvidenceIdsMax = 50;
+
+export const preparePurchaseReviewDocumentResponseContractOneCommitmentSnapshotOneDetailIntelligenceItemOneReconciliationReasonMax = 1000;
+
 export const preparePurchaseReviewDocumentResponseContractOneCommitmentSnapshotOneDetailIntelligenceItemOneVerificationNoteMax = 2000;
 
 export const preparePurchaseReviewDocumentResponseContractOneCommitmentSnapshotOneDetailIntelligenceItemOneContactPermissionEvidenceUrlMax = 2000;
@@ -28048,6 +27480,8 @@ export const preparePurchaseReviewDocumentResponseContractOneCommitmentSnapshotO
 
 export const preparePurchaseReviewDocumentResponseContractOneCommitmentSnapshotOneDetailUnderwritingOneRepairObservationsItemEvidenceIdMax = 200;
 
+export const preparePurchaseReviewDocumentResponseContractOneCommitmentSnapshotOneDetailUnderwritingOneRepairObservationsItemSourceRecordIdMax = 240;
+
 export const preparePurchaseReviewDocumentResponseContractOneCommitmentSnapshotOneDetailUnderwritingOneRepairObservationsMax = 50;
 
 export const preparePurchaseReviewDocumentResponseContractOneCommitmentSnapshotOneDetailUnderwritingOneRepairEstimateCatalogVersionMin = 0;
@@ -28069,22 +27503,9 @@ export const preparePurchaseReviewDocumentResponseContractOneCommitmentSnapshotO
 
 export const preparePurchaseReviewDocumentResponseContractOneCommitmentSnapshotOneDetailUnderwritingOneSellerContactEvidenceIdMax = 200;
 
+export const preparePurchaseReviewDocumentResponseContractOneCommitmentSnapshotOneDetailCallsItemNotesMax = 10000;
 
-export const preparePurchaseReviewDocumentResponseContractOneCommitmentSnapshotOneDetailCallsItemOneNotesMax = 10000;
-
-export const preparePurchaseReviewDocumentResponseContractOneCommitmentSnapshotOneDetailCallsItemOneNextActionMin = 3;
-export const preparePurchaseReviewDocumentResponseContractOneCommitmentSnapshotOneDetailCallsItemOneNextActionMax = 1000;
-
-export const preparePurchaseReviewDocumentResponseContractOneCommitmentSnapshotOneDetailCallsItemOneSellerAnswersMotivationStatementMax = 3000;
-
-export const preparePurchaseReviewDocumentResponseContractOneCommitmentSnapshotOneDetailCallsItemOneSellerAnswersConditionDescriptionMax = 3000;
-
-export const preparePurchaseReviewDocumentResponseContractOneCommitmentSnapshotOneDetailCallsItemOneSellerAnswersTimingMax = 1000;
-
-export const preparePurchaseReviewDocumentResponseContractOneCommitmentSnapshotOneDetailCallsItemOneSellerAnswersAskingPriceMin = 0;
-export const preparePurchaseReviewDocumentResponseContractOneCommitmentSnapshotOneDetailCallsItemOneSellerAnswersAskingPriceMax = 1000000000;
-
-export const preparePurchaseReviewDocumentResponseContractOneCommitmentSnapshotOneDetailCallsItemOneSellerAnswersNextStepOutcomeMax = 2000;
+export const preparePurchaseReviewDocumentResponseContractOneCommitmentSnapshotOneDetailCallsItemNextActionMax = 1000;
 
 export const preparePurchaseReviewDocumentResponseContractOneMilestonesItemAmountMin = 0;
 export const preparePurchaseReviewDocumentResponseContractOneMilestonesItemAmountMax = 1000000000;
@@ -28417,6 +27838,16 @@ export const PreparePurchaseReviewDocumentResponse = zod.object({
   "sourceType": zod.enum(['PUBLIC_RECORD', 'PERMITTED_LISTING', 'SELLER', 'INSPECTION', 'PUBLIC_PAGE', 'ANALYST', 'MODEL']),
   "confidence": zod.number().min(preparePurchaseReviewDocumentResponseContractOneCommitmentSnapshotOneDetailIntelligenceItemOneConfidenceMin).max(preparePurchaseReviewDocumentResponseContractOneCommitmentSnapshotOneDetailIntelligenceItemOneConfidenceMax),
   "capturedAt": zod.string().datetime({"offset":true}),
+  "sourceRecordId": zod.string().max(preparePurchaseReviewDocumentResponseContractOneCommitmentSnapshotOneDetailIntelligenceItemOneSourceRecordIdMax).optional(),
+  "confidenceBasis": zod.enum(['OPERATOR_ASSESSED', 'UNASSESSED_CONSERVATIVE_DEFAULT', 'SOURCE_RELIABILITY']).optional(),
+  "clarificationStatus": zod.enum(['UNREVIEWED', 'FOLLOW_UP_REQUIRED', 'SELLER_CLARIFIED']).optional(),
+  "contentDigest": zod.string().regex(preparePurchaseReviewDocumentResponseContractOneCommitmentSnapshotOneDetailIntelligenceItemOneContentDigestRegExp).optional(),
+  "retentionPolicy": zod.enum(['FULL_TEXT_PERMITTED', 'HASH_ONLY', 'DERIVED_ONLY']).optional(),
+  "reconciliation": zod.object({
+  "state": zod.enum(['NO_COMPARABLE_EVIDENCE', 'NO_CONFLICT_FOUND', 'CONFLICT_REVIEW']),
+  "comparedEvidenceIds": zod.array(zod.string()).max(preparePurchaseReviewDocumentResponseContractOneCommitmentSnapshotOneDetailIntelligenceItemOneReconciliationComparedEvidenceIdsMax),
+  "reason": zod.string().max(preparePurchaseReviewDocumentResponseContractOneCommitmentSnapshotOneDetailIntelligenceItemOneReconciliationReasonMax)
+}).optional(),
   "verificationNote": zod.string().max(preparePurchaseReviewDocumentResponseContractOneCommitmentSnapshotOneDetailIntelligenceItemOneVerificationNoteMax).optional(),
   "contactPermissionStatus": zod.enum(['NOT_REVIEWED', 'PERMITTED', 'PROHIBITED']).optional(),
   "contactPermissionEvidenceUrl": zod.string().url().max(preparePurchaseReviewDocumentResponseContractOneCommitmentSnapshotOneDetailIntelligenceItemOneContactPermissionEvidenceUrlMax).optional(),
@@ -28547,6 +27978,7 @@ export const PreparePurchaseReviewDocumentResponse = zod.object({
   "hypotheses": zod.array(zod.object({
   "id": zod.string(),
   "evidenceId": zod.string(),
+  "sourceRecordId": zod.string().nullable(),
   "category": zod.string(),
   "severity": zod.enum(['COSMETIC', 'MODERATE', 'MAJOR', 'REPLACEMENT']),
   "statement": zod.string(),
@@ -28556,7 +27988,7 @@ export const PreparePurchaseReviewDocumentResponse = zod.object({
   "confidence": zod.number().min(preparePurchaseReviewDocumentResponseContractOneCommitmentSnapshotOneDetailAnalysisOnePreliminaryRepairEstimateHypothesesItemConfidenceMin).max(preparePurchaseReviewDocumentResponseContractOneCommitmentSnapshotOneDetailAnalysisOnePreliminaryRepairEstimateHypothesesItemConfidenceMax),
   "confidenceMethod": zod.enum(['EXPLICIT_PHRASE_RULE_UNCALIBRATED']),
   "source": zod.string(),
-  "sourceUrl": zod.string().url(),
+  "sourceUrl": zod.string().url().nullable(),
   "ruleId": zod.string(),
   "question": zod.string(),
   "action": zod.string()
@@ -28696,7 +28128,9 @@ export const PreparePurchaseReviewDocumentResponse = zod.object({
   "severity": zod.enum(['NO_REPAIR', 'COSMETIC', 'MODERATE', 'MAJOR', 'REPLACEMENT']),
   "quantity": zod.number().min(preparePurchaseReviewDocumentResponseContractOneCommitmentSnapshotOneDetailUnderwritingOneRepairObservationsItemQuantityMin).max(preparePurchaseReviewDocumentResponseContractOneCommitmentSnapshotOneDetailUnderwritingOneRepairObservationsItemQuantityMax),
   "unit": zod.enum(['SQFT', 'LINEAR_FT', 'EACH', 'LUMP_SUM']),
-  "evidenceId": zod.string().min(1).max(preparePurchaseReviewDocumentResponseContractOneCommitmentSnapshotOneDetailUnderwritingOneRepairObservationsItemEvidenceIdMax)
+  "evidenceId": zod.string().min(1).max(preparePurchaseReviewDocumentResponseContractOneCommitmentSnapshotOneDetailUnderwritingOneRepairObservationsItemEvidenceIdMax),
+  "sourceRecordId": zod.string().max(preparePurchaseReviewDocumentResponseContractOneCommitmentSnapshotOneDetailUnderwritingOneRepairObservationsItemSourceRecordIdMax).optional(),
+  "sourceUrl": zod.string().url().nullish()
 })).max(preparePurchaseReviewDocumentResponseContractOneCommitmentSnapshotOneDetailUnderwritingOneRepairObservationsMax).optional(),
   "repairEstimate": zod.object({
   "status": zod.enum(['NOT_USED', 'CALCULATED', 'BLOCKED']),
@@ -28740,26 +28174,21 @@ export const PreparePurchaseReviewDocumentResponse = zod.object({
   "createdAt": zod.string()
 })),
   "calls": zod.array(zod.object({
-  "version": zod.number().int().min(1),
-  "outcome": zod.enum(['NO_ANSWER', 'VOICEMAIL', 'CONNECTED', 'NOT_INTERESTED']),
-  "notes": zod.string().min(1).max(preparePurchaseReviewDocumentResponseContractOneCommitmentSnapshotOneDetailCallsItemOneNotesMax),
-  "nextAction": zod.string().min(preparePurchaseReviewDocumentResponseContractOneCommitmentSnapshotOneDetailCallsItemOneNextActionMin).max(preparePurchaseReviewDocumentResponseContractOneCommitmentSnapshotOneDetailCallsItemOneNextActionMax),
-  "followUpAt": zod.string().datetime({"offset":true}).nullable(),
-  "sellerAnswers": zod.object({
-  "motivationStatement": zod.string().max(preparePurchaseReviewDocumentResponseContractOneCommitmentSnapshotOneDetailCallsItemOneSellerAnswersMotivationStatementMax).optional(),
-  "conditionDescription": zod.string().max(preparePurchaseReviewDocumentResponseContractOneCommitmentSnapshotOneDetailCallsItemOneSellerAnswersConditionDescriptionMax).optional(),
-  "timing": zod.string().max(preparePurchaseReviewDocumentResponseContractOneCommitmentSnapshotOneDetailCallsItemOneSellerAnswersTimingMax).optional(),
-  "askingPrice": zod.number().min(preparePurchaseReviewDocumentResponseContractOneCommitmentSnapshotOneDetailCallsItemOneSellerAnswersAskingPriceMin).max(preparePurchaseReviewDocumentResponseContractOneCommitmentSnapshotOneDetailCallsItemOneSellerAnswersAskingPriceMax).nullish(),
-  "nextStepOutcome": zod.string().max(preparePurchaseReviewDocumentResponseContractOneCommitmentSnapshotOneDetailCallsItemOneSellerAnswersNextStepOutcomeMax).optional()
-}).optional()
-}).and(zod.object({
   "id": zod.string(),
   "createdAt": zod.string(),
   "actor": zod.string(),
-  "evidenceSource": zod.enum(['OPERATOR_ENTERED_SELLER_CONVERSATION']).optional(),
-  "evidenceClassification": zod.enum(['INDICATED']).optional(),
-  "sellerAnswersCapturedAt": zod.string().datetime({"offset":true}).optional()
-}))),
+  "version": zod.number().int(),
+  "outcome": zod.enum(['NO_ANSWER', 'VOICEMAIL', 'CONNECTED', 'NOT_INTERESTED']),
+  "notes": zod.string().max(preparePurchaseReviewDocumentResponseContractOneCommitmentSnapshotOneDetailCallsItemNotesMax),
+  "nextAction": zod.string().max(preparePurchaseReviewDocumentResponseContractOneCommitmentSnapshotOneDetailCallsItemNextActionMax),
+  "followUpAt": zod.string().datetime({"offset":true}).nullable(),
+  "evidenceSource": zod.enum(['OPERATOR_ENTERED_SELLER_CONVERSATION', 'OPERATOR_CALL_ATTEMPT']).optional(),
+  "evidenceClassification": zod.enum(['INDICATED', 'OBSERVED']).optional(),
+  "sellerAnswersCapturedAt": zod.string().datetime({"offset":true}).optional(),
+  "evidenceIds": zod.array(zod.string()).optional(),
+  "materialEvidence": zod.boolean().optional(),
+  "analysisInvalidated": zod.boolean().optional()
+})),
   "allowedTransitions": zod.array(zod.enum(['DISCOVERED', 'ENRICHING', 'ANALYZED', 'STRONG', 'NEGOTIABLE', 'PASS', 'CALL_READY', 'CONTACTED', 'CONVERSATION', 'OFFER_READY', 'OFFER_SENT', 'NEGOTIATING', 'CONTRACT_PENDING', 'UNDER_CONTRACT', 'BUYER_MATCHED', 'BUYER_INTERESTED', 'BUYER_COMMITTED', 'CLOSING', 'CLOSED', 'DEAD_DEAL'])),
   "workGuidance": zod.union([zod.object({
   "category": zod.enum(['RESEARCH', 'CALL', 'FOLLOW_UP', 'OFFER_APPROVAL', 'NEGOTIATION', 'CONTRACT', 'BUYER_MATCH', 'DEADLINE', 'CLOSING', 'DISCOVERY_REVIEW', 'BUYER_VERIFICATION', 'WORKER']),
@@ -29190,6 +28619,13 @@ export const transitionTransactionDocumentResponseContractOneCommitmentSnapshotO
 export const transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneDetailIntelligenceItemOneConfidenceMin = 0;
 export const transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneDetailIntelligenceItemOneConfidenceMax = 1;
 
+export const transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneDetailIntelligenceItemOneSourceRecordIdMax = 240;
+
+export const transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneDetailIntelligenceItemOneContentDigestRegExp = new RegExp('^[a-f0-9]{64}$');
+export const transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneDetailIntelligenceItemOneReconciliationComparedEvidenceIdsMax = 50;
+
+export const transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneDetailIntelligenceItemOneReconciliationReasonMax = 1000;
+
 export const transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneDetailIntelligenceItemOneVerificationNoteMax = 2000;
 
 export const transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneDetailIntelligenceItemOneContactPermissionEvidenceUrlMax = 2000;
@@ -29373,6 +28809,8 @@ export const transitionTransactionDocumentResponseContractOneCommitmentSnapshotO
 
 export const transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneDetailUnderwritingOneRepairObservationsItemEvidenceIdMax = 200;
 
+export const transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneDetailUnderwritingOneRepairObservationsItemSourceRecordIdMax = 240;
+
 export const transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneDetailUnderwritingOneRepairObservationsMax = 50;
 
 export const transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneDetailUnderwritingOneRepairEstimateCatalogVersionMin = 0;
@@ -29394,22 +28832,9 @@ export const transitionTransactionDocumentResponseContractOneCommitmentSnapshotO
 
 export const transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneDetailUnderwritingOneSellerContactEvidenceIdMax = 200;
 
+export const transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneDetailCallsItemNotesMax = 10000;
 
-export const transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneDetailCallsItemOneNotesMax = 10000;
-
-export const transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneDetailCallsItemOneNextActionMin = 3;
-export const transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneDetailCallsItemOneNextActionMax = 1000;
-
-export const transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneDetailCallsItemOneSellerAnswersMotivationStatementMax = 3000;
-
-export const transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneDetailCallsItemOneSellerAnswersConditionDescriptionMax = 3000;
-
-export const transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneDetailCallsItemOneSellerAnswersTimingMax = 1000;
-
-export const transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneDetailCallsItemOneSellerAnswersAskingPriceMin = 0;
-export const transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneDetailCallsItemOneSellerAnswersAskingPriceMax = 1000000000;
-
-export const transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneDetailCallsItemOneSellerAnswersNextStepOutcomeMax = 2000;
+export const transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneDetailCallsItemNextActionMax = 1000;
 
 export const transitionTransactionDocumentResponseContractOneMilestonesItemAmountMin = 0;
 export const transitionTransactionDocumentResponseContractOneMilestonesItemAmountMax = 1000000000;
@@ -29742,6 +29167,16 @@ export const TransitionTransactionDocumentResponse = zod.object({
   "sourceType": zod.enum(['PUBLIC_RECORD', 'PERMITTED_LISTING', 'SELLER', 'INSPECTION', 'PUBLIC_PAGE', 'ANALYST', 'MODEL']),
   "confidence": zod.number().min(transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneDetailIntelligenceItemOneConfidenceMin).max(transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneDetailIntelligenceItemOneConfidenceMax),
   "capturedAt": zod.string().datetime({"offset":true}),
+  "sourceRecordId": zod.string().max(transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneDetailIntelligenceItemOneSourceRecordIdMax).optional(),
+  "confidenceBasis": zod.enum(['OPERATOR_ASSESSED', 'UNASSESSED_CONSERVATIVE_DEFAULT', 'SOURCE_RELIABILITY']).optional(),
+  "clarificationStatus": zod.enum(['UNREVIEWED', 'FOLLOW_UP_REQUIRED', 'SELLER_CLARIFIED']).optional(),
+  "contentDigest": zod.string().regex(transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneDetailIntelligenceItemOneContentDigestRegExp).optional(),
+  "retentionPolicy": zod.enum(['FULL_TEXT_PERMITTED', 'HASH_ONLY', 'DERIVED_ONLY']).optional(),
+  "reconciliation": zod.object({
+  "state": zod.enum(['NO_COMPARABLE_EVIDENCE', 'NO_CONFLICT_FOUND', 'CONFLICT_REVIEW']),
+  "comparedEvidenceIds": zod.array(zod.string()).max(transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneDetailIntelligenceItemOneReconciliationComparedEvidenceIdsMax),
+  "reason": zod.string().max(transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneDetailIntelligenceItemOneReconciliationReasonMax)
+}).optional(),
   "verificationNote": zod.string().max(transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneDetailIntelligenceItemOneVerificationNoteMax).optional(),
   "contactPermissionStatus": zod.enum(['NOT_REVIEWED', 'PERMITTED', 'PROHIBITED']).optional(),
   "contactPermissionEvidenceUrl": zod.string().url().max(transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneDetailIntelligenceItemOneContactPermissionEvidenceUrlMax).optional(),
@@ -29872,6 +29307,7 @@ export const TransitionTransactionDocumentResponse = zod.object({
   "hypotheses": zod.array(zod.object({
   "id": zod.string(),
   "evidenceId": zod.string(),
+  "sourceRecordId": zod.string().nullable(),
   "category": zod.string(),
   "severity": zod.enum(['COSMETIC', 'MODERATE', 'MAJOR', 'REPLACEMENT']),
   "statement": zod.string(),
@@ -29881,7 +29317,7 @@ export const TransitionTransactionDocumentResponse = zod.object({
   "confidence": zod.number().min(transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneDetailAnalysisOnePreliminaryRepairEstimateHypothesesItemConfidenceMin).max(transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneDetailAnalysisOnePreliminaryRepairEstimateHypothesesItemConfidenceMax),
   "confidenceMethod": zod.enum(['EXPLICIT_PHRASE_RULE_UNCALIBRATED']),
   "source": zod.string(),
-  "sourceUrl": zod.string().url(),
+  "sourceUrl": zod.string().url().nullable(),
   "ruleId": zod.string(),
   "question": zod.string(),
   "action": zod.string()
@@ -30021,7 +29457,9 @@ export const TransitionTransactionDocumentResponse = zod.object({
   "severity": zod.enum(['NO_REPAIR', 'COSMETIC', 'MODERATE', 'MAJOR', 'REPLACEMENT']),
   "quantity": zod.number().min(transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneDetailUnderwritingOneRepairObservationsItemQuantityMin).max(transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneDetailUnderwritingOneRepairObservationsItemQuantityMax),
   "unit": zod.enum(['SQFT', 'LINEAR_FT', 'EACH', 'LUMP_SUM']),
-  "evidenceId": zod.string().min(1).max(transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneDetailUnderwritingOneRepairObservationsItemEvidenceIdMax)
+  "evidenceId": zod.string().min(1).max(transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneDetailUnderwritingOneRepairObservationsItemEvidenceIdMax),
+  "sourceRecordId": zod.string().max(transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneDetailUnderwritingOneRepairObservationsItemSourceRecordIdMax).optional(),
+  "sourceUrl": zod.string().url().nullish()
 })).max(transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneDetailUnderwritingOneRepairObservationsMax).optional(),
   "repairEstimate": zod.object({
   "status": zod.enum(['NOT_USED', 'CALCULATED', 'BLOCKED']),
@@ -30065,26 +29503,21 @@ export const TransitionTransactionDocumentResponse = zod.object({
   "createdAt": zod.string()
 })),
   "calls": zod.array(zod.object({
-  "version": zod.number().int().min(1),
-  "outcome": zod.enum(['NO_ANSWER', 'VOICEMAIL', 'CONNECTED', 'NOT_INTERESTED']),
-  "notes": zod.string().min(1).max(transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneDetailCallsItemOneNotesMax),
-  "nextAction": zod.string().min(transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneDetailCallsItemOneNextActionMin).max(transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneDetailCallsItemOneNextActionMax),
-  "followUpAt": zod.string().datetime({"offset":true}).nullable(),
-  "sellerAnswers": zod.object({
-  "motivationStatement": zod.string().max(transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneDetailCallsItemOneSellerAnswersMotivationStatementMax).optional(),
-  "conditionDescription": zod.string().max(transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneDetailCallsItemOneSellerAnswersConditionDescriptionMax).optional(),
-  "timing": zod.string().max(transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneDetailCallsItemOneSellerAnswersTimingMax).optional(),
-  "askingPrice": zod.number().min(transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneDetailCallsItemOneSellerAnswersAskingPriceMin).max(transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneDetailCallsItemOneSellerAnswersAskingPriceMax).nullish(),
-  "nextStepOutcome": zod.string().max(transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneDetailCallsItemOneSellerAnswersNextStepOutcomeMax).optional()
-}).optional()
-}).and(zod.object({
   "id": zod.string(),
   "createdAt": zod.string(),
   "actor": zod.string(),
-  "evidenceSource": zod.enum(['OPERATOR_ENTERED_SELLER_CONVERSATION']).optional(),
-  "evidenceClassification": zod.enum(['INDICATED']).optional(),
-  "sellerAnswersCapturedAt": zod.string().datetime({"offset":true}).optional()
-}))),
+  "version": zod.number().int(),
+  "outcome": zod.enum(['NO_ANSWER', 'VOICEMAIL', 'CONNECTED', 'NOT_INTERESTED']),
+  "notes": zod.string().max(transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneDetailCallsItemNotesMax),
+  "nextAction": zod.string().max(transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneDetailCallsItemNextActionMax),
+  "followUpAt": zod.string().datetime({"offset":true}).nullable(),
+  "evidenceSource": zod.enum(['OPERATOR_ENTERED_SELLER_CONVERSATION', 'OPERATOR_CALL_ATTEMPT']).optional(),
+  "evidenceClassification": zod.enum(['INDICATED', 'OBSERVED']).optional(),
+  "sellerAnswersCapturedAt": zod.string().datetime({"offset":true}).optional(),
+  "evidenceIds": zod.array(zod.string()).optional(),
+  "materialEvidence": zod.boolean().optional(),
+  "analysisInvalidated": zod.boolean().optional()
+})),
   "allowedTransitions": zod.array(zod.enum(['DISCOVERED', 'ENRICHING', 'ANALYZED', 'STRONG', 'NEGOTIABLE', 'PASS', 'CALL_READY', 'CONTACTED', 'CONVERSATION', 'OFFER_READY', 'OFFER_SENT', 'NEGOTIATING', 'CONTRACT_PENDING', 'UNDER_CONTRACT', 'BUYER_MATCHED', 'BUYER_INTERESTED', 'BUYER_COMMITTED', 'CLOSING', 'CLOSED', 'DEAD_DEAL'])),
   "workGuidance": zod.union([zod.object({
   "category": zod.enum(['RESEARCH', 'CALL', 'FOLLOW_UP', 'OFFER_APPROVAL', 'NEGOTIATION', 'CONTRACT', 'BUYER_MATCH', 'DEADLINE', 'CLOSING', 'DISCOVERY_REVIEW', 'BUYER_VERIFICATION', 'WORKER']),
@@ -30563,6 +29996,13 @@ export const executeContractResponseContractOneCommitmentSnapshotOneDetailIntell
 export const executeContractResponseContractOneCommitmentSnapshotOneDetailIntelligenceItemOneConfidenceMin = 0;
 export const executeContractResponseContractOneCommitmentSnapshotOneDetailIntelligenceItemOneConfidenceMax = 1;
 
+export const executeContractResponseContractOneCommitmentSnapshotOneDetailIntelligenceItemOneSourceRecordIdMax = 240;
+
+export const executeContractResponseContractOneCommitmentSnapshotOneDetailIntelligenceItemOneContentDigestRegExp = new RegExp('^[a-f0-9]{64}$');
+export const executeContractResponseContractOneCommitmentSnapshotOneDetailIntelligenceItemOneReconciliationComparedEvidenceIdsMax = 50;
+
+export const executeContractResponseContractOneCommitmentSnapshotOneDetailIntelligenceItemOneReconciliationReasonMax = 1000;
+
 export const executeContractResponseContractOneCommitmentSnapshotOneDetailIntelligenceItemOneVerificationNoteMax = 2000;
 
 export const executeContractResponseContractOneCommitmentSnapshotOneDetailIntelligenceItemOneContactPermissionEvidenceUrlMax = 2000;
@@ -30746,6 +30186,8 @@ export const executeContractResponseContractOneCommitmentSnapshotOneDetailUnderw
 
 export const executeContractResponseContractOneCommitmentSnapshotOneDetailUnderwritingOneRepairObservationsItemEvidenceIdMax = 200;
 
+export const executeContractResponseContractOneCommitmentSnapshotOneDetailUnderwritingOneRepairObservationsItemSourceRecordIdMax = 240;
+
 export const executeContractResponseContractOneCommitmentSnapshotOneDetailUnderwritingOneRepairObservationsMax = 50;
 
 export const executeContractResponseContractOneCommitmentSnapshotOneDetailUnderwritingOneRepairEstimateCatalogVersionMin = 0;
@@ -30767,22 +30209,9 @@ export const executeContractResponseContractOneCommitmentSnapshotOneDetailUnderw
 
 export const executeContractResponseContractOneCommitmentSnapshotOneDetailUnderwritingOneSellerContactEvidenceIdMax = 200;
 
+export const executeContractResponseContractOneCommitmentSnapshotOneDetailCallsItemNotesMax = 10000;
 
-export const executeContractResponseContractOneCommitmentSnapshotOneDetailCallsItemOneNotesMax = 10000;
-
-export const executeContractResponseContractOneCommitmentSnapshotOneDetailCallsItemOneNextActionMin = 3;
-export const executeContractResponseContractOneCommitmentSnapshotOneDetailCallsItemOneNextActionMax = 1000;
-
-export const executeContractResponseContractOneCommitmentSnapshotOneDetailCallsItemOneSellerAnswersMotivationStatementMax = 3000;
-
-export const executeContractResponseContractOneCommitmentSnapshotOneDetailCallsItemOneSellerAnswersConditionDescriptionMax = 3000;
-
-export const executeContractResponseContractOneCommitmentSnapshotOneDetailCallsItemOneSellerAnswersTimingMax = 1000;
-
-export const executeContractResponseContractOneCommitmentSnapshotOneDetailCallsItemOneSellerAnswersAskingPriceMin = 0;
-export const executeContractResponseContractOneCommitmentSnapshotOneDetailCallsItemOneSellerAnswersAskingPriceMax = 1000000000;
-
-export const executeContractResponseContractOneCommitmentSnapshotOneDetailCallsItemOneSellerAnswersNextStepOutcomeMax = 2000;
+export const executeContractResponseContractOneCommitmentSnapshotOneDetailCallsItemNextActionMax = 1000;
 
 export const executeContractResponseContractOneMilestonesItemAmountMin = 0;
 export const executeContractResponseContractOneMilestonesItemAmountMax = 1000000000;
@@ -31115,6 +30544,16 @@ export const ExecuteContractResponse = zod.object({
   "sourceType": zod.enum(['PUBLIC_RECORD', 'PERMITTED_LISTING', 'SELLER', 'INSPECTION', 'PUBLIC_PAGE', 'ANALYST', 'MODEL']),
   "confidence": zod.number().min(executeContractResponseContractOneCommitmentSnapshotOneDetailIntelligenceItemOneConfidenceMin).max(executeContractResponseContractOneCommitmentSnapshotOneDetailIntelligenceItemOneConfidenceMax),
   "capturedAt": zod.string().datetime({"offset":true}),
+  "sourceRecordId": zod.string().max(executeContractResponseContractOneCommitmentSnapshotOneDetailIntelligenceItemOneSourceRecordIdMax).optional(),
+  "confidenceBasis": zod.enum(['OPERATOR_ASSESSED', 'UNASSESSED_CONSERVATIVE_DEFAULT', 'SOURCE_RELIABILITY']).optional(),
+  "clarificationStatus": zod.enum(['UNREVIEWED', 'FOLLOW_UP_REQUIRED', 'SELLER_CLARIFIED']).optional(),
+  "contentDigest": zod.string().regex(executeContractResponseContractOneCommitmentSnapshotOneDetailIntelligenceItemOneContentDigestRegExp).optional(),
+  "retentionPolicy": zod.enum(['FULL_TEXT_PERMITTED', 'HASH_ONLY', 'DERIVED_ONLY']).optional(),
+  "reconciliation": zod.object({
+  "state": zod.enum(['NO_COMPARABLE_EVIDENCE', 'NO_CONFLICT_FOUND', 'CONFLICT_REVIEW']),
+  "comparedEvidenceIds": zod.array(zod.string()).max(executeContractResponseContractOneCommitmentSnapshotOneDetailIntelligenceItemOneReconciliationComparedEvidenceIdsMax),
+  "reason": zod.string().max(executeContractResponseContractOneCommitmentSnapshotOneDetailIntelligenceItemOneReconciliationReasonMax)
+}).optional(),
   "verificationNote": zod.string().max(executeContractResponseContractOneCommitmentSnapshotOneDetailIntelligenceItemOneVerificationNoteMax).optional(),
   "contactPermissionStatus": zod.enum(['NOT_REVIEWED', 'PERMITTED', 'PROHIBITED']).optional(),
   "contactPermissionEvidenceUrl": zod.string().url().max(executeContractResponseContractOneCommitmentSnapshotOneDetailIntelligenceItemOneContactPermissionEvidenceUrlMax).optional(),
@@ -31245,6 +30684,7 @@ export const ExecuteContractResponse = zod.object({
   "hypotheses": zod.array(zod.object({
   "id": zod.string(),
   "evidenceId": zod.string(),
+  "sourceRecordId": zod.string().nullable(),
   "category": zod.string(),
   "severity": zod.enum(['COSMETIC', 'MODERATE', 'MAJOR', 'REPLACEMENT']),
   "statement": zod.string(),
@@ -31254,7 +30694,7 @@ export const ExecuteContractResponse = zod.object({
   "confidence": zod.number().min(executeContractResponseContractOneCommitmentSnapshotOneDetailAnalysisOnePreliminaryRepairEstimateHypothesesItemConfidenceMin).max(executeContractResponseContractOneCommitmentSnapshotOneDetailAnalysisOnePreliminaryRepairEstimateHypothesesItemConfidenceMax),
   "confidenceMethod": zod.enum(['EXPLICIT_PHRASE_RULE_UNCALIBRATED']),
   "source": zod.string(),
-  "sourceUrl": zod.string().url(),
+  "sourceUrl": zod.string().url().nullable(),
   "ruleId": zod.string(),
   "question": zod.string(),
   "action": zod.string()
@@ -31394,7 +30834,9 @@ export const ExecuteContractResponse = zod.object({
   "severity": zod.enum(['NO_REPAIR', 'COSMETIC', 'MODERATE', 'MAJOR', 'REPLACEMENT']),
   "quantity": zod.number().min(executeContractResponseContractOneCommitmentSnapshotOneDetailUnderwritingOneRepairObservationsItemQuantityMin).max(executeContractResponseContractOneCommitmentSnapshotOneDetailUnderwritingOneRepairObservationsItemQuantityMax),
   "unit": zod.enum(['SQFT', 'LINEAR_FT', 'EACH', 'LUMP_SUM']),
-  "evidenceId": zod.string().min(1).max(executeContractResponseContractOneCommitmentSnapshotOneDetailUnderwritingOneRepairObservationsItemEvidenceIdMax)
+  "evidenceId": zod.string().min(1).max(executeContractResponseContractOneCommitmentSnapshotOneDetailUnderwritingOneRepairObservationsItemEvidenceIdMax),
+  "sourceRecordId": zod.string().max(executeContractResponseContractOneCommitmentSnapshotOneDetailUnderwritingOneRepairObservationsItemSourceRecordIdMax).optional(),
+  "sourceUrl": zod.string().url().nullish()
 })).max(executeContractResponseContractOneCommitmentSnapshotOneDetailUnderwritingOneRepairObservationsMax).optional(),
   "repairEstimate": zod.object({
   "status": zod.enum(['NOT_USED', 'CALCULATED', 'BLOCKED']),
@@ -31438,26 +30880,21 @@ export const ExecuteContractResponse = zod.object({
   "createdAt": zod.string()
 })),
   "calls": zod.array(zod.object({
-  "version": zod.number().int().min(1),
-  "outcome": zod.enum(['NO_ANSWER', 'VOICEMAIL', 'CONNECTED', 'NOT_INTERESTED']),
-  "notes": zod.string().min(1).max(executeContractResponseContractOneCommitmentSnapshotOneDetailCallsItemOneNotesMax),
-  "nextAction": zod.string().min(executeContractResponseContractOneCommitmentSnapshotOneDetailCallsItemOneNextActionMin).max(executeContractResponseContractOneCommitmentSnapshotOneDetailCallsItemOneNextActionMax),
-  "followUpAt": zod.string().datetime({"offset":true}).nullable(),
-  "sellerAnswers": zod.object({
-  "motivationStatement": zod.string().max(executeContractResponseContractOneCommitmentSnapshotOneDetailCallsItemOneSellerAnswersMotivationStatementMax).optional(),
-  "conditionDescription": zod.string().max(executeContractResponseContractOneCommitmentSnapshotOneDetailCallsItemOneSellerAnswersConditionDescriptionMax).optional(),
-  "timing": zod.string().max(executeContractResponseContractOneCommitmentSnapshotOneDetailCallsItemOneSellerAnswersTimingMax).optional(),
-  "askingPrice": zod.number().min(executeContractResponseContractOneCommitmentSnapshotOneDetailCallsItemOneSellerAnswersAskingPriceMin).max(executeContractResponseContractOneCommitmentSnapshotOneDetailCallsItemOneSellerAnswersAskingPriceMax).nullish(),
-  "nextStepOutcome": zod.string().max(executeContractResponseContractOneCommitmentSnapshotOneDetailCallsItemOneSellerAnswersNextStepOutcomeMax).optional()
-}).optional()
-}).and(zod.object({
   "id": zod.string(),
   "createdAt": zod.string(),
   "actor": zod.string(),
-  "evidenceSource": zod.enum(['OPERATOR_ENTERED_SELLER_CONVERSATION']).optional(),
-  "evidenceClassification": zod.enum(['INDICATED']).optional(),
-  "sellerAnswersCapturedAt": zod.string().datetime({"offset":true}).optional()
-}))),
+  "version": zod.number().int(),
+  "outcome": zod.enum(['NO_ANSWER', 'VOICEMAIL', 'CONNECTED', 'NOT_INTERESTED']),
+  "notes": zod.string().max(executeContractResponseContractOneCommitmentSnapshotOneDetailCallsItemNotesMax),
+  "nextAction": zod.string().max(executeContractResponseContractOneCommitmentSnapshotOneDetailCallsItemNextActionMax),
+  "followUpAt": zod.string().datetime({"offset":true}).nullable(),
+  "evidenceSource": zod.enum(['OPERATOR_ENTERED_SELLER_CONVERSATION', 'OPERATOR_CALL_ATTEMPT']).optional(),
+  "evidenceClassification": zod.enum(['INDICATED', 'OBSERVED']).optional(),
+  "sellerAnswersCapturedAt": zod.string().datetime({"offset":true}).optional(),
+  "evidenceIds": zod.array(zod.string()).optional(),
+  "materialEvidence": zod.boolean().optional(),
+  "analysisInvalidated": zod.boolean().optional()
+})),
   "allowedTransitions": zod.array(zod.enum(['DISCOVERED', 'ENRICHING', 'ANALYZED', 'STRONG', 'NEGOTIABLE', 'PASS', 'CALL_READY', 'CONTACTED', 'CONVERSATION', 'OFFER_READY', 'OFFER_SENT', 'NEGOTIATING', 'CONTRACT_PENDING', 'UNDER_CONTRACT', 'BUYER_MATCHED', 'BUYER_INTERESTED', 'BUYER_COMMITTED', 'CLOSING', 'CLOSED', 'DEAD_DEAL'])),
   "workGuidance": zod.union([zod.object({
   "category": zod.enum(['RESEARCH', 'CALL', 'FOLLOW_UP', 'OFFER_APPROVAL', 'NEGOTIATION', 'CONTRACT', 'BUYER_MATCH', 'DEADLINE', 'CLOSING', 'DISCOVERY_REVIEW', 'BUYER_VERIFICATION', 'WORKER']),
@@ -31906,6 +31343,13 @@ export const recordClosingMilestoneResponseContractOneCommitmentSnapshotOneDetai
 export const recordClosingMilestoneResponseContractOneCommitmentSnapshotOneDetailIntelligenceItemOneConfidenceMin = 0;
 export const recordClosingMilestoneResponseContractOneCommitmentSnapshotOneDetailIntelligenceItemOneConfidenceMax = 1;
 
+export const recordClosingMilestoneResponseContractOneCommitmentSnapshotOneDetailIntelligenceItemOneSourceRecordIdMax = 240;
+
+export const recordClosingMilestoneResponseContractOneCommitmentSnapshotOneDetailIntelligenceItemOneContentDigestRegExp = new RegExp('^[a-f0-9]{64}$');
+export const recordClosingMilestoneResponseContractOneCommitmentSnapshotOneDetailIntelligenceItemOneReconciliationComparedEvidenceIdsMax = 50;
+
+export const recordClosingMilestoneResponseContractOneCommitmentSnapshotOneDetailIntelligenceItemOneReconciliationReasonMax = 1000;
+
 export const recordClosingMilestoneResponseContractOneCommitmentSnapshotOneDetailIntelligenceItemOneVerificationNoteMax = 2000;
 
 export const recordClosingMilestoneResponseContractOneCommitmentSnapshotOneDetailIntelligenceItemOneContactPermissionEvidenceUrlMax = 2000;
@@ -32089,6 +31533,8 @@ export const recordClosingMilestoneResponseContractOneCommitmentSnapshotOneDetai
 
 export const recordClosingMilestoneResponseContractOneCommitmentSnapshotOneDetailUnderwritingOneRepairObservationsItemEvidenceIdMax = 200;
 
+export const recordClosingMilestoneResponseContractOneCommitmentSnapshotOneDetailUnderwritingOneRepairObservationsItemSourceRecordIdMax = 240;
+
 export const recordClosingMilestoneResponseContractOneCommitmentSnapshotOneDetailUnderwritingOneRepairObservationsMax = 50;
 
 export const recordClosingMilestoneResponseContractOneCommitmentSnapshotOneDetailUnderwritingOneRepairEstimateCatalogVersionMin = 0;
@@ -32110,22 +31556,9 @@ export const recordClosingMilestoneResponseContractOneCommitmentSnapshotOneDetai
 
 export const recordClosingMilestoneResponseContractOneCommitmentSnapshotOneDetailUnderwritingOneSellerContactEvidenceIdMax = 200;
 
+export const recordClosingMilestoneResponseContractOneCommitmentSnapshotOneDetailCallsItemNotesMax = 10000;
 
-export const recordClosingMilestoneResponseContractOneCommitmentSnapshotOneDetailCallsItemOneNotesMax = 10000;
-
-export const recordClosingMilestoneResponseContractOneCommitmentSnapshotOneDetailCallsItemOneNextActionMin = 3;
-export const recordClosingMilestoneResponseContractOneCommitmentSnapshotOneDetailCallsItemOneNextActionMax = 1000;
-
-export const recordClosingMilestoneResponseContractOneCommitmentSnapshotOneDetailCallsItemOneSellerAnswersMotivationStatementMax = 3000;
-
-export const recordClosingMilestoneResponseContractOneCommitmentSnapshotOneDetailCallsItemOneSellerAnswersConditionDescriptionMax = 3000;
-
-export const recordClosingMilestoneResponseContractOneCommitmentSnapshotOneDetailCallsItemOneSellerAnswersTimingMax = 1000;
-
-export const recordClosingMilestoneResponseContractOneCommitmentSnapshotOneDetailCallsItemOneSellerAnswersAskingPriceMin = 0;
-export const recordClosingMilestoneResponseContractOneCommitmentSnapshotOneDetailCallsItemOneSellerAnswersAskingPriceMax = 1000000000;
-
-export const recordClosingMilestoneResponseContractOneCommitmentSnapshotOneDetailCallsItemOneSellerAnswersNextStepOutcomeMax = 2000;
+export const recordClosingMilestoneResponseContractOneCommitmentSnapshotOneDetailCallsItemNextActionMax = 1000;
 
 export const recordClosingMilestoneResponseContractOneMilestonesItemAmountMin = 0;
 export const recordClosingMilestoneResponseContractOneMilestonesItemAmountMax = 1000000000;
@@ -32458,6 +31891,16 @@ export const RecordClosingMilestoneResponse = zod.object({
   "sourceType": zod.enum(['PUBLIC_RECORD', 'PERMITTED_LISTING', 'SELLER', 'INSPECTION', 'PUBLIC_PAGE', 'ANALYST', 'MODEL']),
   "confidence": zod.number().min(recordClosingMilestoneResponseContractOneCommitmentSnapshotOneDetailIntelligenceItemOneConfidenceMin).max(recordClosingMilestoneResponseContractOneCommitmentSnapshotOneDetailIntelligenceItemOneConfidenceMax),
   "capturedAt": zod.string().datetime({"offset":true}),
+  "sourceRecordId": zod.string().max(recordClosingMilestoneResponseContractOneCommitmentSnapshotOneDetailIntelligenceItemOneSourceRecordIdMax).optional(),
+  "confidenceBasis": zod.enum(['OPERATOR_ASSESSED', 'UNASSESSED_CONSERVATIVE_DEFAULT', 'SOURCE_RELIABILITY']).optional(),
+  "clarificationStatus": zod.enum(['UNREVIEWED', 'FOLLOW_UP_REQUIRED', 'SELLER_CLARIFIED']).optional(),
+  "contentDigest": zod.string().regex(recordClosingMilestoneResponseContractOneCommitmentSnapshotOneDetailIntelligenceItemOneContentDigestRegExp).optional(),
+  "retentionPolicy": zod.enum(['FULL_TEXT_PERMITTED', 'HASH_ONLY', 'DERIVED_ONLY']).optional(),
+  "reconciliation": zod.object({
+  "state": zod.enum(['NO_COMPARABLE_EVIDENCE', 'NO_CONFLICT_FOUND', 'CONFLICT_REVIEW']),
+  "comparedEvidenceIds": zod.array(zod.string()).max(recordClosingMilestoneResponseContractOneCommitmentSnapshotOneDetailIntelligenceItemOneReconciliationComparedEvidenceIdsMax),
+  "reason": zod.string().max(recordClosingMilestoneResponseContractOneCommitmentSnapshotOneDetailIntelligenceItemOneReconciliationReasonMax)
+}).optional(),
   "verificationNote": zod.string().max(recordClosingMilestoneResponseContractOneCommitmentSnapshotOneDetailIntelligenceItemOneVerificationNoteMax).optional(),
   "contactPermissionStatus": zod.enum(['NOT_REVIEWED', 'PERMITTED', 'PROHIBITED']).optional(),
   "contactPermissionEvidenceUrl": zod.string().url().max(recordClosingMilestoneResponseContractOneCommitmentSnapshotOneDetailIntelligenceItemOneContactPermissionEvidenceUrlMax).optional(),
@@ -32588,6 +32031,7 @@ export const RecordClosingMilestoneResponse = zod.object({
   "hypotheses": zod.array(zod.object({
   "id": zod.string(),
   "evidenceId": zod.string(),
+  "sourceRecordId": zod.string().nullable(),
   "category": zod.string(),
   "severity": zod.enum(['COSMETIC', 'MODERATE', 'MAJOR', 'REPLACEMENT']),
   "statement": zod.string(),
@@ -32597,7 +32041,7 @@ export const RecordClosingMilestoneResponse = zod.object({
   "confidence": zod.number().min(recordClosingMilestoneResponseContractOneCommitmentSnapshotOneDetailAnalysisOnePreliminaryRepairEstimateHypothesesItemConfidenceMin).max(recordClosingMilestoneResponseContractOneCommitmentSnapshotOneDetailAnalysisOnePreliminaryRepairEstimateHypothesesItemConfidenceMax),
   "confidenceMethod": zod.enum(['EXPLICIT_PHRASE_RULE_UNCALIBRATED']),
   "source": zod.string(),
-  "sourceUrl": zod.string().url(),
+  "sourceUrl": zod.string().url().nullable(),
   "ruleId": zod.string(),
   "question": zod.string(),
   "action": zod.string()
@@ -32737,7 +32181,9 @@ export const RecordClosingMilestoneResponse = zod.object({
   "severity": zod.enum(['NO_REPAIR', 'COSMETIC', 'MODERATE', 'MAJOR', 'REPLACEMENT']),
   "quantity": zod.number().min(recordClosingMilestoneResponseContractOneCommitmentSnapshotOneDetailUnderwritingOneRepairObservationsItemQuantityMin).max(recordClosingMilestoneResponseContractOneCommitmentSnapshotOneDetailUnderwritingOneRepairObservationsItemQuantityMax),
   "unit": zod.enum(['SQFT', 'LINEAR_FT', 'EACH', 'LUMP_SUM']),
-  "evidenceId": zod.string().min(1).max(recordClosingMilestoneResponseContractOneCommitmentSnapshotOneDetailUnderwritingOneRepairObservationsItemEvidenceIdMax)
+  "evidenceId": zod.string().min(1).max(recordClosingMilestoneResponseContractOneCommitmentSnapshotOneDetailUnderwritingOneRepairObservationsItemEvidenceIdMax),
+  "sourceRecordId": zod.string().max(recordClosingMilestoneResponseContractOneCommitmentSnapshotOneDetailUnderwritingOneRepairObservationsItemSourceRecordIdMax).optional(),
+  "sourceUrl": zod.string().url().nullish()
 })).max(recordClosingMilestoneResponseContractOneCommitmentSnapshotOneDetailUnderwritingOneRepairObservationsMax).optional(),
   "repairEstimate": zod.object({
   "status": zod.enum(['NOT_USED', 'CALCULATED', 'BLOCKED']),
@@ -32781,26 +32227,21 @@ export const RecordClosingMilestoneResponse = zod.object({
   "createdAt": zod.string()
 })),
   "calls": zod.array(zod.object({
-  "version": zod.number().int().min(1),
-  "outcome": zod.enum(['NO_ANSWER', 'VOICEMAIL', 'CONNECTED', 'NOT_INTERESTED']),
-  "notes": zod.string().min(1).max(recordClosingMilestoneResponseContractOneCommitmentSnapshotOneDetailCallsItemOneNotesMax),
-  "nextAction": zod.string().min(recordClosingMilestoneResponseContractOneCommitmentSnapshotOneDetailCallsItemOneNextActionMin).max(recordClosingMilestoneResponseContractOneCommitmentSnapshotOneDetailCallsItemOneNextActionMax),
-  "followUpAt": zod.string().datetime({"offset":true}).nullable(),
-  "sellerAnswers": zod.object({
-  "motivationStatement": zod.string().max(recordClosingMilestoneResponseContractOneCommitmentSnapshotOneDetailCallsItemOneSellerAnswersMotivationStatementMax).optional(),
-  "conditionDescription": zod.string().max(recordClosingMilestoneResponseContractOneCommitmentSnapshotOneDetailCallsItemOneSellerAnswersConditionDescriptionMax).optional(),
-  "timing": zod.string().max(recordClosingMilestoneResponseContractOneCommitmentSnapshotOneDetailCallsItemOneSellerAnswersTimingMax).optional(),
-  "askingPrice": zod.number().min(recordClosingMilestoneResponseContractOneCommitmentSnapshotOneDetailCallsItemOneSellerAnswersAskingPriceMin).max(recordClosingMilestoneResponseContractOneCommitmentSnapshotOneDetailCallsItemOneSellerAnswersAskingPriceMax).nullish(),
-  "nextStepOutcome": zod.string().max(recordClosingMilestoneResponseContractOneCommitmentSnapshotOneDetailCallsItemOneSellerAnswersNextStepOutcomeMax).optional()
-}).optional()
-}).and(zod.object({
   "id": zod.string(),
   "createdAt": zod.string(),
   "actor": zod.string(),
-  "evidenceSource": zod.enum(['OPERATOR_ENTERED_SELLER_CONVERSATION']).optional(),
-  "evidenceClassification": zod.enum(['INDICATED']).optional(),
-  "sellerAnswersCapturedAt": zod.string().datetime({"offset":true}).optional()
-}))),
+  "version": zod.number().int(),
+  "outcome": zod.enum(['NO_ANSWER', 'VOICEMAIL', 'CONNECTED', 'NOT_INTERESTED']),
+  "notes": zod.string().max(recordClosingMilestoneResponseContractOneCommitmentSnapshotOneDetailCallsItemNotesMax),
+  "nextAction": zod.string().max(recordClosingMilestoneResponseContractOneCommitmentSnapshotOneDetailCallsItemNextActionMax),
+  "followUpAt": zod.string().datetime({"offset":true}).nullable(),
+  "evidenceSource": zod.enum(['OPERATOR_ENTERED_SELLER_CONVERSATION', 'OPERATOR_CALL_ATTEMPT']).optional(),
+  "evidenceClassification": zod.enum(['INDICATED', 'OBSERVED']).optional(),
+  "sellerAnswersCapturedAt": zod.string().datetime({"offset":true}).optional(),
+  "evidenceIds": zod.array(zod.string()).optional(),
+  "materialEvidence": zod.boolean().optional(),
+  "analysisInvalidated": zod.boolean().optional()
+})),
   "allowedTransitions": zod.array(zod.enum(['DISCOVERED', 'ENRICHING', 'ANALYZED', 'STRONG', 'NEGOTIABLE', 'PASS', 'CALL_READY', 'CONTACTED', 'CONVERSATION', 'OFFER_READY', 'OFFER_SENT', 'NEGOTIATING', 'CONTRACT_PENDING', 'UNDER_CONTRACT', 'BUYER_MATCHED', 'BUYER_INTERESTED', 'BUYER_COMMITTED', 'CLOSING', 'CLOSED', 'DEAD_DEAL'])),
   "workGuidance": zod.union([zod.object({
   "category": zod.enum(['RESEARCH', 'CALL', 'FOLLOW_UP', 'OFFER_APPROVAL', 'NEGOTIATION', 'CONTRACT', 'BUYER_MATCH', 'DEADLINE', 'CLOSING', 'DISCOVERY_REVIEW', 'BUYER_VERIFICATION', 'WORKER']),
@@ -33247,6 +32688,13 @@ export const recordDealOutcomeResponseContractOneCommitmentSnapshotOneDetailInte
 export const recordDealOutcomeResponseContractOneCommitmentSnapshotOneDetailIntelligenceItemOneConfidenceMin = 0;
 export const recordDealOutcomeResponseContractOneCommitmentSnapshotOneDetailIntelligenceItemOneConfidenceMax = 1;
 
+export const recordDealOutcomeResponseContractOneCommitmentSnapshotOneDetailIntelligenceItemOneSourceRecordIdMax = 240;
+
+export const recordDealOutcomeResponseContractOneCommitmentSnapshotOneDetailIntelligenceItemOneContentDigestRegExp = new RegExp('^[a-f0-9]{64}$');
+export const recordDealOutcomeResponseContractOneCommitmentSnapshotOneDetailIntelligenceItemOneReconciliationComparedEvidenceIdsMax = 50;
+
+export const recordDealOutcomeResponseContractOneCommitmentSnapshotOneDetailIntelligenceItemOneReconciliationReasonMax = 1000;
+
 export const recordDealOutcomeResponseContractOneCommitmentSnapshotOneDetailIntelligenceItemOneVerificationNoteMax = 2000;
 
 export const recordDealOutcomeResponseContractOneCommitmentSnapshotOneDetailIntelligenceItemOneContactPermissionEvidenceUrlMax = 2000;
@@ -33430,6 +32878,8 @@ export const recordDealOutcomeResponseContractOneCommitmentSnapshotOneDetailUnde
 
 export const recordDealOutcomeResponseContractOneCommitmentSnapshotOneDetailUnderwritingOneRepairObservationsItemEvidenceIdMax = 200;
 
+export const recordDealOutcomeResponseContractOneCommitmentSnapshotOneDetailUnderwritingOneRepairObservationsItemSourceRecordIdMax = 240;
+
 export const recordDealOutcomeResponseContractOneCommitmentSnapshotOneDetailUnderwritingOneRepairObservationsMax = 50;
 
 export const recordDealOutcomeResponseContractOneCommitmentSnapshotOneDetailUnderwritingOneRepairEstimateCatalogVersionMin = 0;
@@ -33451,22 +32901,9 @@ export const recordDealOutcomeResponseContractOneCommitmentSnapshotOneDetailUnde
 
 export const recordDealOutcomeResponseContractOneCommitmentSnapshotOneDetailUnderwritingOneSellerContactEvidenceIdMax = 200;
 
+export const recordDealOutcomeResponseContractOneCommitmentSnapshotOneDetailCallsItemNotesMax = 10000;
 
-export const recordDealOutcomeResponseContractOneCommitmentSnapshotOneDetailCallsItemOneNotesMax = 10000;
-
-export const recordDealOutcomeResponseContractOneCommitmentSnapshotOneDetailCallsItemOneNextActionMin = 3;
-export const recordDealOutcomeResponseContractOneCommitmentSnapshotOneDetailCallsItemOneNextActionMax = 1000;
-
-export const recordDealOutcomeResponseContractOneCommitmentSnapshotOneDetailCallsItemOneSellerAnswersMotivationStatementMax = 3000;
-
-export const recordDealOutcomeResponseContractOneCommitmentSnapshotOneDetailCallsItemOneSellerAnswersConditionDescriptionMax = 3000;
-
-export const recordDealOutcomeResponseContractOneCommitmentSnapshotOneDetailCallsItemOneSellerAnswersTimingMax = 1000;
-
-export const recordDealOutcomeResponseContractOneCommitmentSnapshotOneDetailCallsItemOneSellerAnswersAskingPriceMin = 0;
-export const recordDealOutcomeResponseContractOneCommitmentSnapshotOneDetailCallsItemOneSellerAnswersAskingPriceMax = 1000000000;
-
-export const recordDealOutcomeResponseContractOneCommitmentSnapshotOneDetailCallsItemOneSellerAnswersNextStepOutcomeMax = 2000;
+export const recordDealOutcomeResponseContractOneCommitmentSnapshotOneDetailCallsItemNextActionMax = 1000;
 
 export const recordDealOutcomeResponseContractOneMilestonesItemAmountMin = 0;
 export const recordDealOutcomeResponseContractOneMilestonesItemAmountMax = 1000000000;
@@ -33799,6 +33236,16 @@ export const RecordDealOutcomeResponse = zod.object({
   "sourceType": zod.enum(['PUBLIC_RECORD', 'PERMITTED_LISTING', 'SELLER', 'INSPECTION', 'PUBLIC_PAGE', 'ANALYST', 'MODEL']),
   "confidence": zod.number().min(recordDealOutcomeResponseContractOneCommitmentSnapshotOneDetailIntelligenceItemOneConfidenceMin).max(recordDealOutcomeResponseContractOneCommitmentSnapshotOneDetailIntelligenceItemOneConfidenceMax),
   "capturedAt": zod.string().datetime({"offset":true}),
+  "sourceRecordId": zod.string().max(recordDealOutcomeResponseContractOneCommitmentSnapshotOneDetailIntelligenceItemOneSourceRecordIdMax).optional(),
+  "confidenceBasis": zod.enum(['OPERATOR_ASSESSED', 'UNASSESSED_CONSERVATIVE_DEFAULT', 'SOURCE_RELIABILITY']).optional(),
+  "clarificationStatus": zod.enum(['UNREVIEWED', 'FOLLOW_UP_REQUIRED', 'SELLER_CLARIFIED']).optional(),
+  "contentDigest": zod.string().regex(recordDealOutcomeResponseContractOneCommitmentSnapshotOneDetailIntelligenceItemOneContentDigestRegExp).optional(),
+  "retentionPolicy": zod.enum(['FULL_TEXT_PERMITTED', 'HASH_ONLY', 'DERIVED_ONLY']).optional(),
+  "reconciliation": zod.object({
+  "state": zod.enum(['NO_COMPARABLE_EVIDENCE', 'NO_CONFLICT_FOUND', 'CONFLICT_REVIEW']),
+  "comparedEvidenceIds": zod.array(zod.string()).max(recordDealOutcomeResponseContractOneCommitmentSnapshotOneDetailIntelligenceItemOneReconciliationComparedEvidenceIdsMax),
+  "reason": zod.string().max(recordDealOutcomeResponseContractOneCommitmentSnapshotOneDetailIntelligenceItemOneReconciliationReasonMax)
+}).optional(),
   "verificationNote": zod.string().max(recordDealOutcomeResponseContractOneCommitmentSnapshotOneDetailIntelligenceItemOneVerificationNoteMax).optional(),
   "contactPermissionStatus": zod.enum(['NOT_REVIEWED', 'PERMITTED', 'PROHIBITED']).optional(),
   "contactPermissionEvidenceUrl": zod.string().url().max(recordDealOutcomeResponseContractOneCommitmentSnapshotOneDetailIntelligenceItemOneContactPermissionEvidenceUrlMax).optional(),
@@ -33929,6 +33376,7 @@ export const RecordDealOutcomeResponse = zod.object({
   "hypotheses": zod.array(zod.object({
   "id": zod.string(),
   "evidenceId": zod.string(),
+  "sourceRecordId": zod.string().nullable(),
   "category": zod.string(),
   "severity": zod.enum(['COSMETIC', 'MODERATE', 'MAJOR', 'REPLACEMENT']),
   "statement": zod.string(),
@@ -33938,7 +33386,7 @@ export const RecordDealOutcomeResponse = zod.object({
   "confidence": zod.number().min(recordDealOutcomeResponseContractOneCommitmentSnapshotOneDetailAnalysisOnePreliminaryRepairEstimateHypothesesItemConfidenceMin).max(recordDealOutcomeResponseContractOneCommitmentSnapshotOneDetailAnalysisOnePreliminaryRepairEstimateHypothesesItemConfidenceMax),
   "confidenceMethod": zod.enum(['EXPLICIT_PHRASE_RULE_UNCALIBRATED']),
   "source": zod.string(),
-  "sourceUrl": zod.string().url(),
+  "sourceUrl": zod.string().url().nullable(),
   "ruleId": zod.string(),
   "question": zod.string(),
   "action": zod.string()
@@ -34078,7 +33526,9 @@ export const RecordDealOutcomeResponse = zod.object({
   "severity": zod.enum(['NO_REPAIR', 'COSMETIC', 'MODERATE', 'MAJOR', 'REPLACEMENT']),
   "quantity": zod.number().min(recordDealOutcomeResponseContractOneCommitmentSnapshotOneDetailUnderwritingOneRepairObservationsItemQuantityMin).max(recordDealOutcomeResponseContractOneCommitmentSnapshotOneDetailUnderwritingOneRepairObservationsItemQuantityMax),
   "unit": zod.enum(['SQFT', 'LINEAR_FT', 'EACH', 'LUMP_SUM']),
-  "evidenceId": zod.string().min(1).max(recordDealOutcomeResponseContractOneCommitmentSnapshotOneDetailUnderwritingOneRepairObservationsItemEvidenceIdMax)
+  "evidenceId": zod.string().min(1).max(recordDealOutcomeResponseContractOneCommitmentSnapshotOneDetailUnderwritingOneRepairObservationsItemEvidenceIdMax),
+  "sourceRecordId": zod.string().max(recordDealOutcomeResponseContractOneCommitmentSnapshotOneDetailUnderwritingOneRepairObservationsItemSourceRecordIdMax).optional(),
+  "sourceUrl": zod.string().url().nullish()
 })).max(recordDealOutcomeResponseContractOneCommitmentSnapshotOneDetailUnderwritingOneRepairObservationsMax).optional(),
   "repairEstimate": zod.object({
   "status": zod.enum(['NOT_USED', 'CALCULATED', 'BLOCKED']),
@@ -34122,26 +33572,21 @@ export const RecordDealOutcomeResponse = zod.object({
   "createdAt": zod.string()
 })),
   "calls": zod.array(zod.object({
-  "version": zod.number().int().min(1),
-  "outcome": zod.enum(['NO_ANSWER', 'VOICEMAIL', 'CONNECTED', 'NOT_INTERESTED']),
-  "notes": zod.string().min(1).max(recordDealOutcomeResponseContractOneCommitmentSnapshotOneDetailCallsItemOneNotesMax),
-  "nextAction": zod.string().min(recordDealOutcomeResponseContractOneCommitmentSnapshotOneDetailCallsItemOneNextActionMin).max(recordDealOutcomeResponseContractOneCommitmentSnapshotOneDetailCallsItemOneNextActionMax),
-  "followUpAt": zod.string().datetime({"offset":true}).nullable(),
-  "sellerAnswers": zod.object({
-  "motivationStatement": zod.string().max(recordDealOutcomeResponseContractOneCommitmentSnapshotOneDetailCallsItemOneSellerAnswersMotivationStatementMax).optional(),
-  "conditionDescription": zod.string().max(recordDealOutcomeResponseContractOneCommitmentSnapshotOneDetailCallsItemOneSellerAnswersConditionDescriptionMax).optional(),
-  "timing": zod.string().max(recordDealOutcomeResponseContractOneCommitmentSnapshotOneDetailCallsItemOneSellerAnswersTimingMax).optional(),
-  "askingPrice": zod.number().min(recordDealOutcomeResponseContractOneCommitmentSnapshotOneDetailCallsItemOneSellerAnswersAskingPriceMin).max(recordDealOutcomeResponseContractOneCommitmentSnapshotOneDetailCallsItemOneSellerAnswersAskingPriceMax).nullish(),
-  "nextStepOutcome": zod.string().max(recordDealOutcomeResponseContractOneCommitmentSnapshotOneDetailCallsItemOneSellerAnswersNextStepOutcomeMax).optional()
-}).optional()
-}).and(zod.object({
   "id": zod.string(),
   "createdAt": zod.string(),
   "actor": zod.string(),
-  "evidenceSource": zod.enum(['OPERATOR_ENTERED_SELLER_CONVERSATION']).optional(),
-  "evidenceClassification": zod.enum(['INDICATED']).optional(),
-  "sellerAnswersCapturedAt": zod.string().datetime({"offset":true}).optional()
-}))),
+  "version": zod.number().int(),
+  "outcome": zod.enum(['NO_ANSWER', 'VOICEMAIL', 'CONNECTED', 'NOT_INTERESTED']),
+  "notes": zod.string().max(recordDealOutcomeResponseContractOneCommitmentSnapshotOneDetailCallsItemNotesMax),
+  "nextAction": zod.string().max(recordDealOutcomeResponseContractOneCommitmentSnapshotOneDetailCallsItemNextActionMax),
+  "followUpAt": zod.string().datetime({"offset":true}).nullable(),
+  "evidenceSource": zod.enum(['OPERATOR_ENTERED_SELLER_CONVERSATION', 'OPERATOR_CALL_ATTEMPT']).optional(),
+  "evidenceClassification": zod.enum(['INDICATED', 'OBSERVED']).optional(),
+  "sellerAnswersCapturedAt": zod.string().datetime({"offset":true}).optional(),
+  "evidenceIds": zod.array(zod.string()).optional(),
+  "materialEvidence": zod.boolean().optional(),
+  "analysisInvalidated": zod.boolean().optional()
+})),
   "allowedTransitions": zod.array(zod.enum(['DISCOVERED', 'ENRICHING', 'ANALYZED', 'STRONG', 'NEGOTIABLE', 'PASS', 'CALL_READY', 'CONTACTED', 'CONVERSATION', 'OFFER_READY', 'OFFER_SENT', 'NEGOTIATING', 'CONTRACT_PENDING', 'UNDER_CONTRACT', 'BUYER_MATCHED', 'BUYER_INTERESTED', 'BUYER_COMMITTED', 'CLOSING', 'CLOSED', 'DEAD_DEAL'])),
   "workGuidance": zod.union([zod.object({
   "category": zod.enum(['RESEARCH', 'CALL', 'FOLLOW_UP', 'OFFER_APPROVAL', 'NEGOTIATION', 'CONTRACT', 'BUYER_MATCH', 'DEADLINE', 'CLOSING', 'DISCOVERY_REVIEW', 'BUYER_VERIFICATION', 'WORKER']),
@@ -37220,6 +36665,13 @@ export const addSourceCompsResponseIntelligenceItemOneSourceUrlMax = 2000;
 export const addSourceCompsResponseIntelligenceItemOneConfidenceMin = 0;
 export const addSourceCompsResponseIntelligenceItemOneConfidenceMax = 1;
 
+export const addSourceCompsResponseIntelligenceItemOneSourceRecordIdMax = 240;
+
+export const addSourceCompsResponseIntelligenceItemOneContentDigestRegExp = new RegExp('^[a-f0-9]{64}$');
+export const addSourceCompsResponseIntelligenceItemOneReconciliationComparedEvidenceIdsMax = 50;
+
+export const addSourceCompsResponseIntelligenceItemOneReconciliationReasonMax = 1000;
+
 export const addSourceCompsResponseIntelligenceItemOneVerificationNoteMax = 2000;
 
 export const addSourceCompsResponseIntelligenceItemOneContactPermissionEvidenceUrlMax = 2000;
@@ -37403,6 +36855,8 @@ export const addSourceCompsResponseUnderwritingOneRepairObservationsItemQuantity
 
 export const addSourceCompsResponseUnderwritingOneRepairObservationsItemEvidenceIdMax = 200;
 
+export const addSourceCompsResponseUnderwritingOneRepairObservationsItemSourceRecordIdMax = 240;
+
 export const addSourceCompsResponseUnderwritingOneRepairObservationsMax = 50;
 
 export const addSourceCompsResponseUnderwritingOneRepairEstimateCatalogVersionMin = 0;
@@ -37424,22 +36878,9 @@ export const addSourceCompsResponseUnderwritingOneConditionEvidenceIdMax = 200;
 
 export const addSourceCompsResponseUnderwritingOneSellerContactEvidenceIdMax = 200;
 
+export const addSourceCompsResponseCallsItemNotesMax = 10000;
 
-export const addSourceCompsResponseCallsItemOneNotesMax = 10000;
-
-export const addSourceCompsResponseCallsItemOneNextActionMin = 3;
-export const addSourceCompsResponseCallsItemOneNextActionMax = 1000;
-
-export const addSourceCompsResponseCallsItemOneSellerAnswersMotivationStatementMax = 3000;
-
-export const addSourceCompsResponseCallsItemOneSellerAnswersConditionDescriptionMax = 3000;
-
-export const addSourceCompsResponseCallsItemOneSellerAnswersTimingMax = 1000;
-
-export const addSourceCompsResponseCallsItemOneSellerAnswersAskingPriceMin = 0;
-export const addSourceCompsResponseCallsItemOneSellerAnswersAskingPriceMax = 1000000000;
-
-export const addSourceCompsResponseCallsItemOneSellerAnswersNextStepOutcomeMax = 2000;
+export const addSourceCompsResponseCallsItemNextActionMax = 1000;
 
 
 
@@ -37509,6 +36950,16 @@ export const AddSourceCompsResponse = zod.object({
   "sourceType": zod.enum(['PUBLIC_RECORD', 'PERMITTED_LISTING', 'SELLER', 'INSPECTION', 'PUBLIC_PAGE', 'ANALYST', 'MODEL']),
   "confidence": zod.number().min(addSourceCompsResponseIntelligenceItemOneConfidenceMin).max(addSourceCompsResponseIntelligenceItemOneConfidenceMax),
   "capturedAt": zod.string().datetime({"offset":true}),
+  "sourceRecordId": zod.string().max(addSourceCompsResponseIntelligenceItemOneSourceRecordIdMax).optional(),
+  "confidenceBasis": zod.enum(['OPERATOR_ASSESSED', 'UNASSESSED_CONSERVATIVE_DEFAULT', 'SOURCE_RELIABILITY']).optional(),
+  "clarificationStatus": zod.enum(['UNREVIEWED', 'FOLLOW_UP_REQUIRED', 'SELLER_CLARIFIED']).optional(),
+  "contentDigest": zod.string().regex(addSourceCompsResponseIntelligenceItemOneContentDigestRegExp).optional(),
+  "retentionPolicy": zod.enum(['FULL_TEXT_PERMITTED', 'HASH_ONLY', 'DERIVED_ONLY']).optional(),
+  "reconciliation": zod.object({
+  "state": zod.enum(['NO_COMPARABLE_EVIDENCE', 'NO_CONFLICT_FOUND', 'CONFLICT_REVIEW']),
+  "comparedEvidenceIds": zod.array(zod.string()).max(addSourceCompsResponseIntelligenceItemOneReconciliationComparedEvidenceIdsMax),
+  "reason": zod.string().max(addSourceCompsResponseIntelligenceItemOneReconciliationReasonMax)
+}).optional(),
   "verificationNote": zod.string().max(addSourceCompsResponseIntelligenceItemOneVerificationNoteMax).optional(),
   "contactPermissionStatus": zod.enum(['NOT_REVIEWED', 'PERMITTED', 'PROHIBITED']).optional(),
   "contactPermissionEvidenceUrl": zod.string().url().max(addSourceCompsResponseIntelligenceItemOneContactPermissionEvidenceUrlMax).optional(),
@@ -37639,6 +37090,7 @@ export const AddSourceCompsResponse = zod.object({
   "hypotheses": zod.array(zod.object({
   "id": zod.string(),
   "evidenceId": zod.string(),
+  "sourceRecordId": zod.string().nullable(),
   "category": zod.string(),
   "severity": zod.enum(['COSMETIC', 'MODERATE', 'MAJOR', 'REPLACEMENT']),
   "statement": zod.string(),
@@ -37648,7 +37100,7 @@ export const AddSourceCompsResponse = zod.object({
   "confidence": zod.number().min(addSourceCompsResponseAnalysisOnePreliminaryRepairEstimateHypothesesItemConfidenceMin).max(addSourceCompsResponseAnalysisOnePreliminaryRepairEstimateHypothesesItemConfidenceMax),
   "confidenceMethod": zod.enum(['EXPLICIT_PHRASE_RULE_UNCALIBRATED']),
   "source": zod.string(),
-  "sourceUrl": zod.string().url(),
+  "sourceUrl": zod.string().url().nullable(),
   "ruleId": zod.string(),
   "question": zod.string(),
   "action": zod.string()
@@ -37788,7 +37240,9 @@ export const AddSourceCompsResponse = zod.object({
   "severity": zod.enum(['NO_REPAIR', 'COSMETIC', 'MODERATE', 'MAJOR', 'REPLACEMENT']),
   "quantity": zod.number().min(addSourceCompsResponseUnderwritingOneRepairObservationsItemQuantityMin).max(addSourceCompsResponseUnderwritingOneRepairObservationsItemQuantityMax),
   "unit": zod.enum(['SQFT', 'LINEAR_FT', 'EACH', 'LUMP_SUM']),
-  "evidenceId": zod.string().min(1).max(addSourceCompsResponseUnderwritingOneRepairObservationsItemEvidenceIdMax)
+  "evidenceId": zod.string().min(1).max(addSourceCompsResponseUnderwritingOneRepairObservationsItemEvidenceIdMax),
+  "sourceRecordId": zod.string().max(addSourceCompsResponseUnderwritingOneRepairObservationsItemSourceRecordIdMax).optional(),
+  "sourceUrl": zod.string().url().nullish()
 })).max(addSourceCompsResponseUnderwritingOneRepairObservationsMax).optional(),
   "repairEstimate": zod.object({
   "status": zod.enum(['NOT_USED', 'CALCULATED', 'BLOCKED']),
@@ -37832,26 +37286,21 @@ export const AddSourceCompsResponse = zod.object({
   "createdAt": zod.string()
 })),
   "calls": zod.array(zod.object({
-  "version": zod.number().int().min(1),
-  "outcome": zod.enum(['NO_ANSWER', 'VOICEMAIL', 'CONNECTED', 'NOT_INTERESTED']),
-  "notes": zod.string().min(1).max(addSourceCompsResponseCallsItemOneNotesMax),
-  "nextAction": zod.string().min(addSourceCompsResponseCallsItemOneNextActionMin).max(addSourceCompsResponseCallsItemOneNextActionMax),
-  "followUpAt": zod.string().datetime({"offset":true}).nullable(),
-  "sellerAnswers": zod.object({
-  "motivationStatement": zod.string().max(addSourceCompsResponseCallsItemOneSellerAnswersMotivationStatementMax).optional(),
-  "conditionDescription": zod.string().max(addSourceCompsResponseCallsItemOneSellerAnswersConditionDescriptionMax).optional(),
-  "timing": zod.string().max(addSourceCompsResponseCallsItemOneSellerAnswersTimingMax).optional(),
-  "askingPrice": zod.number().min(addSourceCompsResponseCallsItemOneSellerAnswersAskingPriceMin).max(addSourceCompsResponseCallsItemOneSellerAnswersAskingPriceMax).nullish(),
-  "nextStepOutcome": zod.string().max(addSourceCompsResponseCallsItemOneSellerAnswersNextStepOutcomeMax).optional()
-}).optional()
-}).and(zod.object({
   "id": zod.string(),
   "createdAt": zod.string(),
   "actor": zod.string(),
-  "evidenceSource": zod.enum(['OPERATOR_ENTERED_SELLER_CONVERSATION']).optional(),
-  "evidenceClassification": zod.enum(['INDICATED']).optional(),
-  "sellerAnswersCapturedAt": zod.string().datetime({"offset":true}).optional()
-}))),
+  "version": zod.number().int(),
+  "outcome": zod.enum(['NO_ANSWER', 'VOICEMAIL', 'CONNECTED', 'NOT_INTERESTED']),
+  "notes": zod.string().max(addSourceCompsResponseCallsItemNotesMax),
+  "nextAction": zod.string().max(addSourceCompsResponseCallsItemNextActionMax),
+  "followUpAt": zod.string().datetime({"offset":true}).nullable(),
+  "evidenceSource": zod.enum(['OPERATOR_ENTERED_SELLER_CONVERSATION', 'OPERATOR_CALL_ATTEMPT']).optional(),
+  "evidenceClassification": zod.enum(['INDICATED', 'OBSERVED']).optional(),
+  "sellerAnswersCapturedAt": zod.string().datetime({"offset":true}).optional(),
+  "evidenceIds": zod.array(zod.string()).optional(),
+  "materialEvidence": zod.boolean().optional(),
+  "analysisInvalidated": zod.boolean().optional()
+})),
   "allowedTransitions": zod.array(zod.enum(['DISCOVERED', 'ENRICHING', 'ANALYZED', 'STRONG', 'NEGOTIABLE', 'PASS', 'CALL_READY', 'CONTACTED', 'CONVERSATION', 'OFFER_READY', 'OFFER_SENT', 'NEGOTIATING', 'CONTRACT_PENDING', 'UNDER_CONTRACT', 'BUYER_MATCHED', 'BUYER_INTERESTED', 'BUYER_COMMITTED', 'CLOSING', 'CLOSED', 'DEAD_DEAL'])),
   "workGuidance": zod.union([zod.object({
   "category": zod.enum(['RESEARCH', 'CALL', 'FOLLOW_UP', 'OFFER_APPROVAL', 'NEGOTIATION', 'CONTRACT', 'BUYER_MATCH', 'DEADLINE', 'CLOSING', 'DISCOVERY_REVIEW', 'BUYER_VERIFICATION', 'WORKER']),

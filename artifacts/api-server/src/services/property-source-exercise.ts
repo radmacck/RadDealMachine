@@ -4,7 +4,7 @@
  */
 import assert from "node:assert/strict";
 import { randomUUID } from "node:crypto";
-import { eq, sql } from "drizzle-orm";
+import { count, eq, sql } from "drizzle-orm";
 import {
   db, pool, jobsTable, leadsTable, intelligenceTable, analysesTable, offersTable, contractsTable, propertySourceObservationsTable,
   unmatchedPropertySourceObservationsTable,
@@ -32,6 +32,7 @@ import { comparePropertyDiscoveriesByRank } from "./property-discovery-ranking";
 import {
   allPropertySourceConnectors,
   listPropertySourceDescriptors,
+  propertySourceConnectorsWithListingDescriptions,
   runPropertyDiscoveryConnectors,
   runPropertyEvidenceRefresh,
 } from "./property-source-connectors";
@@ -40,6 +41,9 @@ const actor = { id: `synthetic-source:${randomUUID()}`, role: "OWNER" };
 const now = new Date();
 try {
   const registeredConnectors = allPropertySourceConnectors();
+  const listingDescriptionConnectors = propertySourceConnectorsWithListingDescriptions();
+  const persistedListingObservations = (await db.select({ total: count() }).from(propertySourceObservationsTable)
+    .where(sql`${propertySourceObservationsTable.sourceKey} LIKE 'listing-description:%'`))[0]?.total ?? 0;
   assert.ok(registeredConnectors.length >= 6, "The live system must register multiple real, replaceable source adapters.");
   const listedSources = ListPropertySourcesResponse.parse(listPropertySources());
   assert.equal(new Set(listedSources.map(source => source.id)).size,
@@ -934,6 +938,15 @@ try {
     qualifiedLeadId: promoted.leadId,
     buyerResearchCandidates: buyerResearch.records.length,
     staleRefresh: staleRefresh.checked,
+    listingDescriptionCapability: {
+      state: listingDescriptionConnectors.length === 0 ? "UNAVAILABLE" :
+        persistedListingObservations > 0 ? "AVAILABLE_AND_EXERCISED" : "CONFIGURED_BUT_UNEXERCISED",
+      registeredConnectors: listingDescriptionConnectors.map(connector => connector.id),
+      persistedListingObservations,
+      reason: listingDescriptionConnectors.length === 0
+        ? "No registered connector has a terms-reviewed LISTING_DESCRIPTION capability; Zillow/Redfin remarks were not collected."
+        : "Only registered connectors may supply remarks; adapter result counts are taken from persisted source observations.",
+    },
     checks: "real OPA, L&I enforcement/vacancy, residential permits, and demolition source observation persistence; no lead on discovery; exact same-source and cross-source dedupe; raw permit/demolition evidence retained OBSERVED without motivation points; AI hypothesis exclusion; synthetic provenance-backed qualification; human promotion; source research/comps; pass retention; evidence-digest change invalidation of pre-execution underwriting/offers/drafts; preservation of executed terms with a persisted research-review action and buyer-rematch job",
   }, "Selective property qualification exercise PASSED (isolated schema; actual public records including permits and demolitions; synthetic qualification evidence only)");
 } finally {

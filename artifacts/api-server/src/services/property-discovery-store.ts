@@ -16,7 +16,7 @@ import {
 } from "@workspace/api-zod";
 import {
   DEFAULT_PROPERTY_QUALIFICATION_CRITERIA, DomainError, PROPERTY_SIGNAL_GROUP_BY_KEY,
-  evaluateCurrentBuyerDemand, evaluatePropertyRelevance, validateProvenance,
+  evaluateCurrentBuyerDemand, evaluatePropertyRelevance, extractListingDescriptionIntelligence, validateProvenance,
   type BuyerDemandFit, type EvidenceClassification, type IntelligenceInput, type PropertyQualificationCriteria, type PropertyRelevanceSignal,
   type PropertySignalGroup, type PropertyDiscoveryStatus, type OfferActor,
 } from "@workspace/deal-domain";
@@ -28,7 +28,11 @@ import {
 import { audit, createLead, move } from "./deal-store";
 import { allBuyerRecords, queueJob } from "./operations-records";
 import { invalidateOffers } from "./offer-records";
-import { refreshEvidenceFromRegisteredSources } from "./property-source-connectors";
+import {
+  refreshEvidenceFromRegisteredSources,
+  refreshListingDescriptionsFromRegisteredSources,
+  type ListingDescriptionObservation,
+} from "./property-source-connectors";
 import { propertyDiscoveryRankingReasons } from "./property-discovery-ranking";
 
 type Tx = Parameters<Parameters<typeof db.transaction>[0]>[0];
@@ -1010,6 +1014,221 @@ function checkAdapterEvidence(evidence: PropertySourceRefresh, now: Date): Prope
   return evidence.signal;
 }
 
+type RegisteredListingObservation = ListingDescriptionObservation & {
+  connectorId: string;
+  sourceName: string;
+};
+
+async function persistListingDescriptionObservation(
+  observation: RegisteredListingObservation,
+  actor: string,
+  now: Date,
+) {
+  let persistedChanged = false;
+  let persistedSignals = 0;
+  const extraction = extractListingDescriptionIntelligence({
+    sourceName: observation.sourceName,
+    sourceRecordId: observation.sourceRecordId,
+    sourceUrl: observation.sourceUrl,
+    capturedAt: observation.capturedAt,
+    description: observation.description,
+    retentionPolicy: observation.retentionPolicy,
+    ...(observation.contentDigest ? { contentDigest: observation.contentDigest } : {}),
+  }, now);
+  const [discovery] = await db.select().from(propertyDiscoveriesTable)
+    .where(sql`${propertyDiscoveriesTable.payload}->'property'->>'id' = ${observation.propertyId}`);
+  if (!discovery) {
+    throw new DomainError(`Listing source ${observation.sourceName} returned property ${observation.propertyId} before discovery was persisted.`, 409);
+  }
+
+  await db.transaction(async tx => {
+    const [lockedDiscovery] = await tx.select().from(propertyDiscoveriesTable)
+      .where(eq(propertyDiscoveriesTable.id, discovery.id)).for("update");
+    if (!lockedDiscovery) throw new DomainError("Listing observation's property discovery disappeared.", 409);
+    const sourceKey = `listing-description:${observation.connectorId}:${observation.sourceId}:${observation.sourceRecordId}`;
+    const [prior] = await tx.select().from(propertySourceObservationsTable)
+      .where(eq(propertySourceObservationsTable.sourceKey, sourceKey)).for("update");
+    if (prior && prior.discoveryId !== lockedDiscovery.id) {
+      throw new DomainError("Listing source record is already attached to another property; no evidence was transferred.", 409);
+    }
+    const priorPayload = sourcePayload(prior?.payload);
+    const digest = extraction.contentDigest ?? observation.contentDigest ?? sha(observation.description);
+    const changed = !prior || priorPayload.contentDigest !== digest ||
+      priorPayload.status !== extraction.status || priorPayload.retentionPolicy !== observation.retentionPolicy;
+    const sameCapture = !!prior && prior.lastObservedAt.getTime() === now.getTime();
+    const storedEntries = extraction.intelligence;
+    const rawDescription = observation.retentionPolicy === "FULL_TEXT_PERMITTED" &&
+      (extraction.status === "EXTRACTED" || extraction.status === "NO_SIGNALS")
+      ? observation.description.slice(0, 5000)
+      : undefined;
+    const nextPayloadBase: Record<string, unknown> = {
+      sourceId: observation.sourceId,
+      sourceName: observation.sourceName,
+      connectorId: observation.connectorId,
+      sourceRecordId: observation.sourceRecordId,
+      sourceUrl: observation.sourceUrl,
+      capturedAt: observation.capturedAt,
+      observedAt: now.toISOString(),
+      freshness: extraction.status === "STALE_SOURCE" ? "STALE" : "CURRENT",
+      status: extraction.status,
+      retentionPolicy: observation.retentionPolicy,
+      contentDigest: digest,
+      extractedIntelligence: storedEntries,
+      relevanceSignals: extraction.relevanceSignals,
+      ...(rawDescription ? { rawDescription } : {}),
+    };
+    const history = Array.isArray(priorPayload.history)
+      ? priorPayload.history.filter(item => item && typeof item === "object" && !Array.isArray(item))
+      : [];
+    if (prior && changed) history.push(sourceHistorySnapshot(priorPayload, prior.lastObservedAt));
+    const nextPayload = { ...nextPayloadBase, history: history.slice(-20) };
+
+    if (prior) {
+      await tx.update(propertySourceObservationsTable).set({
+        sourceId: observation.sourceId,
+        sourceUrl: observation.sourceUrl,
+        lastObservedAt: now,
+        seenCount: prior.seenCount + (sameCapture ? 0 : 1),
+        payload: jsonRecord(nextPayload),
+      }).where(eq(propertySourceObservationsTable.id, prior.id));
+    } else {
+      await tx.insert(propertySourceObservationsTable).values({
+        discoveryId: lockedDiscovery.id,
+        sourceKey,
+        sourceId: observation.sourceId,
+        sourceUrl: observation.sourceUrl,
+        firstObservedAt: now,
+        lastObservedAt: now,
+        seenCount: 1,
+        payload: jsonRecord(nextPayload),
+      });
+    }
+
+    if (!changed) return;
+    persistedChanged = true;
+    const discoveryPayload = parsePayload(lockedDiscovery.payload);
+    const signalPrefix = `${observation.sourceRecordId}:`;
+    const priorSignals = discoveryPayload.signals.filter(signal => !signal.id.startsWith(signalPrefix));
+    const acceptedSignals = extraction.status === "EXTRACTED" ? extraction.relevanceSignals : [];
+    persistedSignals = acceptedSignals.length;
+    discoveryPayload.signals = [...priorSignals, ...acceptedSignals];
+    const criteria = await getCriteriaFrom(tx, lockedDiscovery.marketKey);
+    const evaluation = evaluatePropertyRelevance(discoveryPayload.signals, criteria);
+    const materialTextChange = extraction.intelligence.some(entry =>
+      entry.classification !== "AI_HYPOTHESIS" &&
+      /^(condition_|listing_(motivation|urgency|upgrade|feature)_claim)/.test(entry.category));
+    const priorSignalChanged = priorPayload.status === "EXTRACTED" &&
+      Array.isArray(priorPayload.relevanceSignals) && priorPayload.relevanceSignals.length > 0;
+    const material = materialTextChange || priorSignalChanged;
+    const currentStatus = lockedDiscovery.status;
+    let nextDiscoveryStatus: PropertyDiscoveryStatus = evaluation.status;
+    if (currentStatus === "DISQUALIFIED") nextDiscoveryStatus = "DISQUALIFIED";
+    else if (currentStatus === "CALL_READY" && material) nextDiscoveryStatus = "QUALIFIED_LEAD";
+    else if (currentStatus === "QUALIFIED_LEAD" || currentStatus === "CALL_READY") {
+      nextDiscoveryStatus = currentStatus;
+    }
+    await tx.update(propertyDiscoveriesTable).set({
+      status: nextDiscoveryStatus,
+      score: evaluation.score,
+      confidence: evaluation.confidence,
+      payload: jsonRecord(discoveryPayload),
+      version: lockedDiscovery.version + 1,
+      updatedAt: now,
+    }).where(eq(propertyDiscoveriesTable.id, lockedDiscovery.id));
+    await audit(tx, actor, "LISTING_DESCRIPTION_EVIDENCE_REFRESHED", lockedDiscovery.id,
+      `${observation.sourceName} listing remarks ${extraction.status.toLowerCase()}; retention=${observation.retentionPolicy}; source record=${observation.sourceRecordId}; claims remain provenance-tagged; discovery is not automatically promoted to a lead.`);
+
+    if (!lockedDiscovery.leadId) return;
+    const [lead] = await tx.select().from(leadsTable).where(eq(leadsTable.id, lockedDiscovery.leadId)).for("update");
+    if (!lead) throw new DomainError("Linked listing lead could not be loaded.", 409);
+    if (storedEntries.length) {
+      for (const entry of storedEntries) {
+        validateProvenance(entry, now);
+        await tx.insert(intelligenceTable).values({
+          leadId: lead.id,
+          payload: jsonRecord(entry),
+          createdBy: actor,
+          createdAt: now,
+        });
+      }
+    }
+
+    const currentQualification = lead.payload.propertyQualification &&
+      typeof lead.payload.propertyQualification === "object"
+      ? lead.payload.propertyQualification as Record<string, unknown>
+      : {};
+    const scored = evaluation.scoredSignals.map(({ points, ...signal }) => ({
+      ...signal, scoreContribution: points,
+    }));
+    const qualificationStatus = currentQualification.status === "CALL_READY" && material
+      ? "QUALIFIED_LEAD"
+      : typeof currentQualification.status === "string" ? currentQualification.status : "QUALIFIED_LEAD";
+    const propertyQualification = {
+      ...currentQualification,
+      status: qualificationStatus,
+      score: evaluation.score,
+      confidence: evaluation.confidence,
+      criteriaVersion: criteria.version,
+      reason: evaluation.reason,
+      signals: scored,
+      missingInformation: evaluation.missingInformation,
+      reviewReason: material
+        ? `Listing evidence changed in source record ${observation.sourceRecordId}; review before relying on prior underwriting.`
+        : typeof currentQualification.reviewReason === "string" ? currentQualification.reviewReason : undefined,
+      qualifiedBy: typeof currentQualification.qualifiedBy === "string" ? currentQualification.qualifiedBy : actor,
+      qualifiedAt: typeof currentQualification.qualifiedAt === "string" ? currentQualification.qualifiedAt : now.toISOString(),
+    };
+    const nextAction = material
+      ? `Review the changed ${observation.sourceName} listing evidence, reconcile any conflicts, and refresh underwriting before another seller action.`
+      : lead.nextAction;
+    const [contract] = await tx.select().from(contractsTable)
+      .where(eq(contractsTable.leadId, lead.id)).for("update");
+    const contractStatus = String(contract?.payload.status ?? "");
+    const executed = ["UNDER_CONTRACT", "CLOSING", "CLOSED"].includes(contractStatus) ||
+      ["UNDER_CONTRACT", "BUYER_MATCHED", "BUYER_INTERESTED", "BUYER_COMMITTED", "CLOSING"].includes(lead.stage);
+    if (material && executed) {
+      await audit(tx, actor, "TRANSACTION_RESEARCH_REVIEW", lead.id,
+        `Material listing evidence changed during an active transaction. Existing authorized terms are preserved; human review is required.`);
+    } else if (material) {
+      await invalidateOffers(tx, lead.id, actor,
+        `Material listing description evidence changed (${observation.sourceName}); refresh underwriting and obtain new owner approval.`, now);
+      if (contract && contractStatus === "DRAFT") {
+        const priorHistory = Array.isArray(contract.payload.history) ? contract.payload.history : [];
+        await tx.update(contractsTable).set({
+          payload: {
+            ...contract.payload,
+            status: "CANCELLED",
+            cancelledAt: now.toISOString(),
+            history: [...priorHistory, {
+              kind: "CANCELLED_ATTEMPT",
+              recordedAt: now.toISOString(),
+              effectiveAt: now.toISOString(),
+              recordedBy: actor,
+              evidenceUrl: observation.sourceUrl,
+              note: "Synthetic or sourced listing evidence changed while a document was still a draft; no signature or external cancellation is asserted.",
+              previousState: { status: contractStatus, offerId: contract.payload.offerId ?? null },
+            }],
+          },
+          version: contract.version + 1,
+          updatedAt: now,
+        }).where(eq(contractsTable.id, contract.id));
+      }
+      await move(tx, lead, "ENRICHING",
+        `Material listing description evidence changed from ${observation.sourceName}; prior analysis/offer authorization is stale.`,
+        nextAction, actor, now);
+    }
+    await tx.update(leadsTable).set({
+      payload: { ...lead.payload, propertyQualification },
+      ...(material && !executed ? { analysis: null, analysisSnapshotId: null } : {}),
+      version: lead.version + 1,
+      stage: lead.stage,
+      nextAction,
+      updatedAt: now,
+    }).where(eq(leadsTable.id, lead.id));
+  });
+  return { changed: persistedChanged, signals: persistedSignals };
+}
+
 /**
  * Refreshes exact-parcel City public evidence and keeps each connector's current
  * positive or negative observation separately from the original OPA discovery.
@@ -1023,6 +1242,13 @@ export async function refreshPropertySourceEvidence(propertyIds: string[], actor
     failures: [] as Awaited<ReturnType<typeof refreshEvidenceFromRegisteredSources>>["failures"],
   };
   const { observations, failures } = await refreshEvidenceFromRegisteredSources(ids, now);
+  const sourceProperties: PropertyRecord[] = [];
+  for (const propertyId of ids) {
+    const [discovery] = await db.select().from(propertyDiscoveriesTable)
+      .where(sql`${propertyDiscoveriesTable.payload}->'property'->>'id' = ${propertyId}`);
+    if (discovery) sourceProperties.push(parsePayload(discovery.payload).property);
+  }
+  const listingRefresh = await refreshListingDescriptionsFromRegisteredSources(sourceProperties, now);
   let changed = 0;
   let signals = 0;
   await db.transaction(async tx => {
@@ -1213,7 +1439,17 @@ export async function refreshPropertySourceEvidence(propertyIds: string[], actor
       }
     }
   });
-  return { checked: observations.length, changed, signals, failures };
+  for (const listingObservation of listingRefresh.observations) {
+    const outcome = await persistListingDescriptionObservation(listingObservation, actor, now);
+    if (outcome.changed) changed++;
+    signals += outcome.signals;
+  }
+  return {
+    checked: observations.length + listingRefresh.observations.length,
+    changed,
+    signals,
+    failures: [...failures, ...listingRefresh.failures],
+  };
 }
 
 export async function recordPublicPropertyDiscovery(recordId: string, termsReviewed: boolean, actor: OfferActor, now = new Date()) {
@@ -1459,6 +1695,27 @@ export async function promotePropertyDiscovery(
         createdBy: actor.id,
         createdAt: now,
       });
+    }
+    const listingObservations = await tx.select().from(propertySourceObservationsTable)
+      .where(eq(propertySourceObservationsTable.discoveryId, discoveryId));
+    for (const observation of listingObservations) {
+      if (!observation.sourceKey.startsWith("listing-description:")) continue;
+      const observationPayload = sourcePayload(observation.payload);
+      const extracted = Array.isArray(observationPayload.extractedIntelligence)
+        ? observationPayload.extractedIntelligence
+        : [];
+      for (const rawEntry of extracted) {
+        if (!rawEntry || typeof rawEntry !== "object" || Array.isArray(rawEntry)) continue;
+        const entry = rawEntry as unknown as IntelligenceInput;
+        if (!entry.sourceRecordId || !entry.capturedAt) continue;
+        validateProvenance(entry, now);
+        await tx.insert(intelligenceTable).values({
+          leadId: lead.id,
+          payload: jsonRecord(entry),
+          createdBy: actor.id,
+          createdAt: now,
+        });
+      }
     }
     payload.promotion = { actor: actor.id, at: now.toISOString(), reviewReason: request.reviewReason.trim() };
     const [updated] = await tx.update(propertyDiscoveriesTable).set({

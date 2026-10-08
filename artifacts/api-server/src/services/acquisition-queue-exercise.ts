@@ -7,7 +7,7 @@ import * as store from "./deal-store";
 import { exerciseEvidence } from "./exercise-evidence";
 import { acquisitionQueue, recordQueueSelection, startCallSession } from "./acquisition-queue-store";
 import { recordSellerContactObservation } from "./seller-contact-store";
-import type { UnderwritingInput } from "@workspace/deal-domain";
+import { buildCallBrief, type UnderwritingInput } from "@workspace/deal-domain";
 
 const actor = `SYNTHETIC acquisition queue exercise ${randomUUID()}`;
 const now = new Date("2026-10-08T15:00:00.000Z");
@@ -62,7 +62,7 @@ async function createFixture(label: string, directPhone?: string) {
   await db.update(leadsTable).set({
     payload: {
       ...row.payload,
-      propertyQualification: qualification(`synthetic-discovery-${label}-${lead.id}`),
+      propertyQualification: qualification(randomUUID()),
     } as typeof row.payload,
   }).where(eq(leadsTable.id, lead.id));
   return lead.id;
@@ -193,6 +193,21 @@ try {
   const session = await startCallSession(callableId, callable.lead.version, actor, "OWNER", now);
   assert.equal(session.event, "CALL_SESSION_STARTED");
   const analysisBeforeCall = structuredClone(callable.analysis);
+  await db.insert(intelligenceTable).values({
+    leadId: callableId,
+    payload: {
+      classification: "OBSERVED",
+      category: "public_condition_roof",
+      statement: "SYNTHETIC inspection reports no active roof leak; not a real inspection.",
+      source: "SYNTHETIC inspection fixture",
+      sourceType: "INSPECTION",
+      confidence: 0.8,
+      capturedAt: now.toISOString(),
+      sourceUrl: "https://example.invalid/synthetic-inspection",
+    },
+    createdBy: actor,
+    createdAt: now,
+  });
   const call = await store.recordCall(callableId, {
     version: callable.lead.version,
     outcome: "CONNECTED",
@@ -200,22 +215,67 @@ try {
     nextAction: "SYNTHETIC follow-up only; ask about timeline.",
     followUpAt: future(1),
     sellerAnswers: {
-      motivationStatement: "SYNTHETIC seller statement; not a real statement.",
-      conditionDescription: "SYNTHETIC stated condition; not inspected.",
+      motivationStatement: "SYNTHETIC: selling because of relocation; not a real statement.",
+      conditionDescription: "SYNTHETIC seller states roof leaks; not inspected and not a real statement.",
+      conditionByCategory: [{ category: "ROOF", statement: "SYNTHETIC roof leak; not inspected." }],
       timing: "SYNTHETIC response: 30 days.",
       askingPrice: 125000,
       nextStepOutcome: "SYNTHETIC: provide documents for review.",
     },
   }, actor, now);
-  assert.deepEqual(call.analysis, analysisBeforeCall, "Call-result evidence cannot silently rewrite deterministic underwriting.");
+  assert.equal(call.analysis, null, "Material seller statements invalidate the live analysis pointer rather than silently changing its economics.");
+  assert.equal(call.analysisSnapshotId, null);
+  assert.equal(call.calls[0]?.analysisInvalidated, true);
+  assert.ok(analysisBeforeCall, "The prior immutable synthetic analysis existed before the call.");
   assert.equal(call.calls.length, 1);
   assert.equal(call.calls[0]?.evidenceSource, "OPERATOR_ENTERED_SELLER_CONVERSATION");
   assert.equal(call.calls[0]?.evidenceClassification, "INDICATED");
   assert.equal(call.calls[0]?.sellerAnswersCapturedAt, now.toISOString());
-  assert.equal(call.calls[0]?.sellerAnswers?.askingPrice, 125000);
+  const callEvidence = call.intelligence.filter(item => item.sourceRecordId === call.calls[0]?.id);
+  assert.equal(callEvidence.length, call.calls[0]?.evidenceIds?.length ?? 0);
+  assert.ok(callEvidence.some(item => item.category === "seller_call_asking_price" && item.statement.includes("$125,000")));
+  assert.ok(callEvidence.every(item => item.classification === "INDICATED" && item.sourceType === "SELLER"));
+  assert.ok(callEvidence.some(item => item.reconciliation?.state === "CONFLICT_REVIEW"),
+    "Contradictory synthetic roof evidence is retained and marked for review.");
   assert.equal(call.lead.sellerDescription, callable.lead.sellerDescription,
     "Operator statements append to the call record and do not overwrite the sourced seller/property narrative.");
-  assert.equal(call.lead.propertyQualification?.signals[0]?.classification, "INDICATED");
+  assert.equal(call.lead.askingPrice, callable.lead.askingPrice,
+    "Seller-reported asking price remains evidence and is not copied into property facts or economics.");
+  assert.ok(call.lead.propertyQualification?.signals.some(signal =>
+    signal.key === "SELLER_MOTIVATION" && signal.classification === "INDICATED"));
+  assert.ok(call.lead.propertyQualification?.signals.some(signal =>
+    signal.key === "REPORTED_POOR_CONDITION" && signal.classification === "INDICATED"));
+  assert.equal(call.lead.propertyQualification?.status, "QUALIFIED_LEAD",
+    "A newly material seller statement removes CALL_READY status until reviewed.");
+  assert.ok(call.lead.nextAction.includes("Reconcile conflicting"),
+    "The explicit next action is to resolve the contradictory evidence.");
+  assert.ok(call.calls[0]?.evidenceIds?.length);
+
+  const refreshed = await store.saveUnderwriting(callableId, {
+    ...(call.underwriting as UnderwritingInput),
+    version: call.lead.version,
+  }, actor, now);
+  assert.ok(refreshed.analysis?.preliminaryRepairEstimate.hypotheses.some(hypothesis =>
+    hypothesis.sourceRecordId === call.calls[0]?.id && hypothesis.epistemicStatus === "AI_HYPOTHESIS"),
+    "Seller-reported condition can create a linked repair hypothesis, never an observed repair fact.");
+  assert.ok(refreshed.analysis, "A reviewable underwriting response remains available after the snapshot refresh.");
+  const refreshedBrief = buildCallBrief(refreshed.lead, refreshed.intelligence, refreshed.analysis, null, now);
+  assert.ok(refreshedBrief.questions.some(question => question.includes("conflicts with or supplements")),
+    "The call brief surfaces unresolved source conflicts as questions, not facts.");
+
+  const nonMaterialId = await createFixture("NON-MATERIAL", "000-000-0000");
+  const nonMaterialBefore = await saveSyntheticUnderwriting(nonMaterialId);
+  const nonMaterialCall = await store.recordCall(nonMaterialId, {
+    version: nonMaterialBefore.lead.version,
+    outcome: "CONNECTED",
+    notes: "SYNTHETIC: brief greeting; no property facts discussed.",
+    nextAction: "SYNTHETIC follow-up only.",
+    followUpAt: future(1),
+  }, actor, now);
+  assert.equal(nonMaterialCall.calls[0]?.materialEvidence, false);
+  assert.equal(nonMaterialCall.calls[0]?.analysisInvalidated, false);
+  assert.equal(nonMaterialCall.analysisSnapshotId, nonMaterialBefore.analysisSnapshotId,
+    "A non-material conversation note preserves the current analysis snapshot.");
 
   // Postal-only: persisted property mailing address is not a direct call route.
   const postalId = await createFixture("POSTAL-ONLY");
@@ -285,7 +345,9 @@ await addPhoneEvidence(missingUnderwritingId, "000-000-0000", "SYNTHETIC owner",
       "stale-route and conflicting-recipient blockers",
       "missing-underwriting blocker",
       "queue-selection, contact-route, call-start and call-result audit events",
-      "structured seller answers persisted as INDICATED without changing underwriting",
+      "material seller-call evidence persisted as INDICATED, reconciled against prior evidence, and invalidated stale analysis/offer authority",
+      "non-material call note preserved the current analysis snapshot",
+      "seller-reported condition produced a linked AI repair hypothesis and conflict-focused call question",
       "seller identity/signing authority remain unverified",
     ],
   }, "Acquisition queue persisted workflow exercise PASSED");

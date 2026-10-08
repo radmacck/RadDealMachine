@@ -13,6 +13,8 @@ import type { ProvenanceClass } from './provenanceClass';
 export interface ConditionRepairHypothesis {
   id: string;
   evidenceId: string;
+  /** @nullable */
+  sourceRecordId: string | null;
   category: string;
   severity: ConditionRepairHypothesisSeverity;
   statement: string;
@@ -30,7 +32,8 @@ export interface ConditionRepairHypothesis {
   confidence: number;
   confidenceMethod: ConditionRepairHypothesisConfidenceMethod;
   source: string;
-  sourceUrl: string;
+  /** @nullable */
+  sourceUrl: string | null;
   ruleId: string;
   question: string;
   action: string;

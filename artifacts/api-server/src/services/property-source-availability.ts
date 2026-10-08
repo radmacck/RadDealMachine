@@ -53,6 +53,15 @@ export const NOT_CONNECTED_PROPERTY_SOURCE_CAPABILITIES: UnconnectedPropertySour
     nextAction: activationAction,
   },
   {
+    id: "listing-description-intelligence",
+    name: "Permitted listing-description remarks",
+    category: "LISTING",
+    coverage: "Source-provided description text for condition, upgrade, feature, and seller-motivation questions.",
+    status: "NOT_CONNECTED",
+    reason: "No registered listing connector in this workspace provides remarks under reviewed terms and a permitted retention policy. The application has not queried or retained Zillow, Redfin, or other listing text.",
+    nextAction: "Connect a source adapter only after verifying intended-use terms, access method, rate limits, and whether full text, hashes, or derived signals may be retained.",
+  },
+  {
     id: "public-distress-filings",
     name: "Foreclosure, probate, and other public distress filings",
     category: "PUBLIC_RECORD",

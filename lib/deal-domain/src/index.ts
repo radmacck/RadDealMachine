@@ -17,5 +17,6 @@ export * from "./evidence-readiness";
 export * from "./lead-qualification";
 export * from "./repair-estimation";
 export * from "./repair-hypotheses";
+export * from "./listing-description-intelligence";
 export * from "./transaction-documents";
 export * from "./acquisition-queue";

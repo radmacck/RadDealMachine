@@ -7,13 +7,24 @@
  */
 import type { CallEvidenceClassification } from './callEvidenceClassification';
 import type { CallEvidenceSource } from './callEvidenceSource';
-import type { CallInput } from './callInput';
+import type { CallOutcome } from './callOutcome';
 
-export type Call = CallInput & {
+export interface Call {
   id: string;
   createdAt: string;
   actor: string;
+  version: number;
+  outcome: CallOutcome;
+  /** @maxLength 10000 */
+  notes: string;
+  /** @maxLength 1000 */
+  nextAction: string;
+  /** @nullable */
+  followUpAt: string | null;
   evidenceSource?: CallEvidenceSource;
   evidenceClassification?: CallEvidenceClassification;
   sellerAnswersCapturedAt?: string;
-};
+  evidenceIds?: string[];
+  materialEvidence?: boolean;
+  analysisInvalidated?: boolean;
+}

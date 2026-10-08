@@ -246,21 +246,23 @@ export default function LeadDetailPage() {
               onSubmit={(data, done) => recordCall.mutate({id, data}, {onSuccess:() => {invalidate(id); done(); toast({title:'Follow-up recorded'});}})} />
           </section>}
           {d.calls.length === 0 ? <p className="ledger p-4 text-sm text-muted-foreground" data-testid="empty-calls">No calls logged for this seller. Calls are logged from the Call next screen.</p> : (
-            <ol className="space-y-2">{[...d.calls].reverse().map((c) => (
-              <li key={c.id} className="ledger p-3" data-testid={`call-${c.id}`}>
+            <ol className="space-y-2">{[...d.calls].reverse().map((c) => {
+              const linkedEvidence = d.intelligence.filter((entry) => entry.sourceRecordId === c.id && entry.sourceType === 'SELLER');
+              return <li key={c.id} className="ledger p-3" data-testid={`call-${c.id}`}>
                 <p className="flex flex-wrap items-center gap-2"><span className="tag tone-ink">{c.outcome.replace(/_/g, ' ')}</span><span className="font-mono text-xs text-muted-foreground">{fmtDate(c.createdAt)} / {c.actor}</span></p>
                 <p className="mt-1 whitespace-pre-wrap text-sm">{c.notes}</p>
-                {c.sellerAnswers && <div className="mt-2 border-l-2 border-signal pl-3" data-testid={`seller-answers-${c.id}`}>
-                  <p className="text-xs font-semibold">INDICATED · operator-entered seller statements · {fmtDate(c.sellerAnswersCapturedAt ?? c.createdAt)}</p>
-                  {c.sellerAnswers.motivationStatement && <p className="text-xs">Motivation stated: {c.sellerAnswers.motivationStatement}</p>}
-                  {c.sellerAnswers.conditionDescription && <p className="text-xs">Condition stated: {c.sellerAnswers.conditionDescription}</p>}
-                  {c.sellerAnswers.timing && <p className="text-xs">Timing stated: {c.sellerAnswers.timing}</p>}
-                  {c.sellerAnswers.askingPrice != null && <p className="text-xs">Asking price stated: {money(c.sellerAnswers.askingPrice)}</p>}
-                  {c.sellerAnswers.nextStepOutcome && <p className="text-xs">Seller next-step outcome: {c.sellerAnswers.nextStepOutcome}</p>}
-                  <p className="mt-1 text-xs text-muted-foreground">Appended to this call record; sourced property facts were not overwritten and no underwriting/economics changed.</p>
+                {linkedEvidence.length > 0 && <div className="mt-2 border-l-2 border-signal pl-3" data-testid={`seller-answers-${c.id}`}>
+                  <p className="text-xs font-semibold">Seller-call evidence · linked to this call · {fmtDate(linkedEvidence[0]?.capturedAt ?? c.createdAt)}</p>
+                  {linkedEvidence.map((entry) => <div key={entry.id} className="mt-1">
+                    <p className="text-xs"><span className="font-semibold">{entry.classification.replace(/_/g, ' ')} · {entry.category.replace(/_/g, ' ')}</span>: {entry.statement}</p>
+                    {entry.reconciliation?.state === 'CONFLICT_REVIEW' && <p className="text-xs text-destructive">Conflicts with earlier evidence; review both records before relying on either.</p>}
+                    {entry.question && <p className="text-xs text-muted-foreground">Ask: {entry.question}</p>}
+                  </div>)}
+                  <p className="mt-1 text-xs text-muted-foreground">{c.materialEvidence ? 'Material evidence invalidated the live analysis/offer authority for review; authorized economics were not rewritten.' : 'Appended as seller-reported evidence; sourced property facts were not overwritten.'}</p>
                 </div>}
                 <p className="text-xs text-muted-foreground">Next: {c.nextAction}{c.followUpAt ? ` / follow up ${fmtDate(c.followUpAt)}` : ''}</p>
-              </li>))}</ol>
+              </li>;
+            })}</ol>
           )}
         </TabsContent>
       </Tabs>

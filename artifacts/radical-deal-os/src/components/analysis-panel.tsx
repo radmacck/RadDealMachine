@@ -123,7 +123,7 @@ export function AnalysisPanel({ analysis, comps, full = true }: { analysis: Anal
                       Source status {item.evidenceClassification} · source confidence {pct(item.sourceConfidence)} · rule score {pct(item.confidence)} (uncalibrated)
                     </p>
                     <p className="text-xs"><span className="font-semibold">Ask:</span> {item.question} <span className="font-semibold">Next:</span> {item.action}</p>
-                    <a className="text-xs underline underline-offset-2" href={item.sourceUrl} target="_blank" rel="noreferrer">{item.source}</a>
+                    {item.sourceUrl ? <a className="text-xs underline underline-offset-2" href={item.sourceUrl} target="_blank" rel="noreferrer">{item.source}</a> : <span className="text-xs">{item.source}</span>}
                   </li>
                 );
               })}
