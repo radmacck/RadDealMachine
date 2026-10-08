@@ -8,10 +8,14 @@
 import type { ContactPathObservation } from './contactPathObservation';
 import type { PropertyContactPathChannel } from './propertyContactPathChannel';
 import type { PropertyContactPathClassification } from './propertyContactPathClassification';
+import type { PropertyContactPathEpistemicStatus } from './propertyContactPathEpistemicStatus';
 import type { PropertyContactPathFreshnessStatus } from './propertyContactPathFreshnessStatus';
 import type { PropertyContactPathIdentityConflictStatus } from './propertyContactPathIdentityConflictStatus';
 import type { PropertyContactPathIdentityStatus } from './propertyContactPathIdentityStatus';
+import type { PropertyContactPathLegalBasis } from './propertyContactPathLegalBasis';
+import type { PropertyContactPathPermissionEvidenceStatus } from './propertyContactPathPermissionEvidenceStatus';
 import type { PropertyContactPathPermissionStatus } from './propertyContactPathPermissionStatus';
+import type { PropertyContactPathRecipientIdentityEvidenceStatus } from './propertyContactPathRecipientIdentityEvidenceStatus';
 import type { PropertyContactPathRecipientRole } from './propertyContactPathRecipientRole';
 import type { PropertyContactPathRouteVerificationStatus } from './propertyContactPathRouteVerificationStatus';
 import type { PropertyContactPathSigningAuthorityStatus } from './propertyContactPathSigningAuthorityStatus';
@@ -46,6 +50,22 @@ export interface PropertyContactPath {
   freshUntilAt: string;
   freshnessStatus: PropertyContactPathFreshnessStatus;
   permissionStatus: PropertyContactPathPermissionStatus;
+  /** @nullable */
+  permissionEvidenceStatus?: PropertyContactPathPermissionEvidenceStatus;
+  /** @nullable */
+  legalBasis?: PropertyContactPathLegalBasis;
+  /** @nullable */
+  legalBasisScope?: string | null;
+  /** @nullable */
+  legalBasisEvidenceUrl?: string | null;
+  /** @nullable */
+  providerId?: string | null;
+  /** @nullable */
+  epistemicStatus?: PropertyContactPathEpistemicStatus;
+  /** @nullable */
+  recipientIdentityEvidenceStatus?: PropertyContactPathRecipientIdentityEvidenceStatus;
+  /** @nullable */
+  recipientIdentityEvidenceRef?: string | null;
   /** @nullable */
   contactPermissionEvidenceUrl?: string | null;
   /** @nullable */

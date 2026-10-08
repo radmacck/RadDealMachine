@@ -12,6 +12,7 @@ import { discoverPublicBuyers, reviewBuyerPool } from "./buyer-pool";
 import { discoverPublicProperties } from "./property-discovery-worker";
 import { refreshPropertyBuyerDemandAlignment } from "./property-discovery-store";
 import { reviewHandoffs } from "./handoffs";
+import { runSellerContactEnrichmentOnce } from "./seller-contact-enrichment";
 
 const PROPERTY_SOURCE_POLICY_VERSION = "phila-property-sources-v4";
 const BUYER_SOURCE_POLICY_VERSION = "phila-buyer-sources-v2";
@@ -144,6 +145,7 @@ export function startWorkers() {
       const now = new Date(), bucket = Math.floor(now.getTime()/(5*60000));
       const schedule = bucket!==lastScheduledBucket;
       await runWorkerOnce(now,schedule);
+      await runSellerContactEnrichmentOnce(now);
       if (schedule) lastScheduledBucket = bucket;
     }
     catch (error) { logger.error({err:error},"Worker polling failed; queued jobs remain persisted."); }

@@ -90,6 +90,8 @@ import type {
   PublicPropertySearch,
   ReleaseDistributionAcceptanceInput,
   SearchPublicPropertiesParams,
+  SellerContactEnrichmentRequestInput,
+  SellerContactEnrichmentStatus,
   SellerContactObservationInput,
   SellerContactReadiness,
   SellerOfferPortal,
@@ -289,6 +291,160 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
         TContext
       > => {
       return useMutation(getRecordSellerContactObservationMutationOptions(options));
+    }
+
+export const getGetSellerContactEnrichmentUrl = (id: string,) => {
+
+
+
+
+  return `/api/leads/${id}/contact-enrichment`
+}
+
+export const getSellerContactEnrichment = async (id: string, options?: Parameters<typeof customFetch>[1]): Promise<SellerContactEnrichmentStatus> => {
+
+  return customFetch<SellerContactEnrichmentStatus>(getGetSellerContactEnrichmentUrl(id),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetSellerContactEnrichmentQueryKey = (id: string,) => {
+    return [
+    `/api/leads/${id}/contact-enrichment`
+    ] as const;
+    }
+
+
+export const getGetSellerContactEnrichmentQueryOptions = <TData = Awaited<ReturnType<typeof getSellerContactEnrichment>>, TError = ErrorType<unknown>>(id: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getSellerContactEnrichment>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetSellerContactEnrichmentQueryKey(id);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getSellerContactEnrichment>>> = ({ signal }) => getSellerContactEnrichment(id, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: id !== null && id !== undefined, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getSellerContactEnrichment>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetSellerContactEnrichmentQueryResult = NonNullable<Awaited<ReturnType<typeof getSellerContactEnrichment>>>
+export type GetSellerContactEnrichmentQueryError = ErrorType<unknown>
+
+
+
+export function useGetSellerContactEnrichment<TData = Awaited<ReturnType<typeof getSellerContactEnrichment>>, TError = ErrorType<unknown>>(
+ id: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getSellerContactEnrichment>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetSellerContactEnrichmentQueryOptions(id,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getRequestSellerContactEnrichmentUrl = (id: string,) => {
+
+
+
+
+  return `/api/leads/${id}/contact-enrichment`
+}
+
+export const requestSellerContactEnrichment = async (id: string,
+    sellerContactEnrichmentRequestInput: SellerContactEnrichmentRequestInput, options?: Parameters<typeof customFetch>[1]): Promise<SellerContactEnrichmentStatus> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return customFetch<SellerContactEnrichmentStatus>(getRequestSellerContactEnrichmentUrl(id),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(sellerContactEnrichmentRequestInput)
+  }
+);}
+
+
+
+
+
+export const getRequestSellerContactEnrichmentMutationKey = () => ['requestSellerContactEnrichment'] as const;
+
+export const getRequestSellerContactEnrichmentMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof requestSellerContactEnrichment>>, TError,RequestSellerContactEnrichmentMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof requestSellerContactEnrichment>>, TError,RequestSellerContactEnrichmentMutationVariables, TContext> => {
+
+const mutationKey = getRequestSellerContactEnrichmentMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof requestSellerContactEnrichment>>, RequestSellerContactEnrichmentMutationVariables> = (props) => {
+          const {id,data} = props ?? {};
+
+          return  requestSellerContactEnrichment(id,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type RequestSellerContactEnrichmentMutationResult = NonNullable<Awaited<ReturnType<typeof requestSellerContactEnrichment>>>
+    export type RequestSellerContactEnrichmentMutationBody = BodyType<SellerContactEnrichmentRequestInput>
+    export type RequestSellerContactEnrichmentMutationError = ErrorType<unknown>
+    export type RequestSellerContactEnrichmentMutationVariables = {id: string;data: BodyType<SellerContactEnrichmentRequestInput>}
+
+    export const useRequestSellerContactEnrichment = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof requestSellerContactEnrichment>>, TError,RequestSellerContactEnrichmentMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof requestSellerContactEnrichment>>,
+        TError,
+        RequestSellerContactEnrichmentMutationVariables,
+        TContext
+      > => {
+      return useMutation(getRequestSellerContactEnrichmentMutationOptions(options));
     }
 
 export const getRecordTransactionExceptionUrl = (id: string,) => {

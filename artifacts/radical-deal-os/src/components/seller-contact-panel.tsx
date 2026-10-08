@@ -1,7 +1,9 @@
 import { useState } from 'react';
 import {
-  getGetSellerContactPathsQueryKey, useGetSellerContactPaths, useRecordSellerContactObservation,
-  type SellerContactObservationInput, type SellerContactReadiness,
+  getGetSellerContactEnrichmentQueryKey, getGetSellerContactPathsQueryKey,
+  useGetSellerContactEnrichment, useGetSellerContactPaths, useRecordSellerContactObservation,
+  useRequestSellerContactEnrichment,
+  type SellerContactObservationInput, type SellerContactReadiness, type SellerContactEnrichmentStatus,
 } from '@workspace/api-client-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -48,16 +50,77 @@ function Status({ data }: { data: SellerContactReadiness }) {
   );
 }
 
+function EnrichmentStatus({ data, canResearch, onRequest, isPending }: {
+  data: SellerContactEnrichmentStatus | undefined;
+  canResearch: boolean;
+  onRequest: () => void;
+  isPending: boolean;
+}) {
+  if (!data) return <p className="text-sm text-muted-foreground">Loading enrichment provider state…</p>;
+  const canRun = data.registry.state === 'AVAILABLE_AND_EXERCISED' &&
+    data.registry.providers.some(provider => provider.state === 'AVAILABLE_AND_EXERCISED');
+  return (
+    <div className="space-y-3 rounded border border-border p-3" data-testid="seller-contact-enrichment">
+      <div>
+        <p className="eyebrow mb-1">Replaceable contact-source capability</p>
+        <p className="font-semibold">{data.registry.state.replaceAll('_', ' ')}</p>
+        <p className="mt-1 text-sm text-muted-foreground">{data.registry.reason}</p>
+      </div>
+      {data.registry.providers.map(provider => (
+        <div key={provider.providerId} className="rounded bg-muted/40 p-2 text-sm">
+          <b>{provider.name}: {provider.state.replaceAll('_', ' ')}</b>
+          <p className="text-muted-foreground">{provider.reason}</p>
+          <p className="text-xs text-muted-foreground">Routes: {provider.channels.join(', ') || 'none'} · terms/policy reference: {provider.policyReference || 'not supplied'}</p>
+        </div>
+      ))}
+      {canRun && canResearch && (
+        <Button onClick={onRequest} disabled={isPending} data-testid="button-request-contact-enrichment">
+          {isPending ? 'Queueing permitted lookup…' : 'Check permitted contact sources'}
+        </Button>
+      )}
+      {!canRun && (
+        <p className="text-xs text-muted-foreground" data-testid="text-contact-provider-unavailable">
+          No lookup or outreach will run. Add and exercise a provider that is permitted for the intended use, or record independently obtained evidence below.
+        </p>
+      )}
+      <p className="text-xs text-muted-foreground">This capability only researches contact evidence. It never calls, emails, messages, changes deal economics, authorizes an offer, or changes transaction state.</p>
+      {data.requests.length > 0 && (
+        <div className="space-y-2" data-testid="seller-contact-enrichment-history">
+          <p className="eyebrow">Recent lookup requests</p>
+          {data.requests.map(request => (
+            <article key={request.id} className="rounded border border-border p-2 text-xs">
+              <div className="flex flex-wrap justify-between gap-2">
+                <b>{request.status.replaceAll('_', ' ')}</b>
+                <span>{request.attempts}/{request.maxAttempts} attempts · {request.resultCount} new observation(s)</span>
+              </div>
+              <p className="mt-1 text-muted-foreground">{request.reason}</p>
+              {request.nextAttemptAt && <p className="text-muted-foreground">Next retry: {new Date(request.nextAttemptAt).toLocaleString()}</p>}
+              {request.providerResults.map(result => (
+                <p key={result.providerId} className="text-muted-foreground">{result.providerId}: {result.status.replaceAll('_', ' ')} — {result.reason}</p>
+              ))}
+            </article>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 export function SellerContactPanel({ leadId, canResearch, onSaved }: {
   leadId: string; canResearch: boolean; onSaved: () => void;
 }) {
   const queryClient = useQueryClient();
   const { toast } = useToast();
   const queryKey = getGetSellerContactPathsQueryKey(leadId);
+  const enrichmentQueryKey = getGetSellerContactEnrichmentQueryKey(leadId);
   const query = useGetSellerContactPaths(leadId, {
     query: { queryKey, enabled: !!leadId, staleTime: 5_000, refetchInterval: 15_000 },
   });
+  const enrichmentQuery = useGetSellerContactEnrichment(leadId, {
+    query: { queryKey: enrichmentQueryKey, enabled: !!leadId, staleTime: 5_000, refetchInterval: 15_000 },
+  });
   const mutation = useRecordSellerContactObservation();
+  const enrichmentMutation = useRequestSellerContactEnrichment();
   const [form, setForm] = useState(empty);
   const [localError, setLocalError] = useState<string | null>(null);
   const set = (key: keyof typeof empty) => (value: string) => setForm(current => ({ ...current, [key]: value } as typeof empty));
@@ -66,6 +129,21 @@ export function SellerContactPanel({ leadId, canResearch, onSaved }: {
   if (query.isError || !query.data) return <section className="ledger mt-4 p-4" data-testid="panel-seller-contact"><ErrorNotice error={query.error} onRetry={() => query.refetch()} /></section>;
   const data = query.data;
   const paths = data.contactPaths;
+  const requestEnrichment = () => {
+    enrichmentMutation.mutate({
+      id: leadId,
+      data: { idempotencyKey: crypto.randomUUID(), channels: ['PHONE', 'EMAIL', 'WEB', 'OTHER'] },
+    }, {
+      onSuccess: result => {
+        queryClient.setQueryData(enrichmentQueryKey, result);
+        void queryClient.invalidateQueries({ queryKey });
+        toast({
+          title: 'Contact-source request recorded',
+          description: result.requests[0]?.reason ?? 'Provider state was checked; no outreach was sent.',
+        });
+      },
+    });
+  };
   const submit = () => {
     const confidence = Number(form.confidence);
     if (!form.routeValue.trim() || !form.sourceId.trim() || !form.sourceName.trim() || !form.sourceRecordId.trim()) {
@@ -132,6 +210,15 @@ export function SellerContactPanel({ leadId, canResearch, onSaved }: {
         </p>
       </div>
       <Status data={data} />
+      {enrichmentQuery.isError
+        ? <ErrorNotice error={enrichmentQuery.error} onRetry={() => enrichmentQuery.refetch()} />
+        : <EnrichmentStatus
+            data={enrichmentQuery.data}
+            canResearch={canResearch}
+            onRequest={requestEnrichment}
+            isPending={enrichmentMutation.isPending}
+          />}
+      {enrichmentMutation.isError && <ErrorNotice error={enrichmentMutation.error} />}
       {paths.length ? (
         <div className="space-y-2" data-testid="seller-contact-path-list">
           {paths.map(path => (
@@ -146,6 +233,10 @@ export function SellerContactPanel({ leadId, canResearch, onSaved }: {
               <p className="text-xs text-muted-foreground">
                 Recipient role: {path.recipientRole ?? 'UNKNOWN'} · identity {path.identityStatus ?? 'UNVERIFIED'} · signing authority {path.signingAuthorityStatus ?? 'NOT_ESTABLISHED'}
               </p>
+              {path.providerId && <p className="text-xs text-muted-foreground" data-testid="contact-provider-evidence">
+                Provider {path.providerId} · evidence {path.epistemicStatus ?? 'OBSERVED'} · provider permission assessment {path.permissionEvidenceStatus ?? 'UNKNOWN'} · legal basis {path.legalBasis ?? 'UNKNOWN'} · recipient identity evidence {path.recipientIdentityEvidenceStatus ?? 'NONE'}.
+                {path.legalBasisScope ? ` Scope: ${path.legalBasisScope}` : ''}
+              </p>}
               {path.sourceUrl && <a className="text-xs underline" href={path.sourceUrl} target="_blank" rel="noreferrer">Open source record</a>}
                {path.identityConflictStatus && path.identityConflictStatus !== 'NONE' && (
                  <p className="mt-1 text-xs text-destructive" data-testid="contact-identity-conflict">
@@ -164,6 +255,7 @@ export function SellerContactPanel({ leadId, canResearch, onSaved }: {
                      {path.supportingObservations.map(observation => (
                        <li key={`${observation.sourceId}:${observation.sourceRecordId}:${observation.id}`}>
                          {observation.sourceName} · {observation.sourceRecordId} · {observation.recipient ?? 'recipient not stated'} ({observation.recipientRole}) · {observation.classification} · captured {new Date(observation.capturedAt).toLocaleDateString()}
+                          {observation.providerId && ` · provider ${observation.providerId} · ${observation.epistemicStatus ?? 'OBSERVED'} · ${observation.legalBasis ?? 'legal basis unknown'} · permission evidence ${observation.permissionEvidenceStatus ?? 'unknown'}`}
                        </li>
                      ))}
                    </ul>

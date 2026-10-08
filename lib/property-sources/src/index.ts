@@ -83,6 +83,14 @@ export type ContactPathObservation = {
   classification: "OBSERVED" | "VERIFIED";
   confidence: number;
   permissionStatus: "NOT_REVIEWED" | "PERMITTED" | "PROHIBITED";
+  permissionEvidenceStatus?: "SUPPORTS_ALLOWED" | "UNKNOWN" | "BLOCKED" | null;
+  legalBasis?: "CONSENT" | "PUBLIC_SOURCE_TERMS" | "PUBLIC_DATA_REUSE" | "OTHER_DOCUMENTED" | "UNKNOWN" | null;
+  legalBasisScope?: string | null;
+  legalBasisEvidenceUrl?: string | null;
+  providerId?: string | null;
+  epistemicStatus?: "OBSERVED" | "INDICATED" | "AI_HYPOTHESIS" | null;
+  recipientIdentityEvidenceStatus?: "NONE" | "CLAIMED" | "SUPPORTING_RECORD" | null;
+  recipientIdentityEvidenceRef?: string | null;
   contactPermissionEvidenceUrl?: string | null;
   permissionReviewedAt?: string | null;
   routeVerificationStatus?: "UNREVIEWED" | "CONFIRMED" | "REJECTED";
@@ -108,6 +116,14 @@ export type PropertyContactPath = {
   freshUntilAt: string;
   freshnessStatus: "CURRENT" | "STALE";
   permissionStatus: "NOT_REVIEWED" | "PERMITTED" | "PROHIBITED";
+  permissionEvidenceStatus?: "SUPPORTS_ALLOWED" | "UNKNOWN" | "BLOCKED" | null;
+  legalBasis?: "CONSENT" | "PUBLIC_SOURCE_TERMS" | "PUBLIC_DATA_REUSE" | "OTHER_DOCUMENTED" | "UNKNOWN" | null;
+  legalBasisScope?: string | null;
+  legalBasisEvidenceUrl?: string | null;
+  providerId?: string | null;
+  epistemicStatus?: "OBSERVED" | "INDICATED" | "AI_HYPOTHESIS" | null;
+  recipientIdentityEvidenceStatus?: "NONE" | "CLAIMED" | "SUPPORTING_RECORD" | null;
+  recipientIdentityEvidenceRef?: string | null;
   contactPermissionEvidenceUrl?: string | null;
   permissionReviewedAt?: string | null;
   sourceType?: "PUBLIC_RECORD" | "PUBLIC_PAGE" | "PERMITTED_LISTING" | "SELLER" | "ANALYST";
@@ -162,6 +178,14 @@ function contactPathObservation(path: PropertyContactPath): ContactPathObservati
     classification: path.classification,
     confidence: path.confidence,
     permissionStatus: path.permissionStatus,
+    permissionEvidenceStatus: path.permissionEvidenceStatus ?? null,
+    legalBasis: path.legalBasis ?? null,
+    legalBasisScope: path.legalBasisScope ?? null,
+    legalBasisEvidenceUrl: path.legalBasisEvidenceUrl ?? null,
+    providerId: path.providerId ?? null,
+    epistemicStatus: path.epistemicStatus ?? null,
+    recipientIdentityEvidenceStatus: path.recipientIdentityEvidenceStatus ?? null,
+    recipientIdentityEvidenceRef: path.recipientIdentityEvidenceRef ?? null,
     contactPermissionEvidenceUrl: path.contactPermissionEvidenceUrl ?? null,
     permissionReviewedAt: path.permissionReviewedAt ?? null,
     routeVerificationStatus: path.routeVerificationStatus ?? "UNREVIEWED",
@@ -512,3 +536,5 @@ export async function nearbySales(subject: PublicProperty, options: {radius:numb
     now,`ST_Distance(the_geom::geography,ST_SetSRID(ST_MakePoint(${subject.lng},${subject.lat}),4326)::geography), parcel_number`);
   return candidateSales(subject,rows,{...options,radius},now);
 }
+
+export * from "./contact-enrichment";

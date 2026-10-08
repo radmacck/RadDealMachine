@@ -15,6 +15,12 @@ Seller contact research may update contact evidence and readiness, but it must n
 
 **How to apply:** Keep contact-route observations and review audit events separate from underwriting snapshots and offer/transaction transitions. A contact change may block future readiness, but must not rewrite a prior authorized offer or transaction history.
 
+External contact-provider results are evidence intake only. Route them through the existing reconciliation pipeline as OBSERVED with contact-use permission and route verification left unreviewed; provider permission assertions and recipient claims do not establish seller identity, signing authority, or CALL READY.
+
+**Why:** A provider's source and legal-basis metadata preserve provenance, but they cannot substitute for owner review or prove that a reported person can bind the property owner.
+
+**How to apply:** Persist provider provenance and epistemic status alongside each observation, but keep human permission, route confirmation, identity, and transaction authority as separate checks.
+
 Revoking or superseding internal authority does not undo a proposal already communicated to a seller.
 
 **Why:** The system controls its own permissions, not a seller's memory or the legal effect of a prior human communication. A new approval must never rewrite that history.

@@ -191,6 +191,16 @@ export async function recordSellerContactObservation(
   untrusted: unknown,
   actor: OfferActor,
   now = new Date(),
+  providerEvidence?: {
+    providerId: string;
+    permissionEvidenceStatus: "SUPPORTS_ALLOWED" | "UNKNOWN" | "BLOCKED";
+    legalBasis: "CONSENT" | "PUBLIC_SOURCE_TERMS" | "PUBLIC_DATA_REUSE" | "OTHER_DOCUMENTED" | "UNKNOWN";
+    legalBasisScope: string;
+    legalBasisEvidenceUrl: string | null;
+    epistemicStatus: "OBSERVED" | "INDICATED" | "AI_HYPOTHESIS";
+    recipientIdentityEvidenceStatus: "NONE" | "CLAIMED" | "SUPPORTING_RECORD";
+    recipientIdentityEvidenceRef: string | null;
+  },
 ) {
   const input = RecordSellerContactObservationBody.parse(untrusted);
   if (!["OWNER", "ANALYST"].includes(actor.role)) throw new DomainError("Only owners and analysts can record seller contact research.", 403);
@@ -269,6 +279,16 @@ export async function recordSellerContactObservation(
       freshUntilAt: iso(freshUntilAt),
       freshnessStatus: freshUntilAt > now ? "CURRENT" : "STALE",
       permissionStatus: input.permissionStatus,
+      ...(providerEvidence ? {
+        providerId: providerEvidence.providerId,
+        permissionEvidenceStatus: providerEvidence.permissionEvidenceStatus,
+        legalBasis: providerEvidence.legalBasis,
+        legalBasisScope: providerEvidence.legalBasisScope,
+        legalBasisEvidenceUrl: providerEvidence.legalBasisEvidenceUrl,
+        epistemicStatus: providerEvidence.epistemicStatus,
+        recipientIdentityEvidenceStatus: providerEvidence.recipientIdentityEvidenceStatus,
+        recipientIdentityEvidenceRef: providerEvidence.recipientIdentityEvidenceRef,
+      } : {}),
       contactPermissionEvidenceUrl: input.contactPermissionEvidenceUrl ?? null,
       permissionReviewedAt: input.permissionStatus === "NOT_REVIEWED" ? null : iso(now),
       sourceType: input.sourceType,
@@ -291,6 +311,7 @@ export async function recordSellerContactObservation(
       ...(input.verificationNote ? { verificationNote: input.verificationNote } : {}),
       contactPermissionStatus: input.permissionStatus,
       ...(input.contactPermissionEvidenceUrl ? { contactPermissionEvidenceUrl: input.contactPermissionEvidenceUrl } : {}),
+      ...(providerEvidence ? { providerEvidence } : {}),
       contactPath: path,
     };
     await tx.insert(intelligenceTable).values({

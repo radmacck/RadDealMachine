@@ -9,6 +9,7 @@ import * as offers from "../services/offer-store";
 import { commandCenter } from "../services/command-center";
 import { intakePropertyEvidence } from "../services/evidence-intake";
 import * as sellerContacts from "../services/seller-contact-store";
+import * as sellerContactEnrichment from "../services/seller-contact-enrichment";
 
 const router: IRouter = Router();
 // Trim strings before schema validation so required fields cannot be whitespace-only.
@@ -68,6 +69,18 @@ router.post("/leads/:id/contact-paths",contactResearch,async (req,res) => {
     leadId(req),parse(contract.RecordSellerContactObservationBody,req.body),
     {id:String(res.locals.actor),role:String(res.locals.role)},
   ));
+});
+router.get("/leads/:id/contact-enrichment",research,async (req,res) => {
+  send(res,contract.GetSellerContactEnrichmentResponse,
+    await sellerContactEnrichment.getSellerContactEnrichment(leadId(req)));
+});
+router.post("/leads/:id/contact-enrichment",research,async (req,res) => {
+  send(res,contract.RequestSellerContactEnrichmentResponse,
+    await sellerContactEnrichment.requestSellerContactEnrichment(
+      leadId(req),
+      parse(contract.RequestSellerContactEnrichmentBody,req.body),
+      {id:String(res.locals.actor),role:String(res.locals.role)},
+    ));
 });
 router.patch("/leads/:id",research,async (req,res) => {
   send(res,contract.UpdateLeadResponse,await store.updateLead(leadId(req),parse(contract.UpdateLeadBody,req.body),String(res.locals.actor)));

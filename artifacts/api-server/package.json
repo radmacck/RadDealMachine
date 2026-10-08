@@ -13,6 +13,7 @@
     "exercise:property-source": "tsx src/services/isolated-exercise.ts property-source-exercise.ts",
     "test:property-discovery-ranking": "tsx --test src/services/property-discovery-ranking.test.ts",
     "exercise:seller-contact": "tsx src/services/isolated-exercise.ts seller-contact-exercise.ts",
+    "exercise:seller-contact-enrichment": "tsx src/services/isolated-exercise.ts seller-contact-enrichment-exercise.ts",
     "exercise:buyers": "tsx src/services/isolated-exercise.ts buyer-exercise.ts",
     "exercise:buyer-pool": "tsx src/services/isolated-exercise.ts buyer-pool-exercise.ts",
     "exercise:seller": "tsx src/services/isolated-exercise.ts seller-exercise.ts",

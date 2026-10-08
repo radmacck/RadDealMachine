@@ -410,6 +410,56 @@ export const PropertyContactPathPermissionStatus = {
   PROHIBITED: 'PROHIBITED',
 } as const;
 
+/**
+ * @nullable
+ */
+export type PropertyContactPathPermissionEvidenceStatus = typeof PropertyContactPathPermissionEvidenceStatus[keyof typeof PropertyContactPathPermissionEvidenceStatus] | null;
+
+
+export const PropertyContactPathPermissionEvidenceStatus = {
+  SUPPORTS_ALLOWED: 'SUPPORTS_ALLOWED',
+  UNKNOWN: 'UNKNOWN',
+  BLOCKED: 'BLOCKED',
+} as const;
+
+/**
+ * @nullable
+ */
+export type PropertyContactPathLegalBasis = typeof PropertyContactPathLegalBasis[keyof typeof PropertyContactPathLegalBasis] | null;
+
+
+export const PropertyContactPathLegalBasis = {
+  CONSENT: 'CONSENT',
+  PUBLIC_SOURCE_TERMS: 'PUBLIC_SOURCE_TERMS',
+  PUBLIC_DATA_REUSE: 'PUBLIC_DATA_REUSE',
+  OTHER_DOCUMENTED: 'OTHER_DOCUMENTED',
+  UNKNOWN: 'UNKNOWN',
+} as const;
+
+/**
+ * @nullable
+ */
+export type PropertyContactPathEpistemicStatus = typeof PropertyContactPathEpistemicStatus[keyof typeof PropertyContactPathEpistemicStatus] | null;
+
+
+export const PropertyContactPathEpistemicStatus = {
+  OBSERVED: 'OBSERVED',
+  INDICATED: 'INDICATED',
+  AI_HYPOTHESIS: 'AI_HYPOTHESIS',
+} as const;
+
+/**
+ * @nullable
+ */
+export type PropertyContactPathRecipientIdentityEvidenceStatus = typeof PropertyContactPathRecipientIdentityEvidenceStatus[keyof typeof PropertyContactPathRecipientIdentityEvidenceStatus] | null;
+
+
+export const PropertyContactPathRecipientIdentityEvidenceStatus = {
+  NONE: 'NONE',
+  CLAIMED: 'CLAIMED',
+  SUPPORTING_RECORD: 'SUPPORTING_RECORD',
+} as const;
+
 export type PropertyContactPathSourceType = typeof PropertyContactPathSourceType[keyof typeof PropertyContactPathSourceType];
 
 
@@ -483,6 +533,56 @@ export const ContactPathObservationPermissionStatus = {
   PROHIBITED: 'PROHIBITED',
 } as const;
 
+/**
+ * @nullable
+ */
+export type ContactPathObservationPermissionEvidenceStatus = typeof ContactPathObservationPermissionEvidenceStatus[keyof typeof ContactPathObservationPermissionEvidenceStatus] | null;
+
+
+export const ContactPathObservationPermissionEvidenceStatus = {
+  SUPPORTS_ALLOWED: 'SUPPORTS_ALLOWED',
+  UNKNOWN: 'UNKNOWN',
+  BLOCKED: 'BLOCKED',
+} as const;
+
+/**
+ * @nullable
+ */
+export type ContactPathObservationLegalBasis = typeof ContactPathObservationLegalBasis[keyof typeof ContactPathObservationLegalBasis] | null;
+
+
+export const ContactPathObservationLegalBasis = {
+  CONSENT: 'CONSENT',
+  PUBLIC_SOURCE_TERMS: 'PUBLIC_SOURCE_TERMS',
+  PUBLIC_DATA_REUSE: 'PUBLIC_DATA_REUSE',
+  OTHER_DOCUMENTED: 'OTHER_DOCUMENTED',
+  UNKNOWN: 'UNKNOWN',
+} as const;
+
+/**
+ * @nullable
+ */
+export type ContactPathObservationEpistemicStatus = typeof ContactPathObservationEpistemicStatus[keyof typeof ContactPathObservationEpistemicStatus] | null;
+
+
+export const ContactPathObservationEpistemicStatus = {
+  OBSERVED: 'OBSERVED',
+  INDICATED: 'INDICATED',
+  AI_HYPOTHESIS: 'AI_HYPOTHESIS',
+} as const;
+
+/**
+ * @nullable
+ */
+export type ContactPathObservationRecipientIdentityEvidenceStatus = typeof ContactPathObservationRecipientIdentityEvidenceStatus[keyof typeof ContactPathObservationRecipientIdentityEvidenceStatus] | null;
+
+
+export const ContactPathObservationRecipientIdentityEvidenceStatus = {
+  NONE: 'NONE',
+  CLAIMED: 'CLAIMED',
+  SUPPORTING_RECORD: 'SUPPORTING_RECORD',
+} as const;
+
 export type ContactPathObservationRouteVerificationStatus = typeof ContactPathObservationRouteVerificationStatus[keyof typeof ContactPathObservationRouteVerificationStatus];
 
 
@@ -511,6 +611,22 @@ export interface ContactPathObservation {
      */
   confidence: number;
   permissionStatus: ContactPathObservationPermissionStatus;
+  /** @nullable */
+  permissionEvidenceStatus: ContactPathObservationPermissionEvidenceStatus;
+  /** @nullable */
+  legalBasis: ContactPathObservationLegalBasis;
+  /** @nullable */
+  legalBasisScope: string | null;
+  /** @nullable */
+  legalBasisEvidenceUrl: string | null;
+  /** @nullable */
+  providerId: string | null;
+  /** @nullable */
+  epistemicStatus: ContactPathObservationEpistemicStatus;
+  /** @nullable */
+  recipientIdentityEvidenceStatus: ContactPathObservationRecipientIdentityEvidenceStatus;
+  /** @nullable */
+  recipientIdentityEvidenceRef: string | null;
   /** @nullable */
   contactPermissionEvidenceUrl: string | null;
   /** @nullable */
@@ -560,6 +676,22 @@ export interface PropertyContactPath {
   freshUntilAt: string;
   freshnessStatus: PropertyContactPathFreshnessStatus;
   permissionStatus: PropertyContactPathPermissionStatus;
+  /** @nullable */
+  permissionEvidenceStatus?: PropertyContactPathPermissionEvidenceStatus;
+  /** @nullable */
+  legalBasis?: PropertyContactPathLegalBasis;
+  /** @nullable */
+  legalBasisScope?: string | null;
+  /** @nullable */
+  legalBasisEvidenceUrl?: string | null;
+  /** @nullable */
+  providerId?: string | null;
+  /** @nullable */
+  epistemicStatus?: PropertyContactPathEpistemicStatus;
+  /** @nullable */
+  recipientIdentityEvidenceStatus?: PropertyContactPathRecipientIdentityEvidenceStatus;
+  /** @nullable */
+  recipientIdentityEvidenceRef?: string | null;
   /** @nullable */
   contactPermissionEvidenceUrl?: string | null;
   /** @nullable */
@@ -907,6 +1039,164 @@ export interface SellerContactReadiness {
   /** @minimum 0 */
   unresolvedPhoneRouteCount: number;
   nextAction: string;
+  checkedAt: string;
+}
+
+export type ContactProviderCapabilityState = typeof ContactProviderCapabilityState[keyof typeof ContactProviderCapabilityState];
+
+
+export const ContactProviderCapabilityState = {
+  AVAILABLE_AND_EXERCISED: 'AVAILABLE_AND_EXERCISED',
+  CONFIGURED_BUT_UNEXERCISED: 'CONFIGURED_BUT_UNEXERCISED',
+  UNAVAILABLE: 'UNAVAILABLE',
+  BLOCKED_BY_POLICY: 'BLOCKED_BY_POLICY',
+  BLOCKED_BY_TERMS: 'BLOCKED_BY_TERMS',
+} as const;
+
+export type ContactProviderCapabilityChannelsItem = typeof ContactProviderCapabilityChannelsItem[keyof typeof ContactProviderCapabilityChannelsItem];
+
+
+export const ContactProviderCapabilityChannelsItem = {
+  PHONE: 'PHONE',
+  EMAIL: 'EMAIL',
+  WEB: 'WEB',
+  OTHER: 'OTHER',
+} as const;
+
+export interface ContactProviderCapability {
+  providerId: string;
+  name: string;
+  state: ContactProviderCapabilityState;
+  channels: ContactProviderCapabilityChannelsItem[];
+  reason: string;
+  /** @nullable */
+  policyReference: string | null;
+  /** @nullable */
+  termsReviewedAt: string | null;
+  /** @nullable */
+  lastExercisedAt: string | null;
+}
+
+export type ContactProviderRegistryStatusState = typeof ContactProviderRegistryStatusState[keyof typeof ContactProviderRegistryStatusState];
+
+
+export const ContactProviderRegistryStatusState = {
+  AVAILABLE_AND_EXERCISED: 'AVAILABLE_AND_EXERCISED',
+  CONFIGURED_BUT_UNEXERCISED: 'CONFIGURED_BUT_UNEXERCISED',
+  UNAVAILABLE: 'UNAVAILABLE',
+  BLOCKED_BY_POLICY: 'BLOCKED_BY_POLICY',
+  BLOCKED_BY_TERMS: 'BLOCKED_BY_TERMS',
+} as const;
+
+export interface ContactProviderRegistryStatus {
+  state: ContactProviderRegistryStatusState;
+  providers: ContactProviderCapability[];
+  reason: string;
+}
+
+export type SellerContactEnrichmentRequestInputChannelsItem = typeof SellerContactEnrichmentRequestInputChannelsItem[keyof typeof SellerContactEnrichmentRequestInputChannelsItem];
+
+
+export const SellerContactEnrichmentRequestInputChannelsItem = {
+  PHONE: 'PHONE',
+  EMAIL: 'EMAIL',
+  WEB: 'WEB',
+  OTHER: 'OTHER',
+} as const;
+
+export interface SellerContactEnrichmentRequestInput {
+  /**
+     * @minLength 8
+     * @maxLength 200
+     */
+  idempotencyKey: string;
+  /** @minItems 1 */
+  channels: SellerContactEnrichmentRequestInputChannelsItem[];
+}
+
+export type SellerContactEnrichmentProviderResultStatus = typeof SellerContactEnrichmentProviderResultStatus[keyof typeof SellerContactEnrichmentProviderResultStatus];
+
+
+export const SellerContactEnrichmentProviderResultStatus = {
+  QUEUED: 'QUEUED',
+  RUNNING: 'RUNNING',
+  SUCCEEDED: 'SUCCEEDED',
+  NO_RESULT: 'NO_RESULT',
+  STALE_RESULT: 'STALE_RESULT',
+  RETRY_WAIT: 'RETRY_WAIT',
+  UNAVAILABLE: 'UNAVAILABLE',
+  BLOCKED_BY_POLICY: 'BLOCKED_BY_POLICY',
+  BLOCKED_BY_TERMS: 'BLOCKED_BY_TERMS',
+  BLOCKED_BY_PROVIDER_READINESS: 'BLOCKED_BY_PROVIDER_READINESS',
+  FAILED: 'FAILED',
+  CANCELLED: 'CANCELLED',
+} as const;
+
+export interface SellerContactEnrichmentProviderResult {
+  providerId: string;
+  status: SellerContactEnrichmentProviderResultStatus;
+  reason: string;
+  /** @minimum 0 */
+  observationsAdded: number;
+}
+
+export type SellerContactEnrichmentRequestChannelsItem = typeof SellerContactEnrichmentRequestChannelsItem[keyof typeof SellerContactEnrichmentRequestChannelsItem];
+
+
+export const SellerContactEnrichmentRequestChannelsItem = {
+  PHONE: 'PHONE',
+  EMAIL: 'EMAIL',
+  WEB: 'WEB',
+  OTHER: 'OTHER',
+} as const;
+
+export type SellerContactEnrichmentRequestStatus = typeof SellerContactEnrichmentRequestStatus[keyof typeof SellerContactEnrichmentRequestStatus];
+
+
+export const SellerContactEnrichmentRequestStatus = {
+  QUEUED: 'QUEUED',
+  RUNNING: 'RUNNING',
+  SUCCEEDED: 'SUCCEEDED',
+  NO_RESULT: 'NO_RESULT',
+  STALE_RESULT: 'STALE_RESULT',
+  RETRY_WAIT: 'RETRY_WAIT',
+  UNAVAILABLE: 'UNAVAILABLE',
+  BLOCKED_BY_POLICY: 'BLOCKED_BY_POLICY',
+  BLOCKED_BY_TERMS: 'BLOCKED_BY_TERMS',
+  BLOCKED_BY_PROVIDER_READINESS: 'BLOCKED_BY_PROVIDER_READINESS',
+  FAILED: 'FAILED',
+  CANCELLED: 'CANCELLED',
+} as const;
+
+export interface SellerContactEnrichmentRequest {
+  id: string;
+  leadId: string;
+  idempotencyKey: string;
+  channels: SellerContactEnrichmentRequestChannelsItem[];
+  status: SellerContactEnrichmentRequestStatus;
+  /** @minimum 1 */
+  requestedLeadVersion: number;
+  providerIds: string[];
+  providerResults: SellerContactEnrichmentProviderResult[];
+  /** @minimum 0 */
+  attempts: number;
+  /** @minimum 1 */
+  maxAttempts: number;
+  /** @nullable */
+  nextAttemptAt: string | null;
+  /** @minimum 0 */
+  resultCount: number;
+  reason: string;
+  /** @nullable */
+  lastFailureCode: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface SellerContactEnrichmentStatus {
+  leadId: string;
+  registry: ContactProviderRegistryStatus;
+  requests: SellerContactEnrichmentRequest[];
   checkedAt: string;
 }
 

@@ -6,7 +6,11 @@
  * OpenAPI spec version: 1.0.0
  */
 import type { ContactPathObservationClassification } from './contactPathObservationClassification';
+import type { ContactPathObservationEpistemicStatus } from './contactPathObservationEpistemicStatus';
+import type { ContactPathObservationLegalBasis } from './contactPathObservationLegalBasis';
+import type { ContactPathObservationPermissionEvidenceStatus } from './contactPathObservationPermissionEvidenceStatus';
 import type { ContactPathObservationPermissionStatus } from './contactPathObservationPermissionStatus';
+import type { ContactPathObservationRecipientIdentityEvidenceStatus } from './contactPathObservationRecipientIdentityEvidenceStatus';
 import type { ContactPathObservationRecipientRole } from './contactPathObservationRecipientRole';
 import type { ContactPathObservationRouteVerificationStatus } from './contactPathObservationRouteVerificationStatus';
 
@@ -29,6 +33,22 @@ export interface ContactPathObservation {
      */
   confidence: number;
   permissionStatus: ContactPathObservationPermissionStatus;
+  /** @nullable */
+  permissionEvidenceStatus: ContactPathObservationPermissionEvidenceStatus;
+  /** @nullable */
+  legalBasis: ContactPathObservationLegalBasis;
+  /** @nullable */
+  legalBasisScope: string | null;
+  /** @nullable */
+  legalBasisEvidenceUrl: string | null;
+  /** @nullable */
+  providerId: string | null;
+  /** @nullable */
+  epistemicStatus: ContactPathObservationEpistemicStatus;
+  /** @nullable */
+  recipientIdentityEvidenceStatus: ContactPathObservationRecipientIdentityEvidenceStatus;
+  /** @nullable */
+  recipientIdentityEvidenceRef: string | null;
   /** @nullable */
   contactPermissionEvidenceUrl: string | null;
   /** @nullable */

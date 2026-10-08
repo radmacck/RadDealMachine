@@ -30,6 +30,30 @@ paths:
           content:
             application/json:
               schema: { $ref: "#/components/schemas/SellerContactReadiness" }
+  /leads/{id}/contact-enrichment:
+    parameters:
+      - { name: id, in: path, required: true, schema: { type: string } }
+    get:
+      operationId: getSellerContactEnrichment
+      responses:
+        "200":
+          description: Provider capability states and persisted seller-contact enrichment request history
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/SellerContactEnrichmentStatus" }
+    post:
+      operationId: requestSellerContactEnrichment
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/SellerContactEnrichmentRequestInput" }
+      responses:
+        "200":
+          description: Persisted idempotent lookup request; unavailable providers are reported without claiming a lookup
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/SellerContactEnrichmentStatus" }
   /deals/{id}/contract/exception:
     parameters:
       - { name: id, in: path, required: true, schema: { type: string } }
@@ -1379,7 +1403,7 @@ components:
         leadId: { type: string, format: uuid }
     ContactPathObservation:
       type: object
-      required: [id, recipient, recipientRole, sourceId, sourceName, sourceRecordId, sourceUrl, capturedAt, freshUntilAt, classification, confidence, permissionStatus, contactPermissionEvidenceUrl, permissionReviewedAt, routeVerificationStatus, routeReviewedAt, verificationNote]
+      required: [id, recipient, recipientRole, sourceId, sourceName, sourceRecordId, sourceUrl, capturedAt, freshUntilAt, classification, confidence, permissionStatus, permissionEvidenceStatus, legalBasis, legalBasisScope, legalBasisEvidenceUrl, providerId, epistemicStatus, recipientIdentityEvidenceStatus, recipientIdentityEvidenceRef, contactPermissionEvidenceUrl, permissionReviewedAt, routeVerificationStatus, routeReviewedAt, verificationNote]
       properties:
         id: { type: string }
         recipient: { type: ["string", "null"] }
@@ -1393,6 +1417,14 @@ components:
         classification: { type: string, enum: [OBSERVED, VERIFIED] }
         confidence: { type: number, minimum: 0, maximum: 1 }
         permissionStatus: { type: string, enum: [NOT_REVIEWED, PERMITTED, PROHIBITED] }
+        permissionEvidenceStatus: { type: ["string", "null"], enum: [SUPPORTS_ALLOWED, UNKNOWN, BLOCKED, null] }
+        legalBasis: { type: ["string", "null"], enum: [CONSENT, PUBLIC_SOURCE_TERMS, PUBLIC_DATA_REUSE, OTHER_DOCUMENTED, UNKNOWN, null] }
+        legalBasisScope: { type: ["string", "null"] }
+        legalBasisEvidenceUrl: { type: ["string", "null"], format: uri }
+        providerId: { type: ["string", "null"] }
+        epistemicStatus: { type: ["string", "null"], enum: [OBSERVED, INDICATED, AI_HYPOTHESIS, null] }
+        recipientIdentityEvidenceStatus: { type: ["string", "null"], enum: [NONE, CLAIMED, SUPPORTING_RECORD, null] }
+        recipientIdentityEvidenceRef: { type: ["string", "null"] }
         contactPermissionEvidenceUrl: { type: ["string", "null"], format: uri }
         permissionReviewedAt: { type: ["string", "null"], format: date-time }
         routeVerificationStatus: { type: string, enum: [UNREVIEWED, CONFIRMED, REJECTED] }
@@ -1419,6 +1451,14 @@ components:
         freshUntilAt: { type: string, format: date-time }
         freshnessStatus: { type: string, enum: [CURRENT, STALE] }
         permissionStatus: { type: string, enum: [NOT_REVIEWED, PERMITTED, PROHIBITED] }
+        permissionEvidenceStatus: { type: ["string", "null"], enum: [SUPPORTS_ALLOWED, UNKNOWN, BLOCKED, null] }
+        legalBasis: { type: ["string", "null"], enum: [CONSENT, PUBLIC_SOURCE_TERMS, PUBLIC_DATA_REUSE, OTHER_DOCUMENTED, UNKNOWN, null] }
+        legalBasisScope: { type: ["string", "null"] }
+        legalBasisEvidenceUrl: { type: ["string", "null"], format: uri }
+        providerId: { type: ["string", "null"] }
+        epistemicStatus: { type: ["string", "null"], enum: [OBSERVED, INDICATED, AI_HYPOTHESIS, null] }
+        recipientIdentityEvidenceStatus: { type: ["string", "null"], enum: [NONE, CLAIMED, SUPPORTING_RECORD, null] }
+        recipientIdentityEvidenceRef: { type: ["string", "null"] }
         contactPermissionEvidenceUrl: { type: ["string", "null"], format: uri }
         permissionReviewedAt: { type: ["string", "null"], format: date-time }
         sourceType: { type: string, enum: [PUBLIC_RECORD, PUBLIC_PAGE, PERMITTED_LISTING, SELLER, ANALYST] }
@@ -1472,6 +1512,71 @@ components:
           oneOf: [{ $ref: "#/components/schemas/PropertyContactPath" }, { type: "null" }]
         unresolvedPhoneRouteCount: { type: integer, minimum: 0 }
         nextAction: { type: string }
+        checkedAt: { type: string, format: date-time }
+    ContactProviderCapability:
+      type: object
+      required: [providerId, name, state, channels, reason, policyReference, termsReviewedAt, lastExercisedAt]
+      properties:
+        providerId: { type: string }
+        name: { type: string }
+        state: { type: string, enum: [AVAILABLE_AND_EXERCISED, CONFIGURED_BUT_UNEXERCISED, UNAVAILABLE, BLOCKED_BY_POLICY, BLOCKED_BY_TERMS] }
+        channels: { type: array, items: { type: string, enum: [PHONE, EMAIL, WEB, OTHER] } }
+        reason: { type: string }
+        policyReference: { type: ["string", "null"] }
+        termsReviewedAt: { type: ["string", "null"], format: date-time }
+        lastExercisedAt: { type: ["string", "null"], format: date-time }
+    ContactProviderRegistryStatus:
+      type: object
+      required: [state, providers, reason]
+      properties:
+        state: { type: string, enum: [AVAILABLE_AND_EXERCISED, CONFIGURED_BUT_UNEXERCISED, UNAVAILABLE, BLOCKED_BY_POLICY, BLOCKED_BY_TERMS] }
+        providers: { type: array, items: { $ref: "#/components/schemas/ContactProviderCapability" } }
+        reason: { type: string }
+    SellerContactEnrichmentRequestInput:
+      type: object
+      required: [idempotencyKey, channels]
+      properties:
+        idempotencyKey: { type: string, minLength: 8, maxLength: 200 }
+        channels:
+          type: array
+          minItems: 1
+          uniqueItems: true
+          items: { type: string, enum: [PHONE, EMAIL, WEB, OTHER] }
+    SellerContactEnrichmentProviderResult:
+      type: object
+      required: [providerId, status, reason, observationsAdded]
+      properties:
+        providerId: { type: string }
+        status: { type: string, enum: [QUEUED, RUNNING, SUCCEEDED, NO_RESULT, STALE_RESULT, RETRY_WAIT, UNAVAILABLE, BLOCKED_BY_POLICY, BLOCKED_BY_TERMS, BLOCKED_BY_PROVIDER_READINESS, FAILED, CANCELLED] }
+        reason: { type: string }
+        observationsAdded: { type: integer, minimum: 0 }
+    SellerContactEnrichmentRequest:
+      type: object
+      required: [id, leadId, idempotencyKey, channels, status, requestedLeadVersion, providerIds, providerResults, attempts, maxAttempts, nextAttemptAt, resultCount, reason, lastFailureCode, createdAt, updatedAt]
+      properties:
+        id: { type: string, format: uuid }
+        leadId: { type: string, format: uuid }
+        idempotencyKey: { type: string }
+        channels: { type: array, items: { type: string, enum: [PHONE, EMAIL, WEB, OTHER] } }
+        status: { type: string, enum: [QUEUED, RUNNING, SUCCEEDED, NO_RESULT, STALE_RESULT, RETRY_WAIT, UNAVAILABLE, BLOCKED_BY_POLICY, BLOCKED_BY_TERMS, BLOCKED_BY_PROVIDER_READINESS, FAILED, CANCELLED] }
+        requestedLeadVersion: { type: integer, minimum: 1 }
+        providerIds: { type: array, items: { type: string } }
+        providerResults: { type: array, items: { $ref: "#/components/schemas/SellerContactEnrichmentProviderResult" } }
+        attempts: { type: integer, minimum: 0 }
+        maxAttempts: { type: integer, minimum: 1 }
+        nextAttemptAt: { type: ["string", "null"], format: date-time }
+        resultCount: { type: integer, minimum: 0 }
+        reason: { type: string }
+        lastFailureCode: { type: ["string", "null"] }
+        createdAt: { type: string, format: date-time }
+        updatedAt: { type: string, format: date-time }
+    SellerContactEnrichmentStatus:
+      type: object
+      required: [leadId, registry, requests, checkedAt]
+      properties:
+        leadId: { type: string, format: uuid }
+        registry: { $ref: "#/components/schemas/ContactProviderRegistryStatus" }
+        requests: { type: array, items: { $ref: "#/components/schemas/SellerContactEnrichmentRequest" } }
         checkedAt: { type: string, format: date-time }
     PublicProperty:
       type: object
