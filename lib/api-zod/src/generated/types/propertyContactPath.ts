@@ -8,7 +8,12 @@
 import type { PropertyContactPathChannel } from './propertyContactPathChannel';
 import type { PropertyContactPathClassification } from './propertyContactPathClassification';
 import type { PropertyContactPathFreshnessStatus } from './propertyContactPathFreshnessStatus';
+import type { PropertyContactPathIdentityStatus } from './propertyContactPathIdentityStatus';
 import type { PropertyContactPathPermissionStatus } from './propertyContactPathPermissionStatus';
+import type { PropertyContactPathRecipientRole } from './propertyContactPathRecipientRole';
+import type { PropertyContactPathRouteVerificationStatus } from './propertyContactPathRouteVerificationStatus';
+import type { PropertyContactPathSigningAuthorityStatus } from './propertyContactPathSigningAuthorityStatus';
+import type { PropertyContactPathSourceType } from './propertyContactPathSourceType';
 
 export interface PropertyContactPath {
   id: string;
@@ -34,9 +39,24 @@ export interface PropertyContactPath {
   sourceId: string;
   sourceName: string;
   sourceRecordId: string;
-  sourceUrl: string;
+  sourceUrl?: string;
   capturedAt: string;
   freshUntilAt: string;
   freshnessStatus: PropertyContactPathFreshnessStatus;
   permissionStatus: PropertyContactPathPermissionStatus;
+  /** @nullable */
+  contactPermissionEvidenceUrl?: string | null;
+  /** @nullable */
+  permissionReviewedAt?: string | null;
+  sourceType?: PropertyContactPathSourceType;
+  recipientRole?: PropertyContactPathRecipientRole;
+  routeVerificationStatus?: PropertyContactPathRouteVerificationStatus;
+  /** @nullable */
+  routeReviewedAt?: string | null;
+  /** @nullable */
+  verificationNote?: string | null;
+  identityStatus?: PropertyContactPathIdentityStatus;
+  signingAuthorityStatus?: PropertyContactPathSigningAuthorityStatus;
+  /** @minimum 1 */
+  supportingObservationCount?: number;
 }

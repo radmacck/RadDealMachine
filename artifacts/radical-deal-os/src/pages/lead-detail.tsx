@@ -18,6 +18,7 @@ import { EvidenceIntake } from '@/components/evidence-intake';
 import { OffersPanel } from '@/components/offers-panel';
 import { DealOperationsPanel } from '@/components/deal-operations-panel';
 import { CallLogForm } from '@/components/call-log-form';
+import { SellerContactPanel } from '@/components/seller-contact-panel';
 import { TransitionPanel } from '@/components/transition-panel';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -201,6 +202,7 @@ export default function LeadDetailPage() {
         </TabsList>
 
         <TabsContent value="intel" forceMount className={KEEP}>
+          <SellerContactPanel leadId={id} canResearch={canResearch || canCall} onSaved={() => { invalidate(id); setUwEpoch(e => e + 1); setLeadEpoch(e => e + 1); }} />
           <ProvenanceSections items={d.intelligence} onAdd={canResearch ? setAddClass : undefined} />
           <EvidenceIntake detail={d} disabled={!canResearch} pending={intake.isPending} error={intake.error} onSubmit={(data, done) => intake.mutate({ id, data }, { onSuccess: (detail) => { qc.setQueryData(getGetLeadQueryKey(id), detail); invalidate(id); setUwEpoch((e) => e + 1); setLeadEpoch((e) => e + 1); done(); toast({ title: 'Evidence packet accepted' }); } })} />
           {!canResearch && <p className="mt-3 text-xs text-muted-foreground">Your role can read research but not add to it.</p>}

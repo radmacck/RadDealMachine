@@ -6,6 +6,30 @@ info:
 servers:
   - url: /api
 paths:
+  /leads/{id}/contact-paths:
+    parameters:
+      - { name: id, in: path, required: true, schema: { type: string } }
+    get:
+      operationId: getSellerContactPaths
+      responses:
+        "200":
+          description: Ranked source-backed seller contact observations and explicit readiness blockers
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/SellerContactReadiness" }
+    post:
+      operationId: recordSellerContactObservation
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/SellerContactObservationInput" }
+      responses:
+        "200":
+          description: Persisted contact observation and updated route readiness; no message or call is sent
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/SellerContactReadiness" }
   /deals/{id}/contract/exception:
     parameters:
       - { name: id, in: path, required: true, schema: { type: string } }
@@ -1348,7 +1372,7 @@ components:
         leadId: { type: string, format: uuid }
     PropertyContactPath:
       type: object
-      required: [id, channel, classification, confidence, sourceId, sourceName, sourceRecordId, sourceUrl, capturedAt, freshUntilAt, freshnessStatus, permissionStatus]
+      required: [id, channel, classification, confidence, sourceId, sourceName, sourceRecordId, capturedAt, freshUntilAt, freshnessStatus, permissionStatus]
       properties:
         id: { type: string }
         channel: { type: string, enum: [POSTAL, PHONE, EMAIL, WEB, OTHER] }
@@ -1367,6 +1391,54 @@ components:
         freshUntilAt: { type: string, format: date-time }
         freshnessStatus: { type: string, enum: [CURRENT, STALE] }
         permissionStatus: { type: string, enum: [NOT_REVIEWED, PERMITTED, PROHIBITED] }
+        contactPermissionEvidenceUrl: { type: ["string", "null"], format: uri }
+        permissionReviewedAt: { type: ["string", "null"], format: date-time }
+        sourceType: { type: string, enum: [PUBLIC_RECORD, PUBLIC_PAGE, PERMITTED_LISTING, SELLER, ANALYST] }
+        recipientRole: { type: string, enum: [RECORDED_OWNER, SELLER_SELF_IDENTIFIED, AUTHORIZED_AGENT_CLAIM, DIRECTORY_CONTACT, UNKNOWN] }
+        routeVerificationStatus: { type: string, enum: [UNREVIEWED, CONFIRMED, REJECTED] }
+        routeReviewedAt: { type: ["string", "null"], format: date-time }
+        verificationNote: { type: ["string", "null"] }
+        identityStatus: { type: string, enum: [UNVERIFIED] }
+        signingAuthorityStatus: { type: string, enum: [NOT_ESTABLISHED] }
+        supportingObservationCount: { type: integer, minimum: 1 }
+    SellerContactObservationInput:
+      type: object
+      required: [version, channel, routeValue, recipientRole, classification, confidence, sourceType, sourceId, sourceName, sourceRecordId, permissionStatus, routeVerificationStatus]
+      properties:
+        version: { type: integer, minimum: 1 }
+        channel: { type: string, enum: [PHONE, EMAIL] }
+        routeValue: { type: string, minLength: 3, maxLength: 200 }
+        recipient: { type: ["string", "null"], maxLength: 200 }
+        recipientRole: { type: string, enum: [RECORDED_OWNER, SELLER_SELF_IDENTIFIED, AUTHORIZED_AGENT_CLAIM, DIRECTORY_CONTACT, UNKNOWN] }
+        classification: { type: string, enum: [OBSERVED, VERIFIED] }
+        confidence: { type: number, minimum: 0, maximum: 1 }
+        sourceType: { type: string, enum: [PUBLIC_RECORD, PUBLIC_PAGE, PERMITTED_LISTING, SELLER, ANALYST] }
+        sourceId: { type: string, minLength: 1, maxLength: 200 }
+        sourceName: { type: string, minLength: 1, maxLength: 200 }
+        sourceRecordId: { type: string, minLength: 1, maxLength: 500 }
+        sourceUrl: { type: string, format: uri, pattern: "^https://" }
+        capturedAt: { type: string, format: date-time }
+        freshUntilAt: { type: string, format: date-time }
+        permissionStatus: { type: string, enum: [NOT_REVIEWED, PERMITTED, PROHIBITED] }
+        contactPermissionEvidenceUrl: { type: string, format: uri, pattern: "^https://" }
+        routeVerificationStatus: { type: string, enum: [UNREVIEWED, CONFIRMED, REJECTED] }
+        verificationNote: { type: string, maxLength: 2000 }
+    SellerContactReadiness:
+      type: object
+      required: [leadVersion, contactSourceProviderStatus, contactSourceProviderCount, directRouteStatus, contactPaths, selectedPhonePath, selectedEmailPath, unresolvedPhoneRouteCount, nextAction, checkedAt]
+      properties:
+        leadVersion: { type: integer, minimum: 1 }
+        contactSourceProviderStatus: { type: string, enum: [NOT_CONNECTED, CONNECTED] }
+        contactSourceProviderCount: { type: integer, minimum: 0 }
+        directRouteStatus: { type: string, enum: [NO_DIRECT_ROUTE, POSTAL_ONLY, REVIEW_REQUIRED, CONFLICT_REVIEW_REQUIRED, EMAIL_ONLY, PHONE_ROUTE_AVAILABLE] }
+        contactPaths: { type: array, items: { $ref: "#/components/schemas/PropertyContactPath" } }
+        selectedPhonePath:
+          oneOf: [{ $ref: "#/components/schemas/PropertyContactPath" }, { type: "null" }]
+        selectedEmailPath:
+          oneOf: [{ $ref: "#/components/schemas/PropertyContactPath" }, { type: "null" }]
+        unresolvedPhoneRouteCount: { type: integer, minimum: 0 }
+        nextAction: { type: string }
+        checkedAt: { type: string, format: date-time }
     PublicProperty:
       type: object
       required: [id, provider, classification, address, city, county, state, zip, propertyType, sqft, beds, baths, recordedOwner, entityCandidate, assessedValue, lastSalePrice, lastSaleAt, interiorCondition, exteriorCondition, lat, lng, contactPaths, sourceUrl, capturedAt]

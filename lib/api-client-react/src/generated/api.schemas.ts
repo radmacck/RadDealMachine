@@ -410,6 +410,51 @@ export const PropertyContactPathPermissionStatus = {
   PROHIBITED: 'PROHIBITED',
 } as const;
 
+export type PropertyContactPathSourceType = typeof PropertyContactPathSourceType[keyof typeof PropertyContactPathSourceType];
+
+
+export const PropertyContactPathSourceType = {
+  PUBLIC_RECORD: 'PUBLIC_RECORD',
+  PUBLIC_PAGE: 'PUBLIC_PAGE',
+  PERMITTED_LISTING: 'PERMITTED_LISTING',
+  SELLER: 'SELLER',
+  ANALYST: 'ANALYST',
+} as const;
+
+export type PropertyContactPathRecipientRole = typeof PropertyContactPathRecipientRole[keyof typeof PropertyContactPathRecipientRole];
+
+
+export const PropertyContactPathRecipientRole = {
+  RECORDED_OWNER: 'RECORDED_OWNER',
+  SELLER_SELF_IDENTIFIED: 'SELLER_SELF_IDENTIFIED',
+  AUTHORIZED_AGENT_CLAIM: 'AUTHORIZED_AGENT_CLAIM',
+  DIRECTORY_CONTACT: 'DIRECTORY_CONTACT',
+  UNKNOWN: 'UNKNOWN',
+} as const;
+
+export type PropertyContactPathRouteVerificationStatus = typeof PropertyContactPathRouteVerificationStatus[keyof typeof PropertyContactPathRouteVerificationStatus];
+
+
+export const PropertyContactPathRouteVerificationStatus = {
+  UNREVIEWED: 'UNREVIEWED',
+  CONFIRMED: 'CONFIRMED',
+  REJECTED: 'REJECTED',
+} as const;
+
+export type PropertyContactPathIdentityStatus = typeof PropertyContactPathIdentityStatus[keyof typeof PropertyContactPathIdentityStatus];
+
+
+export const PropertyContactPathIdentityStatus = {
+  UNVERIFIED: 'UNVERIFIED',
+} as const;
+
+export type PropertyContactPathSigningAuthorityStatus = typeof PropertyContactPathSigningAuthorityStatus[keyof typeof PropertyContactPathSigningAuthorityStatus];
+
+
+export const PropertyContactPathSigningAuthorityStatus = {
+  NOT_ESTABLISHED: 'NOT_ESTABLISHED',
+} as const;
+
 export interface PropertyContactPath {
   id: string;
   channel: PropertyContactPathChannel;
@@ -434,11 +479,26 @@ export interface PropertyContactPath {
   sourceId: string;
   sourceName: string;
   sourceRecordId: string;
-  sourceUrl: string;
+  sourceUrl?: string;
   capturedAt: string;
   freshUntilAt: string;
   freshnessStatus: PropertyContactPathFreshnessStatus;
   permissionStatus: PropertyContactPathPermissionStatus;
+  /** @nullable */
+  contactPermissionEvidenceUrl?: string | null;
+  /** @nullable */
+  permissionReviewedAt?: string | null;
+  sourceType?: PropertyContactPathSourceType;
+  recipientRole?: PropertyContactPathRecipientRole;
+  routeVerificationStatus?: PropertyContactPathRouteVerificationStatus;
+  /** @nullable */
+  routeReviewedAt?: string | null;
+  /** @nullable */
+  verificationNote?: string | null;
+  identityStatus?: PropertyContactPathIdentityStatus;
+  signingAuthorityStatus?: PropertyContactPathSigningAuthorityStatus;
+  /** @minimum 1 */
+  supportingObservationCount?: number;
 }
 
 export interface PublicProperty {
@@ -601,6 +661,147 @@ export interface PropertyDiscoveryDispositionInput {
 export interface PropertyDiscoveryPromotionResponse {
   discovery: PropertyDiscovery;
   leadId: string;
+}
+
+export type SellerContactObservationInputChannel = typeof SellerContactObservationInputChannel[keyof typeof SellerContactObservationInputChannel];
+
+
+export const SellerContactObservationInputChannel = {
+  PHONE: 'PHONE',
+  EMAIL: 'EMAIL',
+} as const;
+
+export type SellerContactObservationInputRecipientRole = typeof SellerContactObservationInputRecipientRole[keyof typeof SellerContactObservationInputRecipientRole];
+
+
+export const SellerContactObservationInputRecipientRole = {
+  RECORDED_OWNER: 'RECORDED_OWNER',
+  SELLER_SELF_IDENTIFIED: 'SELLER_SELF_IDENTIFIED',
+  AUTHORIZED_AGENT_CLAIM: 'AUTHORIZED_AGENT_CLAIM',
+  DIRECTORY_CONTACT: 'DIRECTORY_CONTACT',
+  UNKNOWN: 'UNKNOWN',
+} as const;
+
+export type SellerContactObservationInputClassification = typeof SellerContactObservationInputClassification[keyof typeof SellerContactObservationInputClassification];
+
+
+export const SellerContactObservationInputClassification = {
+  OBSERVED: 'OBSERVED',
+  VERIFIED: 'VERIFIED',
+} as const;
+
+export type SellerContactObservationInputSourceType = typeof SellerContactObservationInputSourceType[keyof typeof SellerContactObservationInputSourceType];
+
+
+export const SellerContactObservationInputSourceType = {
+  PUBLIC_RECORD: 'PUBLIC_RECORD',
+  PUBLIC_PAGE: 'PUBLIC_PAGE',
+  PERMITTED_LISTING: 'PERMITTED_LISTING',
+  SELLER: 'SELLER',
+  ANALYST: 'ANALYST',
+} as const;
+
+export type SellerContactObservationInputPermissionStatus = typeof SellerContactObservationInputPermissionStatus[keyof typeof SellerContactObservationInputPermissionStatus];
+
+
+export const SellerContactObservationInputPermissionStatus = {
+  NOT_REVIEWED: 'NOT_REVIEWED',
+  PERMITTED: 'PERMITTED',
+  PROHIBITED: 'PROHIBITED',
+} as const;
+
+export type SellerContactObservationInputRouteVerificationStatus = typeof SellerContactObservationInputRouteVerificationStatus[keyof typeof SellerContactObservationInputRouteVerificationStatus];
+
+
+export const SellerContactObservationInputRouteVerificationStatus = {
+  UNREVIEWED: 'UNREVIEWED',
+  CONFIRMED: 'CONFIRMED',
+  REJECTED: 'REJECTED',
+} as const;
+
+export interface SellerContactObservationInput {
+  /** @minimum 1 */
+  version: number;
+  channel: SellerContactObservationInputChannel;
+  /**
+     * @minLength 3
+     * @maxLength 200
+     */
+  routeValue: string;
+  /**
+     * @maxLength 200
+     * @nullable
+     */
+  recipient?: string | null;
+  recipientRole: SellerContactObservationInputRecipientRole;
+  classification: SellerContactObservationInputClassification;
+  /**
+     * @minimum 0
+     * @maximum 1
+     */
+  confidence: number;
+  sourceType: SellerContactObservationInputSourceType;
+  /**
+     * @minLength 1
+     * @maxLength 200
+     */
+  sourceId: string;
+  /**
+     * @minLength 1
+     * @maxLength 200
+     */
+  sourceName: string;
+  /**
+     * @minLength 1
+     * @maxLength 500
+     */
+  sourceRecordId: string;
+  /** @pattern ^https:// */
+  sourceUrl?: string;
+  capturedAt?: string;
+  freshUntilAt?: string;
+  permissionStatus: SellerContactObservationInputPermissionStatus;
+  /** @pattern ^https:// */
+  contactPermissionEvidenceUrl?: string;
+  routeVerificationStatus: SellerContactObservationInputRouteVerificationStatus;
+  /** @maxLength 2000 */
+  verificationNote?: string;
+}
+
+export type SellerContactReadinessContactSourceProviderStatus = typeof SellerContactReadinessContactSourceProviderStatus[keyof typeof SellerContactReadinessContactSourceProviderStatus];
+
+
+export const SellerContactReadinessContactSourceProviderStatus = {
+  NOT_CONNECTED: 'NOT_CONNECTED',
+  CONNECTED: 'CONNECTED',
+} as const;
+
+export type SellerContactReadinessDirectRouteStatus = typeof SellerContactReadinessDirectRouteStatus[keyof typeof SellerContactReadinessDirectRouteStatus];
+
+
+export const SellerContactReadinessDirectRouteStatus = {
+  NO_DIRECT_ROUTE: 'NO_DIRECT_ROUTE',
+  POSTAL_ONLY: 'POSTAL_ONLY',
+  REVIEW_REQUIRED: 'REVIEW_REQUIRED',
+  CONFLICT_REVIEW_REQUIRED: 'CONFLICT_REVIEW_REQUIRED',
+  EMAIL_ONLY: 'EMAIL_ONLY',
+  PHONE_ROUTE_AVAILABLE: 'PHONE_ROUTE_AVAILABLE',
+} as const;
+
+export interface SellerContactReadiness {
+  /** @minimum 1 */
+  leadVersion: number;
+  contactSourceProviderStatus: SellerContactReadinessContactSourceProviderStatus;
+  /** @minimum 0 */
+  contactSourceProviderCount: number;
+  directRouteStatus: SellerContactReadinessDirectRouteStatus;
+  contactPaths: PropertyContactPath[];
+  selectedPhonePath: PropertyContactPath | null;
+  selectedEmailPath: PropertyContactPath | null;
+  /** @minimum 0 */
+  unresolvedPhoneRouteCount: number;
+  nextAction: string;
+  checkedAt: string;
 }
 
 export interface PublicPropertySearch {

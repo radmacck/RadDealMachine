@@ -75,35 +75,49 @@ export type PropertyContactPath = {
   sourceId: string;
   sourceName: string;
   sourceRecordId: string;
-  sourceUrl: string;
+  sourceUrl?: string;
   capturedAt: string;
   freshUntilAt: string;
   freshnessStatus: "CURRENT" | "STALE";
   permissionStatus: "NOT_REVIEWED" | "PERMITTED" | "PROHIBITED";
+  contactPermissionEvidenceUrl?: string | null;
+  permissionReviewedAt?: string | null;
+  sourceType?: "PUBLIC_RECORD" | "PUBLIC_PAGE" | "PERMITTED_LISTING" | "SELLER" | "ANALYST";
+  recipientRole?: "RECORDED_OWNER" | "SELLER_SELF_IDENTIFIED" | "AUTHORIZED_AGENT_CLAIM" | "DIRECTORY_CONTACT" | "UNKNOWN";
+  routeVerificationStatus?: "UNREVIEWED" | "CONFIRMED" | "REJECTED";
+  routeReviewedAt?: string | null;
+  verificationNote?: string | null;
+  identityStatus?: "UNVERIFIED";
+  signingAuthorityStatus?: "NOT_ESTABLISHED";
+  supportingObservationCount?: number;
 };
+
+export function contactPathKey(path: PropertyContactPath) {
+  const normalize = (value: string) => value.normalize("NFKD").replace(/\p{Diacritic}/gu, "")
+    .replace(/[^\p{L}\p{N}]/gu, "").toUpperCase();
+  if (path.channel === "POSTAL") {
+    return [path.channel, normalize(path.recipient ?? ""), ...(path.addressLines ?? []).map(normalize),
+      normalize(path.cityState ?? ""), normalize(path.postalCode ?? "")].join("|");
+  }
+  const value = path.routeValue?.trim() ?? "";
+  if (path.channel === "PHONE") {
+    const digits = value.replace(/\D/g, "");
+    return `${path.channel}|${digits.length === 11 && digits.startsWith("1") ? digits.slice(1) : digits}`;
+  }
+  if (path.channel === "EMAIL") return `${path.channel}|${value.toLocaleLowerCase("en-US")}`;
+  if (path.channel === "WEB") {
+    try {
+      const url = new URL(value);
+      return `${path.channel}|${url.protocol.toLowerCase()}//${url.host.toLowerCase()}${url.pathname.replace(/\/+$/, "")}${url.search}`;
+    } catch {
+      return `${path.channel}|invalid|${path.id}`;
+    }
+  }
+  return `${path.channel}|${normalize(value)}`;
+}
 
 /** Sorts connector-supplied paths without converting public availability into contact permission. */
 export function rankContactPaths(paths: PropertyContactPath[], now = new Date()) {
-  const normalize = (value: string) => value.normalize("NFKD").replace(/\p{Diacritic}/gu, "")
-    .replace(/[^\p{L}\p{N}]/gu, "").toUpperCase();
-  const routeKey = (path: PropertyContactPath) => {
-    if (path.channel === "POSTAL") {
-      return [path.channel, normalize(path.recipient ?? ""), ...(path.addressLines ?? []).map(normalize),
-        normalize(path.cityState ?? ""), normalize(path.postalCode ?? "")].join("|");
-    }
-    const value = path.routeValue?.trim() ?? "";
-    if (path.channel === "PHONE") return `${path.channel}|${value.replace(/\D/g, "")}`;
-    if (path.channel === "EMAIL") return `${path.channel}|${value.toLocaleLowerCase("en-US")}`;
-    if (path.channel === "WEB") {
-      try {
-        const url = new URL(value);
-        return `${path.channel}|${url.protocol.toLowerCase()}//${url.host.toLowerCase()}${url.pathname.replace(/\/+$/, "")}${url.search}`;
-      } catch {
-        return `${path.channel}|invalid|${path.id}`;
-      }
-    }
-    return `${path.channel}|${normalize(value)}`;
-  };
   const freshness = (path: PropertyContactPath) =>
     Number.isFinite(Date.parse(path.freshUntilAt)) && Date.parse(path.freshUntilAt) > now.getTime();
   const permissionRank = (status: PropertyContactPath["permissionStatus"]) =>
@@ -124,7 +138,7 @@ export function rankContactPaths(paths: PropertyContactPath[], now = new Date())
   for (const path of paths) {
     if (path.channel !== "POSTAL" && !path.routeValue?.trim()) continue;
     if (path.channel === "POSTAL" && (!(path.addressLines?.length) || !path.cityState?.trim())) continue;
-    const key = routeKey(path);
+    const key = contactPathKey(path);
     const prior = unique.get(key);
     if (!prior || better(path, prior) > 0) unique.set(key, path);
   }
@@ -138,6 +152,61 @@ export function rankContactPaths(paths: PropertyContactPath[], now = new Date())
     return permitted || fresh || verified || b.confidence - a.confidence ||
       Date.parse(b.capturedAt) - Date.parse(a.capturedAt) || a.id.localeCompare(b.id);
   });
+}
+
+/** Reconcile duplicate routes while preserving explicit later permission/validity decisions. */
+export function reconcileContactPaths(paths: PropertyContactPath[], now = new Date()) {
+  const observations = new Map<string, PropertyContactPath>();
+  for (const path of paths) {
+    const observationKey = [path.id, path.sourceId, path.sourceRecordId, path.capturedAt].join("|");
+    if (!observations.has(observationKey)) observations.set(observationKey, path);
+  }
+  const groups = new Map<string, PropertyContactPath[]>();
+  for (const path of observations.values()) {
+    if (path.channel !== "POSTAL" && !path.routeValue?.trim()) continue;
+    if (path.channel === "POSTAL" && (!(path.addressLines?.length) || !path.cityState?.trim())) continue;
+    const key = contactPathKey(path);
+    groups.set(key, [...(groups.get(key) ?? []), path]);
+  }
+  const reconciled: PropertyContactPath[] = [];
+  for (const group of groups.values()) {
+    const latest = (items: PropertyContactPath[], at: (path: PropertyContactPath) => string | null | undefined) => [...items].sort((a,b) =>
+      Date.parse(at(b) ?? b.capturedAt) - Date.parse(at(a) ?? a.capturedAt) || b.id.localeCompare(a.id))[0];
+    const current = (path: PropertyContactPath) => Number.isFinite(Date.parse(path.freshUntilAt)) && Date.parse(path.freshUntilAt) > now.getTime();
+    const bestEvidence = [...group].sort((a,b) =>
+      Number(current(b)) - Number(current(a)) ||
+      Number(b.classification === "VERIFIED") - Number(a.classification === "VERIFIED") ||
+      b.confidence - a.confidence ||
+      Date.parse(b.capturedAt) - Date.parse(a.capturedAt) ||
+      a.id.localeCompare(b.id))[0]!;
+    const permissionEvent = latest(group.filter(path => path.permissionStatus !== "NOT_REVIEWED"), path => path.permissionReviewedAt);
+    const routeDecision = latest(group.filter(path => path.routeVerificationStatus && path.routeVerificationStatus !== "UNREVIEWED"), path => path.routeReviewedAt);
+    const deadlines = [
+      bestEvidence.freshUntilAt,
+      ...(permissionEvent ? [permissionEvent.freshUntilAt] : []),
+      ...(routeDecision ? [routeDecision.freshUntilAt] : []),
+    ].map(value => Date.parse(value)).filter(Number.isFinite);
+    const expiry = deadlines.length ? Math.min(...deadlines) : 0;
+    reconciled.push({
+      ...bestEvidence,
+      ...(permissionEvent ? {
+        permissionStatus: permissionEvent.permissionStatus,
+        contactPermissionEvidenceUrl: permissionEvent.contactPermissionEvidenceUrl ?? null,
+        permissionReviewedAt: permissionEvent.permissionReviewedAt ?? permissionEvent.capturedAt,
+      } : {}),
+      ...(routeDecision ? {
+        routeVerificationStatus: routeDecision.routeVerificationStatus,
+        routeReviewedAt: routeDecision.routeReviewedAt ?? routeDecision.capturedAt,
+        verificationNote: routeDecision.verificationNote ?? null,
+      } : {}),
+      freshUntilAt: new Date(expiry).toISOString(),
+      freshnessStatus: expiry > now.getTime() ? "CURRENT" : "STALE",
+      supportingObservationCount: group.length,
+      identityStatus: "UNVERIFIED",
+      signingAuthorityStatus: "NOT_ESTABLISHED",
+    });
+  }
+  return rankContactPaths(reconciled, now);
 }
 
 export function normalizeProperty(value: unknown, now: Date) {
@@ -173,6 +242,12 @@ export function normalizeProperty(value: unknown, now: Date) {
       freshUntilAt: new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000).toISOString(),
       freshnessStatus: "CURRENT",
       permissionStatus: "NOT_REVIEWED",
+      contactPermissionEvidenceUrl: null,
+      sourceType: "PUBLIC_RECORD",
+      recipientRole: "RECORDED_OWNER",
+      routeVerificationStatus: "UNREVIEWED",
+      identityStatus: "UNVERIFIED",
+      signingAuthorityStatus: "NOT_ESTABLISHED",
     }], now)
     : [];
   return {

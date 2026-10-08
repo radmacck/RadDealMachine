@@ -8,6 +8,7 @@ import * as access from "../services/access";
 import * as offers from "../services/offer-store";
 import { commandCenter } from "../services/command-center";
 import { intakePropertyEvidence } from "../services/evidence-intake";
+import * as sellerContacts from "../services/seller-contact-store";
 
 const router: IRouter = Router();
 // Trim strings before schema validation so required fields cannot be whitespace-only.
@@ -30,6 +31,7 @@ function send<T extends z.ZodType>(res: Response, schema: T, value: unknown, sta
 }
 const research = roles("OWNER","ANALYST");
 const operate = roles("OWNER","OPERATOR");
+const contactResearch = roles("OWNER","ANALYST","OPERATOR");
 router.use(authenticated);
 router.get("/access",async (_req,res) => {
   send(res,contract.GetAccessResponse,await access.getAccess(String(res.locals.actor)));
@@ -58,6 +60,15 @@ router.post("/leads",research,async (req,res) => {
   send(res,contract.CreateLeadResponse,await store.createLead(parse(contract.CreateLeadBody,req.body),String(res.locals.actor)),201);
 });
 router.get("/leads/:id",async (req,res) => send(res,contract.GetLeadResponse,await store.leadDetail(leadId(req))));
+router.get("/leads/:id/contact-paths",contactResearch,async (req,res) => {
+  send(res,contract.GetSellerContactPathsResponse,await sellerContacts.getSellerContactPaths(leadId(req)));
+});
+router.post("/leads/:id/contact-paths",contactResearch,async (req,res) => {
+  send(res,contract.RecordSellerContactObservationResponse,await sellerContacts.recordSellerContactObservation(
+    leadId(req),parse(contract.RecordSellerContactObservationBody,req.body),
+    {id:String(res.locals.actor),role:String(res.locals.role)},
+  ));
+});
 router.patch("/leads/:id",research,async (req,res) => {
   send(res,contract.UpdateLeadResponse,await store.updateLead(leadId(req),parse(contract.UpdateLeadBody,req.body),String(res.locals.actor)));
 });

@@ -90,6 +90,8 @@ import type {
   PublicPropertySearch,
   ReleaseDistributionAcceptanceInput,
   SearchPublicPropertiesParams,
+  SellerContactObservationInput,
+  SellerContactReadiness,
   SellerOfferPortal,
   SellerOfferPortalControl,
   SellerOfferPortalIssueInput,
@@ -134,6 +136,160 @@ const withQueryKey = <T extends object, K>(query: T, queryKey: K): T & { queryKe
   }
   return result;
 };
+
+export const getGetSellerContactPathsUrl = (id: string,) => {
+
+
+
+
+  return `/api/leads/${id}/contact-paths`
+}
+
+export const getSellerContactPaths = async (id: string, options?: Parameters<typeof customFetch>[1]): Promise<SellerContactReadiness> => {
+
+  return customFetch<SellerContactReadiness>(getGetSellerContactPathsUrl(id),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetSellerContactPathsQueryKey = (id: string,) => {
+    return [
+    `/api/leads/${id}/contact-paths`
+    ] as const;
+    }
+
+
+export const getGetSellerContactPathsQueryOptions = <TData = Awaited<ReturnType<typeof getSellerContactPaths>>, TError = ErrorType<unknown>>(id: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getSellerContactPaths>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetSellerContactPathsQueryKey(id);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getSellerContactPaths>>> = ({ signal }) => getSellerContactPaths(id, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: id !== null && id !== undefined, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getSellerContactPaths>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetSellerContactPathsQueryResult = NonNullable<Awaited<ReturnType<typeof getSellerContactPaths>>>
+export type GetSellerContactPathsQueryError = ErrorType<unknown>
+
+
+
+export function useGetSellerContactPaths<TData = Awaited<ReturnType<typeof getSellerContactPaths>>, TError = ErrorType<unknown>>(
+ id: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getSellerContactPaths>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetSellerContactPathsQueryOptions(id,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getRecordSellerContactObservationUrl = (id: string,) => {
+
+
+
+
+  return `/api/leads/${id}/contact-paths`
+}
+
+export const recordSellerContactObservation = async (id: string,
+    sellerContactObservationInput: SellerContactObservationInput, options?: Parameters<typeof customFetch>[1]): Promise<SellerContactReadiness> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return customFetch<SellerContactReadiness>(getRecordSellerContactObservationUrl(id),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(sellerContactObservationInput)
+  }
+);}
+
+
+
+
+
+export const getRecordSellerContactObservationMutationKey = () => ['recordSellerContactObservation'] as const;
+
+export const getRecordSellerContactObservationMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof recordSellerContactObservation>>, TError,RecordSellerContactObservationMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof recordSellerContactObservation>>, TError,RecordSellerContactObservationMutationVariables, TContext> => {
+
+const mutationKey = getRecordSellerContactObservationMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof recordSellerContactObservation>>, RecordSellerContactObservationMutationVariables> = (props) => {
+          const {id,data} = props ?? {};
+
+          return  recordSellerContactObservation(id,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type RecordSellerContactObservationMutationResult = NonNullable<Awaited<ReturnType<typeof recordSellerContactObservation>>>
+    export type RecordSellerContactObservationMutationBody = BodyType<SellerContactObservationInput>
+    export type RecordSellerContactObservationMutationError = ErrorType<unknown>
+    export type RecordSellerContactObservationMutationVariables = {id: string;data: BodyType<SellerContactObservationInput>}
+
+    export const useRecordSellerContactObservation = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof recordSellerContactObservation>>, TError,RecordSellerContactObservationMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof recordSellerContactObservation>>,
+        TError,
+        RecordSellerContactObservationMutationVariables,
+        TContext
+      > => {
+      return useMutation(getRecordSellerContactObservationMutationOptions(options));
+    }
 
 export const getRecordTransactionExceptionUrl = (id: string,) => {
 
