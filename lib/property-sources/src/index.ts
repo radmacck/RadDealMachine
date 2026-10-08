@@ -70,6 +70,26 @@ const rawSchema = z.object({
   lng: z.number().min(-180).max(180).nullable(),
 });
 
+export type ContactPathObservation = {
+  id: string;
+  recipient: string | null;
+  recipientRole: "RECORDED_OWNER" | "SELLER_SELF_IDENTIFIED" | "AUTHORIZED_AGENT_CLAIM" | "DIRECTORY_CONTACT" | "UNKNOWN";
+  sourceId: string;
+  sourceName: string;
+  sourceRecordId: string;
+  sourceUrl?: string | null;
+  capturedAt: string;
+  freshUntilAt: string;
+  classification: "OBSERVED" | "VERIFIED";
+  confidence: number;
+  permissionStatus: "NOT_REVIEWED" | "PERMITTED" | "PROHIBITED";
+  contactPermissionEvidenceUrl?: string | null;
+  permissionReviewedAt?: string | null;
+  routeVerificationStatus?: "UNREVIEWED" | "CONFIRMED" | "REJECTED";
+  routeReviewedAt?: string | null;
+  verificationNote?: string | null;
+};
+
 export type PropertyContactPath = {
   id: string;
   channel: "POSTAL" | "PHONE" | "EMAIL" | "WEB" | "OTHER";
@@ -98,6 +118,10 @@ export type PropertyContactPath = {
   identityStatus?: "UNVERIFIED";
   signingAuthorityStatus?: "NOT_ESTABLISHED";
   supportingObservationCount?: number;
+  supportingObservations?: ContactPathObservation[];
+  identityConflictStatus?: "NONE" | "MULTIPLE_RECIPIENTS" | "MULTIPLE_ROLES";
+  recipientIdentityClaimCount?: number;
+  rankingReasons?: string[];
 };
 
 export function contactPathKey(path: PropertyContactPath) {
@@ -124,41 +148,147 @@ export function contactPathKey(path: PropertyContactPath) {
   return `${path.channel}|${normalize(value)}`;
 }
 
+function contactPathObservation(path: PropertyContactPath): ContactPathObservation {
+  return {
+    id: path.id,
+    recipient: path.recipient ?? null,
+    recipientRole: path.recipientRole ?? "UNKNOWN",
+    sourceId: path.sourceId,
+    sourceName: path.sourceName,
+    sourceRecordId: path.sourceRecordId,
+    sourceUrl: path.sourceUrl ?? null,
+    capturedAt: path.capturedAt,
+    freshUntilAt: path.freshUntilAt,
+    classification: path.classification,
+    confidence: path.confidence,
+    permissionStatus: path.permissionStatus,
+    contactPermissionEvidenceUrl: path.contactPermissionEvidenceUrl ?? null,
+    permissionReviewedAt: path.permissionReviewedAt ?? null,
+    routeVerificationStatus: path.routeVerificationStatus ?? "UNREVIEWED",
+    routeReviewedAt: path.routeReviewedAt ?? null,
+    verificationNote: path.verificationNote ?? null,
+  };
+}
+
+function contactIdentityConflict(observations: ContactPathObservation[]) {
+  const normalize = (value: string) => value.normalize("NFKD").replace(/\p{Diacritic}/gu, "")
+    .replace(/[^\p{L}\p{N}]/gu, "").toLocaleUpperCase("en-US");
+  const recipients = new Set(observations.map(item => normalize(item.recipient ?? "")).filter(Boolean));
+  const roles = new Set(observations.map(item => item.recipientRole).filter(role => role !== "UNKNOWN"));
+  return {
+    status: recipients.size > 1 ? "MULTIPLE_RECIPIENTS" as const : roles.size > 1 ? "MULTIPLE_ROLES" as const : "NONE" as const,
+    claimCount: Math.max(recipients.size, roles.size),
+  };
+}
+
 /** Sorts connector-supplied paths without converting public availability into contact permission. */
 export function rankContactPaths(paths: PropertyContactPath[], now = new Date()) {
   const freshness = (path: PropertyContactPath) =>
     Number.isFinite(Date.parse(path.freshUntilAt)) && Date.parse(path.freshUntilAt) > now.getTime();
   const permissionRank = (status: PropertyContactPath["permissionStatus"]) =>
     status === "PERMITTED" ? 2 : status === "NOT_REVIEWED" ? 1 : 0;
+  const verificationRank = (status: PropertyContactPath["routeVerificationStatus"]) =>
+    status === "CONFIRMED" ? 2 : status === "UNREVIEWED" || !status ? 1 : 0;
+  const routeSuitability = (channel: PropertyContactPath["channel"]) =>
+    channel === "PHONE" ? 5 : channel === "EMAIL" ? 4 : channel === "WEB" ? 3 : channel === "OTHER" ? 2 : 1;
+  const captureTime = (path: PropertyContactPath) => {
+    const parsed = Date.parse(path.capturedAt);
+    return Number.isFinite(parsed) ? parsed : 0;
+  };
   const better = (a: PropertyContactPath, b: PropertyContactPath) => {
     const permission = permissionRank(a.permissionStatus) - permissionRank(b.permissionStatus);
     if (permission) return permission;
+    const verification = verificationRank(a.routeVerificationStatus) - verificationRank(b.routeVerificationStatus);
+    if (verification) return verification;
     const current = Number(freshness(a)) - Number(freshness(b));
     if (current) return current;
     const verified = Number(a.classification === "VERIFIED") - Number(b.classification === "VERIFIED");
     if (verified) return verified;
     if (a.confidence !== b.confidence) return a.confidence - b.confidence;
-    const captured = Date.parse(a.capturedAt) - Date.parse(b.capturedAt);
-    if (Number.isFinite(captured) && captured) return captured;
+    const suitable = routeSuitability(a.channel) - routeSuitability(b.channel);
+    if (suitable) return suitable;
+    const captured = captureTime(a) - captureTime(b);
+    if (captured) return captured;
     return b.id.localeCompare(a.id);
   };
-  const unique = new Map<string, PropertyContactPath>();
+  const groups = new Map<string, PropertyContactPath[]>();
   for (const path of paths) {
     if (path.channel !== "POSTAL" && !path.routeValue?.trim()) continue;
     if (path.channel === "POSTAL" && (!(path.addressLines?.length) || !path.cityState?.trim())) continue;
     const key = contactPathKey(path);
-    const prior = unique.get(key);
-    if (!prior || better(path, prior) > 0) unique.set(key, path);
+    groups.set(key, [...(groups.get(key) ?? []), path]);
   }
-  return [...unique.values()].map(path => ({
-    ...path,
-    freshnessStatus: freshness(path) ? "CURRENT" as const : "STALE" as const,
-  })).sort((a, b) => {
+  const unique = [...groups.values()].map(group => {
+    const best = [...group].sort((a, b) => better(b, a))[0]!;
+    const observationMap = new Map<string, ContactPathObservation>();
+    for (const path of group) {
+      const observations = path.supportingObservations?.length
+        ? path.supportingObservations
+        : [contactPathObservation(path)];
+      for (const observation of observations) {
+        const key = [observation.id, observation.sourceId, observation.sourceRecordId, observation.capturedAt].join("|");
+        if (!observationMap.has(key)) observationMap.set(key, observation);
+      }
+    }
+    const supportingObservations = [...observationMap.values()].sort((a, b) =>
+      a.capturedAt.localeCompare(b.capturedAt) || a.sourceId.localeCompare(b.sourceId) ||
+      a.sourceRecordId.localeCompare(b.sourceRecordId) || a.id.localeCompare(b.id));
+    const identity = contactIdentityConflict(supportingObservations);
+    return {
+      ...best,
+      freshnessStatus: freshness(best) ? "CURRENT" as const : "STALE" as const,
+      supportingObservationCount: Math.max(supportingObservations.length, ...group.map(path => path.supportingObservationCount ?? 1)),
+      supportingObservations,
+      identityStatus: "UNVERIFIED" as const,
+      signingAuthorityStatus: "NOT_ESTABLISHED" as const,
+      identityConflictStatus: identity.status,
+      recipientIdentityClaimCount: identity.claimCount,
+    };
+  }).sort((a, b) => {
     const permitted = permissionRank(b.permissionStatus) - permissionRank(a.permissionStatus);
+    const verification = verificationRank(b.routeVerificationStatus) - verificationRank(a.routeVerificationStatus);
     const fresh = Number(b.freshnessStatus === "CURRENT") - Number(a.freshnessStatus === "CURRENT");
     const verified = Number(b.classification === "VERIFIED") - Number(a.classification === "VERIFIED");
-    return permitted || fresh || verified || b.confidence - a.confidence ||
-      Date.parse(b.capturedAt) - Date.parse(a.capturedAt) || a.id.localeCompare(b.id);
+    const confidence = b.confidence - a.confidence;
+    const suitability = routeSuitability(b.channel) - routeSuitability(a.channel);
+    return permitted || verification || fresh || verified || confidence || suitability ||
+      captureTime(b) - captureTime(a) || a.sourceId.localeCompare(b.sourceId) ||
+      a.sourceRecordId.localeCompare(b.sourceRecordId) || a.id.localeCompare(b.id);
+  }).map((path, index, all) => {
+    const freshnessReason = path.freshnessStatus === "CURRENT"
+      ? `Fresh through ${path.freshUntilAt}.`
+      : `Stale since ${path.freshUntilAt}; refresh before use.`;
+    const permissionReason = path.permissionStatus === "PERMITTED"
+      ? "Contact-use permission is recorded as permitted."
+      : path.permissionStatus === "PROHIBITED"
+        ? "Contact use is explicitly prohibited."
+        : "Contact-use permission has not been reviewed.";
+    const verificationReason = path.routeVerificationStatus === "CONFIRMED"
+      ? "An owner confirmed the route; this does not verify the recipient's legal identity or signing authority."
+      : path.routeVerificationStatus === "REJECTED"
+        ? "An owner rejected this route."
+        : "The route itself is not owner-confirmed.";
+    const evidenceReason = `${path.classification} evidence at ${Math.round(path.confidence * 100)}% confidence.`;
+    const suitabilityReason = path.channel === "PHONE" ? "Phone is the preferred route for a call-ready opportunity."
+      : path.channel === "EMAIL" ? "Email is a direct route but does not satisfy the phone-based CALL READY gate."
+        : path.channel === "WEB" ? "Web/contact-form route; no message is sent by this system."
+          : path.channel === "POSTAL" ? "Postal route only; it is not a phone or email route."
+            : "Other route type; it is not treated as a phone or email route.";
+    const identityReason = path.identityConflictStatus === "NONE"
+      ? "Recipient identity remains unverified; signing authority is not established."
+      : `Conflicting ${path.identityConflictStatus === "MULTIPLE_RECIPIENTS" ? "recipient" : "recipient-role"} claims need review.`;
+    return {
+      ...path,
+      rankingReasons: [
+        `Rank ${index + 1} of ${all.length}: ordered by permission, route confirmation, freshness, evidence quality, confidence, route suitability, then stable source identity.`,
+        permissionReason,
+        verificationReason,
+        freshnessReason,
+        evidenceReason,
+        suitabilityReason,
+        identityReason,
+      ],
+    };
   });
 }
 
@@ -210,6 +340,7 @@ export function reconcileContactPaths(paths: PropertyContactPath[], now = new Da
       freshUntilAt: new Date(expiry).toISOString(),
       freshnessStatus: expiry > now.getTime() ? "CURRENT" : "STALE",
       supportingObservationCount: group.length,
+      supportingObservations: group.map(contactPathObservation),
       identityStatus: "UNVERIFIED",
       signingAuthorityStatus: "NOT_ESTABLISHED",
     });

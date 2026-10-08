@@ -21,7 +21,8 @@ const ROUTE_FRESHNESS_MS = 30 * 24 * 60 * 60 * 1000;
 const iso = (value: Date) => value.toISOString();
 const asRecord = (value: unknown): Record<string, unknown> =>
   value && typeof value === "object" && !Array.isArray(value) ? value as Record<string, unknown> : {};
-const channelRouteKey = (channel: "PHONE" | "EMAIL", value: string) =>
+type NonPostalChannel = Exclude<PropertyContactPath["channel"], "POSTAL">;
+const channelRouteKey = (channel: NonPostalChannel, value: string) =>
   contactPathKey({
     id: "candidate", channel, recipient: null, routeValue: value, postalCode: null,
     classification: "OBSERVED", confidence: 0, sourceId: "", sourceName: "", sourceRecordId: "",
@@ -30,7 +31,9 @@ const channelRouteKey = (channel: "PHONE" | "EMAIL", value: string) =>
 const routeIsCurrentAndUsable = (path: PropertyContactPath) =>
   path.freshnessStatus === "CURRENT" &&
   path.permissionStatus === "PERMITTED" &&
-  path.routeVerificationStatus === "CONFIRMED";
+  path.routeVerificationStatus === "CONFIRMED" &&
+  path.identityConflictStatus !== "MULTIPLE_RECIPIENTS" &&
+  path.identityConflictStatus !== "MULTIPLE_ROLES";
 
 function pathFrom(value: unknown): PropertyContactPath | null {
   const path = asRecord(value);
@@ -92,19 +95,39 @@ function buildReadiness(
   const contactPaths = reconcileContactPaths(observations, now);
   const phones = contactPaths.filter(path => path.channel === "PHONE");
   const emails = contactPaths.filter(path => path.channel === "EMAIL");
+  const webRoutes = contactPaths.filter(path => path.channel === "WEB");
+  const otherRoutes = contactPaths.filter(path => path.channel === "OTHER");
+  const postalRoutes = contactPaths.filter(path => path.channel === "POSTAL");
+  const directRoutes = [...phones, ...emails];
   const eligiblePhones = phones.filter(routeIsCurrentAndUsable);
   const eligibleEmails = emails.filter(routeIsCurrentAndUsable);
+  const eligibleWebRoutes = webRoutes.filter(routeIsCurrentAndUsable);
+  const eligibleOtherRoutes = otherRoutes.filter(routeIsCurrentAndUsable);
   const leadPhone = typeof lead.payload.sellerPhone === "string" ? lead.payload.sellerPhone.trim() : "";
   const leadEmail = typeof lead.payload.sellerEmail === "string" ? lead.payload.sellerEmail.trim() : "";
   const linkedPhone = leadPhone && phones.some(path => channelRouteKey("PHONE", path.routeValue ?? "") === channelRouteKey("PHONE", leadPhone));
   const linkedEmail = leadEmail && emails.some(path => channelRouteKey("EMAIL", path.routeValue ?? "") === channelRouteKey("EMAIL", leadEmail));
   const unlinkedExistingRoute = (!!leadPhone && !linkedPhone) || (!!leadEmail && !linkedEmail);
+  const unresolvedCurrentDirect = directRoutes.some(path =>
+    path.freshnessStatus === "CURRENT" &&
+    path.permissionStatus !== "PROHIBITED" &&
+    path.routeVerificationStatus !== "REJECTED" &&
+    !routeIsCurrentAndUsable(path));
+  const staleDirect = directRoutes.some(path =>
+    path.freshnessStatus === "STALE" &&
+    path.permissionStatus !== "PROHIBITED" &&
+    path.routeVerificationStatus !== "REJECTED");
+  const currentIdentityConflict = directRoutes.some(path =>
+    path.freshnessStatus === "CURRENT" &&
+    (path.identityConflictStatus === "MULTIPLE_RECIPIENTS" || path.identityConflictStatus === "MULTIPLE_ROLES"));
   let directRouteStatus:
-    | "NO_DIRECT_ROUTE" | "POSTAL_ONLY" | "REVIEW_REQUIRED" | "CONFLICT_REVIEW_REQUIRED" | "EMAIL_ONLY" | "PHONE_ROUTE_AVAILABLE";
+    | "NO_DIRECT_ROUTE" | "STALE_ROUTE" | "CONFLICTING_ROUTE" | "NEEDS_REVIEW"
+    | "POSTAL_ONLY" | "EMAIL_ONLY" | "WEB_ROUTE_AVAILABLE" | "OTHER_ROUTE_AVAILABLE" | "PHONE_ROUTE_AVAILABLE";
   let selectedPhonePath: PropertyContactPath | null = null;
   let selectedEmailPath: PropertyContactPath | null = null;
-  if (unlinkedExistingRoute) directRouteStatus = "REVIEW_REQUIRED";
-  else if (eligiblePhones.length > 1 || eligibleEmails.length > 1) directRouteStatus = "CONFLICT_REVIEW_REQUIRED";
+  if (currentIdentityConflict || eligiblePhones.length > 1 || eligibleEmails.length > 1 ||
+    eligibleWebRoutes.length > 1 || eligibleOtherRoutes.length > 1) directRouteStatus = "CONFLICTING_ROUTE";
+  else if (unlinkedExistingRoute) directRouteStatus = "NEEDS_REVIEW";
   else if (eligiblePhones.length === 1) {
     directRouteStatus = "PHONE_ROUTE_AVAILABLE";
     selectedPhonePath = eligiblePhones[0]!;
@@ -112,21 +135,36 @@ function buildReadiness(
   } else if (eligibleEmails.length === 1) {
     directRouteStatus = "EMAIL_ONLY";
     selectedEmailPath = eligibleEmails[0]!;
-  } else if (phones.length || emails.length) directRouteStatus = "REVIEW_REQUIRED";
-  else if (contactPaths.some(path => path.channel === "POSTAL" && path.freshnessStatus === "CURRENT")) directRouteStatus = "POSTAL_ONLY";
+  } else if (unresolvedCurrentDirect) directRouteStatus = "NEEDS_REVIEW";
+  else if (staleDirect) directRouteStatus = "STALE_ROUTE";
+  else if (eligibleWebRoutes.length === 1) directRouteStatus = "WEB_ROUTE_AVAILABLE";
+  else if (eligibleOtherRoutes.length === 1) directRouteStatus = "OTHER_ROUTE_AVAILABLE";
+  else if ([...webRoutes, ...otherRoutes].some(path => path.freshnessStatus === "CURRENT" &&
+    path.permissionStatus !== "PROHIBITED" && path.routeVerificationStatus !== "REJECTED")) {
+    directRouteStatus = "NEEDS_REVIEW";
+  } else if ([...webRoutes, ...otherRoutes].some(path => path.freshnessStatus === "STALE" &&
+    path.permissionStatus !== "PROHIBITED" && path.routeVerificationStatus !== "REJECTED")) {
+    directRouteStatus = "STALE_ROUTE";
+  } else if (postalRoutes.some(path => path.freshnessStatus === "CURRENT")) directRouteStatus = "POSTAL_ONLY";
   else directRouteStatus = "NO_DIRECT_ROUTE";
 
   const nextAction = directRouteStatus === "PHONE_ROUTE_AVAILABLE"
-    ? "Confirm who answers and their role before discussing terms; signing authority is not established. Refresh underwriting before CALL READY. No call has been placed."
-    : directRouteStatus === "CONFLICT_REVIEW_REQUIRED"
+    ? "Use the ranked phone route only after reviewing its provenance. Confirm the person's identity and role during the conversation; signing authority is not established. No call has been placed."
+    : directRouteStatus === "CONFLICTING_ROUTE"
       ? "Resolve the competing permitted contact routes with source-backed review; no route is selected and CALL READY remains blocked."
-      : directRouteStatus === "REVIEW_REQUIRED"
+      : directRouteStatus === "NEEDS_REVIEW"
         ? "Review route validity, freshness, source provenance, and permission. No call has been placed."
+        : directRouteStatus === "STALE_ROUTE"
+          ? "The only direct contact evidence is stale. Refresh it from a permitted source before CALL READY; no contact attempt has been made."
         : directRouteStatus === "EMAIL_ONLY"
           ? "A permitted email route is recorded, but this workflow does not treat email alone as CALL READY. Confirm the contact and obtain a phone route if calling is required."
+          : directRouteStatus === "WEB_ROUTE_AVAILABLE"
+            ? "A permitted web/contact-form route is recorded, but this system does not submit forms or treat it as phone-based CALL READY."
+            : directRouteStatus === "OTHER_ROUTE_AVAILABLE"
+              ? "An other-type route is recorded for manual review; it is not treated as phone/email and no external contact is made."
           : directRouteStatus === "POSTAL_ONLY"
             ? "Only a public-record mailing route is available. It is not a phone/email route; no direct seller-contact provider is connected."
-            : "No direct seller phone/email route is recorded and no seller-contact research provider is connected. Do not mark CALL READY.";
+            : "No usable direct seller route is recorded and no seller-contact research provider is connected. Do not mark CALL READY.";
 
   return GetSellerContactPathsResponse.parse({
     leadVersion: lead.version,
@@ -164,6 +202,9 @@ export async function recordSellerContactObservation(
   }
   if (input.channel === "EMAIL" && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(routeValue)) {
     throw new DomainError("Email route is not a valid address. No contact data was saved.", 400);
+  }
+  if (input.channel === "WEB" && !/^https:\/\//i.test(routeValue)) {
+    throw new DomainError("Web/contact-form routes must be HTTPS URLs. No contact data was saved.", 400);
   }
   if (["PUBLIC_RECORD", "PUBLIC_PAGE", "PERMITTED_LISTING"].includes(input.sourceType) &&
     (!input.sourceUrl || !input.sourceUrl.startsWith("https://"))) {
@@ -285,7 +326,7 @@ export async function recordSellerContactObservation(
         ? undefined
         : priorUnderwriting?.sellerContactEvidenceId);
     const nextUnderwriting = transactionLocked ? row.underwriting : priorUnderwriting
-      ? { ...priorUnderwriting, version: row.version + 1, ...(nextPhoneEvidenceId ? { sellerContactEvidenceId: nextPhoneEvidenceId } : {}) }
+      ? { ...priorUnderwriting, ...(nextPhoneEvidenceId ? { sellerContactEvidenceId: nextPhoneEvidenceId } : {}) }
       : selectedPhone
         ? { version: row.version + 1, comps: [], repairs: [], repairsComplete: false, conditionConfirmed: false, sellerContactEvidenceId: selectedPhone.id }
         : null;
@@ -293,28 +334,26 @@ export async function recordSellerContactObservation(
     const payload = { ...row.payload, sellerPhone: nextPhone, sellerEmail: nextEmail };
     const changedRoute = nextPhone !== currentPhone || nextEmail !== currentEmail ||
       nextPhoneEvidenceId !== priorUnderwriting?.sellerContactEvidenceId;
-    const action = readiness.nextAction;
     if (transactionLocked) {
       await audit(tx, actor.id, "SELLER_CONTACT_RESEARCH_DURING_TRANSACTION", id,
         "New contact evidence was recorded without changing executed transaction terms, underwriting, analysis, or next action.");
     } else {
-      await invalidateOffers(tx, id, actor.id, "New seller-contact provenance changed the current evidence set; refresh and re-authorize before external action.", now);
-      await move(tx, row, "ENRICHING", "Seller contact observation added; refresh contact and underwriting readiness.", action, actor.id, now);
+      await audit(tx, actor.id, "SELLER_CONTACT_RESEARCH_RECORDED", id,
+        "Contact evidence changed only contact provenance and route fields. Financial underwriting, offer authorization, stage, and next action were preserved; readiness rechecks the route evidence dynamically.");
     }
     const [saved] = await tx.update(leadsTable).set({
       payload: transactionLocked ? row.payload : { ...payload },
       underwriting: nextUnderwriting,
-      analysis: transactionLocked ? row.analysis : null,
-      analysisSnapshotId: transactionLocked ? row.analysisSnapshotId : null,
+      analysis: row.analysis,
+      analysisSnapshotId: row.analysisSnapshotId,
       stage: row.stage,
-      nextAction: transactionLocked ? row.nextAction
-        : changedRoute ? action : "Review new seller contact evidence before CALL READY; no external contact was made.",
+      nextAction: row.nextAction,
       version: row.version + 1,
       updatedAt: now,
     }).where(eq(leadsTable.id, id)).returning();
     if (!saved) throw new Error("Seller contact observation was not persisted.");
     await audit(tx, actor.id, "SELLER_CONTACT_OBSERVATION_RECORDED", id,
-      `${input.channel} contact evidence ${entryId}; ${input.permissionStatus}; ${input.routeVerificationStatus}. No call/message sent. Seller identity and signing authority not established.`);
+      `${input.channel} contact evidence ${entryId}; ${input.permissionStatus}; ${input.routeVerificationStatus}. No call/message sent. Financial calculations, offer authorization, stage, and next action unchanged. Seller identity and signing authority not established.`);
     return RecordSellerContactObservationResponse.parse(await getSellerContactPaths(id, now, tx));
   });
 }

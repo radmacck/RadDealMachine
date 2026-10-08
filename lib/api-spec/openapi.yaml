@@ -1377,6 +1377,27 @@ components:
       properties:
         discovery: { $ref: "#/components/schemas/PropertyDiscovery" }
         leadId: { type: string, format: uuid }
+    ContactPathObservation:
+      type: object
+      required: [id, recipient, recipientRole, sourceId, sourceName, sourceRecordId, sourceUrl, capturedAt, freshUntilAt, classification, confidence, permissionStatus, contactPermissionEvidenceUrl, permissionReviewedAt, routeVerificationStatus, routeReviewedAt, verificationNote]
+      properties:
+        id: { type: string }
+        recipient: { type: ["string", "null"] }
+        recipientRole: { type: string, enum: [RECORDED_OWNER, SELLER_SELF_IDENTIFIED, AUTHORIZED_AGENT_CLAIM, DIRECTORY_CONTACT, UNKNOWN] }
+        sourceId: { type: string }
+        sourceName: { type: string }
+        sourceRecordId: { type: string }
+        sourceUrl: { type: ["string", "null"], format: uri }
+        capturedAt: { type: string, format: date-time }
+        freshUntilAt: { type: string, format: date-time }
+        classification: { type: string, enum: [OBSERVED, VERIFIED] }
+        confidence: { type: number, minimum: 0, maximum: 1 }
+        permissionStatus: { type: string, enum: [NOT_REVIEWED, PERMITTED, PROHIBITED] }
+        contactPermissionEvidenceUrl: { type: ["string", "null"], format: uri }
+        permissionReviewedAt: { type: ["string", "null"], format: date-time }
+        routeVerificationStatus: { type: string, enum: [UNREVIEWED, CONFIRMED, REJECTED] }
+        routeReviewedAt: { type: ["string", "null"], format: date-time }
+        verificationNote: { type: ["string", "null"] }
     PropertyContactPath:
       type: object
       required: [id, channel, classification, confidence, sourceId, sourceName, sourceRecordId, capturedAt, freshUntilAt, freshnessStatus, permissionStatus]
@@ -1408,13 +1429,17 @@ components:
         identityStatus: { type: string, enum: [UNVERIFIED] }
         signingAuthorityStatus: { type: string, enum: [NOT_ESTABLISHED] }
         supportingObservationCount: { type: integer, minimum: 1 }
+        supportingObservations: { type: array, items: { $ref: "#/components/schemas/ContactPathObservation" } }
+        identityConflictStatus: { type: string, enum: [NONE, MULTIPLE_RECIPIENTS, MULTIPLE_ROLES] }
+        recipientIdentityClaimCount: { type: integer, minimum: 0 }
+        rankingReasons: { type: array, items: { type: string } }
     SellerContactObservationInput:
       type: object
       required: [version, channel, routeValue, recipientRole, classification, confidence, sourceType, sourceId, sourceName, sourceRecordId, permissionStatus, routeVerificationStatus]
       properties:
         version: { type: integer, minimum: 1 }
-        channel: { type: string, enum: [PHONE, EMAIL] }
-        routeValue: { type: string, minLength: 3, maxLength: 200 }
+        channel: { type: string, enum: [PHONE, EMAIL, WEB, OTHER] }
+        routeValue: { type: string, minLength: 3, maxLength: 2000 }
         recipient: { type: ["string", "null"], maxLength: 200 }
         recipientRole: { type: string, enum: [RECORDED_OWNER, SELLER_SELF_IDENTIFIED, AUTHORIZED_AGENT_CLAIM, DIRECTORY_CONTACT, UNKNOWN] }
         classification: { type: string, enum: [OBSERVED, VERIFIED] }
@@ -1437,7 +1462,9 @@ components:
         leadVersion: { type: integer, minimum: 1 }
         contactSourceProviderStatus: { type: string, enum: [NOT_CONNECTED, CONNECTED] }
         contactSourceProviderCount: { type: integer, minimum: 0 }
-        directRouteStatus: { type: string, enum: [NO_DIRECT_ROUTE, POSTAL_ONLY, REVIEW_REQUIRED, CONFLICT_REVIEW_REQUIRED, EMAIL_ONLY, PHONE_ROUTE_AVAILABLE] }
+        directRouteStatus:
+          type: string
+          enum: [NO_DIRECT_ROUTE, STALE_ROUTE, CONFLICTING_ROUTE, NEEDS_REVIEW, POSTAL_ONLY, EMAIL_ONLY, WEB_ROUTE_AVAILABLE, OTHER_ROUTE_AVAILABLE, PHONE_ROUTE_AVAILABLE, REVIEW_REQUIRED, CONFLICT_REVIEW_REQUIRED]
         contactPaths: { type: array, items: { $ref: "#/components/schemas/PropertyContactPath" } }
         selectedPhonePath:
           oneOf: [{ $ref: "#/components/schemas/PropertyContactPath" }, { type: "null" }]
@@ -2626,6 +2653,10 @@ components:
             leadId: { type: string }
             createdAt: { type: string }
             createdBy: { type: string }
+            contactPath:
+              oneOf:
+                - { $ref: "#/components/schemas/PropertyContactPath" }
+                - { type: "null" }
     Comp:
       type: object
       required: [id, address, salePrice, sqft, soldAt, distanceMiles, propertyType, condition, source, verified]
