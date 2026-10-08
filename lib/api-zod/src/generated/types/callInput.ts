@@ -6,6 +6,7 @@
  * OpenAPI spec version: 1.0.0
  */
 import type { CallInputOutcome } from './callInputOutcome';
+import type { CallInputSellerAnswers } from './callInputSellerAnswers';
 
 export interface CallInput {
   /** @minimum 1 */
@@ -23,4 +24,5 @@ export interface CallInput {
   nextAction: string;
   /** @nullable */
   followUpAt: string | null;
+  sellerAnswers?: CallInputSellerAnswers;
 }

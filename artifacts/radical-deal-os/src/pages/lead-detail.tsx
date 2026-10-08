@@ -250,6 +250,15 @@ export default function LeadDetailPage() {
               <li key={c.id} className="ledger p-3" data-testid={`call-${c.id}`}>
                 <p className="flex flex-wrap items-center gap-2"><span className="tag tone-ink">{c.outcome.replace(/_/g, ' ')}</span><span className="font-mono text-xs text-muted-foreground">{fmtDate(c.createdAt)} / {c.actor}</span></p>
                 <p className="mt-1 whitespace-pre-wrap text-sm">{c.notes}</p>
+                {c.sellerAnswers && <div className="mt-2 border-l-2 border-signal pl-3" data-testid={`seller-answers-${c.id}`}>
+                  <p className="text-xs font-semibold">INDICATED · operator-entered seller statements · {fmtDate(c.sellerAnswersCapturedAt ?? c.createdAt)}</p>
+                  {c.sellerAnswers.motivationStatement && <p className="text-xs">Motivation stated: {c.sellerAnswers.motivationStatement}</p>}
+                  {c.sellerAnswers.conditionDescription && <p className="text-xs">Condition stated: {c.sellerAnswers.conditionDescription}</p>}
+                  {c.sellerAnswers.timing && <p className="text-xs">Timing stated: {c.sellerAnswers.timing}</p>}
+                  {c.sellerAnswers.askingPrice != null && <p className="text-xs">Asking price stated: {money(c.sellerAnswers.askingPrice)}</p>}
+                  {c.sellerAnswers.nextStepOutcome && <p className="text-xs">Seller next-step outcome: {c.sellerAnswers.nextStepOutcome}</p>}
+                  <p className="mt-1 text-xs text-muted-foreground">Appended to this call record; sourced property facts were not overwritten and no underwriting/economics changed.</p>
+                </div>}
                 <p className="text-xs text-muted-foreground">Next: {c.nextAction}{c.followUpAt ? ` / follow up ${fmtDate(c.followUpAt)}` : ''}</p>
               </li>))}</ol>
           )}

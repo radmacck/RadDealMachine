@@ -10,6 +10,7 @@ import { commandCenter } from "../services/command-center";
 import { intakePropertyEvidence } from "../services/evidence-intake";
 import * as sellerContacts from "../services/seller-contact-store";
 import * as sellerContactEnrichment from "../services/seller-contact-enrichment";
+import * as acquisitionQueue from "../services/acquisition-queue-store";
 
 const router: IRouter = Router();
 // Trim strings before schema validation so required fields cannot be whitespace-only.
@@ -117,6 +118,21 @@ router.post("/leads/:id/offers/:offerId/withdraw",research,async (req,res) => {
   send(res,contract.WithdrawOfferResponse,await offers.withdrawOffer(id,offerId,parse(contract.WithdrawOfferBody,req.body),{id:String(res.locals.actor),role:String(res.locals.role)}));
 });
 router.get("/call-next",async (_req,res) => send(res,contract.GetCallQueueResponse,await store.callQueue()));
+router.get("/acquisition-queue",async (_req,res) => {
+  send(res,contract.GetAcquisitionQueueResponse,await acquisitionQueue.acquisitionQueue(String(res.locals.role)));
+});
+router.post("/leads/:id/acquisition-queue-selection",roles("OWNER","OPERATOR","ANALYST"),async (req,res) => {
+  const body = parse(contract.RecordAcquisitionQueueSelectionBody,req.body);
+  send(res,contract.RecordAcquisitionQueueSelectionResponse,await acquisitionQueue.recordQueueSelection(
+    leadId(req),body.version,String(res.locals.actor),String(res.locals.role),
+  ));
+});
+router.post("/leads/:id/call-start",operate,async (req,res) => {
+  const body = parse(contract.StartCallSessionBody,req.body);
+  send(res,contract.StartCallSessionResponse,await acquisitionQueue.startCallSession(
+    leadId(req),body.version,String(res.locals.actor),String(res.locals.role),
+  ));
+});
 router.get("/assumptions",async (_req,res) => send(res,contract.GetAssumptionsResponse,await store.getAssumptions()));
 router.put("/assumptions",roles("OWNER"),async (req,res) => {
   send(res,contract.UpdateAssumptionsResponse,await store.saveAssumptions(parse(contract.UpdateAssumptionsBody,req.body),String(res.locals.actor)));

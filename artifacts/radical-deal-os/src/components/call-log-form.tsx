@@ -20,6 +20,11 @@ export function CallLogForm({ lead, disabled, pending, error, onSubmit }: {
   const [notes, setNotes] = useState('');
   const [next, setNext] = useState('');
   const [fu, setFu] = useState('');
+  const [motivation, setMotivation] = useState('');
+  const [condition, setCondition] = useState('');
+  const [timing, setTiming] = useState('');
+  const [askingPrice, setAskingPrice] = useState('');
+  const [sellerNextStep, setSellerNextStep] = useState('');
   const [local, setLocal] = useState<string | null>(null);
   const tomorrow = () => setDate(addDays(new Date(), 1), { hours: 9, minutes: 0, seconds: 0 });
 
@@ -30,7 +35,22 @@ export function CallLogForm({ lead, disabled, pending, error, onSubmit }: {
     const iso = fromLocalInput(fu);
     if (outcome !== 'NOT_INTERESTED' && (!iso || new Date(iso).getTime() <= Date.now())) return setLocal('Set a future follow-up so this conversation always has a next step.');
     setLocal(null);
-    onSubmit({ version: lead.version, outcome, notes: notes.trim(), nextAction: next.trim(), followUpAt: iso }, () => { setOutcome(null); setNotes(''); setNext(''); setFu(''); });
+    const price = askingPrice.trim() ? Number(askingPrice) : undefined;
+    if (price !== undefined && (!Number.isFinite(price) || price < 0)) return setLocal('Enter a valid non-negative asking price, or leave it blank.');
+    const sellerAnswers = {
+      ...(motivation.trim() ? { motivationStatement: motivation.trim() } : {}),
+      ...(condition.trim() ? { conditionDescription: condition.trim() } : {}),
+      ...(timing.trim() ? { timing: timing.trim() } : {}),
+      ...(price !== undefined ? { askingPrice: price } : {}),
+      ...(sellerNextStep.trim() ? { nextStepOutcome: sellerNextStep.trim() } : {}),
+    };
+    onSubmit({
+      version: lead.version, outcome, notes: notes.trim(), nextAction: next.trim(), followUpAt: iso,
+      ...(Object.keys(sellerAnswers).length ? { sellerAnswers } : {}),
+    }, () => {
+      setOutcome(null); setNotes(''); setNext(''); setFu('');
+      setMotivation(''); setCondition(''); setTiming(''); setAskingPrice(''); setSellerNextStep('');
+    });
   };
 
   return (
@@ -42,6 +62,17 @@ export function CallLogForm({ lead, disabled, pending, error, onSubmit }: {
         ))}
       </div>
       <div className="space-y-1.5"><Label>What did you learn?</Label><Textarea rows={4} value={notes} disabled={disabled} onChange={(e) => setNotes(e.target.value)} data-testid="input-call-notes" /></div>
+      <details className="rounded-sm border border-border p-3">
+        <summary className="cursor-pointer text-sm font-medium">Capture seller answers separately</summary>
+        <p className="my-2 text-xs text-muted-foreground">These are operator-entered seller statements, stored as INDICATED evidence with the call timestamp. They do not overwrite public/source facts or change economics.</p>
+        <div className="space-y-2">
+          <div className="space-y-1"><Label>Seller's stated motivation</Label><Textarea rows={2} value={motivation} disabled={disabled} onChange={(e) => setMotivation(e.target.value)} /></div>
+          <div className="space-y-1"><Label>Condition described by seller</Label><Textarea rows={2} value={condition} disabled={disabled} onChange={(e) => setCondition(e.target.value)} /></div>
+          <div className="space-y-1"><Label>Seller's timing</Label><Input value={timing} disabled={disabled} onChange={(e) => setTiming(e.target.value)} /></div>
+          <div className="space-y-1"><Label>Seller's stated asking price</Label><Input type="number" min="0" step="1" value={askingPrice} disabled={disabled} onChange={(e) => setAskingPrice(e.target.value)} /></div>
+          <div className="space-y-1"><Label>Seller's stated next-step outcome</Label><Textarea rows={2} value={sellerNextStep} disabled={disabled} onChange={(e) => setSellerNextStep(e.target.value)} /></div>
+        </div>
+      </details>
       <div className="space-y-1.5"><Label>What happens next?</Label><Input value={next} disabled={disabled} onChange={(e) => setNext(e.target.value)} placeholder="Call back after he talks to his sister" data-testid="input-call-next" /></div>
       <div className="space-y-1.5">
         <Label>Follow up{outcome !== 'NOT_INTERESTED' ? ' (required)' : ''}</Label>

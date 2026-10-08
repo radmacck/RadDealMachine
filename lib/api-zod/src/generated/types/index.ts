@@ -7,6 +7,13 @@
  */
 
 export * from './access';
+export * from './acquisitionQueue';
+export * from './acquisitionQueueEventResponse';
+export * from './acquisitionQueueEventResponseDecision';
+export * from './acquisitionQueueEventResponseEvent';
+export * from './acquisitionQueueItem';
+export * from './acquisitionQueueItemBlockerCode';
+export * from './acquisitionQueueItemDecision';
 export * from './analysis';
 export * from './analysisClassification';
 export * from './assumptions';
@@ -90,8 +97,12 @@ export * from './buyerVerificationStatus';
 export * from './buyerVerifiedFundingTypesItem';
 export * from './call';
 export * from './callBrief';
+export * from './callEvidenceClassification';
+export * from './callEvidenceSource';
 export * from './callInput';
 export * from './callInputOutcome';
+export * from './callInputSellerAnswers';
+export * from './callStartInput';
 export * from './closingMilestone';
 export * from './closingMilestoneCurrency';
 export * from './closingMilestoneEvidenceKind';
@@ -255,6 +266,7 @@ export * from './publicPropertyClassification';
 export * from './publicPropertyImport';
 export * from './publicPropertyPropertyType';
 export * from './publicPropertySearch';
+export * from './queueSelectionInput';
 export * from './range';
 export * from './releaseDistributionAcceptanceInput';
 export * from './repair';

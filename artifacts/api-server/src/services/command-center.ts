@@ -6,6 +6,7 @@ import { allBuyerRecords, jobRecord } from "./operations-records";
 import { db, jobsTable } from "@workspace/db";
 import { and, count, desc, eq, ne } from "drizzle-orm";
 import { listPropertyDiscoveries } from "./property-discovery-store";
+import { acquisitionQueue } from "./acquisition-queue-store";
 
 const SCHEDULER_ACTOR = "system:scheduler";
 const FIVE_MINUTES = 5 * 60_000;
@@ -110,8 +111,11 @@ export async function commandCenter(role: string, now = new Date()) {
   });
   const propertyDiscoveries = allPropertyDiscoveries;
   const leads = await listLeads();
-  const deals = await Promise.all(leads.map(l => leadDetail(l.id,undefined,now)));
-  const calls = await callQueue(now);
+  const [deals, calls, rankedAcquisitionQueue] = await Promise.all([
+    Promise.all(leads.map(l => leadDetail(l.id,undefined,now))),
+    callQueue(now),
+    acquisitionQueue(role, now),
+  ]);
   const operations = await Promise.all(leads.map(l=>dealOperations(l.id,now)));
   const [buyers, jobRows, schedulerRows, propertyPolicyRows, buyerPolicyRows, jobStateCounts] = await Promise.all([
     allBuyerRecords(db,now),
@@ -390,7 +394,7 @@ export async function commandCenter(role: string, now = new Date()) {
     }
   }
   return GetCommandCenterResponse.parse({
-    generatedAt:now.toISOString(),deals,calls,operations,buyers,jobs,automation,
+    generatedAt:now.toISOString(),deals,calls,acquisitionQueue:rankedAcquisitionQueue.items.slice(0,5),operations,buyers,jobs,automation,
     actions:actions.sort((a,b)=>b.priority-a.priority||a.id.localeCompare(b.id)),
     opportunities:strongestOpportunities(deals),
     propertyDiscoveries,

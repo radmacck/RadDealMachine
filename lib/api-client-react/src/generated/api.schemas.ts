@@ -3279,6 +3279,23 @@ export const CallInputOutcome = {
   NOT_INTERESTED: 'NOT_INTERESTED',
 } as const;
 
+export type CallInputSellerAnswers = {
+  /** @maxLength 3000 */
+  motivationStatement?: string;
+  /** @maxLength 3000 */
+  conditionDescription?: string;
+  /** @maxLength 1000 */
+  timing?: string;
+  /**
+     * @minimum 0
+     * @maximum 1000000000
+     * @nullable
+     */
+  askingPrice?: number | null;
+  /** @maxLength 2000 */
+  nextStepOutcome?: string;
+};
+
 export interface CallInput {
   /** @minimum 1 */
   version: number;
@@ -3295,12 +3312,30 @@ export interface CallInput {
   nextAction: string;
   /** @nullable */
   followUpAt: string | null;
+  sellerAnswers?: CallInputSellerAnswers;
 }
+
+export type CallEvidenceSource = typeof CallEvidenceSource[keyof typeof CallEvidenceSource];
+
+
+export const CallEvidenceSource = {
+  OPERATOR_ENTERED_SELLER_CONVERSATION: 'OPERATOR_ENTERED_SELLER_CONVERSATION',
+} as const;
+
+export type CallEvidenceClassification = typeof CallEvidenceClassification[keyof typeof CallEvidenceClassification];
+
+
+export const CallEvidenceClassification = {
+  INDICATED: 'INDICATED',
+} as const;
 
 export type Call = CallInput & {
   id: string;
   createdAt: string;
   actor: string;
+  evidenceSource?: CallEvidenceSource;
+  evidenceClassification?: CallEvidenceClassification;
+  sellerAnswersCapturedAt?: string;
 };
 
 export type DealWorkGuidanceCategory = typeof DealWorkGuidanceCategory[keyof typeof DealWorkGuidanceCategory];
@@ -4346,6 +4381,55 @@ export interface CallBrief {
   authorizedOffer: Offer | null;
 }
 
+export type AcquisitionQueueItemDecision = typeof AcquisitionQueueItemDecision[keyof typeof AcquisitionQueueItemDecision];
+
+
+export const AcquisitionQueueItemDecision = {
+  CALL_NEXT: 'CALL_NEXT',
+  BLOCKED: 'BLOCKED',
+} as const;
+
+/**
+ * @nullable
+ */
+export type AcquisitionQueueItemBlockerCode = typeof AcquisitionQueueItemBlockerCode[keyof typeof AcquisitionQueueItemBlockerCode] | null;
+
+
+export const AcquisitionQueueItemBlockerCode = {
+  PROPERTY_RELEVANCE_REVIEW: 'PROPERTY_RELEVANCE_REVIEW',
+  CONTACT_NO_DIRECT_ROUTE: 'CONTACT_NO_DIRECT_ROUTE',
+  CONTACT_STALE: 'CONTACT_STALE',
+  CONTACT_CONFLICT: 'CONTACT_CONFLICT',
+  CONTACT_REVIEW: 'CONTACT_REVIEW',
+  UNDERWRITING_MISSING: 'UNDERWRITING_MISSING',
+  UNDERWRITING_STALE: 'UNDERWRITING_STALE',
+  UNDERWRITING_BLOCKED: 'UNDERWRITING_BLOCKED',
+  CALL_READY_TRANSITION: 'CALL_READY_TRANSITION',
+  FOLLOW_UP_NOT_DUE: 'FOLLOW_UP_NOT_DUE',
+  OPERATOR_AUTH_REQUIRED: 'OPERATOR_AUTH_REQUIRED',
+} as const;
+
+export interface AcquisitionQueueItem {
+  lead: Lead;
+  decision: AcquisitionQueueItemDecision;
+  /** @minimum 1 */
+  rank: number;
+  /**
+     * @minimum 0
+     * @maximum 100
+     */
+  evidenceScore: number;
+  rankingReason: string;
+  propertySignals: PropertyRelevanceSignal[];
+  contactReadiness: SellerContactReadiness;
+  /** @nullable */
+  blockerCode: AcquisitionQueueItemBlockerCode;
+  /** @nullable */
+  blocker: string | null;
+  nextAction: string;
+  callBrief: CallBrief | null;
+}
+
 export type AutomationOverviewStatus = typeof AutomationOverviewStatus[keyof typeof AutomationOverviewStatus];
 
 
@@ -4405,6 +4489,7 @@ export interface CommandCenter {
   actions: CommandAction[];
   opportunities: LeadDetail[];
   calls: CallBrief[];
+  acquisitionQueue: AcquisitionQueueItem[];
   deals: LeadDetail[];
   operations: DealOperations[];
   buyers: Buyer[];
@@ -4495,6 +4580,49 @@ export interface TransitionInput {
   nextAction: string;
   /** @nullable */
   followUpAt?: string | null;
+}
+
+export interface AcquisitionQueue {
+  generatedAt: string;
+  /** @minimum 0 */
+  total: number;
+  items: AcquisitionQueueItem[];
+}
+
+export interface QueueSelectionInput {
+  /** @minimum 1 */
+  version: number;
+}
+
+export interface CallStartInput {
+  /** @minimum 1 */
+  version: number;
+}
+
+export type AcquisitionQueueEventResponseEvent = typeof AcquisitionQueueEventResponseEvent[keyof typeof AcquisitionQueueEventResponseEvent];
+
+
+export const AcquisitionQueueEventResponseEvent = {
+  QUEUE_SELECTED: 'QUEUE_SELECTED',
+  CALL_SESSION_STARTED: 'CALL_SESSION_STARTED',
+} as const;
+
+export type AcquisitionQueueEventResponseDecision = typeof AcquisitionQueueEventResponseDecision[keyof typeof AcquisitionQueueEventResponseDecision];
+
+
+export const AcquisitionQueueEventResponseDecision = {
+  CALL_NEXT: 'CALL_NEXT',
+  BLOCKED: 'BLOCKED',
+} as const;
+
+export interface AcquisitionQueueEventResponse {
+  leadId: string;
+  event: AcquisitionQueueEventResponseEvent;
+  decision: AcquisitionQueueEventResponseDecision;
+  recordedAt: string;
+  /** @nullable */
+  blocker?: string | null;
+  nextAction: string;
 }
 
 export type OfferDraftInput = OfferTerms & {

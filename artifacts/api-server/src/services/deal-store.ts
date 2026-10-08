@@ -14,6 +14,7 @@ import {
 } from "@workspace/deal-domain";
 import { CreateLeadResponse, GetLeadResponse, AddIntelligenceResponse, GetAssumptionsResponse } from "@workspace/api-zod";
 import { offersForLead, invalidateOffers, invalidateOffersForPolicyChange } from "./offer-records";
+import { getSellerContactPaths } from "./seller-contact-store";
 
 type Tx = Parameters<Parameters<typeof db.transaction>[0]>[0];
 const jsonRecord = (value: object): Record<string, unknown> => ({ ...value });
@@ -386,12 +387,36 @@ export async function recordCall(id: string, input: CallInput, actor: string, no
       if (!current.analysis || current.analysis.blockers.length) {
         throw new DomainError("CALL READY evidence is stale or incomplete. Refresh the seller phone source and underwriting before recording outreach.",409);
       }
+      const contact = await getSellerContactPaths(id,now,tx);
+      if (contact.directRouteStatus !== "PHONE_ROUTE_AVAILABLE" || !contact.selectedPhonePath?.routeValue) {
+        throw new DomainError(`${contact.nextAction} CALL READY remains blocked.`,409);
+      }
     }
     if (executed&&input.outcome==="NOT_INTERESTED") throw new DomainError("A phone response cannot cancel an executed contract. Record the conversation with a follow-up and use the owner-reviewed external cancellation evidence workflow.",409);
     const followUpAt = followupDate(input.followUpAt,now);
     if (input.outcome !== "NOT_INTERESTED" && !followUpAt) throw new DomainError("Set a future follow-up so the seller conversation does not become a dead end.");
     const stage: Stage = input.outcome === "NOT_INTERESTED" ? "DEAD_DEAL" : input.outcome === "CONNECTED" ? "CONVERSATION" : "CONTACTED";
-    await tx.insert(callsTable).values({leadId:id,payload:jsonRecord(input),actor,createdAt:now});
+    const sellerAnswersPresent = !!input.sellerAnswers && Object.values(input.sellerAnswers)
+      .some(value => value !== undefined && value !== null && value !== "");
+    const persistedCall = {
+      ...input,
+      ...(sellerAnswersPresent ? {
+        evidenceSource: "OPERATOR_ENTERED_SELLER_CONVERSATION" as const,
+        evidenceClassification: "INDICATED" as const,
+        sellerAnswersCapturedAt: iso(now),
+      } : {}),
+    };
+    const [savedCall] = await tx.insert(callsTable)
+      .values({leadId:id,payload:jsonRecord(persistedCall),actor,createdAt:now})
+      .returning({id:callsTable.id});
+    if (!savedCall) throw new Error("Call result persistence failed.");
+    if (sellerAnswersPresent) {
+      const capturedFields = Object.entries(input.sellerAnswers ?? {})
+        .filter(([, value]) => value !== undefined && value !== null && value !== "")
+        .map(([field]) => field);
+      await audit(tx, actor, "CALL_RESULT_EVIDENCE_CAPTURED", id,
+        `Call ${savedCall.id}; operator-entered seller statements recorded as INDICATED at ${iso(now)}; fields ${capturedFields.join(", ")}. Existing sourced facts and underwriting were not overwritten.`);
+    }
     // A connected first call must preserve CONTACTED before CONVERSATION.
     if (row.stage === "CALL_READY" && stage === "CONVERSATION") {
       await move(tx,row,"CONTACTED","Seller answered the call","Continue the seller conversation.",actor,now);

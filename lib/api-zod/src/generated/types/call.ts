@@ -5,10 +5,15 @@
  * Radical Deal OS seller intake, underwriting, conversations and approved offers
  * OpenAPI spec version: 1.0.0
  */
+import type { CallEvidenceClassification } from './callEvidenceClassification';
+import type { CallEvidenceSource } from './callEvidenceSource';
 import type { CallInput } from './callInput';
 
 export type Call = CallInput & {
   id: string;
   createdAt: string;
   actor: string;
+  evidenceSource?: CallEvidenceSource;
+  evidenceClassification?: CallEvidenceClassification;
+  sellerAnswersCapturedAt?: string;
 };

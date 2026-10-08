@@ -18,3 +18,4 @@ export * from "./lead-qualification";
 export * from "./repair-estimation";
 export * from "./repair-hypotheses";
 export * from "./transaction-documents";
+export * from "./acquisition-queue";

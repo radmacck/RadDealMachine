@@ -3,6 +3,7 @@ import type {
   CreateLeadResponse, CreateLeadBody, AddIntelligenceBody, AddIntelligenceResponse,
   SaveUnderwritingBody, UpdateAssumptionsBody, GetLeadResponse, TransitionLeadBody,
   RecordCallBody, GetCallQueueResponse,
+  GetAcquisitionQueueResponse, RecordAcquisitionQueueSelectionBody, StartCallSessionBody,
   CreateOfferDraftBody, AuthorizeOfferBody, CommunicateOfferBody, WithdrawOfferBody,
   Repair, RepairEstimate, RepairEstimateLine, RepairObservation, RepairRateCard,
   ConditionRepairHypothesis, PreliminaryRepairEstimate, PreliminaryRepairLine,
@@ -22,6 +23,10 @@ export type Stage = Lead["stage"];
 export type TransitionInput = z.infer<typeof TransitionLeadBody>;
 export type CallInput = z.infer<typeof RecordCallBody>;
 export type CallBrief = z.infer<typeof GetCallQueueResponse>[number];
+export type AcquisitionQueue = z.infer<typeof GetAcquisitionQueueResponse>;
+export type AcquisitionQueueItem = AcquisitionQueue["items"][number];
+export type QueueSelectionInput = z.infer<typeof RecordAcquisitionQueueSelectionBody>;
+export type CallStartInput = z.infer<typeof StartCallSessionBody>;
 export type Offer = LeadDetail["offers"][number];
 export type StoredOffer = Omit<Offer,"effectiveStatus"|"blockers">;
 export type OfferDraftInput = z.infer<typeof CreateOfferDraftBody>;

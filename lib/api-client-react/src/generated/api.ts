@@ -21,6 +21,8 @@ import type {
 
 import type {
   Access,
+  AcquisitionQueue,
+  AcquisitionQueueEventResponse,
   Assumptions,
   AuditEvent,
   Buyer,
@@ -43,6 +45,7 @@ import type {
   BuyerVerificationInput,
   CallBrief,
   CallInput,
+  CallStartInput,
   ClosingMilestoneInput,
   CommandCenter,
   ContractExecutionInput,
@@ -88,6 +91,7 @@ import type {
   PropertySourceCoverageResponse,
   PublicBuyerIntakeInput,
   PublicPropertySearch,
+  QueueSelectionInput,
   ReleaseDistributionAcceptanceInput,
   SearchPublicPropertiesParams,
   SellerContactEnrichmentRequestInput,
@@ -2256,6 +2260,243 @@ export function useGetCallQueue<TData = Awaited<ReturnType<typeof getCallQueue>>
 
 
 
+
+export const getGetAcquisitionQueueUrl = () => {
+
+
+
+
+  return `/api/acquisition-queue`
+}
+
+export const getAcquisitionQueue = async ( options?: Parameters<typeof customFetch>[1]): Promise<AcquisitionQueue> => {
+
+  return customFetch<AcquisitionQueue>(getGetAcquisitionQueueUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetAcquisitionQueueQueryKey = () => {
+    return [
+    `/api/acquisition-queue`
+    ] as const;
+    }
+
+
+export const getGetAcquisitionQueueQueryOptions = <TData = Awaited<ReturnType<typeof getAcquisitionQueue>>, TError = ErrorType<unknown>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getAcquisitionQueue>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetAcquisitionQueueQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getAcquisitionQueue>>> = ({ signal }) => getAcquisitionQueue({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getAcquisitionQueue>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetAcquisitionQueueQueryResult = NonNullable<Awaited<ReturnType<typeof getAcquisitionQueue>>>
+export type GetAcquisitionQueueQueryError = ErrorType<unknown>
+
+
+
+export function useGetAcquisitionQueue<TData = Awaited<ReturnType<typeof getAcquisitionQueue>>, TError = ErrorType<unknown>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getAcquisitionQueue>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetAcquisitionQueueQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getRecordAcquisitionQueueSelectionUrl = (id: string,) => {
+
+
+
+
+  return `/api/leads/${id}/acquisition-queue-selection`
+}
+
+export const recordAcquisitionQueueSelection = async (id: string,
+    queueSelectionInput: QueueSelectionInput, options?: Parameters<typeof customFetch>[1]): Promise<AcquisitionQueueEventResponse> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return customFetch<AcquisitionQueueEventResponse>(getRecordAcquisitionQueueSelectionUrl(id),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(queueSelectionInput)
+  }
+);}
+
+
+
+
+
+export const getRecordAcquisitionQueueSelectionMutationKey = () => ['recordAcquisitionQueueSelection'] as const;
+
+export const getRecordAcquisitionQueueSelectionMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof recordAcquisitionQueueSelection>>, TError,RecordAcquisitionQueueSelectionMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof recordAcquisitionQueueSelection>>, TError,RecordAcquisitionQueueSelectionMutationVariables, TContext> => {
+
+const mutationKey = getRecordAcquisitionQueueSelectionMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof recordAcquisitionQueueSelection>>, RecordAcquisitionQueueSelectionMutationVariables> = (props) => {
+          const {id,data} = props ?? {};
+
+          return  recordAcquisitionQueueSelection(id,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type RecordAcquisitionQueueSelectionMutationResult = NonNullable<Awaited<ReturnType<typeof recordAcquisitionQueueSelection>>>
+    export type RecordAcquisitionQueueSelectionMutationBody = BodyType<QueueSelectionInput>
+    export type RecordAcquisitionQueueSelectionMutationError = ErrorType<unknown>
+    export type RecordAcquisitionQueueSelectionMutationVariables = {id: string;data: BodyType<QueueSelectionInput>}
+
+    export const useRecordAcquisitionQueueSelection = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof recordAcquisitionQueueSelection>>, TError,RecordAcquisitionQueueSelectionMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof recordAcquisitionQueueSelection>>,
+        TError,
+        RecordAcquisitionQueueSelectionMutationVariables,
+        TContext
+      > => {
+      return useMutation(getRecordAcquisitionQueueSelectionMutationOptions(options));
+    }
+
+export const getStartCallSessionUrl = (id: string,) => {
+
+
+
+
+  return `/api/leads/${id}/call-start`
+}
+
+export const startCallSession = async (id: string,
+    callStartInput: CallStartInput, options?: Parameters<typeof customFetch>[1]): Promise<AcquisitionQueueEventResponse> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return customFetch<AcquisitionQueueEventResponse>(getStartCallSessionUrl(id),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(callStartInput)
+  }
+);}
+
+
+
+
+
+export const getStartCallSessionMutationKey = () => ['startCallSession'] as const;
+
+export const getStartCallSessionMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof startCallSession>>, TError,StartCallSessionMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof startCallSession>>, TError,StartCallSessionMutationVariables, TContext> => {
+
+const mutationKey = getStartCallSessionMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof startCallSession>>, StartCallSessionMutationVariables> = (props) => {
+          const {id,data} = props ?? {};
+
+          return  startCallSession(id,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type StartCallSessionMutationResult = NonNullable<Awaited<ReturnType<typeof startCallSession>>>
+    export type StartCallSessionMutationBody = BodyType<CallStartInput>
+    export type StartCallSessionMutationError = ErrorType<unknown>
+    export type StartCallSessionMutationVariables = {id: string;data: BodyType<CallStartInput>}
+
+    export const useStartCallSession = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof startCallSession>>, TError,StartCallSessionMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof startCallSession>>,
+        TError,
+        StartCallSessionMutationVariables,
+        TContext
+      > => {
+      return useMutation(getStartCallSessionMutationOptions(options));
+    }
 
 export const getGetAssumptionsUrl = () => {
 

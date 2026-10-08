@@ -5,6 +5,7 @@
  * Radical Deal OS seller intake, underwriting, conversations and approved offers
  * OpenAPI spec version: 1.0.0
  */
+import type { AcquisitionQueueItem } from './acquisitionQueueItem';
 import type { AutomationOverview } from './automationOverview';
 import type { Buyer } from './buyer';
 import type { CallBrief } from './callBrief';
@@ -19,6 +20,7 @@ export interface CommandCenter {
   actions: CommandAction[];
   opportunities: LeadDetail[];
   calls: CallBrief[];
+  acquisitionQueue: AcquisitionQueueItem[];
   deals: LeadDetail[];
   operations: DealOperations[];
   buyers: Buyer[];

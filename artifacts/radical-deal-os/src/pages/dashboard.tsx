@@ -10,6 +10,7 @@ import { isQualified } from '@/components/buyer-status';
 import { StageBadge } from '@/components/stage-badge';
 import { useWorkspaceSearch } from '@/components/workspace-search';
 import { commandCenterCallDisplay } from '@/lib/command-center-display';
+import { AcquisitionQueueCard } from '@/components/acquisition-queue-card';
 import { ago, fmtDate, isOverdue, money } from '@/lib/format';
 
 const LABEL: Record<CommandAction['category'], string> = {
@@ -64,6 +65,7 @@ export default function Dashboard() {
     d.opportunities.forEach((item) => leadAddressById.set(item.lead.id, item.lead.address));
   }
   const calls = d ? d.calls.filter((item) => matchesSearch(item.lead.sellerName, item.lead.address, item.objective)) : [];
+  const acquisitionItems = d ? d.acquisitionQueue.filter((item) => matchesSearch(item.lead.address, item.lead.sellerName, item.blocker, item.nextAction)) : [];
   const deals = d ? d.deals.filter((item) => matchesSearch(item.lead.address, item.lead.nextAction, item.lead.stage)) : [];
   const contractRows = contracts.filter((operation) => matchesSearch(
     leadAddressById.get(operation.leadId), operation.contract?.status, operation.contract?.purchasePrice, operation.nextAction,
@@ -124,6 +126,21 @@ export default function Dashboard() {
             <div className="fd-metric"><span className="fd-metric-icon"><Compass size={17} /></span><span><div className="fd-metric-value">{d.propertyDiscoveries.counts.RELEVANT_CANDIDATE}</div><div className="fd-metric-label">Candidates to review</div></span></div>
             <div className="fd-metric"><span className="fd-metric-icon"><Headphones size={17} /></span><span><div className="fd-metric-value">{d.calls.length}</div><div className="fd-metric-label">Sellers cleared to call</div></span></div>
             <div className="fd-metric" data-testid="metric-current-buyers"><span className="fd-metric-icon"><UsersRound size={17} /></span><span><div className="fd-metric-value">{qualified.length}</div><div className="fd-metric-label">{qualified.length ? 'Current approved buyers' : 'No current approved buyers'}</div></span></div>
+          </section>
+
+          <section className="fd-actions-section" aria-label="Acquisition decision queue" data-testid="panel-acquisition-queue">
+            <div className="fd-section-head">
+              <div className="fd-section-title"><Headphones size={16} />Acquisition next action
+                <small>{acquisitionItems.length ? `Showing top ${Math.min(acquisitionItems.length, 2)} of ${acquisitionItems.length}` : 'no qualified active seller opportunity'}</small>
+              </div>
+            </div>
+            {acquisitionItems.length
+              ? <div className="grid gap-3 lg:grid-cols-2">{acquisitionItems.slice(0, 2).map(item =>
+                <AcquisitionQueueCard key={item.lead.id} item={item} compact />)}</div>
+              : <div className="fd-empty" role="status">
+                No qualified active seller lead is in the acquisition queue. Review relevant source candidates; discoveries are not leads until qualified.
+                {d.propertyDiscoveries.counts.RELEVANT_CANDIDATE > 0 && <Link className="ml-2 underline" href="/sources">Review candidates</Link>}
+              </div>}
           </section>
 
           <section className="fd-actions-section" data-testid="panel-actions">

@@ -357,6 +357,47 @@ paths:
           content:
             application/json:
               schema: { type: array, items: { $ref: "#/components/schemas/CallBrief" } }
+  /acquisition-queue:
+    get:
+      operationId: getAcquisitionQueue
+      responses:
+        "200":
+          description: Ranked acquisition decisions including callable and explicitly blocked qualified opportunities
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/AcquisitionQueue" }
+  /leads/{id}/acquisition-queue-selection:
+    parameters:
+      - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
+    post:
+      operationId: recordAcquisitionQueueSelection
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/QueueSelectionInput" }
+      responses:
+        "200":
+          description: Re-evaluated queue selection, with an audit event and contact-block event when applicable
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/AcquisitionQueueEventResponse" }
+  /leads/{id}/call-start:
+    parameters:
+      - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
+    post:
+      operationId: startCallSession
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/CallStartInput" }
+      responses:
+        "200":
+          description: Records an operator call-work session only after revalidating the direct contact route and current underwriting; no call is placed
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/AcquisitionQueueEventResponse" }
   /assumptions:
     get:
       operationId: getAssumptions
@@ -2621,12 +2662,13 @@ components:
         completionRecord: { type: string }
     CommandCenter:
       type: object
-      required: [generatedAt, actions, opportunities, calls, deals, operations, buyers, jobs, propertyDiscoveries, automation]
+      required: [generatedAt, actions, opportunities, calls, acquisitionQueue, deals, operations, buyers, jobs, propertyDiscoveries, automation]
       properties:
         generatedAt: { type: string }
         actions: { type: array, items: { $ref: "#/components/schemas/CommandAction" } }
         opportunities: { type: array, items: { $ref: "#/components/schemas/LeadDetail" } }
         calls: { type: array, items: { $ref: "#/components/schemas/CallBrief" } }
+        acquisitionQueue: { type: array, items: { $ref: "#/components/schemas/AcquisitionQueueItem" } }
         deals: { type: array, items: { $ref: "#/components/schemas/LeadDetail" } }
         operations: { type: array, items: { $ref: "#/components/schemas/DealOperations" } }
         buyers: { type: array, items: { $ref: "#/components/schemas/Buyer" } }
@@ -3017,6 +3059,14 @@ components:
         notes: { type: string, minLength: 1, maxLength: 10000 }
         nextAction: { type: string, minLength: 3, maxLength: 1000 }
         followUpAt: { type: ["string", "null"], format: date-time }
+        sellerAnswers:
+          type: object
+          properties:
+            motivationStatement: { type: string, maxLength: 3000 }
+            conditionDescription: { type: string, maxLength: 3000 }
+            timing: { type: string, maxLength: 1000 }
+            askingPrice: { type: ["number", "null"], minimum: 0, maximum: 1000000000 }
+            nextStepOutcome: { type: string, maxLength: 2000 }
     Call:
       allOf:
         - { $ref: "#/components/schemas/CallInput" }
@@ -3026,6 +3076,54 @@ components:
             id: { type: string }
             createdAt: { type: string }
             actor: { type: string }
+            evidenceSource: { type: string, enum: [OPERATOR_ENTERED_SELLER_CONVERSATION] }
+            evidenceClassification: { type: string, enum: [INDICATED] }
+            sellerAnswersCapturedAt: { type: string, format: date-time }
+    AcquisitionQueue:
+      type: object
+      required: [generatedAt, total, items]
+      properties:
+        generatedAt: { type: string, format: date-time }
+        total: { type: integer, minimum: 0 }
+        items: { type: array, items: { $ref: "#/components/schemas/AcquisitionQueueItem" } }
+    AcquisitionQueueItem:
+      type: object
+      required: [lead, decision, rank, evidenceScore, rankingReason, propertySignals, contactReadiness, blockerCode, blocker, nextAction, callBrief]
+      properties:
+        lead: { $ref: "#/components/schemas/Lead" }
+        decision: { type: string, enum: [CALL_NEXT, BLOCKED] }
+        rank: { type: integer, minimum: 1 }
+        evidenceScore: { type: integer, minimum: 0, maximum: 100 }
+        rankingReason: { type: string }
+        propertySignals: { type: array, items: { $ref: "#/components/schemas/PropertyRelevanceSignal" } }
+        contactReadiness: { $ref: "#/components/schemas/SellerContactReadiness" }
+        blockerCode:
+          type: ["string", "null"]
+          enum: [PROPERTY_RELEVANCE_REVIEW, CONTACT_NO_DIRECT_ROUTE, CONTACT_STALE, CONTACT_CONFLICT, CONTACT_REVIEW, UNDERWRITING_MISSING, UNDERWRITING_STALE, UNDERWRITING_BLOCKED, CALL_READY_TRANSITION, FOLLOW_UP_NOT_DUE, OPERATOR_AUTH_REQUIRED, null]
+        blocker: { type: ["string", "null"] }
+        nextAction: { type: string }
+        callBrief:
+          oneOf: [{ $ref: "#/components/schemas/CallBrief" }, { type: "null" }]
+    QueueSelectionInput:
+      type: object
+      required: [version]
+      properties:
+        version: { type: integer, minimum: 1 }
+    CallStartInput:
+      type: object
+      required: [version]
+      properties:
+        version: { type: integer, minimum: 1 }
+    AcquisitionQueueEventResponse:
+      type: object
+      required: [leadId, event, decision, recordedAt, nextAction]
+      properties:
+        leadId: { type: string, format: uuid }
+        event: { type: string, enum: [QUEUE_SELECTED, CALL_SESSION_STARTED] }
+        decision: { type: string, enum: [CALL_NEXT, BLOCKED] }
+        recordedAt: { type: string, format: date-time }
+        blocker: { type: ["string", "null"] }
+        nextAction: { type: string }
     LeadDetail:
       type: object
       required: [lead, intelligence, analysis, analysisSnapshotId, underwriting, transitions, calls, offers, allowedTransitions, workGuidance]
