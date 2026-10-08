@@ -40,7 +40,7 @@ export function jobRecord(row: typeof jobsTable.$inferSelect) {
     recurringPropertyDiscovery:row.payload.recurringPropertyDiscovery===true,
     createdAt:row.createdAt.toISOString(),updatedAt:row.updatedAt.toISOString()});
 }
-export async function queueJob(tx: Store, kind: "MATCH_BUYERS"|"REVIEW_DEADLINES"|"ENRICH_PROPERTY"|"PREPARE_BRIEF"|"BUYER_DISCOVERY"|"DISCOVER_PROPERTIES"|"REVIEW_BUYER_POOL"|"REVIEW_HANDOFFS", leadId: string|null, key: string, requestedBy: string, payload:Record<string,unknown> = {}) {
+export async function queueJob(tx: Store, kind: "MATCH_BUYERS"|"REVIEW_DEADLINES"|"ENRICH_PROPERTY"|"PREPARE_BRIEF"|"BUYER_DISCOVERY"|"DISCOVER_PROPERTIES"|"REVIEW_BUYER_POOL"|"REVIEW_HANDOFFS"|"EVALUATE_DECISION", leadId: string|null, key: string, requestedBy: string, payload:Record<string,unknown> = {}) {
   let budgetReached = false;
   if (kind==="PREPARE_BRIEF"&&leadId) {
     const since = new Date(); since.setUTCHours(0,0,0,0);

@@ -2600,7 +2600,7 @@ components:
       required: [id, kind, state, leadId, requestedBy, message, attempts, createdAt, updatedAt]
       properties:
         id: { type: string }
-        kind: { type: string, enum: [MATCH_BUYERS, REVIEW_DEADLINES, ENRICH_PROPERTY, PREPARE_BRIEF, BUYER_DISCOVERY, DISCOVER_PROPERTIES, REVIEW_BUYER_POOL, REVIEW_HANDOFFS, HUMAN_HANDOFF] }
+        kind: { type: string, enum: [MATCH_BUYERS, REVIEW_DEADLINES, ENRICH_PROPERTY, PREPARE_BRIEF, BUYER_DISCOVERY, DISCOVER_PROPERTIES, REVIEW_BUYER_POOL, REVIEW_HANDOFFS, EVALUATE_DECISION, HUMAN_HANDOFF] }
         termsReviewed: { type: boolean }
         recurringDiscovery: { type: boolean }
         recurringPropertyDiscovery: { type: boolean }
@@ -2662,7 +2662,7 @@ components:
         completionRecord: { type: string }
     CommandCenter:
       type: object
-      required: [generatedAt, actions, opportunities, calls, acquisitionQueue, deals, operations, buyers, jobs, propertyDiscoveries, automation]
+      required: [generatedAt, actions, opportunities, calls, acquisitionQueue, deals, decisions, operations, buyers, jobs, propertyDiscoveries, automation]
       properties:
         generatedAt: { type: string }
         actions: { type: array, items: { $ref: "#/components/schemas/CommandAction" } }
@@ -2670,6 +2670,7 @@ components:
         calls: { type: array, items: { $ref: "#/components/schemas/CallBrief" } }
         acquisitionQueue: { type: array, items: { $ref: "#/components/schemas/AcquisitionQueueItem" } }
         deals: { type: array, items: { $ref: "#/components/schemas/CommandCenterDeal" } }
+        decisions: { type: array, items: { $ref: "#/components/schemas/IntelligenceDecision" } }
         operations: { type: array, items: { $ref: "#/components/schemas/DealOperations" } }
         buyers: { type: array, items: { $ref: "#/components/schemas/Buyer" } }
         jobs: { type: array, items: { $ref: "#/components/schemas/WorkerJob" } }
@@ -2685,13 +2686,67 @@ components:
           oneOf: [{ $ref: "#/components/schemas/Analysis" }, { type: "null" }]
     CommandCenterDeal:
       type: object
-      required: [lead]
+      required: [lead, decision]
       properties:
         lead: { $ref: "#/components/schemas/Lead" }
+        decision: { $ref: "#/components/schemas/IntelligenceDecision" }
         workGuidance:
           oneOf:
             - { $ref: "#/components/schemas/DealWorkGuidance" }
             - { type: "null" }
+    DecisionEvidence:
+      type: object
+      required: [ref, summary, epistemicStatus, observedAt, freshness]
+      properties:
+        ref: { type: string }
+        summary: { type: string }
+        epistemicStatus: { type: string, enum: [VERIFIED, OBSERVED, INDICATED, AI_HYPOTHESIS, UNKNOWN] }
+        observedAt: { type: [string, "null"], format: date-time }
+        freshness: { type: string, enum: [CURRENT, STALE, UNKNOWN] }
+    DecisionAction:
+      type: object
+      required: [workItemId, code, gapKey, status, eligible, priority, title, reason, href, responsibleRole, requiresHumanAuthorization, evidenceRefs]
+      properties:
+        workItemId: { type: string, format: uuid }
+        code:
+          type: string
+          enum: [QUALIFY_DISCOVERY, REVIEW_CANDIDATE, RESEARCH_CONTACT, REFRESH_CONTACT, REVIEW_CONTACT_CONFLICT, RECONCILE_EVIDENCE, REFRESH_SOURCE_EVIDENCE, RESEARCH_COMPS, GATHER_REPAIR_EVIDENCE, RECALCULATE_UNDERWRITING, CALL_NEXT, REVIEW_FOLLOW_UP, AUTHORIZE_OFFER, REVIEW_SELLER_RESPONSE, BUYER_DEMAND, TRANSACTION_NEXT, RECORD_OUTCOME]
+        gapKey: { type: string }
+        status: { type: string, enum: [READY, BLOCKED, IN_PROGRESS, COMPLETED, FAILED, EXPIRED] }
+        eligible: { type: boolean }
+        priority: { type: integer, minimum: 0, maximum: 1000 }
+        title: { type: string }
+        reason: { type: string }
+        href: { type: string }
+        responsibleRole: { type: string, enum: [OWNER, OPERATOR, ANALYST] }
+        requiresHumanAuthorization: { type: boolean }
+        evidenceRefs: { type: array, items: { type: string } }
+    IntelligenceDecision:
+      type: object
+      required: [evaluationId, subjectType, subjectId, leadId, discoveryId, snapshotHash, ruleVersion, evaluatedAt, currentState, known, unknowns, conflicts, staleEvidence, eligibleActions, blockedActions, recommendedAction, humanAuthorizationRequired, evidenceRefs, outcomeRecord]
+      properties:
+        evaluationId: { type: string, format: uuid }
+        subjectType: { type: string, enum: [DISCOVERY, LEAD] }
+        subjectId: { type: string, format: uuid }
+        leadId: { type: [string, "null"], format: uuid }
+        discoveryId: { type: [string, "null"], format: uuid }
+        snapshotHash: { type: string }
+        ruleVersion: { type: string }
+        evaluatedAt: { type: string, format: date-time }
+        currentState: { type: string }
+        known: { type: array, items: { $ref: "#/components/schemas/DecisionEvidence" } }
+        unknowns: { type: array, items: { type: string } }
+        conflicts: { type: array, items: { $ref: "#/components/schemas/DecisionEvidence" } }
+        staleEvidence: { type: array, items: { $ref: "#/components/schemas/DecisionEvidence" } }
+        eligibleActions: { type: array, items: { $ref: "#/components/schemas/DecisionAction" } }
+        blockedActions: { type: array, items: { $ref: "#/components/schemas/DecisionAction" } }
+        recommendedAction:
+          oneOf:
+            - { $ref: "#/components/schemas/DecisionAction" }
+            - { type: "null" }
+        humanAuthorizationRequired: { type: boolean }
+        evidenceRefs: { type: array, items: { type: string } }
+        outcomeRecord: { type: [string, "null"] }
     AutomationOverview:
       type: object
       required: [observedAt, status, queuedJobs, runningJobs, failedJobs, lanes]

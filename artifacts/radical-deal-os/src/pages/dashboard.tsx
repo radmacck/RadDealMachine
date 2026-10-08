@@ -179,6 +179,10 @@ export default function Dashboard() {
                     </div>
                     {(() => {
                       const guidance = primaryAction.workGuidance;
+                      const decision = primaryAction.leadId
+                        ? d.decisions.find((item) => item.leadId === primaryAction.leadId)
+                        : d.decisions.find((item) => item.subjectType === "DISCOVERY"
+                          && primaryAction.id.startsWith(`DECISION:DISCOVERY:${item.subjectId}:`));
                       return (
                         <div className="fd-start-guidance">
                           <div className="fd-start-state">
@@ -201,6 +205,18 @@ export default function Dashboard() {
                               <p>{guidance.requiredEvidence.join(' · ')}</p>
                             </details>
                           ) : null}
+                          {decision && (
+                            <details className="fd-work-guidance-detail" data-testid={`decision-trace-${decision.subjectId}`}>
+                              <summary>Why / next · {decision.ruleVersion} · {decision.recommendedAction?.status ?? 'terminal'}</summary>
+                              <p><b>Selected action:</b> {decision.recommendedAction?.reason ?? decision.outcomeRecord ?? 'No further action is eligible.'}</p>
+                              <p><b>Human authorization:</b> {decision.humanAuthorizationRequired ? 'Required before the protected action.' : 'Not required for this research/review step.'}</p>
+                              {decision.conflicts.length > 0 && <p><b>Conflicts:</b> {decision.conflicts.map((item) => `${item.epistemicStatus} · ${item.summary}`).join(' · ')}</p>}
+                              {decision.staleEvidence.length > 0 && <p><b>Stale evidence:</b> {decision.staleEvidence.map((item) => item.summary).join(' · ')}</p>}
+                              <p><b>Eligible work:</b> {decision.eligibleActions.map((item) => `${item.status} · ${item.title}`).join(' · ') || 'None'}</p>
+                              {decision.blockedActions.length > 0 && <p><b>Blocked work:</b> {decision.blockedActions.map((item) => `${item.status} · ${item.title}: ${item.reason}`).join(' · ')}</p>}
+                              <p><b>Evidence references:</b> {decision.evidenceRefs.join(' · ') || 'None recorded'}</p>
+                            </details>
+                          )}
                           {primaryCall && (
                             <section className="fd-primary-call-context" data-testid="primary-call-context">
                               <div className="fd-section-title"><Headphones size={14} />Selected seller call brief</div>

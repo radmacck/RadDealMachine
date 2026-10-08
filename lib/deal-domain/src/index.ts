@@ -6,6 +6,7 @@ export * from "./call-brief";
 export * from "./orchestration";
 export * from "./offers";
 export * from "./command-center";
+export * from "./intelligence-loop";
 export * from "./buyers";
 export * from "./buyer-qualification";
 export * from "./buyer-criteria";

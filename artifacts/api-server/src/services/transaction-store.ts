@@ -41,6 +41,7 @@ export async function save(tx: Tx,row: typeof contractsTable.$inferSelect, contr
 }
 export async function saveLead(tx: Tx,row: typeof leadsTable.$inferSelect, now: Date) {
   await tx.update(leadsTable).set({stage:row.stage,nextAction:row.nextAction,version:row.version+1,updatedAt:now}).where(eq(leadsTable.id,row.id));
+  await queueJob(tx,"EVALUATE_DECISION",row.id,`decision:${row.id}:transaction:${row.version+1}`,"system:transaction",{trigger:"TRANSACTION_STATE_CHANGED"});
 }
 export async function createContract(id: string,input: z.infer<typeof CreateContractBody>,actor: OfferActor,now = new Date()) {
   assertOperationsRole(actor,["OWNER","OPERATOR"]);

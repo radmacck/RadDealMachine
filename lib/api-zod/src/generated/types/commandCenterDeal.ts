@@ -6,9 +6,11 @@
  * OpenAPI spec version: 1.0.0
  */
 import type { DealWorkGuidance } from './dealWorkGuidance';
+import type { IntelligenceDecision } from './intelligenceDecision';
 import type { Lead } from './lead';
 
 export interface CommandCenterDeal {
   lead: Lead;
+  decision: IntelligenceDecision;
   workGuidance?: DealWorkGuidance | null;
 }

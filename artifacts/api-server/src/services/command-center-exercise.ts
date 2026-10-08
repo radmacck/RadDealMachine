@@ -74,12 +74,14 @@ assert.ok(candidateActions[0]?.workGuidance?.completionRecord);
 assert.equal(analystView.propertyDiscoveries.records[0]?.id, candidate.id);
 const dealActions = analystView.actions.filter((action) => action.leadId === lead.id);
 assert.equal(dealActions.length,1,"one principal action is shown for the deal");
-assert.equal(dealActions[0]?.title,"Review the sourced property record.");
+assert.equal(dealActions[0]?.title,analystView.deals.find((item) => item.lead.id === lead.id)?.decision.recommendedAction?.title,
+  "the persisted decision engine chooses the deal's principal command-center action");
 assert.equal(dealActions[0]?.dueAt,"2026-10-07T14:00:00.000Z");
 assert.equal(dealActions[0]?.workGuidance?.responsibleRole,"ANALYST");
-assert.equal(dealActions[0]?.workGuidance?.currentState,"The deal is in discovered.");
+assert.equal(dealActions[0]?.workGuidance?.currentState,
+  analystView.deals.find((item) => item.lead.id === lead.id)?.decision.currentState);
 assert.ok(dealActions[0]?.workGuidance?.missingFacts.length);
-assert.equal(analystView.deals[0]?.workGuidance?.humanMustDo,"Review the sourced property record.");
+assert.equal(analystView.deals.find((item) => item.lead.id === lead.id)?.workGuidance?.humanMustDo,dealActions[0]?.title);
 assert.ok(analystView.actions.every((action) => action.workGuidance),
   "Every action presented in the command center must include persisted next-step guidance.");
 assert.equal(analystView.automation.lanes.find((lane) => lane.key === "property-discovery")?.state,"AWAITING_AUTHORIZATION",

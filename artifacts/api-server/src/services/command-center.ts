@@ -1,5 +1,11 @@
 import { GetCommandCenterResponse } from "@workspace/api-zod";
-import { dealActions, strongestOpportunities, type DealWorkGuidance } from "@workspace/deal-domain";
+import {
+  dealActions,
+  strongestOpportunities,
+  type DealWorkGuidance,
+  type IntelligenceLoopInput,
+  type CommandAction,
+} from "@workspace/deal-domain";
 import { listLeads, leadDetail, callQueue } from "./deal-store";
 import { dealOperations } from "./matching-store";
 import { allBuyerRecords, jobRecord } from "./operations-records";
@@ -7,6 +13,7 @@ import { db, jobsTable } from "@workspace/db";
 import { and, count, desc, eq, ne } from "drizzle-orm";
 import { listPropertyDiscoveries } from "./property-discovery-store";
 import { acquisitionQueue } from "./acquisition-queue-store";
+import { persistIntelligenceDecision } from "./intelligence-decision-store";
 
 const SCHEDULER_ACTOR = "system:scheduler";
 const FIVE_MINUTES = 5 * 60_000;
@@ -117,6 +124,67 @@ export async function commandCenter(role: string, now = new Date()) {
     acquisitionQueue(role, now),
   ]);
   const operations = await Promise.all(leads.map(l=>dealOperations(l.id,now)));
+  const acquisitionByLead = new Map(rankedAcquisitionQueue.items.map(item => [item.lead.id, item]));
+  const operationByLead = new Map(operations.map(item => [item.leadId, item]));
+  const leadDecisions = await Promise.all(deals.map(detail => {
+    const operation = operationByLead.get(detail.lead.id);
+    const decisionInput: IntelligenceLoopInput = {
+      subjectType: "LEAD",
+      subjectId: detail.lead.id,
+      leadId: detail.lead.id,
+      discoveryId: detail.lead.propertyQualification?.discoveryId ?? null,
+      detail,
+      acquisition: acquisitionByLead.get(detail.lead.id) ?? null,
+      operations: operation ? {
+        contract: operation.contract ? {
+          id: operation.contract.id,
+          status: operation.contract.status,
+          committedBuyerId: operation.contract.committedBuyerId ?? null,
+          closingAt: operation.contract.closingAt,
+        } : null,
+        matches: operation.matches.map(match => ({ buyerId: match.buyerId, eligible: match.eligible })),
+        nextAction: operation.nextAction,
+      } : null,
+      now,
+    };
+    return persistIntelligenceDecision(decisionInput, "system:command-center", now);
+  }));
+  const candidateDecisions = await Promise.all(propertyDiscoveries.records
+    .filter(candidate => candidate.status === "RELEVANT_CANDIDATE" && !candidate.leadId)
+    .map(candidate => {
+      const source = candidate as unknown as {
+        updatedAt?: string; createdAt?: string;
+        sourceObservations?: Array<{ lastObservedAt?: string }>;
+      };
+      const decisionInput: IntelligenceLoopInput = {
+        subjectType: "DISCOVERY",
+        subjectId: candidate.id,
+        discoveryId: candidate.id,
+        leadId: null,
+        discovery: {
+          id: candidate.id,
+          status: candidate.status,
+          leadId: candidate.leadId,
+          address: candidate.property.address,
+          reason: candidate.reason,
+          nextAction: candidate.nextAction,
+          observedAt: source.sourceObservations?.[0]?.lastObservedAt ?? source.updatedAt ?? source.createdAt ?? null,
+          missingInformation: candidate.missingInformation,
+          signalRefs: candidate.signals.map(signal => signal.evidenceRef ?? `signal:${signal.id}`),
+        },
+        now,
+      };
+      return persistIntelligenceDecision(decisionInput, "system:command-center", now);
+    }));
+  const decisions = [...leadDecisions, ...candidateDecisions].sort((a, b) =>
+    (b.recommendedAction?.priority ?? 0) - (a.recommendedAction?.priority ?? 0)
+    || a.subjectId.localeCompare(b.subjectId));
+  const decisionByLead = new Map(leadDecisions.map(decision => [decision.leadId, decision]));
+  const commandDeals = deals.map(detail => ({
+    lead: detail.lead,
+    workGuidance: detail.workGuidance,
+    decision: decisionByLead.get(detail.lead.id)!,
+  }));
   const [buyers, jobRows, schedulerRows, propertyPolicyRows, buyerPolicyRows, jobStateCounts] = await Promise.all([
     allBuyerRecords(db,now),
     db.select().from(jobsTable).orderBy(desc(jobsTable.createdAt)).limit(30),
@@ -393,9 +461,90 @@ export async function commandCenter(role: string, now = new Date()) {
         reason:j.message,cta:"Inspect worker activity",leadId:j.leadId,href,dueAt:null,workGuidance});
     }
   }
+  const categoryForDecision = (code: string): CommandAction["category"] => {
+    if (code === "CALL_NEXT") return "CALL";
+    if (code === "REVIEW_FOLLOW_UP") return "FOLLOW_UP";
+    if (code === "AUTHORIZE_OFFER") return "OFFER_APPROVAL";
+    if (code === "REVIEW_SELLER_RESPONSE") return "NEGOTIATION";
+    if (code === "BUYER_DEMAND") return "BUYER_MATCH";
+    if (code === "TRANSACTION_NEXT") return "CLOSING";
+    if (code === "QUALIFY_DISCOVERY" || code === "REVIEW_CANDIDATE") return "DISCOVERY_REVIEW";
+    return "RESEARCH";
+  };
+  const ctaForDecision = (category: CommandAction["category"]) => ({
+    CALL: "Open seller call",
+    FOLLOW_UP: "Open follow-up",
+    OFFER_APPROVAL: "Review offer authority",
+    NEGOTIATION: "Review seller response",
+    BUYER_MATCH: "Review buyer demand",
+    CONTRACT: "Open transaction",
+    CLOSING: "Open transaction",
+    DISCOVERY_REVIEW: "Review evidence",
+    RESEARCH: "Resolve evidence gap",
+    BUYER_VERIFICATION: "Review buyer",
+    DEADLINE: "Resolve deadline",
+    WORKER: "Inspect worker",
+  })[category];
+  const preservedActions = actions.filter(action => !action.leadId && !action.id.startsWith("DISCOVERY_REVIEW:"));
+  const guidanceByLead = new Map<string, DealWorkGuidance>();
+  const decisionActions: CommandAction[] = decisions.flatMap(decision => {
+    const next = decision.recommendedAction;
+    if (!next) return [];
+    const category = categoryForDecision(next.code);
+    const linkedLead = decision.leadId ? dealById.get(decision.leadId) : undefined;
+    const existing = decision.leadId ? actions.find(action => action.leadId === decision.leadId) : undefined;
+    const guidance: DealWorkGuidance = {
+      category,
+      priority: next.priority,
+      title: next.title,
+      href: next.href,
+      cta: ctaForDecision(category),
+      currentState: decision.currentState,
+      responsibleRole: next.responsibleRole,
+      dueAt: existing?.dueAt ?? null,
+      dueLabel: existing?.workGuidance?.dueLabel ?? "No deadline is recorded for this action.",
+      knownFacts: decision.known.map(item => `${item.epistemicStatus} · ${item.summary}`),
+      missingFacts: decision.unknowns.length ? decision.unknowns
+        : decision.conflicts.length ? decision.conflicts.map(item => item.summary)
+          : ["No material evidence gap is reported by the current decision snapshot."],
+      why: next.reason,
+      systemCanDo: "The decision is derived from persisted evidence, current contact and underwriting gates, and deterministic rules. It does not call, message, authorize an offer, sign, or move funds.",
+      humanMustDo: next.requiresHumanAuthorization
+        ? `Human authorization is required. ${next.title}`
+        : next.title,
+      requiredEvidence: next.evidenceRefs,
+      completionRecord: decision.outcomeRecord
+        ?? "A subsequent evidence or action event will produce a new decision snapshot; superseded work is completed or expired with an audit record.",
+    };
+    if (decision.leadId) guidanceByLead.set(decision.leadId, guidance);
+    if (role !== "OWNER" && role !== next.responsibleRole) return [];
+    return [{
+      id: `DECISION:${decision.subjectType}:${decision.subjectId}:${next.workItemId}`,
+      category,
+      priority: next.priority,
+      title: next.title,
+      reason: next.reason,
+      leadId: decision.leadId,
+      href: next.href,
+      cta: ctaForDecision(category),
+      dueAt: existing?.dueAt ?? null,
+      workGuidance: guidance,
+    }];
+  });
+  const commandActions = [...preservedActions, ...decisionActions]
+    .sort((a,b)=>b.priority-a.priority||a.id.localeCompare(b.id));
+  const displayDeals = commandDeals.map(deal => {
+    const decision = decisionByLead.get(deal.lead.id);
+    return {
+      ...deal,
+      workGuidance: decision
+        ? decision.recommendedAction ? guidanceByLead.get(deal.lead.id) ?? null : null
+        : deal.workGuidance,
+    };
+  });
   return GetCommandCenterResponse.parse({
-    generatedAt:now.toISOString(),deals,calls,acquisitionQueue:rankedAcquisitionQueue.items.slice(0,5),operations,buyers,jobs,automation,
-    actions:actions.sort((a,b)=>b.priority-a.priority||a.id.localeCompare(b.id)),
+    generatedAt:now.toISOString(),deals:displayDeals,decisions,calls,acquisitionQueue:rankedAcquisitionQueue.items.slice(0,5),operations,buyers,jobs,automation,
+    actions:commandActions,
     opportunities:strongestOpportunities(deals),
     propertyDiscoveries,
   });

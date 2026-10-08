@@ -13,6 +13,7 @@ import type { CommandAction } from './commandAction';
 import type { CommandCenterDeal } from './commandCenterDeal';
 import type { CommandCenterOpportunity } from './commandCenterOpportunity';
 import type { DealOperations } from './dealOperations';
+import type { IntelligenceDecision } from './intelligenceDecision';
 import type { PropertyDiscoveryList } from './propertyDiscoveryList';
 import type { WorkerJob } from './workerJob';
 
@@ -23,6 +24,7 @@ export interface CommandCenter {
   calls: CallBrief[];
   acquisitionQueue: AcquisitionQueueItem[];
   deals: CommandCenterDeal[];
+  decisions: IntelligenceDecision[];
   operations: DealOperations[];
   buyers: Buyer[];
   jobs: WorkerJob[];

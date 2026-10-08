@@ -13,6 +13,7 @@ import { discoverPublicProperties } from "./property-discovery-worker";
 import { refreshPropertyBuyerDemandAlignment } from "./property-discovery-store";
 import { reviewHandoffs } from "./handoffs";
 import { runSellerContactEnrichmentOnce } from "./seller-contact-enrichment";
+import { evaluateAllLeadDecisions, evaluateLeadDecision } from "./intelligence-decision-store";
 
 const PROPERTY_SOURCE_POLICY_VERSION = "phila-property-sources-v4";
 const BUYER_SOURCE_POLICY_VERSION = "phila-buyer-sources-v2";
@@ -73,6 +74,11 @@ export async function runWorkerOnce(now = new Date(), schedule = false, onlyJobI
     const rows = await db.select().from(leadsTable);
     let seeded = 0;
     for (const lead of rows) {
+      if (!["CLOSED", "DEAD_DEAL", "PASS"].includes(lead.stage)) {
+        await queueJob(db, "EVALUATE_DECISION", lead.id,
+          `scheduled:decision:${lead.id}:${Math.floor(now.getTime()/(6*60*60_000))}`,
+          "system:scheduler", { reason: "SIX_HOUR_DECISION_REFRESH" });
+      }
       const age = now.getTime()-Date.parse(String(lead.analysis?.calculatedAt));
       if (seeded>=10) break;
       if (!lead.analysisSnapshotId || !["STRONG","NEGOTIABLE"].includes(String(lead.analysis?.classification)) ||
@@ -118,6 +124,15 @@ export async function runWorkerOnce(now = new Date(), schedule = false, onlyJobI
       message = `${buyerReview} ${demandRefresh.message}`;
     }
     else if (row.kind==="REVIEW_HANDOFFS") message = await reviewHandoffs(now);
+    else if (row.kind==="EVALUATE_DECISION") {
+      if (row.leadId) {
+        const decision = await evaluateLeadDecision(row.leadId, `worker:${row.id}`, now);
+        message = `Persisted ${decision.ruleVersion} decision for ${decision.currentState}; next=${decision.recommendedAction?.code ?? "NONE"}; evidence=${decision.evidenceRefs.length}.`;
+      } else {
+        const decisions = await evaluateAllLeadDecisions(`worker:${row.id}`, now);
+        message = `Persisted ${decisions.length} active-deal decision snapshots. No external action was taken.`;
+      }
+    }
     else if (row.kind==="BUYER_DISCOVERY"&&row.payload.termsReviewed===true&&row.payload.sourcePolicyVersion===BUYER_SOURCE_POLICY_VERSION) message = await discoverPublicBuyers(now);
     else if (row.kind==="DISCOVER_PROPERTIES"&&row.payload.termsReviewed===true&&row.payload.sourcePolicyVersion===PROPERTY_SOURCE_POLICY_VERSION) message = await discoverPublicProperties(now);
     else if (row.kind==="BUYER_DISCOVERY"||row.kind==="DISCOVER_PROPERTIES") {

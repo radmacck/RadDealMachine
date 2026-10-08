@@ -280,6 +280,8 @@ export async function respondToBuyerQualificationPortal(
       `Private-link bearer reported current buying status ${parsed.currentBuyingStatus} and updated criteria at ${receivedAt}. Classification INDICATED; identity/permission unverified; buyer matching approval cleared pending owner evidence review.`);
     await queueJob(tx, "MATCH_BUYERS", null, `buyer-profile-response:${row.id}:${invite.id}`, `buyer-portal:${invite.id}`);
     await queueJob(tx, "REVIEW_BUYER_POOL", null, `buyer-profile-review:${row.id}:${invite.id}`, `buyer-portal:${invite.id}`);
+    await queueJob(tx, "EVALUATE_DECISION", null, `decision:buyer-profile-response:${row.id}:${invite.id}`,
+      `buyer-portal:${invite.id}`, { trigger: "BUYER_PROFILE_RESPONSE", buyerId: row.id });
     response = RespondToBuyerQualificationPortalResponse.parse({
       status: "RECEIVED_PENDING_OWNER_REVIEW",
       receivedAt,

@@ -4336,6 +4336,7 @@ export const WorkerJobKind = {
   DISCOVER_PROPERTIES: 'DISCOVER_PROPERTIES',
   REVIEW_BUYER_POOL: 'REVIEW_BUYER_POOL',
   REVIEW_HANDOFFS: 'REVIEW_HANDOFFS',
+  EVALUATE_DECISION: 'EVALUATE_DECISION',
   HUMAN_HANDOFF: 'HUMAN_HANDOFF',
 } as const;
 
@@ -4472,8 +4473,134 @@ export interface AcquisitionQueueItem {
   callBrief: CallBrief | null;
 }
 
+export type IntelligenceDecisionSubjectType = typeof IntelligenceDecisionSubjectType[keyof typeof IntelligenceDecisionSubjectType];
+
+
+export const IntelligenceDecisionSubjectType = {
+  DISCOVERY: 'DISCOVERY',
+  LEAD: 'LEAD',
+} as const;
+
+export type DecisionEvidenceEpistemicStatus = typeof DecisionEvidenceEpistemicStatus[keyof typeof DecisionEvidenceEpistemicStatus];
+
+
+export const DecisionEvidenceEpistemicStatus = {
+  VERIFIED: 'VERIFIED',
+  OBSERVED: 'OBSERVED',
+  INDICATED: 'INDICATED',
+  AI_HYPOTHESIS: 'AI_HYPOTHESIS',
+  UNKNOWN: 'UNKNOWN',
+} as const;
+
+export type DecisionEvidenceFreshness = typeof DecisionEvidenceFreshness[keyof typeof DecisionEvidenceFreshness];
+
+
+export const DecisionEvidenceFreshness = {
+  CURRENT: 'CURRENT',
+  STALE: 'STALE',
+  UNKNOWN: 'UNKNOWN',
+} as const;
+
+export interface DecisionEvidence {
+  ref: string;
+  summary: string;
+  epistemicStatus: DecisionEvidenceEpistemicStatus;
+  /** @nullable */
+  observedAt: string | null;
+  freshness: DecisionEvidenceFreshness;
+}
+
+export type DecisionActionCode = typeof DecisionActionCode[keyof typeof DecisionActionCode];
+
+
+export const DecisionActionCode = {
+  QUALIFY_DISCOVERY: 'QUALIFY_DISCOVERY',
+  REVIEW_CANDIDATE: 'REVIEW_CANDIDATE',
+  RESEARCH_CONTACT: 'RESEARCH_CONTACT',
+  REFRESH_CONTACT: 'REFRESH_CONTACT',
+  REVIEW_CONTACT_CONFLICT: 'REVIEW_CONTACT_CONFLICT',
+  RECONCILE_EVIDENCE: 'RECONCILE_EVIDENCE',
+  REFRESH_SOURCE_EVIDENCE: 'REFRESH_SOURCE_EVIDENCE',
+  RESEARCH_COMPS: 'RESEARCH_COMPS',
+  GATHER_REPAIR_EVIDENCE: 'GATHER_REPAIR_EVIDENCE',
+  RECALCULATE_UNDERWRITING: 'RECALCULATE_UNDERWRITING',
+  CALL_NEXT: 'CALL_NEXT',
+  REVIEW_FOLLOW_UP: 'REVIEW_FOLLOW_UP',
+  AUTHORIZE_OFFER: 'AUTHORIZE_OFFER',
+  REVIEW_SELLER_RESPONSE: 'REVIEW_SELLER_RESPONSE',
+  BUYER_DEMAND: 'BUYER_DEMAND',
+  TRANSACTION_NEXT: 'TRANSACTION_NEXT',
+  RECORD_OUTCOME: 'RECORD_OUTCOME',
+} as const;
+
+export type DecisionActionStatus = typeof DecisionActionStatus[keyof typeof DecisionActionStatus];
+
+
+export const DecisionActionStatus = {
+  READY: 'READY',
+  BLOCKED: 'BLOCKED',
+  IN_PROGRESS: 'IN_PROGRESS',
+  COMPLETED: 'COMPLETED',
+  FAILED: 'FAILED',
+  EXPIRED: 'EXPIRED',
+} as const;
+
+export type DecisionActionResponsibleRole = typeof DecisionActionResponsibleRole[keyof typeof DecisionActionResponsibleRole];
+
+
+export const DecisionActionResponsibleRole = {
+  OWNER: 'OWNER',
+  OPERATOR: 'OPERATOR',
+  ANALYST: 'ANALYST',
+} as const;
+
+export interface DecisionAction {
+  workItemId: string;
+  code: DecisionActionCode;
+  gapKey: string;
+  status: DecisionActionStatus;
+  eligible: boolean;
+  /**
+     * @minimum 0
+     * @maximum 1000
+     */
+  priority: number;
+  title: string;
+  reason: string;
+  href: string;
+  responsibleRole: DecisionActionResponsibleRole;
+  requiresHumanAuthorization: boolean;
+  evidenceRefs: string[];
+}
+
+export interface IntelligenceDecision {
+  evaluationId: string;
+  subjectType: IntelligenceDecisionSubjectType;
+  subjectId: string;
+  /** @nullable */
+  leadId: string | null;
+  /** @nullable */
+  discoveryId: string | null;
+  snapshotHash: string;
+  ruleVersion: string;
+  evaluatedAt: string;
+  currentState: string;
+  known: DecisionEvidence[];
+  unknowns: string[];
+  conflicts: DecisionEvidence[];
+  staleEvidence: DecisionEvidence[];
+  eligibleActions: DecisionAction[];
+  blockedActions: DecisionAction[];
+  recommendedAction: DecisionAction | null;
+  humanAuthorizationRequired: boolean;
+  evidenceRefs: string[];
+  /** @nullable */
+  outcomeRecord: string | null;
+}
+
 export interface CommandCenterDeal {
   lead: Lead;
+  decision: IntelligenceDecision;
   workGuidance?: DealWorkGuidance | null;
 }
 
@@ -4538,6 +4665,7 @@ export interface CommandCenter {
   calls: CallBrief[];
   acquisitionQueue: AcquisitionQueueItem[];
   deals: CommandCenterDeal[];
+  decisions: IntelligenceDecision[];
   operations: DealOperations[];
   buyers: Buyer[];
   jobs: WorkerJob[];

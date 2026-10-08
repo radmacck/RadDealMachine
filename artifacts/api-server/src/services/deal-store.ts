@@ -57,6 +57,7 @@ export async function move(tx: Tx, row: LeadRow, to: Stage, reason: string, next
   }
   await tx.insert(transitionsTable).values({ leadId: row.id, from: row.stage, to, reason, nextAction, actor, createdAt: now });
   await audit(tx, actor, "DEAL_TRANSITION", row.id, `${row.stage} → ${to}: ${reason}. Next: ${nextAction}`);
+  await queueJob(tx,"EVALUATE_DECISION",row.id,`decision:${row.id}:transition:${row.version+1}`,actor,{trigger:"DEAL_TRANSITION",from:row.stage,to});
   row.stage = to;
   row.nextAction = nextAction;
 }
@@ -187,6 +188,7 @@ export async function createLead(input: LeadInput, actor: string, now = new Date
     }).returning();
     if (!row) throw new Error("Lead insert failed");
     await audit(tx,actor,"LEAD_CREATED",row.id,`${input.address}: ${action}`);
+    await queueJob(tx,"EVALUATE_DECISION",row.id,`decision:${row.id}:created:${row.version}`,actor,{trigger:"LEAD_CREATED"});
     const sellerStatements = [
       ["seller_description", input.sellerDescription], ["selling_reason",input.sellingReason],
     ].filter((pair): pair is [string,string] => Boolean(pair[1]?.trim()));
@@ -233,6 +235,7 @@ export async function updateLead(id: string, input: LeadInput & {version:number}
       stage:row.stage,nextAction:row.nextAction,version:row.version+1,updatedAt:now,
     }).where(eq(leadsTable.id,id)).returning();
     await audit(tx,actor,"LEAD_UPDATED",id,"Saved revised property/seller inputs. Previous analysis retained in snapshots; not call-ready until refreshed.");
+    await queueJob(tx,"EVALUATE_DECISION",id,`decision:${id}:lead-update:${saved.version}`,actor,{trigger:"LEAD_UPDATED"});
     if (!saved) throw new Error("Lead update failed");
     if (["address","city","state","zip"].some(k=>row.payload[k]!==saved.payload[k])) {
       await queueJob(tx,"ENRICH_PROPERTY",id,`address:${id}:${saved.version}`,actor);
@@ -268,6 +271,7 @@ export async function addIntelligence(id: string, input: IntelligenceInput, acto
       stage:row.stage,...(supplemental?{}:{analysis:null,analysisSnapshotId:null}),nextAction:row.nextAction,version:row.version+1,updatedAt:now,
     }).where(eq(leadsTable.id,id));
     await audit(tx,actor,"INTELLIGENCE_ADDED",id,`${input.classification} / ${input.category}; source: ${input.source}; confidence: ${input.confidence}. Append-only, no promotion.`);
+    await queueJob(tx,"EVALUATE_DECISION",id,`decision:${id}:intelligence:${entry.id}`,actor,{trigger:"INTELLIGENCE_ADDED",evidenceId:entry.id});
     return AddIntelligenceResponse.parse({...entry.payload,id:entry.id,leadId:id,createdBy:actor,createdAt:iso(now)});
   });
 }
@@ -313,6 +317,7 @@ export async function saveUnderwriting(id: string, input: UnderwritingInput, act
       nextAction:row.nextAction,version:row.version+1,updatedAt:now,
     }).where(eq(leadsTable.id,id));
     await audit(tx,actor,"UNDERWRITING_SAVED",id,`${analysis.engineVersion}: ${analysis.classification}; MAO $${analysis.mao}. Snapshot preserves inputs, policy, excluded comps and calculation time. No offer authorized.`);
+    await queueJob(tx,"EVALUATE_DECISION",id,`decision:${id}:analysis:${snapshot.id}`,actor,{trigger:"UNDERWRITING_SAVED",analysisSnapshotId:snapshot.id});
     if (["STRONG","NEGOTIABLE"].includes(analysis.classification)) await queueJob(tx,"PREPARE_BRIEF",id,`brief:${id}:${snapshot.id}`,actor);
     return leadDetail(id,tx,now);
   };
@@ -717,6 +722,7 @@ export async function recordCall(id: string, input: CallInput, actor: string, no
       ...(analysisInvalidated ? {analysis:null,analysisSnapshotId:null} : {}),
     }).where(eq(leadsTable.id,id));
     await audit(tx,actor,"CALL_RECORDED",id,`${input.outcome}; follow-up ${followUpAt?.toISOString() ?? "none (terminal)"}; next: ${input.nextAction}`);
+    await queueJob(tx,"EVALUATE_DECISION",id,`decision:${id}:call:${row.version+1}`,actor,{trigger:"SELLER_CALL_RECORDED",leadVersion:row.version+1});
     if (input.outcome==="CONNECTED") await queueJob(tx,"PREPARE_BRIEF",id,`conversation-brief:${id}:${row.version+1}`,actor);
     return leadDetail(id,tx,now);
   });

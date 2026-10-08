@@ -13,6 +13,7 @@ import {
   contactPathKey, reconcileContactPaths, type PropertyContactPath,
 } from "@workspace/property-sources";
 import { audit, lockedLead } from "./deal-store";
+import { queueJob } from "./operations-records";
 
 type Tx = Parameters<Parameters<typeof db.transaction>[0]>[0];
 type Query = typeof db | Tx;
@@ -372,6 +373,7 @@ export async function recordSellerContactObservation(
     if (!saved) throw new Error("Seller contact observation was not persisted.");
     await audit(tx, actor.id, "SELLER_CONTACT_OBSERVATION_RECORDED", id,
       `${input.channel} contact evidence ${entryId}; ${input.permissionStatus}; ${input.routeVerificationStatus}. No call/message sent. Financial calculations, offer authorization, stage, and next action unchanged. Seller identity and signing authority not established.`);
+    await queueJob(tx,"EVALUATE_DECISION",id,`decision:${id}:contact:${entryId}`,actor.id,{trigger:"SELLER_CONTACT_EVIDENCE",evidenceId:entryId});
     return RecordSellerContactObservationResponse.parse(await getSellerContactPaths(id, now, tx));
   });
 }

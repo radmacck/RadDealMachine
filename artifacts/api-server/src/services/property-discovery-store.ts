@@ -1337,6 +1337,9 @@ export async function refreshPropertySourceEvidence(propertyIds: string[], actor
         `${evidence.sourceName} returned no current matching public record for OPA parcel ${evidence.propertyId}. This does not establish that a previously reported condition or vacancy has been resolved.`;
       await audit(tx, actor, "PROPERTY_SOURCE_EVIDENCE_REFRESHED", discovery.id,
         `${evidence.sourceName}: source record state or signal changed; prior versions remain in source history; qualification recalculated; no lead was automatically created or removed.`);
+      if (discovery.leadId) await queueJob(tx,"EVALUATE_DECISION",discovery.leadId,
+        `decision:${discovery.leadId}:property-source:${evidence.sourceKey}:${now.getTime()}`,actor,
+        {trigger:"PROPERTY_SOURCE_EVIDENCE_REFRESHED",discoveryId:discovery.id,sourceKey:evidence.sourceKey});
       if (discovery.leadId) {
         if (sourceSignalChanged) {
           const classification = signal?.classification ?? "OBSERVED";
@@ -1728,6 +1731,8 @@ export async function promotePropertyDiscovery(
       updatedAt: now,
     }).where(eq(propertyDiscoveriesTable.id, discoveryId)).returning();
     await audit(tx, actor.id, "PROPERTY_DISCOVERY_PROMOTED", discoveryId, `Created active lead ${lead.id}; qualification score ${evaluation.score}. ${request.reviewReason}`);
+    await queueJob(tx,"EVALUATE_DECISION",lead.id,`decision:${lead.id}:discovery-promotion:${discoveryId}`,actor.id,
+      {trigger:"PROPERTY_DISCOVERY_PROMOTED",discoveryId});
     if (!updated) throw new DomainError("Promoted discovery could not be saved.", 500);
     const observations = await tx.select({ total: count() }).from(propertySourceObservationsTable)
       .where(eq(propertySourceObservationsTable.discoveryId, discoveryId));

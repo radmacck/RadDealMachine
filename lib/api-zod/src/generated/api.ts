@@ -2010,7 +2010,7 @@ export const RecordTransactionExceptionResponse = zod.object({
 })),
   "jobs": zod.array(zod.object({
   "id": zod.string(),
-  "kind": zod.enum(['MATCH_BUYERS', 'REVIEW_DEADLINES', 'ENRICH_PROPERTY', 'PREPARE_BRIEF', 'BUYER_DISCOVERY', 'DISCOVER_PROPERTIES', 'REVIEW_BUYER_POOL', 'REVIEW_HANDOFFS', 'HUMAN_HANDOFF']),
+  "kind": zod.enum(['MATCH_BUYERS', 'REVIEW_DEADLINES', 'ENRICH_PROPERTY', 'PREPARE_BRIEF', 'BUYER_DISCOVERY', 'DISCOVER_PROPERTIES', 'REVIEW_BUYER_POOL', 'REVIEW_HANDOFFS', 'EVALUATE_DECISION', 'HUMAN_HANDOFF']),
   "termsReviewed": zod.boolean().optional(),
   "recurringDiscovery": zod.boolean().optional(),
   "recurringPropertyDiscovery": zod.boolean().optional(),
@@ -12663,6 +12663,24 @@ export const getCommandCenterResponseDealsItemLeadTwoPropertyQualificationSignal
 export const getCommandCenterResponseDealsItemLeadTwoPropertyQualificationSignalsItemScoreContributionMin = 0;
 export const getCommandCenterResponseDealsItemLeadTwoPropertyQualificationSignalsItemScoreContributionMax = 100;
 
+export const getCommandCenterResponseDealsItemDecisionEligibleActionsItemPriorityMin = 0;
+export const getCommandCenterResponseDealsItemDecisionEligibleActionsItemPriorityMax = 1000;
+
+export const getCommandCenterResponseDealsItemDecisionBlockedActionsItemPriorityMin = 0;
+export const getCommandCenterResponseDealsItemDecisionBlockedActionsItemPriorityMax = 1000;
+
+export const getCommandCenterResponseDealsItemDecisionRecommendedActionOnePriorityMin = 0;
+export const getCommandCenterResponseDealsItemDecisionRecommendedActionOnePriorityMax = 1000;
+
+export const getCommandCenterResponseDecisionsItemEligibleActionsItemPriorityMin = 0;
+export const getCommandCenterResponseDecisionsItemEligibleActionsItemPriorityMax = 1000;
+
+export const getCommandCenterResponseDecisionsItemBlockedActionsItemPriorityMin = 0;
+export const getCommandCenterResponseDecisionsItemBlockedActionsItemPriorityMax = 1000;
+
+export const getCommandCenterResponseDecisionsItemRecommendedActionOnePriorityMin = 0;
+export const getCommandCenterResponseDecisionsItemRecommendedActionOnePriorityMax = 1000;
+
 
 export const getCommandCenterResponseOperationsItemContractOneCommitmentSnapshotOneBuyerOneNameMax = 200;
 
@@ -14853,6 +14871,84 @@ export const GetCommandCenterResponse = zod.object({
   "nextAction": zod.string()
 }).optional()
 })),
+  "decision": zod.object({
+  "evaluationId": zod.string().uuid(),
+  "subjectType": zod.enum(['DISCOVERY', 'LEAD']),
+  "subjectId": zod.string().uuid(),
+  "leadId": zod.string().uuid().nullable(),
+  "discoveryId": zod.string().uuid().nullable(),
+  "snapshotHash": zod.string(),
+  "ruleVersion": zod.string(),
+  "evaluatedAt": zod.string().datetime({"offset":true}),
+  "currentState": zod.string(),
+  "known": zod.array(zod.object({
+  "ref": zod.string(),
+  "summary": zod.string(),
+  "epistemicStatus": zod.enum(['VERIFIED', 'OBSERVED', 'INDICATED', 'AI_HYPOTHESIS', 'UNKNOWN']),
+  "observedAt": zod.string().datetime({"offset":true}).nullable(),
+  "freshness": zod.enum(['CURRENT', 'STALE', 'UNKNOWN'])
+})),
+  "unknowns": zod.array(zod.string()),
+  "conflicts": zod.array(zod.object({
+  "ref": zod.string(),
+  "summary": zod.string(),
+  "epistemicStatus": zod.enum(['VERIFIED', 'OBSERVED', 'INDICATED', 'AI_HYPOTHESIS', 'UNKNOWN']),
+  "observedAt": zod.string().datetime({"offset":true}).nullable(),
+  "freshness": zod.enum(['CURRENT', 'STALE', 'UNKNOWN'])
+})),
+  "staleEvidence": zod.array(zod.object({
+  "ref": zod.string(),
+  "summary": zod.string(),
+  "epistemicStatus": zod.enum(['VERIFIED', 'OBSERVED', 'INDICATED', 'AI_HYPOTHESIS', 'UNKNOWN']),
+  "observedAt": zod.string().datetime({"offset":true}).nullable(),
+  "freshness": zod.enum(['CURRENT', 'STALE', 'UNKNOWN'])
+})),
+  "eligibleActions": zod.array(zod.object({
+  "workItemId": zod.string().uuid(),
+  "code": zod.enum(['QUALIFY_DISCOVERY', 'REVIEW_CANDIDATE', 'RESEARCH_CONTACT', 'REFRESH_CONTACT', 'REVIEW_CONTACT_CONFLICT', 'RECONCILE_EVIDENCE', 'REFRESH_SOURCE_EVIDENCE', 'RESEARCH_COMPS', 'GATHER_REPAIR_EVIDENCE', 'RECALCULATE_UNDERWRITING', 'CALL_NEXT', 'REVIEW_FOLLOW_UP', 'AUTHORIZE_OFFER', 'REVIEW_SELLER_RESPONSE', 'BUYER_DEMAND', 'TRANSACTION_NEXT', 'RECORD_OUTCOME']),
+  "gapKey": zod.string(),
+  "status": zod.enum(['READY', 'BLOCKED', 'IN_PROGRESS', 'COMPLETED', 'FAILED', 'EXPIRED']),
+  "eligible": zod.boolean(),
+  "priority": zod.number().int().min(getCommandCenterResponseDealsItemDecisionEligibleActionsItemPriorityMin).max(getCommandCenterResponseDealsItemDecisionEligibleActionsItemPriorityMax),
+  "title": zod.string(),
+  "reason": zod.string(),
+  "href": zod.string(),
+  "responsibleRole": zod.enum(['OWNER', 'OPERATOR', 'ANALYST']),
+  "requiresHumanAuthorization": zod.boolean(),
+  "evidenceRefs": zod.array(zod.string())
+})),
+  "blockedActions": zod.array(zod.object({
+  "workItemId": zod.string().uuid(),
+  "code": zod.enum(['QUALIFY_DISCOVERY', 'REVIEW_CANDIDATE', 'RESEARCH_CONTACT', 'REFRESH_CONTACT', 'REVIEW_CONTACT_CONFLICT', 'RECONCILE_EVIDENCE', 'REFRESH_SOURCE_EVIDENCE', 'RESEARCH_COMPS', 'GATHER_REPAIR_EVIDENCE', 'RECALCULATE_UNDERWRITING', 'CALL_NEXT', 'REVIEW_FOLLOW_UP', 'AUTHORIZE_OFFER', 'REVIEW_SELLER_RESPONSE', 'BUYER_DEMAND', 'TRANSACTION_NEXT', 'RECORD_OUTCOME']),
+  "gapKey": zod.string(),
+  "status": zod.enum(['READY', 'BLOCKED', 'IN_PROGRESS', 'COMPLETED', 'FAILED', 'EXPIRED']),
+  "eligible": zod.boolean(),
+  "priority": zod.number().int().min(getCommandCenterResponseDealsItemDecisionBlockedActionsItemPriorityMin).max(getCommandCenterResponseDealsItemDecisionBlockedActionsItemPriorityMax),
+  "title": zod.string(),
+  "reason": zod.string(),
+  "href": zod.string(),
+  "responsibleRole": zod.enum(['OWNER', 'OPERATOR', 'ANALYST']),
+  "requiresHumanAuthorization": zod.boolean(),
+  "evidenceRefs": zod.array(zod.string())
+})),
+  "recommendedAction": zod.union([zod.object({
+  "workItemId": zod.string().uuid(),
+  "code": zod.enum(['QUALIFY_DISCOVERY', 'REVIEW_CANDIDATE', 'RESEARCH_CONTACT', 'REFRESH_CONTACT', 'REVIEW_CONTACT_CONFLICT', 'RECONCILE_EVIDENCE', 'REFRESH_SOURCE_EVIDENCE', 'RESEARCH_COMPS', 'GATHER_REPAIR_EVIDENCE', 'RECALCULATE_UNDERWRITING', 'CALL_NEXT', 'REVIEW_FOLLOW_UP', 'AUTHORIZE_OFFER', 'REVIEW_SELLER_RESPONSE', 'BUYER_DEMAND', 'TRANSACTION_NEXT', 'RECORD_OUTCOME']),
+  "gapKey": zod.string(),
+  "status": zod.enum(['READY', 'BLOCKED', 'IN_PROGRESS', 'COMPLETED', 'FAILED', 'EXPIRED']),
+  "eligible": zod.boolean(),
+  "priority": zod.number().int().min(getCommandCenterResponseDealsItemDecisionRecommendedActionOnePriorityMin).max(getCommandCenterResponseDealsItemDecisionRecommendedActionOnePriorityMax),
+  "title": zod.string(),
+  "reason": zod.string(),
+  "href": zod.string(),
+  "responsibleRole": zod.enum(['OWNER', 'OPERATOR', 'ANALYST']),
+  "requiresHumanAuthorization": zod.boolean(),
+  "evidenceRefs": zod.array(zod.string())
+}),zod.null()]),
+  "humanAuthorizationRequired": zod.boolean(),
+  "evidenceRefs": zod.array(zod.string()),
+  "outcomeRecord": zod.string().nullable()
+}),
   "workGuidance": zod.union([zod.object({
   "category": zod.enum(['RESEARCH', 'CALL', 'FOLLOW_UP', 'OFFER_APPROVAL', 'NEGOTIATION', 'CONTRACT', 'BUYER_MATCH', 'DEADLINE', 'CLOSING', 'DISCOVERY_REVIEW', 'BUYER_VERIFICATION', 'WORKER']),
   "priority": zod.number().int(),
@@ -14871,6 +14967,84 @@ export const GetCommandCenterResponse = zod.object({
   "requiredEvidence": zod.array(zod.string()),
   "completionRecord": zod.string()
 }),zod.null()]).optional()
+})),
+  "decisions": zod.array(zod.object({
+  "evaluationId": zod.string().uuid(),
+  "subjectType": zod.enum(['DISCOVERY', 'LEAD']),
+  "subjectId": zod.string().uuid(),
+  "leadId": zod.string().uuid().nullable(),
+  "discoveryId": zod.string().uuid().nullable(),
+  "snapshotHash": zod.string(),
+  "ruleVersion": zod.string(),
+  "evaluatedAt": zod.string().datetime({"offset":true}),
+  "currentState": zod.string(),
+  "known": zod.array(zod.object({
+  "ref": zod.string(),
+  "summary": zod.string(),
+  "epistemicStatus": zod.enum(['VERIFIED', 'OBSERVED', 'INDICATED', 'AI_HYPOTHESIS', 'UNKNOWN']),
+  "observedAt": zod.string().datetime({"offset":true}).nullable(),
+  "freshness": zod.enum(['CURRENT', 'STALE', 'UNKNOWN'])
+})),
+  "unknowns": zod.array(zod.string()),
+  "conflicts": zod.array(zod.object({
+  "ref": zod.string(),
+  "summary": zod.string(),
+  "epistemicStatus": zod.enum(['VERIFIED', 'OBSERVED', 'INDICATED', 'AI_HYPOTHESIS', 'UNKNOWN']),
+  "observedAt": zod.string().datetime({"offset":true}).nullable(),
+  "freshness": zod.enum(['CURRENT', 'STALE', 'UNKNOWN'])
+})),
+  "staleEvidence": zod.array(zod.object({
+  "ref": zod.string(),
+  "summary": zod.string(),
+  "epistemicStatus": zod.enum(['VERIFIED', 'OBSERVED', 'INDICATED', 'AI_HYPOTHESIS', 'UNKNOWN']),
+  "observedAt": zod.string().datetime({"offset":true}).nullable(),
+  "freshness": zod.enum(['CURRENT', 'STALE', 'UNKNOWN'])
+})),
+  "eligibleActions": zod.array(zod.object({
+  "workItemId": zod.string().uuid(),
+  "code": zod.enum(['QUALIFY_DISCOVERY', 'REVIEW_CANDIDATE', 'RESEARCH_CONTACT', 'REFRESH_CONTACT', 'REVIEW_CONTACT_CONFLICT', 'RECONCILE_EVIDENCE', 'REFRESH_SOURCE_EVIDENCE', 'RESEARCH_COMPS', 'GATHER_REPAIR_EVIDENCE', 'RECALCULATE_UNDERWRITING', 'CALL_NEXT', 'REVIEW_FOLLOW_UP', 'AUTHORIZE_OFFER', 'REVIEW_SELLER_RESPONSE', 'BUYER_DEMAND', 'TRANSACTION_NEXT', 'RECORD_OUTCOME']),
+  "gapKey": zod.string(),
+  "status": zod.enum(['READY', 'BLOCKED', 'IN_PROGRESS', 'COMPLETED', 'FAILED', 'EXPIRED']),
+  "eligible": zod.boolean(),
+  "priority": zod.number().int().min(getCommandCenterResponseDecisionsItemEligibleActionsItemPriorityMin).max(getCommandCenterResponseDecisionsItemEligibleActionsItemPriorityMax),
+  "title": zod.string(),
+  "reason": zod.string(),
+  "href": zod.string(),
+  "responsibleRole": zod.enum(['OWNER', 'OPERATOR', 'ANALYST']),
+  "requiresHumanAuthorization": zod.boolean(),
+  "evidenceRefs": zod.array(zod.string())
+})),
+  "blockedActions": zod.array(zod.object({
+  "workItemId": zod.string().uuid(),
+  "code": zod.enum(['QUALIFY_DISCOVERY', 'REVIEW_CANDIDATE', 'RESEARCH_CONTACT', 'REFRESH_CONTACT', 'REVIEW_CONTACT_CONFLICT', 'RECONCILE_EVIDENCE', 'REFRESH_SOURCE_EVIDENCE', 'RESEARCH_COMPS', 'GATHER_REPAIR_EVIDENCE', 'RECALCULATE_UNDERWRITING', 'CALL_NEXT', 'REVIEW_FOLLOW_UP', 'AUTHORIZE_OFFER', 'REVIEW_SELLER_RESPONSE', 'BUYER_DEMAND', 'TRANSACTION_NEXT', 'RECORD_OUTCOME']),
+  "gapKey": zod.string(),
+  "status": zod.enum(['READY', 'BLOCKED', 'IN_PROGRESS', 'COMPLETED', 'FAILED', 'EXPIRED']),
+  "eligible": zod.boolean(),
+  "priority": zod.number().int().min(getCommandCenterResponseDecisionsItemBlockedActionsItemPriorityMin).max(getCommandCenterResponseDecisionsItemBlockedActionsItemPriorityMax),
+  "title": zod.string(),
+  "reason": zod.string(),
+  "href": zod.string(),
+  "responsibleRole": zod.enum(['OWNER', 'OPERATOR', 'ANALYST']),
+  "requiresHumanAuthorization": zod.boolean(),
+  "evidenceRefs": zod.array(zod.string())
+})),
+  "recommendedAction": zod.union([zod.object({
+  "workItemId": zod.string().uuid(),
+  "code": zod.enum(['QUALIFY_DISCOVERY', 'REVIEW_CANDIDATE', 'RESEARCH_CONTACT', 'REFRESH_CONTACT', 'REVIEW_CONTACT_CONFLICT', 'RECONCILE_EVIDENCE', 'REFRESH_SOURCE_EVIDENCE', 'RESEARCH_COMPS', 'GATHER_REPAIR_EVIDENCE', 'RECALCULATE_UNDERWRITING', 'CALL_NEXT', 'REVIEW_FOLLOW_UP', 'AUTHORIZE_OFFER', 'REVIEW_SELLER_RESPONSE', 'BUYER_DEMAND', 'TRANSACTION_NEXT', 'RECORD_OUTCOME']),
+  "gapKey": zod.string(),
+  "status": zod.enum(['READY', 'BLOCKED', 'IN_PROGRESS', 'COMPLETED', 'FAILED', 'EXPIRED']),
+  "eligible": zod.boolean(),
+  "priority": zod.number().int().min(getCommandCenterResponseDecisionsItemRecommendedActionOnePriorityMin).max(getCommandCenterResponseDecisionsItemRecommendedActionOnePriorityMax),
+  "title": zod.string(),
+  "reason": zod.string(),
+  "href": zod.string(),
+  "responsibleRole": zod.enum(['OWNER', 'OPERATOR', 'ANALYST']),
+  "requiresHumanAuthorization": zod.boolean(),
+  "evidenceRefs": zod.array(zod.string())
+}),zod.null()]),
+  "humanAuthorizationRequired": zod.boolean(),
+  "evidenceRefs": zod.array(zod.string()),
+  "outcomeRecord": zod.string().nullable()
 })),
   "operations": zod.array(zod.object({
   "leadId": zod.string(),
@@ -15644,7 +15818,7 @@ export const GetCommandCenterResponse = zod.object({
 })),
   "jobs": zod.array(zod.object({
   "id": zod.string(),
-  "kind": zod.enum(['MATCH_BUYERS', 'REVIEW_DEADLINES', 'ENRICH_PROPERTY', 'PREPARE_BRIEF', 'BUYER_DISCOVERY', 'DISCOVER_PROPERTIES', 'REVIEW_BUYER_POOL', 'REVIEW_HANDOFFS', 'HUMAN_HANDOFF']),
+  "kind": zod.enum(['MATCH_BUYERS', 'REVIEW_DEADLINES', 'ENRICH_PROPERTY', 'PREPARE_BRIEF', 'BUYER_DISCOVERY', 'DISCOVER_PROPERTIES', 'REVIEW_BUYER_POOL', 'REVIEW_HANDOFFS', 'EVALUATE_DECISION', 'HUMAN_HANDOFF']),
   "termsReviewed": zod.boolean().optional(),
   "recurringDiscovery": zod.boolean().optional(),
   "recurringPropertyDiscovery": zod.boolean().optional(),
@@ -15866,7 +16040,7 @@ export const GetCommandCenterResponse = zod.object({
 }))),
   "jobs": zod.array(zod.object({
   "id": zod.string(),
-  "kind": zod.enum(['MATCH_BUYERS', 'REVIEW_DEADLINES', 'ENRICH_PROPERTY', 'PREPARE_BRIEF', 'BUYER_DISCOVERY', 'DISCOVER_PROPERTIES', 'REVIEW_BUYER_POOL', 'REVIEW_HANDOFFS', 'HUMAN_HANDOFF']),
+  "kind": zod.enum(['MATCH_BUYERS', 'REVIEW_DEADLINES', 'ENRICH_PROPERTY', 'PREPARE_BRIEF', 'BUYER_DISCOVERY', 'DISCOVER_PROPERTIES', 'REVIEW_BUYER_POOL', 'REVIEW_HANDOFFS', 'EVALUATE_DECISION', 'HUMAN_HANDOFF']),
   "termsReviewed": zod.boolean().optional(),
   "recurringDiscovery": zod.boolean().optional(),
   "recurringPropertyDiscovery": zod.boolean().optional(),
@@ -20439,7 +20613,7 @@ export const GetDealOperationsResponse = zod.object({
 })),
   "jobs": zod.array(zod.object({
   "id": zod.string(),
-  "kind": zod.enum(['MATCH_BUYERS', 'REVIEW_DEADLINES', 'ENRICH_PROPERTY', 'PREPARE_BRIEF', 'BUYER_DISCOVERY', 'DISCOVER_PROPERTIES', 'REVIEW_BUYER_POOL', 'REVIEW_HANDOFFS', 'HUMAN_HANDOFF']),
+  "kind": zod.enum(['MATCH_BUYERS', 'REVIEW_DEADLINES', 'ENRICH_PROPERTY', 'PREPARE_BRIEF', 'BUYER_DISCOVERY', 'DISCOVER_PROPERTIES', 'REVIEW_BUYER_POOL', 'REVIEW_HANDOFFS', 'EVALUATE_DECISION', 'HUMAN_HANDOFF']),
   "termsReviewed": zod.boolean().optional(),
   "recurringDiscovery": zod.boolean().optional(),
   "recurringPropertyDiscovery": zod.boolean().optional(),
@@ -21755,7 +21929,7 @@ export const RefreshMatchesResponse = zod.object({
 })),
   "jobs": zod.array(zod.object({
   "id": zod.string(),
-  "kind": zod.enum(['MATCH_BUYERS', 'REVIEW_DEADLINES', 'ENRICH_PROPERTY', 'PREPARE_BRIEF', 'BUYER_DISCOVERY', 'DISCOVER_PROPERTIES', 'REVIEW_BUYER_POOL', 'REVIEW_HANDOFFS', 'HUMAN_HANDOFF']),
+  "kind": zod.enum(['MATCH_BUYERS', 'REVIEW_DEADLINES', 'ENRICH_PROPERTY', 'PREPARE_BRIEF', 'BUYER_DISCOVERY', 'DISCOVER_PROPERTIES', 'REVIEW_BUYER_POOL', 'REVIEW_HANDOFFS', 'EVALUATE_DECISION', 'HUMAN_HANDOFF']),
   "termsReviewed": zod.boolean().optional(),
   "recurringDiscovery": zod.boolean().optional(),
   "recurringPropertyDiscovery": zod.boolean().optional(),
@@ -23093,7 +23267,7 @@ export const RecordBuyerResponseResponse = zod.object({
 })),
   "jobs": zod.array(zod.object({
   "id": zod.string(),
-  "kind": zod.enum(['MATCH_BUYERS', 'REVIEW_DEADLINES', 'ENRICH_PROPERTY', 'PREPARE_BRIEF', 'BUYER_DISCOVERY', 'DISCOVER_PROPERTIES', 'REVIEW_BUYER_POOL', 'REVIEW_HANDOFFS', 'HUMAN_HANDOFF']),
+  "kind": zod.enum(['MATCH_BUYERS', 'REVIEW_DEADLINES', 'ENRICH_PROPERTY', 'PREPARE_BRIEF', 'BUYER_DISCOVERY', 'DISCOVER_PROPERTIES', 'REVIEW_BUYER_POOL', 'REVIEW_HANDOFFS', 'EVALUATE_DECISION', 'HUMAN_HANDOFF']),
   "termsReviewed": zod.boolean().optional(),
   "recurringDiscovery": zod.boolean().optional(),
   "recurringPropertyDiscovery": zod.boolean().optional(),
@@ -25648,7 +25822,7 @@ export const RecordDestinationActivityResponse = zod.object({
 })),
   "jobs": zod.array(zod.object({
   "id": zod.string(),
-  "kind": zod.enum(['MATCH_BUYERS', 'REVIEW_DEADLINES', 'ENRICH_PROPERTY', 'PREPARE_BRIEF', 'BUYER_DISCOVERY', 'DISCOVER_PROPERTIES', 'REVIEW_BUYER_POOL', 'REVIEW_HANDOFFS', 'HUMAN_HANDOFF']),
+  "kind": zod.enum(['MATCH_BUYERS', 'REVIEW_DEADLINES', 'ENRICH_PROPERTY', 'PREPARE_BRIEF', 'BUYER_DISCOVERY', 'DISCOVER_PROPERTIES', 'REVIEW_BUYER_POOL', 'REVIEW_HANDOFFS', 'EVALUATE_DECISION', 'HUMAN_HANDOFF']),
   "termsReviewed": zod.boolean().optional(),
   "recurringDiscovery": zod.boolean().optional(),
   "recurringPropertyDiscovery": zod.boolean().optional(),
@@ -26973,7 +27147,7 @@ export const CreateContractResponse = zod.object({
 })),
   "jobs": zod.array(zod.object({
   "id": zod.string(),
-  "kind": zod.enum(['MATCH_BUYERS', 'REVIEW_DEADLINES', 'ENRICH_PROPERTY', 'PREPARE_BRIEF', 'BUYER_DISCOVERY', 'DISCOVER_PROPERTIES', 'REVIEW_BUYER_POOL', 'REVIEW_HANDOFFS', 'HUMAN_HANDOFF']),
+  "kind": zod.enum(['MATCH_BUYERS', 'REVIEW_DEADLINES', 'ENRICH_PROPERTY', 'PREPARE_BRIEF', 'BUYER_DISCOVERY', 'DISCOVER_PROPERTIES', 'REVIEW_BUYER_POOL', 'REVIEW_HANDOFFS', 'EVALUATE_DECISION', 'HUMAN_HANDOFF']),
   "termsReviewed": zod.boolean().optional(),
   "recurringDiscovery": zod.boolean().optional(),
   "recurringPropertyDiscovery": zod.boolean().optional(),
@@ -28296,7 +28470,7 @@ export const PreparePurchaseReviewDocumentResponse = zod.object({
 })),
   "jobs": zod.array(zod.object({
   "id": zod.string(),
-  "kind": zod.enum(['MATCH_BUYERS', 'REVIEW_DEADLINES', 'ENRICH_PROPERTY', 'PREPARE_BRIEF', 'BUYER_DISCOVERY', 'DISCOVER_PROPERTIES', 'REVIEW_BUYER_POOL', 'REVIEW_HANDOFFS', 'HUMAN_HANDOFF']),
+  "kind": zod.enum(['MATCH_BUYERS', 'REVIEW_DEADLINES', 'ENRICH_PROPERTY', 'PREPARE_BRIEF', 'BUYER_DISCOVERY', 'DISCOVER_PROPERTIES', 'REVIEW_BUYER_POOL', 'REVIEW_HANDOFFS', 'EVALUATE_DECISION', 'HUMAN_HANDOFF']),
   "termsReviewed": zod.boolean().optional(),
   "recurringDiscovery": zod.boolean().optional(),
   "recurringPropertyDiscovery": zod.boolean().optional(),
@@ -29625,7 +29799,7 @@ export const TransitionTransactionDocumentResponse = zod.object({
 })),
   "jobs": zod.array(zod.object({
   "id": zod.string(),
-  "kind": zod.enum(['MATCH_BUYERS', 'REVIEW_DEADLINES', 'ENRICH_PROPERTY', 'PREPARE_BRIEF', 'BUYER_DISCOVERY', 'DISCOVER_PROPERTIES', 'REVIEW_BUYER_POOL', 'REVIEW_HANDOFFS', 'HUMAN_HANDOFF']),
+  "kind": zod.enum(['MATCH_BUYERS', 'REVIEW_DEADLINES', 'ENRICH_PROPERTY', 'PREPARE_BRIEF', 'BUYER_DISCOVERY', 'DISCOVER_PROPERTIES', 'REVIEW_BUYER_POOL', 'REVIEW_HANDOFFS', 'EVALUATE_DECISION', 'HUMAN_HANDOFF']),
   "termsReviewed": zod.boolean().optional(),
   "recurringDiscovery": zod.boolean().optional(),
   "recurringPropertyDiscovery": zod.boolean().optional(),
@@ -31002,7 +31176,7 @@ export const ExecuteContractResponse = zod.object({
 })),
   "jobs": zod.array(zod.object({
   "id": zod.string(),
-  "kind": zod.enum(['MATCH_BUYERS', 'REVIEW_DEADLINES', 'ENRICH_PROPERTY', 'PREPARE_BRIEF', 'BUYER_DISCOVERY', 'DISCOVER_PROPERTIES', 'REVIEW_BUYER_POOL', 'REVIEW_HANDOFFS', 'HUMAN_HANDOFF']),
+  "kind": zod.enum(['MATCH_BUYERS', 'REVIEW_DEADLINES', 'ENRICH_PROPERTY', 'PREPARE_BRIEF', 'BUYER_DISCOVERY', 'DISCOVER_PROPERTIES', 'REVIEW_BUYER_POOL', 'REVIEW_HANDOFFS', 'EVALUATE_DECISION', 'HUMAN_HANDOFF']),
   "termsReviewed": zod.boolean().optional(),
   "recurringDiscovery": zod.boolean().optional(),
   "recurringPropertyDiscovery": zod.boolean().optional(),
@@ -32349,7 +32523,7 @@ export const RecordClosingMilestoneResponse = zod.object({
 })),
   "jobs": zod.array(zod.object({
   "id": zod.string(),
-  "kind": zod.enum(['MATCH_BUYERS', 'REVIEW_DEADLINES', 'ENRICH_PROPERTY', 'PREPARE_BRIEF', 'BUYER_DISCOVERY', 'DISCOVER_PROPERTIES', 'REVIEW_BUYER_POOL', 'REVIEW_HANDOFFS', 'HUMAN_HANDOFF']),
+  "kind": zod.enum(['MATCH_BUYERS', 'REVIEW_DEADLINES', 'ENRICH_PROPERTY', 'PREPARE_BRIEF', 'BUYER_DISCOVERY', 'DISCOVER_PROPERTIES', 'REVIEW_BUYER_POOL', 'REVIEW_HANDOFFS', 'EVALUATE_DECISION', 'HUMAN_HANDOFF']),
   "termsReviewed": zod.boolean().optional(),
   "recurringDiscovery": zod.boolean().optional(),
   "recurringPropertyDiscovery": zod.boolean().optional(),
@@ -33694,7 +33868,7 @@ export const RecordDealOutcomeResponse = zod.object({
 })),
   "jobs": zod.array(zod.object({
   "id": zod.string(),
-  "kind": zod.enum(['MATCH_BUYERS', 'REVIEW_DEADLINES', 'ENRICH_PROPERTY', 'PREPARE_BRIEF', 'BUYER_DISCOVERY', 'DISCOVER_PROPERTIES', 'REVIEW_BUYER_POOL', 'REVIEW_HANDOFFS', 'HUMAN_HANDOFF']),
+  "kind": zod.enum(['MATCH_BUYERS', 'REVIEW_DEADLINES', 'ENRICH_PROPERTY', 'PREPARE_BRIEF', 'BUYER_DISCOVERY', 'DISCOVER_PROPERTIES', 'REVIEW_BUYER_POOL', 'REVIEW_HANDOFFS', 'EVALUATE_DECISION', 'HUMAN_HANDOFF']),
   "termsReviewed": zod.boolean().optional(),
   "recurringDiscovery": zod.boolean().optional(),
   "recurringPropertyDiscovery": zod.boolean().optional(),
@@ -34296,7 +34470,7 @@ export const RecordHandoffEventResponse = zod.object({
 
 export const ListWorkerJobsResponseItem = zod.object({
   "id": zod.string(),
-  "kind": zod.enum(['MATCH_BUYERS', 'REVIEW_DEADLINES', 'ENRICH_PROPERTY', 'PREPARE_BRIEF', 'BUYER_DISCOVERY', 'DISCOVER_PROPERTIES', 'REVIEW_BUYER_POOL', 'REVIEW_HANDOFFS', 'HUMAN_HANDOFF']),
+  "kind": zod.enum(['MATCH_BUYERS', 'REVIEW_DEADLINES', 'ENRICH_PROPERTY', 'PREPARE_BRIEF', 'BUYER_DISCOVERY', 'DISCOVER_PROPERTIES', 'REVIEW_BUYER_POOL', 'REVIEW_HANDOFFS', 'EVALUATE_DECISION', 'HUMAN_HANDOFF']),
   "termsReviewed": zod.boolean().optional(),
   "recurringDiscovery": zod.boolean().optional(),
   "recurringPropertyDiscovery": zod.boolean().optional(),
@@ -34327,7 +34501,7 @@ export const SubmitWorkerJobBody = zod.object({
 
 export const SubmitWorkerJobResponse = zod.object({
   "id": zod.string(),
-  "kind": zod.enum(['MATCH_BUYERS', 'REVIEW_DEADLINES', 'ENRICH_PROPERTY', 'PREPARE_BRIEF', 'BUYER_DISCOVERY', 'DISCOVER_PROPERTIES', 'REVIEW_BUYER_POOL', 'REVIEW_HANDOFFS', 'HUMAN_HANDOFF']),
+  "kind": zod.enum(['MATCH_BUYERS', 'REVIEW_DEADLINES', 'ENRICH_PROPERTY', 'PREPARE_BRIEF', 'BUYER_DISCOVERY', 'DISCOVER_PROPERTIES', 'REVIEW_BUYER_POOL', 'REVIEW_HANDOFFS', 'EVALUATE_DECISION', 'HUMAN_HANDOFF']),
   "termsReviewed": zod.boolean().optional(),
   "recurringDiscovery": zod.boolean().optional(),
   "recurringPropertyDiscovery": zod.boolean().optional(),

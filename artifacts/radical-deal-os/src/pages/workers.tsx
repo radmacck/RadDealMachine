@@ -20,7 +20,9 @@ const KIND: Record<WorkerJobInputKind, string> = {
   ENRICH_PROPERTY:'Check public address geography',PREPARE_BRIEF:'Prepare AI hypotheses and seller questions',
 };
 const STATE_TONE: Record<WorkerJob['state'], string> = { QUEUED: 'tone-muted', RUNNING: 'tone-warn', SUCCEEDED: 'tone-go', FAILED: 'tone-stop' };
-const JOB_LABEL = (k: WorkerJob['kind']) => k === 'HUMAN_HANDOFF' ? 'Human handoff (prepared message)' : KIND[k];
+const JOB_LABEL = (k: WorkerJob['kind']) => k === 'HUMAN_HANDOFF'
+  ? 'Human handoff (prepared message)'
+  : k === 'EVALUATE_DECISION' ? 'Refresh deal decision' : KIND[k];
 const HSTATE: Record<HumanHandoff['state'], { label: string; tone: string }> = {
   WAITING_CONTACT: { label: 'Pending contact', tone: 'tone-warn' }, WAITING_REPLY: { label: 'Waiting for reply', tone: 'tone-signal' },
   REPLIED: { label: 'Replied', tone: 'tone-go' }, CANCELLED: { label: 'Cancelled', tone: 'tone-muted' },
