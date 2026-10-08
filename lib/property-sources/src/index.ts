@@ -1,14 +1,22 @@
 import { z } from "zod";
 export { ConnectorRegistry } from "./connector-registry";
 export {
+  PHILA_DEMOLITIONS_SOURCE,
   PHILA_LI_VIOLATIONS_SOURCE,
+  PHILA_LI_PERMITS_SOURCE,
   PHILA_PUBLIC_RECORD_SOURCES,
   PHILA_TRANSFER_SOURCE,
   PHILA_UNSAFE_BUILDINGS_SOURCE,
   PHILA_VACANCY_SOURCE,
+  discoverPhiladelphiaDemolitionParcels,
+  discoverPhiladelphiaPermitParcels,
   discoverPhiladelphiaViolationParcels,
+  normalizePhiladelphiaDemolitionRows,
+  normalizePhiladelphiaPermitRows,
   normalizeCorporateGrantee,
+  refreshPhiladelphiaDemolitionEvidence,
   refreshPhiladelphiaEnforcementEvidence,
+  refreshPhiladelphiaPermitEvidence,
   refreshPhiladelphiaVacancyEvidence,
   searchRepeatedRecordedBuyers,
   type PropertySourceRefresh,

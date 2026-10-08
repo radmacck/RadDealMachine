@@ -809,6 +809,7 @@ function sourcePayloadChanged(previous: Record<string, unknown>, next: Record<st
     confidence: payload.confidence ?? null,
     signalId: payload.signalId ?? null,
     evidenceRef: payload.evidenceRef ?? null,
+    evidenceDigest: payload.evidenceDigest ?? null,
   });
   return !isDeepStrictEqual(project(previous), project(next));
 }
@@ -825,6 +826,12 @@ function sourceHistorySnapshot(payload: Record<string, unknown>, observedAt: Dat
     classification: typeof payload.classification === "string" ? payload.classification : null,
     confidence: typeof payload.confidence === "number" ? payload.confidence : null,
     evidenceRef: typeof payload.evidenceRef === "string" ? payload.evidenceRef : null,
+    evidenceDigest: typeof payload.evidenceDigest === "string" ? payload.evidenceDigest : null,
+    identityMethod: typeof payload.identityMethod === "string" ? payload.identityMethod : null,
+    reconciliation: payload.reconciliation ?? null,
+    sourceReliability: payload.sourceReliability ?? null,
+    freshness: payload.freshness ?? null,
+    ...(Array.isArray(payload.records) ? { records: payload.records.slice(0, 40) } : {}),
   };
 }
 
@@ -892,7 +899,9 @@ export async function refreshPropertySourceEvidence(propertyIds: string[], actor
           priorPayload.state !== nextPayloadBase.state ||
           priorPayload.recordCount !== nextPayloadBase.recordCount ||
           priorPayload.classification !== nextPayloadBase.classification ||
-          priorPayload.confidence !== nextPayloadBase.confidence
+          priorPayload.confidence !== nextPayloadBase.confidence ||
+          priorPayload.latestSourceEventAt !== nextPayloadBase.latestSourceEventAt ||
+          priorPayload.evidenceDigest !== nextPayloadBase.evidenceDigest
         : !!signal;
       const history = Array.isArray(priorPayload.history)
         ? priorPayload.history.filter(item => item && typeof item === "object" && !Array.isArray(item))

@@ -13,7 +13,7 @@ import { discoverPublicProperties } from "./property-discovery-worker";
 import { refreshPropertyBuyerDemandAlignment } from "./property-discovery-store";
 import { reviewHandoffs } from "./handoffs";
 
-const PROPERTY_SOURCE_POLICY_VERSION = "phila-property-sources-v3";
+const PROPERTY_SOURCE_POLICY_VERSION = "phila-property-sources-v4";
 const BUYER_SOURCE_POLICY_VERSION = "phila-buyer-sources-v2";
 
 export async function listWorkerJobs() {

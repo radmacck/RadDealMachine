@@ -1,3 +1,4 @@
+import { createHash } from "node:crypto";
 import { z } from "zod";
 
 export const PHILA_LI_VIOLATIONS_SOURCE = {
@@ -52,11 +53,41 @@ export const PHILA_TRANSFER_SOURCE = {
   ],
 };
 
+export const PHILA_LI_PERMITS_SOURCE = {
+  id: "phila-li-building-permits",
+  name: "Philadelphia L&I Building and Zoning Permits",
+  coverage: "Residential Philadelphia building and zoning permits issued within the last 180 days, joined only by exact nine-digit OPA account.",
+  termsUrl: "https://opendataphilly.org/datasets/licenses-and-inspections-building-and-zoning-permits/",
+  capabilities: ["Recent residential permit activity", "Permit record identity, reported scope, status, and issue date", "Exact OPA-account matching"],
+  limitations: [
+    "A permit records authorized or reported work, not the property's present condition, completion quality, seller motivation, or sale availability.",
+    "A permit or permit absence is not a repair estimate or an inspection.",
+    "Only source rows with an exact nine-digit OPA account and a dated event in the source window are considered.",
+    "The source is subject to the City of Philadelphia license and terms shown on its catalog page; operators must review the source terms before enabling recurring discovery.",
+  ],
+};
+
+export const PHILA_DEMOLITIONS_SOURCE = {
+  id: "phila-li-demolitions",
+  name: "Philadelphia L&I Building Demolitions",
+  coverage: "Philadelphia demolition permit/case activity started within the last two years, joined only by exact nine-digit OPA account.",
+  termsUrl: "https://opendataphilly.org/datasets/building-demolitions/",
+  capabilities: ["Recent demolition case/permit observations", "Record identity, reported work type/status, and event dates", "Exact OPA-account matching"],
+  limitations: [
+    "A demolition record may describe permitted, active, or completed work; it is not a current inspection, available property, seller motivation, or proof of remaining structure.",
+    "No demolition record does not establish that a property is safe or intact.",
+    "Only source rows with an exact nine-digit OPA account and a dated event in the source window are considered.",
+    "The source is subject to the City of Philadelphia license and terms shown on its catalog page; operators must review the source terms before enabling recurring discovery.",
+  ],
+};
+
 export const PHILA_PUBLIC_RECORD_SOURCES = [
   PHILA_LI_VIOLATIONS_SOURCE,
   PHILA_UNSAFE_BUILDINGS_SOURCE,
   PHILA_VACANCY_SOURCE,
   PHILA_TRANSFER_SOURCE,
+  PHILA_LI_PERMITS_SOURCE,
+  PHILA_DEMOLITIONS_SOURCE,
 ] as const;
 
 type PublicSignal = {
@@ -442,4 +473,258 @@ export async function searchRepeatedRecordedBuyers(now = new Date()): Promise<Re
       confidence: 0.7,
     }];
   });
+}
+
+type PropertyEventObservation = {
+  propertyId: string;
+  sourceRecordId: string;
+  eventAt: string;
+  raw: Record<string, unknown>;
+  normalized: Record<string, unknown>;
+};
+
+const permitEventRowSchema = z.object({
+  permitnumber: nullableText,
+  opa_account_num: nullableText,
+  permitissuedate: nullableText,
+  status: nullableText,
+  permittype: nullableText,
+  permitdescription: nullableText,
+  typeofwork: nullableText,
+  approvedscopeofwork: nullableText,
+  commercialorresidential: nullableText,
+  address: nullableText,
+  zip: nullableText,
+  objectid: nullableText,
+});
+
+const demolitionEventRowSchema = z.object({
+  caseorpermitnumber: nullableText,
+  opa_account_num: nullableText,
+  start_date: nullableText,
+  completed_date: nullableText,
+  status: nullableText,
+  record_type: nullableText,
+  typeofwork: nullableText,
+  typeofworkdescription: nullableText,
+  address: nullableText,
+  zip: nullableText,
+  city_demo: nullableText,
+  objectid: nullableText,
+});
+
+function boundedSourceText(value: string | null, maxLength = 800) {
+  return value?.trim().slice(0, maxLength) || null;
+}
+
+function exactOpaAccount(value: string | null) {
+  return value && /^\d{9}$/.test(value) ? value : null;
+}
+
+function eventIsCurrent(value: string | null, now: Date, windowDays: number) {
+  const parsed = eventDate(value);
+  if (!parsed || parsed.getTime() > now.getTime() || parsed.getTime() < now.getTime() - windowDays * 86_400_000) {
+    return null;
+  }
+  return parsed.toISOString();
+}
+
+function groupPropertyEventObservations(
+  source: { id: string; name: string; termsUrl: string },
+  records: PropertyEventObservation[],
+  capturedAt: Date,
+  requestedIds: string[] = [],
+): PropertySourceRefresh[] {
+  const groups = new Map<string, Map<string, PropertyEventObservation>>();
+  for (const record of records) {
+    const group = groups.get(record.propertyId) ?? new Map<string, PropertyEventObservation>();
+    // Repeated copies of one provider record are one source fact, not independent evidence.
+    if (!group.has(record.sourceRecordId)) group.set(record.sourceRecordId, record);
+    groups.set(record.propertyId, group);
+  }
+  const ids = requestedIds.length ? [...new Set(requestedIds)] : [...groups.keys()];
+  return ids.map(propertyId => {
+    const rawRecords = [...(groups.get(propertyId)?.values() ?? [])]
+      .sort((a, b) => Date.parse(b.eventAt) - Date.parse(a.eventAt) || a.sourceRecordId.localeCompare(b.sourceRecordId))
+      .slice(0, 40)
+      .map(record => ({
+        sourceRecordId: record.sourceRecordId,
+        observedAt: capturedAt.toISOString(),
+        eventAt: record.eventAt,
+        freshness: {
+          state: "WITHIN_SOURCE_WINDOW",
+          sourceWindowDays: source.id === PHILA_LI_PERMITS_SOURCE.id ? 180 : 730,
+          daysSinceEvent: Math.max(0, Math.floor((capturedAt.getTime() - Date.parse(record.eventAt)) / 86_400_000)),
+        },
+        classification: "OBSERVED",
+        raw: record.raw,
+        normalized: record.normalized,
+      }));
+    const recordIdentities = rawRecords.map(record => record.sourceRecordId);
+    const contentForDigest = rawRecords.map(({ observedAt: _observedAt, freshness: _freshness, ...record }) => record);
+    const evidenceDigest = createHash("sha256").update(JSON.stringify(contentForDigest)).digest("hex");
+    return {
+      sourceKey: `${source.id}:${propertyId}`,
+      sourceId: source.id,
+      propertyId,
+      sourceName: source.name,
+      sourceUrl: source.termsUrl,
+      capturedAt: capturedAt.toISOString(),
+      payload: {
+        state: rawRecords.length ? "SOURCE_RECORDS_OBSERVED" : "NO_MATCH_IN_SOURCE_WINDOW",
+        classification: "OBSERVED",
+        confidence: null,
+        recordCount: rawRecords.length,
+        recordIdentities,
+        latestSourceEventAt: rawRecords[0]?.eventAt ?? null,
+        sourceWindowDays: source.id === PHILA_LI_PERMITS_SOURCE.id ? 180 : 730,
+        retrievedAt: capturedAt.toISOString(),
+        freshness: {
+          checkedAt: capturedAt.toISOString(),
+          state: rawRecords.length ? "SOURCE_RECORDS_WITHIN_WINDOW" : "CHECKED_NO_RECORD_IN_WINDOW",
+        },
+        identityMethod: "EXACT_OPA_ACCOUNT",
+        identityValue: propertyId,
+        reconciliation: { method: "EXACT_OPA_ACCOUNT", key: propertyId },
+        sourceReliability: {
+          tier: "OFFICIAL_MUNICIPAL_DATASET",
+          numericScore: null,
+          basis: "The publisher is the City of Philadelphia; individual-record accuracy is not independently scored and the catalog disclaims warranties.",
+        },
+        evidenceDigest,
+        records: rawRecords,
+      },
+      // Public permits and demolition entries provide context, not a seller-motivation signal.
+      signal: null,
+    };
+  });
+}
+
+export function normalizePhiladelphiaPermitRows(rows: unknown[], now = new Date(), requestedIds: string[] = []) {
+  if (!Number.isFinite(now.getTime())) throw new Error("Invalid source capture time.");
+  const records: PropertyEventObservation[] = rows.flatMap(value => {
+    const parsed = permitEventRowSchema.safeParse(value);
+    if (!parsed.success) return [];
+    const row = parsed.data;
+    const propertyId = exactOpaAccount(row.opa_account_num);
+    const eventAt = eventIsCurrent(row.permitissuedate, now, 180);
+    const sourceRecordId = boundedSourceText(row.permitnumber, 160) || boundedSourceText(row.objectid, 160);
+    if (!propertyId || !eventAt || !sourceRecordId ||
+      !row.commercialorresidential || !/residential/i.test(row.commercialorresidential)) return [];
+    return [{
+      propertyId,
+      sourceRecordId,
+      eventAt,
+      raw: {
+        permitnumber: row.permitnumber,
+        opa_account_num: row.opa_account_num,
+        permitissuedate: row.permitissuedate,
+        status: row.status,
+        permittype: row.permittype,
+        permitdescription: boundedSourceText(row.permitdescription),
+        typeofwork: row.typeofwork,
+        approvedscopeofwork: boundedSourceText(row.approvedscopeofwork),
+        commercialorresidential: row.commercialorresidential,
+        address: boundedSourceText(row.address, 250),
+        zip: row.zip,
+        objectid: row.objectid,
+      },
+      normalized: {
+        sourceRecordId,
+        propertyId,
+        eventAt,
+        status: row.status,
+        workType: row.typeofwork,
+        classification: "OBSERVED",
+      },
+    }];
+  });
+  return groupPropertyEventObservations(PHILA_LI_PERMITS_SOURCE, records, now, requestedIds);
+}
+
+export function normalizePhiladelphiaDemolitionRows(rows: unknown[], now = new Date(), requestedIds: string[] = []) {
+  if (!Number.isFinite(now.getTime())) throw new Error("Invalid source capture time.");
+  const records: PropertyEventObservation[] = rows.flatMap(value => {
+    const parsed = demolitionEventRowSchema.safeParse(value);
+    if (!parsed.success) return [];
+    const row = parsed.data;
+    const propertyId = exactOpaAccount(row.opa_account_num);
+    const eventAt = eventIsCurrent(row.start_date, now, 730);
+    const sourceRecordId = boundedSourceText(row.caseorpermitnumber, 160) || boundedSourceText(row.objectid, 160);
+    if (!propertyId || !eventAt || !sourceRecordId) return [];
+    return [{
+      propertyId,
+      sourceRecordId,
+      eventAt,
+      raw: {
+        caseorpermitnumber: row.caseorpermitnumber,
+        opa_account_num: row.opa_account_num,
+        start_date: row.start_date,
+        completed_date: row.completed_date,
+        status: row.status,
+        record_type: row.record_type,
+        typeofwork: row.typeofwork,
+        typeofworkdescription: boundedSourceText(row.typeofworkdescription),
+        address: boundedSourceText(row.address, 250),
+        zip: row.zip,
+        city_demo: row.city_demo,
+        objectid: row.objectid,
+      },
+      normalized: {
+        sourceRecordId,
+        propertyId,
+        eventAt,
+        status: row.status,
+        workType: row.typeofwork,
+        classification: "OBSERVED",
+      },
+    }];
+  });
+  return groupPropertyEventObservations(PHILA_DEMOLITIONS_SOURCE, records, now, requestedIds);
+}
+
+function buildEventSourceQuery(source: "permits" | "demolitions", now: Date, propertyIds: string[] = []) {
+  if (!Number.isFinite(now.getTime())) throw new Error("Invalid source capture time.");
+  const windowDays = source === "permits" ? 180 : 730;
+  const start = new Date(now.getTime() - windowDays * 86_400_000).toISOString().slice(0, 10);
+  const endExclusive = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate() + 1))
+    .toISOString().slice(0, 10);
+  const table = source === "permits" ? "permits" : "demolitions";
+  const dateColumn = source === "permits" ? "permitissuedate" : "start_date";
+  const fields = source === "permits"
+    ? "permitnumber,opa_account_num,permitissuedate,status,permittype,permitdescription,typeofwork,approvedscopeofwork,commercialorresidential,address,zip,objectid"
+    : "caseorpermitnumber,opa_account_num,start_date,completed_date,status,record_type,typeofwork,typeofworkdescription,address,zip,city_demo,objectid";
+  const clauses = [
+    "opa_account_num ~ '^[0-9]{9}$'",
+    `${dateColumn} >= '${start}'`,
+    `${dateColumn} < '${endExclusive}'`,
+    ...(source === "permits" ? ["commercialorresidential ILIKE 'Residential'"] : []),
+    ...(propertyIds.length ? [`opa_account_num IN (${propertyIds.map(id => `'${id}'`).join(",")})`] : []),
+  ];
+  const limit = propertyIds.length ? 400 : 40;
+  return { query: `SELECT ${fields} FROM ${table} WHERE ${clauses.join(" AND ")} ORDER BY ${dateColumn} DESC NULLS LAST LIMIT ${limit}`, limit };
+}
+
+export async function discoverPhiladelphiaPermitParcels(now = new Date()) {
+  const { query, limit } = buildEventSourceQuery("permits", now);
+  return normalizePhiladelphiaPermitRows(await cartoRows(query, limit), now);
+}
+
+export async function refreshPhiladelphiaPermitEvidence(ids: string[], now = new Date()) {
+  const propertyIds = validatePropertyIds(ids);
+  if (!propertyIds.length) return [];
+  const { query, limit } = buildEventSourceQuery("permits", now, propertyIds);
+  return normalizePhiladelphiaPermitRows(await cartoRows(query, limit), now, propertyIds);
+}
+
+export async function discoverPhiladelphiaDemolitionParcels(now = new Date()) {
+  const { query, limit } = buildEventSourceQuery("demolitions", now);
+  return normalizePhiladelphiaDemolitionRows(await cartoRows(query, limit), now);
+}
+
+export async function refreshPhiladelphiaDemolitionEvidence(ids: string[], now = new Date()) {
+  const propertyIds = validatePropertyIds(ids);
+  if (!propertyIds.length) return [];
+  const { query, limit } = buildEventSourceQuery("demolitions", now, propertyIds);
+  return normalizePhiladelphiaDemolitionRows(await cartoRows(query, limit), now, propertyIds);
 }

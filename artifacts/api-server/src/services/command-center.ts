@@ -168,7 +168,7 @@ export async function commandCenter(role: string, now = new Date()) {
     "Property discovery and qualification",
     propertyPolicyRows[0],
     latestScheduled("DISCOVER_PROPERTIES"),
-    "phila-property-sources-v3",
+    "phila-property-sources-v4",
     "recurringPropertyDiscovery",
     now,
   );

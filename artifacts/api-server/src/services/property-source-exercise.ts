@@ -39,11 +39,11 @@ const actor = { id: `synthetic-source:${randomUUID()}`, role: "OWNER" };
 const now = new Date();
 try {
   const registeredConnectors = allPropertySourceConnectors();
-  assert.ok(registeredConnectors.length >= 4, "The live system must register multiple real, replaceable source adapters.");
+  assert.ok(registeredConnectors.length >= 6, "The live system must register multiple real, replaceable source adapters.");
   const listedSources = ListPropertySourcesResponse.parse(listPropertySources());
   assert.equal(new Set(listedSources.map(source => source.id)).size,
     listedSources.length, "The public source catalog must deduplicate source descriptors and conform to the API contract.");
-  assert.ok(listedSources.length >= 5, "The public catalog must enumerate the live OPA, L&I, unsafe-building, vacancy, and deed-record sources.");
+  assert.ok(listedSources.length >= 7, "The public catalog must enumerate OPA, L&I, vacancy, transfer, permit, and demolition sources.");
   const sourceCoverage = GetPropertySourceCoverageResponse.parse(getPropertySourceCoverage());
   assert.deepEqual(sourceCoverage.registeredSources.map(source => source.id).sort(), listedSources.map(source => source.id).sort());
   assert.ok(sourceCoverage.notConnectedProviders.some(provider =>
@@ -60,6 +60,10 @@ try {
     connector.discoverProperties && connector.refreshEvidence));
   assert.ok(registeredConnectors.some(connector => connector.id === "phila-vacancy-indicators" &&
     connector.refreshEvidence));
+  assert.ok(registeredConnectors.some(connector => connector.id === "phila-li-building-permits" &&
+    connector.discoverProperties && connector.refreshEvidence));
+  assert.ok(registeredConnectors.some(connector => connector.id === "phila-li-demolitions" &&
+    connector.discoverProperties && connector.refreshEvidence));
   assert.ok(registeredConnectors.some(connector => connector.discoverBuyerActivity),
     "Current buyer activity research must also run through a registered source adapter.");
   const connectorFailureProbe = await runPropertyDiscoveryConnectors([
@@ -105,12 +109,12 @@ try {
   assert.equal(discoveryRun?.state, "SUCCEEDED", "The durable seller discovery job must complete from the official source.");
   assert.match(discoveryRun?.message ?? "", /Registered discovery connector results:.*phila-opa/);
   assert.match(discoveryRun?.message ?? "", /no active lead was created/i);
-  const unmatchedCountFromRun = Number(discoveryRun?.message?.match(/Retained (\d+) unmatched L&I source observations/)?.[1]);
+  const unmatchedCountFromRun = Number(discoveryRun?.message?.match(/Retained (\d+) unmatched public-source observations/)?.[1]);
   assert.ok(Number.isInteger(unmatchedCountFromRun), "Worker outcome must report the count of unmatched source observations retained.");
   const liveUnmatched = await db.select().from(unmatchedPropertySourceObservationsTable);
   assert.equal(liveUnmatched.length, unmatchedCountFromRun, "Every real unmatched L&I parcel returned by the worker must be persisted without a property or lead.");
   assert.ok(liveUnmatched.every(row => row.status === "UNMATCHED" && row.linkedDiscoveryId === null));
-  assert.ok(liveUnmatched.every(row => row.sourceKey.startsWith("phila-li-violations:") && row.propertyId.length === 9));
+  assert.ok(liveUnmatched.every(row => row.sourceKey.length > 0 && /^\d{9}$/.test(row.propertyId)));
   const liveDiscoveryList = await listPropertyDiscoveries({ marketKey: "PHILADELPHIA_PA" });
   assert.ok(liveDiscoveryList.records.length > 0);
   assert.ok(liveDiscoveryList.records.every(record => record.demandFit.snapshotFresh),
@@ -126,6 +130,54 @@ try {
   assert.ok(observedSources.some(row => row.sourceKey.startsWith("phila-li-violations:")), "The L&I violations adapter must persist matched or explicit no-match observations.");
   assert.ok(observedSources.some(row => row.sourceKey.startsWith("phila-li-unsafe:")), "The unsafe-building adapter must persist matched or explicit no-match observations.");
   assert.ok(observedSources.some(row => row.sourceKey.startsWith("phila-vacancy-indicators:")), "The vacancy adapter must persist matched, stale, or explicit no-match observations.");
+  const propertyFeedRows = [
+    ...observedSources.map(row => ({ sourceId: row.sourceId, sourceKey: row.sourceKey, payload: row.payload, linked: true })),
+    ...liveUnmatched.map(row => ({ sourceId: row.sourceId, sourceKey: row.sourceKey, payload: row.payload, linked: false })),
+  ];
+  const feedStats = (sourceId: string) => {
+    const rows = propertyFeedRows.filter(row => row.sourceId === sourceId || row.sourceKey.startsWith(`${sourceId}:`));
+    return {
+      observationRows: rows.length,
+      matchedRows: rows.filter(row => row.linked).length,
+      unmatchedRows: rows.filter(row => !row.linked).length,
+      sourceRecordCount: rows.reduce((total, row) => total +
+        (typeof row.payload.recordCount === "number" ? row.payload.recordCount : 0), 0),
+    };
+  };
+  const liveSourceCounts = listedSources.map(source => {
+    const rows = propertyFeedRows.filter(row =>
+      row.sourceId === source.id || row.sourceKey.startsWith(`${source.id}:`));
+    const sourceRecordCount = rows.reduce((total, row) => {
+      if (typeof row.payload.recordCount === "number") return total + row.payload.recordCount;
+      if (Array.isArray(row.payload.recordIdentities)) return total + row.payload.recordIdentities.length;
+      return total + 1;
+    }, 0);
+    return {
+      sourceId: source.id,
+      state: source.id === "phila-real-estate-transfers"
+        ? "REGISTERED_BUYER_ACTIVITY_ONLY_NOT_RUN_IN_PROPERTY_EXERCISE"
+        : rows.length ? "LIVE_AND_OBSERVED" : "NO_OBSERVATION_ROWS",
+      observationRows: rows.length,
+      matchedRows: rows.filter(row => "linked" in row && row.linked).length,
+      unmatchedRows: rows.filter(row => "linked" in row && !row.linked).length,
+      sourceRecordCount,
+    };
+  });
+  const permitFeed = feedStats("phila-li-building-permits");
+  const demolitionFeed = feedStats("phila-li-demolitions");
+  assert.ok(permitFeed.observationRows > 0 && permitFeed.sourceRecordCount > 0,
+    "The real public permit feed must return and persist at least one exact-parcel source observation.");
+  assert.ok(demolitionFeed.observationRows > 0 && demolitionFeed.sourceRecordCount > 0,
+    "The real public demolition feed must return and persist at least one exact-parcel source observation.");
+  for (const row of propertyFeedRows.filter(item =>
+    ["phila-li-building-permits", "phila-li-demolitions"].includes(item.sourceId))) {
+    assert.equal(row.payload.classification, "OBSERVED");
+    assert.equal(row.payload.signalId ?? null, null, "Permit/demolition records must not become motivation signals.");
+    assert.ok(typeof row.payload.evidenceDigest === "string" && row.payload.evidenceDigest.length === 64);
+    assert.ok(Array.isArray(row.payload.records), "Source snapshots retain bounded raw and normalized event records.");
+  }
+  assert.equal(new Set(liveDiscoveryList.records.map(record => record.property.id)).size,
+    liveDiscoveryList.records.length, "Cross-source observations must share one exact-parcel discovery record.");
   assert.equal((await db.select().from(leadsTable)).length, 0, "Raw property discovery must never create active leads.");
 
   const unmatchedFixture: PropertySourceRefresh = {
@@ -284,9 +336,10 @@ try {
   assert.ok(demandJob, "Current buyer evidence must queue a durable demand refresh.");
   const demandJobResult = await runWorkerOnce(now, false, demandJob.id);
   assert.equal(demandJobResult?.state, "SUCCEEDED");
-  const demandUpdated = await listPropertyDiscoveries({ marketKey: "PHILADELPHIA_PA" });
-  const demandSubject = demandUpdated.records.find(record => record.id === secondary.id);
-  assert.ok(demandSubject);
+  // Exercise the exact persisted discovery response rather than assuming the
+  // source-volume page's first 100 rows contain every low-signal discovery.
+  const demandSubject = await recordPublicPropertyDiscovery(property.id, true, actor, now);
+  assert.equal(demandSubject.id, secondary.id);
   assert.equal(demandSubject.status, secondary.status, "Demand matching cannot promote or alter seller qualification.");
   assert.equal(demandSubject.leadId, null);
   assert.equal(demandSubject.demandFit.alignedBuyerCount, 1);
@@ -451,13 +504,13 @@ try {
   assert.ok(staleTargets.includes(property.id), "Previously qualified/candidate parcels become eligible for recurring source refresh after six hours.");
   const sourceObservations = await db.select().from(propertySourceObservationsTable)
     .where(eq(propertySourceObservationsTable.discoveryId, first.id));
-  const refreshableObservation = sourceObservations.find(row => !row.sourceKey.startsWith("phila-opa:"));
+  const refreshableObservation = sourceObservations.find(row => row.sourceId === "phila-li-building-permits") ??
+    sourceObservations.find(row => !row.sourceKey.startsWith("phila-opa:"));
   assert.ok(refreshableObservation, "A linked non-OPA source observation is required to exercise source-change propagation.");
   await db.update(propertySourceObservationsTable).set({
     payload: {
       ...refreshableObservation.payload,
-      signalId: `synthetic-prior-signal:${randomUUID()}`,
-      evidenceRef: "https://example.com/synthetic-prior-evidence",
+      evidenceDigest: "synthetic-prior-evidence-digest-only",
     },
   }).where(eq(propertySourceObservationsTable.id, refreshableObservation.id));
 
@@ -542,7 +595,12 @@ try {
   assert.ok(sourceTestSnapshot);
 
   const staleRefresh = await refreshPropertySourceEvidence([property.id], "system:property-source-exercise", new Date(now.getTime() + 7 * 60 * 60 * 1000));
-  assert.equal(staleRefresh.checked, 3, "The stale refresh rechecks each connected exact-parcel evidence source.");
+  assert.equal(
+    staleRefresh.checked,
+    registeredConnectors.filter(connector => connector.refreshEvidence)
+      .reduce((total, connector) => total + connector.sources.length, 0),
+    "The stale refresh rechecks every registered exact-parcel source descriptor, including sources sharing an adapter.",
+  );
   assert.ok(staleRefresh.changed > 0, "A changed source signal must be detected, not hidden by a fresh retrieval timestamp.");
   detail = await leadDetail(promoted.leadId);
   assert.equal(detail.analysis, null, "Changed public evidence invalidates pre-execution underwriting.");
@@ -630,11 +688,14 @@ try {
     savedDiscoveryId: first.id,
     repeatedSourceObservationCount: repeated.sourceObservationCount,
     crossSourceObservationCount: secondary.sourceObservationCount,
+    liveSourceCounts,
+    livePermitSource: permitFeed,
+    liveDemolitionSource: demolitionFeed,
     qualifiedLeadId: promoted.leadId,
     buyerResearchCandidates: buyerResearch.records.length,
     staleRefresh: staleRefresh.checked,
-    checks: "real OPA and City L&I/vacancy source observation persistence; no lead on discovery; same-source and cross-source dedupe; AI hypothesis exclusion; synthetic provenance-backed qualification; human promotion; source research/comps; pass retention; source-change invalidation of pre-execution underwriting/offers/drafts; preservation of executed terms with a persisted research-review action and buyer-rematch job",
-  }, "Selective property qualification exercise PASSED (isolated schema; actual public source row; synthetic qualification evidence only)");
+    checks: "real OPA, L&I enforcement/vacancy, residential permits, and demolition source observation persistence; no lead on discovery; exact same-source and cross-source dedupe; raw permit/demolition evidence retained OBSERVED without motivation points; AI hypothesis exclusion; synthetic provenance-backed qualification; human promotion; source research/comps; pass retention; evidence-digest change invalidation of pre-execution underwriting/offers/drafts; preservation of executed terms with a persisted research-review action and buyer-rematch job",
+  }, "Selective property qualification exercise PASSED (isolated schema; actual public records including permits and demolitions; synthetic qualification evidence only)");
 } finally {
   await pool.end();
 }

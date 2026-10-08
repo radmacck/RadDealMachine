@@ -19,7 +19,7 @@ export async function discoverPublicProperties(now = new Date()) {
   }
   const baseRecords = connectorBatches.find(batch => batch.connectorId === "phila-opa")?.properties ?? [];
   const distressRecords = connectorBatches.find(batch => batch.connectorId === "phila-li-enforcement")?.properties ?? [];
-  const distressObservations = connectorBatches.flatMap(batch => batch.unmatchedObservations);
+  const unmatchedObservations = connectorBatches.flatMap(batch => batch.unmatchedObservations);
   const sourceRecords = connectorBatches.flatMap(batch => batch.properties);
   // Preserve one observation per distinct source record, while allowing the
   // property store to merge exact parcel identities into one discovery.
@@ -40,9 +40,9 @@ export async function discoverPublicProperties(now = new Date()) {
     discoveryIds.set(property.id, saved.id);
   }
 
-  const matchedIds = new Set(distressRecords.map(property => property.id));
+  const matchedIds = new Set(sourceRecords.map(property => property.id));
   const unmatchedRetention = await persistUnmatchedPropertySourceObservations(
-    distressObservations.filter(observation => !matchedIds.has(observation.propertyId)),
+    unmatchedObservations.filter(observation => !matchedIds.has(observation.propertyId)),
     "system:property-discovery",
     now,
   );
@@ -62,9 +62,12 @@ export async function discoverPublicProperties(now = new Date()) {
   const connectorSummary = connectorBatches
     .map(batch => `${batch.connectorId}: ${batch.properties.length} property record(s), ${batch.unmatchedObservations.length} unmatched observation(s)`)
     .join("; ");
+  const unmatchedSourceCount = new Set(unmatchedObservations
+    .filter(observation => !matchedIds.has(observation.propertyId))
+    .map(observation => observation.sourceId)).size;
   const connectorFailures = [...discoveryFailures, ...supplemental.failures, ...staleRefresh.failures];
   const failureNote = connectorFailures.length
     ? ` Source-specific partial failures (${connectorFailures.length}): ${connectorFailures.map(failure => `${failure.connectorId}/${failure.operation}: ${failure.message}`).join(" | ")}.`
     : " All registered source operations completed.";
-  return `Registered discovery connector results: ${connectorSummary}. Processed ${baseRecords.length} bounded OPA discoveries plus ${matchedDistressParcels} exact-matched parcels independently discovered from recent unresolved L&I records. Retained ${unmatchedRetention.checked} unmatched L&I source observations (no residential OPA record) and linked ${linkedPreviouslyUnmatched.linked} previously unmatched records after exact OPA resolution. Qualification after source refresh: ${qualification.counts.RELEVANT_CANDIDATE} candidates, ${qualification.counts.QUALIFIED_LEAD} qualified, ${qualification.counts.CALL_READY} call ready; these counts do not represent raw discovery volume. Refreshed ${supplemental.checked} exact-parcel public-record observations and rechecked ${staleTargets.length} previously qualified/candidate parcels (${staleRefresh.checked} observations); ${supplemental.signals + staleRefresh.signals} current indicators are present and ${supplemental.changed + staleRefresh.changed} source signals changed. ${demand.message} Raw discoveries remain separate from the active acquisition queue; no active lead was created from a source record.${failureNote}`;
+  return `Registered discovery connector results: ${connectorSummary}. Processed ${baseRecords.length} bounded OPA discoveries plus ${matchedDistressParcels} exact-matched parcels independently discovered from recent unresolved L&I records. Retained ${unmatchedRetention.checked} unmatched public-source observations across ${unmatchedSourceCount} source types (no exact residential OPA match) and linked ${linkedPreviouslyUnmatched.linked} previously unmatched records after exact OPA resolution. Qualification after source refresh: ${qualification.counts.RELEVANT_CANDIDATE} candidates, ${qualification.counts.QUALIFIED_LEAD} qualified, ${qualification.counts.CALL_READY} call ready; these counts do not represent raw discovery volume. Refreshed ${supplemental.checked} exact-parcel public-record observations and rechecked ${staleTargets.length} previously qualified/candidate parcels (${staleRefresh.checked} observations); ${supplemental.signals + staleRefresh.signals} current indicators are present and ${supplemental.changed + staleRefresh.changed} source evidence snapshots changed. ${demand.message} Raw discoveries remain separate from the active acquisition queue; no active lead was created from a source record.${failureNote}`;
 }

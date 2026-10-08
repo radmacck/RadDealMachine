@@ -1,17 +1,23 @@
 import { ConnectorRegistry } from "@workspace/property-sources";
 import {
+  PHILA_DEMOLITIONS_SOURCE,
+  PHILA_LI_PERMITS_SOURCE,
   PHILA_LI_VIOLATIONS_SOURCE,
   PHILA_PUBLIC_RECORD_SOURCES,
   PHILA_SOURCE,
   PHILA_TRANSFER_SOURCE,
   PHILA_UNSAFE_BUILDINGS_SOURCE,
   PHILA_VACANCY_SOURCE,
+  discoverPhiladelphiaDemolitionParcels,
+  discoverPhiladelphiaPermitParcels,
   discoverPhiladelphiaViolationParcels,
   nearbySales,
   propertiesByIds,
   propertyByAddress,
   propertyById,
+  refreshPhiladelphiaDemolitionEvidence,
   refreshPhiladelphiaEnforcementEvidence,
+  refreshPhiladelphiaPermitEvidence,
   refreshPhiladelphiaVacancyEvidence,
   searchProperties,
   searchRepeatedRecordedBuyers,
@@ -124,6 +130,40 @@ registerPropertySourceConnector({
   maxRefreshBatchSize: 40,
   sources: [PHILA_VACANCY_SOURCE],
   refreshEvidence: refreshPhiladelphiaVacancyEvidence,
+});
+
+registerPropertySourceConnector({
+  id: PHILA_LI_PERMITS_SOURCE.id,
+  maxRefreshBatchSize: 40,
+  sources: [PHILA_LI_PERMITS_SOURCE],
+  discoverProperties: async (now) => {
+    const observations = await discoverPhiladelphiaPermitParcels(now);
+    const propertyIds = [...new Set(observations.map(observation => observation.propertyId))];
+    const properties = propertyIds.length ? await propertiesByIds(propertyIds, now) : [];
+    const resolved = new Set(properties.map(property => property.id));
+    return {
+      properties,
+      unmatchedObservations: observations.filter(observation => !resolved.has(observation.propertyId)),
+    };
+  },
+  refreshEvidence: refreshPhiladelphiaPermitEvidence,
+});
+
+registerPropertySourceConnector({
+  id: PHILA_DEMOLITIONS_SOURCE.id,
+  maxRefreshBatchSize: 40,
+  sources: [PHILA_DEMOLITIONS_SOURCE],
+  discoverProperties: async (now) => {
+    const observations = await discoverPhiladelphiaDemolitionParcels(now);
+    const propertyIds = [...new Set(observations.map(observation => observation.propertyId))];
+    const properties = propertyIds.length ? await propertiesByIds(propertyIds, now) : [];
+    const resolved = new Set(properties.map(property => property.id));
+    return {
+      properties,
+      unmatchedObservations: observations.filter(observation => !resolved.has(observation.propertyId)),
+    };
+  },
+  refreshEvidence: refreshPhiladelphiaDemolitionEvidence,
 });
 
 registerPropertySourceConnector({

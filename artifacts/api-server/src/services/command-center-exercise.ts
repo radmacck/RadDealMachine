@@ -102,7 +102,7 @@ await db.insert(jobsTable).values(schedulerKinds.map((kind) => ({
 await db.insert(jobsTable).values([
   {
     kind: "DISCOVER_PROPERTIES",
-    payload: { termsReviewed: true, sourcePolicyVersion: "phila-property-sources-v3", recurringPropertyDiscovery: true },
+    payload: { termsReviewed: true, sourcePolicyVersion: "phila-property-sources-v4", recurringPropertyDiscovery: true },
     state: "SUCCEEDED",
     idempotencyKey: "synthetic-property-terms-reviewed",
     requestedBy: "synthetic-owner",
@@ -132,7 +132,7 @@ assert.equal(activeAutomationView.automation.failedJobs,0);
 const oneTimeAt = new Date(now.getTime() + 1_000);
 await db.insert(jobsTable).values({
   kind: "DISCOVER_PROPERTIES",
-  payload: { termsReviewed: true, sourcePolicyVersion: "phila-property-sources-v3", recurringPropertyDiscovery: false },
+  payload: { termsReviewed: true, sourcePolicyVersion: "phila-property-sources-v4", recurringPropertyDiscovery: false },
   state: "SUCCEEDED",
   idempotencyKey: "synthetic-property-one-time-only-policy",
   requestedBy: "synthetic-owner",

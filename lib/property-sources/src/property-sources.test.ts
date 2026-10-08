@@ -4,7 +4,8 @@ import { ConnectorRegistry } from "./connector-registry";
 import {
   candidateSales, normalizeCorporateGrantee, normalizeProperty, PHILA_SOURCE, propertyById,
   discoverPhiladelphiaViolationParcels, rankContactPaths, refreshPhiladelphiaEnforcementEvidence,
-  refreshPhiladelphiaVacancyEvidence, searchProperties,
+  refreshPhiladelphiaVacancyEvidence, searchProperties, normalizePhiladelphiaPermitRows,
+  normalizePhiladelphiaDemolitionRows, PHILA_LI_PERMITS_SOURCE, PHILA_DEMOLITIONS_SOURCE,
 } from "./index";
 const now = new Date("2026-10-04T12:00:00Z");
 const raw = {
@@ -109,6 +110,56 @@ test("supplemental City evidence requires bounded exact parcel identifiers befor
   await assert.rejects(()=>refreshPhiladelphiaEnforcementEvidence(["12345678"],now),/exact nine-digit/);
   await assert.rejects(()=>refreshPhiladelphiaVacancyEvidence(Array.from({length:41},()=> "123456789"),now),/at most 40/);
   await assert.rejects(()=>discoverPhiladelphiaViolationParcels(now,21),/1–20 parcels/);
+});
+test("recent residential permits retain distinct source records as OBSERVED context, never as motivation",()=>{
+  const permit = {
+    permitnumber:"EP-2026-SYNTHETIC-01", opa_account_num:"123456789",
+    permitissuedate:"2026-10-01T04:00:00Z", status:"Issued",
+    permittype:"Building", permitdescription:"SYNTHETIC repair permit",
+    typeofwork:"Repair", approvedscopeofwork:"SYNTHETIC scope", commercialorresidential:"Residential",
+    address:"123 SYNTHETIC TEST ST", zip:"19143", objectid:7001,
+  };
+  const observations = normalizePhiladelphiaPermitRows([
+    permit, permit,
+    {...permit, permitnumber:"EP-2026-SYNTHETIC-02", permitissuedate:"2026-09-29T04:00:00Z"},
+    {...permit, permitnumber:"EP-2026-FUTURE", permitissuedate:"2026-10-05T04:00:00Z"},
+    {...permit, permitnumber:"EP-2025-STALE", permitissuedate:"2026-01-01T04:00:00Z"},
+    {...permit, opa_account_num:"12345678", permitnumber:"EP-2026-NO-EXACT-PARCEL"},
+  ],now);
+  assert.equal(observations.length,1);
+  assert.equal(observations[0]?.sourceId,PHILA_LI_PERMITS_SOURCE.id);
+  assert.equal(observations[0]?.payload.recordCount,2);
+  assert.equal((observations[0]?.payload.recordIdentities as string[]).length,2);
+  assert.equal(observations[0]?.payload.classification,"OBSERVED");
+  assert.equal(observations[0]?.signal,null,"Permit activity is source context, not a seller-motivation signal.");
+  assert.equal(observations[0]?.payload.identityMethod,"EXACT_OPA_ACCOUNT");
+  assert.equal((observations[0]?.payload.freshness as {state:string})?.state,"SOURCE_RECORDS_WITHIN_WINDOW");
+  assert.equal((observations[0]?.payload.sourceReliability as {numericScore:number|null})?.numericScore,null,
+    "Do not invent a numeric reliability score the public dataset does not provide.");
+  assert.equal(((observations[0]?.payload.records as Array<{freshness:{state:string}}>)[0]?.freshness.state),"WITHIN_SOURCE_WINDOW");
+  assert.match(observations[0]?.sourceUrl ?? "",/opendataphilly\.org\/datasets\/licenses-and-inspections-building-and-zoning-permits/);
+  assert.equal((observations[0]?.payload.records as Array<{classification:string}>)[0]?.classification,"OBSERVED");
+});
+test("recent demolition records remain dated OBSERVED evidence and exact-account failures do not become property matches",()=>{
+  const demolition = {
+    caseorpermitnumber:"SYNTHETIC-DEMO-01", opa_account_num:"987654321",
+    start_date:"2025-10-01T04:00:00Z", completed_date:"2025-12-01T04:00:00Z",
+    status:"COMPLETED", record_type:"PERMIT", typeofwork:"MINOR DEMOLITION",
+    typeofworkdescription:"SYNTHETIC work", address:"456 SYNTHETIC TEST ST",
+    zip:"19143", city_demo:"NO", objectid:8001,
+  };
+  const observations = normalizePhiladelphiaDemolitionRows([
+    demolition, demolition,
+    {...demolition, caseorpermitnumber:"SYNTHETIC-OLD", start_date:"2023-01-01T04:00:00Z"},
+    {...demolition, caseorpermitnumber:"SYNTHETIC-NO-OPA", opa_account_num:null},
+  ],now);
+  assert.equal(observations.length,1);
+  assert.equal(observations[0]?.propertyId,"987654321");
+  assert.equal(observations[0]?.sourceId,PHILA_DEMOLITIONS_SOURCE.id);
+  assert.equal(observations[0]?.payload.recordCount,1);
+  assert.equal(observations[0]?.signal,null);
+  assert.equal(observations[0]?.payload.classification,"OBSERVED");
+  assert.match(observations[0]?.sourceUrl ?? "",/opendataphilly\.org\/datasets\/building-demolitions/);
 });
 test("repeated recorded grantees reject ambiguous names rather than treating them as buyers",()=>{
   assert.equal(normalizeCorporateGrantee("Example Property Holdings LLC"),"Example Property Holdings LLC");
