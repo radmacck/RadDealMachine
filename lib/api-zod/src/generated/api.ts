@@ -10699,6 +10699,10 @@ export const getCommandCenterResponsePropertyDiscoveriesRecordsItemSourceObserva
 
 export const getCommandCenterResponsePropertyDiscoveriesRecordsItemSourceObservationsItemHistoryMax = 20;
 
+export const getCommandCenterResponsePropertyDiscoveriesRecordsItemRankingReasonsItemMax = 1000;
+
+export const getCommandCenterResponsePropertyDiscoveriesRecordsItemRankingReasonsMax = 12;
+
 export const getCommandCenterResponsePropertyDiscoveriesRecordsItemDemandFitAlignedBuyerCountMin = 0;
 
 export const getCommandCenterResponsePropertyDiscoveriesRecordsItemDemandFitCurrentQualifiedBuyerCountMin = 0;
@@ -10717,6 +10721,8 @@ export const getCommandCenterResponsePropertyDiscoveriesRecordsItemDemandFitEvid
 
 
 
+export const getCommandCenterResponsePropertyDiscoveriesNextCursorMax = 512;
+
 export const getCommandCenterResponsePropertyDiscoveriesUnmatchedSourceObservationsItemPropertyIdRegExp = new RegExp('^\\d{9}$');
 
 export const getCommandCenterResponsePropertyDiscoveriesUnmatchedSourceObservationsItemRecordCountMin = 0;
@@ -10730,6 +10736,8 @@ export const getCommandCenterResponsePropertyDiscoveriesUnmatchedSourceObservati
 export const getCommandCenterResponsePropertyDiscoveriesUnmatchedSourceObservationsItemHistoryItemConfidenceMax = 1;
 
 export const getCommandCenterResponsePropertyDiscoveriesUnmatchedSourceObservationsItemHistoryMax = 20;
+
+export const getCommandCenterResponsePropertyDiscoveriesUnmatchedNextCursorMax = 512;
 
 export const getCommandCenterResponsePropertyDiscoveriesCountsDISCOVEREDPROPERTYMin = 0;
 
@@ -12778,6 +12786,7 @@ export const GetCommandCenterResponse = zod.object({
 })).max(getCommandCenterResponsePropertyDiscoveriesRecordsItemSourceObservationsItemHistoryMax)
 })),
   "reason": zod.string(),
+  "rankingReasons": zod.array(zod.string().max(getCommandCenterResponsePropertyDiscoveriesRecordsItemRankingReasonsItemMax)).min(1).max(getCommandCenterResponsePropertyDiscoveriesRecordsItemRankingReasonsMax),
   "missingInformation": zod.array(zod.string()),
   "nextAction": zod.string(),
   "demandFit": zod.object({
@@ -12811,6 +12820,8 @@ export const GetCommandCenterResponse = zod.object({
   "firstObservedAt": zod.string().datetime({"offset":true}),
   "lastObservedAt": zod.string().datetime({"offset":true})
 })),
+  "nextCursor": zod.string().max(getCommandCenterResponsePropertyDiscoveriesNextCursorMax).nullable(),
+  "hasMore": zod.boolean(),
   "unmatchedSourceObservations": zod.array(zod.object({
   "id": zod.string().uuid(),
   "marketKey": zod.string(),
@@ -12842,6 +12853,8 @@ export const GetCommandCenterResponse = zod.object({
 })).max(getCommandCenterResponsePropertyDiscoveriesUnmatchedSourceObservationsItemHistoryMax),
   "nextAction": zod.string()
 })),
+  "unmatchedNextCursor": zod.string().max(getCommandCenterResponsePropertyDiscoveriesUnmatchedNextCursorMax).nullable(),
+  "unmatchedHasMore": zod.boolean(),
   "counts": zod.object({
   "DISCOVERED_PROPERTY": zod.number().int().min(getCommandCenterResponsePropertyDiscoveriesCountsDISCOVEREDPROPERTYMin),
   "RELEVANT_CANDIDATE": zod.number().int().min(getCommandCenterResponsePropertyDiscoveriesCountsRELEVANTCANDIDATEMin),
@@ -30196,15 +30209,21 @@ export const ImportPublicPropertyResponse = zod.void()
 
 
 export const listPropertyDiscoveriesQueryMarketKeyDefault = `PHILADELPHIA_PA`;
-export const listPropertyDiscoveriesQueryLimitDefault = 50;
+export const listPropertyDiscoveriesQueryLimitDefault = 25;
 export const listPropertyDiscoveriesQueryLimitMax = 100;
+
+export const listPropertyDiscoveriesQueryCursorMax = 512;
+
+export const listPropertyDiscoveriesQueryUnmatchedCursorMax = 512;
 
 
 
 export const ListPropertyDiscoveriesQueryParams = zod.object({
   "marketKey": zod.coerce.string().default(listPropertyDiscoveriesQueryMarketKeyDefault),
   "status": zod.enum(['DISCOVERED_PROPERTY', 'RELEVANT_CANDIDATE', 'QUALIFIED_LEAD', 'CALL_READY', 'DISQUALIFIED']).optional(),
-  "limit": zod.coerce.number().int().min(1).max(listPropertyDiscoveriesQueryLimitMax).default(listPropertyDiscoveriesQueryLimitDefault)
+  "limit": zod.coerce.number().int().min(1).max(listPropertyDiscoveriesQueryLimitMax).default(listPropertyDiscoveriesQueryLimitDefault),
+  "cursor": zod.coerce.string().max(listPropertyDiscoveriesQueryCursorMax).optional().describe('Opaque cursor for the next stable relevance-ranked discovery page.'),
+  "unmatchedCursor": zod.coerce.string().max(listPropertyDiscoveriesQueryUnmatchedCursorMax).optional().describe('Opaque cursor for the next stable unmatched-source-observation page.')
 })
 
 export const listPropertyDiscoveriesResponseRecordsItemScoreMin = 0;
@@ -30242,6 +30261,10 @@ export const listPropertyDiscoveriesResponseRecordsItemSourceObservationsItemHis
 
 export const listPropertyDiscoveriesResponseRecordsItemSourceObservationsItemHistoryMax = 20;
 
+export const listPropertyDiscoveriesResponseRecordsItemRankingReasonsItemMax = 1000;
+
+export const listPropertyDiscoveriesResponseRecordsItemRankingReasonsMax = 12;
+
 export const listPropertyDiscoveriesResponseRecordsItemDemandFitAlignedBuyerCountMin = 0;
 
 export const listPropertyDiscoveriesResponseRecordsItemDemandFitCurrentQualifiedBuyerCountMin = 0;
@@ -30260,6 +30283,8 @@ export const listPropertyDiscoveriesResponseRecordsItemDemandFitEvidenceItemRevi
 
 
 
+export const listPropertyDiscoveriesResponseNextCursorMax = 512;
+
 export const listPropertyDiscoveriesResponseUnmatchedSourceObservationsItemPropertyIdRegExp = new RegExp('^\\d{9}$');
 
 export const listPropertyDiscoveriesResponseUnmatchedSourceObservationsItemRecordCountMin = 0;
@@ -30273,6 +30298,8 @@ export const listPropertyDiscoveriesResponseUnmatchedSourceObservationsItemHisto
 export const listPropertyDiscoveriesResponseUnmatchedSourceObservationsItemHistoryItemConfidenceMax = 1;
 
 export const listPropertyDiscoveriesResponseUnmatchedSourceObservationsItemHistoryMax = 20;
+
+export const listPropertyDiscoveriesResponseUnmatchedNextCursorMax = 512;
 
 export const listPropertyDiscoveriesResponseCountsDISCOVEREDPROPERTYMin = 0;
 
@@ -30409,6 +30436,7 @@ export const ListPropertyDiscoveriesResponse = zod.object({
 })).max(listPropertyDiscoveriesResponseRecordsItemSourceObservationsItemHistoryMax)
 })),
   "reason": zod.string(),
+  "rankingReasons": zod.array(zod.string().max(listPropertyDiscoveriesResponseRecordsItemRankingReasonsItemMax)).min(1).max(listPropertyDiscoveriesResponseRecordsItemRankingReasonsMax),
   "missingInformation": zod.array(zod.string()),
   "nextAction": zod.string(),
   "demandFit": zod.object({
@@ -30442,6 +30470,8 @@ export const ListPropertyDiscoveriesResponse = zod.object({
   "firstObservedAt": zod.string().datetime({"offset":true}),
   "lastObservedAt": zod.string().datetime({"offset":true})
 })),
+  "nextCursor": zod.string().max(listPropertyDiscoveriesResponseNextCursorMax).nullable(),
+  "hasMore": zod.boolean(),
   "unmatchedSourceObservations": zod.array(zod.object({
   "id": zod.string().uuid(),
   "marketKey": zod.string(),
@@ -30473,6 +30503,8 @@ export const ListPropertyDiscoveriesResponse = zod.object({
 })).max(listPropertyDiscoveriesResponseUnmatchedSourceObservationsItemHistoryMax),
   "nextAction": zod.string()
 })),
+  "unmatchedNextCursor": zod.string().max(listPropertyDiscoveriesResponseUnmatchedNextCursorMax).nullable(),
+  "unmatchedHasMore": zod.boolean(),
   "counts": zod.object({
   "DISCOVERED_PROPERTY": zod.number().int().min(listPropertyDiscoveriesResponseCountsDISCOVEREDPROPERTYMin),
   "RELEVANT_CANDIDATE": zod.number().int().min(listPropertyDiscoveriesResponseCountsRELEVANTCANDIDATEMin),
@@ -30543,6 +30575,10 @@ export const recordPublicPropertyDiscoveryResponseSourceObservationsItemHistoryI
 export const recordPublicPropertyDiscoveryResponseSourceObservationsItemHistoryItemConfidenceMax = 1;
 
 export const recordPublicPropertyDiscoveryResponseSourceObservationsItemHistoryMax = 20;
+
+export const recordPublicPropertyDiscoveryResponseRankingReasonsItemMax = 1000;
+
+export const recordPublicPropertyDiscoveryResponseRankingReasonsMax = 12;
 
 export const recordPublicPropertyDiscoveryResponseDemandFitAlignedBuyerCountMin = 0;
 
@@ -30669,6 +30705,7 @@ export const RecordPublicPropertyDiscoveryResponse = zod.object({
 })).max(recordPublicPropertyDiscoveryResponseSourceObservationsItemHistoryMax)
 })),
   "reason": zod.string(),
+  "rankingReasons": zod.array(zod.string().max(recordPublicPropertyDiscoveryResponseRankingReasonsItemMax)).min(1).max(recordPublicPropertyDiscoveryResponseRankingReasonsMax),
   "missingInformation": zod.array(zod.string()),
   "nextAction": zod.string(),
   "demandFit": zod.object({
@@ -30894,6 +30931,10 @@ export const addPropertyRelevanceSignalResponseSourceObservationsItemHistoryItem
 
 export const addPropertyRelevanceSignalResponseSourceObservationsItemHistoryMax = 20;
 
+export const addPropertyRelevanceSignalResponseRankingReasonsItemMax = 1000;
+
+export const addPropertyRelevanceSignalResponseRankingReasonsMax = 12;
+
 export const addPropertyRelevanceSignalResponseDemandFitAlignedBuyerCountMin = 0;
 
 export const addPropertyRelevanceSignalResponseDemandFitCurrentQualifiedBuyerCountMin = 0;
@@ -31019,6 +31060,7 @@ export const AddPropertyRelevanceSignalResponse = zod.object({
 })).max(addPropertyRelevanceSignalResponseSourceObservationsItemHistoryMax)
 })),
   "reason": zod.string(),
+  "rankingReasons": zod.array(zod.string().max(addPropertyRelevanceSignalResponseRankingReasonsItemMax)).min(1).max(addPropertyRelevanceSignalResponseRankingReasonsMax),
   "missingInformation": zod.array(zod.string()),
   "nextAction": zod.string(),
   "demandFit": zod.object({
@@ -31103,6 +31145,10 @@ export const promotePropertyDiscoveryResponseDiscoverySourceObservationsItemHist
 export const promotePropertyDiscoveryResponseDiscoverySourceObservationsItemHistoryItemConfidenceMax = 1;
 
 export const promotePropertyDiscoveryResponseDiscoverySourceObservationsItemHistoryMax = 20;
+
+export const promotePropertyDiscoveryResponseDiscoveryRankingReasonsItemMax = 1000;
+
+export const promotePropertyDiscoveryResponseDiscoveryRankingReasonsMax = 12;
 
 export const promotePropertyDiscoveryResponseDiscoveryDemandFitAlignedBuyerCountMin = 0;
 
@@ -31230,6 +31276,7 @@ export const PromotePropertyDiscoveryResponse = zod.object({
 })).max(promotePropertyDiscoveryResponseDiscoverySourceObservationsItemHistoryMax)
 })),
   "reason": zod.string(),
+  "rankingReasons": zod.array(zod.string().max(promotePropertyDiscoveryResponseDiscoveryRankingReasonsItemMax)).min(1).max(promotePropertyDiscoveryResponseDiscoveryRankingReasonsMax),
   "missingInformation": zod.array(zod.string()),
   "nextAction": zod.string(),
   "demandFit": zod.object({
@@ -31316,6 +31363,10 @@ export const disqualifyPropertyDiscoveryResponseSourceObservationsItemHistoryIte
 export const disqualifyPropertyDiscoveryResponseSourceObservationsItemHistoryItemConfidenceMax = 1;
 
 export const disqualifyPropertyDiscoveryResponseSourceObservationsItemHistoryMax = 20;
+
+export const disqualifyPropertyDiscoveryResponseRankingReasonsItemMax = 1000;
+
+export const disqualifyPropertyDiscoveryResponseRankingReasonsMax = 12;
 
 export const disqualifyPropertyDiscoveryResponseDemandFitAlignedBuyerCountMin = 0;
 
@@ -31442,6 +31493,7 @@ export const DisqualifyPropertyDiscoveryResponse = zod.object({
 })).max(disqualifyPropertyDiscoveryResponseSourceObservationsItemHistoryMax)
 })),
   "reason": zod.string(),
+  "rankingReasons": zod.array(zod.string().max(disqualifyPropertyDiscoveryResponseRankingReasonsItemMax)).min(1).max(disqualifyPropertyDiscoveryResponseRankingReasonsMax),
   "missingInformation": zod.array(zod.string()),
   "nextAction": zod.string(),
   "demandFit": zod.object({

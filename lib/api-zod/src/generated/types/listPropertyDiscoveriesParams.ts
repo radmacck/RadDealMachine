@@ -15,4 +15,14 @@ status?: ListPropertyDiscoveriesStatus;
  * @maximum 100
  */
 limit?: number;
+/**
+ * Opaque cursor for the next stable relevance-ranked discovery page.
+ * @maxLength 512
+ */
+cursor?: string;
+/**
+ * Opaque cursor for the next stable unmatched-source-observation page.
+ * @maxLength 512
+ */
+unmatchedCursor?: string;
 };

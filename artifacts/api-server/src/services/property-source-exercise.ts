@@ -28,6 +28,7 @@ import * as transactions from "./transaction-store";
 import { dealOperations } from "./matching-store";
 import { exerciseEvidence } from "./exercise-evidence";
 import { runWorkerOnce, submitWorkerJob } from "./workers";
+import { comparePropertyDiscoveriesByRank } from "./property-discovery-ranking";
 import {
   allPropertySourceConnectors,
   listPropertySourceDescriptors,
@@ -115,16 +116,69 @@ try {
   assert.equal(liveUnmatched.length, unmatchedCountFromRun, "Every real unmatched L&I parcel returned by the worker must be persisted without a property or lead.");
   assert.ok(liveUnmatched.every(row => row.status === "UNMATCHED" && row.linkedDiscoveryId === null));
   assert.ok(liveUnmatched.every(row => row.sourceKey.length > 0 && /^\d{9}$/.test(row.propertyId)));
-  const liveDiscoveryList = await listPropertyDiscoveries({ marketKey: "PHILADELPHIA_PA" });
+  const livePageSize = 25;
+  const liveDiscoveryList = await listPropertyDiscoveries({ marketKey: "PHILADELPHIA_PA", limit: livePageSize });
+  const liveDiscoveryPages = [liveDiscoveryList];
+  let liveDiscoveryPage = liveDiscoveryList;
+  while (liveDiscoveryPage.hasMore) {
+    assert.ok(liveDiscoveryPage.nextCursor, "Every non-final property page must expose a continuation cursor.");
+    liveDiscoveryPage = await listPropertyDiscoveries({
+      marketKey: "PHILADELPHIA_PA", limit: livePageSize, cursor: liveDiscoveryPage.nextCursor!,
+    });
+    liveDiscoveryPages.push(liveDiscoveryPage);
+  }
+  const liveDiscoveryRecords = liveDiscoveryPages.flatMap(page => page.records);
+  const liveDiscoveryCount = Object.values(liveDiscoveryList.counts).reduce((sum, value) => sum + value, 0);
+  assert.ok(liveDiscoveryPages.length > 1, "The live Philadelphia source exercise must traverse multiple persisted property pages.");
+  assert.equal(liveDiscoveryRecords.length, liveDiscoveryCount, "Every persisted live discovery must be reachable through bounded pages.");
+  assert.equal(new Set(liveDiscoveryRecords.map(record => record.id)).size, liveDiscoveryRecords.length,
+    "Cross-page traversal must not repeat a discovery record.");
+  assert.deepEqual(
+    liveDiscoveryRecords.map(record => record.id),
+    [...liveDiscoveryRecords]
+      .sort((left, right) => comparePropertyDiscoveriesByRank(
+        { id: left.id, score: left.score, updatedAt: left.lastObservedAt },
+        { id: right.id, score: right.score, updatedAt: right.lastObservedAt },
+      ))
+      .map(record => record.id),
+    "Live source pages must preserve the deterministic relevance / update / ID order.",
+  );
+  const repeatedLiveFirstPage = await listPropertyDiscoveries({ marketKey: "PHILADELPHIA_PA", limit: livePageSize });
+  assert.deepEqual(repeatedLiveFirstPage.records.map(record => record.id), liveDiscoveryList.records.map(record => record.id),
+    "Repeated reads of an unchanged live snapshot must return the same first-page order.");
+  if (liveDiscoveryList.nextCursor) {
+    await assert.rejects(
+      () => listPropertyDiscoveries({
+        marketKey: "PHILADELPHIA_PA", status: "DISCOVERED_PROPERTY", limit: livePageSize,
+        cursor: liveDiscoveryList.nextCursor!,
+      }),
+      /cursor does not match this market or filter/i,
+      "A cursor from the all-status view cannot be replayed against a different status filter.",
+    );
+  }
+  const liveUnmatchedPages = [liveDiscoveryList];
+  let liveUnmatchedPage = liveDiscoveryList;
+  while (liveUnmatchedPage.unmatchedHasMore) {
+    assert.ok(liveUnmatchedPage.unmatchedNextCursor, "Every non-final unmatched page must expose a continuation cursor.");
+    liveUnmatchedPage = await listPropertyDiscoveries({
+      marketKey: "PHILADELPHIA_PA", limit: livePageSize,
+      unmatchedCursor: liveUnmatchedPage.unmatchedNextCursor!,
+    });
+    liveUnmatchedPages.push(liveUnmatchedPage);
+  }
+  const liveApiUnmatched = liveUnmatchedPages.flatMap(page => page.unmatchedSourceObservations);
+  assert.equal(liveApiUnmatched.length, liveUnmatched.length,
+    "All real unmatched public-source observations must be accessible through their bounded page sequence.");
+  assert.equal(new Set(liveApiUnmatched.map(row => row.id)).size, liveApiUnmatched.length,
+    "Unmatched-source pagination must not repeat source observation rows.");
   assert.ok(liveDiscoveryList.records.length > 0);
-  assert.ok(liveDiscoveryList.records.every(record => record.demandFit.snapshotFresh),
+  assert.ok(liveDiscoveryRecords.every(record => record.demandFit.snapshotFresh),
     "The durable worker must persist demand snapshots that agree with the current buyer-evidence versions.");
-  assert.ok(liveDiscoveryList.records.every(record => record.priorityScore >= record.score),
+  assert.ok(liveDiscoveryRecords.every(record => record.priorityScore >= record.score),
     "Demand ranking may add a separate priority bonus but cannot reduce seller relevance.");
-  assert.ok(liveDiscoveryList.records.every(record => Array.isArray(record.property.contactPaths)),
+  assert.ok(liveDiscoveryRecords.every(record => Array.isArray(record.property.contactPaths)),
     "The API response must preserve contact-path evidence, including an explicit empty list when OPA has no mailing route.");
-  assert.equal(liveDiscoveryList.unmatchedSourceObservations.length, liveUnmatched.length);
-  assert.ok(liveDiscoveryList.unmatchedSourceObservations.every(row => row.nextAction.includes("exact residential OPA match")));
+  assert.ok(liveApiUnmatched.every(row => row.nextAction.includes("exact residential OPA match")));
   const observedSources = await db.select().from(propertySourceObservationsTable);
   assert.ok(observedSources.some(row => row.sourceKey.startsWith("phila-opa:")), "OPA raw observations must persist.");
   assert.ok(observedSources.some(row => row.sourceKey.startsWith("phila-li-violations:")), "The L&I violations adapter must persist matched or explicit no-match observations.");
@@ -176,9 +230,185 @@ try {
     assert.ok(typeof row.payload.evidenceDigest === "string" && row.payload.evidenceDigest.length === 64);
     assert.ok(Array.isArray(row.payload.records), "Source snapshots retain bounded raw and normalized event records.");
   }
-  assert.equal(new Set(liveDiscoveryList.records.map(record => record.property.id)).size,
-    liveDiscoveryList.records.length, "Cross-source observations must share one exact-parcel discovery record.");
+  assert.equal(new Set(liveDiscoveryRecords.map(record => record.property.id)).size,
+    liveDiscoveryRecords.length, "Cross-source observations must share one exact-parcel discovery record across every result page.");
   assert.equal((await db.select().from(leadsTable)).length, 0, "Raw property discovery must never create active leads.");
+
+  const liveObservationRowsBeforeSynthetic = observedSources.length + liveUnmatched.length;
+  const paginationTemplate = liveDiscoveryRecords[0]?.property;
+  assert.ok(paginationTemplate, "The synthetic pagination exercise needs a property-shaped template from the real persisted response.");
+  const syntheticPaginationRecords: Array<{ id: string; version: number; property: typeof paginationTemplate }> = [];
+  for (let index = 0; index < 110; index += 1) {
+    const capturedAt = new Date(now.getTime() - (110 - index) * 1000);
+    const syntheticProperty = {
+      ...paginationTemplate,
+      id: `SYNTHETIC-PAGINATION-${index}`,
+      provider: "SYNTHETIC_PAGINATION_EXERCISE",
+      parcelId: `SYNTHETIC-PAGINATION-PARCEL-${index}`,
+      address: `${1000 + index} SYNTHETIC PAGINATION AVENUE`,
+      recordedOwner: `SYNTHETIC PAGINATION OWNER ${index}`,
+      sourceUrl: "https://example.invalid/synthetic-pagination",
+      contactPaths: [],
+      capturedAt: capturedAt.toISOString(),
+    };
+    const saved = await recordPropertyObservation(
+      syntheticProperty,
+      `synthetic-pagination:${index}`,
+      "synthetic-property-pagination-exercise",
+      capturedAt,
+    );
+    syntheticPaginationRecords.push({ id: saved.id, version: saved.version, property: syntheticProperty });
+    assert.equal(saved.leadId, null, "A synthetic raw source record must not create a lead.");
+    assert.notEqual(saved.status, "CALL_READY", "A raw source record must never become call ready automatically.");
+  }
+
+  const strongSynthetic = syntheticPaginationRecords.at(-1)!;
+  let strongSyntheticResult = await addPropertyRelevanceSignal(strongSynthetic.id, {
+    version: strongSynthetic.version,
+    key: "FORECLOSURE",
+    group: "DISTRESS",
+    classification: "VERIFIED",
+    sourceType: "PUBLIC_RECORD",
+    statement: "SYNTHETIC fixture only: test filing evidence, not a real property fact.",
+    source: "SYNTHETIC isolated pagination test",
+    sourceUrl: "https://example.invalid/synthetic-foreclosure",
+    evidenceRef: "synthetic:pagination-foreclosure",
+    capturedAt: now.toISOString(),
+    confidence: 0.99,
+  }, actor, now);
+  strongSyntheticResult = await addPropertyRelevanceSignal(strongSynthetic.id, {
+    version: strongSyntheticResult.version,
+    key: "REPORTED_POOR_CONDITION",
+    group: "CONDITION",
+    classification: "OBSERVED",
+    sourceType: "PUBLIC_RECORD",
+    statement: "SYNTHETIC fixture only: observed test condition record, not a real property fact.",
+    source: "SYNTHETIC isolated pagination test",
+    sourceUrl: "https://example.invalid/synthetic-condition",
+    evidenceRef: "synthetic:pagination-condition",
+    capturedAt: now.toISOString(),
+    confidence: 0.99,
+  }, actor, now);
+  strongSyntheticResult = await addPropertyRelevanceSignal(strongSynthetic.id, {
+    version: strongSyntheticResult.version,
+    key: "SELLER_MOTIVATION",
+    group: "MOTIVATION",
+    classification: "INDICATED",
+    sourceType: "SELLER",
+    statement: "SYNTHETIC fixture only: test seller motivation indication, not a real owner statement.",
+    source: "SYNTHETIC isolated pagination test",
+    sourceUrl: "https://example.invalid/synthetic-motivation",
+    evidenceRef: "synthetic:pagination-motivation",
+    capturedAt: now.toISOString(),
+    confidence: 0.99,
+  }, actor, now);
+  assert.equal(strongSyntheticResult.status, "RELEVANT_CANDIDATE");
+  assert.ok(strongSyntheticResult.score >= 35);
+  assert.equal(strongSyntheticResult.leadId, null, "Even a strong synthetic candidate requires human promotion.");
+  assert.notEqual(strongSyntheticResult.status, "CALL_READY", "Qualification ranking cannot bypass contact and call-readiness gates.");
+  assert.ok(strongSyntheticResult.rankingReasons.some(reason => reason.includes("VERIFIED")));
+  assert.ok(strongSyntheticResult.rankingReasons.some(reason => reason.includes("OBSERVED")));
+
+  const hypothesisSynthetic = syntheticPaginationRecords[0]!;
+  const beforeSyntheticHypothesisScore = hypothesisSynthetic.version;
+  const hypothesisResult = await addPropertyRelevanceSignal(hypothesisSynthetic.id, {
+    version: beforeSyntheticHypothesisScore,
+    key: "VACANCY",
+    group: "VACANCY",
+    classification: "AI_HYPOTHESIS",
+    sourceType: "MODEL",
+    statement: "SYNTHETIC fixture only: unconfirmed vacancy hypothesis.",
+    source: "SYNTHETIC isolated pagination model",
+    sourceUrl: "https://example.invalid/synthetic-vacancy-hypothesis",
+    evidenceRef: "synthetic:pagination-vacancy-hypothesis",
+    capturedAt: now.toISOString(),
+    confidence: 0.95,
+  }, actor, now);
+  assert.equal(hypothesisResult.signals.find(signal => signal.evidenceRef === "synthetic:pagination-vacancy-hypothesis")?.classification,
+    "AI_HYPOTHESIS", "Persisted ranking responses retain hypothesis classification.");
+  assert.equal(hypothesisResult.signals.find(signal => signal.evidenceRef === "synthetic:pagination-vacancy-hypothesis")?.scoreContribution,
+    0, "AI hypotheses cannot add seller relevance points.");
+  assert.ok(hypothesisResult.rankingReasons.some(reason => reason.includes("AI_HYPOTHESIS") && reason.includes("zero ranking points")));
+
+  const duplicateSyntheticProperty = {
+    ...strongSynthetic.property,
+    id: "SYNTHETIC-PAGINATION-SECOND-SOURCE",
+    parcelId: strongSynthetic.property.parcelId ?? "SYNTHETIC-PAGINATION-STRONG-PARCEL",
+    provider: "SYNTHETIC_PAGINATION_SECOND_SOURCE",
+    sourceUrl: "https://example.invalid/synthetic-pagination-second-source",
+    contactPaths: [],
+  };
+  const duplicateSynthetic = await recordPropertyObservation(
+    duplicateSyntheticProperty,
+    "synthetic-pagination-second-source:strong-parcel",
+    "synthetic-property-pagination-exercise",
+    now,
+  );
+  assert.equal(duplicateSynthetic.id, strongSynthetic.id, "A second source for the same synthetic parcel must deduplicate to one property discovery.");
+  assert.equal(duplicateSynthetic.leadId, null);
+
+  const syntheticAndLivePages = [];
+  let page = await listPropertyDiscoveries({ marketKey: "PHILADELPHIA_PA", limit: livePageSize });
+  syntheticAndLivePages.push(page);
+  while (page.hasMore) {
+    assert.ok(page.nextCursor, "A bounded property page must provide a continuation cursor when more rows exist.");
+    page = await listPropertyDiscoveries({ marketKey: "PHILADELPHIA_PA", limit: livePageSize, cursor: page.nextCursor! });
+    syntheticAndLivePages.push(page);
+  }
+  const pagedDiscoveries = syntheticAndLivePages.flatMap(result => result.records);
+  const pagedIds = pagedDiscoveries.map(result => result.id);
+  const persistedDiscoveryCount = Object.values(syntheticAndLivePages[0]!.counts).reduce((sum, value) => sum + value, 0);
+  assert.ok(persistedDiscoveryCount > 100, "The persisted exercise set must cross the former 100-record visibility boundary.");
+  assert.equal(pagedDiscoveries.length, persistedDiscoveryCount, "The bounded cursor traversal must reach the entire persisted result set.");
+  assert.ok(syntheticAndLivePages.length > 4, "The >100-record exercise must require multiple bounded pages.");
+  assert.equal(new Set(pagedIds).size, pagedIds.length, "Same-property cross-source observations must not duplicate a property across pages.");
+  assert.deepEqual(pagedIds, [...pagedDiscoveries]
+    .sort((left, right) => comparePropertyDiscoveriesByRank(
+      { id: left.id, score: left.score, updatedAt: left.lastObservedAt },
+      { id: right.id, score: right.score, updatedAt: right.lastObservedAt },
+    ))
+    .map(result => result.id), "Every page must preserve deterministic ranking order.");
+  const stableSyntheticFirstPage = await listPropertyDiscoveries({ marketKey: "PHILADELPHIA_PA", limit: livePageSize });
+  assert.deepEqual(stableSyntheticFirstPage.records.map(result => result.id), syntheticAndLivePages[0]!.records.map(result => result.id),
+    "Repeated reads without a data change must preserve the exact first-page selection.");
+  const strongResultAcrossPages = pagedDiscoveries.find(result => result.id === strongSynthetic.id);
+  assert.ok(strongResultAcrossPages);
+  assert.equal(strongResultAcrossPages.status, "RELEVANT_CANDIDATE");
+  assert.equal(strongResultAcrossPages.sourceObservationCount, 2, "Both distinct source observations must remain attached after cross-page deduplication.");
+  assert.equal(strongResultAcrossPages.leadId, null);
+  assert.ok(pagedDiscoveries.every(result => result.status !== "CALL_READY"),
+    "Neither the real feed's raw discoveries nor synthetic records become CALL_READY from listing or ranking.");
+  assert.equal((await db.select().from(leadsTable)).length, 0,
+    "The multi-page source exercise creates no active lead before a human promotion decision.");
+  const topCandidatePage = await listPropertyDiscoveries({
+    marketKey: "PHILADELPHIA_PA",
+    statuses: ["RELEVANT_CANDIDATE", "QUALIFIED_LEAD"],
+    limit: 5,
+  });
+  assert.ok(topCandidatePage.records.length <= 5);
+  assert.ok(topCandidatePage.records.every(result => ["RELEVANT_CANDIDATE", "QUALIFIED_LEAD"].includes(result.status)),
+    "The command-center query must filter the candidate queue before its small top-five limit.");
+  assert.ok(topCandidatePage.records.some(result => result.id === strongSynthetic.id),
+    "A high-value candidate remains visible in the independently filtered command-center queue.");
+  const sourceObservationRowsAfterSyntheticFixture =
+    (await db.select().from(propertySourceObservationsTable)).length +
+    (await db.select().from(unmatchedPropertySourceObservationsTable)).length;
+  assert.equal(sourceObservationRowsAfterSyntheticFixture - liveObservationRowsBeforeSynthetic, 111,
+    "The isolated pagination fixture adds 110 synthetic properties plus one retained second-source observation.");
+  const propertyPaginationSummary = {
+    liveFirstPageRecords: liveDiscoveryList.records.length,
+    livePersistedPropertyRecords: liveDiscoveryRecords.length,
+    livePropertyPages: liveDiscoveryPages.length,
+    liveUnmatchedObservations: liveApiUnmatched.length,
+    liveUnmatchedPages: liveUnmatchedPages.length,
+    sourceObservationRowsBeforeSynthetic: liveObservationRowsBeforeSynthetic,
+    sourceObservationRowsAfterSyntheticFixture: sourceObservationRowsAfterSyntheticFixture,
+    syntheticPropertiesAdded: syntheticPaginationRecords.length,
+    totalPersistedRecordsAfterSynthetic: persistedDiscoveryCount,
+    boundedPagesAfterSynthetic: syntheticAndLivePages.length,
+    statusFilteredCommandCenterResults: topCandidatePage.records.length,
+    crossSourceDuplicateObservationsRetained: strongResultAcrossPages.sourceObservationCount,
+  };
 
   const unmatchedFixture: PropertySourceRefresh = {
     sourceKey: `synthetic-unmatched:${randomUUID()}`,
@@ -336,8 +566,8 @@ try {
   assert.ok(demandJob, "Current buyer evidence must queue a durable demand refresh.");
   const demandJobResult = await runWorkerOnce(now, false, demandJob.id);
   assert.equal(demandJobResult?.state, "SUCCEEDED");
-  // Exercise the exact persisted discovery response rather than assuming the
-  // source-volume page's first 100 rows contain every low-signal discovery.
+  // Exercise the exact persisted discovery response; the public pool is
+  // paginated independently from the command-center candidate queue.
   const demandSubject = await recordPublicPropertyDiscovery(property.id, true, actor, now);
   assert.equal(demandSubject.id, secondary.id);
   assert.equal(demandSubject.status, secondary.status, "Demand matching cannot promote or alter seller qualification.");
@@ -688,6 +918,7 @@ try {
     savedDiscoveryId: first.id,
     repeatedSourceObservationCount: repeated.sourceObservationCount,
     crossSourceObservationCount: secondary.sourceObservationCount,
+    propertyPagination: propertyPaginationSummary,
     liveSourceCounts,
     livePermitSource: permitFeed,
     liveDemolitionSource: demolitionFeed,

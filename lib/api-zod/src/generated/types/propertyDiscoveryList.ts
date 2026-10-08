@@ -12,7 +12,19 @@ import type { UnmatchedPropertySourceObservation } from './unmatchedPropertySour
 
 export interface PropertyDiscoveryList {
   records: PropertyDiscovery[];
+  /**
+     * @maxLength 512
+     * @nullable
+     */
+  nextCursor: string | null;
+  hasMore: boolean;
   unmatchedSourceObservations: UnmatchedPropertySourceObservation[];
+  /**
+     * @maxLength 512
+     * @nullable
+     */
+  unmatchedNextCursor: string | null;
+  unmatchedHasMore: boolean;
   counts: PropertyDiscoveryListCounts;
   criteria: PropertyQualificationCriteria;
 }

@@ -105,14 +105,10 @@ function sourceDiscoveryLane(
 export async function commandCenter(role: string, now = new Date()) {
   const allPropertyDiscoveries = await listPropertyDiscoveries({
     marketKey: "PHILADELPHIA_PA",
-    limit: 100,
+    statuses: ["RELEVANT_CANDIDATE", "QUALIFIED_LEAD"],
+    limit: 5,
   });
-  const propertyDiscoveries = {
-    ...allPropertyDiscoveries,
-    records: allPropertyDiscoveries.records
-      .filter((item) => ["RELEVANT_CANDIDATE", "QUALIFIED_LEAD"].includes(item.status))
-      .slice(0, 5),
-  };
+  const propertyDiscoveries = allPropertyDiscoveries;
   const leads = await listLeads();
   const deals = await Promise.all(leads.map(l => leadDetail(l.id,undefined,now)));
   const calls = await callQueue(now);

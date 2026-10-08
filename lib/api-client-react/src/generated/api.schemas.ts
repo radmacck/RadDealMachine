@@ -566,6 +566,12 @@ export interface PropertyDiscovery {
   signals: PropertyRelevanceSignal[];
   sourceObservations: PropertySourceObservation[];
   reason: string;
+  /**
+     * @minItems 1
+     * @maxItems 12
+     * @items.maxLength 1000
+     */
+  rankingReasons: string[];
   missingInformation: string[];
   nextAction: string;
   demandFit: BuyerDemandFit;
@@ -598,7 +604,19 @@ export type PropertyDiscoveryListCounts = {
 
 export interface PropertyDiscoveryList {
   records: PropertyDiscovery[];
+  /**
+     * @maxLength 512
+     * @nullable
+     */
+  nextCursor: string | null;
+  hasMore: boolean;
   unmatchedSourceObservations: UnmatchedPropertySourceObservation[];
+  /**
+     * @maxLength 512
+     * @nullable
+     */
+  unmatchedNextCursor: string | null;
+  unmatchedHasMore: boolean;
   counts: PropertyDiscoveryListCounts;
   criteria: PropertyQualificationCriteria;
 }
@@ -4235,6 +4253,16 @@ status?: ListPropertyDiscoveriesStatus;
  * @maximum 100
  */
 limit?: number;
+/**
+ * Opaque cursor for the next stable relevance-ranked discovery page.
+ * @maxLength 512
+ */
+cursor?: string;
+/**
+ * Opaque cursor for the next stable unmatched-source-observation page.
+ * @maxLength 512
+ */
+unmatchedCursor?: string;
 };
 
 export type ListPropertyDiscoveriesStatus = typeof ListPropertyDiscoveriesStatus[keyof typeof ListPropertyDiscoveriesStatus];

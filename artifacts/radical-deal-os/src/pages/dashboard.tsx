@@ -80,7 +80,7 @@ export default function Dashboard() {
   )) : [];
   const candidateRows = d ? d.propertyDiscoveries.records.filter((item) =>
     ['RELEVANT_CANDIDATE', 'QUALIFIED_LEAD'].includes(item.status) && matchesSearch(
-    item.property.address, item.property.recordedOwner, item.reason, item.nextAction,
+    item.property.address, item.property.recordedOwner, item.reason, item.rankingReasons.join(' '), item.nextAction,
   )) : [];
   const qualifiedRows = buyerRows.filter((buyer) => isQualified(buyer) && (buyer.destinationKind ?? 'BUYER') === 'BUYER');
   const callDisplay = commandCenterCallDisplay(primaryAction, calls);
@@ -317,7 +317,7 @@ export default function Dashboard() {
 
           <section className="fd-opps" data-testid="panel-qualified-candidates">
             <div className="fd-section-head">
-              <div className="fd-section-title"><Compass size={15} />Highest-relevance properties <small>{query ? `${candidateRows.length} / ${d.propertyDiscoveries.records.length}` : d.propertyDiscoveries.records.length}</small></div>
+              <div className="fd-section-title"><Compass size={15} />Highest-relevance properties <small>top {candidateRows.length} of {d.propertyDiscoveries.counts.RELEVANT_CANDIDATE + d.propertyDiscoveries.counts.QUALIFIED_LEAD}</small></div>
               <Link className="fd-text-link" href="/sources">Review qualification queue <ArrowRight size={12} style={{ verticalAlign: 'middle', marginLeft: 3 }} /></Link>
             </div>
             {candidateRows.length === 0 ? (
@@ -325,9 +325,9 @@ export default function Dashboard() {
             ) : (
               <div className="fd-opp-grid">{candidateRows.slice(0, 3).map((item) => (
                 <Link key={item.id} href={item.leadId ? `/leads/${item.leadId}` : `/sources?discovery=${item.id}`} className="fd-opp" data-testid={`link-candidate-${item.id}`}>
-                  <div className="fd-row-top"><div className="fd-row-name">{item.property.address}</div><span className="fd-stage">{item.score}/100 seller relevance · rank {item.priorityScore}</span></div>
+                  <div className="fd-row-top"><div className="fd-row-name">{item.property.address}</div><span className="fd-stage">{item.score}/100 seller relevance · buyer alignment +{item.demandFit.priorityBonus}</span></div>
                   <div className="fd-opp-info">{item.status.replaceAll('_', ' ')} · {item.signals.length} sourced signal(s) · {item.sourceObservationCount} observation(s)</div>
-                  <div className="fd-row-copy"><b>Why selected:</b> {item.reason}</div>
+                  <div className="fd-row-copy"><b>Why ranked:</b> {item.rankingReasons.slice(1, 5).join(' ') || item.reason}</div>
                   <div className="fd-row-copy"><b>Buyer demand:</b> {item.demandFit.alignedBuyerCount
                     ? `${item.demandFit.alignedBuyerCount} currently approved buyer profile(s) align on known fields; this is not a deal match.`
                     : 'No currently approved buyer profile aligns to known fields. A strong seller opportunity can still qualify independently.'}</div>

@@ -36,6 +36,12 @@ export interface PropertyDiscovery {
   signals: PropertyRelevanceSignal[];
   sourceObservations: PropertySourceObservation[];
   reason: string;
+  /**
+     * @minItems 1
+     * @maxItems 12
+     * @items.maxLength 1000
+     */
+  rankingReasons: string[];
   missingInformation: string[];
   nextAction: string;
   demandFit: BuyerDemandFit;

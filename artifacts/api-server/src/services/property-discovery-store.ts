@@ -1,6 +1,6 @@
 import { createHash, randomUUID } from "node:crypto";
 import { isDeepStrictEqual } from "node:util";
-import { and, count, desc, eq, inArray, lte, ne, sql } from "drizzle-orm";
+import { and, asc, count, desc, eq, gt, inArray, lt, lte, ne, or, sql } from "drizzle-orm";
 import {
   db, propertyDiscoveriesTable, propertySourceObservationsTable, unmatchedPropertySourceObservationsTable,
   propertyQualificationCriteriaTable,
@@ -29,6 +29,7 @@ import { audit, createLead, move } from "./deal-store";
 import { allBuyerRecords, queueJob } from "./operations-records";
 import { invalidateOffers } from "./offer-records";
 import { refreshEvidenceFromRegisteredSources } from "./property-source-connectors";
+import { propertyDiscoveryRankingReasons } from "./property-discovery-ranking";
 
 type Tx = Parameters<Parameters<typeof db.transaction>[0]>[0];
 type Database = typeof db | Tx;
@@ -48,6 +49,84 @@ const normalAddress = (value: string) => value.toUpperCase().replace(/[^A-Z0-9]/
 const normalizedOwner = (value: string | null) => value?.trim().replace(/\s+/g, " ").toUpperCase() ?? "";
 const jsonRecord = (value: object): Record<string, unknown> => ({ ...value });
 const iso = (value: Date | string) => (value instanceof Date ? value : new Date(value)).toISOString();
+const PROPERTY_DISCOVERY_PAGE_MAX = 100;
+
+type DiscoveryCursor = {
+  version: 1;
+  kind: "discoveries";
+  marketKey: string;
+  statusScope: string;
+  score: number;
+  updatedAt: string;
+  id: string;
+};
+
+type UnmatchedCursor = {
+  version: 1;
+  kind: "unmatched";
+  marketKey: string;
+  lastObservedAt: string;
+  id: string;
+};
+
+function encodePageCursor(value: DiscoveryCursor | UnmatchedCursor) {
+  return Buffer.from(JSON.stringify(value)).toString("base64url");
+}
+
+function decodePageCursor(value: string, kind: "discoveries" | "unmatched"): unknown {
+  if (!value || value.length > 512 || !/^[A-Za-z0-9_-]+$/.test(value)) {
+    throw new DomainError("Invalid property discovery page cursor.", 400);
+  }
+  try {
+    const parsed = JSON.parse(Buffer.from(value, "base64url").toString("utf8")) as unknown;
+    if (!parsed || typeof parsed !== "object" || (parsed as { kind?: unknown }).kind !== kind) {
+      throw new Error("Cursor kind mismatch.");
+    }
+    return parsed;
+  } catch {
+    throw new DomainError("Invalid property discovery page cursor.", 400);
+  }
+}
+
+function validCursorDate(value: unknown): value is string {
+  return typeof value === "string" && Number.isFinite(Date.parse(value));
+}
+
+function validCursorId(value: unknown): value is string {
+  return typeof value === "string" && /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(value);
+}
+
+function decodeDiscoveryCursor(value: string | undefined, marketKey: string, statusScope: string): DiscoveryCursor | null {
+  if (!value) return null;
+  const parsed = decodePageCursor(value, "discoveries");
+  if (!parsed || typeof parsed !== "object") throw new DomainError("Invalid property discovery page cursor.", 400);
+  const cursor = parsed as Partial<DiscoveryCursor>;
+  if (
+    cursor.version !== 1 || cursor.kind !== "discoveries" ||
+    cursor.marketKey !== marketKey || cursor.statusScope !== statusScope ||
+    !validCursorDate(cursor.updatedAt) ||
+    !Number.isInteger(cursor.score) || Number(cursor.score) < 0 || Number(cursor.score) > 100 ||
+    !validCursorId(cursor.id)
+  ) {
+    throw new DomainError("Property discovery cursor does not match this market or filter.", 400);
+  }
+  return cursor as DiscoveryCursor;
+}
+
+function decodeUnmatchedCursor(value: string | undefined, marketKey: string): UnmatchedCursor | null {
+  if (!value) return null;
+  const parsed = decodePageCursor(value, "unmatched");
+  if (!parsed || typeof parsed !== "object") throw new DomainError("Invalid unmatched-source page cursor.", 400);
+  const cursor = parsed as Partial<UnmatchedCursor>;
+  if (
+    cursor.version !== 1 || cursor.kind !== "unmatched" || cursor.marketKey !== marketKey ||
+    !validCursorDate(cursor.lastObservedAt) ||
+    !validCursorId(cursor.id)
+  ) {
+    throw new DomainError("Unmatched-source cursor does not match this market.", 400);
+  }
+  return cursor as UnmatchedCursor;
+}
 
 function marketKeyFor(property: PropertyRecord) {
   return `${property.city.trim().toUpperCase().replace(/[^A-Z0-9]+/g, "_")}_${property.state.trim().toUpperCase()}`;
@@ -329,6 +408,12 @@ async function toDiscoveryResponse(
     signals: evaluation.scoredSignals.map(({ points, ...signal }) => ({ ...signal, scoreContribution: points })),
     sourceObservations,
     reason,
+    rankingReasons: propertyDiscoveryRankingReasons(
+      row.score,
+      evaluation.scoredSignals.map(({ id, key, classification, statement, source, confidence, points }) => ({
+        id, key, classification, statement, source, confidence, points,
+      })),
+    ),
     missingInformation: [...new Set(missingInformation)],
     nextAction: demandFit.alignedBuyerCount && status !== "DISQUALIFIED"
       ? `${baseNextAction} Current buyer demand aligns with ${demandFit.alignedBuyerCount} profile(s) on known fields only; price, condition, ARV, units, and deal-level capacity still require underwriting.`
@@ -361,17 +446,48 @@ async function discoveryResponse(row: typeof propertyDiscoveriesTable.$inferSele
 export async function listPropertyDiscoveries(options: {
   marketKey?: string;
   status?: string;
+  statuses?: string[];
   limit?: number;
+  cursor?: string;
+  unmatchedCursor?: string;
 } = {}, database: Database = db) {
   const marketKey = options.marketKey || DEFAULT_PROPERTY_QUALIFICATION_CRITERIA.marketKey;
-  const requestedLimit = Math.max(1, Math.min(options.limit ?? 50, 100));
+  const requestedLimit = Math.max(1, Math.min(options.limit ?? 25, PROPERTY_DISCOVERY_PAGE_MAX));
+  const statuses = options.statuses?.length
+    ? [...new Set(options.statuses)].sort()
+    : options.status ? [options.status] : [];
+  const statusScope = statuses.length ? statuses.join(",") : "ALL";
+  const discoveryCursor = decodeDiscoveryCursor(options.cursor, marketKey, statusScope);
+  const unmatchedCursor = decodeUnmatchedCursor(options.unmatchedCursor, marketKey);
   const criteria = await getCriteriaFrom(database, marketKey);
   const conditions = [eq(propertyDiscoveriesTable.marketKey, marketKey)];
-  if (options.status) conditions.push(eq(propertyDiscoveriesTable.status, options.status));
-  const rows = await database.select().from(propertyDiscoveriesTable)
+  if (statuses.length === 1) conditions.push(eq(propertyDiscoveriesTable.status, statuses[0]!));
+  else if (statuses.length > 1) conditions.push(inArray(propertyDiscoveriesTable.status, statuses));
+  if (discoveryCursor) {
+    const cursorUpdatedAt = new Date(discoveryCursor.updatedAt);
+    conditions.push(or(
+      lt(propertyDiscoveriesTable.score, discoveryCursor.score),
+      and(
+        eq(propertyDiscoveriesTable.score, discoveryCursor.score),
+        lt(propertyDiscoveriesTable.updatedAt, cursorUpdatedAt),
+      ),
+      and(
+        eq(propertyDiscoveriesTable.score, discoveryCursor.score),
+        eq(propertyDiscoveriesTable.updatedAt, cursorUpdatedAt),
+        gt(propertyDiscoveriesTable.id, discoveryCursor.id),
+      ),
+    )!);
+  }
+  const fetchedRows = await database.select().from(propertyDiscoveriesTable)
     .where(and(...conditions))
-    .orderBy(desc(propertyDiscoveriesTable.score), desc(propertyDiscoveriesTable.updatedAt))
-    .limit(100);
+    .orderBy(
+      desc(propertyDiscoveriesTable.score),
+      desc(propertyDiscoveriesTable.updatedAt),
+      asc(propertyDiscoveriesTable.id),
+    )
+    .limit(requestedLimit + 1);
+  const hasMore = fetchedRows.length > requestedLimit;
+  const rows = fetchedRows.slice(0, requestedLimit);
   const countsRows = await database.select({
     status: propertyDiscoveriesTable.status,
     total: count(),
@@ -388,6 +504,16 @@ export async function listPropertyDiscoveries(options: {
   for (const item of countsRows) {
     if (item.status in counts) counts[item.status as keyof typeof counts] = item.total;
   }
+  const nextDiscoveryRow = hasMore ? rows.at(-1) : undefined;
+  const nextCursor = nextDiscoveryRow ? encodePageCursor({
+    version: 1,
+    kind: "discoveries",
+    marketKey,
+    statusScope,
+    score: nextDiscoveryRow.score,
+    updatedAt: nextDiscoveryRow.updatedAt.toISOString(),
+    id: nextDiscoveryRow.id,
+  }) : null;
   const ids = rows.map((row) => row.id);
   const observations = ids.length
     ? await database.select({
@@ -409,13 +535,37 @@ export async function listPropertyDiscoveries(options: {
     records.push(sourceRow);
     sourceRowsByDiscovery.set(sourceRow.discoveryId, records);
   }
-  const unmatchedRows = await database.select().from(unmatchedPropertySourceObservationsTable)
-    .where(and(
+  const unmatchedConditions = [
       eq(unmatchedPropertySourceObservationsTable.marketKey, marketKey),
       eq(unmatchedPropertySourceObservationsTable.status, "UNMATCHED"),
-    ))
-    .orderBy(desc(unmatchedPropertySourceObservationsTable.lastObservedAt))
-    .limit(100);
+    ];
+  if (unmatchedCursor) {
+    const cursorObservedAt = new Date(unmatchedCursor.lastObservedAt);
+    unmatchedConditions.push(or(
+      lt(unmatchedPropertySourceObservationsTable.lastObservedAt, cursorObservedAt),
+      and(
+        eq(unmatchedPropertySourceObservationsTable.lastObservedAt, cursorObservedAt),
+        gt(unmatchedPropertySourceObservationsTable.id, unmatchedCursor.id),
+      ),
+    )!);
+  }
+  const fetchedUnmatchedRows = await database.select().from(unmatchedPropertySourceObservationsTable)
+    .where(and(...unmatchedConditions))
+    .orderBy(
+      desc(unmatchedPropertySourceObservationsTable.lastObservedAt),
+      asc(unmatchedPropertySourceObservationsTable.id),
+    )
+    .limit(requestedLimit + 1);
+  const unmatchedHasMore = fetchedUnmatchedRows.length > requestedLimit;
+  const unmatchedRows = fetchedUnmatchedRows.slice(0, requestedLimit);
+  const lastUnmatchedRow = unmatchedHasMore ? unmatchedRows.at(-1) : undefined;
+  const unmatchedNextCursor = lastUnmatchedRow ? encodePageCursor({
+    version: 1,
+    kind: "unmatched",
+    marketKey,
+    lastObservedAt: lastUnmatchedRow.lastObservedAt.toISOString(),
+    id: lastUnmatchedRow.id,
+  }) : null;
   const unmatchedSourceObservations = unmatchedRows.map(row => {
     const payload = sourcePayload(row.payload);
     return {
@@ -443,15 +593,17 @@ export async function listPropertyDiscoveries(options: {
       nextAction: "Find an exact residential OPA match or leave this source record unlinked. It is not an active lead.",
     };
   });
-  const owners = await database.select({
-    id: propertyDiscoveriesTable.id,
+  const ownerKeys = [...new Set(rows.map(row => row.ownerKey).filter((key): key is string => Boolean(key)))];
+  const owners = ownerKeys.length ? await database.select({
     ownerKey: propertyDiscoveriesTable.ownerKey,
+    total: count(),
   }).from(propertyDiscoveriesTable)
-    .where(eq(propertyDiscoveriesTable.marketKey, marketKey));
-  const ownerCount = new Map<string, number>();
-  for (const item of owners) {
-    if (item.ownerKey) ownerCount.set(item.ownerKey, (ownerCount.get(item.ownerKey) ?? 0) + 1);
-  }
+    .where(and(
+      eq(propertyDiscoveriesTable.marketKey, marketKey),
+      inArray(propertyDiscoveriesTable.ownerKey, ownerKeys),
+    ))
+    .groupBy(propertyDiscoveriesTable.ownerKey) : [];
+  const ownerCount = new Map(owners.flatMap(item => item.ownerKey ? [[item.ownerKey, item.total] as const] : []));
   const now = new Date();
   const currentBuyers = await allBuyerRecords(database, now);
   const records = await Promise.all(rows.map((row) => toDiscoveryResponse(
@@ -464,10 +616,15 @@ export async function listPropertyDiscoveries(options: {
     currentBuyers,
     now,
   )));
-  records.sort((a, b) => b.priorityScore - a.priorityScore || b.score - a.score ||
-    Date.parse(b.lastObservedAt) - Date.parse(a.lastObservedAt));
   return ListPropertyDiscoveriesResponse.parse({
-    records: records.slice(0, requestedLimit), counts, criteria, unmatchedSourceObservations,
+    records,
+    nextCursor,
+    hasMore,
+    unmatchedSourceObservations,
+    unmatchedNextCursor,
+    unmatchedHasMore,
+    counts,
+    criteria,
   });
 }
 

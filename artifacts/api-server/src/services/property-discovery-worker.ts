@@ -56,7 +56,7 @@ export async function discoverPublicProperties(now = new Date()) {
   const staleRefresh: typeof supplemental = staleTargets.length
     ? await refreshPropertySourceEvidence(staleTargets, "system:property-discovery", now)
     : { checked: 0, changed: 0, signals: 0, failures: [] };
-  const qualification = await listPropertyDiscoveries({ marketKey: "PHILADELPHIA_PA", limit: 100 });
+  const qualification = await listPropertyDiscoveries({ marketKey: "PHILADELPHIA_PA", limit: 1 });
   const demand = await refreshPropertyBuyerDemandAlignment(now);
   const matchedDistressParcels = distressRecords.length;
   const connectorSummary = connectorBatches

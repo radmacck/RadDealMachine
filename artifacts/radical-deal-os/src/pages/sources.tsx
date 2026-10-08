@@ -8,6 +8,7 @@ import {
   useSavePropertyDiscoveryCriteria, useSearchPublicProperties,
   type PropertyEvidenceClassification, type PropertyEvidenceSourceType, type PropertySignalKey,
   type PropertyDiscoveryStatus, type PropertySignalGroup, type PublicProperty, type SearchPublicPropertiesParams,
+  type ListPropertyDiscoveriesParams,
 } from '@workspace/api-client-react';
 import { PageHeader } from '@/components/page-header';
 import { EmptyState, ErrorNotice, RowsSkeleton } from '@/components/state-views';
@@ -19,6 +20,7 @@ import { useInvalidateWork } from '@/hooks/use-invalidate';
 import { useToast } from '@/hooks/use-toast';
 
 type Lane = 'properties' | 'buyer_candidates';
+const DISCOVERY_PAGE_SIZE = 25;
 
 export default function Sources() {
   const { canResearch, access } = useAccess();
@@ -33,6 +35,10 @@ export default function Sources() {
   const [terms, setTerms] = useState(false);
   const [statusFilter, setStatusFilter] = useState<PropertyDiscoveryStatus | 'ALL'>(() =>
     new URLSearchParams(window.location.search).get('discovery') ? 'ALL' : 'RELEVANT_CANDIDATE');
+  const [discoveryCursor, setDiscoveryCursor] = useState<string | undefined>();
+  const [discoveryPageHistory, setDiscoveryPageHistory] = useState<Array<string | undefined>>([]);
+  const [unmatchedCursor, setUnmatchedCursor] = useState<string | undefined>();
+  const [unmatchedPageHistory, setUnmatchedPageHistory] = useState<Array<string | undefined>>([]);
   const [openDiscoveryId, setOpenDiscoveryId] = useState(() => new URLSearchParams(window.location.search).get('discovery') ?? '');
   const [signalKey, setSignalKey] = useState<PropertySignalKey>('SELLER_MOTIVATION');
   const [signalClassification, setSignalClassification] = useState<PropertyEvidenceClassification>('INDICATED');
@@ -53,7 +59,13 @@ export default function Sources() {
   const sourceCoverage = useGetPropertySourceCoverage();
   const params: SearchPublicPropertiesParams = { lane, ...(zip ? { zip } : {}) };
   const search = useSearchPublicProperties(params, { query: { queryKey: getSearchPublicPropertiesQueryKey(params), staleTime: 30_000 } });
-  const discoveryParams = { marketKey: 'PHILADELPHIA_PA', limit: 100, ...(statusFilter !== 'ALL' ? { status: statusFilter } : {}) };
+  const discoveryParams: ListPropertyDiscoveriesParams = {
+    marketKey: 'PHILADELPHIA_PA',
+    limit: DISCOVERY_PAGE_SIZE,
+    ...(statusFilter !== 'ALL' ? { status: statusFilter } : {}),
+    ...(discoveryCursor ? { cursor: discoveryCursor } : {}),
+    ...(unmatchedCursor ? { unmatchedCursor } : {}),
+  };
   const discoveries = useListPropertyDiscoveries(discoveryParams);
   const recordDiscovery = useRecordPublicPropertyDiscovery();
   const addSignal = useAddPropertyRelevanceSignal();
@@ -75,8 +87,39 @@ export default function Sources() {
   }, [criterion?.version, criterion?.candidateThreshold, criterion?.qualifiedLeadThreshold]);
   const invalidateDiscoveries = () => {
     invalidate();
-    qc.invalidateQueries({ queryKey: getListPropertyDiscoveriesQueryKey({ marketKey: 'PHILADELPHIA_PA', limit: 100 }) });
+    setDiscoveryCursor(undefined);
+    setDiscoveryPageHistory([]);
+    setUnmatchedCursor(undefined);
+    setUnmatchedPageHistory([]);
+    qc.invalidateQueries({ queryKey: getListPropertyDiscoveriesQueryKey() });
     qc.invalidateQueries({ queryKey: getGetCommandCenterQueryKey() });
+  };
+  const nextDiscoveryPage = () => {
+    if (!discoveries.data?.nextCursor) return;
+    setDiscoveryPageHistory(history => [...history, discoveryCursor]);
+    setDiscoveryCursor(discoveries.data.nextCursor);
+  };
+  const previousDiscoveryPage = () => {
+    if (!discoveryPageHistory.length) return;
+    setDiscoveryCursor(discoveryPageHistory.at(-1));
+    setDiscoveryPageHistory(history => history.slice(0, -1));
+  };
+  const nextUnmatchedPage = () => {
+    if (!discoveries.data?.unmatchedNextCursor) return;
+    setUnmatchedPageHistory(history => [...history, unmatchedCursor]);
+    setUnmatchedCursor(discoveries.data.unmatchedNextCursor);
+  };
+  const previousUnmatchedPage = () => {
+    if (!unmatchedPageHistory.length) return;
+    setUnmatchedCursor(unmatchedPageHistory.at(-1));
+    setUnmatchedPageHistory(history => history.slice(0, -1));
+  };
+  const changeStatusFilter = (value: PropertyDiscoveryStatus | 'ALL') => {
+    setStatusFilter(value);
+    setDiscoveryCursor(undefined);
+    setDiscoveryPageHistory([]);
+    setUnmatchedCursor(undefined);
+    setUnmatchedPageHistory([]);
   };
   const record = (r: PublicProperty) => discover.mutate({ data: { name: r.recordedOwner ?? '', source: `Philadelphia official tax record ${r.id} (${r.address}); recorded owner ${r.recordedOwner ?? 'n/a'}. OBSERVED corporate-owner research; not title, ownership of a buy box, or buying intent.`, sourceUrl: r.sourceUrl, capturedAt: r.capturedAt, confidence: 0.55 } }, {
     onSuccess: (b) => { invalidate(); toast({ title: 'Unverified prospect recorded', description: b.name }); nav(`/buyers/${b.id}`); },
@@ -260,7 +303,7 @@ export default function Sources() {
               <div>
                 <h3 className="font-semibold">Unmatched public-source records</h3>
                 <p className="text-sm text-muted-foreground">
-                  {discoveries.data.unmatchedSourceObservations.length} raw record(s) have no exact residential OPA match. They remain evidence only—not property candidates or leads.
+                  Showing {discoveries.data.unmatchedSourceObservations.length} raw record(s) on this page. They have no exact residential OPA match and remain evidence only—not property candidates or leads.
                 </p>
               </div>
               <span className="tag tone-muted">Not in acquisition queue</span>
@@ -294,11 +337,22 @@ export default function Sources() {
                 </article>
               ))}
             </div>
+            <div className="mt-3 flex flex-wrap items-center justify-between gap-2 border-t pt-3">
+              <Button type="button" size="sm" variant="outline" disabled={!unmatchedPageHistory.length || discoveries.isFetching} onClick={previousUnmatchedPage}>
+                Newer unmatched records
+              </Button>
+              <span className="text-xs text-muted-foreground">
+                Page {unmatchedPageHistory.length + 1} · {discoveries.data.unmatchedHasMore ? 'more retained records available' : 'latest available page'}
+              </span>
+              <Button type="button" size="sm" variant="outline" disabled={!discoveries.data.unmatchedHasMore || discoveries.isFetching} onClick={nextUnmatchedPage}>
+                Older unmatched records
+              </Button>
+            </div>
           </section>
         )}
         <div className="flex flex-wrap items-end justify-between gap-3">
           <label className="grid gap-1 text-xs">Show
-            <select className="h-9 rounded border bg-background px-2 text-sm" value={statusFilter} onChange={(e) => setStatusFilter(e.target.value as PropertyDiscoveryStatus | 'ALL')} data-testid="select-discovery-status">
+            <select className="h-9 rounded border bg-background px-2 text-sm" value={statusFilter} onChange={(e) => changeStatusFilter(e.target.value as PropertyDiscoveryStatus | 'ALL')} data-testid="select-discovery-status">
               <option value="RELEVANT_CANDIDATE">Relevant candidates</option>
               <option value="DISCOVERED_PROPERTY">Raw discoveries</option>
               <option value="QUALIFIED_LEAD">Qualified leads</option>
@@ -309,6 +363,21 @@ export default function Sources() {
           </label>
           <span className="text-xs text-muted-foreground">Owner-linked properties remain separate parcels. Repeated source records attach to one property discovery.</span>
         </div>
+        {discoveries.data && (
+          <div className="flex flex-wrap items-center justify-between gap-2 rounded border bg-muted/20 px-3 py-2" data-testid="discovery-pagination">
+            <Button type="button" size="sm" variant="outline" disabled={!discoveryPageHistory.length || discoveries.isFetching} onClick={previousDiscoveryPage}>
+              Previous page
+            </Button>
+            <span className="text-xs text-muted-foreground">
+              Page {discoveryPageHistory.length + 1} · {discoveries.data.records.length} properties shown ·
+              {" "}{discoveries.data.hasMore ? 'more properties available' : 'end of this filtered pool'} ·
+              {" "}stable ranking; restart after a source refresh to include changed records.
+            </span>
+            <Button type="button" size="sm" variant="outline" disabled={!discoveries.data.hasMore || discoveries.isFetching} onClick={nextDiscoveryPage}>
+              Next page
+            </Button>
+          </div>
+        )}
         {discoveries.isLoading && <RowsSkeleton rows={2} />}
         {discoveries.isError && <ErrorNotice error={discoveries.error} onRetry={() => discoveries.refetch()} />}
         {recordDiscovery.error && <ErrorNotice error={recordDiscovery.error} />}
@@ -335,6 +404,12 @@ export default function Sources() {
                       <span className="tag tone-muted">{item.score}/100 · {Math.round(item.confidence * 100)}% confidence</span>
                     </div>
                     <p className="mt-1 text-sm">{item.reason}</p>
+                    <div className="mt-2 rounded border border-border/70 bg-background/60 p-2" data-testid={`ranking-reasons-${item.id}`}>
+                      <p className="text-xs font-semibold uppercase tracking-wide">Why it is ranked here</p>
+                      <ul className="mt-1 list-disc space-y-1 pl-4 text-xs text-muted-foreground">
+                        {item.rankingReasons.slice(0, 6).map((reason, index) => <li key={`${item.id}-ranking-${index}`}>{reason}</li>)}
+                      </ul>
+                    </div>
                     <p className="mt-1 text-xs text-muted-foreground">Next: {item.nextAction}</p>
                     <p className="mt-1 text-xs text-muted-foreground">Source observations: {item.sourceObservationCount} · properties with recorded owner: {item.relatedOwnerPropertyCount} · first seen {new Date(item.firstObservedAt).toLocaleDateString()} · last seen {new Date(item.lastObservedAt).toLocaleDateString()}</p>
                   </div>
