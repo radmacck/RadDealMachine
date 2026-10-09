@@ -3,8 +3,9 @@ import { Link } from 'wouter';
 import { Download, FileText, RefreshCw } from 'lucide-react';
 import {
   getGetDealOperationsQueryKey, useCreateContract, useExecuteContract, useGetDealOperations, useGetTransactionDocumentReadiness, usePreparePurchaseReviewDocument, useTransitionTransactionDocument, useRecordBuyerResponse, useRecordDestinationActivity,
-  useRecordClosingMilestone, useRecordDealOutcome, useRecordTransactionException, useRefreshMatches,
-  type BuyerMatch, type BuyerResponseInputStatus, type ClosingMilestoneInputKind, type ClosingMilestoneInputEvidenceKind, type DealContract, type DealOutcomeInputOutcome,
+  useRecordClosingMilestone, useRecordDealOutcome, useRecordTransactionDeadlineSchedule, useRecordTransactionException, useRefreshMatches,
+  type BuyerMatch, type BuyerResponseInputStatus, type ClosingMilestoneInputKind, type ClosingMilestoneInputEvidenceKind,
+  type TransactionMilestoneDeadlineItemKind, type TransactionMilestoneDeadlineItemDisposition, type DealContract, type DealOutcomeInputOutcome,
   type DestinationActivityEvent, type DestinationActivityInputKind, type TransactionExceptionInputKind, type LeadDetail,
 } from '@workspace/api-client-react';
 import { ErrorNotice, RowsSkeleton } from '@/components/state-views';
@@ -19,11 +20,15 @@ import { ago, fmtDate, fromLocalInput, isOverdue, money, num, toLocalInput } fro
 import { DistributionPanel } from '@/components/distribution-panel';
 
 const MILESTONES: { k: ClosingMilestoneInputKind; label: string }[] = [
-  { k: 'TITLE_CLEARED', label: 'Title cleared' }, { k: 'EARNEST_MONEY_CONFIRMED', label: 'Earnest money confirmed' },
+  { k: 'TITLE_CLEARED', label: 'Title cleared' }, { k: 'INSPECTION_COMPLETED', label: 'Inspection completed' },
+  { k: 'EARNEST_MONEY_CONFIRMED', label: 'Earnest money confirmed' },
   { k: 'ASSIGNMENT_SIGNED', label: 'Assignment signed' }, { k: 'FUNDS_CONFIRMED', label: 'Funds confirmed' },
 ];
 const requiredMilestones = (contract: DealContract) =>
-  MILESTONES.filter((m) => m.k !== 'EARNEST_MONEY_CONFIRMED' || contract.earnestMoney > 0);
+  MILESTONES.filter((m) =>
+    (m.k !== 'EARNEST_MONEY_CONFIRMED' || contract.earnestMoney > 0) &&
+    (m.k !== 'INSPECTION_COMPLETED' || contract.deadlineSchedule?.items.find((item) => item.kind === m.k)?.disposition !== 'NOT_APPLICABLE' &&
+      contract.deadlineSchedule?.items.some((item) => item.kind === m.k)));
 const STATUS_TONE: Record<DealContract['status'], string> = { DRAFT: 'tone-warn', UNDER_CONTRACT: 'tone-go', CLOSING: 'tone-signal', CLOSED: 'tone-ink', CANCELLED: 'tone-stop' };
 const STATUS_LABEL: Record<DealContract['status'], string> = { DRAFT: 'Draft, not under contract', UNDER_CONTRACT: 'Under contract', CLOSING: 'Closing', CLOSED: 'Closed', CANCELLED: 'Cancelled' };
 
@@ -271,17 +276,18 @@ function MilestoneForm({ contract, onDone }: { contract: DealContract; onDone: (
     if (url.trim().length < 8 || note.trim().length < 10) return setLocal('Evidence link and a note of at least 10 characters are required.');
     const amountValue = num(amount);
     const effective = fromLocalInput(effectiveAt);
+    if (!effective) return setLocal('Enter when the milestone actually occurred; the system records occurrence time separately from when you save it.');
     if (financial && (!Number.isFinite(amountValue) || amountValue < 0 || !evidenceKind ||
-      counterpartyName.trim().length < 2 || paymentReference.trim().length < 3 || !effective))
-      return setLocal('Financial evidence requires its actual amount, evidence type, counterparty, masked reference, and actual effective date.');
+      counterpartyName.trim().length < 2 || paymentReference.trim().length < 3))
+      return setLocal('Financial evidence requires its actual amount, evidence type, counterparty, and masked reference.');
     if (financial && /\b\d{9,}\b/.test(paymentReference))
       return setLocal('Use a masked receipt reference only; do not enter account, card, or payment credentials.');
     setLocal(null);
     rec.mutate({ id: contract.leadId, data: {
-      version: contract.version, kind: k, evidenceUrl: url.trim(), note: note.trim(),
+      version: contract.version, kind: k, evidenceUrl: url.trim(), note: note.trim(), effectiveAt: effective,
       ...(financial ? {
         amount: amountValue, currency: 'USD' as const, evidenceKind: evidenceKind as ClosingMilestoneInputEvidenceKind,
-        counterpartyName: counterpartyName.trim(), paymentReference: paymentReference.trim(), effectiveAt: effective!,
+        counterpartyName: counterpartyName.trim(), paymentReference: paymentReference.trim(),
       } : {}),
     } }, { onSuccess: () => {
       const next = open[open.findIndex((m) => m.k === k) + 1];
@@ -317,13 +323,141 @@ function MilestoneForm({ contract, onDone }: { contract: DealContract; onDone: (
           </select></Field>
           <Field label={k === 'EARNEST_MONEY_CONFIRMED' ? 'Escrow / title holder' : 'Funding institution / escrow'}><Input value={counterpartyName} onChange={(e) => setCounterpartyName(e.target.value)} disabled={!isOwner} data-testid="input-milestone-counterparty" /></Field>
           <Field label="Masked receipt/reference" hint="Do not enter account/card numbers or credentials"><Input value={paymentReference} onChange={(e) => setPaymentReference(e.target.value)} disabled={!isOwner} data-testid="input-milestone-reference" /></Field>
-          <Field label="When it actually occurred"><Input type="datetime-local" value={effectiveAt} onChange={(e) => setEffectiveAt(e.target.value)} disabled={!isOwner} data-testid="input-milestone-effective-at" /></Field>
         </div>
       </>}
+      <Field label="When it actually occurred" hint="Recorded separately from the time this evidence is entered">
+        <Input type="datetime-local" value={effectiveAt} onChange={(e) => setEffectiveAt(e.target.value)} disabled={!isOwner} data-testid="input-milestone-effective-at" />
+      </Field>
       {local && <p className="text-sm text-destructive">{local}</p>}
       {rec.error != null && <ErrorNotice error={rec.error} />}
       <Button size="sm" disabled={!isOwner || rec.isPending} onClick={submit} data-testid="button-record-milestone">{rec.isPending ? 'Recording...' : 'Record milestone'}</Button>
       {!isOwner && <p className="text-xs text-muted-foreground">Only the owner can record closing milestones.</p>}
+    </div>
+  );
+}
+
+const DEADLINE_MILESTONES: { kind: TransactionMilestoneDeadlineItemKind; label: string }[] = [
+  { kind: 'TITLE_CLEARED', label: 'Title clearance' },
+  { kind: 'INSPECTION_COMPLETED', label: 'Inspection completion' },
+  { kind: 'EARNEST_MONEY_CONFIRMED', label: 'Acquisition earnest money' },
+  { kind: 'ASSIGNMENT_SIGNED', label: 'Buyer assignment' },
+  { kind: 'FUNDS_CONFIRMED', label: 'Buyer funds evidence' },
+];
+type DeadlineDraft = {
+  kind: TransactionMilestoneDeadlineItemKind;
+  disposition: TransactionMilestoneDeadlineItemDisposition | '';
+  dueDate: string;
+  basisNote: string;
+};
+function latestDeadlineSource(contract: DealContract) {
+  const latestAmendment = [...(contract.history ?? [])]
+    .filter((item) => item.kind === 'AMEND_CLOSING' && !!item.evidenceUrl)
+    .sort((a, b) => Date.parse(a.effectiveAt) - Date.parse(b.effectiveAt))
+    .at(-1);
+  return latestAmendment?.evidenceUrl ?? contract.executedDocumentUrl ?? '';
+}
+function MilestoneDeadlineScheduleForm({ contract, onDone }: { contract: DealContract; onDone: () => void }) {
+  const { isOwner } = useAccess();
+  const save = useRecordTransactionDeadlineSchedule();
+  const { toast } = useToast();
+  const current = contract.deadlineSchedule;
+  const [sourceEvidenceUrl, setSourceEvidenceUrl] = useState(() => latestDeadlineSource(contract));
+  const [timeZone, setTimeZone] = useState(() =>
+    current?.items.find((item) => item.timeZone)?.timeZone ?? '');
+  const [reviewNote, setReviewNote] = useState('');
+  const [requestKey, setRequestKey] = useState(() => globalThis.crypto.randomUUID());
+  const [local, setLocal] = useState<string | null>(null);
+  const [items, setItems] = useState<DeadlineDraft[]>(() => DEADLINE_MILESTONES.map(({ kind }) => {
+    const prior = current?.items.find((item) => item.kind === kind);
+    return {
+      kind,
+      disposition: prior?.disposition ?? '',
+      dueDate: prior?.dueDate ?? '',
+      basisNote: prior?.basisNote ?? '',
+    };
+  }));
+  const updateItem = (kind: TransactionMilestoneDeadlineItemKind, patch: Partial<DeadlineDraft>) =>
+    setItems((previous) => previous.map((item) => item.kind === kind ? { ...item, ...patch } : item));
+  const submit = () => {
+    if (!isOwner) return;
+    if (sourceEvidenceUrl.trim().length < 8 || reviewNote.trim().length < 10)
+      return setLocal('Link the current executed agreement/amendment and add a review note.');
+    if (items.some((item) => !item.disposition || item.basisNote.trim().length < 10))
+      return setLocal('Review all five milestones and explain the disposition for each.');
+    if (items.some((item) => item.disposition === 'DUE_DATE' && (!item.dueDate || !timeZone.trim())))
+      return setLocal('A scheduled calendar date needs the exact date and the time zone stated or confirmed from the contract.');
+    setLocal(null);
+    save.mutate({
+      id: contract.leadId,
+      data: {
+        version: contract.version,
+        deadlineScheduleVersion: contract.deadlineScheduleVersion ?? 0,
+        idempotencyKey: requestKey,
+        sourceEvidenceUrl: sourceEvidenceUrl.trim(),
+        reviewNote: reviewNote.trim(),
+        items: items.map((item) => ({
+          kind: item.kind,
+          disposition: item.disposition as TransactionMilestoneDeadlineItemDisposition,
+          dueDate: item.disposition === 'DUE_DATE' ? item.dueDate : null,
+          timeZone: item.disposition === 'DUE_DATE' ? timeZone.trim() : null,
+          basisNote: item.basisNote.trim(),
+        })),
+      },
+    }, {
+      onSuccess: () => {
+        setRequestKey(globalThis.crypto.randomUUID());
+        setReviewNote('');
+        onDone();
+        toast({ title: 'Deadline schedule reviewed', description: 'This records due-date interpretation only; it does not complete a milestone or amend the contract.' });
+      },
+    });
+  };
+  return (
+    <div className="space-y-3" data-testid="form-milestone-deadlines">
+      <div>
+        <p className="text-sm font-semibold">Milestone due dates</p>
+        <p className="mt-1 text-xs text-muted-foreground">Review the executed terms. Each milestone must be given a due date, marked as having no fixed date, or explicitly marked not applicable. This is a schedule review, not proof of completion or a contract amendment.</p>
+      </div>
+      {current && <p className="text-xs text-muted-foreground" data-testid="text-deadline-schedule-version">
+        Schedule v{current.version} · reviewed {fmtDate(current.recordedAt)} · source event {fmtDate(current.sourceEffectiveAt)} · terms {current.termsHash.slice(0, 12)}
+      </p>}
+      <Field label="Current executed agreement or latest amendment reference"><Input value={sourceEvidenceUrl} onChange={(e) => setSourceEvidenceUrl(e.target.value)} disabled={!isOwner} data-testid="input-deadline-source" /></Field>
+      <div className="space-y-3">
+        {items.map((item) => (
+          <div key={item.kind} className="grid gap-2 rounded-md border border-border p-3 sm:grid-cols-2" data-testid={`row-deadline-${item.kind}`}>
+            <Field label={DEADLINE_MILESTONES.find((m) => m.kind === item.kind)?.label ?? item.kind}>
+              <select className={SELECT} value={item.disposition} disabled={!isOwner} onChange={(e) => updateItem(item.kind, {
+                disposition: e.target.value as TransactionMilestoneDeadlineItemDisposition | '',
+                dueDate: e.target.value === 'DUE_DATE' ? item.dueDate : '',
+              })}>
+                <option value="">Review executed terms</option>
+                <option value="DUE_DATE">Has a specific due date</option>
+                <option value="NO_FIXED_DATE">No fixed date stated</option>
+                <option value="NOT_APPLICABLE">Not applicable under these terms</option>
+              </select>
+            </Field>
+            {item.disposition === 'DUE_DATE' && <Field label={`Due date (${timeZone || 'time zone required'})`}>
+              <Input type="date" value={item.dueDate} onChange={(e) => updateItem(item.kind, { dueDate: e.target.value })} disabled={!isOwner} />
+            </Field>}
+            <Field label="Reason from the executed terms" hint="For example: clause or page; do not infer a missing date">
+              <Input value={item.basisNote} onChange={(e) => updateItem(item.kind, { basisNote: e.target.value })} disabled={!isOwner} />
+            </Field>
+          </div>
+        ))}
+      </div>
+      {items.some((item) => item.disposition === 'DUE_DATE') && <Field label="Time zone explicitly confirmed from the agreement">
+        <Input value={timeZone} onChange={(e) => setTimeZone(e.target.value)} placeholder="e.g. America/New_York" disabled={!isOwner} data-testid="input-deadline-time-zone" />
+      </Field>}
+      <Field label="Review note"><Textarea value={reviewNote} onChange={(e) => setReviewNote(e.target.value)} disabled={!isOwner} data-testid="input-deadline-review-note" /></Field>
+      {local && <p className="text-sm text-destructive">{local}</p>}
+      {save.error != null && <ErrorNotice error={save.error} />}
+      {isOwner ? <Button size="sm" disabled={save.isPending} onClick={submit} data-testid="button-save-deadline-schedule">
+        {save.isPending ? 'Saving review...' : 'Save reviewed schedule'}
+      </Button> : <p className="text-xs text-muted-foreground">Only the owner can record this schedule review.</p>}
+      {current && <ul className="space-y-1 text-xs text-muted-foreground" data-testid="list-current-deadlines">
+        {current.items.map((item) => <li key={item.kind}>{item.kind.replace(/_/g, ' ')}: {item.disposition.replace(/_/g, ' ')}
+          {item.disposition === 'DUE_DATE' ? ` — ${item.dueDate} (${item.timeZone})` : ''}. {item.basisNote}</li>)}
+      </ul>}
     </div>
   );
 }
@@ -666,7 +800,12 @@ export function DealOperationsPanel({ detail }: { detail: LeadDetail }) {
                   <p className="text-xs text-muted-foreground">Recorded in this system: {fmtDate(c.outcomeRecordedAt)}. History and milestone entries have their own recording times.</p>
                   {c.status === 'CLOSED' && <p className="font-mono text-xs">Fee {money(c.assignmentFeeReceived)} / costs {money(c.closingCosts)} / net {money(c.netProceeds)}</p>}
                   <p className="text-muted-foreground">{c.outcomeNote} <EvidenceLink url={c.outcomeEvidenceUrl} label="evidence" /></p></div>
-              ) : <div className="mt-4 border-t border-border pt-3"><MilestoneForm key={c.version} contract={c} onDone={done} /></div>}
+              ) : <>
+                <div className="mt-4 border-t border-border pt-3">
+                  <MilestoneDeadlineScheduleForm key={`${c.version}:${c.deadlineScheduleVersion}`} contract={c} onDone={done} />
+                </div>
+                <div className="mt-4 border-t border-border pt-3"><MilestoneForm key={c.version} contract={c} onDone={done} /></div>
+              </>}
             </div>
             {c.status !== 'CLOSED' && c.status !== 'CANCELLED' && <div className="border-border lg:border-l lg:pl-5"><p className="eyebrow mb-3">Record outcome</p><OutcomeForm key={c.version} contract={c} onDone={done} /></div>}
           </div>

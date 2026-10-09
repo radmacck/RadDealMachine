@@ -11,6 +11,7 @@ export type ClosingMilestoneInputKind = typeof ClosingMilestoneInputKind[keyof t
 
 export const ClosingMilestoneInputKind = {
   TITLE_CLEARED: 'TITLE_CLEARED',
+  INSPECTION_COMPLETED: 'INSPECTION_COMPLETED',
   EARNEST_MONEY_CONFIRMED: 'EARNEST_MONEY_CONFIRMED',
   ASSIGNMENT_SIGNED: 'ASSIGNMENT_SIGNED',
   FUNDS_CONFIRMED: 'FUNDS_CONFIRMED',

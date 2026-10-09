@@ -107,7 +107,7 @@ try {
     id:"synthetic-portal-contract",leadId:b.id,offerId:"synthetic-authorized-offer",version:1,status:"UNDER_CONTRACT",
     purchasePrice:100000,assignmentTarget:15000,earnestMoney:1000,assignmentAllowed:true,
     closingAt:new Date(now.getTime()+30*24*60*60*1000).toISOString(),contingencies:"Synthetic exercise only.",
-    milestones:[],createdAt:now.toISOString(),
+    milestones:[],deadlineScheduleVersion:0,deadlineScheduleHistory:[],createdAt:now.toISOString(),
   };
   const syntheticDetail = {
     lead:{

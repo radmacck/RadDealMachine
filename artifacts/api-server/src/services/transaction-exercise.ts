@@ -27,6 +27,7 @@ const actor = {id:`synthetic-transaction:${randomUUID()}`,role:"OWNER"};
 const operator = {...actor,role:"OPERATOR"};
 const now = new Date();
 const future = (days:number)=>new Date(now.getTime()+days*86400000).toISOString();
+const dateOnly = (days:number)=>future(days).slice(0,10);
 let readinessSummary: Record<string,unknown> = {};
 let readinessDeadlineKeys: {upcoming:string;overdue:string}|null = null;
 try {
@@ -167,7 +168,61 @@ try {
   await assert.rejects(transactions.executeContract(id,execute,operator,now),e=>(e as {status:number}).status===403);
   await assert.rejects(transactions.executeContract(id,{...execute,sellerSignedAt:future(1)},actor,now),/future/);
   // Recording after approval expiry is allowed ONLY for historically valid signatures.
-  op = await transactions.executeContract(id,execute,actor,new Date(now.getTime()+3*86400000));
+  const executionNow = new Date(now.getTime()+3*86400000);
+  op = await transactions.executeContract(id,execute,actor,executionNow);
+  const initialDeadlineSchedule = {
+    version:op.contract!.version,deadlineScheduleVersion:op.contract!.deadlineScheduleVersion,
+    idempotencyKey:"synthetic-deadline-review-initial",sourceEvidenceUrl:execute.executedDocumentUrl,
+    reviewNote:"SYNTHETIC schedule exercise only; the fixture is not a real transaction or date.",
+    items:[
+      {kind:"TITLE_CLEARED" as const,disposition:"DUE_DATE" as const,dueDate:dateOnly(2),timeZone:"America/New_York",basisNote:"SYNTHETIC contract clause 4 title target."},
+      {kind:"INSPECTION_COMPLETED" as const,disposition:"DUE_DATE" as const,dueDate:dateOnly(4),timeZone:"America/New_York",basisNote:"SYNTHETIC contract clause 6 inspection date."},
+      {kind:"EARNEST_MONEY_CONFIRMED" as const,disposition:"DUE_DATE" as const,dueDate:dateOnly(6),timeZone:"America/New_York",basisNote:"SYNTHETIC contract clause 2 escrow deadline."},
+      {kind:"ASSIGNMENT_SIGNED" as const,disposition:"NO_FIXED_DATE" as const,dueDate:null,timeZone:null,basisNote:"SYNTHETIC agreement has no fixed assignment date."},
+      {kind:"FUNDS_CONFIRMED" as const,disposition:"NOT_APPLICABLE" as const,dueDate:null,timeZone:null,basisNote:"SYNTHETIC no buyer was committed at this review."},
+    ],
+  };
+  await evaluateAllTransactionReadiness(executionNow);
+  let deadlineReport = await getTransactionReadinessReport(executionNow);
+  assert.ok(deadlineReport.exceptions.some(item=>
+    item.contractId===op.contract?.id&&item.issueKey==="MILESTONE_SCHEDULE_REVIEW_REQUIRED"&&item.status==="OPEN"),
+    "An active executed transaction without a reviewed milestone schedule is explicitly blocked.");
+  await assert.rejects(
+    transactions.recordTransactionDeadlineSchedule(id,initialDeadlineSchedule,operator,executionNow),
+    (error:unknown)=>(error as {status?:number}).status===403,
+    "Only the owner can schedule contractual milestones.",
+  );
+  await assert.rejects(
+    transactions.recordTransactionDeadlineSchedule(id,{...initialDeadlineSchedule,
+      sourceEvidenceUrl:"https://example.com/synthetic-stale-contract"},actor,executionNow),
+    /latest executed agreement or amendment only/,
+    "A schedule must cite the current executed agreement.",
+  );
+  op = await transactions.recordTransactionDeadlineSchedule(id,initialDeadlineSchedule,actor,executionNow);
+  assert.equal(op.contract?.deadlineScheduleVersion,1);
+  const deadlineHistoryCount = op.contract?.deadlineScheduleHistory.length;
+  op = await transactions.recordTransactionDeadlineSchedule(id,initialDeadlineSchedule,actor,executionNow);
+  assert.equal(op.contract?.deadlineScheduleHistory.length,deadlineHistoryCount,"Idempotent schedule replay must not append a second revision.");
+  assert.equal(op.contract?.milestones.length,0,"Recording due dates must not record milestone completion.");
+  await evaluateAllTransactionReadiness(executionNow);
+  deadlineReport = await getTransactionReadinessReport(executionNow);
+  assert.ok(deadlineReport.exceptions.some(item=>
+    item.contractId===op.contract?.id&&item.issueKey===`MILESTONE_DEADLINE_OVERDUE:TITLE_CLEARED:${dateOnly(2)}`&&item.status==="OPEN"),
+    "An overdue title date is persisted as a distinct, evidence-linked transaction exception.");
+  assert.ok(deadlineReport.exceptions.some(item=>
+    item.contractId===op.contract?.id&&item.issueKey===`MILESTONE_DEADLINE_UPCOMING:INSPECTION_COMPLETED:${dateOnly(4)}`&&item.status==="OPEN"),
+    "A persisted contract review creates an upcoming inspection exception from its calendar date and reviewed time zone.");
+  assert.ok(deadlineReport.exceptions.some(item=>
+    item.contractId===op.contract?.id&&item.issueKey==="MILESTONE_SCHEDULE_REVIEW_REQUIRED"&&item.status==="RESOLVED"),
+    "The owner-reviewed schedule resolves the missing-schedule exception without recording milestone completion.");
+  op = await transactions.recordClosingMilestone(id,{version:op.contract!.version,kind:"INSPECTION_COMPLETED",
+    evidenceUrl:"https://example.com/synthetic-inspection-report",
+    note:"SYNTHETIC inspection evidence only; no real property was inspected.",effectiveAt:now.toISOString()},actor,executionNow);
+  await evaluateAllTransactionReadiness(executionNow);
+  deadlineReport = await getTransactionReadinessReport(executionNow);
+  assert.ok(deadlineReport.exceptions.some(item=>
+    item.contractId===op.contract?.id&&item.issueKey===`MILESTONE_DEADLINE_UPCOMING:INSPECTION_COMPLETED:${dateOnly(4)}`&&item.status==="RESOLVED"),
+    "A separately persisted inspection event with distinct event/record times resolves the due-date exception.");
   assert.equal(op.contract?.status,"UNDER_CONTRACT");
   assert.equal(op.contract?.documents?.[0]?.id,reviewDocument.id,"contract updates must retain the immutable review artifact");
    const executedReviewArtifact = op.contract?.documents?.find(document=>document.id===reviewDocument.id);
@@ -539,6 +594,11 @@ try {
   op = await recordTransactionException(id,{...amend,buyerConsentEvidenceUrl:"https://example.com/synthetic-buyer-consent"},actor,now);
   assert.equal(op.contract?.closingAt,future(4)); assert.equal(op.contract?.purchasePrice,110000);
   assert.equal(op.contract?.history?.[0]?.previousState.closingAt,future(20));
+  await evaluateAllTransactionReadiness(now);
+  const amendedScheduleReport = await getTransactionReadinessReport(now);
+  assert.ok(amendedScheduleReport.exceptions.some(item=>
+    item.contractId===op.contract?.id&&item.issueKey==="MILESTONE_SCHEDULE_STALE"&&item.status==="OPEN"),
+    "An executed closing-date amendment invalidates the prior milestone schedule.");
    await evaluateAllTransactionReadiness(now);
    readinessReport = await getTransactionReadinessReport(now);
    assert.ok(readinessReport.exceptions.some(item=>item.issueKey===readinessDeadlineKeys?.upcoming&&item.status==="RESOLVED"),
@@ -553,7 +613,7 @@ try {
     "a closing amendment must make a prior terms PDF unavailable for current use",
   );
   op = await transactions.recordClosingMilestone(id,{version:op.contract!.version,kind:"ASSIGNMENT_SIGNED",
-    evidenceUrl:"https://example.com/synthetic-old-assignment",note:"SYNTHETIC former buyer assignment."},actor,now);
+    evidenceUrl:"https://example.com/synthetic-old-assignment",note:"SYNTHETIC former buyer assignment.",effectiveAt:now.toISOString()},actor,now);
     const oldBuyerId = winnerBuyerId;
   op = await recordTransactionException(id,{version:op.contract!.version,kind:"RELEASE_BUYER",buyerId:oldBuyerId,
     effectiveAt:now.toISOString(),evidenceUrl:"https://example.com/synthetic-release",note:"SYNTHETIC externally reviewed release only."},actor,now);
@@ -609,9 +669,9 @@ try {
   /current owner-reviewed funding evidence/);
   const legacySparseContract = {...op.contract!,status:"CLOSING" as const,milestones:[
     {kind:"EARNEST_MONEY_CONFIRMED" as const,evidenceUrl:"https://example.com/synthetic-old-emd",
-      note:"Legacy evidence link only.",recordedBy:actor.id,recordedAt:now.toISOString()},
+      note:"Legacy evidence link only.",effectiveAt:now.toISOString(),recordedBy:actor.id,recordedAt:now.toISOString()},
     {kind:"FUNDS_CONFIRMED" as const,evidenceUrl:"https://example.com/synthetic-old-funds",
-      note:"Legacy evidence link only.",recordedBy:actor.id,recordedAt:now.toISOString()},
+      note:"Legacy evidence link only.",effectiveAt:now.toISOString(),recordedBy:actor.id,recordedAt:now.toISOString()},
   ]};
   const legacyBlockers = closingBlockers(legacySparseContract,undefined);
   assert.ok(legacyBlockers.some(x=>/Acquisition earnest-money evidence is incomplete/.test(x)),
@@ -619,9 +679,10 @@ try {
   assert.ok(legacyBlockers.some(x=>/Buyer-funds evidence is incomplete/.test(x)),
     "Legacy generic funds links cannot satisfy the current-funds evidence gate.");
   for (const kind of CLOSING_MILESTONES) {
+    if (op.contract?.milestones.some(milestone=>milestone.kind===kind)) continue;
     const details = kind==="EARNEST_MONEY_CONFIRMED" ? earnestEvidence
       : kind==="FUNDS_CONFIRMED" ? buyerFundsEvidence
-        : {kind,evidenceUrl:`https://example.com/synthetic-${kind.toLowerCase()}`,note:"Synthetic reviewed evidence, no actual escrow activity."};
+        : {kind,evidenceUrl:`https://example.com/synthetic-${kind.toLowerCase()}`,note:"Synthetic reviewed evidence, no actual escrow activity.",effectiveAt:now.toISOString()};
     op = await transactions.recordClosingMilestone(id,{version:op.contract!.version,...details},actor,now);
   }
   const recordedEarnest = op.contract?.milestones.find(m=>m.kind==="EARNEST_MONEY_CONFIRMED");
@@ -630,6 +691,24 @@ try {
   assert.equal(recordedEarnest?.effectiveAt,now.toISOString());
   assert.equal(recordedFunds?.amount,buyer.availableFunds);
   assert.equal(recordedFunds?.evidenceUrl,buyer.fundingEvidenceUrl);
+  const latestAmendmentForSchedule = [...(op.contract!.history??[])]
+    .filter(item=>item.kind==="AMEND_CLOSING"&&!!item.evidenceUrl)
+    .sort((a,b)=>Date.parse(a.effectiveAt)-Date.parse(b.effectiveAt)).at(-1);
+  const currentScheduleSource = latestAmendmentForSchedule?.evidenceUrl??op.contract!.executedDocumentUrl!;
+  op = await transactions.recordTransactionDeadlineSchedule(id,{
+    version:op.contract!.version,deadlineScheduleVersion:op.contract!.deadlineScheduleVersion,
+    idempotencyKey:"synthetic-deadline-review-after-amendment-and-buyer",
+    sourceEvidenceUrl:currentScheduleSource,
+    reviewNote:"SYNTHETIC revised schedule after evidenced amendment and replacement buyer; no real transaction.",
+    items:[
+      {kind:"TITLE_CLEARED" as const,disposition:"DUE_DATE" as const,dueDate:dateOnly(5),timeZone:"America/New_York",basisNote:"SYNTHETIC latest terms title review date."},
+      {kind:"INSPECTION_COMPLETED" as const,disposition:"DUE_DATE" as const,dueDate:dateOnly(4),timeZone:"America/New_York",basisNote:"SYNTHETIC inspection was recorded separately with actual occurrence evidence."},
+      {kind:"EARNEST_MONEY_CONFIRMED" as const,disposition:"DUE_DATE" as const,dueDate:dateOnly(6),timeZone:"America/New_York",basisNote:"SYNTHETIC escrow term in current reviewed agreement."},
+      {kind:"ASSIGNMENT_SIGNED" as const,disposition:"DUE_DATE" as const,dueDate:dateOnly(7),timeZone:"America/New_York",basisNote:"SYNTHETIC replacement-buyer assignment timing."},
+      {kind:"FUNDS_CONFIRMED" as const,disposition:"DUE_DATE" as const,dueDate:dateOnly(7),timeZone:"America/New_York",basisNote:"SYNTHETIC replacement-buyer funding timing."},
+    ],
+  },actor,now);
+  assert.equal(op.contract?.deadlineScheduleVersion,2,"The re-reviewed schedule is an append-only revision after material party/term changes.");
    readinessRuns = await evaluateAllTransactionReadiness(now);
    readinessReport = await getTransactionReadinessReport(now);
    assert.ok(readinessReport.exceptions.some(item=>item.issueKey==="CONTRACT_ECONOMICS_CONFLICT"&&item.status==="OPEN"),
@@ -671,14 +750,40 @@ try {
    readinessReport = await getTransactionReadinessReport(now);
    assert.ok(readinessReport.exceptions.some(item=>item.issueKey==="MILESTONE_INVALID:EARNEST_MONEY_CONFIRMED"&&item.status==="RESOLVED"),
      "Valid persisted escrow evidence resolves its prior EMD mismatch with a referenced resolution.");
+    const milestoneDeadlineExceptions = readinessReport.exceptions.filter(item=>
+      item.contractId===op.contract!.id&&item.issueKey.startsWith("MILESTONE_"));
+    assert.deepEqual(op.contract?.deadlineScheduleHistory.map(schedule=>schedule.version),[1,2],
+      "The initial review and post-amendment/party review remain as two immutable schedule versions.");
+    assert.ok(milestoneDeadlineExceptions.some(item=>item.issueKey==="MILESTONE_SCHEDULE_STALE"&&item.status==="RESOLVED"),
+      "A fresh review tied to the latest party/terms snapshot resolves the stale-schedule exception without deleting history.");
+    assert.ok(!milestoneDeadlineExceptions.some(item=>item.status==="OPEN"),
+      "No milestone deadline/schedule exception remains open once the synthetic milestones and current schedule are evidenced.");
    readinessSummary = {
      syntheticTransactions: readinessReport.syntheticTransactionCount,
      realTransactions: readinessReport.realTransactionCount,
      capabilities: readinessReport.capabilities,
      persistedExceptions: readinessReport.exceptions.length,
      openExceptions: readinessReport.openExceptionCount,
+      milestoneDeadlineSchedule: {
+        syntheticOnly:true,
+        scheduleVersions:op.contract?.deadlineScheduleHistory.map(schedule=>schedule.version)??[],
+        currentTermsHash:op.contract?.deadlineSchedule?.termsHash,
+        currentSourceEvidenceUrl:op.contract?.deadlineSchedule?.sourceEvidenceUrl,
+        recordedMilestones:op.contract?.milestones.map(milestone=>({
+          kind:milestone.kind,effectiveAt:milestone.effectiveAt??null,recordedAt:milestone.recordedAt,
+        }))??[],
+        milestoneExceptions:milestoneDeadlineExceptions.map(item=>({issueKey:item.issueKey,status:item.status,severity:item.severity})),
+        asserted:[
+          "missing-schedule-blocks-active-transaction","owner-only-schedule-review","source-reference-must-match-executed-terms",
+          "separate-calendar-date-and-time-zone","overdue-and-upcoming-milestones",
+          "schedule-does-not-complete-milestones","event-time-distinct-from-record-time",
+          "idempotent-replay","amendment-stales-schedule","buyer-party-change-stales-schedule",
+          "append-only-review-version","evidence-resolves-deadline","current-schedule-required-for-settlement",
+        ],
+      },
      exercised: ["idempotent-re-evaluation", "upcoming-and-overdue-close", "amended-deadline-resolution",
-       "packet-delivery-unconfirmed", "missing-template-signing-provider-and-private-storage",
+        "milestone-deadline-schedule-review-and-stale-protection",
+        "packet-delivery-unconfirmed", "missing-template-signing-provider-and-private-storage",
        "stale-document-economics", "mismatched-emd-and-buyer-funds",
        "owner-only-financial-evidence", "resolution-from-persisted-emd-evidence"],
    };

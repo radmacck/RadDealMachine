@@ -7,7 +7,7 @@ import {
 } from "@workspace/db";
 import type { z } from "zod";
 import {
-  CreateContractBody, PreparePurchaseReviewDocumentBody, RecordDestinationActivityBody as DestinationActivityBody, ExecuteContractBody, RecordBuyerResponseBody, RecordClosingMilestoneBody, RecordDealOutcomeBody, TransitionTransactionDocumentBody,
+  CreateContractBody, PreparePurchaseReviewDocumentBody, RecordDestinationActivityBody as DestinationActivityBody, ExecuteContractBody, RecordBuyerResponseBody, RecordClosingMilestoneBody, RecordTransactionDeadlineScheduleBody, RecordDealOutcomeBody, TransitionTransactionDocumentBody,
   type DestinationActivityEvent,
 } from "@workspace/api-zod";
 import {
@@ -23,6 +23,10 @@ import { buildPurchaseReviewPdf, purchaseReviewSnapshotHash, type PurchaseReview
 import { lockDealEconomics } from "./locked-economics";
 import { ensureTransactionDocumentRegistry, propertyDocumentJurisdiction } from "./transaction-document-registry";
 import { transactionDocumentBinaryStore } from "./transaction-document-storage";
+import {
+  isCalendarDate, isValidTimeZone, scheduleCoversAllMilestones, transactionDeadlineRequestHash,
+  transactionTermsHash, TRANSACTION_DEADLINE_KINDS,
+} from "./transaction-deadlines";
 
 export async function lockedContract(tx: Tx, id: string, version: number) {
   const [row] = await tx.select().from(contractsTable).where(eq(contractsTable.leadId,id)).for("update");
@@ -509,15 +513,14 @@ export async function recordClosingMilestone(id: string,input: z.infer<typeof Re
     if (contract.status==="DRAFT") throw new DomainError("Record executed acquisition agreement first.",409);
     if (contract.milestones.some(m=>m.kind===parsed.kind)) throw new DomainError("This milestone is already recorded; evidence history is immutable.",409);
     if (["ASSIGNMENT_SIGNED","FUNDS_CONFIRMED"].includes(parsed.kind) && !contract.committedBuyerId) throw new DomainError("A qualified committed buyer is required before assignment or funds confirmation.",409);
-    let effectiveAt: string | undefined;
+    const effectiveAt = new Date(pastInstant(parsed.effectiveAt,now,"Milestone event time")).toISOString();
     if (parsed.kind==="EARNEST_MONEY_CONFIRMED" || parsed.kind==="FUNDS_CONFIRMED") {
       if (parsed.amount==null || parsed.currency!=="USD" || !parsed.evidenceKind || !parsed.counterpartyName?.trim() ||
-        !parsed.paymentReference?.trim() || !parsed.effectiveAt)
+        !parsed.paymentReference?.trim())
         throw new DomainError("Financial confirmation requires the evidence-backed amount, USD currency, evidence type, counterparty, masked reference and actual effective time.");
       wholeDollars(parsed.amount,"Confirmed amount");
       if (/\b\d{9,}\b/.test(parsed.paymentReference))
         throw new DomainError("Use a masked receipt reference only; do not store full account, card, or payment credentials.");
-      effectiveAt = new Date(pastInstant(parsed.effectiveAt,now,"Financial evidence effective time")).toISOString();
       if (parsed.kind==="EARNEST_MONEY_CONFIRMED") {
         if (contract.earnestMoney<=0 || Math.abs(parsed.amount-contract.earnestMoney)>0.005)
           throw new DomainError("The escrow evidence amount must equal the earnest money in the communicated, authorized acquisition terms.");
@@ -554,7 +557,7 @@ export async function recordClosingMilestone(id: string,input: z.infer<typeof Re
       ...(parsed.evidenceKind?{evidenceKind:parsed.evidenceKind}:{}),
       ...(parsed.counterpartyName?{counterpartyName:parsed.counterpartyName.trim()}:{}),
       ...(parsed.paymentReference?{paymentReference:parsed.paymentReference.trim()}:{}),
-      ...(effectiveAt?{effectiveAt}:{}),
+      effectiveAt,
       recordedBy:actor.id,recordedAt:now.toISOString(),
     });
     if (contract.committedBuyerId) {
@@ -572,6 +575,7 @@ export async function recordClosingMilestone(id: string,input: z.infer<typeof Re
       await move(tx,lead,"CLOSING","Closing evidence recorded","Complete outstanding evidence and record actual settlement outcome.",actor.id,now);
     }
     await save(tx,row,contract,now); await saveLead(tx,lead,now);
+    await queueJob(tx,"REVIEW_DEADLINES",id,`closing-milestone:${row.id}:${row.version+1}:${parsed.kind}`,actor.id);
     const financialSummary = parsed.amount!=null
       ? ` Amount $${parsed.amount.toLocaleString("en-US",{minimumFractionDigits:2,maximumFractionDigits:2})} ${parsed.currency}; counterparty ${parsed.counterpartyName}; masked reference ${parsed.paymentReference}; effective ${effectiveAt}; evidence type ${parsed.evidenceKind}.`
       : "";
@@ -579,6 +583,96 @@ export async function recordClosingMilestone(id: string,input: z.infer<typeof Re
   });
   return dealOperations(id,now);
 }
+export async function recordTransactionDeadlineSchedule(
+  id: string,
+  input: z.infer<typeof RecordTransactionDeadlineScheduleBody>,
+  actor: OfferActor,
+  now = new Date(),
+) {
+  assertOperationsRole(actor,["OWNER"]);
+  const parsed = RecordTransactionDeadlineScheduleBody.parse(input);
+  const sourceEvidenceUrl = evidenceUrl(parsed.sourceEvidenceUrl);
+  const normalizedInput = {...parsed,sourceEvidenceUrl};
+  const requestHash = transactionDeadlineRequestHash(normalizedInput);
+  await db.transaction(async tx=>{
+    const {row,contract} = await lockedContract(tx,id,parsed.version);
+    const history = Array.isArray(contract.deadlineScheduleHistory) ? contract.deadlineScheduleHistory : [];
+    const prior = history.find(item=>item.idempotencyKey===parsed.idempotencyKey);
+    if (prior) {
+      if (prior.requestHash!==requestHash)
+        throw new DomainError("Deadline-schedule idempotency key already belongs to a different request.",409);
+      return;
+    }
+    if (contract.status!=="UNDER_CONTRACT"&&contract.status!=="CLOSING")
+      throw new DomainError("Review deadline schedules only after the executed acquisition agreement is recorded.",409);
+    if (!contract.executedDocumentUrl||!contract.sellerSignedAt||!contract.acquisitionSignedAt)
+      throw new DomainError("An executed agreement and both recorded signature event times are required before scheduling transaction deadlines.",409);
+    const scheduleVersion = Number(row.payload.deadlineScheduleVersion??0);
+    if (scheduleVersion!==parsed.deadlineScheduleVersion)
+      throw new DomainError("The deadline schedule changed. Reload and review the current schedule before saving.",409);
+
+    const amendments = (contract.history??[]).filter(item=>item.kind==="AMEND_CLOSING"&&!!item.evidenceUrl)
+      .sort((a,b)=>Date.parse(a.effectiveAt)-Date.parse(b.effectiveAt));
+    const latestAmendment = amendments.at(-1);
+    const requiredSource = latestAmendment?.evidenceUrl??contract.executedDocumentUrl;
+    if (sourceEvidenceUrl!==evidenceUrl(requiredSource))
+      throw new DomainError("Schedule deadlines from the latest executed agreement or amendment only; the referenced document is not the current source.",409);
+    const sourceEffectiveAt = latestAmendment?.effectiveAt ??
+      (Date.parse(contract.sellerSignedAt)>Date.parse(contract.acquisitionSignedAt)
+        ? contract.sellerSignedAt : contract.acquisitionSignedAt);
+    if (!Number.isFinite(Date.parse(sourceEffectiveAt))||Date.parse(sourceEffectiveAt)>now.getTime())
+      throw new DomainError("The source agreement event time is invalid or in the future.",409);
+
+    if (parsed.items.length!==TRANSACTION_DEADLINE_KINDS.length ||
+        new Set(parsed.items.map(item=>item.kind)).size!==TRANSACTION_DEADLINE_KINDS.length ||
+        TRANSACTION_DEADLINE_KINDS.some(kind=>!parsed.items.some(item=>item.kind===kind)))
+      throw new DomainError("Review each supported transaction milestone exactly once.");
+    for (const item of parsed.items) {
+      if (item.disposition==="DUE_DATE") {
+        if (!isCalendarDate(item.dueDate)||!isValidTimeZone(item.timeZone))
+          throw new DomainError(`${item.kind.replace(/_/g," ")} needs a valid calendar date and an explicitly reviewed IANA time zone.`);
+      } else if (item.dueDate!==null||item.timeZone!==null) {
+        throw new DomainError(`${item.kind.replace(/_/g," ")} must not retain a date or time zone unless its disposition is DUE_DATE.`);
+      }
+      if (item.disposition==="NOT_APPLICABLE") {
+        if (item.kind==="TITLE_CLEARED" ||
+            (item.kind==="EARNEST_MONEY_CONFIRMED"&&contract.earnestMoney>0) ||
+            (item.kind==="ASSIGNMENT_SIGNED"&&contract.assignmentAllowed) ||
+            (item.kind==="FUNDS_CONFIRMED"&&contract.committedBuyerId))
+          throw new DomainError(`${item.kind.replace(/_/g," ")} cannot be marked not applicable under the current authorized terms/party state.`);
+      }
+    }
+
+    const termsHash = transactionTermsHash(contract);
+    const schedule = {
+      version:scheduleVersion+1,
+      idempotencyKey:parsed.idempotencyKey,
+      requestHash,
+      termsHash,
+      sourceEvidenceUrl,
+      sourceEffectiveAt:new Date(sourceEffectiveAt).toISOString(),
+      recordedAt:now.toISOString(),
+      recordedBy:actor.id,
+      reviewNote:parsed.reviewNote.trim(),
+      items:parsed.items.map(item=>({...item,basisNote:item.basisNote.trim()})),
+    };
+    const nextHistory = [...history,schedule];
+    await tx.update(contractsTable).set({
+      payload:{
+        ...row.payload,
+        deadlineScheduleVersion:schedule.version,
+        deadlineSchedule:schedule,
+        deadlineScheduleHistory:nextHistory,
+      },
+      updatedAt:now,
+    }).where(eq(contractsTable.id,row.id));
+    await audit(tx,actor.id,"TRANSACTION_DEADLINE_SCHEDULE_REVIEWED",id,
+      `Owner reviewed milestone dates from ${sourceEvidenceUrl}; schedule ${schedule.version}, source event ${schedule.sourceEffectiveAt}, recorded ${schedule.recordedAt}. This review is not milestone completion or a contract amendment.`);
+    await queueJob(tx,"REVIEW_DEADLINES",id,`deadline-schedule:${row.id}:${schedule.version}`,actor.id);
+  });
+  return dealOperations(id,now);
+}
+
 export async function recordDealOutcome(id: string,input: z.infer<typeof RecordDealOutcomeBody>,actor: OfferActor,now = new Date()) {
   assertOperationsRole(actor,["OWNER"]);
   const parsed = RecordDealOutcomeBody.parse(input); evidenceUrl(parsed.evidenceUrl);
@@ -623,6 +717,10 @@ export async function recordDealOutcome(id: string,input: z.infer<typeof RecordD
         late?historical!.reservedCount:reservations.count,late?historical!.reservedFunds:reservations.funds),status:recorded?.payload.status as "COMMITTED"}:undefined;
       const blockers = closingBlockers(contract,match);
       if (blockers.length) throw new DomainError(blockers.join("; "),409);
+      if (!contract.deadlineSchedule ||
+          !scheduleCoversAllMilestones(contract.deadlineSchedule) ||
+          contract.deadlineSchedule.termsHash!==transactionTermsHash(contract))
+        throw new DomainError("Missing evidence: a current owner-reviewed milestone deadline schedule tied to the latest executed terms and buyer party is required before settlement.",409);
       if (parsed.assignmentFeeReceived==null || parsed.closingCosts==null) throw new DomainError("Record actual received assignment fee and actual closing costs.");
       wholeDollars(parsed.assignmentFeeReceived,"Received fee"); wholeDollars(parsed.closingCosts,"Closing costs");
       const expectedFee = Math.round(((contract.agreedBuyerPrice??0)-contract.purchasePrice)*100)/100;

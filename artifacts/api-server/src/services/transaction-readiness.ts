@@ -18,6 +18,7 @@ import { getTransactionDocumentReadiness } from "./transaction-document-registry
 import { buyerOutreachReadiness } from "./buyer-outreach";
 import { evaluateLeadDecision } from "./intelligence-decision-store";
 import { lockDealEconomics } from "./locked-economics";
+import { calendarDateInZone, classifyMilestoneDeadline, scheduleCoversAllMilestones, transactionTermsHash } from "./transaction-deadlines";
 
 type ExceptionCategory = "DEADLINE" | "EVIDENCE" | "DOCUMENT" | "PROVIDER" | "BUYER" | "AUTHORITY" | "INTEGRITY";
 type Severity = "CRITICAL" | "HIGH" | "MEDIUM" | "LOW";
@@ -198,6 +199,62 @@ function deriveIssues(input: {
   const currentMatch = contract.committedBuyerId
     ? matches.find(match => match.buyerId === contract.committedBuyerId)
     : undefined;
+  if (contract.status === "UNDER_CONTRACT" || contract.status === "CLOSING") {
+    const schedule = contract.deadlineSchedule ?? null;
+    const currentTermsHash = transactionTermsHash(contract);
+    if (!schedule) {
+      issues.push(issue("MILESTONE_SCHEDULE_REVIEW_REQUIRED", "DEADLINE", "HIGH",
+        "No owner-reviewed due-date schedule is linked to the executed agreement. Dates are not inferred from the closing date.",
+        [evidenceRef("contract", contract.id, "executedDocumentUrl", contract.executedDocumentUrl,
+          "sellerSignedAt", contract.sellerSignedAt, "acquisitionSignedAt", contract.acquisitionSignedAt)],
+        "OWNER", "REVIEW_TRANSACTION_DEADLINES",
+        "Owner: review title, inspection, earnest-money, assignment and buyer-funds timing against the latest executed terms."));
+    } else if (!scheduleCoversAllMilestones(schedule)) {
+      issues.push(issue("MILESTONE_SCHEDULE_INCOMPLETE", "INTEGRITY", "HIGH",
+        "The persisted owner-reviewed schedule does not contain exactly one disposition for every supported transaction milestone.",
+        [evidenceRef("deadline-schedule", contract.id, "version", schedule.version, "termsHash", schedule.termsHash)],
+        "OWNER", "REVIEW_TRANSACTION_DEADLINES",
+        "Owner: reconcile the schedule against the latest executed terms; do not infer missing dates."));
+    } else if (schedule.termsHash !== currentTermsHash) {
+      issues.push(issue("MILESTONE_SCHEDULE_STALE", "EVIDENCE", "HIGH",
+        "The schedule was reviewed against different contract terms or parties and cannot be relied on until re-reviewed.",
+        [evidenceRef("deadline-schedule", contract.id, "version", schedule.version, "sourceTermsHash", schedule.termsHash),
+          evidenceRef("contract", contract.id, "currentTermsHash", currentTermsHash, "version", input.contractVersion)],
+        "OWNER", "REVIEW_TRANSACTION_DEADLINES",
+        "Owner: review the latest executed agreement/amendment and record a new schedule version."));
+    } else {
+      for (const item of schedule.items) {
+        const state = classifyMilestoneDeadline(item, now);
+        if (state === "NOT_APPLICABLE" || state === "NOT_DATED" || state === "ON_TRACK") continue;
+        const milestone = milestoneProblem(contract,item.kind,currentMatch,now);
+        const complete = !milestone.missing && !milestone.invalidReason && milestone.refs.length > 0;
+        if (complete) continue;
+        const evidence = [
+          evidenceRef("deadline-schedule", contract.id, "version", schedule.version,
+            "milestone", item.kind, "disposition", item.disposition, "dueDate", item.dueDate,
+            "timeZone", item.timeZone, "source", schedule.sourceEvidenceUrl,
+            "sourceEffectiveAt", schedule.sourceEffectiveAt, "recordedAt", schedule.recordedAt),
+          ...milestone.refs,
+        ];
+        if (state === "INVALID") {
+          issues.push(issue(`MILESTONE_DEADLINE_INVALID:${item.kind}`, "INTEGRITY", "HIGH",
+            `The ${item.kind.replace(/_/g," ").toLowerCase()} deadline is not a valid calendar date/time-zone pair.`,
+            evidence, "OWNER", "REVIEW_TRANSACTION_DEADLINES",
+            "Owner: correct the date and time zone from the executed terms; do not substitute an assumed date."));
+        } else {
+          const overdue = state === "OVERDUE";
+          const dueToday = !!item.timeZone && calendarDateInZone(now,item.timeZone)===item.dueDate;
+          issues.push(issue(`MILESTONE_DEADLINE_${overdue?"OVERDUE":"UPCOMING"}:${item.kind}:${item.dueDate}`,
+            "DEADLINE", overdue?"CRITICAL":dueToday?"HIGH":"MEDIUM",
+            `${item.kind.replace(/_/g," ").toLowerCase()} is ${overdue?"past its owner-reviewed due date":"due within seven calendar days"}${milestone.invalidReason?`; recorded evidence is not valid: ${milestone.invalidReason}`:milestone.missing?"; completion evidence is missing":""}.`,
+            evidence, "OWNER", overdue?"RESOLVE_OVERDUE_MILESTONE":"REVIEW_UPCOMING_MILESTONE",
+            overdue
+              ? "Owner: verify milestone completion or record the exact current state and evidence; a deadline reminder does not extend the contract."
+              : "Owner: confirm readiness and record completion only after the actual milestone occurs with supporting evidence."));
+        }
+      }
+    }
+  }
   const sourceOffer = detail.offers.find(offer => offer.id === contract.offerId);
   if (contract.status === "DRAFT" && (!sourceOffer || sourceOffer.effectiveStatus !== "COMMUNICATED" ||
       detail.analysisSnapshotId !== sourceOffer.analysisSnapshotId)) {
@@ -436,6 +493,43 @@ function resolutionProof(
       ? operation.matches.find(match => match.buyerId === contract.committedBuyerId)
       : undefined, input.now);
     if (!check.missing && !check.invalidReason && check.refs.length) return check.refs;
+  }
+  if (issueKey === "MILESTONE_SCHEDULE_REVIEW_REQUIRED" ||
+      issueKey === "MILESTONE_SCHEDULE_INCOMPLETE" ||
+      issueKey === "MILESTONE_SCHEDULE_STALE") {
+    const schedule = contract.deadlineSchedule;
+    if (schedule && scheduleCoversAllMilestones(schedule) && schedule.termsHash === transactionTermsHash(contract)) {
+      return [evidenceRef("deadline-schedule", contract.id, "version", schedule.version,
+        "termsHash", schedule.termsHash, "source", schedule.sourceEvidenceUrl, "reviewedAt", schedule.recordedAt)];
+    }
+  }
+  const milestoneDeadlineMatch = issueKey.match(/^MILESTONE_DEADLINE_(UPCOMING|OVERDUE|INVALID):([^:]+)(?::(.+))?$/);
+  if (milestoneDeadlineMatch) {
+    const [, oldState, kind, oldDueDate] = milestoneDeadlineMatch;
+    const schedule = contract.deadlineSchedule;
+    if (schedule && scheduleCoversAllMilestones(schedule)) {
+      if (schedule.termsHash !== transactionTermsHash(contract)) {
+        return [evidenceRef("deadline-schedule", contract.id, "version", schedule.version,
+          "status", "stale-after-contract-change", "sourceTermsHash", schedule.termsHash,
+          "currentTermsHash", transactionTermsHash(contract))];
+      }
+      const item = schedule.items.find(candidate => candidate.kind === kind);
+      if (item) {
+        const state = classifyMilestoneDeadline(item,input.now);
+        const stateChanged = oldState === "INVALID" ? state !== "INVALID"
+          : oldState === "OVERDUE" ? state !== "OVERDUE"
+            : state !== "UPCOMING";
+        if (stateChanged || item.disposition !== "DUE_DATE" || item.dueDate !== oldDueDate) {
+          return [evidenceRef("deadline-schedule", contract.id, "version", schedule.version,
+            "milestone", kind, "disposition", item.disposition, "dueDate", item.dueDate,
+            "timeZone", item.timeZone, "recordedAt", schedule.recordedAt)];
+        }
+        const check = milestoneProblem(contract,kind,contract.committedBuyerId
+          ? operation.matches.find(match => match.buyerId === contract.committedBuyerId)
+          : undefined,input.now);
+        if (!check.missing && !check.invalidReason && check.refs.length) return check.refs;
+      }
+    }
   }
   if (issueKey.startsWith("LEGAL_TEMPLATE_UNAVAILABLE:")) {
     const key = issueKey.slice("LEGAL_TEMPLATE_UNAVAILABLE:".length);

@@ -2365,6 +2365,7 @@ export type ClosingMilestoneKind = typeof ClosingMilestoneKind[keyof typeof Clos
 
 export const ClosingMilestoneKind = {
   TITLE_CLEARED: 'TITLE_CLEARED',
+  INSPECTION_COMPLETED: 'INSPECTION_COMPLETED',
   EARNEST_MONEY_CONFIRMED: 'EARNEST_MONEY_CONFIRMED',
   ASSIGNMENT_SIGNED: 'ASSIGNMENT_SIGNED',
   FUNDS_CONFIRMED: 'FUNDS_CONFIRMED',
@@ -2416,6 +2417,7 @@ export type ClosingMilestoneInputKind = typeof ClosingMilestoneInputKind[keyof t
 
 export const ClosingMilestoneInputKind = {
   TITLE_CLEARED: 'TITLE_CLEARED',
+  INSPECTION_COMPLETED: 'INSPECTION_COMPLETED',
   EARNEST_MONEY_CONFIRMED: 'EARNEST_MONEY_CONFIRMED',
   ASSIGNMENT_SIGNED: 'ASSIGNMENT_SIGNED',
   FUNDS_CONFIRMED: 'FUNDS_CONFIRMED',
@@ -2471,7 +2473,95 @@ export interface ClosingMilestoneInput {
      * @maxLength 100
      */
   paymentReference?: string;
-  effectiveAt?: string;
+  effectiveAt: string;
+}
+
+export type TransactionMilestoneDeadlineItemKind = typeof TransactionMilestoneDeadlineItemKind[keyof typeof TransactionMilestoneDeadlineItemKind];
+
+
+export const TransactionMilestoneDeadlineItemKind = {
+  TITLE_CLEARED: 'TITLE_CLEARED',
+  INSPECTION_COMPLETED: 'INSPECTION_COMPLETED',
+  EARNEST_MONEY_CONFIRMED: 'EARNEST_MONEY_CONFIRMED',
+  ASSIGNMENT_SIGNED: 'ASSIGNMENT_SIGNED',
+  FUNDS_CONFIRMED: 'FUNDS_CONFIRMED',
+} as const;
+
+export type TransactionMilestoneDeadlineItemDisposition = typeof TransactionMilestoneDeadlineItemDisposition[keyof typeof TransactionMilestoneDeadlineItemDisposition];
+
+
+export const TransactionMilestoneDeadlineItemDisposition = {
+  DUE_DATE: 'DUE_DATE',
+  NO_FIXED_DATE: 'NO_FIXED_DATE',
+  NOT_APPLICABLE: 'NOT_APPLICABLE',
+} as const;
+
+export interface TransactionMilestoneDeadlineItem {
+  kind: TransactionMilestoneDeadlineItemKind;
+  disposition: TransactionMilestoneDeadlineItemDisposition;
+  /** @nullable */
+  dueDate: string | null;
+  /**
+     * IANA time zone explicitly read from or confirmed against transaction terms; never inferred from the property address.
+     * @nullable
+     */
+  timeZone: string | null;
+  /**
+     * @minLength 10
+     * @maxLength 1000
+     */
+  basisNote: string;
+}
+
+export interface TransactionMilestoneDeadlineSchedule {
+  /** @minimum 1 */
+  version: number;
+  idempotencyKey: string;
+  /** @pattern ^[a-f0-9]{64}$ */
+  requestHash: string;
+  /** @pattern ^[a-f0-9]{64}$ */
+  termsHash: string;
+  sourceEvidenceUrl: string;
+  sourceEffectiveAt: string;
+  recordedAt: string;
+  recordedBy: string;
+  /**
+     * @minLength 10
+     * @maxLength 2000
+     */
+  reviewNote: string;
+  /**
+     * @minItems 5
+     * @maxItems 5
+     */
+  items: TransactionMilestoneDeadlineItem[];
+}
+
+export interface TransactionDeadlineScheduleInput {
+  /** @minimum 1 */
+  version: number;
+  /** @minimum 0 */
+  deadlineScheduleVersion: number;
+  /**
+     * @minLength 8
+     * @maxLength 128
+     */
+  idempotencyKey: string;
+  /**
+     * @minLength 8
+     * @maxLength 2000
+     */
+  sourceEvidenceUrl: string;
+  /**
+     * @minLength 10
+     * @maxLength 2000
+     */
+  reviewNote: string;
+  /**
+     * @minItems 5
+     * @maxItems 5
+     */
+  items: TransactionMilestoneDeadlineItem[];
 }
 
 export type DealOutcomeInputOutcome = typeof DealOutcomeInputOutcome[keyof typeof DealOutcomeInputOutcome];
@@ -3919,6 +4009,10 @@ export interface DealContract {
   /** @nullable */
   closedAt?: string | null;
   createdAt: string;
+  /** @minimum 0 */
+  deadlineScheduleVersion: number;
+  deadlineSchedule?: TransactionMilestoneDeadlineSchedule | null;
+  deadlineScheduleHistory: TransactionMilestoneDeadlineSchedule[];
   documents?: TransactionDocumentMetadata[];
 }
 

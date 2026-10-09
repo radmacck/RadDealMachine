@@ -139,6 +139,12 @@ router.post("/deals/:id/contract/milestones",roles("OWNER"),async(req,res)=>{
   const {id} = parse(schemas.RecordClosingMilestoneParams,req.params);
   res.json(schemas.RecordClosingMilestoneResponse.parse(await transactions.recordClosingMilestone(id,parse(schemas.RecordClosingMilestoneBody,req.body),actor(res))));
 });
+router.post("/deals/:id/contract/deadline-schedule",roles("OWNER"),async(req,res)=>{
+  const {id} = parse(schemas.RecordTransactionDeadlineScheduleParams,req.params);
+  res.json(schemas.RecordTransactionDeadlineScheduleResponse.parse(
+    await transactions.recordTransactionDeadlineSchedule(id,parse(schemas.RecordTransactionDeadlineScheduleBody,req.body),actor(res)),
+  ));
+});
 router.post("/deals/:id/contract/outcome",roles("OWNER"),async(req,res)=>{
   const {id} = parse(schemas.RecordDealOutcomeParams,req.params);
   res.json(schemas.RecordDealOutcomeResponse.parse(await transactions.recordDealOutcome(id,parse(schemas.RecordDealOutcomeBody,req.body),actor(res))));

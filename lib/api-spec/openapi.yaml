@@ -911,6 +911,22 @@ paths:
           content:
             application/json:
               schema: { $ref: "#/components/schemas/DealOperations" }
+  /deals/{id}/contract/deadline-schedule:
+    parameters:
+      - { name: id, in: path, required: true, schema: { type: string } }
+    post:
+      operationId: recordTransactionDeadlineSchedule
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/TransactionDeadlineScheduleInput" }
+      responses:
+        "200":
+          description: Owner-reviewed contractual milestone deadlines, separate from completion evidence
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/DealOperations" }
   /deals/{id}/contract/outcome:
     parameters:
       - { name: id, in: path, required: true, schema: { type: string } }
@@ -2163,7 +2179,7 @@ components:
       type: object
       required: [kind, evidenceUrl, note, recordedBy, recordedAt]
       properties:
-        kind: { type: string, enum: [TITLE_CLEARED, EARNEST_MONEY_CONFIRMED, ASSIGNMENT_SIGNED, FUNDS_CONFIRMED] }
+        kind: { type: string, enum: [TITLE_CLEARED, INSPECTION_COMPLETED, EARNEST_MONEY_CONFIRMED, ASSIGNMENT_SIGNED, FUNDS_CONFIRMED] }
         evidenceUrl: { type: string }
         note: { type: string }
         amount: { type: number, minimum: 0, maximum: 1000000000 }
@@ -2176,10 +2192,10 @@ components:
         recordedAt: { type: string }
     ClosingMilestoneInput:
       type: object
-      required: [version, kind, evidenceUrl, note]
+      required: [version, kind, evidenceUrl, note, effectiveAt]
       properties:
         version: { type: integer, minimum: 1 }
-        kind: { type: string, enum: [TITLE_CLEARED, EARNEST_MONEY_CONFIRMED, ASSIGNMENT_SIGNED, FUNDS_CONFIRMED] }
+        kind: { type: string, enum: [TITLE_CLEARED, INSPECTION_COMPLETED, EARNEST_MONEY_CONFIRMED, ASSIGNMENT_SIGNED, FUNDS_CONFIRMED] }
         evidenceUrl: { type: string, minLength: 8, maxLength: 2000 }
         note: { type: string, minLength: 10, maxLength: 3000 }
         amount: { type: number, minimum: 0, maximum: 1000000000 }
@@ -2188,6 +2204,39 @@ components:
         counterpartyName: { type: string, minLength: 2, maxLength: 200 }
         paymentReference: { type: string, minLength: 3, maxLength: 100, description: "Masked receipt/reference only. Never include an account number, card number, password, or other credential." }
         effectiveAt: { type: string, format: date-time }
+    TransactionMilestoneDeadlineItem:
+      type: object
+      required: [kind, disposition, dueDate, timeZone, basisNote]
+      properties:
+        kind: { type: string, enum: [TITLE_CLEARED, INSPECTION_COMPLETED, EARNEST_MONEY_CONFIRMED, ASSIGNMENT_SIGNED, FUNDS_CONFIRMED] }
+        disposition: { type: string, enum: [DUE_DATE, NO_FIXED_DATE, NOT_APPLICABLE] }
+        dueDate: { type: ["string", "null"], format: date }
+        timeZone: { type: ["string", "null"], description: "IANA time zone explicitly read from or confirmed against transaction terms; never inferred from the property address." }
+        basisNote: { type: string, minLength: 10, maxLength: 1000 }
+    TransactionMilestoneDeadlineSchedule:
+      type: object
+      required: [version, idempotencyKey, requestHash, termsHash, sourceEvidenceUrl, sourceEffectiveAt, recordedAt, recordedBy, reviewNote, items]
+      properties:
+        version: { type: integer, minimum: 1 }
+        idempotencyKey: { type: string }
+        requestHash: { type: string, pattern: "^[a-f0-9]{64}$" }
+        termsHash: { type: string, pattern: "^[a-f0-9]{64}$" }
+        sourceEvidenceUrl: { type: string }
+        sourceEffectiveAt: { type: string, format: date-time }
+        recordedAt: { type: string, format: date-time }
+        recordedBy: { type: string }
+        reviewNote: { type: string, minLength: 10, maxLength: 2000 }
+        items: { type: array, minItems: 5, maxItems: 5, items: { $ref: "#/components/schemas/TransactionMilestoneDeadlineItem" } }
+    TransactionDeadlineScheduleInput:
+      type: object
+      required: [version, deadlineScheduleVersion, idempotencyKey, sourceEvidenceUrl, reviewNote, items]
+      properties:
+        version: { type: integer, minimum: 1 }
+        deadlineScheduleVersion: { type: integer, minimum: 0 }
+        idempotencyKey: { type: string, minLength: 8, maxLength: 128 }
+        sourceEvidenceUrl: { type: string, minLength: 8, maxLength: 2000 }
+        reviewNote: { type: string, minLength: 10, maxLength: 2000 }
+        items: { type: array, minItems: 5, maxItems: 5, items: { $ref: "#/components/schemas/TransactionMilestoneDeadlineItem" } }
     DealOutcomeInput:
       type: object
       required: [version, outcome, evidenceUrl, note]
@@ -2342,7 +2391,7 @@ components:
         previousState: { type: object, additionalProperties: true }
     DealContract:
       type: object
-      required: [id, leadId, offerId, version, status, purchasePrice, assignmentTarget, earnestMoney, assignmentAllowed, closingAt, contingencies, milestones, createdAt]
+      required: [id, leadId, offerId, version, status, purchasePrice, assignmentTarget, earnestMoney, assignmentAllowed, closingAt, contingencies, milestones, deadlineScheduleVersion, deadlineScheduleHistory, createdAt]
       properties:
         id: { type: string }
         leadId: { type: string }
@@ -2377,6 +2426,9 @@ components:
         netProceeds: { type: [number, "null"] }
         closedAt: { type: [string, "null"] }
         createdAt: { type: string }
+        deadlineScheduleVersion: { type: integer, minimum: 0 }
+        deadlineSchedule: { oneOf: [{ $ref: "#/components/schemas/TransactionMilestoneDeadlineSchedule" }, { type: "null" }] }
+        deadlineScheduleHistory: { type: array, items: { $ref: "#/components/schemas/TransactionMilestoneDeadlineSchedule" } }
         documents: { type: array, items: { $ref: "#/components/schemas/TransactionDocumentMetadata" } }
     TransactionDocumentMetadata:
       type: object

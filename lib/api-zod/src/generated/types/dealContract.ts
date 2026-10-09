@@ -11,6 +11,7 @@ import type { DealContractStatus } from './dealContractStatus';
 import type { DestinationActivityEvent } from './destinationActivityEvent';
 import type { TransactionDocumentMetadata } from './transactionDocumentMetadata';
 import type { TransactionHistoryEntry } from './transactionHistoryEntry';
+import type { TransactionMilestoneDeadlineSchedule } from './transactionMilestoneDeadlineSchedule';
 
 export interface DealContract {
   id: string;
@@ -60,5 +61,9 @@ export interface DealContract {
   /** @nullable */
   closedAt?: string | null;
   createdAt: string;
+  /** @minimum 0 */
+  deadlineScheduleVersion: number;
+  deadlineSchedule?: TransactionMilestoneDeadlineSchedule | null;
+  deadlineScheduleHistory: TransactionMilestoneDeadlineSchedule[];
   documents?: TransactionDocumentMetadata[];
 }

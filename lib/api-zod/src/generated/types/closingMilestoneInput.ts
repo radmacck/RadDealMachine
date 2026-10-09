@@ -41,5 +41,5 @@ export interface ClosingMilestoneInput {
      * @maxLength 100
      */
   paymentReference?: string;
-  effectiveAt?: string;
+  effectiveAt: string;
 }

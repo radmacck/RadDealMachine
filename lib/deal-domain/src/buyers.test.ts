@@ -43,7 +43,7 @@ test("early buyer-demand fit counts only approved current buyers and cannot clai
 const contract: DealContract = {
   id:"synthetic-contract",leadId:"synthetic-deal",offerId:"synthetic-offer",version:1,status:"UNDER_CONTRACT",
   purchasePrice:100000,assignmentTarget:15000,earnestMoney:1000,assignmentAllowed:true,closingAt:"2026-10-18T12:00:00Z",
-  contingencies:"Synthetic terms",milestones:[],createdAt:now.toISOString(),
+  contingencies:"Synthetic terms",milestones:[],deadlineScheduleVersion:0,deadlineScheduleHistory:[],createdAt:now.toISOString(),
 };
 const lead: LeadDetail["lead"] = {
   id:"synthetic-deal",address:"SYNTHETIC SUBJECT",city:"Test City",state:"TX",county:"Synthetic County",zip:"75001",

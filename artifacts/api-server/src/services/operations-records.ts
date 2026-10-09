@@ -18,7 +18,11 @@ export function contractRecord(row: typeof contractsTable.$inferSelect) {
       .map(({pdfBase64:_,...metadata})=>metadata)
     : [];
   return GetDealOperationsResponse.shape.contract.options[0].parse({
-    ...row.payload,documents,id:row.id,leadId:row.leadId,version:row.version,createdAt:row.createdAt.toISOString(),
+    ...row.payload,
+    deadlineScheduleVersion: typeof row.payload.deadlineScheduleVersion === "number" ? row.payload.deadlineScheduleVersion : 0,
+    deadlineSchedule: row.payload.deadlineSchedule ?? null,
+    deadlineScheduleHistory: Array.isArray(row.payload.deadlineScheduleHistory) ? row.payload.deadlineScheduleHistory : [],
+    documents,id:row.id,leadId:row.leadId,version:row.version,createdAt:row.createdAt.toISOString(),
   });
 }
 export async function getBuyerRecord(id: string, database: Store = db, now = new Date()) {
