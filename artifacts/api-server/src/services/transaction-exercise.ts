@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { randomUUID } from "node:crypto";
 import { PDFDocument } from "pdf-lib";
-import { db,pool,contractsTable,jobsTable,matchesTable,buyersTable,leadsTable,transactionDocumentBlobsTable } from "@workspace/db";
+import { db,pool,analysesTable,contractsTable,jobsTable,matchesTable,buyersTable,leadsTable,transactionDocumentBlobsTable } from "@workspace/db";
 import { eq } from "drizzle-orm";
 import { logger } from "../lib/logger";
 import * as seller from "./deal-store";
@@ -64,7 +64,7 @@ try {
   const callAction = liveDesk.actions.find(action=>action.leadId===id);
   assert.equal(callAction?.href,`/calls?lead=${id}`);
   assert.ok(callAction?.workGuidance?.humanMustDo);
-  assert.match(callAction?.workGuidance?.currentState??"",/call ready/i);
+  assert.match(callAction?.workGuidance?.currentState??"",/call[_ ]ready/i);
   detail = await seller.recordCall(id,{version:detail.lead.version,outcome:"CONNECTED",notes:"Synthetic conversation, no external call.",nextAction:"Review terms.",followUpAt:future(1)},actor.id,now);
   detail = await offers.createOfferDraft(id,{version:detail.lead.version,amount:110000,earnestMoney:1000,closingDays:30,
     contingencies:"Synthetic title and diligence",assignmentIntent:true,reason:"Synthetic terms"},actor,now);
@@ -74,6 +74,7 @@ try {
   detail = await offers.communicateOffer(id,offerId,{version:detail.lead.version,amount:110000,channel:"PHONE",
     evidence:"Synthetic human communication only.",nextAction:"Prepare contract.",followUpAt:future(1)},operator,now);
   const approvedSnapshot = detail.analysisSnapshotId;
+  assert.ok(approvedSnapshot,"The communicated offer must remain bound to a persisted analysis snapshot.");
   await seller.addIntelligence(id,{classification:"AI_HYPOTHESIS",category:"prepared_questions",statement:"The seller may value clear coordination.",
     source:"Synthetic model-only test",sourceType:"MODEL",confidence:0.4,capturedAt:now.toISOString(),
     question:"What coordination would help?",action:"Ask the seller and record the actual answer."},actor.id,now);
@@ -240,6 +241,21 @@ try {
   const lockedAnalysis=(await seller.leadDetail(id,undefined,now)).analysis;
   assert.ok(lockedAnalysis,"The exact approved analysis remains available before buyer distribution.");
   assert.equal(lockedAnalysis.assumptions.assignmentTarget,15000);
+  const [approvedAnalysisRow] = await db.select().from(analysesTable).where(eq(analysesTable.id,approvedSnapshot));
+  assert.ok(approvedAnalysisRow,"The communicated offer's approved analysis snapshot remains persisted.");
+  const [mismatchSnapshotRow] = await db.insert(analysesTable).values({
+    leadId:id,snapshot:approvedAnalysisRow.snapshot,createdBy:actor.id,createdAt:new Date(now.getTime()+1),
+  }).returning({id:analysesTable.id});
+  assert.ok(mismatchSnapshotRow);
+  await db.update(leadsTable).set({analysisSnapshotId:mismatchSnapshotRow.id}).where(eq(leadsTable.id,id));
+  await assert.rejects(authorizeDealDistribution(id,{version:op.contract!.version,
+    reason:"SYNTHETIC snapshot mismatch rejection exercise."},actor,now),
+    /Refresh and verify complete, current underwriting tied to the communicated offer/,
+    "A current lead pointer that no longer matches the communicated offer must block distribution.");
+  assert.equal((await getDealDistribution(id)).packetId,null,
+    "A stale/mismatched economics authorization must not persist a buyer packet.");
+  await db.update(leadsTable).set({analysisSnapshotId:approvedSnapshot}).where(eq(leadsTable.id,id));
+  await db.delete(analysesTable).where(eq(analysesTable.id,mismatchSnapshotRow.id));
     const distribution = await authorizeDealDistribution(id,{version:op.contract!.version,
       reason:"Synthetic owner authorization for isolated distribution exercise."},actor,now);
     assert.ok(distribution.packetId);
@@ -290,11 +306,38 @@ try {
    assert.equal(competitorPortal.canAccept,true,"A second currently qualified buyer can accept after another buyer's soft response.");
     assert.equal(JSON.stringify(portal).includes(detail.lead.address),false,"The public buyer packet must not expose the street address.");
     assert.equal(JSON.stringify(portal).includes(detail.lead.sellerName),false,"The public buyer packet must not expose seller identity.");
+    const repeatedPortalAccess = await getBuyerPortalDeal(portalToken,now);
+    assert.equal(repeatedPortalAccess.recipientStatus,"INVITED","Opening a packet must not change recipient qualification or response state.");
+    assert.equal(repeatedPortalAccess.canAccept,true);
+    assert.equal(repeatedPortalAccess.events.filter(event=>event.action==="PORTAL_ACCESSED").length,2,
+      "Each valid private-packet access is persisted as access evidence, not as buyer intent.");
+    assert.ok(repeatedPortalAccess.events.filter(event=>event.action==="PORTAL_ACCESSED")
+      .every(event=>event.note.includes("does not establish the reader's identity")));
+    const afterViews = await getDealDistribution(id);
+    const viewedRecipients = afterViews.recipients as Array<{
+      buyerId:string;status:string;events:Array<{action:string}>;
+    }>;
+    assert.equal(viewedRecipients.find(recipient=>recipient.buyerId===buyer.id)?.status,"INVITED");
+    assert.equal(viewedRecipients.find(recipient=>recipient.buyerId===buyer.id)?.events
+      .filter(event=>event.action==="PORTAL_ACCESSED").length,2,
+      "The operator distribution view receives persisted portal-access history.");
+    assert.equal(afterViews.acceptedBuyerId,null,"Portal access alone cannot mark interest, acceptance, or commitment.");
+    const accessCountBeforeRejectedReads = repeatedPortalAccess.events.filter(event=>event.action==="PORTAL_ACCESSED").length;
+    await assert.rejects(getBuyerPortalDeal(portalToken,new Date(Date.parse(distribution.expiresAt!)+1000)),/no longer available/);
+    await assert.rejects(getBuyerPortalDeal("x".repeat(43),now),/invalid or no longer active/);
+    const afterRejectedReads = await getDealDistribution(id);
+    const afterRejectedRecipients = afterRejectedReads.recipients as Array<{
+      buyerId:string;events:Array<{action:string}>;
+    }>;
+    assert.equal(afterRejectedRecipients.find(recipient=>recipient.buyerId===buyer.id)?.events
+      .filter(event=>event.action==="PORTAL_ACCESSED").length,accessCountBeforeRejectedReads,
+      "Expired and nonexistent capabilities must not create access events.");
    const interest = {eventKey:"synthetic-portal-interest",action:"INTERESTED" as const,note:"Synthetic interest, no external contact."};
    let portalResult = await respondToBuyerPortalDeal(portalToken,interest,now);
     assert.equal(portalResult.recipientStatus,"INTERESTED");
    portalResult = await respondToBuyerPortalDeal(portalToken,interest,now);
-    assert.equal(portalResult.events.length,1,"An identical portal event retry must not duplicate activity.");
+     assert.equal(portalResult.events.filter(event=>event.eventKey===interest.eventKey).length,1,
+       "An identical portal response retry must not duplicate interest activity.");
     await assert.rejects(respondToBuyerPortalDeal(portalToken,{...interest,action:"DECLINED"},now),/different response/);
    portalResult = await respondToBuyerPortalDeal(portalToken,{eventKey:"synthetic-portal-accept",action:"ACCEPTED"},now);
     assert.equal(portalResult.recipientStatus,"ACCEPTED");
@@ -378,7 +421,13 @@ try {
      assert.equal(op.matches.find(m=>m.buyerId===selectedBuyer.id)?.status,
        selectedBuyer.id===winnerBuyerId?"COMMITTED":"EXPIRED");
    }
+   const closedRecipient = committedDistribution.recipients.find(r=>r.buyerId===lateVerified.id);
+   const closedAccessCount = closedRecipient?.events.filter(event=>event.action==="PORTAL_ACCESSED").length;
    await assert.rejects(getBuyerPortalDeal(thirdShare.links[0]!.token,now),/no longer available/);
+   const afterClosedAccess = await getDealDistribution(id);
+   assert.equal(afterClosedAccess.recipients.find(r=>r.buyerId===lateVerified.id)?.events
+     .filter(event=>event.action==="PORTAL_ACCESSED").length,closedAccessCount,
+     "A committed/closed link rejection must not record another portal access.");
   let destination = await buyers.createBuyer({name:"SYNTHETIC GURU DESTINATION",email:"synthetic-guru@example.com",phone:"",
     source:"Synthetic destination exercise",status:"ACTIVE",destinationKind:"GURU",qualifiedDealFee:500,feeTermsSource:"Synthetic quoted terms, not receipt",
     criteria:buyer.criteria},actor);

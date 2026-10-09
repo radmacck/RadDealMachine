@@ -3962,6 +3962,7 @@ export const BuyerPortalEventAction = {
   INTERESTED: 'INTERESTED',
   ACCEPTED: 'ACCEPTED',
   DECLINED: 'DECLINED',
+  PORTAL_ACCESSED: 'PORTAL_ACCESSED',
 } as const;
 
 export interface BuyerPortalEvent {

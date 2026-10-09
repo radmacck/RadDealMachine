@@ -23395,7 +23395,7 @@ export const GetDealDistributionResponse = zod.object({
   "status": zod.enum(['INVITED', 'INTERESTED', 'ACCEPTED', 'DECLINED', 'COMMITTED', 'EXPIRED']),
   "events": zod.array(zod.object({
   "eventKey": zod.string(),
-  "action": zod.enum(['INTERESTED', 'ACCEPTED', 'DECLINED']),
+  "action": zod.enum(['INTERESTED', 'ACCEPTED', 'DECLINED', 'PORTAL_ACCESSED']),
   "recordedAt": zod.string(),
   "note": zod.string()
 })),
@@ -23528,7 +23528,7 @@ export const AuthorizeDealDistributionResponse = zod.object({
   "status": zod.enum(['INVITED', 'INTERESTED', 'ACCEPTED', 'DECLINED', 'COMMITTED', 'EXPIRED']),
   "events": zod.array(zod.object({
   "eventKey": zod.string(),
-  "action": zod.enum(['INTERESTED', 'ACCEPTED', 'DECLINED']),
+  "action": zod.enum(['INTERESTED', 'ACCEPTED', 'DECLINED', 'PORTAL_ACCESSED']),
   "recordedAt": zod.string(),
   "note": zod.string()
 })),
@@ -23661,7 +23661,7 @@ export const ShareDistributionRecipientsResponse = zod.object({
   "status": zod.enum(['INVITED', 'INTERESTED', 'ACCEPTED', 'DECLINED', 'COMMITTED', 'EXPIRED']),
   "events": zod.array(zod.object({
   "eventKey": zod.string(),
-  "action": zod.enum(['INTERESTED', 'ACCEPTED', 'DECLINED']),
+  "action": zod.enum(['INTERESTED', 'ACCEPTED', 'DECLINED', 'PORTAL_ACCESSED']),
   "recordedAt": zod.string(),
   "note": zod.string()
 })),
@@ -23800,7 +23800,7 @@ export const ReleaseDistributionAcceptanceResponse = zod.object({
   "status": zod.enum(['INVITED', 'INTERESTED', 'ACCEPTED', 'DECLINED', 'COMMITTED', 'EXPIRED']),
   "events": zod.array(zod.object({
   "eventKey": zod.string(),
-  "action": zod.enum(['INTERESTED', 'ACCEPTED', 'DECLINED']),
+  "action": zod.enum(['INTERESTED', 'ACCEPTED', 'DECLINED', 'PORTAL_ACCESSED']),
   "recordedAt": zod.string(),
   "note": zod.string()
 })),
@@ -23918,7 +23918,7 @@ export const GetBuyerPortalDealResponse = zod.object({
   "unavailableReason": zod.string().nullable(),
   "events": zod.array(zod.object({
   "eventKey": zod.string(),
-  "action": zod.enum(['INTERESTED', 'ACCEPTED', 'DECLINED']),
+  "action": zod.enum(['INTERESTED', 'ACCEPTED', 'DECLINED', 'PORTAL_ACCESSED']),
   "recordedAt": zod.string(),
   "note": zod.string()
 }))
@@ -24046,7 +24046,7 @@ export const RespondToBuyerPortalDealResponse = zod.object({
   "unavailableReason": zod.string().nullable(),
   "events": zod.array(zod.object({
   "eventKey": zod.string(),
-  "action": zod.enum(['INTERESTED', 'ACCEPTED', 'DECLINED']),
+  "action": zod.enum(['INTERESTED', 'ACCEPTED', 'DECLINED', 'PORTAL_ACCESSED']),
   "recordedAt": zod.string(),
   "note": zod.string()
 }))

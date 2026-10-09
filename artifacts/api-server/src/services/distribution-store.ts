@@ -1,4 +1,4 @@
-import { createHash, randomBytes } from "node:crypto";
+import { createHash, randomBytes, randomUUID } from "node:crypto";
 import { isDeepStrictEqual } from "node:util";
 import { and, desc, eq } from "drizzle-orm";
 import {
@@ -321,7 +321,32 @@ async function loadPortalRecord(tx: Store, tokenHash: string, now: Date) {
 }
 
 export async function getBuyerPortalDeal(token: string | undefined, now = new Date()) {
-  return loadPortalRecord(db, validateToken(token), now);
+  const tokenHash = validateToken(token);
+  let response: Awaited<ReturnType<typeof loadPortalRecord>> | undefined;
+  await db.transaction(async (tx) => {
+    const [recipient] = await tx.select().from(distributionRecipientsTable)
+      .where(eq(distributionRecipientsTable.tokenHash, tokenHash)).for("update");
+    if (!recipient) throw new DomainError("This buyer link is invalid or no longer active.", 404);
+    response = await loadPortalRecord(tx, tokenHash, now);
+    const [packet] = await tx.select().from(distributionPacketsTable).where(eq(distributionPacketsTable.id, recipient.packetId));
+    if (!packet) throw new DomainError("This opportunity is no longer available.", 410);
+    const event: BuyerPortalEvent = {
+      eventKey: `portal-access:${randomUUID()}`,
+      action: "PORTAL_ACCESSED",
+      recordedAt: now.toISOString(),
+      note: "Private bearer capability accessed. This does not establish the reader's identity, delivery, buyer intent, acceptance, or commitment.",
+    };
+    const events = [...eventsOf(recipient), event];
+    await tx.update(distributionRecipientsTable).set({
+      payload: { ...recipient.payload, events },
+      updatedAt: now,
+    }).where(eq(distributionRecipientsTable.id, recipient.id));
+    await audit(tx, "buyer-capability", "BUYER_PORTAL_ACCESSED", packet.leadId,
+      `Private buyer capability ${recipient.id} accessed at ${now.toISOString()}; this records token access only, not verified human identity, delivery, intent, acceptance, or commitment.`);
+    response.events = events;
+  });
+  if (!response) throw new Error("Buyer portal access did not return a validated packet.");
+  return response;
 }
 
 export async function respondToBuyerPortalDeal(

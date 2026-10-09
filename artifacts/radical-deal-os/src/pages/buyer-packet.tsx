@@ -314,9 +314,9 @@ export default function BuyerPacketPage() {
             </div>}
           </div>
           {deal.events.length > 0 && <div className="border-t border-border pt-4">
-            <h2 className="eyebrow mb-2">Your response history</h2>
+            <h2 className="eyebrow mb-2">Portal activity</h2>
             <ul className="space-y-1 text-xs text-muted-foreground">{deal.events.map((event) =>
-              <li key={event.eventKey}>{event.action} · {fmtDate(event.recordedAt)}{event.note ? ` · ${event.note}` : ''}</li>)}</ul>
+              <li key={event.eventKey}>{event.action === 'PORTAL_ACCESSED' ? 'Private link accessed (reader identity not verified)' : event.action} · {fmtDate(event.recordedAt)}{event.note ? ` · ${event.note}` : ''}</li>)}</ul>
           </div>}
         </section>
       </>}

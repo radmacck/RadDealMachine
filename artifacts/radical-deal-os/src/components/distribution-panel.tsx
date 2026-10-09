@@ -135,11 +135,11 @@ export function DistributionPanel({ detail, contract, matches, onChanged }: {
           </div>)}
         </div>}
         {distribution.recipients.length > 0 && <div className="space-y-2 border-t border-border pt-3">
-          <p className="eyebrow">Buyer responses</p>
+          <p className="eyebrow">Buyer portal activity</p>
           {distribution.recipients.map((recipient) => <div key={recipient.buyerId} className="border border-border p-2 text-sm">
             <div className="flex flex-wrap justify-between gap-2"><b>{recipient.buyerName}</b><span className="tag tone-muted">{recipient.status}</span></div>
             {recipient.events.map((event) => <div key={event.eventKey} className="mt-1 text-xs text-muted-foreground">
-              <p>{event.action} / {fmtDate(event.recordedAt)}{event.note ? ` / ${event.note}` : ''}</p>
+              <p>{event.action === 'PORTAL_ACCESSED' ? 'Private link accessed (reader identity not verified)' : event.action} / {fmtDate(event.recordedAt)}{event.note ? ` / ${event.note}` : ''}</p>
               {['INTERESTED', 'ACCEPTED'].includes(event.action) && (() => {
                 const match = matches.find((m) => m.buyerId === recipient.buyerId);
                 if (!match || match.status === 'INTERESTED' || match.status === 'COMMITTED' || !match.eligible || !(isOwner || canCall) || !lifecycleOpen || contract.committedBuyerId) {
