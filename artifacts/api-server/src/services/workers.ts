@@ -14,6 +14,7 @@ import { refreshPropertyBuyerDemandAlignment } from "./property-discovery-store"
 import { reviewHandoffs } from "./handoffs";
 import { runSellerContactEnrichmentOnce } from "./seller-contact-enrichment";
 import { evaluateAllLeadDecisions, evaluateLeadDecision } from "./intelligence-decision-store";
+import { decisionWorkExecutors, runDecisionWorkOnce } from "./decision-work-lifecycle";
 
 const PROPERTY_SOURCE_POLICY_VERSION = "phila-property-sources-v4";
 const BUYER_SOURCE_POLICY_VERSION = "phila-buyer-sources-v2";
@@ -49,6 +50,9 @@ export async function reviewDeadlines(now = new Date()) {
 }
 /** Durable leased claims: concurrent instances cannot execute the same queued row. */
 export async function runWorkerOnce(now = new Date(), schedule = false, onlyJobId?: string) {
+  // Keep decision-work leases and bounded retries moving alongside the durable
+  // decision-evaluation worker. No protected or unconfigured action is executed.
+  await runDecisionWorkOnce(decisionWorkExecutors, now);
   if (schedule) {
     const bucket = Math.floor(now.getTime()/(5*60000));
     await queueJob(db,"REVIEW_DEADLINES",null,`scheduled:deadlines:${bucket}`,"system:scheduler");
@@ -132,6 +136,8 @@ export async function runWorkerOnce(now = new Date(), schedule = false, onlyJobI
         const decisions = await evaluateAllLeadDecisions(`worker:${row.id}`, now);
         message = `Persisted ${decisions.length} active-deal decision snapshots. No external action was taken.`;
       }
+      const workRun = await runDecisionWorkOnce(decisionWorkExecutors, now, `system:decision-worker:${row.id}`);
+      message += ` Decision-work lifecycle: ${workRun.claimed} claimed, ${workRun.completed} completed, ${workRun.failed} failed, ${workRun.stale} blocked stale; no unsupported or human-gated action was run.`;
     }
     else if (row.kind==="BUYER_DISCOVERY"&&row.payload.termsReviewed===true&&row.payload.sourcePolicyVersion===BUYER_SOURCE_POLICY_VERSION) message = await discoverPublicBuyers(now);
     else if (row.kind==="DISCOVER_PROPERTIES"&&row.payload.termsReviewed===true&&row.payload.sourcePolicyVersion===PROPERTY_SOURCE_POLICY_VERSION) message = await discoverPublicProperties(now);

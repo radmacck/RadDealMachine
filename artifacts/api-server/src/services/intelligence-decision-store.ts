@@ -6,6 +6,7 @@ import {
   db,
   dealDecisionEvaluationsTable,
   dealDecisionWorkItemsTable,
+  leadsTable,
 } from "@workspace/db";
 import { GetCommandCenterResponse } from "@workspace/api-zod";
 import {
@@ -15,8 +16,13 @@ import {
   type IntelligenceLoopInput,
 } from "@workspace/deal-domain";
 import type { Store } from "./operations-records";
+import {
+  recordDecisionWorkEvent,
+  transitionDecisionWorkItem,
+  type DecisionWorkStatus,
+} from "./decision-work-state";
 
-type WorkStatus = "READY" | "BLOCKED" | "IN_PROGRESS" | "COMPLETED" | "FAILED" | "EXPIRED";
+type WorkStatus = DecisionWorkStatus;
 
 function hashSnapshot(value: unknown) {
   return createHash("sha256").update(JSON.stringify(value)).digest("hex");
@@ -37,8 +43,13 @@ async function auditDecision(
   await tx.insert(auditTable).values({ actor, action, entityId: subjectId, detail, createdAt: now });
 }
 
-function workKey(subjectType: string, subjectId: string, item: Pick<DecisionActionDraft, "code" | "gapKey">) {
-  return `${subjectType}:${subjectId}:${item.code}:${item.gapKey}`;
+function workKey(
+  subjectType: string,
+  subjectId: string,
+  item: Pick<DecisionActionDraft, "code" | "gapKey">,
+  snapshotHash: string,
+) {
+  return `${subjectType}:${subjectId}:${item.code}:${item.gapKey}:${snapshotHash}`;
 }
 
 function resolutionStatus(
@@ -69,10 +80,12 @@ async function ensureWorkItem(
   evaluationId: string,
   item: DecisionActionDraft,
   desiredStatus: WorkStatus,
+  snapshotHash: string,
+  subjectVersion: number,
   actor: string,
   now: Date,
 ) {
-  const idempotencyKey = workKey(input.subjectType, input.subjectId, item);
+  const idempotencyKey = workKey(input.subjectType, input.subjectId, item, snapshotHash);
   const [existing] = await tx.select().from(dealDecisionWorkItemsTable)
     .where(eq(dealDecisionWorkItemsTable.idempotencyKey, idempotencyKey)).limit(1);
   const payload = { ...item, synthetic: input.synthetic === true };
@@ -90,42 +103,82 @@ async function ensureWorkItem(
       reason: item.reason,
       evidenceRefs: item.evidenceRefs,
       payload,
+      evidenceSnapshotHash: snapshotHash,
+      subjectVersion,
+      attempts: 0,
+      maxAttempts: 3,
+      retryable: false,
+      stateVersion: 1,
       createdBy: actor,
       createdAt: now,
       updatedAt: now,
     }).returning();
     if (!created) throw new Error("Decision work item insert failed.");
-    await auditDecision(tx, actor, `DECISION_ACTION_${desiredStatus}`, input.subjectId,
-      `${item.code}/${item.gapKey}: ${item.reason}`, now);
+    await recordDecisionWorkEvent(tx, created, {
+      eventType: "CREATED",
+      actor,
+      reason: `${item.code}/${item.gapKey}: ${item.reason}`,
+      evaluationId,
+      evidenceSnapshotHash: snapshotHash,
+      fromStatus: null,
+      toStatus: desiredStatus,
+      metadata: { subjectType: input.subjectType, subjectVersion, synthetic: input.synthetic === true },
+    }, now);
     return created;
   }
-  const nextStatus: WorkStatus = existing.status === "IN_PROGRESS" && desiredStatus === "READY"
-    ? "IN_PROGRESS" : desiredStatus;
+  const existingStatus = existing.status as WorkStatus;
+  const desiredCanReplace = ["READY", "BLOCKED"].includes(existingStatus);
+  const nextStatus = desiredCanReplace ? desiredStatus : existingStatus;
   const changed = existing.status !== nextStatus
     || existing.evaluationId !== evaluationId
     || existing.reason !== item.reason
     || !sameJson(existing.payload, payload)
     || !sameJson(existing.evidenceRefs, item.evidenceRefs);
   if (!changed) return existing;
+  if (existing.status !== nextStatus) {
+    return transitionDecisionWorkItem(tx, existing, nextStatus, {
+      eventType: "STATUS_RECONCILED",
+      actor,
+      reason: `${item.code}/${item.gapKey}: ${existing.status} -> ${nextStatus}. ${item.reason}`,
+      evaluationId,
+      evidenceSnapshotHash: snapshotHash,
+    }, now, {
+      evaluationId,
+      evidenceSnapshotHash: snapshotHash,
+      subjectVersion,
+      evidenceRefs: item.evidenceRefs,
+      payload,
+      leaseOwner: null,
+      leaseToken: null,
+      leaseExpiresAt: null,
+      nextAttemptAt: null,
+    });
+  }
   const [updated] = await tx.update(dealDecisionWorkItemsTable).set({
     evaluationId,
-    status: nextStatus,
     reason: item.reason,
     evidenceRefs: item.evidenceRefs,
     payload,
+    evidenceSnapshotHash: snapshotHash,
+    subjectVersion,
     updatedAt: now,
   }).where(eq(dealDecisionWorkItemsTable.id, existing.id)).returning();
   if (!updated) throw new Error("Decision work item update failed.");
-  if (existing.status !== nextStatus) {
-    await auditDecision(tx, actor, `DECISION_ACTION_${nextStatus}`, input.subjectId,
-      `${item.code}/${item.gapKey}: ${existing.status} -> ${nextStatus}. ${item.reason}`, now);
-  }
+  await recordDecisionWorkEvent(tx, updated, {
+    eventType: "SNAPSHOT_REVALIDATED",
+    actor,
+    reason: `Decision work remains ${updated.status}; linked to the current decision snapshot.`,
+    evaluationId,
+    evidenceSnapshotHash: snapshotHash,
+    metadata: { subjectVersion },
+  }, now);
   return updated;
 }
 
 async function persist(input: IntelligenceLoopInput, actor: string, tx: Store, now: Date) {
   const draft = evaluateIntelligenceLoop(input);
-  const snapshotHash = hashSnapshot({ decision: draft, synthetic: input.synthetic === true });
+  const subjectVersion = input.subjectType === "LEAD" ? input.detail.lead.version : 0;
+  const snapshotHash = hashSnapshot({ decision: draft, subjectVersion, synthetic: input.synthetic === true });
   let [evaluation] = await tx.select().from(dealDecisionEvaluationsTable).where(and(
     eq(dealDecisionEvaluationsTable.subjectType, input.subjectType),
     eq(dealDecisionEvaluationsTable.subjectId, input.subjectId),
@@ -161,11 +214,11 @@ async function persist(input: IntelligenceLoopInput, actor: string, tx: Store, n
     ...draft.eligibleActions.map(item => ({ item, status: "READY" as const })),
     ...draft.blockedActions.map(item => ({ item, status: "BLOCKED" as const })),
   ];
-  const currentKeys = new Set(actions.map(({ item }) => workKey(input.subjectType, input.subjectId, item)));
+  const currentKeys = new Set(actions.map(({ item }) => workKey(input.subjectType, input.subjectId, item, snapshotHash)));
   const persistedActions = new Map<string, Awaited<ReturnType<typeof ensureWorkItem>>>();
   for (const { item, status } of actions) {
-    const row = await ensureWorkItem(tx, input, evaluation.id, item, status, actor, now);
-    persistedActions.set(workKey(input.subjectType, input.subjectId, item), row);
+    const row = await ensureWorkItem(tx, input, evaluation.id, item, status, snapshotHash, subjectVersion, actor, now);
+    persistedActions.set(workKey(input.subjectType, input.subjectId, item, snapshotHash), row);
   }
 
   if (draft.outcomeRecord) {
@@ -181,31 +234,50 @@ async function persist(input: IntelligenceLoopInput, actor: string, tx: Store, n
       requiresHumanAuthorization: false,
       evidenceRefs: draft.evidenceRefs,
     };
-    const outcomeRow = await ensureWorkItem(tx, input, evaluation.id, outcome, "COMPLETED", actor, now);
-    persistedActions.set(workKey(input.subjectType, input.subjectId, outcome), outcomeRow);
-    currentKeys.add(workKey(input.subjectType, input.subjectId, outcome));
+    const outcomeRow = await ensureWorkItem(tx, input, evaluation.id, outcome, "COMPLETED", snapshotHash, subjectVersion, actor, now);
+    persistedActions.set(workKey(input.subjectType, input.subjectId, outcome, snapshotHash), outcomeRow);
+    currentKeys.add(workKey(input.subjectType, input.subjectId, outcome, snapshotHash));
   }
 
   const oldOpen = await tx.select().from(dealDecisionWorkItemsTable).where(and(
     eq(dealDecisionWorkItemsTable.subjectType, input.subjectType),
     eq(dealDecisionWorkItemsTable.subjectId, input.subjectId),
-    inArray(dealDecisionWorkItemsTable.status, ["READY", "BLOCKED", "IN_PROGRESS"]),
+    inArray(dealDecisionWorkItemsTable.status, ["READY", "BLOCKED", "IN_PROGRESS", "FAILED"]),
   ));
   for (const old of oldOpen) {
     if (currentKeys.has(old.idempotencyKey)) continue;
-    const nextStatus = resolutionStatus(input, old.actionCode, old.updatedAt);
-    const [updated] = await tx.update(dealDecisionWorkItemsTable).set({
-      status: nextStatus,
-      updatedAt: now,
+    if (old.status === "FAILED" && !old.retryable) continue;
+    const retrySuperseded = old.status === "FAILED" && old.retryable;
+    const nextStatus = retrySuperseded
+      ? "EXPIRED"
+      : old.status === "IN_PROGRESS"
+      ? "BLOCKED"
+      : resolutionStatus(input, old.actionCode, old.updatedAt);
+    await transitionDecisionWorkItem(tx, old, nextStatus, {
+      eventType: retrySuperseded
+        ? "RETRY_INVALIDATED_BY_EVIDENCE"
+        : old.status === "IN_PROGRESS" ? "STALE_DURING_EXECUTION" : "SUPERSEDED_BY_EVIDENCE",
+      actor,
+      reason: retrySuperseded
+        ? `${old.actionCode}/${old.gapKey}: pending retry invalidated by a newer evidence snapshot.`
+        : old.status === "IN_PROGRESS"
+        ? `${old.actionCode}/${old.gapKey}: evidence changed during execution; blocked for reevaluation.`
+        : `${old.actionCode}/${old.gapKey}: superseded by evidence snapshot ${snapshotHash.slice(0, 12)}.`,
+      evaluationId: evaluation.id,
+      evidenceSnapshotHash: snapshotHash,
+      metadata: { resolvedByEvaluation: evaluation.id },
+    }, now, {
       payload: { ...old.payload, resolvedByEvaluation: evaluation.id },
-    }).where(eq(dealDecisionWorkItemsTable.id, old.id)).returning();
-    if (updated) await auditDecision(tx, actor, `DECISION_ACTION_${nextStatus}`, input.subjectId,
-      `${old.actionCode}/${old.gapKey}: ${old.status} -> ${nextStatus}; superseded by evidence snapshot ${snapshotHash.slice(0, 12)}.`,
-      now);
+      leaseOwner: null,
+      leaseToken: null,
+      leaseExpiresAt: null,
+      nextAttemptAt: null,
+      retryable: false,
+    });
   }
 
   const workAction = (item: DecisionActionDraft) => {
-    const row = persistedActions.get(workKey(input.subjectType, input.subjectId, item));
+    const row = persistedActions.get(workKey(input.subjectType, input.subjectId, item, snapshotHash));
     if (!row) throw new Error(`Persisted decision action is missing: ${item.code}/${item.gapKey}`);
     return {
       ...item,
@@ -244,7 +316,7 @@ export async function latestIntelligenceDecision(subjectType: string, subjectId:
   const byKey = new Map(work.map(row => [row.idempotencyKey, row]));
   const decorate = (value: unknown) => {
     const item = value as DecisionActionDraft;
-    const row = byKey.get(workKey(subjectType, subjectId, item));
+    const row = byKey.get(workKey(subjectType, subjectId, item, evaluation.snapshotHash));
     return row ? { ...item, workItemId: row.id, status: row.status as WorkStatus } : null;
   };
   const eligibleActions = ((payload.eligibleActions ?? []) as DecisionActionDraft[]).map(decorate).filter(Boolean);
@@ -266,6 +338,8 @@ export async function evaluateLeadDecision(leadId: string, actor = "system:decis
   const { acquisitionQueue } = await import("./acquisition-queue-store");
   const { dealOperations } = await import("./matching-store");
   const detail = await leadDetail(leadId, undefined, now);
+  const [persistedLead] = await db.select({ payload: leadsTable.payload }).from(leadsTable)
+    .where(eq(leadsTable.id, leadId)).limit(1);
   const queue = await acquisitionQueue("OWNER", now);
   const acquisition = queue.items.find(item => item.lead.id === leadId) ?? null;
   const operations = await dealOperations(leadId, now);
@@ -286,6 +360,7 @@ export async function evaluateLeadDecision(leadId: string, actor = "system:decis
       matches: operations.matches.map(match => ({ buyerId: match.buyerId, eligible: match.eligible })),
       nextAction: operations.nextAction,
     },
+    synthetic: persistedLead?.payload.synthetic === true,
     now,
   };
   return persistIntelligenceDecision(input, actor, now);

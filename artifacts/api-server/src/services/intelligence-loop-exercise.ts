@@ -245,8 +245,8 @@ assert.equal(workerJob?.state, "SUCCEEDED", "the queued decision worker complete
 const workerEvaluations = await db.select().from(dealDecisionEvaluationsTable)
   .where(eq(dealDecisionEvaluationsTable.leadId, workerLeadId));
 assert.ok(workerEvaluations.length, "worker evaluation is persisted for the linked synthetic lead");
-assert.equal(workerEvaluations[0]?.payload.synthetic, false,
-  "the production worker evaluation is not mislabeled synthetic based on test-job metadata");
+assert.equal(workerEvaluations[0]?.payload.synthetic, true,
+  "a persisted fixture marked synthetic remains labelled synthetic when evaluated by the real worker");
 console.log(JSON.stringify({
   exercise: "SYNTHETIC GAP-AWARE INTELLIGENCE LOOP",
   scenarios: {
