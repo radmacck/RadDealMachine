@@ -6,6 +6,7 @@ import {
   discoverPhiladelphiaViolationParcels, rankContactPaths, refreshPhiladelphiaEnforcementEvidence,
   refreshPhiladelphiaVacancyEvidence, searchProperties, normalizePhiladelphiaPermitRows,
   normalizePhiladelphiaDemolitionRows, PHILA_LI_PERMITS_SOURCE, PHILA_DEMOLITIONS_SOURCE,
+  normalizePhiladelphiaSheriffDeedRows, PHILA_SHERIFF_DEEDS_SOURCE,
 } from "./index";
 const now = new Date("2026-10-04T12:00:00Z");
 const raw = {
@@ -190,6 +191,31 @@ test("recent demolition records remain dated OBSERVED evidence and exact-account
   assert.equal(observations[0]?.signal,null);
   assert.equal(observations[0]?.payload.classification,"OBSERVED");
   assert.match(observations[0]?.sourceUrl ?? "",/opendataphilly\.org\/datasets\/building-demolitions/);
+});
+test("recent sheriff deeds retain exact-parcel transaction provenance without becoming motivation or lead signals",()=>{
+  const record = {
+    record_id: 99001, opa_account_num: "123456789", display_date: "2026-10-01T04:00:00Z",
+    document_type: "SHERIFF'S DEED",
+  };
+  const observations = normalizePhiladelphiaSheriffDeedRows([
+    record, record,
+    {...record, record_id: 99002, display_date: "2026-09-29T04:00:00Z"},
+    {...record, record_id: 99003, display_date: "2026-10-05T04:00:00Z"},
+    {...record, record_id: 99004, display_date: "2026-01-01T04:00:00Z"},
+    {...record, record_id: 99005, document_type: "DEED"},
+    {...record, record_id: 99006, opa_account_num: "12345678"},
+  ], now);
+  assert.equal(observations.length, 1);
+  const observation = observations[0]!;
+  assert.equal(observation.propertyId, "123456789");
+  assert.equal(observation.sourceId, PHILA_SHERIFF_DEEDS_SOURCE.id);
+  assert.equal(observation.payload.classification, "OBSERVED");
+  assert.equal(observation.payload.identityMethod, "EXACT_OPA_ACCOUNT");
+  assert.equal(observation.payload.recordCount, 2);
+  assert.deepEqual(observation.payload.recordIdentities, ["99001", "99002"]);
+  assert.equal(observation.payload.sourceWindowDays, 180);
+  assert.equal(observation.signal, null, "A recorded sheriff deed is not proof of current seller motivation.");
+  assert.match(observation.sourceUrl, /opendataphilly\.org\/datasets\/real-estate-transfers/);
 });
 test("repeated recorded grantees reject ambiguous names rather than treating them as buyers",()=>{
   assert.equal(normalizeCorporateGrantee("Example Property Holdings LLC"),"Example Property Holdings LLC");

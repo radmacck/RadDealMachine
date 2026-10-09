@@ -57,7 +57,9 @@ export async function move(tx: Tx, row: LeadRow, to: Stage, reason: string, next
   }
   await tx.insert(transitionsTable).values({ leadId: row.id, from: row.stage, to, reason, nextAction, actor, createdAt: now });
   await audit(tx, actor, "DEAL_TRANSITION", row.id, `${row.stage} → ${to}: ${reason}. Next: ${nextAction}`);
-  await queueJob(tx,"EVALUATE_DECISION",row.id,`decision:${row.id}:transition:${row.version+1}`,actor,{trigger:"DEAL_TRANSITION",from:row.stage,to});
+  await queueJob(tx,"EVALUATE_DECISION",row.id,
+    `decision:${row.id}:transition:${row.version+1}:${row.stage}:${to}`,
+    actor,{trigger:"DEAL_TRANSITION",from:row.stage,to});
   row.stage = to;
   row.nextAction = nextAction;
 }

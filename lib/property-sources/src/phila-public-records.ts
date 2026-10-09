@@ -53,6 +53,20 @@ export const PHILA_TRANSFER_SOURCE = {
   ],
 };
 
+export const PHILA_SHERIFF_DEEDS_SOURCE = {
+  id: "phila-sheriff-deed-records",
+  name: "Philadelphia Real Estate Transfers — Sheriff Deed Records",
+  coverage: "Philadelphia sheriff deeds recorded in the last 180 days, joined to OPA parcels only by an exact nine-digit account identifier.",
+  termsUrl: PHILA_TRANSFER_SOURCE.termsUrl,
+  capabilities: ["Bounded keyset traversal of recent sheriff-deed records", "Exact OPA-account property discovery", "Transfer record identity and event date"],
+  limitations: [
+    "A sheriff deed is an OBSERVED recorded transfer, not proof of current seller identity, present availability, motivation, title authority, condition, or an active foreclosure.",
+    "Only exact nine-digit OPA account identifiers are joined; unresolved records remain unmatched source observations.",
+    "The source is limited to the last 180 days and 1,000 records per run; the adapter fails explicitly rather than reporting a complete result if that bound is exceeded.",
+    "The City publishes the dataset with its City of Philadelphia License and terms; this connector uses the documented public Carto SQL API, not a listing or court-portal scrape.",
+  ],
+};
+
 export const PHILA_LI_PERMITS_SOURCE = {
   id: "phila-li-building-permits",
   name: "Philadelphia L&I Building and Zoning Permits",
@@ -86,6 +100,7 @@ export const PHILA_PUBLIC_RECORD_SOURCES = [
   PHILA_UNSAFE_BUILDINGS_SOURCE,
   PHILA_VACANCY_SOURCE,
   PHILA_TRANSFER_SOURCE,
+  PHILA_SHERIFF_DEEDS_SOURCE,
   PHILA_LI_PERMITS_SOURCE,
   PHILA_DEMOLITIONS_SOURCE,
 ] as const;
@@ -513,6 +528,13 @@ const demolitionEventRowSchema = z.object({
   objectid: nullableText,
 });
 
+const sheriffDeedEventRowSchema = z.object({
+  record_id: z.union([z.string(), z.number().transform(String)]),
+  opa_account_num: nullableText,
+  display_date: nullableText,
+  document_type: nullableText,
+});
+
 function boundedSourceText(value: string | null, maxLength = 800) {
   return value?.trim().slice(0, maxLength) || null;
 }
@@ -535,6 +557,8 @@ function groupPropertyEventObservations(
   capturedAt: Date,
   requestedIds: string[] = [],
 ): PropertySourceRefresh[] {
+  const sourceWindowDays = source.id === PHILA_LI_PERMITS_SOURCE.id ||
+    source.id === PHILA_SHERIFF_DEEDS_SOURCE.id ? 180 : 730;
   const groups = new Map<string, Map<string, PropertyEventObservation>>();
   for (const record of records) {
     const group = groups.get(record.propertyId) ?? new Map<string, PropertyEventObservation>();
@@ -553,7 +577,7 @@ function groupPropertyEventObservations(
         eventAt: record.eventAt,
         freshness: {
           state: "WITHIN_SOURCE_WINDOW",
-          sourceWindowDays: source.id === PHILA_LI_PERMITS_SOURCE.id ? 180 : 730,
+          sourceWindowDays,
           daysSinceEvent: Math.max(0, Math.floor((capturedAt.getTime() - Date.parse(record.eventAt)) / 86_400_000)),
         },
         classification: "OBSERVED",
@@ -577,7 +601,7 @@ function groupPropertyEventObservations(
         recordCount: rawRecords.length,
         recordIdentities,
         latestSourceEventAt: rawRecords[0]?.eventAt ?? null,
-        sourceWindowDays: source.id === PHILA_LI_PERMITS_SOURCE.id ? 180 : 730,
+        sourceWindowDays,
         retrievedAt: capturedAt.toISOString(),
         freshness: {
           checkedAt: capturedAt.toISOString(),
@@ -683,6 +707,39 @@ export function normalizePhiladelphiaDemolitionRows(rows: unknown[], now = new D
   return groupPropertyEventObservations(PHILA_DEMOLITIONS_SOURCE, records, now, requestedIds);
 }
 
+export function normalizePhiladelphiaSheriffDeedRows(rows: unknown[], now = new Date(), requestedIds: string[] = []) {
+  if (!Number.isFinite(now.getTime())) throw new Error("Invalid source capture time.");
+  const records: PropertyEventObservation[] = rows.flatMap(value => {
+    const parsed = sheriffDeedEventRowSchema.safeParse(value);
+    if (!parsed.success) return [];
+    const row = parsed.data;
+    const propertyId = exactOpaAccount(row.opa_account_num);
+    const eventAt = eventIsCurrent(row.display_date, now, 180);
+    const sourceRecordId = boundedSourceText(String(row.record_id), 160);
+    if (!propertyId || !eventAt || !sourceRecordId ||
+      row.document_type?.trim().toUpperCase() !== "SHERIFF'S DEED") return [];
+    return [{
+      propertyId,
+      sourceRecordId,
+      eventAt,
+      raw: {
+        record_id: sourceRecordId,
+        opa_account_num: propertyId,
+        display_date: row.display_date,
+        document_type: row.document_type,
+      },
+      normalized: {
+        sourceRecordId,
+        propertyId,
+        eventAt,
+        documentType: "SHERIFF'S DEED",
+        classification: "OBSERVED",
+      },
+    }];
+  });
+  return groupPropertyEventObservations(PHILA_SHERIFF_DEEDS_SOURCE, records, now, requestedIds);
+}
+
 function buildEventSourceQuery(source: "permits" | "demolitions", now: Date, propertyIds: string[] = []) {
   if (!Number.isFinite(now.getTime())) throw new Error("Invalid source capture time.");
   const windowDays = source === "permits" ? 180 : 730;
@@ -727,4 +784,86 @@ export async function refreshPhiladelphiaDemolitionEvidence(ids: string[], now =
   if (!propertyIds.length) return [];
   const { query, limit } = buildEventSourceQuery("demolitions", now, propertyIds);
   return normalizePhiladelphiaDemolitionRows(await cartoRows(query, limit), now, propertyIds);
+}
+
+const SHERIFF_DEED_PAGE_SIZE = 40;
+const SHERIFF_DEED_MAX_RECORDS = 1_000;
+
+function buildSheriffDeedQuery(
+  now: Date,
+  propertyIds: string[] = [],
+  cursor?: { eventDate: string; sourceRecordId: string },
+  limit = SHERIFF_DEED_PAGE_SIZE,
+) {
+  if (!Number.isFinite(now.getTime())) throw new Error("Invalid source capture time.");
+  if (limit < 1 || limit > SHERIFF_DEED_PAGE_SIZE) throw new Error("Sheriff deed page size must be between 1 and 40.");
+  const start = new Date(now.getTime() - 180 * 86_400_000).toISOString().slice(0, 10);
+  const endExclusive = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate() + 1))
+    .toISOString().slice(0, 10);
+  const clauses = [
+    "document_type = 'SHERIFF''S DEED'",
+    "opa_account_num ~ '^[0-9]{9}$'",
+    `display_date >= '${start}'`,
+    `display_date < '${endExclusive}'`,
+    ...(propertyIds.length ? [`opa_account_num IN (${propertyIds.map(id => `'${id}'`).join(",")})`] : []),
+    ...(cursor ? [`(display_date::date < '${cursor.eventDate}' OR (display_date::date = '${cursor.eventDate}' AND record_id::text > '${cursor.sourceRecordId.replaceAll("'", "''")}'))`] : []),
+  ];
+  return `SELECT record_id,opa_account_num,display_date::text AS display_date,document_type FROM RTT_SUMMARY
+    WHERE ${clauses.join(" AND ")}
+    ORDER BY display_date::date DESC,record_id::text ASC LIMIT ${limit}`;
+}
+
+async function fetchSheriffDeedRows(now: Date, propertyIds: string[] = []) {
+  const ids = propertyIds.length ? validatePropertyIds(propertyIds) : [];
+  const records: unknown[] = [];
+  let cursor: { eventDate: string; sourceRecordId: string } | undefined;
+  const maxPages = Math.ceil(SHERIFF_DEED_MAX_RECORDS / SHERIFF_DEED_PAGE_SIZE);
+  let pagesFetched = 0;
+  for (let page = 0; page < maxPages; page += 1) {
+    const query = buildSheriffDeedQuery(now, ids, cursor);
+    const rows = await cartoRows(query, SHERIFF_DEED_PAGE_SIZE);
+    pagesFetched += 1;
+    if (!rows.length) return { records, pagesFetched };
+    records.push(...rows);
+    const last = sheriffDeedEventRowSchema.parse(rows.at(-1));
+    const eventDate = eventDateValue(last.display_date);
+    const sourceRecordId = boundedSourceText(String(last.record_id), 160);
+    if (!eventDate || !sourceRecordId) throw new Error("Sheriff-deed source page ended with an invalid keyset cursor.");
+    const nextCursor = { eventDate: eventDate.slice(0, 10), sourceRecordId };
+    if (cursor && cursor.eventDate === nextCursor.eventDate && cursor.sourceRecordId === nextCursor.sourceRecordId) {
+      throw new Error("Sheriff-deed source pagination did not advance; no complete source result was recorded.");
+    }
+    cursor = nextCursor;
+    if (rows.length < SHERIFF_DEED_PAGE_SIZE) return { records, pagesFetched };
+  }
+  const probe = await cartoRows(buildSheriffDeedQuery(now, ids, cursor, 1), 1);
+  pagesFetched += 1;
+  if (probe.length) {
+    throw new Error(`Sheriff-deed source exceeds the explicit ${SHERIFF_DEED_MAX_RECORDS}-record traversal bound; no complete source result was recorded.`);
+  }
+  return { records, pagesFetched };
+}
+
+function eventDateValue(value: string | null) {
+  const parsed = eventDate(value);
+  return parsed ? parsed.toISOString() : null;
+}
+
+export async function discoverPhiladelphiaSheriffDeedParcels(now = new Date()) {
+  const fetched = await fetchSheriffDeedRows(now);
+  return {
+    observations: normalizePhiladelphiaSheriffDeedRows(fetched.records, now),
+    pagesFetched: fetched.pagesFetched,
+    sourceRecordCount: fetched.records.length,
+    traversalComplete: true as const,
+    pageSize: SHERIFF_DEED_PAGE_SIZE,
+    maxRecords: SHERIFF_DEED_MAX_RECORDS,
+  };
+}
+
+export async function refreshPhiladelphiaSheriffDeedEvidence(ids: string[], now = new Date()) {
+  const propertyIds = validatePropertyIds(ids);
+  if (!propertyIds.length) return [];
+  const fetched = await fetchSheriffDeedRows(now, propertyIds);
+  return normalizePhiladelphiaSheriffDeedRows(fetched.records, now, propertyIds);
 }

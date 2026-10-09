@@ -6,12 +6,14 @@ import {
   PHILA_LI_PERMITS_SOURCE,
   PHILA_LI_VIOLATIONS_SOURCE,
   PHILA_PUBLIC_RECORD_SOURCES,
+  PHILA_SHERIFF_DEEDS_SOURCE,
   PHILA_SOURCE,
   PHILA_TRANSFER_SOURCE,
   PHILA_UNSAFE_BUILDINGS_SOURCE,
   PHILA_VACANCY_SOURCE,
   discoverPhiladelphiaDemolitionParcels,
   discoverPhiladelphiaPermitParcels,
+  discoverPhiladelphiaSheriffDeedParcels,
   discoverPhiladelphiaViolationParcels,
   nearbySales,
   propertiesByIds,
@@ -20,6 +22,7 @@ import {
   refreshPhiladelphiaDemolitionEvidence,
   refreshPhiladelphiaEnforcementEvidence,
   refreshPhiladelphiaPermitEvidence,
+  refreshPhiladelphiaSheriffDeedEvidence,
   refreshPhiladelphiaVacancyEvidence,
   searchProperties,
   searchRepeatedRecordedBuyers,
@@ -53,6 +56,13 @@ export type ListingDescriptionObservation = {
 export type PropertyDiscoveryBatch = {
   properties: PublicProperty[];
   unmatchedObservations: PropertySourceRefresh[];
+  sourceStats?: {
+    pagesFetched: number;
+    sourceRecordCount: number;
+    traversalComplete: boolean;
+    pageSize: number;
+    maxRecords: number;
+  };
 };
 
 export type SourceConnectorFailure = {
@@ -201,6 +211,34 @@ registerPropertySourceConnector({
   discoverBuyerActivity: searchRepeatedRecordedBuyers,
 });
 
+registerPropertySourceConnector({
+  id: PHILA_SHERIFF_DEEDS_SOURCE.id,
+  maxRefreshBatchSize: 40,
+  sources: [PHILA_SHERIFF_DEEDS_SOURCE],
+  discoverProperties: async (now) => {
+    const result = await discoverPhiladelphiaSheriffDeedParcels(now);
+    const observations = result.observations;
+    const propertyIds = [...new Set(observations.map(observation => observation.propertyId))];
+    const properties: PublicProperty[] = [];
+    for (let offset = 0; offset < propertyIds.length; offset += 40) {
+      properties.push(...await propertiesByIds(propertyIds.slice(offset, offset + 40), now));
+    }
+    const resolved = new Set(properties.map(property => property.id));
+    return {
+      properties,
+      unmatchedObservations: observations.filter(observation => !resolved.has(observation.propertyId)),
+      sourceStats: {
+        pagesFetched: result.pagesFetched,
+        sourceRecordCount: result.sourceRecordCount,
+        traversalComplete: result.traversalComplete,
+        pageSize: result.pageSize,
+        maxRecords: result.maxRecords,
+      },
+    };
+  },
+  refreshEvidence: refreshPhiladelphiaSheriffDeedEvidence,
+});
+
 export function allPropertySourceConnectors() {
   return propertySourceConnectors.all();
 }
@@ -321,6 +359,14 @@ export async function runPropertyEvidenceRefresh(
   return { observations, failures };
 }
 
-export async function refreshEvidenceFromRegisteredSources(ids: string[], now: Date) {
-  return runPropertyEvidenceRefresh(allPropertySourceConnectors(), ids, now);
+export async function refreshEvidenceFromRegisteredSources(
+  ids: string[],
+  now: Date,
+  connectorIds?: readonly string[],
+) {
+  const registered = allPropertySourceConnectors();
+  const selected = connectorIds
+    ? registered.filter(connector => connectorIds.includes(connector.id))
+    : registered;
+  return runPropertyEvidenceRefresh(selected, ids, now);
 }

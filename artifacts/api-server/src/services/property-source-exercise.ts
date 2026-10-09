@@ -44,11 +44,11 @@ try {
   const listingDescriptionConnectors = propertySourceConnectorsWithListingDescriptions();
   const persistedListingObservations = (await db.select({ total: count() }).from(propertySourceObservationsTable)
     .where(sql`${propertySourceObservationsTable.sourceKey} LIKE 'listing-description:%'`))[0]?.total ?? 0;
-  assert.ok(registeredConnectors.length >= 6, "The live system must register multiple real, replaceable source adapters.");
+  assert.ok(registeredConnectors.length >= 7, "The live system must register multiple real, replaceable source adapters.");
   const listedSources = ListPropertySourcesResponse.parse(listPropertySources());
   assert.equal(new Set(listedSources.map(source => source.id)).size,
     listedSources.length, "The public source catalog must deduplicate source descriptors and conform to the API contract.");
-  assert.ok(listedSources.length >= 7, "The public catalog must enumerate OPA, L&I, vacancy, transfer, permit, and demolition sources.");
+  assert.ok(listedSources.length >= 8, "The public catalog must enumerate OPA, L&I, vacancy, transfer, sheriff-deed, permit, and demolition sources.");
   const sourceCoverage = GetPropertySourceCoverageResponse.parse(getPropertySourceCoverage());
   assert.deepEqual(sourceCoverage.registeredSources.map(source => source.id).sort(), listedSources.map(source => source.id).sort());
   assert.ok(sourceCoverage.notConnectedProviders.some(provider =>
@@ -69,6 +69,9 @@ try {
     connector.discoverProperties && connector.refreshEvidence));
   assert.ok(registeredConnectors.some(connector => connector.id === "phila-li-demolitions" &&
     connector.discoverProperties && connector.refreshEvidence));
+  assert.ok(registeredConnectors.some(connector => connector.id === "phila-sheriff-deed-records" &&
+    connector.discoverProperties && connector.refreshEvidence),
+  "The documented sheriff-deed subfeed must run through the property connector registry.");
   assert.ok(registeredConnectors.some(connector => connector.discoverBuyerActivity),
     "Current buyer activity research must also run through a registered source adapter.");
   const connectorFailureProbe = await runPropertyDiscoveryConnectors([
@@ -114,6 +117,19 @@ try {
   assert.equal(discoveryRun?.state, "SUCCEEDED", "The durable seller discovery job must complete from the official source.");
   assert.match(discoveryRun?.message ?? "", /Registered discovery connector results:.*phila-opa/);
   assert.match(discoveryRun?.message ?? "", /no active lead was created/i);
+  const sheriffTraversalMatch = discoveryRun?.message?.match(
+    /phila-sheriff-deed-records: (\d+) property record\(s\), \d+ unmatched observation\(s\), traversed (\d+) page\(s\) \/ (\d+) source record\(s\), complete=true/,
+  );
+  assert.ok(sheriffTraversalMatch, "The live worker must report complete sheriff-deed keyset traversal metrics.");
+  const sheriffDeedTraversal = {
+    matchedProperties: Number(sheriffTraversalMatch![1]),
+    pagesFetched: Number(sheriffTraversalMatch![2]),
+    sourceRecordCount: Number(sheriffTraversalMatch![3]),
+  };
+  assert.ok(sheriffDeedTraversal.matchedProperties > 0 &&
+    sheriffDeedTraversal.pagesFetched > 1 &&
+    sheriffDeedTraversal.sourceRecordCount > 40,
+  "The actual public-source exercise must prove that the sheriff-deed result set crosses page boundaries.");
   const unmatchedCountFromRun = Number(discoveryRun?.message?.match(/Retained (\d+) unmatched public-source observations/)?.[1]);
   assert.ok(Number.isInteger(unmatchedCountFromRun), "Worker outcome must report the count of unmatched source observations retained.");
   const liveUnmatched = await db.select().from(unmatchedPropertySourceObservationsTable);
@@ -231,20 +247,36 @@ try {
   });
   const permitFeed = feedStats("phila-li-building-permits");
   const demolitionFeed = feedStats("phila-li-demolitions");
+  const sheriffDeedFeed = feedStats("phila-sheriff-deed-records");
   assert.ok(permitFeed.observationRows > 0 && permitFeed.sourceRecordCount > 0,
     "The real public permit feed must return and persist at least one exact-parcel source observation.");
   assert.ok(demolitionFeed.observationRows > 0 && demolitionFeed.sourceRecordCount > 0,
     "The real public demolition feed must return and persist at least one exact-parcel source observation.");
+  assert.ok(sheriffDeedFeed.observationRows > 0 && sheriffDeedFeed.sourceRecordCount > 0,
+    "The real public sheriff-deed source must return and persist exact-parcel transfer observations.");
   for (const row of propertyFeedRows.filter(item =>
-    ["phila-li-building-permits", "phila-li-demolitions"].includes(item.sourceId))) {
+    ["phila-li-building-permits", "phila-li-demolitions", "phila-sheriff-deed-records"].includes(item.sourceId))) {
     assert.equal(row.payload.classification, "OBSERVED");
-    assert.equal(row.payload.signalId ?? null, null, "Permit/demolition records must not become motivation signals.");
+    assert.equal(row.payload.signalId ?? null, null, "Permit/demolition/transfer records must not become motivation signals.");
     assert.ok(typeof row.payload.evidenceDigest === "string" && row.payload.evidenceDigest.length === 64);
     assert.ok(Array.isArray(row.payload.records), "Source snapshots retain bounded raw and normalized event records.");
   }
+  assert.ok(propertyFeedRows.some(row => row.sourceId === "phila-sheriff-deed-records" &&
+    row.payload.identityMethod === "EXACT_OPA_ACCOUNT" &&
+    typeof row.payload.latestSourceEventAt === "string" &&
+    (row.payload.recordIdentities as string[] | undefined)?.length),
+  "Persisted sheriff-deed observations must retain exact parcel identity, event time, and source record IDs.");
   assert.equal(new Set(liveDiscoveryRecords.map(record => record.property.id)).size,
     liveDiscoveryRecords.length, "Cross-source observations must share one exact-parcel discovery record across every result page.");
   assert.equal((await db.select().from(leadsTable)).length, 0, "Raw property discovery must never create active leads.");
+  console.log(`LIVE property-source exercise results: ${JSON.stringify({
+    persistedUniqueDiscoveries: liveDiscoveryRecords.length,
+    persistedActiveLeadsFromRawDiscovery: 0,
+    persistedUnmatchedObservations: liveUnmatched.length,
+    sourceCounts: liveSourceCounts,
+    sheriffDeedTraversal,
+    directContactRoutes: "unavailable in current permitted feeds",
+  })}`);
 
   const liveObservationRowsBeforeSynthetic = observedSources.length + liveUnmatched.length;
   const paginationTemplate = liveDiscoveryRecords[0]?.property;
@@ -806,9 +838,8 @@ try {
   }, actor.id, now);
   const commandDesk = await commandCenter("OPERATOR", now);
   const persistedCallAction = commandDesk.actions.find(action => action.leadId === promoted.leadId);
-  assert.equal(persistedCallAction?.href, `/calls?lead=${promoted.leadId}`,
-    "The real command-center API must link a call-ready/follow-up action to the selected seller's live call form.");
-  assert.equal(persistedCallAction?.cta, "Open call brief");
+  assert.equal(persistedCallAction?.href, `/leads/${promoted.leadId}`,
+    "After a recorded call, the recommended follow-up action must reopen the persisted lead workspace.");
   detail = await offers.createOfferDraft(promoted.leadId, {
     version: detail.lead.version, amount: 50000, earnestMoney: 500, closingDays: 30,
     contingencies: "Synthetic exercise only.", assignmentIntent: true,
@@ -935,6 +966,8 @@ try {
     liveSourceCounts,
     livePermitSource: permitFeed,
     liveDemolitionSource: demolitionFeed,
+    liveSheriffDeedSource: sheriffDeedFeed,
+    sheriffDeedTraversal,
     qualifiedLeadId: promoted.leadId,
     buyerResearchCandidates: buyerResearch.records.length,
     staleRefresh: staleRefresh.checked,
@@ -947,8 +980,8 @@ try {
         ? "No registered connector has a terms-reviewed LISTING_DESCRIPTION capability; Zillow/Redfin remarks were not collected."
         : "Only registered connectors may supply remarks; adapter result counts are taken from persisted source observations.",
     },
-    checks: "real OPA, L&I enforcement/vacancy, residential permits, and demolition source observation persistence; no lead on discovery; exact same-source and cross-source dedupe; raw permit/demolition evidence retained OBSERVED without motivation points; AI hypothesis exclusion; synthetic provenance-backed qualification; human promotion; source research/comps; pass retention; evidence-digest change invalidation of pre-execution underwriting/offers/drafts; preservation of executed terms with a persisted research-review action and buyer-rematch job",
-  }, "Selective property qualification exercise PASSED (isolated schema; actual public records including permits and demolitions; synthetic qualification evidence only)");
+    checks: "real OPA, L&I enforcement/vacancy, residential permits, demolition, and sheriff-deed source observation persistence; no lead on raw discovery; exact same-source and cross-source dedupe; raw public event records retained OBSERVED without motivation points; AI hypothesis exclusion; synthetic provenance-backed qualification; human promotion; source research/comps; pass retention; evidence-digest change invalidation of pre-execution underwriting/offers/drafts; preservation of executed terms with a persisted research-review action and buyer-rematch job",
+  }, "Selective property qualification exercise PASSED (isolated schema; actual public records including permits, demolitions, and sheriff deeds; synthetic qualification evidence only)");
 } finally {
   await pool.end();
 }

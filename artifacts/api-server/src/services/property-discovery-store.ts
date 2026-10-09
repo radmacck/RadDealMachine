@@ -29,6 +29,7 @@ import { audit, createLead, move } from "./deal-store";
 import { allBuyerRecords, queueJob } from "./operations-records";
 import { invalidateOffers } from "./offer-records";
 import {
+  propertySourceConnectorsWithListingDescriptions,
   refreshEvidenceFromRegisteredSources,
   refreshListingDescriptionsFromRegisteredSources,
   type ListingDescriptionObservation,
@@ -1236,19 +1237,32 @@ async function persistListingDescriptionObservation(
  * it is not interpreted as proof that a violation or vacancy has been resolved.
  */
 export async function refreshPropertySourceEvidence(propertyIds: string[], actor: string, now = new Date()) {
+  return refreshPropertySourceEvidenceFromConnectors(propertyIds, actor, now);
+}
+
+export async function refreshPropertySourceEvidenceFromConnectors(
+  propertyIds: string[],
+  actor: string,
+  now = new Date(),
+  connectorIds?: readonly string[],
+) {
   const ids = [...new Set(propertyIds)];
   if (!ids.length) return {
     checked: 0, changed: 0, signals: 0,
     failures: [] as Awaited<ReturnType<typeof refreshEvidenceFromRegisteredSources>>["failures"],
   };
-  const { observations, failures } = await refreshEvidenceFromRegisteredSources(ids, now);
+  const { observations, failures } = await refreshEvidenceFromRegisteredSources(ids, now, connectorIds);
   const sourceProperties: PropertyRecord[] = [];
-  for (const propertyId of ids) {
-    const [discovery] = await db.select().from(propertyDiscoveriesTable)
-      .where(sql`${propertyDiscoveriesTable.payload}->'property'->>'id' = ${propertyId}`);
-    if (discovery) sourceProperties.push(parsePayload(discovery.payload).property);
+  if (propertySourceConnectorsWithListingDescriptions().length) {
+    for (const propertyId of ids) {
+      const [discovery] = await db.select().from(propertyDiscoveriesTable)
+        .where(sql`${propertyDiscoveriesTable.payload}->'property'->>'id' = ${propertyId}`);
+      if (discovery) sourceProperties.push(parsePayload(discovery.payload).property);
+    }
   }
-  const listingRefresh = await refreshListingDescriptionsFromRegisteredSources(sourceProperties, now);
+  const listingRefresh = sourceProperties.length
+    ? await refreshListingDescriptionsFromRegisteredSources(sourceProperties, now)
+    : { observations: [], failures: [] as Awaited<ReturnType<typeof refreshListingDescriptionsFromRegisteredSources>>["failures"] };
   let changed = 0;
   let signals = 0;
   await db.transaction(async tx => {
