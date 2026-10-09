@@ -15,6 +15,7 @@ import { reviewHandoffs } from "./handoffs";
 import { runSellerContactEnrichmentOnce } from "./seller-contact-enrichment";
 import { evaluateAllLeadDecisions, evaluateLeadDecision } from "./intelligence-decision-store";
 import { decisionWorkExecutors, runDecisionWorkOnce } from "./decision-work-lifecycle";
+import { evaluateAllTransactionReadiness } from "./transaction-readiness";
 
 const PROPERTY_SOURCE_POLICY_VERSION = "phila-property-sources-v4";
 const BUYER_SOURCE_POLICY_VERSION = "phila-buyer-sources-v2";
@@ -44,9 +45,11 @@ export async function reviewDeadlines(now = new Date()) {
   const followups = leads.filter(l=>!["CLOSED","DEAD_DEAL"].includes(l.stage)&&l.followUpAt&&Date.parse(l.followUpAt)<=now.getTime()).length;
   const contracts = (await db.select().from(contractsTable)).map(contractRecord);
   const deadlines = contracts.filter(c=>!["CLOSED","CANCELLED"].includes(c.status)&&Date.parse(c.closingAt)<now.getTime()+3*86400000).length;
+  const readinessRuns = await evaluateAllTransactionReadiness(now);
+  const readinessChanges = readinessRuns.filter(item=>item.changed).length;
   const stale = (await allBuyerRecords(db,now)).filter(b=>b.approvalStatus!=="APPROVED"&&b.currentBuyingStatus!=="NOT_BUYING").length;
   const staleLeads = leads.filter(l=>!["CLOSED","DEAD_DEAL"].includes(l.stage)&&now.getTime()-Date.parse(l.updatedAt)>30*86400000).length;
-  return `${followups} seller follow-ups due; ${staleLeads} leads unchanged for 30 days; ${deadlines} transaction deadlines within three days or overdue; ${stale} buyers need current qualification. Action center reflects current work. No messages sent.`;
+  return `${followups} seller follow-ups due; ${staleLeads} leads unchanged for 30 days; ${deadlines} transaction deadlines within three days or overdue; ${readinessRuns.length} transaction readiness records reviewed (${readinessChanges} changed); ${stale} buyers need current qualification. Action center reflects current work. No messages sent.`;
 }
 /** Durable leased claims: concurrent instances cannot execute the same queued row. */
 export async function runWorkerOnce(now = new Date(), schedule = false, onlyJobId?: string) {

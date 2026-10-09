@@ -870,6 +870,15 @@ paths:
           content:
             application/json:
               schema: { $ref: "#/components/schemas/TransactionDocumentReadinessResponse" }
+  /transaction-readiness:
+    get:
+      operationId: getTransactionReadiness
+      responses:
+        "200":
+          description: Persisted transaction exceptions, deadline/evidence readiness, and provider capability state
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/TransactionReadinessResponse" }
   /deals/{id}/contract/execution:
     parameters:
       - { name: id, in: path, required: true, schema: { type: string } }
@@ -2443,6 +2452,63 @@ components:
             reason: { type: [string, "null"] }
         canSendLegalDocuments: { type: boolean }
         blockers: { type: array, items: { type: string } }
+    TransactionReadinessException:
+      type: object
+      required: [id, contractId, leadId, issueKey, category, severity, reason, evidenceRefs, ownerRole, status, nextActionCode, nextAction, eventAt, firstObservedAt, lastObservedAt, resolvedAt, resolutionEvidenceRefs, snapshotHash, synthetic]
+      properties:
+        id: { type: string, format: uuid }
+        contractId: { type: string, format: uuid }
+        leadId: { type: string, format: uuid }
+        issueKey: { type: string }
+        category: { type: string, enum: [DEADLINE, EVIDENCE, DOCUMENT, PROVIDER, BUYER, AUTHORITY, INTEGRITY] }
+        severity: { type: string, enum: [CRITICAL, HIGH, MEDIUM, LOW] }
+        reason: { type: string }
+        evidenceRefs: { type: array, items: { type: string } }
+        ownerRole: { type: string, enum: [OWNER, OPERATOR, SYSTEM] }
+        status: { type: string, enum: [OPEN, RESOLVED] }
+        nextActionCode: { type: string }
+        nextAction: { type: string }
+        eventAt: { type: ["string", "null"], format: date-time }
+        firstObservedAt: { type: string, format: date-time }
+        lastObservedAt: { type: string, format: date-time }
+        resolvedAt: { type: ["string", "null"], format: date-time }
+        resolutionEvidenceRefs: { type: array, items: { type: string } }
+        snapshotHash: { type: string, pattern: "^[a-f0-9]{64}$" }
+        synthetic: { type: boolean }
+    TransactionReadinessResponse:
+      type: object
+      required: [evaluatedAt, transactionCount, realTransactionCount, syntheticTransactionCount, activeTransactionCount, openExceptionCount, exceptions, capabilities]
+      properties:
+        evaluatedAt: { type: string, format: date-time }
+        transactionCount: { type: integer, minimum: 0 }
+        realTransactionCount: { type: integer, minimum: 0 }
+        syntheticTransactionCount: { type: integer, minimum: 0 }
+        activeTransactionCount: { type: integer, minimum: 0 }
+        openExceptionCount: { type: integer, minimum: 0 }
+        exceptions: { type: array, items: { $ref: "#/components/schemas/TransactionReadinessException" } }
+        capabilities:
+          type: object
+          required: [signingProvider, deliveryProvider, privateDocumentStorage]
+          properties:
+            signingProvider:
+              type: object
+              required: [status, reason]
+              properties:
+                status: { type: string, enum: [CONNECTED, NOT_CONNECTED] }
+                reason: { type: string }
+            deliveryProvider:
+              type: object
+              required: [status, reason]
+              properties:
+                status: { type: string, enum: [CONNECTED, NOT_CONNECTED] }
+                reason: { type: string }
+            privateDocumentStorage:
+              type: object
+              required: [status, activeStore, reason]
+              properties:
+                status: { type: string, enum: [MANAGED_PRIVATE, PRIVATE_FILE_STORE_UNAVAILABLE] }
+                activeStore: { type: string, enum: [MANAGED_PRIVATE_OBJECT_STORAGE, PERSISTENT_DATABASE_BLOB] }
+                reason: { type: string }
     DistributionAuthorizationInput:
       type: object
       required: [version, reason]

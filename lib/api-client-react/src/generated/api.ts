@@ -115,6 +115,7 @@ import type {
   TransactionDocumentLifecycleInput,
   TransactionDocumentReadinessResponse,
   TransactionExceptionInput,
+  TransactionReadinessResponse,
   TransitionInput,
   UnderwritingInput,
   WorkerJob,
@@ -5225,6 +5226,77 @@ export function useGetTransactionDocumentReadiness<TData = Awaited<ReturnType<ty
  ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
 
   const queryOptions = getGetTransactionDocumentReadinessQueryOptions(params,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getGetTransactionReadinessUrl = () => {
+
+
+
+
+  return `/api/transaction-readiness`
+}
+
+export const getTransactionReadiness = async ( options?: Parameters<typeof customFetch>[1]): Promise<TransactionReadinessResponse> => {
+
+  return customFetch<TransactionReadinessResponse>(getGetTransactionReadinessUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetTransactionReadinessQueryKey = () => {
+    return [
+    `/api/transaction-readiness`
+    ] as const;
+    }
+
+
+export const getGetTransactionReadinessQueryOptions = <TData = Awaited<ReturnType<typeof getTransactionReadiness>>, TError = ErrorType<unknown>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getTransactionReadiness>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetTransactionReadinessQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getTransactionReadiness>>> = ({ signal }) => getTransactionReadiness({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getTransactionReadiness>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetTransactionReadinessQueryResult = NonNullable<Awaited<ReturnType<typeof getTransactionReadiness>>>
+export type GetTransactionReadinessQueryError = ErrorType<unknown>
+
+
+
+export function useGetTransactionReadiness<TData = Awaited<ReturnType<typeof getTransactionReadiness>>, TError = ErrorType<unknown>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getTransactionReadiness>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetTransactionReadinessQueryOptions(options)
 
   const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
 

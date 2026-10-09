@@ -11,6 +11,7 @@ import { dealOperations, refreshMatches } from "../services/matching-store";
 import * as transactions from "../services/transaction-store";
 import * as outcomes from "../services/outcome-learning-store";
 import { getTransactionDocumentReadiness } from "../services/transaction-document-registry";
+import { getTransactionReadinessReport } from "../services/transaction-readiness";
 import { recordTransactionException } from "../services/transaction-exceptions";
 import * as workers from "../services/workers";
 import { listHandoffs, recordHandoffEvent } from "../services/handoffs";
@@ -20,6 +21,9 @@ router.use(authenticated,membership);
 router.get("/transaction-documents/readiness",roles("OWNER","OPERATOR"),async(req,res)=>{
   const {leadId} = parse(z.object({leadId:z.string().uuid().optional()}),req.query);
   res.json(schemas.GetTransactionDocumentReadinessResponse.parse(await getTransactionDocumentReadiness(actor(res),leadId)));
+});
+router.get("/transaction-readiness",roles("OWNER","OPERATOR","ANALYST"),async(_req,res)=>{
+  res.json(schemas.GetTransactionReadinessResponse.parse(await getTransactionReadinessReport()));
 });
 router.get("/outcome-learning",async(_req,res)=>{
   res.json(schemas.GetOutcomeLearningResponse.parse(await outcomes.getOutcomeLearningReport(new Date(),String(res.locals.role)==="OWNER")));

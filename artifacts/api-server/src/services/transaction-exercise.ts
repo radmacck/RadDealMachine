@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { randomUUID } from "node:crypto";
 import { PDFDocument } from "pdf-lib";
-import { db,pool,analysesTable,contractsTable,jobsTable,matchesTable,buyersTable,leadsTable,transactionDocumentBlobsTable } from "@workspace/db";
+import { db,pool,analysesTable,contractsTable,jobsTable,matchesTable,buyersTable,leadsTable,transactionDocumentBlobsTable,transactionReadinessExceptionsTable,dealDecisionWorkItemsTable } from "@workspace/db";
 import { eq } from "drizzle-orm";
 import { logger } from "../lib/logger";
 import * as seller from "./deal-store";
@@ -22,10 +22,13 @@ import {
   respondToBuyerPortalDeal, shareDistributionRecipients,
 } from "./distribution-store";
 import { getTransactionDocumentReadiness } from "./transaction-document-registry";
+import { evaluateAllTransactionReadiness, getTransactionReadinessReport } from "./transaction-readiness";
 const actor = {id:`synthetic-transaction:${randomUUID()}`,role:"OWNER"};
 const operator = {...actor,role:"OPERATOR"};
 const now = new Date();
 const future = (days:number)=>new Date(now.getTime()+days*86400000).toISOString();
+let readinessSummary: Record<string,unknown> = {};
+let readinessDeadlineKeys: {upcoming:string;overdue:string}|null = null;
 try {
   // All these writes are isolated by the harness's connection-wide search path.
   let lead = await seller.createLead({address:"SYNTHETIC COMPLETE DEAL",city:"Synthetic City",state:"TX",county:"Synthetic County",zip:"75001",
@@ -297,6 +300,50 @@ try {
        "Failed stale/unverified recipient checks must not persist distribution links.");
     const shared = await shareDistributionRecipients(distribution.packetId!,{version:distribution.version,buyerIds:[buyer.id,competitor.id]},operator,now);
     assert.equal(shared.links.length,2);
+     let readinessRuns = await evaluateAllTransactionReadiness(now);
+     assert.equal(readinessRuns.length,1);
+     assert.equal(readinessRuns[0]?.synthetic,true,"The isolated persisted transaction must remain labelled synthetic.");
+     let readinessReport = await getTransactionReadinessReport(now);
+     assert.equal(readinessReport.realTransactionCount,0,"Synthetic fixtures must never count as real transaction evidence.");
+     assert.equal(readinessReport.syntheticTransactionCount,1);
+     assert.ok(readinessReport.exceptions.some(item=>item.issueKey==="SIGNING_PROVIDER_UNAVAILABLE"&&item.status==="OPEN"));
+     assert.ok(readinessReport.exceptions.some(item=>item.issueKey==="LEGAL_TEMPLATE_UNAVAILABLE:PURCHASE_AGREEMENT"&&item.status==="OPEN"));
+     assert.ok(readinessReport.exceptions.some(item=>item.issueKey==="MILESTONE_MISSING:EARNEST_MONEY_CONFIRMED"&&item.status==="OPEN"));
+     assert.ok(readinessReport.exceptions.some(item=>item.issueKey.startsWith("DELIVERY_UNCONFIRMED:")&&item.status==="OPEN"),
+       "An INVITED recipient without provider receipt must remain explicitly unconfirmed.");
+     const persistedReadinessRows = await db.select().from(transactionReadinessExceptionsTable)
+       .where(eq(transactionReadinessExceptionsTable.contractId,op.contract!.id));
+     const firstIssueIds = new Set(persistedReadinessRows.map(item=>item.id));
+     assert.ok(persistedReadinessRows.every(item=>item.synthetic===true&&item.firstObservedAt instanceof Date));
+     const onceExceptionCount = persistedReadinessRows.length;
+     await evaluateAllTransactionReadiness(now);
+     const replayReadinessRows = await db.select().from(transactionReadinessExceptionsTable)
+       .where(eq(transactionReadinessExceptionsTable.contractId,op.contract!.id));
+     assert.equal(replayReadinessRows.length,onceExceptionCount,"Readiness reevaluation must not duplicate an unresolved issue.");
+     assert.ok(replayReadinessRows.every(item=>firstIssueIds.has(item.id)),"Readiness replay must preserve issue identities.");
+     const [readinessContractRow] = await db.select().from(contractsTable).where(eq(contractsTable.id,op.contract!.id));
+     assert.ok(readinessContractRow);
+     const originalContractPayload = readinessContractRow!.payload;
+     const readinessUpcomingClose = future(2);
+     const readinessOverdueClose = new Date(now.getTime()-86400000).toISOString();
+     readinessDeadlineKeys = {
+       upcoming:`CLOSING_DEADLINE_UPCOMING:${readinessUpcomingClose}`,
+       overdue:`CLOSING_DEADLINE_OVERDUE:${readinessOverdueClose}`,
+     };
+     await db.update(contractsTable).set({payload:{...originalContractPayload,closingAt:readinessUpcomingClose}})
+       .where(eq(contractsTable.id,op.contract!.id));
+     await evaluateAllTransactionReadiness(now);
+     readinessReport = await getTransactionReadinessReport(now);
+     assert.ok(readinessReport.exceptions.some(item=>item.issueKey.startsWith("CLOSING_DEADLINE_UPCOMING:")&&item.status==="OPEN"),
+       "A persisted closing date within seven days must create a deterministic upcoming exception.");
+     await db.update(contractsTable).set({payload:{...originalContractPayload,closingAt:readinessOverdueClose}})
+       .where(eq(contractsTable.id,op.contract!.id));
+     await evaluateAllTransactionReadiness(now);
+     readinessReport = await getTransactionReadinessReport(now);
+     assert.ok(readinessReport.exceptions.some(item=>item.issueKey.startsWith("CLOSING_DEADLINE_OVERDUE:")&&item.status==="OPEN"),
+       "A persisted past closing date must create an overdue exception; the evaluator never extends it.");
+     await db.update(contractsTable).set({payload:originalContractPayload}).where(eq(contractsTable.id,op.contract!.id));
+     await evaluateAllTransactionReadiness(now);
     const portalToken = shared.links.find(link=>link.buyerId===buyer.id)!.token;
    const competitorPortalToken = shared.links.find(link=>link.buyerId===competitor.id)!.token;
     const portal = await getBuyerPortalDeal(portalToken,now);
@@ -492,6 +539,14 @@ try {
   op = await recordTransactionException(id,{...amend,buyerConsentEvidenceUrl:"https://example.com/synthetic-buyer-consent"},actor,now);
   assert.equal(op.contract?.closingAt,future(4)); assert.equal(op.contract?.purchasePrice,110000);
   assert.equal(op.contract?.history?.[0]?.previousState.closingAt,future(20));
+   await evaluateAllTransactionReadiness(now);
+   readinessReport = await getTransactionReadinessReport(now);
+   assert.ok(readinessReport.exceptions.some(item=>item.issueKey===readinessDeadlineKeys?.upcoming&&item.status==="RESOLVED"),
+     "An evidence-backed closing-date amendment resolves the prior upcoming-deadline exception.");
+   assert.ok(readinessReport.exceptions.some(item=>item.issueKey===readinessDeadlineKeys?.overdue&&item.status==="RESOLVED"),
+     "An evidence-backed closing-date amendment resolves the prior overdue-deadline exception.");
+   assert.ok(readinessReport.exceptions.some(item=>item.issueKey===`CLOSING_DEADLINE_UPCOMING:${future(4)}`&&item.status==="OPEN"),
+     "The amended persisted closing date gets a new active deadline exception rather than deleting history.");
   await assert.rejects(
     transactions.downloadPurchaseReviewDocument(id,reviewDocument.id,operator,now),
     (error:unknown)=>(error as {status?:number}).status===409,
@@ -538,6 +593,9 @@ try {
     currency:"USD" as const,evidenceKind:"ESCROW_RECEIPT" as const,counterpartyName:"SYNTHETIC ESCROW",
     paymentReference:"SYN-ESCROW-001",effectiveAt:now.toISOString(),
   };
+   await assert.rejects(transactions.recordClosingMilestone(id,{...earnestEvidence,version:op.contract!.version},operator,now),
+     (error:unknown)=>(error as {status?:number}).status===403,
+     "An operator without owner authority cannot attest EMD completion.");
   await assert.rejects(transactions.recordClosingMilestone(id,{...earnestEvidence,amount:earnestEvidence.amount+1,
     version:op.contract!.version},actor,now),/equal the earnest money/);
   const buyerFundsEvidence = {
@@ -572,6 +630,58 @@ try {
   assert.equal(recordedEarnest?.effectiveAt,now.toISOString());
   assert.equal(recordedFunds?.amount,buyer.availableFunds);
   assert.equal(recordedFunds?.evidenceUrl,buyer.fundingEvidenceUrl);
+   readinessRuns = await evaluateAllTransactionReadiness(now);
+   readinessReport = await getTransactionReadinessReport(now);
+   assert.ok(readinessReport.exceptions.some(item=>item.issueKey==="CONTRACT_ECONOMICS_CONFLICT"&&item.status==="OPEN"),
+     "A newly changed analysis version remains visibly inconsistent with the existing authorized contract terms.");
+   assert.ok(readinessReport.exceptions.some(item=>item.issueKey.startsWith("STALE_DOCUMENT:")&&item.status==="OPEN"),
+     "Prepared documents whose contract/economics snapshot changed remain blocked.");
+   const [readinessEvidenceRow] = await db.select().from(contractsTable).where(eq(contractsTable.id,op.contract!.id));
+   assert.ok(readinessEvidenceRow);
+   const readinessBaselinePayload = readinessEvidenceRow!.payload;
+   const baselineArtifacts = (readinessBaselinePayload.documentArtifacts ?? []) as Array<Record<string,unknown>>;
+   const damagedArtifacts = baselineArtifacts.map(artifact => artifact.id === reviewDocument.id
+     ? { ...artifact, economicsSnapshotHash:"f".repeat(64) }
+     : artifact);
+   await db.update(contractsTable).set({payload:{
+     ...readinessBaselinePayload,documentArtifacts:damagedArtifacts,
+   }}).where(eq(contractsTable.id,op.contract!.id));
+   await evaluateAllTransactionReadiness(now);
+   readinessReport = await getTransactionReadinessReport(now);
+   assert.ok(readinessReport.exceptions.some(item=>item.issueKey==="MILESTONE_MISSING:EARNEST_MONEY_CONFIRMED"&&item.status==="RESOLVED"),
+     "Actual persisted, correctly matched synthetic escrow evidence resolves the earlier missing-EMD exception.");
+   assert.ok(readinessReport.exceptions.some(item=>item.issueKey===`STALE_DOCUMENT:${reviewDocument.id}`&&item.status==="OPEN"),
+     "A changed economics hash is persisted as a stale-document exception.");
+   const baselineMilestones = (readinessBaselinePayload.milestones ?? []) as unknown as Array<Record<string,unknown>>;
+   const mismatchedMilestones = baselineMilestones.map(milestone =>
+     milestone.kind === "EARNEST_MONEY_CONFIRMED" ? { ...milestone, amount:Number(milestone.amount)+1 } :
+     milestone.kind === "FUNDS_CONFIRMED" ? { ...milestone, evidenceUrl:"https://example.com/SYNTHETIC-stale-funds" } :
+     milestone);
+   await db.update(contractsTable).set({payload:{
+     ...readinessBaselinePayload,documentArtifacts:damagedArtifacts,milestones:mismatchedMilestones,
+   }}).where(eq(contractsTable.id,op.contract!.id));
+   await evaluateAllTransactionReadiness(now);
+   readinessReport = await getTransactionReadinessReport(now);
+   assert.ok(readinessReport.exceptions.some(item=>item.issueKey==="MILESTONE_INVALID:EARNEST_MONEY_CONFIRMED"&&item.status==="OPEN"),
+     "Persisted EMD amount mismatch is detected even if the legacy row exists.");
+   assert.ok(readinessReport.exceptions.some(item=>item.issueKey==="MILESTONE_INVALID:FUNDS_CONFIRMED"&&item.status==="OPEN"),
+     "Persisted buyer-funds evidence with a stale reference is blocked.");
+   await db.update(contractsTable).set({payload:readinessBaselinePayload}).where(eq(contractsTable.id,op.contract!.id));
+   await evaluateAllTransactionReadiness(now);
+   readinessReport = await getTransactionReadinessReport(now);
+   assert.ok(readinessReport.exceptions.some(item=>item.issueKey==="MILESTONE_INVALID:EARNEST_MONEY_CONFIRMED"&&item.status==="RESOLVED"),
+     "Valid persisted escrow evidence resolves its prior EMD mismatch with a referenced resolution.");
+   readinessSummary = {
+     syntheticTransactions: readinessReport.syntheticTransactionCount,
+     realTransactions: readinessReport.realTransactionCount,
+     capabilities: readinessReport.capabilities,
+     persistedExceptions: readinessReport.exceptions.length,
+     openExceptions: readinessReport.openExceptionCount,
+     exercised: ["idempotent-re-evaluation", "upcoming-and-overdue-close", "amended-deadline-resolution",
+       "packet-delivery-unconfirmed", "missing-template-signing-provider-and-private-storage",
+       "stale-document-economics", "mismatched-emd-and-buyer-funds",
+       "owner-only-financial-evidence", "resolution-from-persisted-emd-evidence"],
+   };
   await assert.rejects(transactions.recordDealOutcome(id,{...outcome,version:op.contract!.version,assignmentFeeReceived:19999},actor,now),/reconcile/);
    // An actual response can predate settlement even when entered afterwards.
    // A recorded-time-only check must not ignore that contradiction.
@@ -588,6 +698,21 @@ try {
   assert.equal(op.contract?.status,"CLOSED"); assert.equal(op.contract?.netProceeds,18000);
   assert.equal(op.contract?.closedAt,future(2)); assert.equal(op.contract?.outcomeRecordedAt,future(5));
   assert.equal((await seller.leadDetail(id)).lead.stage,"CLOSED");
+   await evaluateAllTransactionReadiness(new Date(now.getTime()+5*86400000));
+   readinessReport = await getTransactionReadinessReport(new Date(now.getTime()+5*86400000));
+   const terminalExceptions = readinessReport.exceptions.filter(item=>item.contractId===op.contract!.id);
+   assert.ok(terminalExceptions.length>0);
+   assert.ok(terminalExceptions.every(item=>item.status==="RESOLVED"),
+     "Terminal closure must resolve every open transaction exception with terminal-state evidence.");
+   const terminalWork = await db.select().from(dealDecisionWorkItemsTable).where(eq(dealDecisionWorkItemsTable.leadId,id));
+   assert.ok(terminalWork.every(item=>["COMPLETED","FAILED","EXPIRED"].includes(item.status)),
+     "A closed deal must not retain runnable decision work.");
+   readinessSummary = {
+     ...readinessSummary,
+     terminalOpenExceptions:terminalExceptions.filter(item=>item.status==="OPEN").length,
+     terminalRunnableDecisionWork:terminalWork.filter(item=>!["COMPLETED","FAILED","EXPIRED"].includes(item.status)).length,
+     terminalClosureResolution:terminalExceptions.filter(item=>item.status==="RESOLVED").length,
+   };
   assert.ok(!(await commandCenter("OWNER",now)).actions.some(a=>a.leadId===id));
   await assert.rejects(transactions.recordDealOutcome(id,{...outcome,version:op.contract!.version},actor,now));
    await assert.rejects(transactions.recordDestinationActivity(id,destination.id,{version:op.contract!.version,buyerVersion:destination.version,
@@ -758,5 +883,5 @@ try {
   }
   await verifyPreExecutionRevisionInvalidation();
   logger.info("Cancellation/restart PASSED: owner-only, fresh underwriting/approval/communication, distinct attempt, original cancellation/signatures/terms/buyer history retained; CLOSED cannot reopen.");
-   logger.info({checks:"persisted document registry and missing-template/private-storage/signing blockers; review PDF bytes separated into protected blob table; party/economic changes stale artifacts; persisted DRAFT → PREPARED → REJECTED/VOID/EXPIRED/REPLACED paths; separately evidenced execution never marks a review worksheet SIGNED; immutable economics hash shared with redacted packet; existing seller/buyer/closing lifecycle guards"},"Full lifecycle persistence exercise PASSED (isolated synthetic schema)");
+    logger.info({checks:"persisted document registry and missing-template/private-storage/signing blockers; review PDF bytes separated into protected blob table; party/economic changes stale artifacts; persisted DRAFT → PREPARED → REJECTED/VOID/EXPIRED/REPLACED paths; separately evidenced execution never marks a review worksheet SIGNED; immutable economics hash shared with redacted packet; deadline/evidence exception persistence and terminal work cleanup",readinessSummary},"Full lifecycle persistence exercise PASSED (isolated synthetic schema)");
 } finally { await pool.end(); }

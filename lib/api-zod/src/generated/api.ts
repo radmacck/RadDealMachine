@@ -30051,6 +30051,65 @@ export const GetTransactionDocumentReadinessResponse = zod.object({
 })
 
 
+export const getTransactionReadinessResponseTransactionCountMin = 0;
+
+export const getTransactionReadinessResponseRealTransactionCountMin = 0;
+
+export const getTransactionReadinessResponseSyntheticTransactionCountMin = 0;
+
+export const getTransactionReadinessResponseActiveTransactionCountMin = 0;
+
+export const getTransactionReadinessResponseOpenExceptionCountMin = 0;
+
+export const getTransactionReadinessResponseExceptionsItemSnapshotHashRegExp = new RegExp('^[a-f0-9]{64}$');
+
+
+export const GetTransactionReadinessResponse = zod.object({
+  "evaluatedAt": zod.string().datetime({"offset":true}),
+  "transactionCount": zod.number().int().min(getTransactionReadinessResponseTransactionCountMin),
+  "realTransactionCount": zod.number().int().min(getTransactionReadinessResponseRealTransactionCountMin),
+  "syntheticTransactionCount": zod.number().int().min(getTransactionReadinessResponseSyntheticTransactionCountMin),
+  "activeTransactionCount": zod.number().int().min(getTransactionReadinessResponseActiveTransactionCountMin),
+  "openExceptionCount": zod.number().int().min(getTransactionReadinessResponseOpenExceptionCountMin),
+  "exceptions": zod.array(zod.object({
+  "id": zod.string().uuid(),
+  "contractId": zod.string().uuid(),
+  "leadId": zod.string().uuid(),
+  "issueKey": zod.string(),
+  "category": zod.enum(['DEADLINE', 'EVIDENCE', 'DOCUMENT', 'PROVIDER', 'BUYER', 'AUTHORITY', 'INTEGRITY']),
+  "severity": zod.enum(['CRITICAL', 'HIGH', 'MEDIUM', 'LOW']),
+  "reason": zod.string(),
+  "evidenceRefs": zod.array(zod.string()),
+  "ownerRole": zod.enum(['OWNER', 'OPERATOR', 'SYSTEM']),
+  "status": zod.enum(['OPEN', 'RESOLVED']),
+  "nextActionCode": zod.string(),
+  "nextAction": zod.string(),
+  "eventAt": zod.string().datetime({"offset":true}).nullable(),
+  "firstObservedAt": zod.string().datetime({"offset":true}),
+  "lastObservedAt": zod.string().datetime({"offset":true}),
+  "resolvedAt": zod.string().datetime({"offset":true}).nullable(),
+  "resolutionEvidenceRefs": zod.array(zod.string()),
+  "snapshotHash": zod.string().regex(getTransactionReadinessResponseExceptionsItemSnapshotHashRegExp),
+  "synthetic": zod.boolean()
+})),
+  "capabilities": zod.object({
+  "signingProvider": zod.object({
+  "status": zod.enum(['CONNECTED', 'NOT_CONNECTED']),
+  "reason": zod.string()
+}),
+  "deliveryProvider": zod.object({
+  "status": zod.enum(['CONNECTED', 'NOT_CONNECTED']),
+  "reason": zod.string()
+}),
+  "privateDocumentStorage": zod.object({
+  "status": zod.enum(['MANAGED_PRIVATE', 'PRIVATE_FILE_STORE_UNAVAILABLE']),
+  "activeStore": zod.enum(['MANAGED_PRIVATE_OBJECT_STORAGE', 'PERSISTENT_DATABASE_BLOB']),
+  "reason": zod.string()
+})
+})
+})
+
+
 export const ExecuteContractParams = zod.object({
   "id": zod.coerce.string()
 })

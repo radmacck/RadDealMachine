@@ -21,6 +21,8 @@
     "exercise:offers": "tsx src/services/isolated-exercise.ts offer-exercise.ts",
     "exercise:seller-offer-portal": "tsx src/services/isolated-exercise.ts seller-offer-portal-exercise.ts",
     "exercise:transactions": "tsx src/services/isolated-exercise.ts transaction-exercise.ts",
+    "exercise:transaction-readiness": "tsx src/services/isolated-exercise.ts transaction-exercise.ts",
+    "test:transaction-readiness": "tsx --test src/services/transaction-readiness.test.ts",
     "exercise:command-center": "tsx src/services/isolated-exercise.ts command-center-exercise.ts",
     "exercise:acquisition-queue": "tsx src/services/isolated-exercise.ts acquisition-queue-exercise.ts",
     "exercise:intelligence-loop": "tsx src/services/isolated-exercise.ts intelligence-loop-exercise.ts",

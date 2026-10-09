@@ -3999,6 +3999,141 @@ export interface TransactionDocumentReadinessResponse {
   blockers: string[];
 }
 
+export type TransactionReadinessExceptionCategory = typeof TransactionReadinessExceptionCategory[keyof typeof TransactionReadinessExceptionCategory];
+
+
+export const TransactionReadinessExceptionCategory = {
+  DEADLINE: 'DEADLINE',
+  EVIDENCE: 'EVIDENCE',
+  DOCUMENT: 'DOCUMENT',
+  PROVIDER: 'PROVIDER',
+  BUYER: 'BUYER',
+  AUTHORITY: 'AUTHORITY',
+  INTEGRITY: 'INTEGRITY',
+} as const;
+
+export type TransactionReadinessExceptionSeverity = typeof TransactionReadinessExceptionSeverity[keyof typeof TransactionReadinessExceptionSeverity];
+
+
+export const TransactionReadinessExceptionSeverity = {
+  CRITICAL: 'CRITICAL',
+  HIGH: 'HIGH',
+  MEDIUM: 'MEDIUM',
+  LOW: 'LOW',
+} as const;
+
+export type TransactionReadinessExceptionOwnerRole = typeof TransactionReadinessExceptionOwnerRole[keyof typeof TransactionReadinessExceptionOwnerRole];
+
+
+export const TransactionReadinessExceptionOwnerRole = {
+  OWNER: 'OWNER',
+  OPERATOR: 'OPERATOR',
+  SYSTEM: 'SYSTEM',
+} as const;
+
+export type TransactionReadinessExceptionStatus = typeof TransactionReadinessExceptionStatus[keyof typeof TransactionReadinessExceptionStatus];
+
+
+export const TransactionReadinessExceptionStatus = {
+  OPEN: 'OPEN',
+  RESOLVED: 'RESOLVED',
+} as const;
+
+export interface TransactionReadinessException {
+  id: string;
+  contractId: string;
+  leadId: string;
+  issueKey: string;
+  category: TransactionReadinessExceptionCategory;
+  severity: TransactionReadinessExceptionSeverity;
+  reason: string;
+  evidenceRefs: string[];
+  ownerRole: TransactionReadinessExceptionOwnerRole;
+  status: TransactionReadinessExceptionStatus;
+  nextActionCode: string;
+  nextAction: string;
+  /** @nullable */
+  eventAt: string | null;
+  firstObservedAt: string;
+  lastObservedAt: string;
+  /** @nullable */
+  resolvedAt: string | null;
+  resolutionEvidenceRefs: string[];
+  /** @pattern ^[a-f0-9]{64}$ */
+  snapshotHash: string;
+  synthetic: boolean;
+}
+
+export type TransactionReadinessResponseCapabilitiesSigningProviderStatus = typeof TransactionReadinessResponseCapabilitiesSigningProviderStatus[keyof typeof TransactionReadinessResponseCapabilitiesSigningProviderStatus];
+
+
+export const TransactionReadinessResponseCapabilitiesSigningProviderStatus = {
+  CONNECTED: 'CONNECTED',
+  NOT_CONNECTED: 'NOT_CONNECTED',
+} as const;
+
+export type TransactionReadinessResponseCapabilitiesSigningProvider = {
+  status: TransactionReadinessResponseCapabilitiesSigningProviderStatus;
+  reason: string;
+};
+
+export type TransactionReadinessResponseCapabilitiesDeliveryProviderStatus = typeof TransactionReadinessResponseCapabilitiesDeliveryProviderStatus[keyof typeof TransactionReadinessResponseCapabilitiesDeliveryProviderStatus];
+
+
+export const TransactionReadinessResponseCapabilitiesDeliveryProviderStatus = {
+  CONNECTED: 'CONNECTED',
+  NOT_CONNECTED: 'NOT_CONNECTED',
+} as const;
+
+export type TransactionReadinessResponseCapabilitiesDeliveryProvider = {
+  status: TransactionReadinessResponseCapabilitiesDeliveryProviderStatus;
+  reason: string;
+};
+
+export type TransactionReadinessResponseCapabilitiesPrivateDocumentStorageStatus = typeof TransactionReadinessResponseCapabilitiesPrivateDocumentStorageStatus[keyof typeof TransactionReadinessResponseCapabilitiesPrivateDocumentStorageStatus];
+
+
+export const TransactionReadinessResponseCapabilitiesPrivateDocumentStorageStatus = {
+  MANAGED_PRIVATE: 'MANAGED_PRIVATE',
+  PRIVATE_FILE_STORE_UNAVAILABLE: 'PRIVATE_FILE_STORE_UNAVAILABLE',
+} as const;
+
+export type TransactionReadinessResponseCapabilitiesPrivateDocumentStorageActiveStore = typeof TransactionReadinessResponseCapabilitiesPrivateDocumentStorageActiveStore[keyof typeof TransactionReadinessResponseCapabilitiesPrivateDocumentStorageActiveStore];
+
+
+export const TransactionReadinessResponseCapabilitiesPrivateDocumentStorageActiveStore = {
+  MANAGED_PRIVATE_OBJECT_STORAGE: 'MANAGED_PRIVATE_OBJECT_STORAGE',
+  PERSISTENT_DATABASE_BLOB: 'PERSISTENT_DATABASE_BLOB',
+} as const;
+
+export type TransactionReadinessResponseCapabilitiesPrivateDocumentStorage = {
+  status: TransactionReadinessResponseCapabilitiesPrivateDocumentStorageStatus;
+  activeStore: TransactionReadinessResponseCapabilitiesPrivateDocumentStorageActiveStore;
+  reason: string;
+};
+
+export type TransactionReadinessResponseCapabilities = {
+  signingProvider: TransactionReadinessResponseCapabilitiesSigningProvider;
+  deliveryProvider: TransactionReadinessResponseCapabilitiesDeliveryProvider;
+  privateDocumentStorage: TransactionReadinessResponseCapabilitiesPrivateDocumentStorage;
+};
+
+export interface TransactionReadinessResponse {
+  evaluatedAt: string;
+  /** @minimum 0 */
+  transactionCount: number;
+  /** @minimum 0 */
+  realTransactionCount: number;
+  /** @minimum 0 */
+  syntheticTransactionCount: number;
+  /** @minimum 0 */
+  activeTransactionCount: number;
+  /** @minimum 0 */
+  openExceptionCount: number;
+  exceptions: TransactionReadinessException[];
+  capabilities: TransactionReadinessResponseCapabilities;
+}
+
 export interface DistributionAuthorizationInput {
   /** @minimum 1 */
   version: number;

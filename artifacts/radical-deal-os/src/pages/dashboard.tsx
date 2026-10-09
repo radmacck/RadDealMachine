@@ -1,11 +1,11 @@
 import { useState } from 'react';
 import { Link } from 'wouter';
 import {
-  ArrowRight, Building2, CalendarClock, CircleDollarSign, Compass, HandCoins,
+  AlertTriangle, ArrowRight, Building2, CalendarClock, CircleDollarSign, Compass, HandCoins,
   Headphones, House, Leaf, MapPin, Plus, RefreshCw, ShieldCheck, UsersRound,
   WalletCards, Zap,
 } from 'lucide-react';
-import { getGetCommandCenterQueryKey, useGetCommandCenter, type CommandAction } from '@workspace/api-client-react';
+import { getGetCommandCenterQueryKey, getGetTransactionReadinessQueryKey, useGetCommandCenter, useGetTransactionReadiness, type CommandAction } from '@workspace/api-client-react';
 import { isQualified } from '@/components/buyer-status';
 import { StageBadge } from '@/components/stage-badge';
 import { useWorkspaceSearch } from '@/components/workspace-search';
@@ -47,7 +47,9 @@ const AUTOMATION_STATE_TONE: Record<string, string> = {
 
 export default function Dashboard() {
   const q = useGetCommandCenter({ query: { queryKey: getGetCommandCenterQueryKey(), refetchInterval: 15000 } });
+  const transactionReadiness = useGetTransactionReadiness({ query: { queryKey: getGetTransactionReadinessQueryKey(), refetchInterval: 30000 } });
   const [showAllActions, setShowAllActions] = useState(false);
+  const [showAllTransactionExceptions, setShowAllTransactionExceptions] = useState(false);
   const { open: searchOpen, query: searchQuery, setQuery: setSearchQuery } = useWorkspaceSearch();
   const d = q.data;
   const query = searchQuery.trim().toLowerCase();
@@ -96,6 +98,12 @@ export default function Dashboard() {
     const date = new Date(operation.contract!.closingAt);
     return !Number.isNaN(date.getTime()) && date.getMonth() === now.getMonth() && date.getFullYear() === now.getFullYear();
   }).length;
+  const transactionExceptions = (transactionReadiness.data?.exceptions ?? [])
+    .filter((item) => item.status === 'OPEN')
+    .sort((a, b) => {
+      const severity = { CRITICAL: 0, HIGH: 1, MEDIUM: 2, LOW: 3 };
+      return severity[a.severity] - severity[b.severity] || b.lastObservedAt.localeCompare(a.lastObservedAt);
+    });
 
   return (
     <>
@@ -127,6 +135,61 @@ export default function Dashboard() {
             <div className="fd-metric"><span className="fd-metric-icon"><Compass size={17} /></span><span><div className="fd-metric-value">{d.propertyDiscoveries.counts.RELEVANT_CANDIDATE}</div><div className="fd-metric-label">Candidates to review</div></span></div>
             <div className="fd-metric"><span className="fd-metric-icon"><Headphones size={17} /></span><span><div className="fd-metric-value">{d.calls.length}</div><div className="fd-metric-label">Sellers cleared to call</div></span></div>
             <div className="fd-metric" data-testid="metric-current-buyers"><span className="fd-metric-icon"><UsersRound size={17} /></span><span><div className="fd-metric-value">{qualified.length}</div><div className="fd-metric-label">{qualified.length ? 'Current approved buyers' : 'No current approved buyers'}</div></span></div>
+          </section>
+
+          <section className="fd-actions-section" aria-label="Transaction readiness" data-testid="panel-transaction-readiness">
+            <div className="fd-section-head">
+              <div className="fd-section-title"><AlertTriangle size={16} />Transaction readiness
+                <small>{transactionReadiness.data
+                  ? `${transactionReadiness.data.openExceptionCount} open exception${transactionReadiness.data.openExceptionCount === 1 ? '' : 's'}`
+                  : 'persisted deadlines and evidence'}</small>
+              </div>
+            </div>
+            {transactionReadiness.isError && (
+              <div className="fd-empty" role="alert">Transaction readiness could not be refreshed. Do not treat an unrefreshed view as clear.
+                <button className="fd-text-link ml-2" type="button" onClick={() => void transactionReadiness.refetch()}>Try again</button>
+              </div>
+            )}
+            {transactionReadiness.data && (
+              <>
+                <div className="fd-empty mb-3">
+                  {transactionReadiness.data.transactionCount === 0
+                    ? 'No transaction records are persisted. There is no real transaction evidence to report.'
+                    : `${transactionReadiness.data.realTransactionCount} real · ${transactionReadiness.data.syntheticTransactionCount} synthetic transaction record(s). Synthetic exercises are not live deal proof.`}
+                  <span className="ml-2">Signing: {transactionReadiness.data.capabilities.signingProvider.status}. Delivery: {transactionReadiness.data.capabilities.deliveryProvider.status}. Private storage: {transactionReadiness.data.capabilities.privateDocumentStorage.status}.</span>
+                </div>
+                {transactionExceptions.length === 0 ? (
+                  <div className="fd-empty" role="status">
+                    {transactionReadiness.data.transactionCount === 0
+                      ? 'Readiness checks remain inactive until a real transaction exists.'
+                      : 'No persisted transaction exception is currently open. This is not a claim that an external signature, delivery, funds transfer, or closing occurred.'}
+                  </div>
+                ) : (
+                  <div className="fd-list">
+                     {transactionExceptions.slice(0, showAllTransactionExceptions ? undefined : 3).map((item) => (
+                      <Link key={item.id} href={`/deals/${item.leadId}?work=transaction`} className="fd-deadline" data-testid={`link-transaction-exception-${item.id}`}>
+                        <span className="fd-deadline-date">
+                          <b>{item.severity} · {item.category.replaceAll('_', ' ')}</b>
+                          <br /><span className="fd-row-meta">{item.reason}</span>
+                          <br /><span className="fd-row-meta"><b>Next:</b> {item.nextAction}</span>
+                        </span>
+                        <span className={`fd-deadline-count ${item.severity === 'CRITICAL' || item.severity === 'HIGH' ? 'fd-pill-coral' : ''}`}>
+                          {item.ownerRole}
+                        </span>
+                      </Link>
+                    ))}
+                     {transactionExceptions.length > 3 && (
+                       <button className="fd-text-link mt-2" type="button"
+                         onClick={() => setShowAllTransactionExceptions((value) => !value)}>
+                         {showAllTransactionExceptions
+                           ? 'Show the 3 highest-priority exceptions'
+                           : `Show all ${transactionExceptions.length} open exceptions`}
+                       </button>
+                     )}
+                  </div>
+                )}
+              </>
+            )}
           </section>
 
           <section className="fd-actions-section" aria-label="Acquisition decision queue" data-testid="panel-acquisition-queue">
