@@ -192,3 +192,23 @@ The public dataset/catalog and documented query endpoint were accessed without a
 **Next buildable slice:** jurisdiction-gated clause/addendum request and qualified-review workflow at the existing transaction boundary; keep generated/unreviewed language blocked and do not invent legal templates. P2 remains the earliest overall external blocker: no newly permitted/exercisable independent listing source was established in this turn.
 
 **Turn state:** this accepted implementation turn is stopped. No background task is running; web and API workflows are running.
+
+## Seller education → operational intelligence requirement — 2026-10-09
+
+**Status:** Added to the durable next-continuation scope; runtime behavior has not changed in this update. This supersedes the previous “next buildable slice” pointer for the next accepted continuation. It does not remove the P2 external-access blocker from the overall backlog.
+
+**Current gap:** the existing 15-entry playbook is integrated and versioned, but its two Harvard Program on Negotiation references support only general listening/question methods. Public material from Jerry Norton / Flipping Mastery, Pace Morby, FlipMan, and other credible wholesaling educators has not yet been researched and converted into operational playbook guidance. Do not describe their methods as internally field-tested or proven by this project.
+
+**Next continuation — source-backed real-estate operating intelligence:**
+
+- The system, not the two operators, researches freely accessible public material: educator resources, public deal breakdowns, scripts, interviews, and educational resources. Use only material whose access and intended use are permitted. Do not bypass paywalls, sign-ins, CAPTCHAs, robots restrictions, or terms; do not copy proprietary course content or large passages. If a source is not openly/permittedly accessible, record that boundary rather than implying it was reviewed.
+- Preserve source attribution with author, title, URL/reference, publication date when available, access date/context, topic, and relevant market/jurisdiction when known. Keep citations attached to the operational guidance they support; the source record is internal provenance, not a separate link directory or operator research assignment.
+- Independently synthesize reusable methods into the existing versioned playbook and seller workflow/call brief. Cover seller discovery and motivation hypotheses, objection-specific responses, negotiation options and trade-offs, follow-up, buyer/disposition methods, underwriting decision support, transaction pitfalls, and escalation triggers. Reuse existing components and extend only missing schema/integration.
+- Each recommendation must state its rationale, evidence that could support/refute it, the next question/action, and which decision remains with a human. Treat an educator's statement as a **source claim**, not as a verified fact or proof that the tactic works. Keep distinct: publicly taught technique/source claim, internally exercised synthetic scenario, and observed outcome from this project's real deals. Only real, adequately evidenced project outcomes can support claims about this operation's observed results.
+- Seller situations remain hypotheses until seller evidence supports them. Preserve explicit evidence classes and provenance; no inferred motivation becomes fact. Keep deterministic underwriting, versioned economics, permission checks, and explicit human offer authorization unchanged. Do not auto-send communications or make promises.
+- Legal and contract content remains jurisdiction-aware and blocked behind approved templates and qualified review. Do not present educational material or generated language as legal advice, approved clauses, or permission to insert terms.
+- Add realistic persisted synthetic exercises, clearly labeled synthetic, that prove source attribution, method-to-recommendation traceability, hypothesis boundaries, evidence that confirms/refutes a method's applicability, and that economics/authority remain unchanged. Do not claim a real seller outcome, field validation, legal review, or external action without evidence.
+
+**After this slice:** retain the jurisdiction-gated clause/addendum review workflow as a subsequent buildable item. P2 remains the earliest overall external-access blocker; do not repeat unavailable property-source attempts without new permitted access.
+
+**Turn state:** checkpoint-only update; no application code or running workflows were changed or interrupted.
