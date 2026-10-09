@@ -30662,16 +30662,36 @@ export const GetTransactionReadinessResponse = zod.object({
   "capabilities": zod.object({
   "signingProvider": zod.object({
   "status": zod.enum(['CONNECTED', 'NOT_CONNECTED']),
-  "reason": zod.string()
+  "reason": zod.string(),
+  "nextAction": zod.string()
 }),
   "deliveryProvider": zod.object({
   "status": zod.enum(['CONNECTED', 'NOT_CONNECTED']),
-  "reason": zod.string()
+  "deliveryStatus": zod.enum(['NOT_SENT']),
+  "reason": zod.string(),
+  "nextAction": zod.string()
 }),
   "privateDocumentStorage": zod.object({
   "status": zod.enum(['MANAGED_PRIVATE', 'PRIVATE_FILE_STORE_UNAVAILABLE']),
   "activeStore": zod.enum(['MANAGED_PRIVATE_OBJECT_STORAGE', 'PERSISTENT_DATABASE_BLOB']),
-  "reason": zod.string()
+  "reason": zod.string(),
+  "nextAction": zod.string()
+}),
+  "jurisdictionTemplates": zod.object({
+  "status": zod.enum(['NOT_EVALUATED', 'BLOCKED', 'READY']),
+  "reason": zod.string(),
+  "nextAction": zod.string(),
+  "jurisdictions": zod.array(zod.object({
+  "jurisdiction": zod.string(),
+  "templates": zod.array(zod.object({
+  "key": zod.string(),
+  "documentKind": zod.string(),
+  "status": zod.enum(['REVIEW_COPY_ONLY', 'PORTAL_EVENT_RECORD', 'MISSING_APPROVED_TEMPLATE', 'APPROVED_LEGAL']),
+  "ready": zod.boolean(),
+  "reason": zod.string(),
+  "nextAction": zod.string()
+}))
+}))
 })
 })
 })

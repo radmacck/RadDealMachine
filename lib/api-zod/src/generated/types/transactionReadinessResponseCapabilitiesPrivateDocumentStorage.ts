@@ -12,4 +12,5 @@ export type TransactionReadinessResponseCapabilitiesPrivateDocumentStorage = {
   status: TransactionReadinessResponseCapabilitiesPrivateDocumentStorageStatus;
   activeStore: TransactionReadinessResponseCapabilitiesPrivateDocumentStorageActiveStore;
   reason: string;
+  nextAction: string;
 };

@@ -2,10 +2,30 @@ import assert from "node:assert/strict";
 import { db, jobsTable, leadsTable } from "@workspace/db";
 import { logger } from "../lib/logger";
 import { commandCenter } from "./command-center";
+import { getTransactionReadinessReport } from "./transaction-readiness";
 import { addPropertyRelevanceSignal, recordPropertyObservation } from "./property-discovery-store";
 import type { PublicProperty } from "@workspace/property-sources";
 
 const now = new Date("2026-10-05T14:00:00.000Z");
+const emptyWorkspace = await commandCenter("ANALYST",now);
+assert.equal(emptyWorkspace.actions.length,0);
+assert.equal(emptyWorkspace.deals.length,0);
+assert.equal(emptyWorkspace.calls.length,0);
+assert.equal(emptyWorkspace.buyers.length,0);
+assert.equal(emptyWorkspace.jobs.length,0);
+assert.equal(emptyWorkspace.propertyDiscoveries.counts.DISCOVERED_PROPERTY,0);
+assert.equal(emptyWorkspace.propertyDiscoveries.counts.RELEVANT_CANDIDATE,0);
+const emptyReadiness = await getTransactionReadinessReport(now);
+assert.equal(emptyReadiness.transactionCount,0);
+assert.equal(emptyReadiness.capabilities.signingProvider.status,"NOT_CONNECTED");
+assert.match(emptyReadiness.capabilities.signingProvider.reason,/no signing provider connection/i);
+assert.equal(emptyReadiness.capabilities.deliveryProvider.status,"NOT_CONNECTED");
+assert.equal(emptyReadiness.capabilities.deliveryProvider.deliveryStatus,"NOT_SENT");
+assert.match(emptyReadiness.capabilities.deliveryProvider.nextAction,/No direct route.*provenance and permission evidence/i);
+assert.equal(emptyReadiness.capabilities.privateDocumentStorage.status,"PRIVATE_FILE_STORE_UNAVAILABLE");
+assert.match(emptyReadiness.capabilities.privateDocumentStorage.nextAction,/private object storage/i);
+assert.equal(emptyReadiness.capabilities.jurisdictionTemplates.status,"NOT_EVALUATED");
+assert.match(emptyReadiness.capabilities.jurisdictionTemplates.nextAction,/jurisdiction/i);
 const [lead] = await db.insert(leadsTable).values({
   payload:{
     address:"100 SYNTHETIC AVENUE",city:"Test City",state:"TX",county:"Test County",zip:"75001",
@@ -16,6 +36,11 @@ const [lead] = await db.insert(leadsTable).values({
   followUpAt:new Date("2026-10-07T14:00:00.000Z"),createdAt:now,updatedAt:now,
 }).returning();
 if (!lead) throw new Error("Could not create isolated command-center fixture.");
+const jurisdictionReadiness = await getTransactionReadinessReport(now);
+assert.equal(jurisdictionReadiness.capabilities.jurisdictionTemplates.status,"BLOCKED");
+assert.equal(jurisdictionReadiness.capabilities.jurisdictionTemplates.jurisdictions.length,1);
+assert.ok(jurisdictionReadiness.capabilities.jurisdictionTemplates.jurisdictions[0]?.templates.some(item =>
+  item.status === "MISSING_APPROVED_TEMPLATE" && item.nextAction.length > 0));
 
 const discovery = await recordPropertyObservation({
   id: "SYNTHETIC-COMMAND-DISCOVERY",
@@ -170,4 +195,4 @@ const operatorView = await commandCenter("OPERATOR",now);
 assert.equal(operatorView.actions.filter((action) => action.leadId === lead.id).length,0,
   "research work is not assigned to an operator");
 
-logger.info({checks:"persisted role-assigned next actions; source-consent, one-time-only and recurring status; current, overdue and failed worker states; last-run data and human authority gates"},"Command-center persistence exercise PASSED");
+logger.info({checks:"isolated persisted zero-data workspace; provider-unavailable and jurisdiction-template readiness reasons; role-assigned next actions; source-consent, one-time-only and recurring status; current, overdue and failed worker states; last-run data and human authority gates"},"Command-center persistence exercise PASSED");

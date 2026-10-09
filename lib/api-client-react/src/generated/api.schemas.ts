@@ -4169,6 +4169,7 @@ export const TransactionReadinessResponseCapabilitiesSigningProviderStatus = {
 export type TransactionReadinessResponseCapabilitiesSigningProvider = {
   status: TransactionReadinessResponseCapabilitiesSigningProviderStatus;
   reason: string;
+  nextAction: string;
 };
 
 export type TransactionReadinessResponseCapabilitiesDeliveryProviderStatus = typeof TransactionReadinessResponseCapabilitiesDeliveryProviderStatus[keyof typeof TransactionReadinessResponseCapabilitiesDeliveryProviderStatus];
@@ -4179,9 +4180,18 @@ export const TransactionReadinessResponseCapabilitiesDeliveryProviderStatus = {
   NOT_CONNECTED: 'NOT_CONNECTED',
 } as const;
 
+export type TransactionReadinessResponseCapabilitiesDeliveryProviderDeliveryStatus = typeof TransactionReadinessResponseCapabilitiesDeliveryProviderDeliveryStatus[keyof typeof TransactionReadinessResponseCapabilitiesDeliveryProviderDeliveryStatus];
+
+
+export const TransactionReadinessResponseCapabilitiesDeliveryProviderDeliveryStatus = {
+  NOT_SENT: 'NOT_SENT',
+} as const;
+
 export type TransactionReadinessResponseCapabilitiesDeliveryProvider = {
   status: TransactionReadinessResponseCapabilitiesDeliveryProviderStatus;
+  deliveryStatus: TransactionReadinessResponseCapabilitiesDeliveryProviderDeliveryStatus;
   reason: string;
+  nextAction: string;
 };
 
 export type TransactionReadinessResponseCapabilitiesPrivateDocumentStorageStatus = typeof TransactionReadinessResponseCapabilitiesPrivateDocumentStorageStatus[keyof typeof TransactionReadinessResponseCapabilitiesPrivateDocumentStorageStatus];
@@ -4204,12 +4214,54 @@ export type TransactionReadinessResponseCapabilitiesPrivateDocumentStorage = {
   status: TransactionReadinessResponseCapabilitiesPrivateDocumentStorageStatus;
   activeStore: TransactionReadinessResponseCapabilitiesPrivateDocumentStorageActiveStore;
   reason: string;
+  nextAction: string;
+};
+
+export type TransactionReadinessResponseCapabilitiesJurisdictionTemplatesStatus = typeof TransactionReadinessResponseCapabilitiesJurisdictionTemplatesStatus[keyof typeof TransactionReadinessResponseCapabilitiesJurisdictionTemplatesStatus];
+
+
+export const TransactionReadinessResponseCapabilitiesJurisdictionTemplatesStatus = {
+  NOT_EVALUATED: 'NOT_EVALUATED',
+  BLOCKED: 'BLOCKED',
+  READY: 'READY',
+} as const;
+
+export type TransactionReadinessResponseCapabilitiesJurisdictionTemplatesJurisdictionsItemTemplatesItemStatus = typeof TransactionReadinessResponseCapabilitiesJurisdictionTemplatesJurisdictionsItemTemplatesItemStatus[keyof typeof TransactionReadinessResponseCapabilitiesJurisdictionTemplatesJurisdictionsItemTemplatesItemStatus];
+
+
+export const TransactionReadinessResponseCapabilitiesJurisdictionTemplatesJurisdictionsItemTemplatesItemStatus = {
+  REVIEW_COPY_ONLY: 'REVIEW_COPY_ONLY',
+  PORTAL_EVENT_RECORD: 'PORTAL_EVENT_RECORD',
+  MISSING_APPROVED_TEMPLATE: 'MISSING_APPROVED_TEMPLATE',
+  APPROVED_LEGAL: 'APPROVED_LEGAL',
+} as const;
+
+export type TransactionReadinessResponseCapabilitiesJurisdictionTemplatesJurisdictionsItemTemplatesItem = {
+  key: string;
+  documentKind: string;
+  status: TransactionReadinessResponseCapabilitiesJurisdictionTemplatesJurisdictionsItemTemplatesItemStatus;
+  ready: boolean;
+  reason: string;
+  nextAction: string;
+};
+
+export type TransactionReadinessResponseCapabilitiesJurisdictionTemplatesJurisdictionsItem = {
+  jurisdiction: string;
+  templates: TransactionReadinessResponseCapabilitiesJurisdictionTemplatesJurisdictionsItemTemplatesItem[];
+};
+
+export type TransactionReadinessResponseCapabilitiesJurisdictionTemplates = {
+  status: TransactionReadinessResponseCapabilitiesJurisdictionTemplatesStatus;
+  reason: string;
+  nextAction: string;
+  jurisdictions: TransactionReadinessResponseCapabilitiesJurisdictionTemplatesJurisdictionsItem[];
 };
 
 export type TransactionReadinessResponseCapabilities = {
   signingProvider: TransactionReadinessResponseCapabilitiesSigningProvider;
   deliveryProvider: TransactionReadinessResponseCapabilitiesDeliveryProvider;
   privateDocumentStorage: TransactionReadinessResponseCapabilitiesPrivateDocumentStorage;
+  jurisdictionTemplates: TransactionReadinessResponseCapabilitiesJurisdictionTemplates;
 };
 
 export interface TransactionReadinessResponse {

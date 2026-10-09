@@ -6,6 +6,7 @@
  * OpenAPI spec version: 1.0.0
  */
 import type { TransactionReadinessResponseCapabilitiesDeliveryProvider } from './transactionReadinessResponseCapabilitiesDeliveryProvider';
+import type { TransactionReadinessResponseCapabilitiesJurisdictionTemplates } from './transactionReadinessResponseCapabilitiesJurisdictionTemplates';
 import type { TransactionReadinessResponseCapabilitiesPrivateDocumentStorage } from './transactionReadinessResponseCapabilitiesPrivateDocumentStorage';
 import type { TransactionReadinessResponseCapabilitiesSigningProvider } from './transactionReadinessResponseCapabilitiesSigningProvider';
 
@@ -13,4 +14,5 @@ export type TransactionReadinessResponseCapabilities = {
   signingProvider: TransactionReadinessResponseCapabilitiesSigningProvider;
   deliveryProvider: TransactionReadinessResponseCapabilitiesDeliveryProvider;
   privateDocumentStorage: TransactionReadinessResponseCapabilitiesPrivateDocumentStorage;
+  jurisdictionTemplates: TransactionReadinessResponseCapabilitiesJurisdictionTemplates;
 };

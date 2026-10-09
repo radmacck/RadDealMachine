@@ -6,13 +6,19 @@ import {
   WalletCards, Zap,
 } from 'lucide-react';
 import { getGetCommandCenterQueryKey, getGetTransactionReadinessQueryKey, useGetCommandCenter, useGetTransactionReadiness, type CommandAction } from '@workspace/api-client-react';
-import { isQualified } from '@/components/buyer-status';
 import { StageBadge } from '@/components/stage-badge';
 import { useWorkspaceSearch } from '@/components/workspace-search';
 import { commandCenterCallDisplay } from '@/lib/command-center-display';
+import {
+  buyerDistributionSummary,
+  classifyApiViewState,
+  isCurrentApprovedBuyer,
+  isEmptyCommandCenter,
+  isSyntheticExerciseBuyer,
+} from '@/lib/command-center-state';
 import { AcquisitionQueueCard } from '@/components/acquisition-queue-card';
 import { OutcomeLearningPanel } from '@/components/outcome-learning-panel';
-import { ago, fmtDate, isOverdue, money } from '@/lib/format';
+import { ago, errInfo, fmtDate, isOverdue, money } from '@/lib/format';
 
 const LABEL: Record<CommandAction['category'], string> = {
   RESEARCH: 'Research', CALL: 'Call', FOLLOW_UP: 'Follow up', OFFER_APPROVAL: 'Owner approval', NEGOTIATION: 'Negotiate',
@@ -51,7 +57,14 @@ export default function Dashboard() {
   const [showAllActions, setShowAllActions] = useState(false);
   const [showAllTransactionExceptions, setShowAllTransactionExceptions] = useState(false);
   const { open: searchOpen, query: searchQuery, setQuery: setSearchQuery } = useWorkspaceSearch();
-  const d = q.data;
+  const now = new Date();
+  const workspaceState = classifyApiViewState(q, isEmptyCommandCenter);
+  const transactionState = classifyApiViewState(transactionReadiness);
+  const mayRenderWorkspace = ["READY", "EMPTY", "STALE"].includes(workspaceState);
+  const mayRenderReadiness = ["READY", "STALE"].includes(transactionState);
+  const d = mayRenderWorkspace ? q.data : undefined;
+  const readinessData = mayRenderReadiness ? transactionReadiness.data : undefined;
+  const refreshing = q.isFetching || transactionReadiness.isFetching;
   const query = searchQuery.trim().toLowerCase();
   const matchesSearch = (...values: (string | number | null | undefined)[]) =>
     !query || values.some((value) => String(value ?? '').toLowerCase().includes(query));
@@ -60,7 +73,8 @@ export default function Dashboard() {
   const secondaryActions = showAllActions ? actions.slice(1) : actions.slice(1, 3);
   const contracts = d ? d.operations.filter((o) => o.contract) : [];
   const deadlines = contracts.filter((o) => o.contract!.status !== 'CLOSED' && o.contract!.status !== 'CANCELLED').sort((a, b) => a.contract!.closingAt.localeCompare(b.contract!.closingAt));
-  const qualified = d ? d.buyers.filter((b) => isQualified(b) && (b.destinationKind ?? 'BUYER') === 'BUYER') : [];
+  const buyerSummary = d ? buyerDistributionSummary(d.buyers, now) : null;
+  const qualified = d ? d.buyers.filter((buyer) => isCurrentApprovedBuyer(buyer, now)) : [];
   const leadAddressById = new Map<string, string>();
   if (d) {
     d.calls.forEach((item) => leadAddressById.set(item.lead.id, item.lead.address));
@@ -76,7 +90,9 @@ export default function Dashboard() {
   const deadlineRows = deadlines.filter((operation) => matchesSearch(
     leadAddressById.get(operation.leadId), operation.contract?.closingAt, operation.contract?.closingAt ? fmtDate(operation.contract.closingAt) : '',
   ));
-  const buyerRows = d ? d.buyers.filter((buyer) => matchesSearch(
+  const buyerRows = d ? d.buyers.filter((buyer) => !isSyntheticExerciseBuyer(buyer)
+    && (buyer.destinationKind ?? 'BUYER') === 'BUYER'
+    && matchesSearch(
     buyer.name, buyer.criteria?.states.join(' '), buyer.criteria?.maxPurchasePrice, buyer.verificationStatus,
   )) : [];
   const jobRows = d ? d.jobs.filter((job) => matchesSearch(job.message, job.kind, job.state)) : [];
@@ -87,18 +103,17 @@ export default function Dashboard() {
     ['RELEVANT_CANDIDATE', 'QUALIFIED_LEAD'].includes(item.status) && matchesSearch(
     item.property.address, item.property.recordedOwner, item.reason, item.rankingReasons.join(' '), item.nextAction,
   )) : [];
-  const qualifiedRows = buyerRows.filter((buyer) => isQualified(buyer) && (buyer.destinationKind ?? 'BUYER') === 'BUYER');
+  const qualifiedRows = buyerRows.filter((buyer) => isCurrentApprovedBuyer(buyer, now));
   const callDisplay = commandCenterCallDisplay(primaryAction, calls);
   const primaryCall = callDisplay.primaryCall;
   const additionalCalls = callDisplay.additionalCalls;
   const nextCall = additionalCalls[0];
-  const now = new Date();
   const activeOpportunityCount = d ? d.deals.filter((item) => !['CLOSED', 'DEAD_DEAL'].includes(item.lead.stage)).length : 0;
   const closingThisMonth = deadlines.filter((operation) => {
     const date = new Date(operation.contract!.closingAt);
     return !Number.isNaN(date.getTime()) && date.getMonth() === now.getMonth() && date.getFullYear() === now.getFullYear();
   }).length;
-  const transactionExceptions = (transactionReadiness.data?.exceptions ?? [])
+  const transactionExceptions = (readinessData?.exceptions ?? [])
     .filter((item) => item.status === 'OPEN')
     .sort((a, b) => {
       const severity = { CRITICAL: 0, HIGH: 1, MEDIUM: 2, LOW: 3 };
@@ -114,8 +129,8 @@ export default function Dashboard() {
           <p className="fd-subtitle">Seller acquisition, buyer demand, and the deal that connects them. Start with the next action; the system keeps the workstreams distinct.</p>
         </div>
         <div className="fd-head-buttons">
-          <button className="fd-button" type="button" onClick={() => void q.refetch()} disabled={q.isFetching} aria-busy={q.isFetching}>
-            <RefreshCw size={14} className={q.isFetching ? 'animate-spin' : ''} />{q.isFetching ? 'Refreshing' : 'Refresh desk'}
+          <button className="fd-button" type="button" onClick={() => void Promise.allSettled([q.refetch(), transactionReadiness.refetch()])} disabled={refreshing} aria-busy={refreshing}>
+            <RefreshCw size={14} className={refreshing ? 'animate-spin' : ''} />{refreshing ? 'Refreshing' : 'Refresh desk'}
           </button>
           <Link className="fd-button" href="/leads" data-testid="link-add-lead"><Plus size={15} />Manual seller intake</Link>
         </div>
@@ -126,10 +141,19 @@ export default function Dashboard() {
           <input id="fd-search" className="fd-search-input" value={searchQuery} onChange={(event) => setSearchQuery(event.target.value)} autoFocus placeholder="Try an address, seller, or task…" />
         </div>
       )}
-      {q.isError && <div className="fd-empty" role="alert">The workspace data could not be refreshed. Existing information may be out of date. <button className="fd-text-link" type="button" onClick={() => void q.refetch()}>Try again</button></div>}
-      {q.isLoading && !d && <div className="fd-empty" role="status">Loading workspace activity…</div>}
+      {workspaceState === 'LOADING' && <div className="fd-empty" role="status" data-testid="workspace-loading">Loading authenticated workspace data…</div>}
+      {workspaceState === 'UNAUTHENTICATED' && <div className="fd-empty" role="alert" data-testid="workspace-unauthenticated">Sign-in is required. Cached workspace data is hidden; reauthenticate through the existing sign-in flow.</div>}
+      {workspaceState === 'FORBIDDEN' && <div className="fd-empty" role="alert" data-testid="workspace-forbidden">This account is not authorized for this workspace action. Cached workspace data is hidden; ask the workspace owner to review access.</div>}
+      {workspaceState === 'ERROR' && <div className="fd-empty" role="alert" data-testid="workspace-error">The command-center service did not return workspace data: {errInfo(q.error).message} <button className="fd-text-link" type="button" onClick={() => void q.refetch()}>Try again</button></div>}
+      {workspaceState === 'STALE' && <div className="fd-empty" role="alert" data-testid="workspace-stale">Refresh failed ({errInfo(q.error).message}). Showing the last saved snapshot from {d ? fmtDate(d.generatedAt) : 'an earlier request'}; verify the linked record before acting. <button className="fd-text-link" type="button" onClick={() => void q.refetch()}>Retry command center</button></div>}
+      {transactionState === 'LOADING' && <div className="fd-empty" role="status" data-testid="transaction-readiness-loading">Loading persisted transaction readiness…</div>}
+      {transactionState === 'UNAUTHENTICATED' && <div className="fd-empty" role="alert" data-testid="transaction-readiness-unauthenticated">Transaction readiness requires sign-in. Cached readiness data is hidden.</div>}
+      {transactionState === 'FORBIDDEN' && <div className="fd-empty" role="alert" data-testid="transaction-readiness-forbidden">Your role cannot view transaction readiness. Cached readiness data is hidden.</div>}
+      {transactionState === 'ERROR' && <div className="fd-empty" role="alert" data-testid="transaction-readiness-error">Transaction readiness is unavailable: {errInfo(transactionReadiness.error).message} <button className="fd-text-link" type="button" onClick={() => void transactionReadiness.refetch()}>Try again</button></div>}
+      {transactionState === 'STALE' && <div className="fd-empty" role="alert" data-testid="transaction-readiness-stale">Transaction-readiness refresh failed ({errInfo(transactionReadiness.error).message}). The displayed capability/evidence data may be stale; do not treat it as clear.</div>}
       {d && (
         <>
+          {workspaceState === 'EMPTY' && <div className="fd-empty mb-3" role="status" data-testid="workspace-empty">No persisted seller, buyer, deal, or discovery records are available. No sample data is substituted. Add a seller record or review permitted source access to begin.</div>}
           <section className="fd-metrics" aria-label="Operating state">
             <div className="fd-metric"><span className="fd-metric-icon"><Building2 size={17} /></span><span><div className="fd-metric-value">{activeOpportunityCount}</div><div className="fd-metric-label">Active seller leads</div></span></div>
             <div className="fd-metric"><span className="fd-metric-icon"><Compass size={17} /></span><span><div className="fd-metric-value">{d.propertyDiscoveries.counts.RELEVANT_CANDIDATE}</div><div className="fd-metric-label">Candidates to review</div></span></div>
@@ -137,30 +161,99 @@ export default function Dashboard() {
             <div className="fd-metric" data-testid="metric-current-buyers"><span className="fd-metric-icon"><UsersRound size={17} /></span><span><div className="fd-metric-value">{qualified.length}</div><div className="fd-metric-label">{qualified.length ? 'Current approved buyers' : 'No current approved buyers'}</div></span></div>
           </section>
 
+          <section className="fd-actions-section" aria-label="Buyer and distribution readiness" data-testid="panel-buyer-distribution-readiness">
+            <div className="fd-section-head">
+              <div className="fd-section-title"><UsersRound size={16} />Buyer &amp; distribution readiness
+                <small>{buyerSummary?.approvedCurrentCount ?? 0} current approved acquisition buyers</small>
+              </div>
+              <Link className="fd-text-link" href="/buyers">Review buyer evidence <ArrowRight size={12} /></Link>
+            </div>
+            <div className="fd-readiness-grid">
+              <div className="fd-readiness-item">
+                <b>Eligible buyer pool</b>
+                <p>{buyerSummary?.approvedCurrentCount
+                  ? `${buyerSummary.approvedCurrentCount} buyer(s) meet current approval and evidence gates.`
+                  : 'No buyer is currently eligible for priority matching or distribution.'}</p>
+              </div>
+              <div className="fd-readiness-item">
+                <b>Excluded from matching</b>
+                <p>{buyerSummary?.staleExcludedCount ?? 0} stale · {buyerSummary?.unverifiedExcludedCount ?? 0} unverified/incomplete.
+                  {(buyerSummary?.syntheticExcludedCount ?? 0) > 0 && ` ${buyerSummary?.syntheticExcludedCount} explicitly synthetic exercise record(s) excluded from live totals.`}</p>
+              </div>
+              <div className="fd-readiness-item">
+                <b>Delivery capability</b>
+                {readinessData ? <>
+                  <p>{readinessData.capabilities.deliveryProvider.status}: {readinessData.capabilities.deliveryProvider.reason}</p>
+                  <p><b>Next:</b> {readinessData.capabilities.deliveryProvider.nextAction}</p>
+                </> : <p>Provider state is unavailable until the authenticated readiness API responds.</p>}
+              </div>
+              <div className="fd-readiness-item">
+                <b>Delivery state</b>
+                <p>{readinessData?.capabilities.deliveryProvider.status === 'CONNECTED'
+                  ? `Provider API state: ${readinessData.capabilities.deliveryProvider.deliveryStatus}. Each recipient remains unconfirmed until its provider receipt is persisted.`
+                  : readinessData?.capabilities.deliveryProvider.status === 'NOT_CONNECTED'
+                    ? `${readinessData.capabilities.deliveryProvider.deliveryStatus} — no delivery provider is connected. Copied links and invitations are not delivery evidence.`
+                    : 'Unknown — delivery cannot be claimed while provider readiness is unavailable.'}</p>
+              </div>
+            </div>
+          </section>
+
           <section className="fd-actions-section" aria-label="Transaction readiness" data-testid="panel-transaction-readiness">
             <div className="fd-section-head">
               <div className="fd-section-title"><AlertTriangle size={16} />Transaction readiness
-                <small>{transactionReadiness.data
-                  ? `${transactionReadiness.data.openExceptionCount} open exception${transactionReadiness.data.openExceptionCount === 1 ? '' : 's'}`
+                <small>{readinessData
+                  ? `${readinessData.openExceptionCount} open exception${readinessData.openExceptionCount === 1 ? '' : 's'}`
                   : 'persisted deadlines and evidence'}</small>
               </div>
             </div>
-            {transactionReadiness.isError && (
-              <div className="fd-empty" role="alert">Transaction readiness could not be refreshed. Do not treat an unrefreshed view as clear.
-                <button className="fd-text-link ml-2" type="button" onClick={() => void transactionReadiness.refetch()}>Try again</button>
-              </div>
-            )}
-            {transactionReadiness.data && (
+            {readinessData && (
               <>
                 <div className="fd-empty mb-3">
-                  {transactionReadiness.data.transactionCount === 0
+                  {readinessData.transactionCount === 0
                     ? 'No transaction records are persisted. There is no real transaction evidence to report.'
-                    : `${transactionReadiness.data.realTransactionCount} real · ${transactionReadiness.data.syntheticTransactionCount} synthetic transaction record(s). Synthetic exercises are not live deal proof.`}
-                  <span className="ml-2">Signing: {transactionReadiness.data.capabilities.signingProvider.status}. Delivery: {transactionReadiness.data.capabilities.deliveryProvider.status}. Private storage: {transactionReadiness.data.capabilities.privateDocumentStorage.status}.</span>
+                    : `${readinessData.realTransactionCount} real · ${readinessData.syntheticTransactionCount} synthetic transaction record(s). Synthetic exercises are not live deal proof.`}
+                  <span className="ml-2">Evaluated {fmtDate(readinessData.evaluatedAt)}.</span>
                 </div>
+                <div className="fd-readiness-grid" data-testid="provider-readiness">
+                  <div className="fd-readiness-item">
+                    <b>Signing · {readinessData.capabilities.signingProvider.status}</b>
+                    <p>{readinessData.capabilities.signingProvider.reason}</p>
+                    <p><b>Next:</b> {readinessData.capabilities.signingProvider.nextAction}</p>
+                  </div>
+                  <div className="fd-readiness-item">
+                    <b>Delivery · {readinessData.capabilities.deliveryProvider.status}</b>
+                    <p>{readinessData.capabilities.deliveryProvider.reason}</p>
+                    <p><b>Next:</b> {readinessData.capabilities.deliveryProvider.nextAction}</p>
+                  </div>
+                  <div className="fd-readiness-item">
+                    <b>Private storage · {readinessData.capabilities.privateDocumentStorage.status}</b>
+                    <p>{readinessData.capabilities.privateDocumentStorage.reason}</p>
+                    <p><b>Next:</b> {readinessData.capabilities.privateDocumentStorage.nextAction}</p>
+                  </div>
+                  <div className="fd-readiness-item">
+                    <b>Jurisdiction templates · {readinessData.capabilities.jurisdictionTemplates.status}</b>
+                    <p>{readinessData.capabilities.jurisdictionTemplates.reason}</p>
+                    <p><b>Next:</b> {readinessData.capabilities.jurisdictionTemplates.nextAction}</p>
+                  </div>
+                </div>
+                {readinessData.capabilities.jurisdictionTemplates.jurisdictions.length > 0 && (
+                  <div className="fd-template-readiness" data-testid="jurisdiction-template-readiness">
+                    {readinessData.capabilities.jurisdictionTemplates.jurisdictions.map((jurisdiction) => (
+                      <div key={jurisdiction.jurisdiction} className="fd-template-jurisdiction">
+                        <b>{jurisdiction.jurisdiction}</b>
+                        {jurisdiction.templates.map((template) => (
+                          <div key={template.key} className="fd-template-row">
+                            <span className={`fd-pill ${template.status === 'APPROVED_LEGAL' ? '' : 'fd-pill-coral'}`}>{template.status.replaceAll('_', ' ')}</span>
+                            <span><b>{template.documentKind.replaceAll('_', ' ')}</b> · {template.reason}<br /><span className="fd-row-meta"><b>Next:</b> {template.nextAction}</span></span>
+                          </div>
+                        ))}
+                      </div>
+                    ))}
+                  </div>
+                )}
                 {transactionExceptions.length === 0 ? (
                   <div className="fd-empty" role="status">
-                    {transactionReadiness.data.transactionCount === 0
+                    {readinessData.transactionCount === 0
                       ? 'Readiness checks remain inactive until a real transaction exists.'
                       : 'No persisted transaction exception is currently open. This is not a claim that an external signature, delivery, funds transfer, or closing occurred.'}
                   </div>
@@ -249,6 +342,16 @@ export default function Dashboard() {
                           && primaryAction.id.startsWith(`DECISION:DISCOVERY:${item.subjectId}:`));
                       return (
                         <div className="fd-start-guidance">
+                          <div className="fd-start-state" data-testid="primary-action-state">
+                            <div><span className="fd-start-label">Recommendation status</span><p data-testid="primary-action-work-status">{decision?.recommendedAction?.status ?? 'Open linked workflow to verify persisted status'}</p></div>
+                            <div><span className="fd-start-label">Authorization</span><p data-testid="primary-action-authorization">{decision?.recommendedAction?.requiresHumanAuthorization
+                              ? 'Required before protected action'
+                              : decision ? 'Not required for this recommended step' : 'Check the destination workflow; no permission change is implied here'}</p></div>
+                            <div><span className="fd-start-label">Key evidence references</span><p data-testid="primary-action-evidence">{(decision?.evidenceRefs ?? guidance?.requiredEvidence ?? []).slice(0, 3).join(' · ') || 'No evidence references returned for this action.'}</p></div>
+                            <div className="fd-start-missing"><span className="fd-start-label">Primary blocker</span><p data-testid="primary-action-blocker">{decision?.recommendedAction?.status === 'BLOCKED'
+                              ? decision.recommendedAction.reason
+                              : decision?.blockedActions[0]?.reason ?? guidance?.missingFacts[0] ?? 'No blocker is reported for the selected action.'}</p></div>
+                          </div>
                           <div className="fd-start-state">
                             <div><span className="fd-start-label">Where we are</span><p>{guidance?.currentState ?? 'This action has no workflow state attached; confirm the linked record before proceeding.'}</p></div>
                             <div><span className="fd-start-label">Responsible</span><p>{guidance?.responsibleRole ?? 'Review required'}</p></div>
@@ -312,6 +415,7 @@ export default function Dashboard() {
                           <Link href={primaryAction.href} className="fd-start-cta" aria-label={`${primaryAction.cta}: ${primaryAction.title}`}>
                             {primaryAction.cta}<ArrowRight size={15} />
                           </Link>
+                          <p className="fd-row-meta">Opening a workflow does not perform the action. Protected changes require server authorization and a confirmed response from that workflow.</p>
                         </div>
                       );
                     })()}
@@ -510,7 +614,7 @@ export default function Dashboard() {
               <div className="fd-section-head"><div className="fd-section-title"><UsersRound size={15} />Qualified buyers <small>{query ? `${qualifiedRows.length} of ${buyerRows.length}` : `${qualified.length} of ${d.buyers.length}`}</small></div><Link className="fd-text-link" href="/buyers" data-testid="link-buyers">All buyers</Link></div>
               {buyerRows.length === 0 ? <div className="fd-empty">{query ? 'No buyers match that search.' : 'No buyers recorded. Prospects require evidenced, current-buying qualification before they are treated as qualified.'}</div> : (
                 <div className="fd-list">{buyerRows.slice(0, 3).map((buyer) => {
-                  const qualifiedBuyer = isQualified(buyer) && (buyer.destinationKind ?? 'BUYER') === 'BUYER';
+                  const qualifiedBuyer = isCurrentApprovedBuyer(buyer, now);
                   const buyerState = qualifiedBuyer ? 'Qualified' : buyer.verificationStatus === 'STALE' ? 'Stale' : buyer.status === 'PAUSED' ? 'Paused' : 'Unverified';
                   return (
                     <Link key={buyer.id} href={`/buyers/${buyer.id}`} className="fd-deal-row" data-testid={`link-buyer-${buyer.id}`}>

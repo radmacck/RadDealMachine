@@ -7,6 +7,7 @@
     "exercise:handoffs": "tsx src/services/isolated-exercise.ts handoff-exercise.ts",
     "exercise:evidence-intake": "tsx src/services/isolated-exercise.ts evidence-intake-exercise.ts",
     "test:auth": "tsx --test src/services/access.test.ts",
+    "test:command-center": "tsx --test src/services/command-center-api.test.ts ../../artifacts/radical-deal-os/src/lib/command-center-display.test.ts ../../artifacts/radical-deal-os/src/lib/command-center-state.test.ts",
     "test:research": "tsx --test src/services/research-worker.test.ts",
     "exercise:research": "tsx src/services/isolated-exercise.ts research-exercise.ts",
     "exercise:research-lifecycle": "tsx src/services/isolated-exercise.ts research-lifecycle-exercise.ts",

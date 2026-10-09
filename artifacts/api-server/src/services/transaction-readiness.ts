@@ -14,7 +14,7 @@ import type { DealContract } from "@workspace/deal-domain";
 import { dealOperations } from "./matching-store";
 import { audit, leadDetail } from "./deal-store";
 import { contractRecord } from "./operations-records";
-import { getTransactionDocumentReadiness } from "./transaction-document-registry";
+import { getTransactionDocumentReadiness, propertyDocumentJurisdiction } from "./transaction-document-registry";
 import { buyerOutreachReadiness } from "./buyer-outreach";
 import { evaluateLeadDecision } from "./intelligence-decision-store";
 import { lockDealEconomics } from "./locked-economics";
@@ -905,6 +905,55 @@ export async function getTransactionReadinessReport(now = new Date()) {
   const openExceptions = exceptions.filter(item => item.status === "OPEN");
   const delivery = buyerOutreachReadiness({}, now);
   const readiness = await getTransactionDocumentReadiness(SYSTEM_ACTOR);
+  const leadByJurisdiction = new Map<string,string>();
+  for (const row of leads) {
+    const jurisdiction = propertyDocumentJurisdiction(row.payload);
+    if (!leadByJurisdiction.has(jurisdiction)) leadByJurisdiction.set(jurisdiction,row.id);
+  }
+  const jurisdictionDocuments = await Promise.all([...leadByJurisdiction.entries()].map(async ([jurisdiction,leadId]) => {
+    const documentReadiness = await getTransactionDocumentReadiness(SYSTEM_ACTOR,leadId);
+    return {
+      jurisdiction,
+      templates: documentReadiness.templates.map(template => {
+        const ready = template.status === "APPROVED_LEGAL" && !!template.templateHash && !!template.approvalEvidenceRef;
+        const nextAction = ready
+          ? "No template blocker; still validate the deal snapshot, parties, and send authorization."
+          : template.status === "REVIEW_COPY_ONLY"
+            ? "Keep this as an internal review worksheet; obtain a jurisdiction-approved legal template before sending legal terms."
+            : template.status === "PORTAL_EVENT_RECORD"
+              ? "Keep portal responses as evidence events; do not represent them as signed or executed documents."
+              : "Have a qualified reviewer register an approved template and approval evidence for this jurisdiction; do not send this document yet.";
+        return {
+          key: template.key,
+          documentKind: template.documentKind,
+          status: template.status,
+          ready,
+          reason: template.missingReason ?? "Template readiness has no reason recorded.",
+          nextAction,
+        };
+      }),
+    };
+  }));
+  const templateBlocked = jurisdictionDocuments.some(jurisdiction => jurisdiction.templates.some(template => {
+    if (["PURCHASE_TERMS_REVIEW","SELLER_RESPONSE_EVIDENCE"].includes(template.key)) return false;
+    return !template.ready;
+  }));
+  const jurisdictionTemplates = {
+    status: jurisdictionDocuments.length === 0
+      ? "NOT_EVALUATED" as const
+      : templateBlocked ? "BLOCKED" as const : "READY" as const,
+    reason: jurisdictionDocuments.length === 0
+      ? "No persisted property jurisdiction is available, so required legal templates cannot yet be evaluated."
+      : templateBlocked
+        ? "At least one required legal document lacks jurisdiction-approved template and approval evidence."
+        : "Required legal templates have approval evidence for every persisted property jurisdiction.",
+    nextAction: jurisdictionDocuments.length === 0
+      ? "Record or select a property with a known jurisdiction before evaluating required transaction templates."
+      : templateBlocked
+        ? "Resolve the listed jurisdiction-specific template blockers with qualified review; do not treat worksheets or portal events as legal signatures."
+        : "Validate the exact deal and party snapshots before any authorized document send.",
+    jurisdictions: jurisdictionDocuments,
+  };
   return GetTransactionReadinessResponse.parse({
     evaluatedAt: now.toISOString(),
     transactionCount: contracts.length,
@@ -917,18 +966,23 @@ export async function getTransactionReadinessReport(now = new Date()) {
       signingProvider: {
         status: readiness.signingProvider.status,
         reason: readiness.signingProvider.reason ?? "Signing-provider readiness has no reason recorded.",
+        nextAction: readiness.signingProvider.status === "CONNECTED"
+          ? "Use the connected signing adapter only for an authorized document and verify its provider-confirmed signature evidence."
+          : "Connect and exercise an approved signing provider; generated or prepared PDFs remain unsigned.",
       },
       deliveryProvider: {
         status: delivery.providerStatus,
-        reason: delivery.providerStatus === "CONNECTED"
-          ? "A buyer outreach/delivery provider is registered; each delivery still requires its own provider receipt."
-          : "No permitted buyer delivery provider is connected. Packets and recipient invitations are not proof of delivery.",
+        deliveryStatus: delivery.deliveryStatus,
+        reason: delivery.missingCapabilities.join(" "),
+        nextAction: delivery.nextAction,
       },
       privateDocumentStorage: {
         status: readiness.storage.status,
         activeStore: readiness.storage.activeStore,
         reason: readiness.storage.reason,
+        nextAction: "Configure managed private object storage and verify authenticated access before treating legal-document storage as ready.",
       },
+      jurisdictionTemplates,
     },
   });
 }

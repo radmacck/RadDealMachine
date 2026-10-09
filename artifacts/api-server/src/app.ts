@@ -50,12 +50,12 @@ app.use((req,res,next) => {
 });
 
 app.use("/api", router);
-const errorHandler: ErrorRequestHandler = (error,req,res,_next) => {
+export const apiErrorHandler: ErrorRequestHandler = (error,req,res,_next) => {
   if (error instanceof DomainError) { res.status(error.status).json({error:error.message}); return; }
   if (error?.type === "entity.parse.failed") { res.status(400).json({error:"Invalid JSON request."}); return; }
   req.log.error({err:error},"Request failed");
   res.status(500).json({error:"An unexpected server error occurred. No successful save was confirmed."});
 };
-app.use(errorHandler);
+app.use(apiErrorHandler);
 
 export default app;

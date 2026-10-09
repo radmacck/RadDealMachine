@@ -2540,27 +2540,57 @@ components:
         exceptions: { type: array, items: { $ref: "#/components/schemas/TransactionReadinessException" } }
         capabilities:
           type: object
-          required: [signingProvider, deliveryProvider, privateDocumentStorage]
+          required: [signingProvider, deliveryProvider, privateDocumentStorage, jurisdictionTemplates]
           properties:
             signingProvider:
               type: object
-              required: [status, reason]
+              required: [status, reason, nextAction]
               properties:
                 status: { type: string, enum: [CONNECTED, NOT_CONNECTED] }
                 reason: { type: string }
+                nextAction: { type: string }
             deliveryProvider:
               type: object
-              required: [status, reason]
+              required: [status, deliveryStatus, reason, nextAction]
               properties:
                 status: { type: string, enum: [CONNECTED, NOT_CONNECTED] }
+                deliveryStatus: { type: string, enum: [NOT_SENT] }
                 reason: { type: string }
+                nextAction: { type: string }
             privateDocumentStorage:
               type: object
-              required: [status, activeStore, reason]
+              required: [status, activeStore, reason, nextAction]
               properties:
                 status: { type: string, enum: [MANAGED_PRIVATE, PRIVATE_FILE_STORE_UNAVAILABLE] }
                 activeStore: { type: string, enum: [MANAGED_PRIVATE_OBJECT_STORAGE, PERSISTENT_DATABASE_BLOB] }
                 reason: { type: string }
+                nextAction: { type: string }
+            jurisdictionTemplates:
+              type: object
+              required: [status, reason, nextAction, jurisdictions]
+              properties:
+                status: { type: string, enum: [NOT_EVALUATED, BLOCKED, READY] }
+                reason: { type: string }
+                nextAction: { type: string }
+                jurisdictions:
+                  type: array
+                  items:
+                    type: object
+                    required: [jurisdiction, templates]
+                    properties:
+                      jurisdiction: { type: string }
+                      templates:
+                        type: array
+                        items:
+                          type: object
+                          required: [key, documentKind, status, ready, reason, nextAction]
+                          properties:
+                            key: { type: string }
+                            documentKind: { type: string }
+                            status: { type: string, enum: [REVIEW_COPY_ONLY, PORTAL_EVENT_RECORD, MISSING_APPROVED_TEMPLATE, APPROVED_LEGAL] }
+                            ready: { type: boolean }
+                            reason: { type: string }
+                            nextAction: { type: string }
     DistributionAuthorizationInput:
       type: object
       required: [version, reason]

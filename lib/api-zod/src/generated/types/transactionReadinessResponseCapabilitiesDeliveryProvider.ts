@@ -5,9 +5,12 @@
  * Radical Deal OS seller intake, underwriting, conversations and approved offers
  * OpenAPI spec version: 1.0.0
  */
+import type { TransactionReadinessResponseCapabilitiesDeliveryProviderDeliveryStatus } from './transactionReadinessResponseCapabilitiesDeliveryProviderDeliveryStatus';
 import type { TransactionReadinessResponseCapabilitiesDeliveryProviderStatus } from './transactionReadinessResponseCapabilitiesDeliveryProviderStatus';
 
 export type TransactionReadinessResponseCapabilitiesDeliveryProvider = {
   status: TransactionReadinessResponseCapabilitiesDeliveryProviderStatus;
+  deliveryStatus: TransactionReadinessResponseCapabilitiesDeliveryProviderDeliveryStatus;
   reason: string;
+  nextAction: string;
 };
