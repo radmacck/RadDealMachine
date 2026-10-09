@@ -8,6 +8,7 @@ import {
 import { PageHeader } from '@/components/page-header';
 import { ErrorNotice, EmptyState, RowsSkeleton } from '@/components/state-views';
 import { CallBriefCard } from '@/components/call-brief-card';
+import { SellerPlaybookPanel } from '@/components/seller-playbook-panel';
 import { AcquisitionQueueCard } from '@/components/acquisition-queue-card';
 import { CallLogForm } from '@/components/call-log-form';
 import { CommunicateForm, useOfferCommunicate } from '@/components/offers-panel';
@@ -73,7 +74,12 @@ export default function Calls() {
           </ol>
           <div className="space-y-4">
             <AcquisitionQueueCard item={current} />
-            {current.callBrief && <CallBriefCard brief={current.callBrief} />}
+            {current.callBrief && (
+              <>
+                <CallBriefCard brief={current.callBrief} />
+                <SellerPlaybookPanel leadId={current.lead.id} />
+              </>
+            )}
           </div>
           <aside className="ledger h-fit p-4 lg:sticky lg:top-6" data-testid="panel-log-call">
             {current.decision === 'BLOCKED' ? (

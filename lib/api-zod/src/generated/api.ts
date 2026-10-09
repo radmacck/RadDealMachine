@@ -40415,3 +40415,259 @@ export const GetWorkerCapabilitiesResponseItem = zod.object({
 export const GetWorkerCapabilitiesResponse = zod.array(GetWorkerCapabilitiesResponseItem)
 
 
+export const GetSellerPlaybookParams = zod.object({
+  "id": zod.coerce.string().uuid()
+})
+
+
+export const getSellerPlaybookResponseEntriesItemContentTitleMax = 160;
+
+export const getSellerPlaybookResponseEntriesItemContentHypothesisMax = 2000;
+
+export const getSellerPlaybookResponseEntriesItemContentMatchTermsItemMax = 100;
+
+export const getSellerPlaybookResponseEntriesItemContentMatchTermsMax = 30;
+
+export const getSellerPlaybookResponseEntriesItemContentDiscoveryQuestionsItemMax = 500;
+
+export const getSellerPlaybookResponseEntriesItemContentDiscoveryQuestionsMax = 20;
+
+export const getSellerPlaybookResponseEntriesItemContentEmpatheticResponseMax = 1500;
+
+export const getSellerPlaybookResponseEntriesItemContentNegotiationOptionsItemMax = 1000;
+
+export const getSellerPlaybookResponseEntriesItemContentNegotiationOptionsMax = 20;
+
+export const getSellerPlaybookResponseEntriesItemContentFollowUpGuidanceItemMax = 1000;
+
+export const getSellerPlaybookResponseEntriesItemContentFollowUpGuidanceMax = 20;
+
+export const getSellerPlaybookResponseEntriesItemContentRisksItemMax = 1000;
+
+export const getSellerPlaybookResponseEntriesItemContentRisksMax = 20;
+
+export const getSellerPlaybookResponseEntriesItemContentEscalationConditionsItemMax = 1000;
+
+export const getSellerPlaybookResponseEntriesItemContentEscalationConditionsMax = 20;
+
+export const getSellerPlaybookResponseEntriesItemContentConfirmingEvidenceItemMax = 1000;
+
+export const getSellerPlaybookResponseEntriesItemContentConfirmingEvidenceMax = 20;
+
+export const getSellerPlaybookResponseEntriesItemContentRefutingEvidenceItemMax = 1000;
+
+export const getSellerPlaybookResponseEntriesItemContentRefutingEvidenceMax = 20;
+
+export const getSellerPlaybookResponseEntriesItemContentDoNotPromiseItemMax = 1000;
+
+export const getSellerPlaybookResponseEntriesItemContentDoNotPromiseMax = 20;
+
+
+
+
+
+export const GetSellerPlaybookResponse = zod.object({
+  "leadId": zod.string().uuid(),
+  "entries": zod.array(zod.object({
+  "slug": zod.string(),
+  "version": zod.number().int().min(1),
+  "content": zod.object({
+  "title": zod.string().min(1).max(getSellerPlaybookResponseEntriesItemContentTitleMax),
+  "kind": zod.enum(['SITUATION_HYPOTHESIS', 'OBJECTION_GUIDANCE']),
+  "hypothesis": zod.string().min(1).max(getSellerPlaybookResponseEntriesItemContentHypothesisMax),
+  "matchTerms": zod.array(zod.string().min(1).max(getSellerPlaybookResponseEntriesItemContentMatchTermsItemMax)).max(getSellerPlaybookResponseEntriesItemContentMatchTermsMax),
+  "discoveryQuestions": zod.array(zod.string().min(1).max(getSellerPlaybookResponseEntriesItemContentDiscoveryQuestionsItemMax)).min(1).max(getSellerPlaybookResponseEntriesItemContentDiscoveryQuestionsMax),
+  "empatheticResponse": zod.string().min(1).max(getSellerPlaybookResponseEntriesItemContentEmpatheticResponseMax),
+  "negotiationOptions": zod.array(zod.string().min(1).max(getSellerPlaybookResponseEntriesItemContentNegotiationOptionsItemMax)).min(1).max(getSellerPlaybookResponseEntriesItemContentNegotiationOptionsMax),
+  "followUpGuidance": zod.array(zod.string().min(1).max(getSellerPlaybookResponseEntriesItemContentFollowUpGuidanceItemMax)).min(1).max(getSellerPlaybookResponseEntriesItemContentFollowUpGuidanceMax),
+  "risks": zod.array(zod.string().min(1).max(getSellerPlaybookResponseEntriesItemContentRisksItemMax)).min(1).max(getSellerPlaybookResponseEntriesItemContentRisksMax),
+  "escalationConditions": zod.array(zod.string().min(1).max(getSellerPlaybookResponseEntriesItemContentEscalationConditionsItemMax)).min(1).max(getSellerPlaybookResponseEntriesItemContentEscalationConditionsMax),
+  "confirmingEvidence": zod.array(zod.string().min(1).max(getSellerPlaybookResponseEntriesItemContentConfirmingEvidenceItemMax)).min(1).max(getSellerPlaybookResponseEntriesItemContentConfirmingEvidenceMax),
+  "refutingEvidence": zod.array(zod.string().min(1).max(getSellerPlaybookResponseEntriesItemContentRefutingEvidenceItemMax)).min(1).max(getSellerPlaybookResponseEntriesItemContentRefutingEvidenceMax),
+  "doNotPromise": zod.array(zod.string().min(1).max(getSellerPlaybookResponseEntriesItemContentDoNotPromiseItemMax)).min(1).max(getSellerPlaybookResponseEntriesItemContentDoNotPromiseMax)
+}),
+  "sourceProvenance": zod.array(zod.object({
+  "sourceId": zod.string(),
+  "title": zod.string(),
+  "url": zod.string().url(),
+  "accessedAt": zod.string().datetime({"offset":true}),
+  "relevance": zod.string(),
+  "scopeLimit": zod.string()
+})).min(1),
+  "updatedBy": zod.string(),
+  "updatedAt": zod.string().datetime({"offset":true}),
+  "revisions": zod.array(zod.object({
+  "version": zod.number().int().min(1),
+  "changeReason": zod.string(),
+  "actor": zod.string(),
+  "recordedAt": zod.string().datetime({"offset":true})
+})),
+  "relevance": zod.object({
+  "status": zod.enum(['SELLER_REPORTED_TOPIC_TO_CONFIRM', 'GENERAL_QUESTION']),
+  "reason": zod.string(),
+  "evidenceRefs": zod.array(zod.string())
+})
+}))
+})
+
+
+export const updateSellerPlaybookEntryPathSlugMax = 100;
+
+
+
+export const UpdateSellerPlaybookEntryParams = zod.object({
+  "id": zod.coerce.string().uuid(),
+  "slug": zod.coerce.string().min(1).max(updateSellerPlaybookEntryPathSlugMax)
+})
+
+
+export const updateSellerPlaybookEntryBodyChangeReasonMin = 5;
+export const updateSellerPlaybookEntryBodyChangeReasonMax = 500;
+
+export const updateSellerPlaybookEntryBodyContentTitleMax = 160;
+
+export const updateSellerPlaybookEntryBodyContentHypothesisMax = 2000;
+
+export const updateSellerPlaybookEntryBodyContentDiscoveryQuestionsItemMax = 500;
+
+export const updateSellerPlaybookEntryBodyContentDiscoveryQuestionsMax = 20;
+
+export const updateSellerPlaybookEntryBodyContentEmpatheticResponseMax = 1500;
+
+export const updateSellerPlaybookEntryBodyContentNegotiationOptionsItemMax = 1000;
+
+export const updateSellerPlaybookEntryBodyContentNegotiationOptionsMax = 20;
+
+export const updateSellerPlaybookEntryBodyContentFollowUpGuidanceItemMax = 1000;
+
+export const updateSellerPlaybookEntryBodyContentFollowUpGuidanceMax = 20;
+
+export const updateSellerPlaybookEntryBodyContentRisksItemMax = 1000;
+
+export const updateSellerPlaybookEntryBodyContentRisksMax = 20;
+
+export const updateSellerPlaybookEntryBodyContentEscalationConditionsItemMax = 1000;
+
+export const updateSellerPlaybookEntryBodyContentEscalationConditionsMax = 20;
+
+export const updateSellerPlaybookEntryBodyContentConfirmingEvidenceItemMax = 1000;
+
+export const updateSellerPlaybookEntryBodyContentConfirmingEvidenceMax = 20;
+
+export const updateSellerPlaybookEntryBodyContentRefutingEvidenceItemMax = 1000;
+
+export const updateSellerPlaybookEntryBodyContentRefutingEvidenceMax = 20;
+
+export const updateSellerPlaybookEntryBodyContentDoNotPromiseItemMax = 1000;
+
+export const updateSellerPlaybookEntryBodyContentDoNotPromiseMax = 20;
+
+
+
+export const UpdateSellerPlaybookEntryBody = zod.object({
+  "expectedVersion": zod.number().int().min(1),
+  "changeReason": zod.string().min(updateSellerPlaybookEntryBodyChangeReasonMin).max(updateSellerPlaybookEntryBodyChangeReasonMax),
+  "content": zod.object({
+  "title": zod.string().min(1).max(updateSellerPlaybookEntryBodyContentTitleMax),
+  "hypothesis": zod.string().min(1).max(updateSellerPlaybookEntryBodyContentHypothesisMax),
+  "discoveryQuestions": zod.array(zod.string().min(1).max(updateSellerPlaybookEntryBodyContentDiscoveryQuestionsItemMax)).min(1).max(updateSellerPlaybookEntryBodyContentDiscoveryQuestionsMax),
+  "empatheticResponse": zod.string().min(1).max(updateSellerPlaybookEntryBodyContentEmpatheticResponseMax),
+  "negotiationOptions": zod.array(zod.string().min(1).max(updateSellerPlaybookEntryBodyContentNegotiationOptionsItemMax)).min(1).max(updateSellerPlaybookEntryBodyContentNegotiationOptionsMax),
+  "followUpGuidance": zod.array(zod.string().min(1).max(updateSellerPlaybookEntryBodyContentFollowUpGuidanceItemMax)).min(1).max(updateSellerPlaybookEntryBodyContentFollowUpGuidanceMax),
+  "risks": zod.array(zod.string().min(1).max(updateSellerPlaybookEntryBodyContentRisksItemMax)).min(1).max(updateSellerPlaybookEntryBodyContentRisksMax),
+  "escalationConditions": zod.array(zod.string().min(1).max(updateSellerPlaybookEntryBodyContentEscalationConditionsItemMax)).min(1).max(updateSellerPlaybookEntryBodyContentEscalationConditionsMax),
+  "confirmingEvidence": zod.array(zod.string().min(1).max(updateSellerPlaybookEntryBodyContentConfirmingEvidenceItemMax)).min(1).max(updateSellerPlaybookEntryBodyContentConfirmingEvidenceMax),
+  "refutingEvidence": zod.array(zod.string().min(1).max(updateSellerPlaybookEntryBodyContentRefutingEvidenceItemMax)).min(1).max(updateSellerPlaybookEntryBodyContentRefutingEvidenceMax),
+  "doNotPromise": zod.array(zod.string().min(1).max(updateSellerPlaybookEntryBodyContentDoNotPromiseItemMax)).min(1).max(updateSellerPlaybookEntryBodyContentDoNotPromiseMax)
+})
+})
+
+
+export const updateSellerPlaybookEntryResponseContentTitleMax = 160;
+
+export const updateSellerPlaybookEntryResponseContentHypothesisMax = 2000;
+
+export const updateSellerPlaybookEntryResponseContentMatchTermsItemMax = 100;
+
+export const updateSellerPlaybookEntryResponseContentMatchTermsMax = 30;
+
+export const updateSellerPlaybookEntryResponseContentDiscoveryQuestionsItemMax = 500;
+
+export const updateSellerPlaybookEntryResponseContentDiscoveryQuestionsMax = 20;
+
+export const updateSellerPlaybookEntryResponseContentEmpatheticResponseMax = 1500;
+
+export const updateSellerPlaybookEntryResponseContentNegotiationOptionsItemMax = 1000;
+
+export const updateSellerPlaybookEntryResponseContentNegotiationOptionsMax = 20;
+
+export const updateSellerPlaybookEntryResponseContentFollowUpGuidanceItemMax = 1000;
+
+export const updateSellerPlaybookEntryResponseContentFollowUpGuidanceMax = 20;
+
+export const updateSellerPlaybookEntryResponseContentRisksItemMax = 1000;
+
+export const updateSellerPlaybookEntryResponseContentRisksMax = 20;
+
+export const updateSellerPlaybookEntryResponseContentEscalationConditionsItemMax = 1000;
+
+export const updateSellerPlaybookEntryResponseContentEscalationConditionsMax = 20;
+
+export const updateSellerPlaybookEntryResponseContentConfirmingEvidenceItemMax = 1000;
+
+export const updateSellerPlaybookEntryResponseContentConfirmingEvidenceMax = 20;
+
+export const updateSellerPlaybookEntryResponseContentRefutingEvidenceItemMax = 1000;
+
+export const updateSellerPlaybookEntryResponseContentRefutingEvidenceMax = 20;
+
+export const updateSellerPlaybookEntryResponseContentDoNotPromiseItemMax = 1000;
+
+export const updateSellerPlaybookEntryResponseContentDoNotPromiseMax = 20;
+
+
+
+
+
+export const UpdateSellerPlaybookEntryResponse = zod.object({
+  "slug": zod.string(),
+  "version": zod.number().int().min(1),
+  "content": zod.object({
+  "title": zod.string().min(1).max(updateSellerPlaybookEntryResponseContentTitleMax),
+  "kind": zod.enum(['SITUATION_HYPOTHESIS', 'OBJECTION_GUIDANCE']),
+  "hypothesis": zod.string().min(1).max(updateSellerPlaybookEntryResponseContentHypothesisMax),
+  "matchTerms": zod.array(zod.string().min(1).max(updateSellerPlaybookEntryResponseContentMatchTermsItemMax)).max(updateSellerPlaybookEntryResponseContentMatchTermsMax),
+  "discoveryQuestions": zod.array(zod.string().min(1).max(updateSellerPlaybookEntryResponseContentDiscoveryQuestionsItemMax)).min(1).max(updateSellerPlaybookEntryResponseContentDiscoveryQuestionsMax),
+  "empatheticResponse": zod.string().min(1).max(updateSellerPlaybookEntryResponseContentEmpatheticResponseMax),
+  "negotiationOptions": zod.array(zod.string().min(1).max(updateSellerPlaybookEntryResponseContentNegotiationOptionsItemMax)).min(1).max(updateSellerPlaybookEntryResponseContentNegotiationOptionsMax),
+  "followUpGuidance": zod.array(zod.string().min(1).max(updateSellerPlaybookEntryResponseContentFollowUpGuidanceItemMax)).min(1).max(updateSellerPlaybookEntryResponseContentFollowUpGuidanceMax),
+  "risks": zod.array(zod.string().min(1).max(updateSellerPlaybookEntryResponseContentRisksItemMax)).min(1).max(updateSellerPlaybookEntryResponseContentRisksMax),
+  "escalationConditions": zod.array(zod.string().min(1).max(updateSellerPlaybookEntryResponseContentEscalationConditionsItemMax)).min(1).max(updateSellerPlaybookEntryResponseContentEscalationConditionsMax),
+  "confirmingEvidence": zod.array(zod.string().min(1).max(updateSellerPlaybookEntryResponseContentConfirmingEvidenceItemMax)).min(1).max(updateSellerPlaybookEntryResponseContentConfirmingEvidenceMax),
+  "refutingEvidence": zod.array(zod.string().min(1).max(updateSellerPlaybookEntryResponseContentRefutingEvidenceItemMax)).min(1).max(updateSellerPlaybookEntryResponseContentRefutingEvidenceMax),
+  "doNotPromise": zod.array(zod.string().min(1).max(updateSellerPlaybookEntryResponseContentDoNotPromiseItemMax)).min(1).max(updateSellerPlaybookEntryResponseContentDoNotPromiseMax)
+}),
+  "sourceProvenance": zod.array(zod.object({
+  "sourceId": zod.string(),
+  "title": zod.string(),
+  "url": zod.string().url(),
+  "accessedAt": zod.string().datetime({"offset":true}),
+  "relevance": zod.string(),
+  "scopeLimit": zod.string()
+})).min(1),
+  "updatedBy": zod.string(),
+  "updatedAt": zod.string().datetime({"offset":true}),
+  "revisions": zod.array(zod.object({
+  "version": zod.number().int().min(1),
+  "changeReason": zod.string(),
+  "actor": zod.string(),
+  "recordedAt": zod.string().datetime({"offset":true})
+})),
+  "relevance": zod.object({
+  "status": zod.enum(['SELLER_REPORTED_TOPIC_TO_CONFIRM', 'GENERAL_QUESTION']),
+  "reason": zod.string(),
+  "evidenceRefs": zod.array(zod.string())
+})
+})
+
+

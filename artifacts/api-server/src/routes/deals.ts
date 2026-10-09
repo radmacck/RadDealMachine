@@ -11,6 +11,7 @@ import { intakePropertyEvidence } from "../services/evidence-intake";
 import * as sellerContacts from "../services/seller-contact-store";
 import * as sellerContactEnrichment from "../services/seller-contact-enrichment";
 import * as acquisitionQueue from "../services/acquisition-queue-store";
+import * as sellerPlaybooks from "../services/seller-playbook-store";
 
 const router: IRouter = Router();
 // Trim strings before schema validation so required fields cannot be whitespace-only.
@@ -62,6 +63,16 @@ router.post("/leads",research,async (req,res) => {
   send(res,contract.CreateLeadResponse,await store.createLead(parse(contract.CreateLeadBody,req.body),String(res.locals.actor)),201);
 });
 router.get("/leads/:id",async (req,res) => send(res,contract.GetLeadResponse,await store.leadDetail(leadId(req))));
+router.get("/leads/:id/seller-playbook",async (req,res) => {
+  send(res,contract.GetSellerPlaybookResponse,await sellerPlaybooks.getSellerPlaybook(leadId(req)));
+});
+router.put("/leads/:id/seller-playbook/:slug",roles("OWNER"),async (req,res) => {
+  const {id,slug} = parse(contract.UpdateSellerPlaybookEntryParams,req.params);
+  const body = parse(contract.UpdateSellerPlaybookEntryBody,req.body);
+  send(res,contract.UpdateSellerPlaybookEntryResponse,await sellerPlaybooks.updateSellerPlaybookEntry(
+    id,slug,body.expectedVersion,body.changeReason,body.content,String(res.locals.actor),
+  ));
+});
 router.get("/leads/:id/contact-paths",contactResearch,async (req,res) => {
   send(res,contract.GetSellerContactPathsResponse,await sellerContacts.getSellerContactPaths(leadId(req)));
 });

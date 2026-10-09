@@ -1235,8 +1235,131 @@ paths:
                     state: { type: string, enum: [AVAILABLE, PENDING_CONNECTION] }
                     reason: { type: string }
                     nextAction: { type: string }
+  /leads/{id}/seller-playbook:
+    get:
+      operationId: getSellerPlaybook
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
+      responses:
+        "200":
+          description: Versioned seller conversation guidance for the selected persisted lead; no motivation is asserted
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/SellerPlaybookCollectionResponse" }
+        "401": { description: Sign-in required }
+        "403": { description: Workspace membership required }
+        "404": { description: Lead not found }
+  /leads/{id}/seller-playbook/{slug}:
+    put:
+      operationId: updateSellerPlaybookEntry
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
+        - { name: slug, in: path, required: true, schema: { type: string, minLength: 1, maxLength: 100 } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/SellerPlaybookUpdateRequest" }
+      responses:
+        "200":
+          description: New owner-authored version; previous revisions remain immutable
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/SellerPlaybookEntry" }
+        "401": { description: Sign-in required }
+        "403": { description: Owner role required }
+        "404": { description: Playbook entry not found }
+        "409": { description: The expected playbook version is stale }
 components:
   schemas:
+    SellerPlaybookSource:
+      type: object
+      required: [sourceId, title, url, accessedAt, relevance, scopeLimit]
+      properties:
+        sourceId: { type: string }
+        title: { type: string }
+        url: { type: string, format: uri }
+        accessedAt: { type: string, format: date-time }
+        relevance: { type: string }
+        scopeLimit: { type: string }
+    SellerPlaybookRevision:
+      type: object
+      required: [version, changeReason, actor, recordedAt]
+      properties:
+        version: { type: integer, minimum: 1 }
+        changeReason: { type: string }
+        actor: { type: string }
+        recordedAt: { type: string, format: date-time }
+    SellerPlaybookRelevance:
+      type: object
+      required: [status, reason, evidenceRefs]
+      properties:
+        status: { type: string, enum: [SELLER_REPORTED_TOPIC_TO_CONFIRM, GENERAL_QUESTION] }
+        reason: { type: string }
+        evidenceRefs: { type: array, items: { type: string } }
+    SellerPlaybookContent:
+      type: object
+      required: [title, kind, hypothesis, matchTerms, discoveryQuestions, empatheticResponse, negotiationOptions, followUpGuidance, risks, escalationConditions, confirmingEvidence, refutingEvidence, doNotPromise]
+      properties:
+        title: { type: string, minLength: 1, maxLength: 160 }
+        kind: { type: string, enum: [SITUATION_HYPOTHESIS, OBJECTION_GUIDANCE] }
+        hypothesis: { type: string, minLength: 1, maxLength: 2000 }
+        matchTerms: { type: array, items: { type: string, minLength: 1, maxLength: 100 }, maxItems: 30 }
+        discoveryQuestions: { type: array, items: { type: string, minLength: 1, maxLength: 500 }, minItems: 1, maxItems: 20 }
+        empatheticResponse: { type: string, minLength: 1, maxLength: 1500 }
+        negotiationOptions: { type: array, items: { type: string, minLength: 1, maxLength: 1000 }, minItems: 1, maxItems: 20 }
+        followUpGuidance: { type: array, items: { type: string, minLength: 1, maxLength: 1000 }, minItems: 1, maxItems: 20 }
+        risks: { type: array, items: { type: string, minLength: 1, maxLength: 1000 }, minItems: 1, maxItems: 20 }
+        escalationConditions: { type: array, items: { type: string, minLength: 1, maxLength: 1000 }, minItems: 1, maxItems: 20 }
+        confirmingEvidence: { type: array, items: { type: string, minLength: 1, maxLength: 1000 }, minItems: 1, maxItems: 20 }
+        refutingEvidence: { type: array, items: { type: string, minLength: 1, maxLength: 1000 }, minItems: 1, maxItems: 20 }
+        doNotPromise: { type: array, items: { type: string, minLength: 1, maxLength: 1000 }, minItems: 1, maxItems: 20 }
+    SellerPlaybookEditableContent:
+      type: object
+      required: [title, hypothesis, discoveryQuestions, empatheticResponse, negotiationOptions, followUpGuidance, risks, escalationConditions, confirmingEvidence, refutingEvidence, doNotPromise]
+      properties:
+        title: { type: string, minLength: 1, maxLength: 160 }
+        hypothesis: { type: string, minLength: 1, maxLength: 2000 }
+        discoveryQuestions: { type: array, items: { type: string, minLength: 1, maxLength: 500 }, minItems: 1, maxItems: 20 }
+        empatheticResponse: { type: string, minLength: 1, maxLength: 1500 }
+        negotiationOptions: { type: array, items: { type: string, minLength: 1, maxLength: 1000 }, minItems: 1, maxItems: 20 }
+        followUpGuidance: { type: array, items: { type: string, minLength: 1, maxLength: 1000 }, minItems: 1, maxItems: 20 }
+        risks: { type: array, items: { type: string, minLength: 1, maxLength: 1000 }, minItems: 1, maxItems: 20 }
+        escalationConditions: { type: array, items: { type: string, minLength: 1, maxLength: 1000 }, minItems: 1, maxItems: 20 }
+        confirmingEvidence: { type: array, items: { type: string, minLength: 1, maxLength: 1000 }, minItems: 1, maxItems: 20 }
+        refutingEvidence: { type: array, items: { type: string, minLength: 1, maxLength: 1000 }, minItems: 1, maxItems: 20 }
+        doNotPromise: { type: array, items: { type: string, minLength: 1, maxLength: 1000 }, minItems: 1, maxItems: 20 }
+    SellerPlaybookEntry:
+      type: object
+      required: [slug, version, content, sourceProvenance, updatedBy, updatedAt, revisions, relevance]
+      properties:
+        slug: { type: string }
+        version: { type: integer, minimum: 1 }
+        content: { $ref: "#/components/schemas/SellerPlaybookContent" }
+        sourceProvenance: { type: array, items: { $ref: "#/components/schemas/SellerPlaybookSource" }, minItems: 1 }
+        updatedBy: { type: string }
+        updatedAt: { type: string, format: date-time }
+        revisions: { type: array, items: { $ref: "#/components/schemas/SellerPlaybookRevision" } }
+        relevance: { $ref: "#/components/schemas/SellerPlaybookRelevance" }
+    SellerPlaybookCollectionResponse:
+      type: object
+      required: [leadId, entries]
+      properties:
+        leadId: { type: string, format: uuid }
+        entries: { type: array, items: { $ref: "#/components/schemas/SellerPlaybookEntry" } }
+    SellerPlaybookUpdateRequest:
+      type: object
+      required: [expectedVersion, changeReason, content]
+      properties:
+        expectedVersion: { type: integer, minimum: 1 }
+        changeReason: { type: string, minLength: 5, maxLength: 500 }
+        content: { $ref: "#/components/schemas/SellerPlaybookEditableContent" }
+    UpdateSellerPlaybookParams:
+      type: object
+      required: [id, slug]
+      properties:
+        id: { type: string, format: uuid }
+        slug: { type: string, minLength: 1, maxLength: 100 }
     UnconnectedPropertySourceCapability:
       type: object
       required: [id, name, category, coverage, status, reason, nextAction]

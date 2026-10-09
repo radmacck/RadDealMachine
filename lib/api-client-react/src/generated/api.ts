@@ -108,6 +108,9 @@ import type {
   SellerOfferPortalIssueInput,
   SellerOfferPortalIssueResponse,
   SellerOfferPortalResponseInput,
+  SellerPlaybookCollectionResponse,
+  SellerPlaybookEntry,
+  SellerPlaybookUpdateRequest,
   SourceCompsInput,
   SourceRefreshInput,
   SourceResearch,
@@ -7294,4 +7297,160 @@ export function useGetWorkerCapabilities<TData = Awaited<ReturnType<typeof getWo
 
 
 
+
+export const getGetSellerPlaybookUrl = (id: string,) => {
+
+
+
+
+  return `/api/leads/${id}/seller-playbook`
+}
+
+export const getSellerPlaybook = async (id: string, options?: Parameters<typeof customFetch>[1]): Promise<SellerPlaybookCollectionResponse> => {
+
+  return customFetch<SellerPlaybookCollectionResponse>(getGetSellerPlaybookUrl(id),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetSellerPlaybookQueryKey = (id: string,) => {
+    return [
+    `/api/leads/${id}/seller-playbook`
+    ] as const;
+    }
+
+
+export const getGetSellerPlaybookQueryOptions = <TData = Awaited<ReturnType<typeof getSellerPlaybook>>, TError = ErrorType<void>>(id: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getSellerPlaybook>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetSellerPlaybookQueryKey(id);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getSellerPlaybook>>> = ({ signal }) => getSellerPlaybook(id, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: id !== null && id !== undefined, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getSellerPlaybook>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetSellerPlaybookQueryResult = NonNullable<Awaited<ReturnType<typeof getSellerPlaybook>>>
+export type GetSellerPlaybookQueryError = ErrorType<void>
+
+
+
+export function useGetSellerPlaybook<TData = Awaited<ReturnType<typeof getSellerPlaybook>>, TError = ErrorType<void>>(
+ id: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getSellerPlaybook>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetSellerPlaybookQueryOptions(id,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getUpdateSellerPlaybookEntryUrl = (id: string,
+    slug: string,) => {
+
+
+
+
+  return `/api/leads/${id}/seller-playbook/${slug}`
+}
+
+export const updateSellerPlaybookEntry = async (id: string,
+    slug: string,
+    sellerPlaybookUpdateRequest: SellerPlaybookUpdateRequest, options?: Parameters<typeof customFetch>[1]): Promise<SellerPlaybookEntry> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return customFetch<SellerPlaybookEntry>(getUpdateSellerPlaybookEntryUrl(id,slug),
+  {
+    ...options,
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(sellerPlaybookUpdateRequest)
+  }
+);}
+
+
+
+
+
+export const getUpdateSellerPlaybookEntryMutationKey = () => ['updateSellerPlaybookEntry'] as const;
+
+export const getUpdateSellerPlaybookEntryMutationOptions = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateSellerPlaybookEntry>>, TError,UpdateSellerPlaybookEntryMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof updateSellerPlaybookEntry>>, TError,UpdateSellerPlaybookEntryMutationVariables, TContext> => {
+
+const mutationKey = getUpdateSellerPlaybookEntryMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof updateSellerPlaybookEntry>>, UpdateSellerPlaybookEntryMutationVariables> = (props) => {
+          const {id,slug,data} = props ?? {};
+
+          return  updateSellerPlaybookEntry(id,slug,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type UpdateSellerPlaybookEntryMutationResult = NonNullable<Awaited<ReturnType<typeof updateSellerPlaybookEntry>>>
+    export type UpdateSellerPlaybookEntryMutationBody = BodyType<SellerPlaybookUpdateRequest>
+    export type UpdateSellerPlaybookEntryMutationError = ErrorType<void>
+    export type UpdateSellerPlaybookEntryMutationVariables = {id: string;slug: string;data: BodyType<SellerPlaybookUpdateRequest>}
+
+    export const useUpdateSellerPlaybookEntry = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateSellerPlaybookEntry>>, TError,UpdateSellerPlaybookEntryMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof updateSellerPlaybookEntry>>,
+        TError,
+        UpdateSellerPlaybookEntryMutationVariables,
+        TContext
+      > => {
+      return useMutation(getUpdateSellerPlaybookEntryMutationOptions(options));
+    }
 

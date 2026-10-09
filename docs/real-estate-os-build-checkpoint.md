@@ -163,3 +163,32 @@ The public dataset/catalog and documented query endpoint were accessed without a
 **Durable next implementation task after this slice:** build the source-backed, editable, versioned seller motivation/negotiation playbook requested by the founder. Treat all situations as hypotheses until seller evidence confirms them; add discovery questions, empathy-first framing, objection responses, alternative structures, risks, cadence, prohibited promises, escalation gates, and evidence that confirms/refutes each hypothesis. Add the structured, jurisdiction-gated clause/addendum review boundary without auto-inserting unreviewed legal text. Keep deterministic economics and offer authority unchanged unless a separately authorized versioned calculation is completed. Persisted exercises must use synthetic labels; no real seller conversation or legal review is implied.
 
 **Turn state:** implementation and verification for this accepted slice are stopped at turn end. The configured web/API workflows are running; queued suggestions or backlog notes do not execute automatically.
+
+## Seller motivation and negotiation playbook (#39) — 2026-10-09
+
+**Status:** Implemented and synthetic-persisted-exercised. This adds call-flow guidance; it does not establish seller motivation, contact a seller, authorize terms, or create legal documents.
+
+- Added a 15-entry, source-linked playbook covering seller-situation hypotheses and common objections. Each entry includes questions, empathy-first response guidance, optional negotiation structures, follow-up guidance, risks/escalations, do-not-promise boundaries, and evidence that could confirm or refute the hypothesis.
+- Added persisted playbook entries and append-only revision history. Seeding is idempotent; owner-only edits require a reason and expected version, preserve source/matching provenance, and reject stale revisions.
+- Added GET/PUT API contracts and generated client hooks. GET is membership-protected; edits are OWNER-only.
+- Integrated the persisted playbook directly below the existing seller call brief. Seller-reported related topics sort first but remain INDICATED and explicitly “to confirm”; property flags and AI hypotheses do not trigger a motivation match. All entries are expandable, and the owner can revise them in place. Suggestions do not update lead economics, offer authority, seller communications, or transaction state.
+- Added `docs/seller-negotiation-playbook-sources.md`. Two public Harvard PON references are used only for general listening/question methods. Situation labels and negotiation guidance are original synthesis, not sourced facts about a seller. No legal language is generated or represented as approved.
+
+**Persisted exercise:** `pnpm --filter @workspace/api-server run exercise:seller-playbook` — passed in an isolated PostgreSQL schema and labeled synthetic. It persisted 15 seeded entries, a synthetic seller-reported INDICATED statement, matching evidence reference, and revision 1→2; a stale version edit was rejected; revision/audit rows were present; lead stage/version/asking price and analysis were unchanged. The isolated schema was cleaned up. No real call or seller outcome was used.
+
+**Checks:**
+
+- `pnpm --filter @workspace/api-spec run codegen` — passed after aligning component-schema names with generated operation types.
+- `pnpm --filter @workspace/db run push` — passed; only the development schema was updated with the playbook tables.
+- `pnpm --filter @workspace/deal-domain test` — **103/103 passed**, including four focused playbook tests for topic coverage, public/AI evidence exclusion, seller-reported confirmation questions, and no automatic price/term/clause changes.
+- `pnpm --filter @workspace/api-server run test:auth` — **7/7 passed**, including OWNER-only role enforcement.
+- API server and web typechecks — passed.
+- `pnpm --filter @workspace/api-server run build` — passed.
+- `PORT=20639 BASE_PATH=/ pnpm --filter @workspace/radical-deal-os run build` — passed; existing source-map lookup and >500 kB chunk warnings remain.
+- API/web managed workflows were restarted and reported `Server listening` / Vite `ready`. Preview screenshot showed the logged-out sign-in page without browser console errors. The capture has no authenticated owner session, so signed-in rendering and owner editing were not browser-verified.
+
+**Real-vs-synthetic boundary:** the persisted exercise was synthetic only. No real seller contact, seller response, negotiation, offer change, legal review, signature, or external action occurred or is claimed.
+
+**Next buildable slice:** jurisdiction-gated clause/addendum request and qualified-review workflow at the existing transaction boundary; keep generated/unreviewed language blocked and do not invent legal templates. P2 remains the earliest overall external blocker: no newly permitted/exercisable independent listing source was established in this turn.
+
+**Turn state:** this accepted implementation turn is stopped. No background task is running; web and API workflows are running.

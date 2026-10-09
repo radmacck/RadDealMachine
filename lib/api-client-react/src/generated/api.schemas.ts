@@ -5,6 +5,238 @@
  * Radical Deal OS seller intake, underwriting, conversations and approved offers
  * OpenAPI spec version: 1.0.0
  */
+export interface SellerPlaybookSource {
+  sourceId: string;
+  title: string;
+  url: string;
+  accessedAt: string;
+  relevance: string;
+  scopeLimit: string;
+}
+
+export interface SellerPlaybookRevision {
+  /** @minimum 1 */
+  version: number;
+  changeReason: string;
+  actor: string;
+  recordedAt: string;
+}
+
+export type SellerPlaybookRelevanceStatus = typeof SellerPlaybookRelevanceStatus[keyof typeof SellerPlaybookRelevanceStatus];
+
+
+export const SellerPlaybookRelevanceStatus = {
+  SELLER_REPORTED_TOPIC_TO_CONFIRM: 'SELLER_REPORTED_TOPIC_TO_CONFIRM',
+  GENERAL_QUESTION: 'GENERAL_QUESTION',
+} as const;
+
+export interface SellerPlaybookRelevance {
+  status: SellerPlaybookRelevanceStatus;
+  reason: string;
+  evidenceRefs: string[];
+}
+
+export type SellerPlaybookContentKind = typeof SellerPlaybookContentKind[keyof typeof SellerPlaybookContentKind];
+
+
+export const SellerPlaybookContentKind = {
+  SITUATION_HYPOTHESIS: 'SITUATION_HYPOTHESIS',
+  OBJECTION_GUIDANCE: 'OBJECTION_GUIDANCE',
+} as const;
+
+export interface SellerPlaybookContent {
+  /**
+     * @minLength 1
+     * @maxLength 160
+     */
+  title: string;
+  kind: SellerPlaybookContentKind;
+  /**
+     * @minLength 1
+     * @maxLength 2000
+     */
+  hypothesis: string;
+  /**
+     * @maxItems 30
+     * @items.minLength 1
+     * @items.maxLength 100
+     */
+  matchTerms: string[];
+  /**
+     * @minItems 1
+     * @maxItems 20
+     * @items.minLength 1
+     * @items.maxLength 500
+     */
+  discoveryQuestions: string[];
+  /**
+     * @minLength 1
+     * @maxLength 1500
+     */
+  empatheticResponse: string;
+  /**
+     * @minItems 1
+     * @maxItems 20
+     * @items.minLength 1
+     * @items.maxLength 1000
+     */
+  negotiationOptions: string[];
+  /**
+     * @minItems 1
+     * @maxItems 20
+     * @items.minLength 1
+     * @items.maxLength 1000
+     */
+  followUpGuidance: string[];
+  /**
+     * @minItems 1
+     * @maxItems 20
+     * @items.minLength 1
+     * @items.maxLength 1000
+     */
+  risks: string[];
+  /**
+     * @minItems 1
+     * @maxItems 20
+     * @items.minLength 1
+     * @items.maxLength 1000
+     */
+  escalationConditions: string[];
+  /**
+     * @minItems 1
+     * @maxItems 20
+     * @items.minLength 1
+     * @items.maxLength 1000
+     */
+  confirmingEvidence: string[];
+  /**
+     * @minItems 1
+     * @maxItems 20
+     * @items.minLength 1
+     * @items.maxLength 1000
+     */
+  refutingEvidence: string[];
+  /**
+     * @minItems 1
+     * @maxItems 20
+     * @items.minLength 1
+     * @items.maxLength 1000
+     */
+  doNotPromise: string[];
+}
+
+export interface SellerPlaybookEditableContent {
+  /**
+     * @minLength 1
+     * @maxLength 160
+     */
+  title: string;
+  /**
+     * @minLength 1
+     * @maxLength 2000
+     */
+  hypothesis: string;
+  /**
+     * @minItems 1
+     * @maxItems 20
+     * @items.minLength 1
+     * @items.maxLength 500
+     */
+  discoveryQuestions: string[];
+  /**
+     * @minLength 1
+     * @maxLength 1500
+     */
+  empatheticResponse: string;
+  /**
+     * @minItems 1
+     * @maxItems 20
+     * @items.minLength 1
+     * @items.maxLength 1000
+     */
+  negotiationOptions: string[];
+  /**
+     * @minItems 1
+     * @maxItems 20
+     * @items.minLength 1
+     * @items.maxLength 1000
+     */
+  followUpGuidance: string[];
+  /**
+     * @minItems 1
+     * @maxItems 20
+     * @items.minLength 1
+     * @items.maxLength 1000
+     */
+  risks: string[];
+  /**
+     * @minItems 1
+     * @maxItems 20
+     * @items.minLength 1
+     * @items.maxLength 1000
+     */
+  escalationConditions: string[];
+  /**
+     * @minItems 1
+     * @maxItems 20
+     * @items.minLength 1
+     * @items.maxLength 1000
+     */
+  confirmingEvidence: string[];
+  /**
+     * @minItems 1
+     * @maxItems 20
+     * @items.minLength 1
+     * @items.maxLength 1000
+     */
+  refutingEvidence: string[];
+  /**
+     * @minItems 1
+     * @maxItems 20
+     * @items.minLength 1
+     * @items.maxLength 1000
+     */
+  doNotPromise: string[];
+}
+
+export interface SellerPlaybookEntry {
+  slug: string;
+  /** @minimum 1 */
+  version: number;
+  content: SellerPlaybookContent;
+  /** @minItems 1 */
+  sourceProvenance: SellerPlaybookSource[];
+  updatedBy: string;
+  updatedAt: string;
+  revisions: SellerPlaybookRevision[];
+  relevance: SellerPlaybookRelevance;
+}
+
+export interface SellerPlaybookCollectionResponse {
+  leadId: string;
+  entries: SellerPlaybookEntry[];
+}
+
+export interface SellerPlaybookUpdateRequest {
+  /** @minimum 1 */
+  expectedVersion: number;
+  /**
+     * @minLength 5
+     * @maxLength 500
+     */
+  changeReason: string;
+  content: SellerPlaybookEditableContent;
+}
+
+export interface UpdateSellerPlaybookParams {
+  id: string;
+  /**
+     * @minLength 1
+     * @maxLength 100
+     */
+  slug: string;
+}
+
 export type UnconnectedPropertySourceCapabilityStatus = typeof UnconnectedPropertySourceCapabilityStatus[keyof typeof UnconnectedPropertySourceCapabilityStatus];
 
 
