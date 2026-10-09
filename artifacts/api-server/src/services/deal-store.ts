@@ -602,6 +602,12 @@ async function persistCallRelevance(
 }
 
 export async function recordCall(id: string, input: CallInput, actor: string, now = new Date()): Promise<LeadDetail> {
+  if (input.occurredAt) {
+    const occurred = Date.parse(input.occurredAt);
+    if (!Number.isFinite(occurred) || occurred > now.getTime()) {
+      throw new DomainError("Actual call time must be a valid timestamp no later than the recorded call result.", 400);
+    }
+  }
   return db.transaction(async tx => {
     const row = await lockedLead(tx,id,input.version);
     const executed = ["UNDER_CONTRACT","BUYER_MATCHED","BUYER_INTERESTED","BUYER_COMMITTED","CLOSING"].includes(row.stage);

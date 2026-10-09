@@ -2514,6 +2514,220 @@ export interface DealOutcomeInput {
   occurredAt?: string;
 }
 
+export type OutcomeActualsInputSource = typeof OutcomeActualsInputSource[keyof typeof OutcomeActualsInputSource];
+
+
+export const OutcomeActualsInputSource = {
+  APPRAISAL: 'APPRAISAL',
+  PAID_REPAIR_INVOICE: 'PAID_REPAIR_INVOICE',
+  INSPECTION: 'INSPECTION',
+  SELLER_REPORTED: 'SELLER_REPORTED',
+  CLOSING_RECORD: 'CLOSING_RECORD',
+  OTHER_DOCUMENTED: 'OTHER_DOCUMENTED',
+} as const;
+
+export type OutcomeActualsInputActualRepairsByCategory = {[key: string]: number};
+
+export type OutcomeActualsInputCauseCategoriesItem = typeof OutcomeActualsInputCauseCategoriesItem[keyof typeof OutcomeActualsInputCauseCategoriesItem];
+
+
+export const OutcomeActualsInputCauseCategoriesItem = {
+  SCOPE_CHANGE: 'SCOPE_CHANGE',
+  HIDDEN_CONDITION: 'HIDDEN_CONDITION',
+  MARKET_CHANGE: 'MARKET_CHANGE',
+  COMPARABLE_SELECTION: 'COMPARABLE_SELECTION',
+  PRICING_ERROR: 'PRICING_ERROR',
+  TIMING: 'TIMING',
+  ACCESS_LIMITATION: 'ACCESS_LIMITATION',
+  SELLER_REPORT: 'SELLER_REPORT',
+  BUYER_REPORT: 'BUYER_REPORT',
+  DOCUMENTED_EXTERNAL_CAUSE: 'DOCUMENTED_EXTERNAL_CAUSE',
+  OTHER: 'OTHER',
+} as const;
+
+export interface OutcomeActualsInput {
+  /**
+     * @minLength 8
+     * @maxLength 200
+     */
+  idempotencyKey: string;
+  analysisSnapshotId: string;
+  occurredAt: string;
+  source: OutcomeActualsInputSource;
+  /**
+     * @minimum 0
+     * @maximum 1000000000
+     */
+  actualArv?: number;
+  actualRepairsByCategory?: OutcomeActualsInputActualRepairsByCategory;
+  /**
+     * @minItems 1
+     * @maxItems 20
+     * @items.minLength 3
+     * @items.maxLength 2000
+     */
+  evidenceRefs: string[];
+  /**
+     * @minimum 0
+     * @maximum 1
+     */
+  confidence: number;
+  /** @maxItems 12 */
+  causeCategories: OutcomeActualsInputCauseCategoriesItem[];
+  /** @maxLength 3000 */
+  note?: string;
+}
+
+/**
+ * @nullable
+ */
+export type OutcomeObservationPredicted = { [key: string]: unknown } | null;
+
+/**
+ * @nullable
+ */
+export type OutcomeObservationActual = { [key: string]: unknown } | null;
+
+/**
+ * @nullable
+ */
+export type OutcomeObservationDelta = { [key: string]: unknown } | null;
+
+export type OutcomeObservationPayload = { [key: string]: unknown };
+
+export interface OutcomeObservation {
+  id: string;
+  leadId: string;
+  eventType: string;
+  sourceRecordType: string;
+  sourceRecordId: string;
+  source: string;
+  /** @nullable */
+  occurredAt: string | null;
+  recordedAt: string;
+  evidenceRefs: string[];
+  synthetic: boolean;
+  /**
+     * @minimum 0
+     * @maximum 1
+     * @nullable
+     */
+  confidence: number | null;
+  verificationState: string;
+  /** @nullable */
+  economicsSnapshotId: string | null;
+  /** @nullable */
+  decisionVersion: number | null;
+  /** @nullable */
+  predicted: OutcomeObservationPredicted;
+  /** @nullable */
+  actual: OutcomeObservationActual;
+  /** @nullable */
+  delta: OutcomeObservationDelta;
+  causeCategories: string[];
+  payload: OutcomeObservationPayload;
+}
+
+export type OutcomeCalibrationRecommendationStatus = typeof OutcomeCalibrationRecommendationStatus[keyof typeof OutcomeCalibrationRecommendationStatus];
+
+
+export const OutcomeCalibrationRecommendationStatus = {
+  INSUFFICIENT_EVIDENCE: 'INSUFFICIENT_EVIDENCE',
+  NO_RECOMMENDATION: 'NO_RECOMMENDATION',
+  PENDING_REVIEW: 'PENDING_REVIEW',
+  APPROVED_NOT_DEPLOYED: 'APPROVED_NOT_DEPLOYED',
+  REJECTED: 'REJECTED',
+  TEST_ONLY_NOT_DEPLOYABLE: 'TEST_ONLY_NOT_DEPLOYABLE',
+} as const;
+
+export interface OutcomeCalibrationRecommendation {
+  id: string;
+  metricKey: string;
+  currentRuleVersion: string;
+  proposedRuleVersion: string;
+  status: OutcomeCalibrationRecommendationStatus;
+  /** @minimum 0 */
+  sampleSize: number;
+  /** @minimum 1 */
+  minimumSampleSize: number;
+  observationRefs: string[];
+  summary: string;
+  synthetic: boolean;
+}
+
+export type OutcomeCalibrationReviewInputDecision = typeof OutcomeCalibrationReviewInputDecision[keyof typeof OutcomeCalibrationReviewInputDecision];
+
+
+export const OutcomeCalibrationReviewInputDecision = {
+  APPROVE_FOR_SEPARATE_CHANGE_REVIEW: 'APPROVE_FOR_SEPARATE_CHANGE_REVIEW',
+  REJECT: 'REJECT',
+} as const;
+
+export interface OutcomeCalibrationReviewInput {
+  decision: OutcomeCalibrationReviewInputDecision;
+  /**
+     * @minLength 5
+     * @maxLength 1000
+     */
+  note: string;
+}
+
+export type OutcomeLearningReportSampleSizes = {
+  /** @minimum 0 */
+  arv: number;
+  /** @minimum 0 */
+  repairs: number;
+};
+
+export type OutcomeLearningReportDeltasArv = {
+  /** @minimum 0 */
+  sampleSize: number;
+  /** @nullable */
+  mean: number | null;
+  /** @nullable */
+  median: number | null;
+};
+
+export type OutcomeLearningReportDeltasRepairs = {
+  /** @minimum 0 */
+  sampleSize: number;
+  /** @nullable */
+  mean: number | null;
+  /** @nullable */
+  median: number | null;
+};
+
+export type OutcomeLearningReportDeltas = {
+  arv: OutcomeLearningReportDeltasArv;
+  repairs: OutcomeLearningReportDeltasRepairs;
+};
+
+export type OutcomeLearningReportCalibrationStatus = typeof OutcomeLearningReportCalibrationStatus[keyof typeof OutcomeLearningReportCalibrationStatus];
+
+
+export const OutcomeLearningReportCalibrationStatus = {
+  INSUFFICIENT_EVIDENCE: 'INSUFFICIENT_EVIDENCE',
+  REVIEW_REQUIRED: 'REVIEW_REQUIRED',
+  NO_RECOMMENDATION: 'NO_RECOMMENDATION',
+} as const;
+
+export interface OutcomeLearningReport {
+  generatedAt: string;
+  /** @minimum 0 */
+  realOutcomeCount: number;
+  /** @minimum 0 */
+  syntheticOutcomeCount: number;
+  sampleSizes: OutcomeLearningReportSampleSizes;
+  deltas: OutcomeLearningReportDeltas;
+  ruleVersion: string;
+  calibrationStatus: OutcomeLearningReportCalibrationStatus;
+  missingData: string[];
+  recentOutcomes: OutcomeObservation[];
+  recommendations: OutcomeCalibrationRecommendation[];
+  liveRulesChanged: false;
+  canReview: boolean;
+}
+
 export type LeadInputPropertyType = typeof LeadInputPropertyType[keyof typeof LeadInputPropertyType];
 
 
@@ -3677,6 +3891,7 @@ export interface DealContract {
   commitmentSnapshot?: CommitmentSnapshot | null;
   cancelledAt?: string;
   outcomeRecordedAt?: string;
+  outcomeRecordedBy?: string;
   contingencies: string;
   /** @nullable */
   executedDocumentUrl?: string | null;
@@ -4854,6 +5069,8 @@ export interface CallInput {
   nextAction: string;
   /** @nullable */
   followUpAt: string | null;
+  /** Optional actual call time. Omit when only the recording time is known. */
+  occurredAt?: string;
   /**
      * @minimum 0
      * @maximum 1

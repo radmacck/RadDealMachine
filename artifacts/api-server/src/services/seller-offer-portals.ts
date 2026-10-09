@@ -7,6 +7,7 @@ import {
 import * as schemas from "@workspace/api-zod";
 import { DomainError, assertOperationsRole, type OfferActor } from "@workspace/deal-domain";
 import { audit, leadDetail, lockedLead, move } from "./deal-store";
+import { queueJob } from "./operations-records";
 
 type Tx = Parameters<Parameters<typeof db.transaction>[0]>[0];
 type OfferTerms = {
@@ -395,6 +396,9 @@ export async function respondToSellerOfferPortal(
     }).where(eq(leadsTable.id, portal.leadId));
     await audit(tx, actor, "SELLER_OFFER_PORTAL_RESPONSE", portal.leadId,
       `${canonical.action} recorded for offer ${portal.offerId}; portal event ${canonical.eventKey}; one-time code verified control of the owner-confirmed ${verification.deliveryMethod} contact using ownership evidence ${verification.identityEvidenceId}. Respondent name remains self-reported; no legal authority, contract or new commercial authority was created.`);
+    await queueJob(tx, "EVALUATE_DECISION", portal.leadId,
+      `decision:${portal.leadId}:seller-portal:${portal.id}:${canonical.eventKey}`, actor,
+      { trigger: "SELLER_OFFER_PORTAL_RESPONSE", offerId: portal.offerId, action: canonical.action });
   });
 
   if (verificationError) throw verificationError;

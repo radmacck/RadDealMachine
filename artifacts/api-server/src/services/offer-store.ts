@@ -8,6 +8,7 @@ import {
 } from "@workspace/deal-domain";
 import { lockedLead, leadDetail, toLead, getAssumptions, move, audit, followupDate } from "./deal-store";
 import { toStoredOffer } from "./offer-records";
+import { queueJob } from "./operations-records";
 
 type Tx = Parameters<Parameters<typeof db.transaction>[0]>[0];
 async function context(tx: Tx, detail: LeadDetail, now: Date): Promise<OfferContext> {
@@ -91,6 +92,8 @@ export async function communicateOffer(id: string,offerId: string,input: OfferCo
       version:lead.version+1,updatedAt:now,
     }).where(eq(leadsTable.id,id));
     await audit(tx,actor.id,"OFFER_COMMUNICATION_RECORDED",id,`Offer ${offerId}, exact amount $${input.amount}, channel ${input.channel}, evidence: ${input.evidence}. Human attestation only; system sent nothing and executed no contract.`);
+    await queueJob(tx,"EVALUATE_DECISION",id,`decision:${id}:offer-communication:${offerId}`,actor.id,
+      {trigger:"OFFER_COMMUNICATION_RECORDED",offerId,analysisSnapshotId:offer.analysisSnapshotId});
     return leadDetail(id,tx,now);
   });
 }

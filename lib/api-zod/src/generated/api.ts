@@ -1928,6 +1928,7 @@ export const RecordTransactionExceptionResponse = zod.object({
 }),zod.null()]).optional(),
   "cancelledAt": zod.string().optional(),
   "outcomeRecordedAt": zod.string().optional(),
+  "outcomeRecordedBy": zod.string().optional(),
   "contingencies": zod.string(),
   "executedDocumentUrl": zod.string().nullish(),
   "sellerSignedAt": zod.string().nullish(),
@@ -6125,6 +6126,7 @@ export const RecordCallBody = zod.object({
   "notes": zod.string().min(1).max(recordCallBodyNotesMax),
   "nextAction": zod.string().min(recordCallBodyNextActionMin).max(recordCallBodyNextActionMax),
   "followUpAt": zod.string().datetime({"offset":true}).nullable(),
+  "occurredAt": zod.string().datetime({"offset":true}).optional().describe('Optional actual call time. Omit when only the recording time is known.'),
   "operatorConfidence": zod.number().min(recordCallBodyOperatorConfidenceMin).max(recordCallBodyOperatorConfidenceMax).optional(),
   "clarificationStatus": zod.enum(['UNREVIEWED', 'FOLLOW_UP_REQUIRED', 'SELLER_CLARIFIED']).optional(),
   "sellerAnswers": zod.object({
@@ -15736,6 +15738,7 @@ export const GetCommandCenterResponse = zod.object({
 }),zod.null()]).optional(),
   "cancelledAt": zod.string().optional(),
   "outcomeRecordedAt": zod.string().optional(),
+  "outcomeRecordedBy": zod.string().optional(),
   "contingencies": zod.string(),
   "executedDocumentUrl": zod.string().nullish(),
   "sellerSignedAt": zod.string().nullish(),
@@ -16306,6 +16309,188 @@ export const GetCommandCenterResponse = zod.object({
   "href": zod.string().nullable()
 }))
 })
+})
+
+
+export const getOutcomeLearningResponseRealOutcomeCountMin = 0;
+
+export const getOutcomeLearningResponseSyntheticOutcomeCountMin = 0;
+
+export const getOutcomeLearningResponseSampleSizesArvMin = 0;
+
+export const getOutcomeLearningResponseSampleSizesRepairsMin = 0;
+
+export const getOutcomeLearningResponseDeltasArvSampleSizeMin = 0;
+
+export const getOutcomeLearningResponseDeltasRepairsSampleSizeMin = 0;
+
+export const getOutcomeLearningResponseRecentOutcomesItemConfidenceMin = 0;
+export const getOutcomeLearningResponseRecentOutcomesItemConfidenceMax = 1;
+
+export const getOutcomeLearningResponseRecommendationsItemSampleSizeMin = 0;
+
+
+
+
+export const GetOutcomeLearningResponse = zod.object({
+  "generatedAt": zod.string().datetime({"offset":true}),
+  "realOutcomeCount": zod.number().int().min(getOutcomeLearningResponseRealOutcomeCountMin),
+  "syntheticOutcomeCount": zod.number().int().min(getOutcomeLearningResponseSyntheticOutcomeCountMin),
+  "sampleSizes": zod.object({
+  "arv": zod.number().int().min(getOutcomeLearningResponseSampleSizesArvMin),
+  "repairs": zod.number().int().min(getOutcomeLearningResponseSampleSizesRepairsMin)
+}),
+  "deltas": zod.object({
+  "arv": zod.object({
+  "sampleSize": zod.number().int().min(getOutcomeLearningResponseDeltasArvSampleSizeMin),
+  "mean": zod.number().nullable(),
+  "median": zod.number().nullable()
+}),
+  "repairs": zod.object({
+  "sampleSize": zod.number().int().min(getOutcomeLearningResponseDeltasRepairsSampleSizeMin),
+  "mean": zod.number().nullable(),
+  "median": zod.number().nullable()
+})
+}),
+  "ruleVersion": zod.string(),
+  "calibrationStatus": zod.enum(['INSUFFICIENT_EVIDENCE', 'REVIEW_REQUIRED', 'NO_RECOMMENDATION']),
+  "missingData": zod.array(zod.string()),
+  "recentOutcomes": zod.array(zod.object({
+  "id": zod.string().uuid(),
+  "leadId": zod.string().uuid(),
+  "eventType": zod.string(),
+  "sourceRecordType": zod.string(),
+  "sourceRecordId": zod.string(),
+  "source": zod.string(),
+  "occurredAt": zod.string().datetime({"offset":true}).nullable(),
+  "recordedAt": zod.string().datetime({"offset":true}),
+  "evidenceRefs": zod.array(zod.string()),
+  "synthetic": zod.boolean(),
+  "confidence": zod.number().min(getOutcomeLearningResponseRecentOutcomesItemConfidenceMin).max(getOutcomeLearningResponseRecentOutcomesItemConfidenceMax).nullable(),
+  "verificationState": zod.string(),
+  "economicsSnapshotId": zod.string().nullable(),
+  "decisionVersion": zod.number().int().nullable(),
+  "predicted": zod.record(zod.string(), zod.unknown()).nullable(),
+  "actual": zod.record(zod.string(), zod.unknown()).nullable(),
+  "delta": zod.record(zod.string(), zod.unknown()).nullable(),
+  "causeCategories": zod.array(zod.string()),
+  "payload": zod.record(zod.string(), zod.unknown())
+})),
+  "recommendations": zod.array(zod.object({
+  "id": zod.string().uuid(),
+  "metricKey": zod.string(),
+  "currentRuleVersion": zod.string(),
+  "proposedRuleVersion": zod.string(),
+  "status": zod.enum(['INSUFFICIENT_EVIDENCE', 'NO_RECOMMENDATION', 'PENDING_REVIEW', 'APPROVED_NOT_DEPLOYED', 'REJECTED', 'TEST_ONLY_NOT_DEPLOYABLE']),
+  "sampleSize": zod.number().int().min(getOutcomeLearningResponseRecommendationsItemSampleSizeMin),
+  "minimumSampleSize": zod.number().int().min(1),
+  "observationRefs": zod.array(zod.string()),
+  "summary": zod.string(),
+  "synthetic": zod.boolean()
+})),
+  "liveRulesChanged": zod.literal(false),
+  "canReview": zod.boolean()
+})
+
+
+export const RecordOutcomeActualsParams = zod.object({
+  "id": zod.coerce.string().uuid()
+})
+
+export const recordOutcomeActualsBodyIdempotencyKeyMin = 8;
+export const recordOutcomeActualsBodyIdempotencyKeyMax = 200;
+
+export const recordOutcomeActualsBodyActualArvMin = 0;
+export const recordOutcomeActualsBodyActualArvMax = 1000000000;
+
+export const recordOutcomeActualsBodyActualRepairsByCategoryMinOne = 0;
+export const recordOutcomeActualsBodyActualRepairsByCategoryMaxOne = 1000000000;
+
+export const recordOutcomeActualsBodyEvidenceRefsItemMin = 3;
+export const recordOutcomeActualsBodyEvidenceRefsItemMax = 2000;
+
+export const recordOutcomeActualsBodyEvidenceRefsMax = 20;
+
+export const recordOutcomeActualsBodyConfidenceMin = 0;
+export const recordOutcomeActualsBodyConfidenceMax = 1;
+
+export const recordOutcomeActualsBodyCauseCategoriesMax = 12;
+
+export const recordOutcomeActualsBodyNoteMax = 3000;
+
+
+
+export const RecordOutcomeActualsBody = zod.object({
+  "idempotencyKey": zod.string().min(recordOutcomeActualsBodyIdempotencyKeyMin).max(recordOutcomeActualsBodyIdempotencyKeyMax),
+  "analysisSnapshotId": zod.string().uuid(),
+  "occurredAt": zod.string().datetime({"offset":true}),
+  "source": zod.enum(['APPRAISAL', 'PAID_REPAIR_INVOICE', 'INSPECTION', 'SELLER_REPORTED', 'CLOSING_RECORD', 'OTHER_DOCUMENTED']),
+  "actualArv": zod.number().min(recordOutcomeActualsBodyActualArvMin).max(recordOutcomeActualsBodyActualArvMax).optional(),
+  "actualRepairsByCategory": zod.record(zod.string(), zod.number().min(recordOutcomeActualsBodyActualRepairsByCategoryMinOne).max(recordOutcomeActualsBodyActualRepairsByCategoryMaxOne)).optional(),
+  "evidenceRefs": zod.array(zod.string().min(recordOutcomeActualsBodyEvidenceRefsItemMin).max(recordOutcomeActualsBodyEvidenceRefsItemMax)).min(1).max(recordOutcomeActualsBodyEvidenceRefsMax),
+  "confidence": zod.number().min(recordOutcomeActualsBodyConfidenceMin).max(recordOutcomeActualsBodyConfidenceMax),
+  "causeCategories": zod.array(zod.enum(['SCOPE_CHANGE', 'HIDDEN_CONDITION', 'MARKET_CHANGE', 'COMPARABLE_SELECTION', 'PRICING_ERROR', 'TIMING', 'ACCESS_LIMITATION', 'SELLER_REPORT', 'BUYER_REPORT', 'DOCUMENTED_EXTERNAL_CAUSE', 'OTHER'])).max(recordOutcomeActualsBodyCauseCategoriesMax),
+  "note": zod.string().max(recordOutcomeActualsBodyNoteMax).optional()
+})
+
+export const recordOutcomeActualsResponseConfidenceMin = 0;
+export const recordOutcomeActualsResponseConfidenceMax = 1;
+
+
+
+export const RecordOutcomeActualsResponse = zod.object({
+  "id": zod.string().uuid(),
+  "leadId": zod.string().uuid(),
+  "eventType": zod.string(),
+  "sourceRecordType": zod.string(),
+  "sourceRecordId": zod.string(),
+  "source": zod.string(),
+  "occurredAt": zod.string().datetime({"offset":true}).nullable(),
+  "recordedAt": zod.string().datetime({"offset":true}),
+  "evidenceRefs": zod.array(zod.string()),
+  "synthetic": zod.boolean(),
+  "confidence": zod.number().min(recordOutcomeActualsResponseConfidenceMin).max(recordOutcomeActualsResponseConfidenceMax).nullable(),
+  "verificationState": zod.string(),
+  "economicsSnapshotId": zod.string().nullable(),
+  "decisionVersion": zod.number().int().nullable(),
+  "predicted": zod.record(zod.string(), zod.unknown()).nullable(),
+  "actual": zod.record(zod.string(), zod.unknown()).nullable(),
+  "delta": zod.record(zod.string(), zod.unknown()).nullable(),
+  "causeCategories": zod.array(zod.string()),
+  "payload": zod.record(zod.string(), zod.unknown())
+})
+
+
+export const ReviewOutcomeCalibrationParams = zod.object({
+  "id": zod.coerce.string().uuid()
+})
+
+export const reviewOutcomeCalibrationBodyNoteMin = 5;
+export const reviewOutcomeCalibrationBodyNoteMax = 1000;
+
+
+
+export const ReviewOutcomeCalibrationBody = zod.object({
+  "decision": zod.enum(['APPROVE_FOR_SEPARATE_CHANGE_REVIEW', 'REJECT']),
+  "note": zod.string().min(reviewOutcomeCalibrationBodyNoteMin).max(reviewOutcomeCalibrationBodyNoteMax)
+})
+
+export const reviewOutcomeCalibrationResponseSampleSizeMin = 0;
+
+
+
+
+export const ReviewOutcomeCalibrationResponse = zod.object({
+  "id": zod.string().uuid(),
+  "metricKey": zod.string(),
+  "currentRuleVersion": zod.string(),
+  "proposedRuleVersion": zod.string(),
+  "status": zod.enum(['INSUFFICIENT_EVIDENCE', 'NO_RECOMMENDATION', 'PENDING_REVIEW', 'APPROVED_NOT_DEPLOYED', 'REJECTED', 'TEST_ONLY_NOT_DEPLOYABLE']),
+  "sampleSize": zod.number().int().min(reviewOutcomeCalibrationResponseSampleSizeMin),
+  "minimumSampleSize": zod.number().int().min(1),
+  "observationRefs": zod.array(zod.string()),
+  "summary": zod.string(),
+  "synthetic": zod.boolean()
 })
 
 
@@ -20531,6 +20716,7 @@ export const GetDealOperationsResponse = zod.object({
 }),zod.null()]).optional(),
   "cancelledAt": zod.string().optional(),
   "outcomeRecordedAt": zod.string().optional(),
+  "outcomeRecordedBy": zod.string().optional(),
   "contingencies": zod.string(),
   "executedDocumentUrl": zod.string().nullish(),
   "sellerSignedAt": zod.string().nullish(),
@@ -21847,6 +22033,7 @@ export const RefreshMatchesResponse = zod.object({
 }),zod.null()]).optional(),
   "cancelledAt": zod.string().optional(),
   "outcomeRecordedAt": zod.string().optional(),
+  "outcomeRecordedBy": zod.string().optional(),
   "contingencies": zod.string(),
   "executedDocumentUrl": zod.string().nullish(),
   "sellerSignedAt": zod.string().nullish(),
@@ -23185,6 +23372,7 @@ export const RecordBuyerResponseResponse = zod.object({
 }),zod.null()]).optional(),
   "cancelledAt": zod.string().optional(),
   "outcomeRecordedAt": zod.string().optional(),
+  "outcomeRecordedBy": zod.string().optional(),
   "contingencies": zod.string(),
   "executedDocumentUrl": zod.string().nullish(),
   "sellerSignedAt": zod.string().nullish(),
@@ -25740,6 +25928,7 @@ export const RecordDestinationActivityResponse = zod.object({
 }),zod.null()]).optional(),
   "cancelledAt": zod.string().optional(),
   "outcomeRecordedAt": zod.string().optional(),
+  "outcomeRecordedBy": zod.string().optional(),
   "contingencies": zod.string(),
   "executedDocumentUrl": zod.string().nullish(),
   "sellerSignedAt": zod.string().nullish(),
@@ -27065,6 +27254,7 @@ export const CreateContractResponse = zod.object({
 }),zod.null()]).optional(),
   "cancelledAt": zod.string().optional(),
   "outcomeRecordedAt": zod.string().optional(),
+  "outcomeRecordedBy": zod.string().optional(),
   "contingencies": zod.string(),
   "executedDocumentUrl": zod.string().nullish(),
   "sellerSignedAt": zod.string().nullish(),
@@ -28388,6 +28578,7 @@ export const PreparePurchaseReviewDocumentResponse = zod.object({
 }),zod.null()]).optional(),
   "cancelledAt": zod.string().optional(),
   "outcomeRecordedAt": zod.string().optional(),
+  "outcomeRecordedBy": zod.string().optional(),
   "contingencies": zod.string(),
   "executedDocumentUrl": zod.string().nullish(),
   "sellerSignedAt": zod.string().nullish(),
@@ -29717,6 +29908,7 @@ export const TransitionTransactionDocumentResponse = zod.object({
 }),zod.null()]).optional(),
   "cancelledAt": zod.string().optional(),
   "outcomeRecordedAt": zod.string().optional(),
+  "outcomeRecordedBy": zod.string().optional(),
   "contingencies": zod.string(),
   "executedDocumentUrl": zod.string().nullish(),
   "sellerSignedAt": zod.string().nullish(),
@@ -31094,6 +31286,7 @@ export const ExecuteContractResponse = zod.object({
 }),zod.null()]).optional(),
   "cancelledAt": zod.string().optional(),
   "outcomeRecordedAt": zod.string().optional(),
+  "outcomeRecordedBy": zod.string().optional(),
   "contingencies": zod.string(),
   "executedDocumentUrl": zod.string().nullish(),
   "sellerSignedAt": zod.string().nullish(),
@@ -32441,6 +32634,7 @@ export const RecordClosingMilestoneResponse = zod.object({
 }),zod.null()]).optional(),
   "cancelledAt": zod.string().optional(),
   "outcomeRecordedAt": zod.string().optional(),
+  "outcomeRecordedBy": zod.string().optional(),
   "contingencies": zod.string(),
   "executedDocumentUrl": zod.string().nullish(),
   "sellerSignedAt": zod.string().nullish(),
@@ -33786,6 +33980,7 @@ export const RecordDealOutcomeResponse = zod.object({
 }),zod.null()]).optional(),
   "cancelledAt": zod.string().optional(),
   "outcomeRecordedAt": zod.string().optional(),
+  "outcomeRecordedBy": zod.string().optional(),
   "contingencies": zod.string(),
   "executedDocumentUrl": zod.string().nullish(),
   "sellerSignedAt": zod.string().nullish(),

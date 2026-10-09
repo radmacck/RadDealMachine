@@ -25,6 +25,8 @@ export interface CallInput {
   nextAction: string;
   /** @nullable */
   followUpAt: string | null;
+  /** Optional actual call time. Omit when only the recording time is known. */
+  occurredAt?: string;
   /**
      * @minimum 0
      * @maximum 1

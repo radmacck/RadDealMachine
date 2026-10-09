@@ -11,6 +11,7 @@ import { StageBadge } from '@/components/stage-badge';
 import { useWorkspaceSearch } from '@/components/workspace-search';
 import { commandCenterCallDisplay } from '@/lib/command-center-display';
 import { AcquisitionQueueCard } from '@/components/acquisition-queue-card';
+import { OutcomeLearningPanel } from '@/components/outcome-learning-panel';
 import { ago, fmtDate, isOverdue, money } from '@/lib/format';
 
 const LABEL: Record<CommandAction['category'], string> = {
@@ -347,6 +348,8 @@ export default function Dashboard() {
               ))}
             </div>
           </section>
+
+          <OutcomeLearningPanel />
 
           <section className="fd-opps" data-testid="panel-qualified-candidates">
             <div className="fd-section-head">

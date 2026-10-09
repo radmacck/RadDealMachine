@@ -9,6 +9,7 @@ import * as buyerQualificationPortal from "../services/buyer-qualification-porta
 import { allBuyerRecords, getBuyerRecord } from "../services/operations-records";
 import { dealOperations, refreshMatches } from "../services/matching-store";
 import * as transactions from "../services/transaction-store";
+import * as outcomes from "../services/outcome-learning-store";
 import { getTransactionDocumentReadiness } from "../services/transaction-document-registry";
 import { recordTransactionException } from "../services/transaction-exceptions";
 import * as workers from "../services/workers";
@@ -19,6 +20,22 @@ router.use(authenticated,membership);
 router.get("/transaction-documents/readiness",roles("OWNER","OPERATOR"),async(req,res)=>{
   const {leadId} = parse(z.object({leadId:z.string().uuid().optional()}),req.query);
   res.json(schemas.GetTransactionDocumentReadinessResponse.parse(await getTransactionDocumentReadiness(actor(res),leadId)));
+});
+router.get("/outcome-learning",async(_req,res)=>{
+  res.json(schemas.GetOutcomeLearningResponse.parse(await outcomes.getOutcomeLearningReport(new Date(),String(res.locals.role)==="OWNER")));
+});
+router.post("/leads/:id/outcomes/actuals",roles("OWNER"),async(req,res)=>{
+  const {id} = parse(schemas.RecordOutcomeActualsParams,req.params);
+  res.status(201).json(schemas.RecordOutcomeActualsResponse.parse(await outcomes.recordOutcomeActuals(
+    id,parse(schemas.RecordOutcomeActualsBody,req.body),actor(res),
+  )));
+});
+router.patch("/outcome-learning/recommendations/:id",roles("OWNER"),async(req,res)=>{
+  const {id} = parse(schemas.ReviewOutcomeCalibrationParams,req.params);
+  const body = parse(schemas.ReviewOutcomeCalibrationBody,req.body);
+  res.json(schemas.ReviewOutcomeCalibrationResponse.parse(await outcomes.reviewOutcomeCalibration(
+    id,body.decision,body.note,actor(res),
+  )));
 });
 export const actor = (res: {locals:Record<string,unknown>}): OfferActor => ({id:String(res.locals.actor),role:String(res.locals.role)});
 export function parse<T extends z.ZodType>(schema: T,value: unknown): z.infer<T> {

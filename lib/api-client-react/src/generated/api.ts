@@ -77,6 +77,11 @@ import type {
   OfferCommunicationInput,
   OfferDraftInput,
   OfferWithdrawalInput,
+  OutcomeActualsInput,
+  OutcomeCalibrationRecommendation,
+  OutcomeCalibrationReviewInput,
+  OutcomeLearningReport,
+  OutcomeObservation,
   PrepareTransactionDocumentInput,
   PropertyDiscovery,
   PropertyDiscoveryDispositionInput,
@@ -2792,6 +2797,243 @@ export function useGetCommandCenter<TData = Awaited<ReturnType<typeof getCommand
 
 
 
+
+export const getGetOutcomeLearningUrl = () => {
+
+
+
+
+  return `/api/outcome-learning`
+}
+
+export const getOutcomeLearning = async ( options?: Parameters<typeof customFetch>[1]): Promise<OutcomeLearningReport> => {
+
+  return customFetch<OutcomeLearningReport>(getGetOutcomeLearningUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetOutcomeLearningQueryKey = () => {
+    return [
+    `/api/outcome-learning`
+    ] as const;
+    }
+
+
+export const getGetOutcomeLearningQueryOptions = <TData = Awaited<ReturnType<typeof getOutcomeLearning>>, TError = ErrorType<unknown>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getOutcomeLearning>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetOutcomeLearningQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getOutcomeLearning>>> = ({ signal }) => getOutcomeLearning({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getOutcomeLearning>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetOutcomeLearningQueryResult = NonNullable<Awaited<ReturnType<typeof getOutcomeLearning>>>
+export type GetOutcomeLearningQueryError = ErrorType<unknown>
+
+
+
+export function useGetOutcomeLearning<TData = Awaited<ReturnType<typeof getOutcomeLearning>>, TError = ErrorType<unknown>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getOutcomeLearning>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetOutcomeLearningQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getRecordOutcomeActualsUrl = (id: string,) => {
+
+
+
+
+  return `/api/leads/${id}/outcomes/actuals`
+}
+
+export const recordOutcomeActuals = async (id: string,
+    outcomeActualsInput: OutcomeActualsInput, options?: Parameters<typeof customFetch>[1]): Promise<OutcomeObservation> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return customFetch<OutcomeObservation>(getRecordOutcomeActualsUrl(id),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(outcomeActualsInput)
+  }
+);}
+
+
+
+
+
+export const getRecordOutcomeActualsMutationKey = () => ['recordOutcomeActuals'] as const;
+
+export const getRecordOutcomeActualsMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof recordOutcomeActuals>>, TError,RecordOutcomeActualsMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof recordOutcomeActuals>>, TError,RecordOutcomeActualsMutationVariables, TContext> => {
+
+const mutationKey = getRecordOutcomeActualsMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof recordOutcomeActuals>>, RecordOutcomeActualsMutationVariables> = (props) => {
+          const {id,data} = props ?? {};
+
+          return  recordOutcomeActuals(id,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type RecordOutcomeActualsMutationResult = NonNullable<Awaited<ReturnType<typeof recordOutcomeActuals>>>
+    export type RecordOutcomeActualsMutationBody = BodyType<OutcomeActualsInput>
+    export type RecordOutcomeActualsMutationError = ErrorType<unknown>
+    export type RecordOutcomeActualsMutationVariables = {id: string;data: BodyType<OutcomeActualsInput>}
+
+    export const useRecordOutcomeActuals = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof recordOutcomeActuals>>, TError,RecordOutcomeActualsMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof recordOutcomeActuals>>,
+        TError,
+        RecordOutcomeActualsMutationVariables,
+        TContext
+      > => {
+      return useMutation(getRecordOutcomeActualsMutationOptions(options));
+    }
+
+export const getReviewOutcomeCalibrationUrl = (id: string,) => {
+
+
+
+
+  return `/api/outcome-learning/recommendations/${id}`
+}
+
+export const reviewOutcomeCalibration = async (id: string,
+    outcomeCalibrationReviewInput: OutcomeCalibrationReviewInput, options?: Parameters<typeof customFetch>[1]): Promise<OutcomeCalibrationRecommendation> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return customFetch<OutcomeCalibrationRecommendation>(getReviewOutcomeCalibrationUrl(id),
+  {
+    ...options,
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(outcomeCalibrationReviewInput)
+  }
+);}
+
+
+
+
+
+export const getReviewOutcomeCalibrationMutationKey = () => ['reviewOutcomeCalibration'] as const;
+
+export const getReviewOutcomeCalibrationMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof reviewOutcomeCalibration>>, TError,ReviewOutcomeCalibrationMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof reviewOutcomeCalibration>>, TError,ReviewOutcomeCalibrationMutationVariables, TContext> => {
+
+const mutationKey = getReviewOutcomeCalibrationMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof reviewOutcomeCalibration>>, ReviewOutcomeCalibrationMutationVariables> = (props) => {
+          const {id,data} = props ?? {};
+
+          return  reviewOutcomeCalibration(id,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type ReviewOutcomeCalibrationMutationResult = NonNullable<Awaited<ReturnType<typeof reviewOutcomeCalibration>>>
+    export type ReviewOutcomeCalibrationMutationBody = BodyType<OutcomeCalibrationReviewInput>
+    export type ReviewOutcomeCalibrationMutationError = ErrorType<unknown>
+    export type ReviewOutcomeCalibrationMutationVariables = {id: string;data: BodyType<OutcomeCalibrationReviewInput>}
+
+    export const useReviewOutcomeCalibration = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof reviewOutcomeCalibration>>, TError,ReviewOutcomeCalibrationMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof reviewOutcomeCalibration>>,
+        TError,
+        ReviewOutcomeCalibrationMutationVariables,
+        TContext
+      > => {
+      return useMutation(getReviewOutcomeCalibrationMutationOptions(options));
+    }
 
 export const getListBuyersUrl = () => {
 

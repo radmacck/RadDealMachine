@@ -414,6 +414,7 @@ export async function recordBuyerResponse(id: string,buyerId: string,input: z.in
       await save(tx,row,contract,now);
     } else await save(tx,row,contract,now);
     const payload = {...evaluated,status:parsed.status,evidence:parsed.evidence,
+      responseOccurredAt:now.toISOString(),responseRecordedAt:now.toISOString(),responseRecordedBy:actor.id,
       agreedPrice:parsed.status==="COMMITTED"?parsed.agreedPrice:null,commitmentEvidenceUrl:parsed.commitmentEvidenceUrl??null};
     await tx.insert(matchesTable).values({leadId:id,buyerId,payload,updatedAt:now})
       .onConflictDoUpdate({target:[matchesTable.leadId,matchesTable.buyerId],set:{payload,updatedAt:now}});
@@ -640,7 +641,8 @@ export async function recordDealOutcome(id: string,input: z.infer<typeof RecordD
         evidenceUrl:parsed.buyerReleaseEvidenceUrl!,note:parsed.note,previousState:{committedBuyerId:contract.committedBuyerId,agreedBuyerPrice:contract.agreedBuyerPrice,milestones:contract.milestones}}];
       await move(tx,lead,"DEAD_DEAL","Owner attested externally documented cancellation", "Preserve cancellation and prior negotiation/commitment history.",actor.id,now);
     }
-    contract.outcomeNote = parsed.note; contract.outcomeEvidenceUrl = parsed.evidenceUrl; contract.outcomeRecordedAt = now.toISOString();
+    contract.outcomeNote = parsed.note; contract.outcomeEvidenceUrl = parsed.evidenceUrl;
+    contract.outcomeRecordedAt = now.toISOString(); contract.outcomeRecordedBy = actor.id;
     await save(tx,row,contract,now); await saveLead(tx,lead,now);
     await audit(tx,actor.id,`TRANSACTION_${parsed.outcome}`,id,`${parsed.note}. Documented external outcome; system did not transfer funds or void legal obligations.`);
   });

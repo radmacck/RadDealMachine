@@ -25,6 +25,8 @@
     "exercise:acquisition-queue": "tsx src/services/isolated-exercise.ts acquisition-queue-exercise.ts",
     "exercise:intelligence-loop": "tsx src/services/isolated-exercise.ts intelligence-loop-exercise.ts",
     "exercise:decision-work-lifecycle": "tsx src/services/isolated-exercise.ts decision-work-lifecycle-exercise.ts",
+    "exercise:outcome-learning": "tsx src/services/isolated-exercise.ts outcome-learning-exercise.ts",
+    "test:outcome-learning": "tsx --test src/services/outcome-learning.test.ts",
     "dev": "export NODE_ENV=development && pnpm run build && pnpm run start",
     "build": "node ./build.mjs",
     "start": "node --enable-source-maps ./dist/index.mjs",

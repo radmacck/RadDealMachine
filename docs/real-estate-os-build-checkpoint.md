@@ -1,7 +1,7 @@
 # Real-estate operating-system build checkpoint
 
-**Checkpoint date:** 2026-10-08  
-**Current gate:** P2 remains PARTIAL because additional independent permitted property sources are unavailable; P6 buyer-demand workflow semantics are persisted-tested, and P7 now records buyer-portal capability access. No live approved buyer or confirmed external packet delivery is claimed.
+**Checkpoint date:** 2026-10-09
+**Current gate:** P2 remains PARTIAL because additional independent permitted property sources are unavailable; P6 workflow semantics are persisted-tested; P7 records buyer-portal capability access; P11 outcome-learning mechanics are implemented but live calibration remains unverified because the development workspace has no real outcome events. No live approved buyer or confirmed external packet delivery is claimed.
 **Checkpoint rule:** On each accepted build turn, resume at the first item below that is not objectively verified. Queued tasks are not background execution; no work is considered active after its Agent turn ends.
 
 ## Product and implementation rules
@@ -25,7 +25,7 @@ Every slice must implement behavior, run automated tests and an isolated persist
 | **P8** | Contracts/signing: jurisdiction-approved templates, private managed storage, replaceable signing provider, stale-snapshot protection, and truthful document states. | Provider/template/storage boundary exists; no approved template or signing provider proven. |
 | **P9** | Funds/closing: EMD and funds evidence, deadlines, title/inspection/closing tasks, amendments, party changes, replacement/expiry, exceptions, closing proof, and time validation. | Partial; real transaction evidence remains unverified. |
 | **P10** | Command center: authenticated action-centered CALL NEXT / WHY / NEXT, ranked opportunities, blockers/evidence/economics/deadlines/matches/exceptions, complete paginated pools, and no repeated manual hunting/re-entry. | Foundations exist; authenticated browser verification and owner acceptance remain unverified. |
-| **P11** | Outcome learning: persist outcomes and predicted-vs-actual performance; calibrate only from sufficient real evidence with rule/confidence versions; exclude synthetic fixtures from live learning. | Incomplete. |
+| **P11** | Outcome learning: persist outcomes and predicted-vs-actual performance; calibrate only from sufficient real evidence with rule/confidence versions; exclude synthetic fixtures from live learning. | **PARTIAL — persisted mechanics exercised, live calibration unverified.** Canonical events project idempotently; owner actuals capture is snapshot-bound; synthetic records are excluded; insufficient evidence is persisted; a synthetic threshold-path preview remains non-deployable. No real outcome exists in the development workspace, so no real threshold-met recommendation or real review/reversal was exercised. |
 | **P12** | End-to-end live proof: permitted discovery through contact, seller conversation, refreshed underwriting, authorized offer, current buyer, confirmed distribution/commitment, approved documents/signature, funds/deadlines/closing, and outcome. Label every synthetic step; never count one as live proof. | Incomplete; no GREEN claim until evidenced end to end. |
 
 ## Resume rule
@@ -34,12 +34,14 @@ Work one vertical slice at a time, beginning at the earliest non-verified priori
 
 ## Latest verification checkpoint
 
-- Development schema push applied successfully; no production database was changed.
-- `pnpm run typecheck:libs`, API typecheck, and web typecheck passed.
-- API build passed.
-- Web build passed with the artifact's required local `PORT` and `BASE_PATH`; only existing source-map/chunk-size warnings were emitted.
-- API workflow restarted and reported `Server listening`; web and component-preview workflows remained running.
-- Persisted exercises passed: decision-work lifecycle and gap-aware intelligence loop. Both exercises use isolated cloned schemas and explicitly synthetic records; neither is live deal-flow proof.
+- Outcome-learning development schema push applied successfully; no production database was changed.
+- `pnpm --filter @workspace/api-spec run codegen` and workspace library typecheck passed; API and web typechecks passed.
+- Outcome-learning automated tests passed **2/2**.
+- Persisted isolated exercise passed with explicitly synthetic data: 4 source-derived outcome rows; repeat reconciliation inserted 0 rows; call occurred-at and recorded-at remained distinct; actual ARV delta was **−$5,000** and actual repair delta **$0**; concurrent/replayed actuals shared one record; stale analysis snapshot was rejected; one canonical decision reevaluation job was created; synthetic close retained a **+1-day** time-to-close delta; terminal reevaluation left **0** runnable work items.
+- The persisted five-sample threshold-path preview was marked `TEST_ONLY_NOT_DEPLOYABLE`; synthetic outcomes remained excluded from report sample counts and live rule versions. Owner-only actual capture rejected a non-owner; synthetic preview approval was rejected.
+- A read against the real development database passed the response-schema parse and reported **0 real / 0 synthetic outcome events**, **0 eligible ARV / 0 eligible repair samples**, `INSUFFICIENT_EVIDENCE`, and `liveRulesChanged=false`. No real outcome was seeded.
+- API build passed. Web build passed with the artifact's required `PORT=20639 BASE_PATH=/`; Vite emitted source-map lookup and >500 kB chunk warnings, but exited successfully.
+- The API and web workflows are configured/running; this checkpoint does not claim authenticated browser verification.
 - Remaining P0 limitation: the production executor registry is intentionally empty until an authorized supported executor is configured. Calls, offers, legal actions, and unsupported research remain unexecuted.
 
 ## P2 property-source expansion verification
@@ -88,3 +90,20 @@ The public dataset/catalog and documented query endpoint were accessed without a
 **Still unverified:** no live buyer response, owner-approved/current real buyer, permitted outbound delivery provider, delivery receipt, authenticated operator browser session, or real transaction commitment was available. P2 remains PARTIAL; named listing/FSBO/distress feeds remain unavailable as recorded above.
 
 **Next blocker:** a permitted buyer-packet delivery provider that can confirm actual delivery; current capability links are generated for operator copy only and remain NOT_SENT.
+
+## P11 outcome-learning implementation and verification
+
+**Exercise date:** 2026-10-09
+**State:** **PARTIAL — implementation mechanics proven; live calibration unavailable until real, source-referenced outcomes exist.** The real development workspace contained zero outcome observations before/after the source reconciliation pass; zero real or synthetic business outcome events were present. The dashboard correctly shows insufficient evidence rather than fabricated performance or a changed rule.
+
+- Added an append-only outcome ledger that idempotently projects canonical call/no-answer and seller-reported answer records, offer authorization/communication attestations, seller portal responses, buyer responses/commitments, and closed/cancelled transaction outcomes. Projection records retain source record ID/type, source label, occurred-at separately from recorded-at, evidence references, synthetic status, confidence/verification state, analysis snapshot and decision version. Seller statements remain seller-reported; owner-entered communication is not represented as provider delivery; portal acceptance is not represented as a signature.
+- Added owner-only, idempotent actual ARV/repair capture against the current persisted underwriting snapshot. It rejects a stale snapshot, stores actual values, category totals, source references, confidence, cause categories, and actual-minus-predicted deltas. It does not rewrite prior analysis, offers, packet economics, or authority. Seller-reported actuals are stored as unverified and excluded from calibration samples.
+- Added report API and a compact command-center panel for real/synthetic event counts, eligible ARV/repair samples and deltas, missing evidence, recommendation readiness, and recent recorded events. The API persists `INSUFFICIENT_EVIDENCE` status per metric when fewer than five eligible real samples exist. Threshold recommendations are versioned and review-only; approval means “approved for separate change review,” not deployment. Recommendation review requires owner authority, current sample references, append-only history, and supports reopen/reject; live underwriting/economics rules are never changed by this workflow.
+- Added canonical reevaluation jobs when actuals are recorded, seller portal responses are recorded, or offer communication is attested. Existing call, buyer-response, and transaction save flows already queue decision reevaluation. Closed/dead-deal reevaluation expires/supersedes obsolete open work.
+- **Persisted isolated exercise:** `pnpm --filter @workspace/api-server run exercise:outcome-learning` passed. It persisted four call-derived outcomes, proved replay inserted zero duplicates, separated event/record timestamps, recorded synthetic ARV/repair deltas, verified concurrent idempotency, rejected stale snapshot and non-owner capture, proved source reconciliation idempotency, created a five-sample synthetic threshold preview that is non-deployable and excluded from live recommendations, rejected preview approval, confirmed zero live rule changes, queued one reevaluation job, projected a synthetic close with a one-day planned-vs-realized delta, and left zero open work items after terminal decision reevaluation. All exercise records are in the isolated schema and explicitly synthetic.
+- **Automated test:** `pnpm --filter @workspace/api-server run test:outcome-learning` — **2/2 passed**; synthetic samples cannot satisfy the real-sample threshold.
+- **Checks:** codegen/library typecheck, API typecheck, web typecheck, API build, and web build passed. Web build warnings: unresolved original source-map positions for existing UI modules and the existing >500 kB bundle notice.
+- After the final code batch, the API managed workflow restarted and logged `Server listening`; the web workflow restarted and logged Vite `ready`. The browser preview rendered the logged-out sign-in landing; the authenticated dashboard and seller portal remain unverified in a signed-in browser.
+- **Known unverified boundary:** no actual real-world outcome evidence was available, so a real threshold-met calibration recommendation and its approve/reject/reopen lifecycle were not exercised. No calibration was counted from the isolated fixtures. Authenticated dashboard rendering was not verified in a signed-in browser session.
+
+**Current next blocker:** P2 remains the earliest ordered blocker: access to at least one additional independent listing/owner-sale or jurisdiction-specific public-distress source under a permitted, exercisable access method. The existing P2 unavailable-source list remains in force; no restricted connector was added or retried in this slice.

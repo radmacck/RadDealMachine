@@ -32,6 +32,7 @@ export interface DealContract {
   commitmentSnapshot?: CommitmentSnapshot | null;
   cancelledAt?: string;
   outcomeRecordedAt?: string;
+  outcomeRecordedBy?: string;
   contingencies: string;
   /** @nullable */
   executedDocumentUrl?: string | null;

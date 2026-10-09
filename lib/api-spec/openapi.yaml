@@ -438,6 +438,47 @@ paths:
           content:
             application/json:
               schema: { $ref: "#/components/schemas/CommandCenter" }
+  /outcome-learning:
+    get:
+      operationId: getOutcomeLearning
+      responses:
+        "200":
+          description: Evidence-backed outcome counts, prediction deltas, and calibration readiness
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/OutcomeLearningReport" }
+  /leads/{id}/outcomes/actuals:
+    parameters:
+      - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
+    post:
+      operationId: recordOutcomeActuals
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/OutcomeActualsInput" }
+      responses:
+        "201":
+          description: Owner-reviewed actual outcome comparison appended to the learning ledger
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/OutcomeObservation" }
+  /outcome-learning/recommendations/{id}:
+    parameters:
+      - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
+    patch:
+      operationId: reviewOutcomeCalibration
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/OutcomeCalibrationReviewInput" }
+      responses:
+        "200":
+          description: Review recorded; no live rule or economics is deployed
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/OutcomeCalibrationRecommendation" }
   /buyers:
     get:
       operationId: listBuyers
@@ -2150,6 +2191,114 @@ components:
         closingCosts: { type: number, minimum: 0, maximum: 1000000000 }
         buyerReleaseEvidenceUrl: { type: string, minLength: 8, maxLength: 2000 }
         occurredAt: { type: string }
+    OutcomeActualsInput:
+      type: object
+      required: [idempotencyKey, analysisSnapshotId, occurredAt, source, evidenceRefs, confidence, causeCategories]
+      properties:
+        idempotencyKey: { type: string, minLength: 8, maxLength: 200 }
+        analysisSnapshotId: { type: string, format: uuid }
+        occurredAt: { type: string, format: date-time }
+        source:
+          type: string
+          enum: [APPRAISAL, PAID_REPAIR_INVOICE, INSPECTION, SELLER_REPORTED, CLOSING_RECORD, OTHER_DOCUMENTED]
+        actualArv: { type: number, minimum: 0, maximum: 1000000000 }
+        actualRepairsByCategory:
+          type: object
+          additionalProperties: { type: number, minimum: 0, maximum: 1000000000 }
+        evidenceRefs:
+          type: array
+          minItems: 1
+          maxItems: 20
+          items: { type: string, minLength: 3, maxLength: 2000 }
+        confidence: { type: number, minimum: 0, maximum: 1 }
+        causeCategories:
+          type: array
+          maxItems: 12
+          items:
+            type: string
+            enum: [SCOPE_CHANGE, HIDDEN_CONDITION, MARKET_CHANGE, COMPARABLE_SELECTION, PRICING_ERROR, TIMING, ACCESS_LIMITATION, SELLER_REPORT, BUYER_REPORT, DOCUMENTED_EXTERNAL_CAUSE, OTHER]
+        note: { type: string, maxLength: 3000 }
+    OutcomeObservation:
+      type: object
+      required: [id, leadId, eventType, sourceRecordType, sourceRecordId, source, occurredAt, recordedAt, evidenceRefs, synthetic, confidence, verificationState, economicsSnapshotId, decisionVersion, predicted, actual, delta, causeCategories, payload]
+      properties:
+        id: { type: string, format: uuid }
+        leadId: { type: string, format: uuid }
+        eventType: { type: string }
+        sourceRecordType: { type: string }
+        sourceRecordId: { type: string }
+        source: { type: string }
+        occurredAt: { type: ["string", "null"], format: date-time }
+        recordedAt: { type: string, format: date-time }
+        evidenceRefs: { type: array, items: { type: string } }
+        synthetic: { type: boolean }
+        confidence: { type: ["number", "null"], minimum: 0, maximum: 1 }
+        verificationState: { type: string }
+        economicsSnapshotId: { type: ["string", "null"] }
+        decisionVersion: { type: ["integer", "null"] }
+        predicted: { type: ["object", "null"], additionalProperties: true }
+        actual: { type: ["object", "null"], additionalProperties: true }
+        delta: { type: ["object", "null"], additionalProperties: true }
+        causeCategories: { type: array, items: { type: string } }
+        payload: { type: object, additionalProperties: true }
+    OutcomeCalibrationRecommendation:
+      type: object
+      required: [id, metricKey, currentRuleVersion, proposedRuleVersion, status, sampleSize, minimumSampleSize, observationRefs, summary, synthetic]
+      properties:
+        id: { type: string, format: uuid }
+        metricKey: { type: string }
+        currentRuleVersion: { type: string }
+        proposedRuleVersion: { type: string }
+        status: { type: string, enum: [INSUFFICIENT_EVIDENCE, NO_RECOMMENDATION, PENDING_REVIEW, APPROVED_NOT_DEPLOYED, REJECTED, TEST_ONLY_NOT_DEPLOYABLE] }
+        sampleSize: { type: integer, minimum: 0 }
+        minimumSampleSize: { type: integer, minimum: 1 }
+        observationRefs: { type: array, items: { type: string } }
+        summary: { type: string }
+        synthetic: { type: boolean }
+    OutcomeCalibrationReviewInput:
+      type: object
+      required: [decision, note]
+      properties:
+        decision: { type: string, enum: [APPROVE_FOR_SEPARATE_CHANGE_REVIEW, REJECT] }
+        note: { type: string, minLength: 5, maxLength: 1000 }
+    OutcomeLearningReport:
+      type: object
+      required: [generatedAt, realOutcomeCount, syntheticOutcomeCount, sampleSizes, deltas, ruleVersion, calibrationStatus, missingData, recentOutcomes, recommendations, liveRulesChanged, canReview]
+      properties:
+        generatedAt: { type: string, format: date-time }
+        realOutcomeCount: { type: integer, minimum: 0 }
+        syntheticOutcomeCount: { type: integer, minimum: 0 }
+        sampleSizes:
+          type: object
+          required: [arv, repairs]
+          properties:
+            arv: { type: integer, minimum: 0 }
+            repairs: { type: integer, minimum: 0 }
+        deltas:
+          type: object
+          required: [arv, repairs]
+          properties:
+            arv:
+              type: object
+              required: [sampleSize, mean, median]
+              properties:
+                sampleSize: { type: integer, minimum: 0 }
+                mean: { type: ["number", "null"] }
+                median: { type: ["number", "null"] }
+            repairs:
+              type: object
+              required: [sampleSize, mean, median]
+              properties:
+                sampleSize: { type: integer, minimum: 0 }
+                mean: { type: ["number", "null"] }
+                median: { type: ["number", "null"] }
+        ruleVersion: { type: string }
+        calibrationStatus: { type: string, enum: [INSUFFICIENT_EVIDENCE, REVIEW_REQUIRED, NO_RECOMMENDATION] }
+        missingData: { type: array, items: { type: string } }
+        recentOutcomes: { type: array, items: { $ref: "#/components/schemas/OutcomeObservation" } }
+        recommendations: { type: array, items: { $ref: "#/components/schemas/OutcomeCalibrationRecommendation" } }
+        liveRulesChanged: { type: boolean, enum: [false] }
+        canReview: { type: boolean }
     CommitmentSnapshot:
       type: object
       required: [buyer, detail, reservedCount, reservedFunds]
@@ -2203,6 +2352,7 @@ components:
         commitmentSnapshot: { oneOf: [{ $ref: "#/components/schemas/CommitmentSnapshot" }, { type: "null" }] }
         cancelledAt: { type: string }
         outcomeRecordedAt: { type: string }
+        outcomeRecordedBy: { type: string }
         contingencies: { type: string }
         executedDocumentUrl: { type: [string, "null"] }
         sellerSignedAt: { type: [string, "null"] }
@@ -3169,6 +3319,7 @@ components:
         notes: { type: string, minLength: 1, maxLength: 10000 }
         nextAction: { type: string, minLength: 3, maxLength: 1000 }
         followUpAt: { type: ["string", "null"], format: date-time }
+        occurredAt: { type: string, format: date-time, description: "Optional actual call time. Omit when only the recording time is known." }
         operatorConfidence: { type: number, minimum: 0, maximum: 1 }
         clarificationStatus: { type: string, enum: [UNREVIEWED, FOLLOW_UP_REQUIRED, SELLER_CLARIFIED] }
         sellerAnswers: { $ref: "#/components/schemas/CallSellerAnswers" }
