@@ -1282,6 +1282,13 @@ components:
         accessedAt: { type: string, format: date-time }
         relevance: { type: string }
         scopeLimit: { type: string }
+        author: { type: string }
+        publishedAt: { type: string, format: date, nullable: true }
+        accessContext: { type: string }
+        topic: { type: string }
+        marketJurisdiction: { type: string, nullable: true }
+        materialType: { type: string, enum: [PUBLIC_ARTICLE, PUBLIC_RESOURCE_CATALOG, PUBLIC_INTERVIEW, OTHER] }
+        claimStatus: { type: string, enum: [SOURCE_CLAIM_NOT_PROJECT_VALIDATED, PUBLIC_DESCRIPTION_ONLY] }
     SellerPlaybookRevision:
       type: object
       required: [version, changeReason, actor, recordedAt]
@@ -1314,6 +1321,20 @@ components:
         confirmingEvidence: { type: array, items: { type: string, minLength: 1, maxLength: 1000 }, minItems: 1, maxItems: 20 }
         refutingEvidence: { type: array, items: { type: string, minLength: 1, maxLength: 1000 }, minItems: 1, maxItems: 20 }
         doNotPromise: { type: array, items: { type: string, minLength: 1, maxLength: 1000 }, minItems: 1, maxItems: 20 }
+        operationalIntelligence:
+          type: object
+          required: [domain, sourceClaim, claimStatus, synthesizedMethod, rationale, supportingEvidence, refutingEvidence, nextQuestionOrAction, humanDecision, outcomeValidation]
+          properties:
+            domain: { type: string, enum: [SELLER_CONVERSATION, UNDERWRITING, BUYER_DISPOSITION, TRANSACTION_READINESS] }
+            sourceClaim: { type: string }
+            claimStatus: { type: string, enum: [EDUCATOR_CLAIM_NOT_PROJECT_VALIDATED, PUBLIC_DESCRIPTION_ONLY] }
+            synthesizedMethod: { type: string }
+            rationale: { type: string }
+            supportingEvidence: { type: array, items: { type: string } }
+            refutingEvidence: { type: array, items: { type: string } }
+            nextQuestionOrAction: { type: string }
+            humanDecision: { type: string }
+            outcomeValidation: { type: string, enum: [NO_REAL_DEAL_OUTCOME_VALIDATION] }
     SellerPlaybookEditableContent:
       type: object
       required: [title, hypothesis, discoveryQuestions, empatheticResponse, negotiationOptions, followUpGuidance, risks, escalationConditions, confirmingEvidence, refutingEvidence, doNotPromise]

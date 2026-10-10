@@ -5,6 +5,8 @@
  * Radical Deal OS seller intake, underwriting, conversations and approved offers
  * OpenAPI spec version: 1.0.0
  */
+import type { SellerPlaybookSourceClaimStatus } from './sellerPlaybookSourceClaimStatus';
+import type { SellerPlaybookSourceMaterialType } from './sellerPlaybookSourceMaterialType';
 
 export interface SellerPlaybookSource {
   sourceId: string;
@@ -13,4 +15,11 @@ export interface SellerPlaybookSource {
   accessedAt: string;
   relevance: string;
   scopeLimit: string;
+  author?: string;
+  publishedAt?: string | null;
+  accessContext?: string;
+  topic?: string;
+  marketJurisdiction?: string | null;
+  materialType?: SellerPlaybookSourceMaterialType;
+  claimStatus?: SellerPlaybookSourceClaimStatus;
 }

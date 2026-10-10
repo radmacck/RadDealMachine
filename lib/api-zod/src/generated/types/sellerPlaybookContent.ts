@@ -6,6 +6,7 @@
  * OpenAPI spec version: 1.0.0
  */
 import type { SellerPlaybookContentKind } from './sellerPlaybookContentKind';
+import type { SellerPlaybookContentOperationalIntelligence } from './sellerPlaybookContentOperationalIntelligence';
 
 export interface SellerPlaybookContent {
   /**
@@ -86,4 +87,5 @@ export interface SellerPlaybookContent {
      * @items.maxLength 1000
      */
   doNotPromise: string[];
+  operationalIntelligence?: SellerPlaybookContentOperationalIntelligence;
 }

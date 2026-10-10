@@ -7,6 +7,26 @@ export interface SellerPlaybookSource {
   accessedAt: string;
   relevance: string;
   scopeLimit: string;
+  author?: string;
+  publishedAt?: string | null;
+  accessContext?: string;
+  topic?: string;
+  marketJurisdiction?: string | null;
+  materialType?: "PUBLIC_ARTICLE" | "PUBLIC_RESOURCE_CATALOG" | "PUBLIC_INTERVIEW" | "OTHER";
+  claimStatus?: "SOURCE_CLAIM_NOT_PROJECT_VALIDATED" | "PUBLIC_DESCRIPTION_ONLY";
+}
+
+export interface SellerPlaybookOperationalIntelligence {
+  domain: "SELLER_CONVERSATION" | "UNDERWRITING" | "BUYER_DISPOSITION" | "TRANSACTION_READINESS";
+  sourceClaim: string;
+  claimStatus: "EDUCATOR_CLAIM_NOT_PROJECT_VALIDATED" | "PUBLIC_DESCRIPTION_ONLY";
+  synthesizedMethod: string;
+  rationale: string;
+  supportingEvidence: string[];
+  refutingEvidence: string[];
+  nextQuestionOrAction: string;
+  humanDecision: string;
+  outcomeValidation: "NO_REAL_DEAL_OUTCOME_VALIDATION";
 }
 
 export interface SellerPlaybookContent {
@@ -23,6 +43,7 @@ export interface SellerPlaybookContent {
   confirmingEvidence: string[];
   refutingEvidence: string[];
   doNotPromise: string[];
+  operationalIntelligence?: SellerPlaybookOperationalIntelligence;
 }
 
 export interface SellerPlaybookSeed {
@@ -52,6 +73,13 @@ const LISTENING_SOURCE = {
   accessedAt: "2026-10-09T21:39:58.000Z",
   relevance: "Supports the general use of active listening to reduce tension and learn information.",
   scopeLimit: "Does not establish any seller motivation, property fact, negotiation outcome, or legal rule.",
+  author: "Program on Negotiation at Harvard Law School",
+  publishedAt: null,
+  accessContext: "Public article; accessed 2026-10-09. No publication date was visible.",
+  topic: "General negotiation listening",
+  marketJurisdiction: null,
+  materialType: "PUBLIC_ARTICLE",
+  claimStatus: "SOURCE_CLAIM_NOT_PROJECT_VALIDATED",
 } satisfies SellerPlaybookSource;
 
 const QUESTIONS_SOURCE = {
@@ -61,9 +89,46 @@ const QUESTIONS_SOURCE = {
   accessedAt: "2026-10-09T21:39:58.000Z",
   relevance: "Supports open, non-antagonistic questions as a way to understand a counterpart's position.",
   scopeLimit: "Does not establish any seller motivation, property fact, negotiation outcome, or legal rule.",
+  author: "Program on Negotiation at Harvard Law School",
+  publishedAt: null,
+  accessContext: "Public article; accessed 2026-10-09. No publication date was visible.",
+  topic: "General negotiation questions",
+  marketJurisdiction: null,
+  materialType: "PUBLIC_ARTICLE",
+  claimStatus: "SOURCE_CLAIM_NOT_PROJECT_VALIDATED",
 } satisfies SellerPlaybookSource;
 
 const sourceProvenance = [LISTENING_SOURCE, QUESTIONS_SOURCE];
+const JERRY_REO_SOURCE = {
+  sourceId: "JERRY_NORTON_REO_ARTICLE",
+  title: "5 Tips For Getting Bank Owned REOs Cheap",
+  url: "https://flippingmastery.com/5_tips_for_getting_bank_owned_reos",
+  accessedAt: "2026-10-10T00:00:00.000Z",
+  relevance: "The public article says repair-cost support can help explain an offer and makes claims about REO seller preferences.",
+  scopeLimit: "Educator claims only; REO/bank-owned context, not a rule for individual sellers. Do not adopt dual-agency, waived-inspection, or higher-EMD suggestions without legal and owner review. No project outcome validation.",
+  author: "Jerry Norton (attributed by Flipping Mastery; no page byline displayed)",
+  publishedAt: null,
+  accessContext: "Full public article page fetched without sign-in or payment; no publication date displayed.",
+  topic: "REO acquisition, repair evidence, and offer preparation",
+  marketJurisdiction: "United States REO context stated by the source; no state-specific rule established.",
+  materialType: "PUBLIC_ARTICLE",
+  claimStatus: "SOURCE_CLAIM_NOT_PROJECT_VALIDATED",
+} satisfies SellerPlaybookSource;
+const PACE_FREEBIES_SOURCE = {
+  sourceId: "PACE_MORBY_PUBLIC_TEXTING_RESOURCE_DESCRIPTION",
+  title: "FREEBIES by Pace Morby — public resource catalog",
+  url: "https://resources.pacejmorby.com/all-freebies/",
+  accessedAt: "2026-10-10T00:00:00.000Z",
+  relevance: "The public catalog describes a free texting-script resource spanning initial outreach and negotiation.",
+  scopeLimit: "Only the public catalog description was reviewed; the script itself was not accessed or reproduced. This does not establish efficacy, permission to contact, or any seller's motivation. No project outcome validation.",
+  author: "Pace Morby (site attribution)",
+  publishedAt: null,
+  accessContext: "Public catalog page fetched; no login, payment, form submission, or gated download was attempted. No publication date displayed.",
+  topic: "Seller/buyer text outreach and negotiation resource description",
+  marketJurisdiction: null,
+  materialType: "PUBLIC_RESOURCE_CATALOG",
+  claimStatus: "PUBLIC_DESCRIPTION_ONLY",
+} satisfies SellerPlaybookSource;
 
 function entry(
   slug: string,
@@ -80,10 +145,12 @@ function entry(
   confirmingEvidence: string[],
   refutingEvidence: string[],
   doNotPromise: string[],
+  sources: SellerPlaybookSource[] = sourceProvenance,
+  operationalIntelligence?: SellerPlaybookOperationalIntelligence,
 ): SellerPlaybookSeed {
   return {
     slug,
-    sourceProvenance,
+    sourceProvenance: sources,
     content: {
       title,
       kind,
@@ -98,6 +165,7 @@ function entry(
       confirmingEvidence,
       refutingEvidence,
       doNotPromise,
+      ...(operationalIntelligence ? { operationalIntelligence } : {}),
     },
   };
 }
@@ -347,6 +415,64 @@ export const SELLER_NEGOTIATION_PLAYBOOK_SEEDS: SellerPlaybookSeed[] = [
     ["Seller explicitly confirms a preferred follow-up method/time or opts in."],
     ["No response, opt-out, or unreachable route remains unresolved."],
     [...BASE_BOUNDARIES, "Do not send or claim a communication from this guidance."],
+  ),
+  entry(
+    "evidence-backed-reo-offer-review",
+    "Evidence-backed offer review for bank-owned properties",
+    "OBJECTION_GUIDANCE",
+    "This guidance is limited to REO acquisition context. The educator's claims about institutional seller preferences are not universal and do not establish a seller's motivation or this project's outcomes.",
+    ["reo", "bank owned", "bank-owned", "repair estimate", "offer justification", "institutional seller"],
+    ["Which current, property-specific condition evidence supports the repair scope?", "Which comparable sales support the value range, and what differs?", "Are any access, inspection, or offer terms already approved for this deal?"],
+    "Explain the evidence and uncertainty plainly. Do not characterize a lower offer as accepted or preferred by a seller.",
+    ["Carry sourced condition evidence into deterministic repair scenarios and cite the estimate inputs.", "Compare an offer only against current comps, repair assumptions, transaction costs, and authorized policy.", "Do not waive inspection rights, increase EMD, use dual agency, or alter terms based on the article; require the established legal/owner review gates."],
+    ["Record the seller's actual response separately from the educator's source claim.", "Refresh stale comp/condition inputs before recalculating; a new recommendation is not a new authorization."],
+    ["The article discusses REO listings and offers; it does not prove individual bank policy or apply automatically to owner-occupants.", "Condition evidence and repair costs need their own provenance; an article is not a property inspection."],
+    ["Escalate representation/dual-agency, inspection waiver, EMD changes, unusual terms, and institutional approval conditions to qualified review."],
+    ["Current property-specific comps and documented condition inputs support a deterministic analysis; any seller preference is separately confirmed."],
+    ["The property is not an REO, the source policy is not applicable, the cited condition is unsupported, or current comps contradict the premise."],
+    [...BASE_BOUNDARIES, "Do not remove inspection protections, change EMD, assert dual-agency suitability, or claim institutional approval from an educator article."],
+    [JERRY_REO_SOURCE],
+    {
+      domain: "UNDERWRITING",
+      sourceClaim: "Jerry Norton's public REO article claims that documented repair costs can help explain an offer and describes cash, inspection, and earnest-money preferences as attractive to banks.",
+      claimStatus: "EDUCATOR_CLAIM_NOT_PROJECT_VALIDATED",
+      synthesizedMethod: "Use property-specific, provenance-backed repair and comp evidence to explain a deterministic offer range; keep source claims about REO preferences separate from this property's facts and retain inspection/EMD safeguards unless separately approved.",
+      rationale: "A transparent evidence trail makes the offer rationale reviewable without turning an educator's general claim into seller intent, property condition, or approval.",
+      supportingEvidence: ["Current comp records with source/date and reconciliation status.", "Property-specific condition evidence and documented repair-rate assumptions.", "Current authorized economics and offer snapshot."],
+      refutingEvidence: ["Non-REO seller or different institutional requirements.", "Stale or conflicting comps/condition evidence.", "No approved authority for changed inspection, deposit, or representation terms."],
+      nextQuestionOrAction: "Refresh comps and condition evidence, then review the existing deterministic underwriting snapshot; ask the seller or authorized representative only about terms they have actually stated.",
+      humanDecision: "Owner retains all offer/term authorization; qualified legal/title reviewers decide representation, inspection, and contract questions.",
+      outcomeValidation: "NO_REAL_DEAL_OUTCOME_VALIDATION",
+    },
+  ),
+  entry(
+    "permission-aware-text-follow-up",
+    "Permission-aware seller follow-up",
+    "OBJECTION_GUIDANCE",
+    "A public Pace Morby resource catalog advertises a texting script for outreach and negotiation, but the script itself was not accessed. The catalog description is not evidence of efficacy, consent, or a particular seller's motivation.",
+    ["texting", "text message", "follow up text", "seller outreach", "negotiation script"],
+    ["If contact is permitted and the seller is reached, what channel and follow-up timing do they prefer?", "What question remains unanswered from the last conversation?", "Would the seller prefer no further contact?"],
+    "Use the seller's stated contact preference, keep language factual and brief, and let the seller set the pace.",
+    ["Prepare only an internal follow-up suggestion that references the last persisted conversation; do not send it automatically.", "When authorized communication capability exists, require the existing role/permission checks and provider confirmation before recording delivery.", "Use the seller's actual response to update indicated evidence; do not infer consent from a public script resource."],
+    ["Keep no-response as unknown, observe opt-outs, and preserve the last confirmed channel and timestamp.", "A follow-up task is not proof that a text was sent or delivered."],
+    ["The public catalog does not expose the script text; no tactic beyond its description is attributed to Pace Morby.", "Contact consent, channel permission, opt-out, and communications law remain separate checks."],
+    ["Escalate missing or conflicting contact-use permission, opt-out, representation, or a request involving protected communications."],
+    ["A seller directly confirms a preferred channel/time and existing permission records allow it."],
+    ["No response, an opt-out, stale permission, or an unverified route."],
+    [...BASE_BOUNDARIES, "Do not send a text, claim delivery, or treat a follow-up suggestion as authorization."],
+    [PACE_FREEBIES_SOURCE],
+    {
+      domain: "SELLER_CONVERSATION",
+      sourceClaim: "Pace Morby's public resource catalog describes a free text-script resource as covering outreach and negotiation; its actual script content was not accessed.",
+      claimStatus: "PUBLIC_DESCRIPTION_ONLY",
+      synthesizedMethod: "Turn the last persisted conversation and permission state into an internal, reviewable follow-up prompt. Never generate an external send event from this playbook.",
+      rationale: "Carry-forward context avoids re-entry while preserving permission, evidence, and human control over seller communication.",
+      supportingEvidence: ["A persisted prior seller response or requested follow-up.", "Current direct-contact route and source-specific contact-use permission."],
+      refutingEvidence: ["No seller response, explicit opt-out, stale route, or unresolved permission conflict."],
+      nextQuestionOrAction: "Review the last conversation, permission record, and seller-stated follow-up preference; if any are absent, resolve that gap before communication.",
+      humanDecision: "The authorized operator decides whether and when to contact; the system records delivery only after a connected provider confirms it.",
+      outcomeValidation: "NO_REAL_DEAL_OUTCOME_VALIDATION",
+    },
   ),
 ];
 

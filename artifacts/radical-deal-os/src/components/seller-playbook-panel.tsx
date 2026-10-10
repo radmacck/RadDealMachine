@@ -13,7 +13,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { ErrorNotice } from "@/components/state-views";
 import { useAccess } from "@/hooks/use-access";
 
-type EditableContent = Omit<SellerPlaybookEntry["content"], "kind" | "matchTerms">;
+type EditableContent = Omit<SellerPlaybookEntry["content"], "kind" | "matchTerms" | "operationalIntelligence">;
 type Draft = EditableContent & { changeReason: string };
 
 function lines(value: string) {
@@ -132,6 +132,9 @@ export function SellerPlaybookPanel({ leadId }: { leadId: string }) {
           <p className="mt-1 text-xs text-muted-foreground">
             Property flags never establish seller motivation. A matched topic below comes only from seller-reported evidence and remains INDICATED until independently reviewed. Guidance cannot change offer terms.
           </p>
+          <p className="mt-1 text-xs text-muted-foreground">
+            Educator material is labeled as a source claim, not proof of effectiveness. Synthetic exercises are not real-deal outcomes.
+          </p>
         </div>
       </div>
       {update.error && <ErrorNotice error={update.error} title="Playbook revision was not saved" />}
@@ -163,6 +166,21 @@ export function SellerPlaybookPanel({ leadId }: { leadId: string }) {
                   Seller evidence references: {entry.relevance.evidenceRefs.join(", ")}
                 </p>
               )}
+              {entry.content.operationalIntelligence && (
+                <section className="mt-3 rounded-sm border border-signal/30 bg-signal/5 p-3" data-testid={`seller-playbook-intelligence-${entry.slug}`}>
+                  <p className="eyebrow">Operational synthesis · {entry.content.operationalIntelligence.domain.replaceAll("_", " ").toLowerCase()}</p>
+                  <p className="mt-1 text-xs"><b>Educator/source claim (not validated by our deals):</b> {entry.content.operationalIntelligence.sourceClaim}</p>
+                  <p className="mt-1 text-xs"><b>Why this is useful:</b> {entry.content.operationalIntelligence.rationale}</p>
+                  <p className="mt-1 text-xs"><b>Suggested method:</b> {entry.content.operationalIntelligence.synthesizedMethod}</p>
+                  <div className="mt-2 grid gap-2 text-xs md:grid-cols-2">
+                    <div><b>Evidence supporting applicability</b><ul className="list-disc pl-5">{entry.content.operationalIntelligence.supportingEvidence.map((item) => <li key={item}>{item}</li>)}</ul></div>
+                    <div><b>Evidence that would refute applicability</b><ul className="list-disc pl-5">{entry.content.operationalIntelligence.refutingEvidence.map((item) => <li key={item}>{item}</li>)}</ul></div>
+                  </div>
+                  <p className="mt-2 text-xs"><b>Next question/action:</b> {entry.content.operationalIntelligence.nextQuestionOrAction}</p>
+                  <p className="mt-1 text-xs"><b>Human decision:</b> {entry.content.operationalIntelligence.humanDecision}</p>
+                  <p className="mt-1 text-[11px] text-muted-foreground">Real-deal outcome validation: none asserted. The playbook does not change underwriting, terms, authority, or send communication.</p>
+                </section>
+              )}
               <div className="mt-3 grid gap-3 md:grid-cols-2">
                 <div>
                   <p className="eyebrow mb-1">Ask to confirm or refute</p>
@@ -192,11 +210,16 @@ export function SellerPlaybookPanel({ leadId }: { leadId: string }) {
               <details className="mt-2 text-xs">
                 <summary className="cursor-pointer flex items-center gap-1"><History className="h-3.5 w-3.5" />Source and revision history</summary>
                 <div className="mt-2 space-y-2">
-                  <p>Sources support general listening/question methods only; they do not establish this seller's situation.</p>
+                  <p>Sources support only the scope stated below. Educator claims are not independently validated by this system.</p>
                   {entry.sourceProvenance.map((source) => (
                     <p key={source.sourceId}>
                       <a href={source.url} target="_blank" rel="noreferrer" className="underline">{source.title}</a>
-                      <span className="ml-1 text-muted-foreground">· accessed {new Date(source.accessedAt).toLocaleDateString()}</span>
+                      <span className="ml-1 text-muted-foreground">· {source.author ?? "Author not recorded"} · accessed {new Date(source.accessedAt).toLocaleDateString()}</span>
+                      {source.publishedAt && <span className="block text-muted-foreground">Published {source.publishedAt}</span>}
+                      {source.topic && <span className="block text-muted-foreground">Topic: {source.topic}</span>}
+                      {source.marketJurisdiction && <span className="block text-muted-foreground">Market/jurisdiction: {source.marketJurisdiction}</span>}
+                      {source.accessContext && <span className="block text-muted-foreground">Access: {source.accessContext}</span>}
+                      {source.claimStatus && <span className="block font-semibold text-amber-700">{source.claimStatus.replaceAll("_", " ")}</span>}
                       <span className="block text-muted-foreground">{source.scopeLimit}</span>
                     </p>
                   ))}
@@ -244,7 +267,7 @@ export function SellerPlaybookPanel({ leadId }: { leadId: string }) {
         })}
       </div>
       <p className="border-t border-border pt-2 text-xs text-muted-foreground">
-        All {entries.length} entries are available above. Seller-reported matches sort first; no property-only signal selects or confirms a motivation.
+        All {entries.length} entries are available above. Seller-reported matches sort first; no property-only signal selects or confirms a motivation. Educational claims are not project outcomes.
       </p>
       {!isOwner && <p className="text-[11px] text-muted-foreground">Shared guidance is read-only for this role. Owner approval is required to publish a new version.</p>}
     </section>

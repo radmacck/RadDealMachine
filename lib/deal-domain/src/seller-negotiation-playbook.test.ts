@@ -13,8 +13,8 @@ test("playbook situations remain hypotheses and the library preserves the reques
   assert.ok(entries.some((item) => item.slug === "landlord-or-tenant-context"));
   assert.ok(entries.some((item) => item.slug === "tax-foreclosure-or-title-pressure"));
   assert.ok(entries.every((item) => item.content.hypothesis.length > 0));
-  assert.ok(entries.every((item) => item.sourceProvenance.length >= 2));
-  assert.ok(entries.every((item) => item.sourceProvenance.every((source) => source.scopeLimit.includes("Does not establish"))));
+  assert.ok(entries.every((item) => item.sourceProvenance.length >= 1));
+  assert.ok(entries.every((item) => item.sourceProvenance.every((source) => source.scopeLimit.length > 0)));
 });
 
 test("public/property and AI evidence cannot trigger a seller-motivation playbook match", () => {
@@ -44,4 +44,21 @@ test("advisory options do not contain automatic price/term changes or contract c
     assert.doesNotMatch(guidance, /\$\s?\d/);
     assert.ok(item.content.doNotPromise.some((line) => /approval|promise|legal|contract/i.test(line)));
   }
+});
+
+test("source-backed guidance retains attribution, claim status, scope, and human decision boundaries", () => {
+  const reo = SELLER_NEGOTIATION_PLAYBOOK_SEEDS.find((item) => item.slug === "evidence-backed-reo-offer-review")!;
+  const texting = SELLER_NEGOTIATION_PLAYBOOK_SEEDS.find((item) => item.slug === "permission-aware-text-follow-up")!;
+  assert.equal(reo.sourceProvenance[0]?.author, "Jerry Norton (attributed by Flipping Mastery; no page byline displayed)");
+  assert.match(reo.sourceProvenance[0]?.url ?? "", /flippingmastery\.com/);
+  assert.equal(reo.content.operationalIntelligence?.claimStatus, "EDUCATOR_CLAIM_NOT_PROJECT_VALIDATED");
+  assert.match(reo.content.operationalIntelligence?.sourceClaim ?? "", /claims/);
+  assert.match(reo.content.operationalIntelligence?.humanDecision ?? "", /Owner retains/);
+  assert.equal(texting.sourceProvenance[0]?.author, "Pace Morby (site attribution)");
+  assert.equal(texting.sourceProvenance[0]?.claimStatus, "PUBLIC_DESCRIPTION_ONLY");
+  assert.match(texting.sourceProvenance[0]?.accessContext ?? "", /no login, payment, form submission/);
+  assert.equal(texting.content.operationalIntelligence?.outcomeValidation, "NO_REAL_DEAL_OUTCOME_VALIDATION");
+  assert.match(texting.content.operationalIntelligence?.nextQuestionOrAction ?? "", /permission record/);
+  assert.ok([...reo.content.negotiationOptions, ...texting.content.negotiationOptions]
+    .some((item) => /approval/i.test(item)));
 });

@@ -38,7 +38,17 @@ async function exercise() {
     leadId = created.id;
     const beforeEvidence = await dealStore.leadDetail(leadId, db, now);
     const initial = await getSellerPlaybook(leadId);
-    assert.ok(initial.entries.length >= 12);
+    assert.ok(initial.entries.length >= 14);
+    const reoGuidance = initial.entries.find((entry) => entry.slug === "evidence-backed-reo-offer-review");
+    const followUpGuidance = initial.entries.find((entry) => entry.slug === "permission-aware-text-follow-up");
+    assert.ok(reoGuidance?.content.operationalIntelligence);
+    assert.equal(reoGuidance!.content.operationalIntelligence!.claimStatus, "EDUCATOR_CLAIM_NOT_PROJECT_VALIDATED");
+    assert.ok(reoGuidance!.sourceProvenance.some((source) => source.author?.includes("Jerry Norton")
+      && source.topic?.includes("REO") && source.accessContext));
+    assert.ok(followUpGuidance?.content.operationalIntelligence);
+    assert.equal(followUpGuidance!.content.operationalIntelligence!.claimStatus, "PUBLIC_DESCRIPTION_ONLY");
+    assert.ok(followUpGuidance!.sourceProvenance.some((source) => source.author?.includes("Pace Morby")
+      && source.topic?.includes("text") && source.scopeLimit.includes("not accessed")));
     const relocation = initial.entries.find((entry) => entry.slug === "relocation-or-deadline");
     assert.ok(relocation);
     assert.equal(relocation!.version, 1);
@@ -134,6 +144,8 @@ async function exercise() {
     logger.info({
       synthetic: true,
       libraryEntries: initial.entries.length,
+      sourceBackedOperationalEntries: [reoGuidance!.slug, followUpGuidance!.slug],
+      realDealOutcomeValidation: "none",
       sellerEvidenceId: sellerEvidence.id,
       revisionVersions: revised.revisions.map((item) => item.version),
       staleEditRejected: true,

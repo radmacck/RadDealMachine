@@ -40484,7 +40484,19 @@ export const GetSellerPlaybookResponse = zod.object({
   "escalationConditions": zod.array(zod.string().min(1).max(getSellerPlaybookResponseEntriesItemContentEscalationConditionsItemMax)).min(1).max(getSellerPlaybookResponseEntriesItemContentEscalationConditionsMax),
   "confirmingEvidence": zod.array(zod.string().min(1).max(getSellerPlaybookResponseEntriesItemContentConfirmingEvidenceItemMax)).min(1).max(getSellerPlaybookResponseEntriesItemContentConfirmingEvidenceMax),
   "refutingEvidence": zod.array(zod.string().min(1).max(getSellerPlaybookResponseEntriesItemContentRefutingEvidenceItemMax)).min(1).max(getSellerPlaybookResponseEntriesItemContentRefutingEvidenceMax),
-  "doNotPromise": zod.array(zod.string().min(1).max(getSellerPlaybookResponseEntriesItemContentDoNotPromiseItemMax)).min(1).max(getSellerPlaybookResponseEntriesItemContentDoNotPromiseMax)
+  "doNotPromise": zod.array(zod.string().min(1).max(getSellerPlaybookResponseEntriesItemContentDoNotPromiseItemMax)).min(1).max(getSellerPlaybookResponseEntriesItemContentDoNotPromiseMax),
+  "operationalIntelligence": zod.object({
+  "domain": zod.enum(['SELLER_CONVERSATION', 'UNDERWRITING', 'BUYER_DISPOSITION', 'TRANSACTION_READINESS']),
+  "sourceClaim": zod.string(),
+  "claimStatus": zod.enum(['EDUCATOR_CLAIM_NOT_PROJECT_VALIDATED', 'PUBLIC_DESCRIPTION_ONLY']),
+  "synthesizedMethod": zod.string(),
+  "rationale": zod.string(),
+  "supportingEvidence": zod.array(zod.string()),
+  "refutingEvidence": zod.array(zod.string()),
+  "nextQuestionOrAction": zod.string(),
+  "humanDecision": zod.string(),
+  "outcomeValidation": zod.enum(['NO_REAL_DEAL_OUTCOME_VALIDATION'])
+}).optional()
 }),
   "sourceProvenance": zod.array(zod.object({
   "sourceId": zod.string(),
@@ -40492,7 +40504,14 @@ export const GetSellerPlaybookResponse = zod.object({
   "url": zod.string().url(),
   "accessedAt": zod.string().datetime({"offset":true}),
   "relevance": zod.string(),
-  "scopeLimit": zod.string()
+  "scopeLimit": zod.string(),
+  "author": zod.string().optional(),
+  "publishedAt": zod.string().date().nullish(),
+  "accessContext": zod.string().optional(),
+  "topic": zod.string().optional(),
+  "marketJurisdiction": zod.string().nullish(),
+  "materialType": zod.enum(['PUBLIC_ARTICLE', 'PUBLIC_RESOURCE_CATALOG', 'PUBLIC_INTERVIEW', 'OTHER']).optional(),
+  "claimStatus": zod.enum(['SOURCE_CLAIM_NOT_PROJECT_VALIDATED', 'PUBLIC_DESCRIPTION_ONLY']).optional()
 })).min(1),
   "updatedBy": zod.string(),
   "updatedAt": zod.string().datetime({"offset":true}),
@@ -40645,7 +40664,19 @@ export const UpdateSellerPlaybookEntryResponse = zod.object({
   "escalationConditions": zod.array(zod.string().min(1).max(updateSellerPlaybookEntryResponseContentEscalationConditionsItemMax)).min(1).max(updateSellerPlaybookEntryResponseContentEscalationConditionsMax),
   "confirmingEvidence": zod.array(zod.string().min(1).max(updateSellerPlaybookEntryResponseContentConfirmingEvidenceItemMax)).min(1).max(updateSellerPlaybookEntryResponseContentConfirmingEvidenceMax),
   "refutingEvidence": zod.array(zod.string().min(1).max(updateSellerPlaybookEntryResponseContentRefutingEvidenceItemMax)).min(1).max(updateSellerPlaybookEntryResponseContentRefutingEvidenceMax),
-  "doNotPromise": zod.array(zod.string().min(1).max(updateSellerPlaybookEntryResponseContentDoNotPromiseItemMax)).min(1).max(updateSellerPlaybookEntryResponseContentDoNotPromiseMax)
+  "doNotPromise": zod.array(zod.string().min(1).max(updateSellerPlaybookEntryResponseContentDoNotPromiseItemMax)).min(1).max(updateSellerPlaybookEntryResponseContentDoNotPromiseMax),
+  "operationalIntelligence": zod.object({
+  "domain": zod.enum(['SELLER_CONVERSATION', 'UNDERWRITING', 'BUYER_DISPOSITION', 'TRANSACTION_READINESS']),
+  "sourceClaim": zod.string(),
+  "claimStatus": zod.enum(['EDUCATOR_CLAIM_NOT_PROJECT_VALIDATED', 'PUBLIC_DESCRIPTION_ONLY']),
+  "synthesizedMethod": zod.string(),
+  "rationale": zod.string(),
+  "supportingEvidence": zod.array(zod.string()),
+  "refutingEvidence": zod.array(zod.string()),
+  "nextQuestionOrAction": zod.string(),
+  "humanDecision": zod.string(),
+  "outcomeValidation": zod.enum(['NO_REAL_DEAL_OUTCOME_VALIDATION'])
+}).optional()
 }),
   "sourceProvenance": zod.array(zod.object({
   "sourceId": zod.string(),
@@ -40653,7 +40684,14 @@ export const UpdateSellerPlaybookEntryResponse = zod.object({
   "url": zod.string().url(),
   "accessedAt": zod.string().datetime({"offset":true}),
   "relevance": zod.string(),
-  "scopeLimit": zod.string()
+  "scopeLimit": zod.string(),
+  "author": zod.string().optional(),
+  "publishedAt": zod.string().date().nullish(),
+  "accessContext": zod.string().optional(),
+  "topic": zod.string().optional(),
+  "marketJurisdiction": zod.string().nullish(),
+  "materialType": zod.enum(['PUBLIC_ARTICLE', 'PUBLIC_RESOURCE_CATALOG', 'PUBLIC_INTERVIEW', 'OTHER']).optional(),
+  "claimStatus": zod.enum(['SOURCE_CLAIM_NOT_PROJECT_VALIDATED', 'PUBLIC_DESCRIPTION_ONLY']).optional()
 })).min(1),
   "updatedBy": zod.string(),
   "updatedAt": zod.string().datetime({"offset":true}),

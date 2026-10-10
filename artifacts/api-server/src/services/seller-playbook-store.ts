@@ -15,7 +15,7 @@ import {
 } from "@workspace/deal-domain";
 import { leadDetail, audit } from "./deal-store";
 
-type EditableContent = Omit<SellerPlaybookContent, "kind" | "matchTerms">;
+type EditableContent = Omit<SellerPlaybookContent, "kind" | "matchTerms" | "operationalIntelligence">;
 type EntryRow = typeof sellerPlaybookEntriesTable.$inferSelect;
 type RevisionRow = typeof sellerPlaybookRevisionsTable.$inferSelect;
 type Tx = Parameters<Parameters<typeof db.transaction>[0]>[0];

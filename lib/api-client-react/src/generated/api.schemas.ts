@@ -5,6 +5,24 @@
  * Radical Deal OS seller intake, underwriting, conversations and approved offers
  * OpenAPI spec version: 1.0.0
  */
+export type SellerPlaybookSourceMaterialType = typeof SellerPlaybookSourceMaterialType[keyof typeof SellerPlaybookSourceMaterialType];
+
+
+export const SellerPlaybookSourceMaterialType = {
+  PUBLIC_ARTICLE: 'PUBLIC_ARTICLE',
+  PUBLIC_RESOURCE_CATALOG: 'PUBLIC_RESOURCE_CATALOG',
+  PUBLIC_INTERVIEW: 'PUBLIC_INTERVIEW',
+  OTHER: 'OTHER',
+} as const;
+
+export type SellerPlaybookSourceClaimStatus = typeof SellerPlaybookSourceClaimStatus[keyof typeof SellerPlaybookSourceClaimStatus];
+
+
+export const SellerPlaybookSourceClaimStatus = {
+  SOURCE_CLAIM_NOT_PROJECT_VALIDATED: 'SOURCE_CLAIM_NOT_PROJECT_VALIDATED',
+  PUBLIC_DESCRIPTION_ONLY: 'PUBLIC_DESCRIPTION_ONLY',
+} as const;
+
 export interface SellerPlaybookSource {
   sourceId: string;
   title: string;
@@ -12,6 +30,13 @@ export interface SellerPlaybookSource {
   accessedAt: string;
   relevance: string;
   scopeLimit: string;
+  author?: string;
+  publishedAt?: string | null;
+  accessContext?: string;
+  topic?: string;
+  marketJurisdiction?: string | null;
+  materialType?: SellerPlaybookSourceMaterialType;
+  claimStatus?: SellerPlaybookSourceClaimStatus;
 }
 
 export interface SellerPlaybookRevision {
@@ -43,6 +68,44 @@ export const SellerPlaybookContentKind = {
   SITUATION_HYPOTHESIS: 'SITUATION_HYPOTHESIS',
   OBJECTION_GUIDANCE: 'OBJECTION_GUIDANCE',
 } as const;
+
+export type SellerPlaybookContentOperationalIntelligenceDomain = typeof SellerPlaybookContentOperationalIntelligenceDomain[keyof typeof SellerPlaybookContentOperationalIntelligenceDomain];
+
+
+export const SellerPlaybookContentOperationalIntelligenceDomain = {
+  SELLER_CONVERSATION: 'SELLER_CONVERSATION',
+  UNDERWRITING: 'UNDERWRITING',
+  BUYER_DISPOSITION: 'BUYER_DISPOSITION',
+  TRANSACTION_READINESS: 'TRANSACTION_READINESS',
+} as const;
+
+export type SellerPlaybookContentOperationalIntelligenceClaimStatus = typeof SellerPlaybookContentOperationalIntelligenceClaimStatus[keyof typeof SellerPlaybookContentOperationalIntelligenceClaimStatus];
+
+
+export const SellerPlaybookContentOperationalIntelligenceClaimStatus = {
+  EDUCATOR_CLAIM_NOT_PROJECT_VALIDATED: 'EDUCATOR_CLAIM_NOT_PROJECT_VALIDATED',
+  PUBLIC_DESCRIPTION_ONLY: 'PUBLIC_DESCRIPTION_ONLY',
+} as const;
+
+export type SellerPlaybookContentOperationalIntelligenceOutcomeValidation = typeof SellerPlaybookContentOperationalIntelligenceOutcomeValidation[keyof typeof SellerPlaybookContentOperationalIntelligenceOutcomeValidation];
+
+
+export const SellerPlaybookContentOperationalIntelligenceOutcomeValidation = {
+  NO_REAL_DEAL_OUTCOME_VALIDATION: 'NO_REAL_DEAL_OUTCOME_VALIDATION',
+} as const;
+
+export type SellerPlaybookContentOperationalIntelligence = {
+  domain: SellerPlaybookContentOperationalIntelligenceDomain;
+  sourceClaim: string;
+  claimStatus: SellerPlaybookContentOperationalIntelligenceClaimStatus;
+  synthesizedMethod: string;
+  rationale: string;
+  supportingEvidence: string[];
+  refutingEvidence: string[];
+  nextQuestionOrAction: string;
+  humanDecision: string;
+  outcomeValidation: SellerPlaybookContentOperationalIntelligenceOutcomeValidation;
+};
 
 export interface SellerPlaybookContent {
   /**
@@ -123,6 +186,7 @@ export interface SellerPlaybookContent {
      * @items.maxLength 1000
      */
   doNotPromise: string[];
+  operationalIntelligence?: SellerPlaybookContentOperationalIntelligence;
 }
 
 export interface SellerPlaybookEditableContent {
