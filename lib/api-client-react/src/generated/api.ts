@@ -46,6 +46,9 @@ import type {
   CallBrief,
   CallInput,
   CallStartInput,
+  ClauseReviewRequest,
+  ClauseReviewRequestInput,
+  ClauseReviewRequestsResponse,
   ClosingMilestoneInput,
   CommandCenter,
   ContractExecutionInput,
@@ -542,6 +545,160 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
         TContext
       > => {
       return useMutation(getRecordTransactionExceptionMutationOptions(options));
+    }
+
+export const getGetClauseReviewRequestsUrl = (id: string,) => {
+
+
+
+
+  return `/api/deals/${id}/contract/clause-review-requests`
+}
+
+export const getClauseReviewRequests = async (id: string, options?: Parameters<typeof customFetch>[1]): Promise<ClauseReviewRequestsResponse> => {
+
+  return customFetch<ClauseReviewRequestsResponse>(getGetClauseReviewRequestsUrl(id),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetClauseReviewRequestsQueryKey = (id: string,) => {
+    return [
+    `/api/deals/${id}/contract/clause-review-requests`
+    ] as const;
+    }
+
+
+export const getGetClauseReviewRequestsQueryOptions = <TData = Awaited<ReturnType<typeof getClauseReviewRequests>>, TError = ErrorType<void>>(id: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getClauseReviewRequests>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetClauseReviewRequestsQueryKey(id);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getClauseReviewRequests>>> = ({ signal }) => getClauseReviewRequests(id, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: id !== null && id !== undefined, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getClauseReviewRequests>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetClauseReviewRequestsQueryResult = NonNullable<Awaited<ReturnType<typeof getClauseReviewRequests>>>
+export type GetClauseReviewRequestsQueryError = ErrorType<void>
+
+
+
+export function useGetClauseReviewRequests<TData = Awaited<ReturnType<typeof getClauseReviewRequests>>, TError = ErrorType<void>>(
+ id: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getClauseReviewRequests>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetClauseReviewRequestsQueryOptions(id,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getCreateClauseReviewRequestUrl = (id: string,) => {
+
+
+
+
+  return `/api/deals/${id}/contract/clause-review-requests`
+}
+
+export const createClauseReviewRequest = async (id: string,
+    clauseReviewRequestInput: ClauseReviewRequestInput, options?: Parameters<typeof customFetch>[1]): Promise<ClauseReviewRequest> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return customFetch<ClauseReviewRequest>(getCreateClauseReviewRequestUrl(id),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(clauseReviewRequestInput)
+  }
+);}
+
+
+
+
+
+export const getCreateClauseReviewRequestMutationKey = () => ['createClauseReviewRequest'] as const;
+
+export const getCreateClauseReviewRequestMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createClauseReviewRequest>>, TError,CreateClauseReviewRequestMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof createClauseReviewRequest>>, TError,CreateClauseReviewRequestMutationVariables, TContext> => {
+
+const mutationKey = getCreateClauseReviewRequestMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof createClauseReviewRequest>>, CreateClauseReviewRequestMutationVariables> = (props) => {
+          const {id,data} = props ?? {};
+
+          return  createClauseReviewRequest(id,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type CreateClauseReviewRequestMutationResult = NonNullable<Awaited<ReturnType<typeof createClauseReviewRequest>>>
+    export type CreateClauseReviewRequestMutationBody = BodyType<ClauseReviewRequestInput>
+    export type CreateClauseReviewRequestMutationError = ErrorType<unknown>
+    export type CreateClauseReviewRequestMutationVariables = {id: string;data: BodyType<ClauseReviewRequestInput>}
+
+    export const useCreateClauseReviewRequest = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createClauseReviewRequest>>, TError,CreateClauseReviewRequestMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof createClauseReviewRequest>>,
+        TError,
+        CreateClauseReviewRequestMutationVariables,
+        TContext
+      > => {
+      return useMutation(getCreateClauseReviewRequestMutationOptions(options));
     }
 
 export const getIntakePropertyEvidenceUrl = (id: string,) => {

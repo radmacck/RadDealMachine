@@ -5,6 +5,131 @@
  * Radical Deal OS seller intake, underwriting, conversations and approved offers
  * OpenAPI spec version: 1.0.0
  */
+export type ClauseReviewRequestInputCategory = typeof ClauseReviewRequestInputCategory[keyof typeof ClauseReviewRequestInputCategory];
+
+
+export const ClauseReviewRequestInputCategory = {
+  ASSIGNMENT: 'ASSIGNMENT',
+  INSPECTION: 'INSPECTION',
+  ACCESS: 'ACCESS',
+  EARNEST_MONEY: 'EARNEST_MONEY',
+  CLOSING: 'CLOSING',
+  TITLE: 'TITLE',
+  DEFAULT_REMEDIES: 'DEFAULT_REMEDIES',
+  OTHER: 'OTHER',
+} as const;
+
+export type ClauseReviewRequestInputPartyScope = typeof ClauseReviewRequestInputPartyScope[keyof typeof ClauseReviewRequestInputPartyScope];
+
+
+export const ClauseReviewRequestInputPartyScope = {
+  SELLER: 'SELLER',
+  BUYER: 'BUYER',
+  BOTH: 'BOTH',
+  INTERNAL_REVIEW: 'INTERNAL_REVIEW',
+} as const;
+
+export type ClauseReviewRequestInputAffectedTermsItem = typeof ClauseReviewRequestInputAffectedTermsItem[keyof typeof ClauseReviewRequestInputAffectedTermsItem];
+
+
+export const ClauseReviewRequestInputAffectedTermsItem = {
+  ASSIGNMENT: 'ASSIGNMENT',
+  INSPECTION: 'INSPECTION',
+  ACCESS: 'ACCESS',
+  EARNEST_MONEY: 'EARNEST_MONEY',
+  CLOSING: 'CLOSING',
+  TITLE: 'TITLE',
+  DEFAULT_REMEDIES: 'DEFAULT_REMEDIES',
+  PRICE: 'PRICE',
+  OTHER: 'OTHER',
+} as const;
+
+export interface ClauseReviewRequestInput {
+  /**
+     * @minLength 12
+     * @maxLength 160
+     */
+  idempotencyKey: string;
+  category: ClauseReviewRequestInputCategory;
+  /**
+     * @minLength 10
+     * @maxLength 2000
+     */
+  purpose: string;
+  /**
+     * @minLength 4
+     * @maxLength 200
+     */
+  jurisdiction: string;
+  /** @maxLength 500 */
+  sourceTemplateRef?: string;
+  partyScope: ClauseReviewRequestInputPartyScope;
+  /**
+     * Optional owner-supplied text; always unreviewed and never inserted automatically.
+     * @maxLength 5000
+     */
+  proposedText?: string;
+  /**
+     * @minItems 1
+     * @maxItems 12
+     */
+  affectedTerms: ClauseReviewRequestInputAffectedTermsItem[];
+  /**
+     * @maxItems 20
+     * @items.maxLength 500
+     */
+  conflictsWith?: string[];
+}
+
+export type ClauseReviewRequestStatus = typeof ClauseReviewRequestStatus[keyof typeof ClauseReviewRequestStatus];
+
+
+export const ClauseReviewRequestStatus = {
+  BLOCKED_MISSING_APPROVED_TEMPLATE: 'BLOCKED_MISSING_APPROVED_TEMPLATE',
+  AWAITING_QUALIFIED_REVIEW: 'AWAITING_QUALIFIED_REVIEW',
+} as const;
+
+export type ClauseReviewRequestProposedTextStatus = typeof ClauseReviewRequestProposedTextStatus[keyof typeof ClauseReviewRequestProposedTextStatus];
+
+
+export const ClauseReviewRequestProposedTextStatus = {
+  OWNER_SUPPLIED_UNREVIEWED: 'OWNER_SUPPLIED_UNREVIEWED',
+} as const;
+
+export type ClauseReviewRequestQualifiedReviewStatus = typeof ClauseReviewRequestQualifiedReviewStatus[keyof typeof ClauseReviewRequestQualifiedReviewStatus];
+
+
+export const ClauseReviewRequestQualifiedReviewStatus = {
+  NOT_REVIEWED: 'NOT_REVIEWED',
+} as const;
+
+export interface ClauseReviewRequest {
+  id: string;
+  leadId: string;
+  /** @minimum 1 */
+  version: number;
+  status: ClauseReviewRequestStatus;
+  createdBy: string;
+  createdAt: string;
+  category: string;
+  purpose: string;
+  jurisdiction: string;
+  requiredTemplateKey: string;
+  /** @nullable */
+  sourceTemplateRef: string | null;
+  partyScope: string;
+  /** @nullable */
+  proposedText: string | null;
+  proposedTextStatus: ClauseReviewRequestProposedTextStatus;
+  affectedTerms: string[];
+  conflictsWith: string[];
+  qualifiedReviewStatus: ClauseReviewRequestQualifiedReviewStatus;
+  blocker: string;
+  nextAction: string;
+}
+
+export type ClauseReviewRequestsResponse = ClauseReviewRequest[];
+
 export type SellerPlaybookSourceMaterialType = typeof SellerPlaybookSourceMaterialType[keyof typeof SellerPlaybookSourceMaterialType];
 
 

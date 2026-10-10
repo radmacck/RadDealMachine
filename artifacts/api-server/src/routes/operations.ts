@@ -13,6 +13,7 @@ import * as outcomes from "../services/outcome-learning-store";
 import { getTransactionDocumentReadiness } from "../services/transaction-document-registry";
 import { getTransactionReadinessReport } from "../services/transaction-readiness";
 import { recordTransactionException } from "../services/transaction-exceptions";
+import { createClauseReviewRequest, listClauseReviewRequests } from "../services/transaction-clause-requests";
 import * as workers from "../services/workers";
 import { listHandoffs, recordHandoffEvent } from "../services/handoffs";
 
@@ -21,6 +22,16 @@ router.use(authenticated,membership);
 router.get("/transaction-documents/readiness",roles("OWNER","OPERATOR"),async(req,res)=>{
   const {leadId} = parse(z.object({leadId:z.string().uuid().optional()}),req.query);
   res.json(schemas.GetTransactionDocumentReadinessResponse.parse(await getTransactionDocumentReadiness(actor(res),leadId)));
+});
+router.get("/deals/:id/contract/clause-review-requests",roles("OWNER","OPERATOR"),async(req,res)=>{
+  const {id} = parse(schemas.GetClauseReviewRequestsParams,req.params);
+  res.json(schemas.GetClauseReviewRequestsResponse.parse(await listClauseReviewRequests(id,actor(res))));
+});
+router.post("/deals/:id/contract/clause-review-requests",roles("OWNER"),async(req,res)=>{
+  const {id} = parse(schemas.CreateClauseReviewRequestParams,req.params);
+  res.status(201).json(schemas.CreateClauseReviewRequestResponse.parse(
+    await createClauseReviewRequest(id,parse(schemas.CreateClauseReviewRequestBody,req.body),actor(res)),
+  ));
 });
 router.get("/transaction-readiness",roles("OWNER","OPERATOR","ANALYST"),async(_req,res)=>{
   res.json(schemas.GetTransactionReadinessResponse.parse(await getTransactionReadinessReport()));

@@ -2090,6 +2090,100 @@ export const RecordTransactionExceptionResponse = zod.object({
 })
 
 
+export const GetClauseReviewRequestsParams = zod.object({
+  "id": zod.coerce.string().uuid()
+})
+
+
+
+
+export const GetClauseReviewRequestsResponseItem = zod.object({
+  "id": zod.string().uuid(),
+  "leadId": zod.string().uuid(),
+  "version": zod.number().int().min(1),
+  "status": zod.enum(['BLOCKED_MISSING_APPROVED_TEMPLATE', 'AWAITING_QUALIFIED_REVIEW']),
+  "createdBy": zod.string(),
+  "createdAt": zod.string().datetime({"offset":true}),
+  "category": zod.string(),
+  "purpose": zod.string(),
+  "jurisdiction": zod.string(),
+  "requiredTemplateKey": zod.string(),
+  "sourceTemplateRef": zod.string().nullable(),
+  "partyScope": zod.string(),
+  "proposedText": zod.string().nullable(),
+  "proposedTextStatus": zod.enum(['OWNER_SUPPLIED_UNREVIEWED']),
+  "affectedTerms": zod.array(zod.string()),
+  "conflictsWith": zod.array(zod.string()),
+  "qualifiedReviewStatus": zod.enum(['NOT_REVIEWED']),
+  "blocker": zod.string(),
+  "nextAction": zod.string()
+})
+export const GetClauseReviewRequestsResponse = zod.array(GetClauseReviewRequestsResponseItem)
+
+
+export const CreateClauseReviewRequestParams = zod.object({
+  "id": zod.coerce.string().uuid()
+})
+
+export const createClauseReviewRequestBodyIdempotencyKeyMin = 12;
+export const createClauseReviewRequestBodyIdempotencyKeyMax = 160;
+
+export const createClauseReviewRequestBodyPurposeMin = 10;
+export const createClauseReviewRequestBodyPurposeMax = 2000;
+
+export const createClauseReviewRequestBodyJurisdictionMin = 4;
+export const createClauseReviewRequestBodyJurisdictionMax = 200;
+
+export const createClauseReviewRequestBodySourceTemplateRefMax = 500;
+
+export const createClauseReviewRequestBodyProposedTextMax = 5000;
+
+export const createClauseReviewRequestBodyAffectedTermsMax = 12;
+
+export const createClauseReviewRequestBodyConflictsWithItemMax = 500;
+
+export const createClauseReviewRequestBodyConflictsWithMax = 20;
+
+
+
+export const CreateClauseReviewRequestBody = zod.object({
+  "idempotencyKey": zod.string().min(createClauseReviewRequestBodyIdempotencyKeyMin).max(createClauseReviewRequestBodyIdempotencyKeyMax),
+  "category": zod.enum(['ASSIGNMENT', 'INSPECTION', 'ACCESS', 'EARNEST_MONEY', 'CLOSING', 'TITLE', 'DEFAULT_REMEDIES', 'OTHER']),
+  "purpose": zod.string().min(createClauseReviewRequestBodyPurposeMin).max(createClauseReviewRequestBodyPurposeMax),
+  "jurisdiction": zod.string().min(createClauseReviewRequestBodyJurisdictionMin).max(createClauseReviewRequestBodyJurisdictionMax),
+  "sourceTemplateRef": zod.string().max(createClauseReviewRequestBodySourceTemplateRefMax).optional(),
+  "partyScope": zod.enum(['SELLER', 'BUYER', 'BOTH', 'INTERNAL_REVIEW']),
+  "proposedText": zod.string().max(createClauseReviewRequestBodyProposedTextMax).optional().describe('Optional owner-supplied text; always unreviewed and never inserted automatically.'),
+  "affectedTerms": zod.array(zod.enum(['ASSIGNMENT', 'INSPECTION', 'ACCESS', 'EARNEST_MONEY', 'CLOSING', 'TITLE', 'DEFAULT_REMEDIES', 'PRICE', 'OTHER'])).min(1).max(createClauseReviewRequestBodyAffectedTermsMax),
+  "conflictsWith": zod.array(zod.string().max(createClauseReviewRequestBodyConflictsWithItemMax)).max(createClauseReviewRequestBodyConflictsWithMax).optional()
+})
+
+
+
+
+export const CreateClauseReviewRequestResponse = zod.object({
+  "id": zod.string().uuid(),
+  "leadId": zod.string().uuid(),
+  "version": zod.number().int().min(1),
+  "status": zod.enum(['BLOCKED_MISSING_APPROVED_TEMPLATE', 'AWAITING_QUALIFIED_REVIEW']),
+  "createdBy": zod.string(),
+  "createdAt": zod.string().datetime({"offset":true}),
+  "category": zod.string(),
+  "purpose": zod.string(),
+  "jurisdiction": zod.string(),
+  "requiredTemplateKey": zod.string(),
+  "sourceTemplateRef": zod.string().nullable(),
+  "partyScope": zod.string(),
+  "proposedText": zod.string().nullable(),
+  "proposedTextStatus": zod.enum(['OWNER_SUPPLIED_UNREVIEWED']),
+  "affectedTerms": zod.array(zod.string()),
+  "conflictsWith": zod.array(zod.string()),
+  "qualifiedReviewStatus": zod.enum(['NOT_REVIEWED']),
+  "blocker": zod.string(),
+  "nextAction": zod.string()
+})
+
+
 export const IntakePropertyEvidenceParams = zod.object({
   "id": zod.coerce.string()
 })

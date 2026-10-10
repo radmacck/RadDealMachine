@@ -223,3 +223,22 @@ The public dataset/catalog and documented query endpoint were accessed without a
 **Next implementation task:** build the jurisdiction-gated clause/addendum request and qualified-review boundary at the existing transaction/document workflow; never auto-insert unreviewed legal language. **Overall earliest blocker remains P2:** a new permitted, independently exercisable property source is not available; do not retry unavailable feeds without new access.
 
 **Turn state:** this accepted slice is complete and stopped at turn end. No background Agent task is running; API, web, and mockup workflows are running.
+
+## Clause request intake at transaction boundary — 2026-10-10
+
+**Status:** Partial and operationally fail-closed. This advances the next buildable P8 transaction step but does not complete qualified legal review, template approval, signing, or execution.
+
+- Reused the existing transaction-document readiness registry and `DealOperationsPanel`; added an owner-only, deal-linked special-clause/addendum request path with persisted category, purpose, saved-property jurisdiction, source/template reference, party scope, affected terms, conflicts, and optional owner-supplied proposed text.
+- Requests are idempotent and append-only, versioned, actor/timestamped, and audited. A jurisdiction mismatch is rejected. The API and UI explicitly identify supplied language as `OWNER_SUPPLIED_UNREVIEWED`; no clause is generated or inserted into a contract or buyer packet. A matching approved template would only move the request to `AWAITING_QUALIFIED_REVIEW`; current missing templates produce `BLOCKED_MISSING_APPROVED_TEMPLATE`.
+- Added the request table to the development schema, authenticated GET / owner-only POST API, generated OpenAPI client/Zod types, and a request form/list inside the existing purchase-document panel. An unauthenticated live API GET returned HTTP 401.
+- `pnpm --filter @workspace/db run push` — passed against development schema only.
+- `pnpm --filter @workspace/api-spec run codegen` — passed; generated API schemas/client and library typecheck passed.
+- `pnpm --filter @workspace/api-server run exercise:clause-review` — passed in the isolated synthetic schema: request persisted; exact replay returned the same request; template absence remained blocked; review remained `NOT_REVIEWED`; owner-only denial and jurisdiction mismatch were rejected; exactly one audit event existed; lead version/state remained unchanged; no auto-insertion.
+- API and web typechecks passed. API and web builds passed. `pnpm --filter @workspace/api-server run test:auth` — 7/7 passed. The web build still reports pre-existing sourcemap and large-chunk warnings.
+- API/web workflows were restarted and reached listening/ready states. The signed-in owner UI was not browser-verified; no authenticated owner session was available and no bypass was attempted.
+
+**Remaining boundary:** No approved jurisdictional legal template or qualified reviewer evidence is registered. There is no review-response/approval operation, approved-clause versioning, stale-document invalidation from clause approval, or insertion workflow. Those must be implemented only against actual approved template and reviewer evidence; the current intake must not be presented as legal review or ready-to-use language. No real legal review occurred.
+
+**Next buildable milestone:** add the qualified-review evidence and approved-template registration/decision path to the existing transaction document registry, then propagate approved clause versions into document staleness checks. **Earliest overall external blocker remains P2:** access to another permitted, independently exercisable property source.
+
+**Turn state:** implementation and verification stopped at turn end; no background Agent task is running. API, web, and mockup workflows are running.

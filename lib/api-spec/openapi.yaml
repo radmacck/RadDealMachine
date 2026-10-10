@@ -70,6 +70,32 @@ paths:
           content:
             application/json:
               schema: { $ref: "#/components/schemas/DealOperations" }
+  /deals/{id}/contract/clause-review-requests:
+    parameters:
+      - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
+    get:
+      operationId: getClauseReviewRequests
+      responses:
+        "200":
+          description: Persisted special-clause requests; proposed language remains unreviewed and is never inserted automatically
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ClauseReviewRequestsResponse" }
+        "401": { description: Sign-in required }
+        "403": { description: Workspace membership required }
+    post:
+      operationId: createClauseReviewRequest
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/ClauseReviewRequestInput" }
+      responses:
+        "201":
+          description: Owner-entered clause request persisted and explicitly blocked pending jurisdictional template/review evidence
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ClauseReviewRequest" }
   /leads/{id}/evidence-intake:
     parameters:
       - { name: id, in: path, required: true, schema: { type: string } }
@@ -1272,6 +1298,45 @@ paths:
         "409": { description: The expected playbook version is stale }
 components:
   schemas:
+    ClauseReviewRequestInput:
+      type: object
+      required: [idempotencyKey, category, purpose, jurisdiction, partyScope, affectedTerms]
+      properties:
+        idempotencyKey: { type: string, minLength: 12, maxLength: 160 }
+        category: { type: string, enum: [ASSIGNMENT, INSPECTION, ACCESS, EARNEST_MONEY, CLOSING, TITLE, DEFAULT_REMEDIES, OTHER] }
+        purpose: { type: string, minLength: 10, maxLength: 2000 }
+        jurisdiction: { type: string, minLength: 4, maxLength: 200 }
+        sourceTemplateRef: { type: string, maxLength: 500 }
+        partyScope: { type: string, enum: [SELLER, BUYER, BOTH, INTERNAL_REVIEW] }
+        proposedText: { type: string, maxLength: 5000, description: "Optional owner-supplied text; always unreviewed and never inserted automatically." }
+        affectedTerms: { type: array, minItems: 1, maxItems: 12, items: { type: string, enum: [ASSIGNMENT, INSPECTION, ACCESS, EARNEST_MONEY, CLOSING, TITLE, DEFAULT_REMEDIES, PRICE, OTHER] } }
+        conflictsWith: { type: array, maxItems: 20, items: { type: string, maxLength: 500 } }
+    ClauseReviewRequest:
+      type: object
+      required: [id, leadId, version, status, createdBy, createdAt, category, purpose, jurisdiction, requiredTemplateKey, sourceTemplateRef, partyScope, proposedText, proposedTextStatus, affectedTerms, conflictsWith, qualifiedReviewStatus, blocker, nextAction]
+      properties:
+        id: { type: string, format: uuid }
+        leadId: { type: string, format: uuid }
+        version: { type: integer, minimum: 1 }
+        status: { type: string, enum: [BLOCKED_MISSING_APPROVED_TEMPLATE, AWAITING_QUALIFIED_REVIEW] }
+        createdBy: { type: string }
+        createdAt: { type: string, format: date-time }
+        category: { type: string }
+        purpose: { type: string }
+        jurisdiction: { type: string }
+        requiredTemplateKey: { type: string }
+        sourceTemplateRef: { type: [string, "null"] }
+        partyScope: { type: string }
+        proposedText: { type: [string, "null"] }
+        proposedTextStatus: { type: string, enum: [OWNER_SUPPLIED_UNREVIEWED] }
+        affectedTerms: { type: array, items: { type: string } }
+        conflictsWith: { type: array, items: { type: string } }
+        qualifiedReviewStatus: { type: string, enum: [NOT_REVIEWED] }
+        blocker: { type: string }
+        nextAction: { type: string }
+    ClauseReviewRequestsResponse:
+      type: array
+      items: { $ref: "#/components/schemas/ClauseReviewRequest" }
     SellerPlaybookSource:
       type: object
       required: [sourceId, title, url, accessedAt, relevance, scopeLimit]

@@ -3,6 +3,7 @@ import { Link } from 'wouter';
 import { Download, FileText, RefreshCw } from 'lucide-react';
 import {
   getGetDealOperationsQueryKey, useCreateContract, useExecuteContract, useGetDealOperations, useGetTransactionDocumentReadiness, usePreparePurchaseReviewDocument, useTransitionTransactionDocument, useRecordBuyerResponse, useRecordDestinationActivity,
+  useCreateClauseReviewRequest, useGetClauseReviewRequests,
   useRecordClosingMilestone, useRecordDealOutcome, useRecordTransactionDeadlineSchedule, useRecordTransactionException, useRefreshMatches,
   type BuyerMatch, type BuyerResponseInputStatus, type ClosingMilestoneInputKind, type ClosingMilestoneInputEvidenceKind,
   type TransactionMilestoneDeadlineItemKind, type TransactionMilestoneDeadlineItemDisposition, type DealContract, type DealOutcomeInputOutcome,
@@ -24,6 +25,9 @@ const MILESTONES: { k: ClosingMilestoneInputKind; label: string }[] = [
   { k: 'EARNEST_MONEY_CONFIRMED', label: 'Earnest money confirmed' },
   { k: 'ASSIGNMENT_SIGNED', label: 'Assignment signed' }, { k: 'FUNDS_CONFIRMED', label: 'Funds confirmed' },
 ];
+const CLAUSE_CATEGORIES = ['ASSIGNMENT','INSPECTION','ACCESS','EARNEST_MONEY','CLOSING','TITLE','DEFAULT_REMEDIES','OTHER'] as const;
+const CLAUSE_TERMS = [...CLAUSE_CATEGORIES.slice(0,7),'PRICE','OTHER'] as const;
+const CLAUSE_SCOPES = ['SELLER','BUYER','BOTH','INTERNAL_REVIEW'] as const;
 const requiredMilestones = (contract: DealContract) =>
   MILESTONES.filter((m) =>
     (m.k !== 'EARNEST_MONEY_CONFIRMED' || contract.earnestMoney > 0) &&
@@ -71,6 +75,15 @@ function PurchaseReviewDocuments({ contract, onDone }: { contract: DealContract;
   const [downloading, setDownloading] = useState<string | null>(null);
   const [downloadError, setDownloadError] = useState<string | null>(null);
   const [documentReasons, setDocumentReasons] = useState<Record<string, string>>({});
+  const [clauseCategory, setClauseCategory] = useState<(typeof CLAUSE_CATEGORIES)[number]>('OTHER');
+  const [clausePurpose, setClausePurpose] = useState('');
+  const [clauseText, setClauseText] = useState('');
+  const [clauseTerms, setClauseTerms] = useState<(typeof CLAUSE_TERMS)[number]>('OTHER');
+  const [clauseScope, setClauseScope] = useState<(typeof CLAUSE_SCOPES)[number]>('INTERNAL_REVIEW');
+  const [clauseSourceRef, setClauseSourceRef] = useState('');
+  const [clauseConflicts, setClauseConflicts] = useState('');
+  const clauseRequests = useGetClauseReviewRequests(contract.leadId);
+  const createClauseRequest = useCreateClauseReviewRequest();
   const documents = contract.documents ?? [];
   const createReviewCopy = () => prepare.mutate(
     { id: contract.leadId, data: { version: contract.version } },
@@ -115,6 +128,19 @@ function PurchaseReviewDocuments({ contract, onDone }: { contract: DealContract;
     }
   };
 
+  const submitClauseRequest = () => {
+    if (!readiness.data?.jurisdiction || clausePurpose.trim().length < 10) return;
+    createClauseRequest.mutate({ id: contract.leadId, data: {
+      idempotencyKey: crypto.randomUUID(), category: clauseCategory, purpose: clausePurpose.trim(),
+      jurisdiction: readiness.data.jurisdiction, partyScope: clauseScope,
+      affectedTerms: [clauseTerms], ...(clauseText.trim() ? { proposedText: clauseText.trim() } : {}),
+      ...(clauseSourceRef.trim() ? { sourceTemplateRef: clauseSourceRef.trim() } : {}),
+      ...(clauseConflicts.trim() ? { conflictsWith: clauseConflicts.split('\n').map(item => item.trim()).filter(Boolean) } : {}),
+    } }, { onSuccess: () => {
+      setClausePurpose(''); setClauseText(''); setClauseSourceRef(''); setClauseConflicts(''); void clauseRequests.refetch();
+      toast({ title: 'Clause review request recorded', description: 'It remains unreviewed and was not added to a contract or packet.' });
+    } });
+  };
   return <section className="space-y-3 border-t border-border pt-4" data-testid="panel-purchase-review-documents">
     <div className="flex items-start gap-3">
       <FileText className="mt-0.5 h-4 w-4 shrink-0 text-signal" />
@@ -145,6 +171,35 @@ function PurchaseReviewDocuments({ contract, onDone }: { contract: DealContract;
       )}
       <p className="mt-1 text-muted-foreground">Next: provide approved templates, configure private file storage, and connect a signing provider. The worksheet below is not a contract and cannot be signed here.</p>
     </div>}
+    <div className="space-y-2 border border-border p-3" data-testid="panel-clause-review-requests">
+      <h4 className="text-sm font-semibold">Special clause / addendum review</h4>
+      <p className="text-xs text-muted-foreground">Owner-entered request only. Proposed text is unreviewed; no clause is generated, approved, or inserted here. Jurisdiction-approved templates and qualified review are required.</p>
+      {isOwner && <div className="grid gap-2 sm:grid-cols-2">
+        <Field label="Clause category"><select className={SELECT} value={clauseCategory} onChange={e => setClauseCategory(e.target.value as typeof clauseCategory)} data-testid="select-clause-category">
+          {CLAUSE_CATEGORIES.map(v => <option key={v} value={v}>{v.replaceAll('_',' ')}</option>)}
+        </select></Field>
+        <Field label="Affected term"><select className={SELECT} value={clauseTerms} onChange={e => setClauseTerms(e.target.value as typeof clauseTerms)} data-testid="select-clause-term">
+          {CLAUSE_TERMS.map(v => <option key={v} value={v}>{v.replaceAll('_',' ')}</option>)}
+        </select></Field>
+        <Field label="Party scope"><select className={SELECT} value={clauseScope} onChange={e => setClauseScope(e.target.value as typeof clauseScope)} data-testid="select-clause-party-scope">
+          {CLAUSE_SCOPES.map(v => <option key={v} value={v}>{v.replaceAll('_',' ')}</option>)}
+        </select></Field>
+        <Field label="Template/source reference (not approval)"><Input value={clauseSourceRef} onChange={e => setClauseSourceRef(e.target.value)} maxLength={500} data-testid="input-clause-source-reference" /></Field>
+        <Field label="Purpose / issue"><Textarea value={clausePurpose} onChange={e => setClausePurpose(e.target.value)} maxLength={2000} data-testid="input-clause-purpose" /></Field>
+        <Field label="Optional owner-supplied proposed text (unreviewed)"><Textarea value={clauseText} onChange={e => setClauseText(e.target.value)} maxLength={5000} data-testid="input-clause-proposed-text" /></Field>
+        <Field label="Known conflicts with existing clauses"><Textarea value={clauseConflicts} onChange={e => setClauseConflicts(e.target.value)} maxLength={3000} data-testid="input-clause-conflicts" /></Field>
+        <Button type="button" size="sm" disabled={!isOwner || !readiness.data?.jurisdiction || clausePurpose.trim().length < 10 || createClauseRequest.isPending}
+          onClick={submitClauseRequest} data-testid="button-submit-clause-review">{createClauseRequest.isPending ? 'Recording…' : 'Record for qualified review'}</Button>
+      </div>}
+      {createClauseRequest.error && <ErrorNotice error={createClauseRequest.error} />}
+      {clauseRequests.error && <ErrorNotice error={clauseRequests.error} />}
+      {!clauseRequests.isLoading && !clauseRequests.data?.length && <p className="text-xs text-muted-foreground">No special clause requests recorded for this deal.</p>}
+      <ul className="space-y-2">{clauseRequests.data?.map((request) => <li key={request.id} className="border-t border-border pt-2 text-xs">
+        <p className="font-semibold">{request.category.replaceAll('_',' ')} · {request.status.replaceAll('_',' ')}</p>
+        <p>{request.purpose}</p><p className="text-muted-foreground">{request.blocker} Next: {request.nextAction}</p>
+        <p className="text-muted-foreground">Proposed text: {request.proposedTextStatus.replaceAll('_',' ')}; qualified review: {request.qualifiedReviewStatus.replaceAll('_',' ')}.</p>
+      </li>)}</ul>
+    </div>
     {contract.status === 'DRAFT' && canCall && <Button size="sm" onClick={createReviewCopy} disabled={prepare.isPending} data-testid="button-prepare-purchase-review-pdf">
       <FileText className="mr-2 h-4 w-4" />{prepare.isPending ? 'Preparing…' : 'Prepare fillable review PDF'}
     </Button>}
