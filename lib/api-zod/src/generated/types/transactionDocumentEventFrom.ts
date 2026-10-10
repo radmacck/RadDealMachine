@@ -24,4 +24,5 @@ export const TransactionDocumentEventFrom = {
   VOID: 'VOID',
   EXPIRED: 'EXPIRED',
   REPLACED: 'REPLACED',
+  STALE: 'STALE',
 } as const;

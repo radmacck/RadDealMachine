@@ -10,9 +10,52 @@ export const TRANSACTION_DOCUMENT_STATES = [
   "VOID",
   "EXPIRED",
   "REPLACED",
+  "STALE",
 ] as const;
 
 export type TransactionDocumentState = typeof TRANSACTION_DOCUMENT_STATES[number];
+
+export interface LegalTemplateReadiness {
+  status: string;
+  jurisdiction: string;
+  templateHash?: string | null;
+  approvalEvidenceRef?: string | null;
+  approvedBy?: string | null;
+  approvedAt?: Date | string | null;
+  sourceRef?: string | null;
+  sourceProvenance?: Record<string, unknown> | null;
+  reviewState?: string | null;
+  reviewedBy?: string | null;
+  reviewedAt?: Date | string | null;
+  reviewerQualificationRef?: string | null;
+  effectiveAt?: Date | string | null;
+  expiresAt?: Date | string | null;
+  supportedDealTypes?: string[] | null;
+}
+
+/** Fail closed: a status label alone is never legal approval. */
+export function legalTemplateBlocker(
+  template: LegalTemplateReadiness | undefined,
+  expectedJurisdiction: string,
+  dealType: string,
+  now = new Date(),
+): string | null {
+  if (!template) return "Required template is missing.";
+  if (template.jurisdiction !== expectedJurisdiction) return "Template jurisdiction does not match the property.";
+  if (template.status !== "APPROVED_LEGAL" || !template.templateHash || !template.approvalEvidenceRef ||
+      !template.approvedBy || !template.approvedAt || !template.sourceRef || !template.sourceProvenance ||
+      template.reviewState !== "APPROVED" || !template.reviewedBy || !template.reviewedAt ||
+      !template.reviewerQualificationRef || !template.effectiveAt)
+    return "Template lacks complete source, qualified-review, approval, effective-date, or version evidence.";
+  if (!template.supportedDealTypes?.includes(dealType)) return "Template does not support this deal type.";
+  const effective = template.effectiveAt ? new Date(template.effectiveAt).getTime() : Number.NEGATIVE_INFINITY;
+  const expiry = template.expiresAt ? new Date(template.expiresAt).getTime() : Number.POSITIVE_INFINITY;
+  if (!Number.isFinite(effective) && template.effectiveAt) return "Template effective date is invalid.";
+  if (!Number.isFinite(expiry) && template.expiresAt) return "Template expiry date is invalid.";
+  if (effective > now.getTime()) return "Template is not yet effective.";
+  if (expiry <= now.getTime()) return "Template has expired.";
+  return null;
+}
 
 export interface TransactionDocumentTransitionContext {
   actorRole: "OWNER" | "OPERATOR" | "SYSTEM_WORKER" | "PROVIDER";
@@ -37,7 +80,7 @@ export type TransactionDocumentTransitionDecision =
   | { allowed: true }
   | { allowed: false; reason: string };
 
-const inactiveStates = new Set<TransactionDocumentState>(["REJECTED", "VOID", "EXPIRED", "REPLACED", "EXECUTED"]);
+const inactiveStates = new Set<TransactionDocumentState>(["REJECTED", "VOID", "EXPIRED", "REPLACED", "STALE", "EXECUTED"]);
 
 function deny(reason: string): TransactionDocumentTransitionDecision {
   return { allowed: false, reason };
@@ -75,6 +118,11 @@ export function evaluateTransactionDocumentTransition(
   if (to === "REPLACED") {
     if (!context.replacementDocumentId || !context.reason?.trim())
       return deny("Replacement requires the new document ID and a recorded reason.");
+    return { allowed: true };
+  }
+  if (to === "STALE") {
+    if (context.actorRole !== "SYSTEM_WORKER" || context.currentSnapshot !== false || !context.reason?.trim())
+      return deny("Stale status requires an automated evidence check, a changed snapshot, and an audit reason.");
     return { allowed: true };
   }
 

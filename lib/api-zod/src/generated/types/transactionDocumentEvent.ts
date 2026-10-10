@@ -13,6 +13,10 @@ export interface TransactionDocumentEvent {
   /** @nullable */
   from?: TransactionDocumentEventFrom;
   to: TransactionDocumentEventTo;
+  /** @nullable */
+  staleReason?: string | null;
+  /** @nullable */
+  nextAction?: string | null;
   occurredAt: string;
   actorId: string;
   actorRole: TransactionDocumentEventActorRole;

@@ -405,6 +405,8 @@ export * from './transactionDocumentReadinessResponseStorage';
 export * from './transactionDocumentReadinessResponseStorageActiveStore';
 export * from './transactionDocumentReadinessResponseStorageStatus';
 export * from './transactionDocumentTemplateReadiness';
+export * from './transactionDocumentTemplateReadinessReviewState';
+export * from './transactionDocumentTemplateReadinessSourceProvenance';
 export * from './transactionDocumentTemplateReadinessStatus';
 export * from './transactionExceptionInput';
 export * from './transactionExceptionInputKind';
@@ -435,6 +437,9 @@ export * from './transactionReadinessResponseCapabilitiesPrivateDocumentStorageA
 export * from './transactionReadinessResponseCapabilitiesPrivateDocumentStorageStatus';
 export * from './transactionReadinessResponseCapabilitiesSigningProvider';
 export * from './transactionReadinessResponseCapabilitiesSigningProviderStatus';
+export * from './transactionTemplateReviewInput';
+export * from './transactionTemplateReviewInputDecision';
+export * from './transactionTemplateReviewInputSourceProvenance';
 export * from './transition';
 export * from './transitionInput';
 export * from './unconnectedPropertySourceCapability';

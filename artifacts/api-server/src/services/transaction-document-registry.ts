@@ -1,8 +1,10 @@
 import { asc, eq } from "drizzle-orm";
 import { db, leadsTable, transactionDocumentTemplatesTable } from "@workspace/db";
-import { assertOperationsRole, DomainError, type OfferActor } from "@workspace/deal-domain";
+import { assertOperationsRole, DomainError, legalTemplateBlocker, type OfferActor } from "@workspace/deal-domain";
 import type { Store } from "./operations-records";
 import { unavailableSigningProvider } from "./transaction-signing-provider";
+import { TransactionTemplateReviewInput, TransactionDocumentTemplateReadiness } from "@workspace/api-zod";
+import { audit } from "./deal-store";
 
 const REQUIRED_DOCUMENTS = [
   {
@@ -105,8 +107,10 @@ export async function getTransactionDocumentReadiness(actor: OfferActor, leadId?
     !["PURCHASE_TERMS_REVIEW", "SELLER_RESPONSE_EVIDENCE"].includes(item.templateKey));
   const blockers = leadId
     ? legalDocs
-        .filter(item => item.status !== "APPROVED_LEGAL" || !item.templateHash || !item.approvalEvidenceRef)
-        .map(item => `No approved ${item.documentKind.toLowerCase().replaceAll("_", " ")} template is registered for property jurisdiction ${item.jurisdiction}.`)
+        .flatMap(item => {
+          const reason = legalTemplateBlocker(item, item.jurisdiction, item.documentKind);
+          return reason ? [`${item.documentKind.toLowerCase().replaceAll("_", " ")} template blocked for ${item.jurisdiction}: ${reason}`] : [];
+        })
     : ["Open a deal to evaluate document readiness against its persisted property jurisdiction."];
   blockers.push("Managed private file storage is unavailable; current review-copy bytes use a protected persistent database blob table.");
   blockers.push("No e-signature provider is connected; system-managed send/sign events are unavailable.");
@@ -123,6 +127,17 @@ export async function getTransactionDocumentReadiness(actor: OfferActor, leadId?
       requiredFields: item.requiredFields,
       templateHash: item.templateHash,
       approvalEvidenceRef: item.approvalEvidenceRef,
+      approvedBy: item.approvedBy,
+      approvedAt: item.approvedAt?.toISOString() ?? null,
+      sourceRef: item.sourceRef,
+      sourceProvenance: item.sourceProvenance,
+      reviewState: item.reviewState,
+      reviewedBy: item.reviewedBy,
+      reviewedAt: item.reviewedAt?.toISOString() ?? null,
+      reviewerQualificationRef: item.reviewerQualificationRef,
+      effectiveAt: item.effectiveAt?.toISOString() ?? null,
+      expiresAt: item.expiresAt?.toISOString() ?? null,
+      supportedDealTypes: item.supportedDealTypes,
       missingReason: item.status === "REVIEW_COPY_ONLY"
         ? "Internal terms-review worksheet only; not an approved legal form."
         : item.status === "PORTAL_EVENT_RECORD"
@@ -138,4 +153,46 @@ export async function getTransactionDocumentReadiness(actor: OfferActor, leadId?
     canSendLegalDocuments: false,
     blockers,
   };
+}
+
+export async function recordTransactionTemplateReview(id: string, input: unknown, actor: OfferActor, now = new Date()) {
+  assertOperationsRole(actor, ["OWNER"]);
+  const parsed = TransactionTemplateReviewInput.parse(input);
+  return db.transaction(async tx => {
+    const [row] = await tx.select().from(transactionDocumentTemplatesTable).where(eq(transactionDocumentTemplatesTable.id,id)).for("update");
+    if (!row) throw new DomainError("Transaction template registry entry was not found.",404);
+    if (row.version !== parsed.expectedVersion) throw new DomainError("Template version changed; reload before recording review.",409);
+    if (parsed.reviewerIdentity === actor.id) throw new DomainError("The submitting owner cannot stand in for the qualified reviewer.",409);
+    if (parsed.expiresAt && Date.parse(parsed.expiresAt) <= Date.parse(parsed.effectiveAt))
+      throw new DomainError("Template expiry must be later than its effective date.",400);
+    const approved = parsed.decision === "APPROVED";
+    const updated = {
+      sourceRef: parsed.sourceRef, sourceProvenance: parsed.sourceProvenance,
+      templateStorageRef: parsed.templateStorageRef ?? null, templateHash: parsed.templateHash,
+      reviewState: parsed.decision, reviewedBy: parsed.reviewerIdentity, reviewedAt: now,
+      reviewerQualificationRef: parsed.reviewerQualificationRef,
+      approvalEvidenceRef: approved ? parsed.reviewEvidenceRef : null,
+      approvedBy: approved ? parsed.reviewerIdentity : null, approvedAt: approved ? now : null,
+      effectiveAt: approved ? new Date(parsed.effectiveAt) : null,
+      expiresAt: approved && parsed.expiresAt ? new Date(parsed.expiresAt) : null,
+      supportedDealTypes: approved ? parsed.supportedDealTypes : [],
+      status: approved ? "APPROVED_LEGAL" : "MISSING_APPROVED_TEMPLATE",
+      version: row.version + 1, updatedAt: now,
+    };
+    await tx.update(transactionDocumentTemplatesTable).set(updated).where(eq(transactionDocumentTemplatesTable.id,id));
+    await audit(tx,actor.id,"TRANSACTION_TEMPLATE_REVIEW_RECORDED",id,
+      JSON.stringify({priorVersion:row.version,newVersion:updated.version,decision:parsed.decision,jurisdiction:row.jurisdiction,
+        templateKey:row.templateKey,reviewerIdentity:parsed.reviewerIdentity,reviewerQualificationRef:parsed.reviewerQualificationRef,
+        reviewEvidenceRef:parsed.reviewEvidenceRef,reason:parsed.reason}));
+    return TransactionDocumentTemplateReadiness.parse({
+      key:row.templateKey,documentKind:row.documentKind,jurisdiction:row.jurisdiction,status:updated.status,
+      version:updated.version,requiredFields:row.requiredFields,templateHash:updated.templateHash,
+      approvalEvidenceRef:updated.approvalEvidenceRef,missingReason:approved?null:"Review rejected; obtain a new qualified review.",
+      approvedBy:updated.approvedBy,approvedAt:updated.approvedAt?.toISOString()??null,
+      sourceRef:updated.sourceRef,sourceProvenance:updated.sourceProvenance,reviewState:updated.reviewState,
+      reviewedBy:updated.reviewedBy,reviewedAt:updated.reviewedAt?.toISOString()??null,
+      reviewerQualificationRef:updated.reviewerQualificationRef,effectiveAt:updated.effectiveAt?.toISOString()??null,
+      expiresAt:updated.expiresAt?.toISOString()??null,supportedDealTypes:updated.supportedDealTypes,
+    });
+  });
 }

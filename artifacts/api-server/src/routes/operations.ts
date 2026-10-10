@@ -10,7 +10,7 @@ import { allBuyerRecords, getBuyerRecord } from "../services/operations-records"
 import { dealOperations, refreshMatches } from "../services/matching-store";
 import * as transactions from "../services/transaction-store";
 import * as outcomes from "../services/outcome-learning-store";
-import { getTransactionDocumentReadiness } from "../services/transaction-document-registry";
+import { getTransactionDocumentReadiness, recordTransactionTemplateReview } from "../services/transaction-document-registry";
 import { getTransactionReadinessReport } from "../services/transaction-readiness";
 import { recordTransactionException } from "../services/transaction-exceptions";
 import { createClauseReviewRequest, listClauseReviewRequests } from "../services/transaction-clause-requests";
@@ -22,6 +22,12 @@ router.use(authenticated,membership);
 router.get("/transaction-documents/readiness",roles("OWNER","OPERATOR"),async(req,res)=>{
   const {leadId} = parse(z.object({leadId:z.string().uuid().optional()}),req.query);
   res.json(schemas.GetTransactionDocumentReadinessResponse.parse(await getTransactionDocumentReadiness(actor(res),leadId)));
+});
+router.post("/transaction-document-templates/:id/review",roles("OWNER"),async(req,res)=>{
+  const {id} = parse(z.object({id:z.string().uuid()}),req.params);
+  res.json(schemas.TransactionDocumentTemplateReadiness.parse(
+    await recordTransactionTemplateReview(id,parse(schemas.TransactionTemplateReviewInput,req.body),actor(res)),
+  ));
 });
 router.get("/deals/:id/contract/clause-review-requests",roles("OWNER","OPERATOR"),async(req,res)=>{
   const {id} = parse(schemas.GetClauseReviewRequestsParams,req.params);

@@ -4265,6 +4265,7 @@ export const TransactionDocumentMetadataStatus = {
   VOID: 'VOID',
   EXPIRED: 'EXPIRED',
   REPLACED: 'REPLACED',
+  STALE: 'STALE',
 } as const;
 
 export type TransactionDocumentMetadataContentType = typeof TransactionDocumentMetadataContentType[keyof typeof TransactionDocumentMetadataContentType];
@@ -4308,6 +4309,7 @@ export const TransactionDocumentEventFrom = {
   VOID: 'VOID',
   EXPIRED: 'EXPIRED',
   REPLACED: 'REPLACED',
+  STALE: 'STALE',
 } as const;
 
 export type TransactionDocumentEventTo = typeof TransactionDocumentEventTo[keyof typeof TransactionDocumentEventTo];
@@ -4325,6 +4327,7 @@ export const TransactionDocumentEventTo = {
   VOID: 'VOID',
   EXPIRED: 'EXPIRED',
   REPLACED: 'REPLACED',
+  STALE: 'STALE',
 } as const;
 
 export type TransactionDocumentEventActorRole = typeof TransactionDocumentEventActorRole[keyof typeof TransactionDocumentEventActorRole];
@@ -4341,6 +4344,10 @@ export interface TransactionDocumentEvent {
   /** @nullable */
   from?: TransactionDocumentEventFrom;
   to: TransactionDocumentEventTo;
+  /** @nullable */
+  staleReason?: string | null;
+  /** @nullable */
+  nextAction?: string | null;
   occurredAt: string;
   actorId: string;
   actorRole: TransactionDocumentEventActorRole;
@@ -4372,6 +4379,10 @@ export interface TransactionDocumentMetadata {
   generatedAt: string;
   generatedBy: string;
   downloadUrl: string;
+  /** @nullable */
+  staleReason?: string | null;
+  /** @nullable */
+  nextAction?: string | null;
   templateKey?: string;
   /** @minimum 1 */
   templateVersion?: number;
@@ -4448,6 +4459,22 @@ export const TransactionDocumentTemplateReadinessStatus = {
   APPROVED_LEGAL: 'APPROVED_LEGAL',
 } as const;
 
+/**
+ * @nullable
+ */
+export type TransactionDocumentTemplateReadinessSourceProvenance = { [key: string]: unknown } | null;
+
+export type TransactionDocumentTemplateReadinessReviewState = typeof TransactionDocumentTemplateReadinessReviewState[keyof typeof TransactionDocumentTemplateReadinessReviewState];
+
+
+export const TransactionDocumentTemplateReadinessReviewState = {
+  NOT_REVIEWED: 'NOT_REVIEWED',
+  SUBMITTED: 'SUBMITTED',
+  APPROVED: 'APPROVED',
+  REJECTED: 'REJECTED',
+  EXPIRED: 'EXPIRED',
+} as const;
+
 export interface TransactionDocumentTemplateReadiness {
   key: string;
   documentKind: string;
@@ -4462,6 +4489,26 @@ export interface TransactionDocumentTemplateReadiness {
   approvalEvidenceRef: string | null;
   /** @nullable */
   missingReason: string | null;
+  /** @nullable */
+  approvedBy: string | null;
+  /** @nullable */
+  approvedAt: string | null;
+  /** @nullable */
+  sourceRef: string | null;
+  /** @nullable */
+  sourceProvenance: TransactionDocumentTemplateReadinessSourceProvenance;
+  reviewState: TransactionDocumentTemplateReadinessReviewState;
+  /** @nullable */
+  reviewedBy: string | null;
+  /** @nullable */
+  reviewedAt: string | null;
+  /** @nullable */
+  reviewerQualificationRef: string | null;
+  /** @nullable */
+  effectiveAt: string | null;
+  /** @nullable */
+  expiresAt: string | null;
+  supportedDealTypes: string[];
 }
 
 export type TransactionDocumentReadinessResponseSigningProviderStatus = typeof TransactionDocumentReadinessResponseSigningProviderStatus[keyof typeof TransactionDocumentReadinessResponseSigningProviderStatus];
@@ -4513,6 +4560,42 @@ export interface TransactionDocumentReadinessResponse {
   storage: TransactionDocumentReadinessResponseStorage;
   canSendLegalDocuments: boolean;
   blockers: string[];
+}
+
+export type TransactionTemplateReviewInputDecision = typeof TransactionTemplateReviewInputDecision[keyof typeof TransactionTemplateReviewInputDecision];
+
+
+export const TransactionTemplateReviewInputDecision = {
+  APPROVED: 'APPROVED',
+  REJECTED: 'REJECTED',
+} as const;
+
+export type TransactionTemplateReviewInputSourceProvenance = { [key: string]: unknown };
+
+export interface TransactionTemplateReviewInput {
+  /** @minimum 1 */
+  expectedVersion: number;
+  decision: TransactionTemplateReviewInputDecision;
+  /** @minLength 1 */
+  sourceRef: string;
+  sourceProvenance: TransactionTemplateReviewInputSourceProvenance;
+  /** @nullable */
+  templateStorageRef?: string | null;
+  /** @pattern ^[a-f0-9]{64}$ */
+  templateHash: string;
+  /** @minLength 1 */
+  reviewerIdentity: string;
+  /** @minLength 1 */
+  reviewerQualificationRef: string;
+  /** @minLength 1 */
+  reviewEvidenceRef: string;
+  effectiveAt: string;
+  /** @nullable */
+  expiresAt?: string | null;
+  /** @minItems 1 */
+  supportedDealTypes: string[];
+  /** @minLength 10 */
+  reason?: string;
 }
 
 export type TransactionReadinessExceptionCategory = typeof TransactionReadinessExceptionCategory[keyof typeof TransactionReadinessExceptionCategory];

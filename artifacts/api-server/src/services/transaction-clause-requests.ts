@@ -34,7 +34,8 @@ export async function createClauseReviewRequest(leadId: string, input: unknown, 
   const requiredTemplateKey = parsed.category === "ASSIGNMENT" ? "ASSIGNMENT_AGREEMENT" :
     parsed.category === "OTHER" ? "AMENDMENT" : "PURCHASE_AGREEMENT";
   const approvedTemplate = templates.some(item => item.templateKey === requiredTemplateKey &&
-    item.status === "APPROVED_LEGAL" && !!item.templateHash && !!item.approvalEvidenceRef);
+    legalTemplateBlocker(item, jurisdiction,
+      parsed.category === "ASSIGNMENT" ? "WHOLESALE_ASSIGNMENT" : "PURCHASE", now) === null);
   const status = approvedTemplate ? "AWAITING_QUALIFIED_REVIEW" : "BLOCKED_MISSING_APPROVED_TEMPLATE";
   const payload = {
     category: parsed.category, purpose: parsed.purpose, jurisdiction,

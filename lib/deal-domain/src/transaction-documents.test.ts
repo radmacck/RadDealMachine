@@ -1,6 +1,23 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { evaluateTransactionDocumentTransition as decide } from "./transaction-documents";
+import { evaluateTransactionDocumentTransition as decide, legalTemplateBlocker } from "./transaction-documents";
+
+test("legal template eligibility fails closed on provenance, jurisdiction, deal type, and effective status", () => {
+  const now = new Date("2026-10-10T12:00:00.000Z");
+  const approved = {
+    status: "APPROVED_LEGAL", jurisdiction: "US/PA/PHILADELPHIA",
+    templateHash: "sha256:synthetic", approvalEvidenceRef: "synthetic:review",
+    approvedBy: "synthetic-qualified-reviewer", approvedAt: "2026-10-01T00:00:00.000Z",
+    effectiveAt: "2026-10-01T00:00:00.000Z", expiresAt: "2026-11-01T00:00:00.000Z",
+    supportedDealTypes: ["WHOLESALE_ASSIGNMENT"],
+  };
+  assert.equal(legalTemplateBlocker(approved, "US/PA/PHILADELPHIA", "WHOLESALE_ASSIGNMENT", now), null);
+  assert.match(legalTemplateBlocker(approved, "US/NJ/UNKNOWN", "WHOLESALE_ASSIGNMENT", now)!, /jurisdiction/);
+  assert.match(legalTemplateBlocker({ ...approved, approvalEvidenceRef: null }, approved.jurisdiction, "WHOLESALE_ASSIGNMENT", now)!, /approval identity/);
+  assert.match(legalTemplateBlocker({ ...approved, supportedDealTypes: ["DOUBLE_CLOSE"] }, approved.jurisdiction, "WHOLESALE_ASSIGNMENT", now)!, /does not support/);
+  assert.match(legalTemplateBlocker({ ...approved, effectiveAt: "2026-10-11T00:00:00.000Z" }, approved.jurisdiction, "WHOLESALE_ASSIGNMENT", now)!, /not yet effective/);
+  assert.match(legalTemplateBlocker({ ...approved, expiresAt: "2026-10-09T00:00:00.000Z" }, approved.jurisdiction, "WHOLESALE_ASSIGNMENT", now)!, /expired/);
+});
 
 test("review-copy generation can prepare only from a current snapshot and configured review template", () => {
   assert.deepEqual(decide("DRAFT", "PREPARED_FOR_REVIEW", {

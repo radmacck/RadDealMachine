@@ -21,4 +21,5 @@ export const TransactionDocumentEventTo = {
   VOID: 'VOID',
   EXPIRED: 'EXPIRED',
   REPLACED: 'REPLACED',
+  STALE: 'STALE',
 } as const;

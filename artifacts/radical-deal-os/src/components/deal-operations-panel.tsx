@@ -215,10 +215,14 @@ function PurchaseReviewDocuments({ contract, onDone }: { contract: DealContract;
           </div>
           <div className="flex flex-wrap items-center gap-2">
             <Button type="button" size="sm" variant="outline" onClick={() => void downloadReviewCopy(document.id,document.fileName,document.downloadUrl)}
-              disabled={downloading!==null || ['REJECTED','VOID','EXPIRED','REPLACED'].includes(document.status ?? '')} data-testid={`button-download-transaction-review-document-${document.id}`}>
+              disabled={downloading!==null || ['REJECTED','VOID','EXPIRED','REPLACED','STALE'].includes(document.status ?? '')} data-testid={`button-download-transaction-review-document-${document.id}`}>
               <Download className="mr-2 h-3.5 w-3.5" />{downloading===document.id?'Checking…':'Download'}
             </Button>
           </div>
+          {document.status === 'STALE' && <div role="alert" className="mt-2 w-full text-sm text-destructive">
+            <p>{document.staleReason || 'The source snapshot changed after preparation.'}</p>
+            <p>Next: {document.nextAction || 'Reconcile the evidence and prepare a new version after renewed authorization.'}</p>
+          </div>}
           {document.status === 'PREPARED_FOR_REVIEW' && <div className="mt-2 w-full space-y-2">
             <Input value={documentReasons[document.id] ?? ''} onChange={(event) => setDocumentReasons((current) => ({ ...current, [document.id]: event.target.value }))}
               placeholder="Reason required (at least 10 characters)" aria-label={`Reason for changing document ${document.fileName}`}

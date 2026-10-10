@@ -896,6 +896,25 @@ paths:
           content:
             application/json:
               schema: { $ref: "#/components/schemas/TransactionDocumentReadinessResponse" }
+  /transaction-document-templates/{id}/review:
+    post:
+      operationId: recordTransactionTemplateReview
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/TransactionTemplateReviewInput" }
+      responses:
+        "200":
+          description: Append-audited jurisdiction template review decision
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/TransactionDocumentTemplateReadiness" }
   /transaction-readiness:
     get:
       operationId: getTransactionReadiness
@@ -2645,7 +2664,7 @@ components:
       properties:
         id: { type: string, format: uuid }
         kind: { type: string, enum: [PURCHASE_TERMS_REVIEW, PURCHASE_AGREEMENT, ASSIGNMENT_AGREEMENT, SELLER_RESPONSE, AMENDMENT, REPLACEMENT_BUYER, EMD_ACKNOWLEDGMENT, CLOSING_DOCUMENT] }
-        status: { type: string, enum: [DRAFT, PREPARED_FOR_REVIEW, APPROVED_TO_SEND, SENT, SIGNING_IN_PROGRESS, SIGNED, EXECUTED, REJECTED, VOID, EXPIRED, REPLACED] }
+        status: { type: string, enum: [DRAFT, PREPARED_FOR_REVIEW, APPROVED_TO_SEND, SENT, SIGNING_IN_PROGRESS, SIGNED, EXECUTED, REJECTED, VOID, EXPIRED, REPLACED, STALE] }
         attemptNumber: { type: integer, minimum: 1 }
         sourceContractVersion: { type: integer, minimum: 1 }
         sourceOfferId: { type: string, format: uuid }
@@ -2659,6 +2678,8 @@ components:
         generatedAt: { type: string, format: date-time }
         generatedBy: { type: string }
         downloadUrl: { type: string }
+        staleReason: { type: [string, "null"] }
+        nextAction: { type: [string, "null"] }
         templateKey: { type: string }
         templateVersion: { type: integer, minimum: 1 }
         templateStatus: { type: string, enum: [REVIEW_COPY_ONLY, APPROVED_LEGAL] }
@@ -2670,8 +2691,10 @@ components:
       type: object
       required: [to, occurredAt, actorId, actorRole, reason]
       properties:
-        from: { type: [string, "null"], enum: [DRAFT, PREPARED_FOR_REVIEW, APPROVED_TO_SEND, SENT, SIGNING_IN_PROGRESS, SIGNED, EXECUTED, REJECTED, VOID, EXPIRED, REPLACED, null] }
-        to: { type: string, enum: [DRAFT, PREPARED_FOR_REVIEW, APPROVED_TO_SEND, SENT, SIGNING_IN_PROGRESS, SIGNED, EXECUTED, REJECTED, VOID, EXPIRED, REPLACED] }
+        from: { type: [string, "null"], enum: [DRAFT, PREPARED_FOR_REVIEW, APPROVED_TO_SEND, SENT, SIGNING_IN_PROGRESS, SIGNED, EXECUTED, REJECTED, VOID, EXPIRED, REPLACED, STALE, null] }
+        to: { type: string, enum: [DRAFT, PREPARED_FOR_REVIEW, APPROVED_TO_SEND, SENT, SIGNING_IN_PROGRESS, SIGNED, EXECUTED, REJECTED, VOID, EXPIRED, REPLACED, STALE] }
+        staleReason: { type: [string, "null"] }
+        nextAction: { type: [string, "null"] }
         occurredAt: { type: string, format: date-time }
         actorId: { type: string }
         actorRole: { type: string, enum: [OWNER, OPERATOR, SYSTEM_WORKER, PROVIDER] }
@@ -2679,7 +2702,7 @@ components:
         evidenceRef: { type: [string, "null"] }
     TransactionDocumentTemplateReadiness:
       type: object
-      required: [key, documentKind, jurisdiction, status, version, requiredFields, templateHash, approvalEvidenceRef, missingReason]
+      required: [key, documentKind, jurisdiction, status, version, requiredFields, templateHash, approvalEvidenceRef, missingReason, approvedBy, approvedAt, sourceRef, sourceProvenance, reviewState, reviewedBy, reviewedAt, reviewerQualificationRef, effectiveAt, expiresAt, supportedDealTypes]
       properties:
         key: { type: string }
         documentKind: { type: string }
@@ -2690,6 +2713,17 @@ components:
         templateHash: { type: [string, "null"] }
         approvalEvidenceRef: { type: [string, "null"] }
         missingReason: { type: [string, "null"] }
+        approvedBy: { type: [string, "null"] }
+        approvedAt: { type: [string, "null"], format: date-time }
+        sourceRef: { type: [string, "null"] }
+        sourceProvenance: { type: [object, "null"], additionalProperties: true }
+        reviewState: { type: string, enum: [NOT_REVIEWED, SUBMITTED, APPROVED, REJECTED, EXPIRED] }
+        reviewedBy: { type: [string, "null"] }
+        reviewedAt: { type: [string, "null"], format: date-time }
+        reviewerQualificationRef: { type: [string, "null"] }
+        effectiveAt: { type: [string, "null"], format: date-time }
+        expiresAt: { type: [string, "null"], format: date-time }
+        supportedDealTypes: { type: array, items: { type: string } }
     TransactionDocumentReadinessResponse:
       type: object
       required: [leadId, jurisdiction, templates, signingProvider, storage, canSendLegalDocuments, blockers]
@@ -2713,6 +2747,24 @@ components:
             reason: { type: [string, "null"] }
         canSendLegalDocuments: { type: boolean }
         blockers: { type: array, items: { type: string } }
+    TransactionTemplateReviewInput:
+      type: object
+      additionalProperties: false
+      required: [expectedVersion, decision, sourceRef, sourceProvenance, templateHash, reviewerIdentity, reviewerQualificationRef, reviewEvidenceRef, effectiveAt, supportedDealTypes]
+      properties:
+        expectedVersion: { type: integer, minimum: 1 }
+        decision: { type: string, enum: [APPROVED, REJECTED] }
+        sourceRef: { type: string, minLength: 1 }
+        sourceProvenance: { type: object, additionalProperties: true }
+        templateStorageRef: { type: [string, "null"] }
+        templateHash: { type: string, pattern: "^[a-f0-9]{64}$" }
+        reviewerIdentity: { type: string, minLength: 1 }
+        reviewerQualificationRef: { type: string, minLength: 1 }
+        reviewEvidenceRef: { type: string, minLength: 1 }
+        effectiveAt: { type: string, format: date-time }
+        expiresAt: { type: [string, "null"], format: date-time }
+        supportedDealTypes: { type: array, minItems: 1, items: { type: string } }
+        reason: { type: string, minLength: 10 }
     TransactionReadinessException:
       type: object
       required: [id, contractId, leadId, issueKey, category, severity, reason, evidenceRefs, ownerRole, status, nextActionCode, nextAction, eventAt, firstObservedAt, lastObservedAt, resolvedAt, resolutionEvidenceRefs, snapshotHash, synthetic]

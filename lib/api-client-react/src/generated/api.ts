@@ -121,8 +121,10 @@ import type {
   TransactionDeadlineScheduleInput,
   TransactionDocumentLifecycleInput,
   TransactionDocumentReadinessResponse,
+  TransactionDocumentTemplateReadiness,
   TransactionExceptionInput,
   TransactionReadinessResponse,
+  TransactionTemplateReviewInput,
   TransitionInput,
   UnderwritingInput,
   WorkerJob,
@@ -5398,6 +5400,89 @@ export function useGetTransactionDocumentReadiness<TData = Awaited<ReturnType<ty
 
 
 
+
+export const getRecordTransactionTemplateReviewUrl = (id: string,) => {
+
+
+
+
+  return `/api/transaction-document-templates/${id}/review`
+}
+
+export const recordTransactionTemplateReview = async (id: string,
+    transactionTemplateReviewInput: TransactionTemplateReviewInput, options?: Parameters<typeof customFetch>[1]): Promise<TransactionDocumentTemplateReadiness> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return customFetch<TransactionDocumentTemplateReadiness>(getRecordTransactionTemplateReviewUrl(id),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(transactionTemplateReviewInput)
+  }
+);}
+
+
+
+
+
+export const getRecordTransactionTemplateReviewMutationKey = () => ['recordTransactionTemplateReview'] as const;
+
+export const getRecordTransactionTemplateReviewMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof recordTransactionTemplateReview>>, TError,RecordTransactionTemplateReviewMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof recordTransactionTemplateReview>>, TError,RecordTransactionTemplateReviewMutationVariables, TContext> => {
+
+const mutationKey = getRecordTransactionTemplateReviewMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof recordTransactionTemplateReview>>, RecordTransactionTemplateReviewMutationVariables> = (props) => {
+          const {id,data} = props ?? {};
+
+          return  recordTransactionTemplateReview(id,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type RecordTransactionTemplateReviewMutationResult = NonNullable<Awaited<ReturnType<typeof recordTransactionTemplateReview>>>
+    export type RecordTransactionTemplateReviewMutationBody = BodyType<TransactionTemplateReviewInput>
+    export type RecordTransactionTemplateReviewMutationError = ErrorType<unknown>
+    export type RecordTransactionTemplateReviewMutationVariables = {id: string;data: BodyType<TransactionTemplateReviewInput>}
+
+    export const useRecordTransactionTemplateReview = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof recordTransactionTemplateReview>>, TError,RecordTransactionTemplateReviewMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof recordTransactionTemplateReview>>,
+        TError,
+        RecordTransactionTemplateReviewMutationVariables,
+        TContext
+      > => {
+      return useMutation(getRecordTransactionTemplateReviewMutationOptions(options));
+    }
 
 export const getGetTransactionReadinessUrl = () => {
 

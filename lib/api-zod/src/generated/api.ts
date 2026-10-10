@@ -2022,7 +2022,7 @@ export const RecordTransactionExceptionResponse = zod.object({
   "documents": zod.array(zod.object({
   "id": zod.string().uuid(),
   "kind": zod.enum(['PURCHASE_TERMS_REVIEW', 'PURCHASE_AGREEMENT', 'ASSIGNMENT_AGREEMENT', 'SELLER_RESPONSE', 'AMENDMENT', 'REPLACEMENT_BUYER', 'EMD_ACKNOWLEDGMENT', 'CLOSING_DOCUMENT']),
-  "status": zod.enum(['DRAFT', 'PREPARED_FOR_REVIEW', 'APPROVED_TO_SEND', 'SENT', 'SIGNING_IN_PROGRESS', 'SIGNED', 'EXECUTED', 'REJECTED', 'VOID', 'EXPIRED', 'REPLACED']),
+  "status": zod.enum(['DRAFT', 'PREPARED_FOR_REVIEW', 'APPROVED_TO_SEND', 'SENT', 'SIGNING_IN_PROGRESS', 'SIGNED', 'EXECUTED', 'REJECTED', 'VOID', 'EXPIRED', 'REPLACED', 'STALE']),
   "attemptNumber": zod.number().int().min(1),
   "sourceContractVersion": zod.number().int().min(1),
   "sourceOfferId": zod.string().uuid(),
@@ -2036,6 +2036,8 @@ export const RecordTransactionExceptionResponse = zod.object({
   "generatedAt": zod.string().datetime({"offset":true}),
   "generatedBy": zod.string(),
   "downloadUrl": zod.string(),
+  "staleReason": zod.string().nullish(),
+  "nextAction": zod.string().nullish(),
   "templateKey": zod.string().optional(),
   "templateVersion": zod.number().int().min(1).optional(),
   "templateStatus": zod.enum(['REVIEW_COPY_ONLY', 'APPROVED_LEGAL']).optional(),
@@ -2043,8 +2045,10 @@ export const RecordTransactionExceptionResponse = zod.object({
   "partySnapshotHash": zod.string().regex(recordTransactionExceptionResponseContractOneDocumentsItemPartySnapshotHashRegExp).optional(),
   "storageMode": zod.enum(['PERSISTENT_DATABASE_BLOB', 'PRIVATE_OBJECT_STORAGE']).optional(),
   "events": zod.array(zod.object({
-  "from": zod.union([zod.literal('DRAFT'),zod.literal('PREPARED_FOR_REVIEW'),zod.literal('APPROVED_TO_SEND'),zod.literal('SENT'),zod.literal('SIGNING_IN_PROGRESS'),zod.literal('SIGNED'),zod.literal('EXECUTED'),zod.literal('REJECTED'),zod.literal('VOID'),zod.literal('EXPIRED'),zod.literal('REPLACED'),zod.literal(null)]).nullish(),
-  "to": zod.enum(['DRAFT', 'PREPARED_FOR_REVIEW', 'APPROVED_TO_SEND', 'SENT', 'SIGNING_IN_PROGRESS', 'SIGNED', 'EXECUTED', 'REJECTED', 'VOID', 'EXPIRED', 'REPLACED']),
+  "from": zod.union([zod.literal('DRAFT'),zod.literal('PREPARED_FOR_REVIEW'),zod.literal('APPROVED_TO_SEND'),zod.literal('SENT'),zod.literal('SIGNING_IN_PROGRESS'),zod.literal('SIGNED'),zod.literal('EXECUTED'),zod.literal('REJECTED'),zod.literal('VOID'),zod.literal('EXPIRED'),zod.literal('REPLACED'),zod.literal('STALE'),zod.literal(null)]).nullish(),
+  "to": zod.enum(['DRAFT', 'PREPARED_FOR_REVIEW', 'APPROVED_TO_SEND', 'SENT', 'SIGNING_IN_PROGRESS', 'SIGNED', 'EXECUTED', 'REJECTED', 'VOID', 'EXPIRED', 'REPLACED', 'STALE']),
+  "staleReason": zod.string().nullish(),
+  "nextAction": zod.string().nullish(),
   "occurredAt": zod.string().datetime({"offset":true}),
   "actorId": zod.string(),
   "actorRole": zod.enum(['OWNER', 'OPERATOR', 'SYSTEM_WORKER', 'PROVIDER']),
@@ -15989,7 +15993,7 @@ export const GetCommandCenterResponse = zod.object({
   "documents": zod.array(zod.object({
   "id": zod.string().uuid(),
   "kind": zod.enum(['PURCHASE_TERMS_REVIEW', 'PURCHASE_AGREEMENT', 'ASSIGNMENT_AGREEMENT', 'SELLER_RESPONSE', 'AMENDMENT', 'REPLACEMENT_BUYER', 'EMD_ACKNOWLEDGMENT', 'CLOSING_DOCUMENT']),
-  "status": zod.enum(['DRAFT', 'PREPARED_FOR_REVIEW', 'APPROVED_TO_SEND', 'SENT', 'SIGNING_IN_PROGRESS', 'SIGNED', 'EXECUTED', 'REJECTED', 'VOID', 'EXPIRED', 'REPLACED']),
+  "status": zod.enum(['DRAFT', 'PREPARED_FOR_REVIEW', 'APPROVED_TO_SEND', 'SENT', 'SIGNING_IN_PROGRESS', 'SIGNED', 'EXECUTED', 'REJECTED', 'VOID', 'EXPIRED', 'REPLACED', 'STALE']),
   "attemptNumber": zod.number().int().min(1),
   "sourceContractVersion": zod.number().int().min(1),
   "sourceOfferId": zod.string().uuid(),
@@ -16003,6 +16007,8 @@ export const GetCommandCenterResponse = zod.object({
   "generatedAt": zod.string().datetime({"offset":true}),
   "generatedBy": zod.string(),
   "downloadUrl": zod.string(),
+  "staleReason": zod.string().nullish(),
+  "nextAction": zod.string().nullish(),
   "templateKey": zod.string().optional(),
   "templateVersion": zod.number().int().min(1).optional(),
   "templateStatus": zod.enum(['REVIEW_COPY_ONLY', 'APPROVED_LEGAL']).optional(),
@@ -16010,8 +16016,10 @@ export const GetCommandCenterResponse = zod.object({
   "partySnapshotHash": zod.string().regex(getCommandCenterResponseOperationsItemContractOneDocumentsItemPartySnapshotHashRegExp).optional(),
   "storageMode": zod.enum(['PERSISTENT_DATABASE_BLOB', 'PRIVATE_OBJECT_STORAGE']).optional(),
   "events": zod.array(zod.object({
-  "from": zod.union([zod.literal('DRAFT'),zod.literal('PREPARED_FOR_REVIEW'),zod.literal('APPROVED_TO_SEND'),zod.literal('SENT'),zod.literal('SIGNING_IN_PROGRESS'),zod.literal('SIGNED'),zod.literal('EXECUTED'),zod.literal('REJECTED'),zod.literal('VOID'),zod.literal('EXPIRED'),zod.literal('REPLACED'),zod.literal(null)]).nullish(),
-  "to": zod.enum(['DRAFT', 'PREPARED_FOR_REVIEW', 'APPROVED_TO_SEND', 'SENT', 'SIGNING_IN_PROGRESS', 'SIGNED', 'EXECUTED', 'REJECTED', 'VOID', 'EXPIRED', 'REPLACED']),
+  "from": zod.union([zod.literal('DRAFT'),zod.literal('PREPARED_FOR_REVIEW'),zod.literal('APPROVED_TO_SEND'),zod.literal('SENT'),zod.literal('SIGNING_IN_PROGRESS'),zod.literal('SIGNED'),zod.literal('EXECUTED'),zod.literal('REJECTED'),zod.literal('VOID'),zod.literal('EXPIRED'),zod.literal('REPLACED'),zod.literal('STALE'),zod.literal(null)]).nullish(),
+  "to": zod.enum(['DRAFT', 'PREPARED_FOR_REVIEW', 'APPROVED_TO_SEND', 'SENT', 'SIGNING_IN_PROGRESS', 'SIGNED', 'EXECUTED', 'REJECTED', 'VOID', 'EXPIRED', 'REPLACED', 'STALE']),
+  "staleReason": zod.string().nullish(),
+  "nextAction": zod.string().nullish(),
   "occurredAt": zod.string().datetime({"offset":true}),
   "actorId": zod.string(),
   "actorRole": zod.enum(['OWNER', 'OPERATOR', 'SYSTEM_WORKER', 'PROVIDER']),
@@ -21030,7 +21038,7 @@ export const GetDealOperationsResponse = zod.object({
   "documents": zod.array(zod.object({
   "id": zod.string().uuid(),
   "kind": zod.enum(['PURCHASE_TERMS_REVIEW', 'PURCHASE_AGREEMENT', 'ASSIGNMENT_AGREEMENT', 'SELLER_RESPONSE', 'AMENDMENT', 'REPLACEMENT_BUYER', 'EMD_ACKNOWLEDGMENT', 'CLOSING_DOCUMENT']),
-  "status": zod.enum(['DRAFT', 'PREPARED_FOR_REVIEW', 'APPROVED_TO_SEND', 'SENT', 'SIGNING_IN_PROGRESS', 'SIGNED', 'EXECUTED', 'REJECTED', 'VOID', 'EXPIRED', 'REPLACED']),
+  "status": zod.enum(['DRAFT', 'PREPARED_FOR_REVIEW', 'APPROVED_TO_SEND', 'SENT', 'SIGNING_IN_PROGRESS', 'SIGNED', 'EXECUTED', 'REJECTED', 'VOID', 'EXPIRED', 'REPLACED', 'STALE']),
   "attemptNumber": zod.number().int().min(1),
   "sourceContractVersion": zod.number().int().min(1),
   "sourceOfferId": zod.string().uuid(),
@@ -21044,6 +21052,8 @@ export const GetDealOperationsResponse = zod.object({
   "generatedAt": zod.string().datetime({"offset":true}),
   "generatedBy": zod.string(),
   "downloadUrl": zod.string(),
+  "staleReason": zod.string().nullish(),
+  "nextAction": zod.string().nullish(),
   "templateKey": zod.string().optional(),
   "templateVersion": zod.number().int().min(1).optional(),
   "templateStatus": zod.enum(['REVIEW_COPY_ONLY', 'APPROVED_LEGAL']).optional(),
@@ -21051,8 +21061,10 @@ export const GetDealOperationsResponse = zod.object({
   "partySnapshotHash": zod.string().regex(getDealOperationsResponseContractOneDocumentsItemPartySnapshotHashRegExp).optional(),
   "storageMode": zod.enum(['PERSISTENT_DATABASE_BLOB', 'PRIVATE_OBJECT_STORAGE']).optional(),
   "events": zod.array(zod.object({
-  "from": zod.union([zod.literal('DRAFT'),zod.literal('PREPARED_FOR_REVIEW'),zod.literal('APPROVED_TO_SEND'),zod.literal('SENT'),zod.literal('SIGNING_IN_PROGRESS'),zod.literal('SIGNED'),zod.literal('EXECUTED'),zod.literal('REJECTED'),zod.literal('VOID'),zod.literal('EXPIRED'),zod.literal('REPLACED'),zod.literal(null)]).nullish(),
-  "to": zod.enum(['DRAFT', 'PREPARED_FOR_REVIEW', 'APPROVED_TO_SEND', 'SENT', 'SIGNING_IN_PROGRESS', 'SIGNED', 'EXECUTED', 'REJECTED', 'VOID', 'EXPIRED', 'REPLACED']),
+  "from": zod.union([zod.literal('DRAFT'),zod.literal('PREPARED_FOR_REVIEW'),zod.literal('APPROVED_TO_SEND'),zod.literal('SENT'),zod.literal('SIGNING_IN_PROGRESS'),zod.literal('SIGNED'),zod.literal('EXECUTED'),zod.literal('REJECTED'),zod.literal('VOID'),zod.literal('EXPIRED'),zod.literal('REPLACED'),zod.literal('STALE'),zod.literal(null)]).nullish(),
+  "to": zod.enum(['DRAFT', 'PREPARED_FOR_REVIEW', 'APPROVED_TO_SEND', 'SENT', 'SIGNING_IN_PROGRESS', 'SIGNED', 'EXECUTED', 'REJECTED', 'VOID', 'EXPIRED', 'REPLACED', 'STALE']),
+  "staleReason": zod.string().nullish(),
+  "nextAction": zod.string().nullish(),
   "occurredAt": zod.string().datetime({"offset":true}),
   "actorId": zod.string(),
   "actorRole": zod.enum(['OWNER', 'OPERATOR', 'SYSTEM_WORKER', 'PROVIDER']),
@@ -22410,7 +22422,7 @@ export const RefreshMatchesResponse = zod.object({
   "documents": zod.array(zod.object({
   "id": zod.string().uuid(),
   "kind": zod.enum(['PURCHASE_TERMS_REVIEW', 'PURCHASE_AGREEMENT', 'ASSIGNMENT_AGREEMENT', 'SELLER_RESPONSE', 'AMENDMENT', 'REPLACEMENT_BUYER', 'EMD_ACKNOWLEDGMENT', 'CLOSING_DOCUMENT']),
-  "status": zod.enum(['DRAFT', 'PREPARED_FOR_REVIEW', 'APPROVED_TO_SEND', 'SENT', 'SIGNING_IN_PROGRESS', 'SIGNED', 'EXECUTED', 'REJECTED', 'VOID', 'EXPIRED', 'REPLACED']),
+  "status": zod.enum(['DRAFT', 'PREPARED_FOR_REVIEW', 'APPROVED_TO_SEND', 'SENT', 'SIGNING_IN_PROGRESS', 'SIGNED', 'EXECUTED', 'REJECTED', 'VOID', 'EXPIRED', 'REPLACED', 'STALE']),
   "attemptNumber": zod.number().int().min(1),
   "sourceContractVersion": zod.number().int().min(1),
   "sourceOfferId": zod.string().uuid(),
@@ -22424,6 +22436,8 @@ export const RefreshMatchesResponse = zod.object({
   "generatedAt": zod.string().datetime({"offset":true}),
   "generatedBy": zod.string(),
   "downloadUrl": zod.string(),
+  "staleReason": zod.string().nullish(),
+  "nextAction": zod.string().nullish(),
   "templateKey": zod.string().optional(),
   "templateVersion": zod.number().int().min(1).optional(),
   "templateStatus": zod.enum(['REVIEW_COPY_ONLY', 'APPROVED_LEGAL']).optional(),
@@ -22431,8 +22445,10 @@ export const RefreshMatchesResponse = zod.object({
   "partySnapshotHash": zod.string().regex(refreshMatchesResponseContractOneDocumentsItemPartySnapshotHashRegExp).optional(),
   "storageMode": zod.enum(['PERSISTENT_DATABASE_BLOB', 'PRIVATE_OBJECT_STORAGE']).optional(),
   "events": zod.array(zod.object({
-  "from": zod.union([zod.literal('DRAFT'),zod.literal('PREPARED_FOR_REVIEW'),zod.literal('APPROVED_TO_SEND'),zod.literal('SENT'),zod.literal('SIGNING_IN_PROGRESS'),zod.literal('SIGNED'),zod.literal('EXECUTED'),zod.literal('REJECTED'),zod.literal('VOID'),zod.literal('EXPIRED'),zod.literal('REPLACED'),zod.literal(null)]).nullish(),
-  "to": zod.enum(['DRAFT', 'PREPARED_FOR_REVIEW', 'APPROVED_TO_SEND', 'SENT', 'SIGNING_IN_PROGRESS', 'SIGNED', 'EXECUTED', 'REJECTED', 'VOID', 'EXPIRED', 'REPLACED']),
+  "from": zod.union([zod.literal('DRAFT'),zod.literal('PREPARED_FOR_REVIEW'),zod.literal('APPROVED_TO_SEND'),zod.literal('SENT'),zod.literal('SIGNING_IN_PROGRESS'),zod.literal('SIGNED'),zod.literal('EXECUTED'),zod.literal('REJECTED'),zod.literal('VOID'),zod.literal('EXPIRED'),zod.literal('REPLACED'),zod.literal('STALE'),zod.literal(null)]).nullish(),
+  "to": zod.enum(['DRAFT', 'PREPARED_FOR_REVIEW', 'APPROVED_TO_SEND', 'SENT', 'SIGNING_IN_PROGRESS', 'SIGNED', 'EXECUTED', 'REJECTED', 'VOID', 'EXPIRED', 'REPLACED', 'STALE']),
+  "staleReason": zod.string().nullish(),
+  "nextAction": zod.string().nullish(),
   "occurredAt": zod.string().datetime({"offset":true}),
   "actorId": zod.string(),
   "actorRole": zod.enum(['OWNER', 'OPERATOR', 'SYSTEM_WORKER', 'PROVIDER']),
@@ -23812,7 +23828,7 @@ export const RecordBuyerResponseResponse = zod.object({
   "documents": zod.array(zod.object({
   "id": zod.string().uuid(),
   "kind": zod.enum(['PURCHASE_TERMS_REVIEW', 'PURCHASE_AGREEMENT', 'ASSIGNMENT_AGREEMENT', 'SELLER_RESPONSE', 'AMENDMENT', 'REPLACEMENT_BUYER', 'EMD_ACKNOWLEDGMENT', 'CLOSING_DOCUMENT']),
-  "status": zod.enum(['DRAFT', 'PREPARED_FOR_REVIEW', 'APPROVED_TO_SEND', 'SENT', 'SIGNING_IN_PROGRESS', 'SIGNED', 'EXECUTED', 'REJECTED', 'VOID', 'EXPIRED', 'REPLACED']),
+  "status": zod.enum(['DRAFT', 'PREPARED_FOR_REVIEW', 'APPROVED_TO_SEND', 'SENT', 'SIGNING_IN_PROGRESS', 'SIGNED', 'EXECUTED', 'REJECTED', 'VOID', 'EXPIRED', 'REPLACED', 'STALE']),
   "attemptNumber": zod.number().int().min(1),
   "sourceContractVersion": zod.number().int().min(1),
   "sourceOfferId": zod.string().uuid(),
@@ -23826,6 +23842,8 @@ export const RecordBuyerResponseResponse = zod.object({
   "generatedAt": zod.string().datetime({"offset":true}),
   "generatedBy": zod.string(),
   "downloadUrl": zod.string(),
+  "staleReason": zod.string().nullish(),
+  "nextAction": zod.string().nullish(),
   "templateKey": zod.string().optional(),
   "templateVersion": zod.number().int().min(1).optional(),
   "templateStatus": zod.enum(['REVIEW_COPY_ONLY', 'APPROVED_LEGAL']).optional(),
@@ -23833,8 +23851,10 @@ export const RecordBuyerResponseResponse = zod.object({
   "partySnapshotHash": zod.string().regex(recordBuyerResponseResponseContractOneDocumentsItemPartySnapshotHashRegExp).optional(),
   "storageMode": zod.enum(['PERSISTENT_DATABASE_BLOB', 'PRIVATE_OBJECT_STORAGE']).optional(),
   "events": zod.array(zod.object({
-  "from": zod.union([zod.literal('DRAFT'),zod.literal('PREPARED_FOR_REVIEW'),zod.literal('APPROVED_TO_SEND'),zod.literal('SENT'),zod.literal('SIGNING_IN_PROGRESS'),zod.literal('SIGNED'),zod.literal('EXECUTED'),zod.literal('REJECTED'),zod.literal('VOID'),zod.literal('EXPIRED'),zod.literal('REPLACED'),zod.literal(null)]).nullish(),
-  "to": zod.enum(['DRAFT', 'PREPARED_FOR_REVIEW', 'APPROVED_TO_SEND', 'SENT', 'SIGNING_IN_PROGRESS', 'SIGNED', 'EXECUTED', 'REJECTED', 'VOID', 'EXPIRED', 'REPLACED']),
+  "from": zod.union([zod.literal('DRAFT'),zod.literal('PREPARED_FOR_REVIEW'),zod.literal('APPROVED_TO_SEND'),zod.literal('SENT'),zod.literal('SIGNING_IN_PROGRESS'),zod.literal('SIGNED'),zod.literal('EXECUTED'),zod.literal('REJECTED'),zod.literal('VOID'),zod.literal('EXPIRED'),zod.literal('REPLACED'),zod.literal('STALE'),zod.literal(null)]).nullish(),
+  "to": zod.enum(['DRAFT', 'PREPARED_FOR_REVIEW', 'APPROVED_TO_SEND', 'SENT', 'SIGNING_IN_PROGRESS', 'SIGNED', 'EXECUTED', 'REJECTED', 'VOID', 'EXPIRED', 'REPLACED', 'STALE']),
+  "staleReason": zod.string().nullish(),
+  "nextAction": zod.string().nullish(),
   "occurredAt": zod.string().datetime({"offset":true}),
   "actorId": zod.string(),
   "actorRole": zod.enum(['OWNER', 'OPERATOR', 'SYSTEM_WORKER', 'PROVIDER']),
@@ -26431,7 +26451,7 @@ export const RecordDestinationActivityResponse = zod.object({
   "documents": zod.array(zod.object({
   "id": zod.string().uuid(),
   "kind": zod.enum(['PURCHASE_TERMS_REVIEW', 'PURCHASE_AGREEMENT', 'ASSIGNMENT_AGREEMENT', 'SELLER_RESPONSE', 'AMENDMENT', 'REPLACEMENT_BUYER', 'EMD_ACKNOWLEDGMENT', 'CLOSING_DOCUMENT']),
-  "status": zod.enum(['DRAFT', 'PREPARED_FOR_REVIEW', 'APPROVED_TO_SEND', 'SENT', 'SIGNING_IN_PROGRESS', 'SIGNED', 'EXECUTED', 'REJECTED', 'VOID', 'EXPIRED', 'REPLACED']),
+  "status": zod.enum(['DRAFT', 'PREPARED_FOR_REVIEW', 'APPROVED_TO_SEND', 'SENT', 'SIGNING_IN_PROGRESS', 'SIGNED', 'EXECUTED', 'REJECTED', 'VOID', 'EXPIRED', 'REPLACED', 'STALE']),
   "attemptNumber": zod.number().int().min(1),
   "sourceContractVersion": zod.number().int().min(1),
   "sourceOfferId": zod.string().uuid(),
@@ -26445,6 +26465,8 @@ export const RecordDestinationActivityResponse = zod.object({
   "generatedAt": zod.string().datetime({"offset":true}),
   "generatedBy": zod.string(),
   "downloadUrl": zod.string(),
+  "staleReason": zod.string().nullish(),
+  "nextAction": zod.string().nullish(),
   "templateKey": zod.string().optional(),
   "templateVersion": zod.number().int().min(1).optional(),
   "templateStatus": zod.enum(['REVIEW_COPY_ONLY', 'APPROVED_LEGAL']).optional(),
@@ -26452,8 +26474,10 @@ export const RecordDestinationActivityResponse = zod.object({
   "partySnapshotHash": zod.string().regex(recordDestinationActivityResponseContractOneDocumentsItemPartySnapshotHashRegExp).optional(),
   "storageMode": zod.enum(['PERSISTENT_DATABASE_BLOB', 'PRIVATE_OBJECT_STORAGE']).optional(),
   "events": zod.array(zod.object({
-  "from": zod.union([zod.literal('DRAFT'),zod.literal('PREPARED_FOR_REVIEW'),zod.literal('APPROVED_TO_SEND'),zod.literal('SENT'),zod.literal('SIGNING_IN_PROGRESS'),zod.literal('SIGNED'),zod.literal('EXECUTED'),zod.literal('REJECTED'),zod.literal('VOID'),zod.literal('EXPIRED'),zod.literal('REPLACED'),zod.literal(null)]).nullish(),
-  "to": zod.enum(['DRAFT', 'PREPARED_FOR_REVIEW', 'APPROVED_TO_SEND', 'SENT', 'SIGNING_IN_PROGRESS', 'SIGNED', 'EXECUTED', 'REJECTED', 'VOID', 'EXPIRED', 'REPLACED']),
+  "from": zod.union([zod.literal('DRAFT'),zod.literal('PREPARED_FOR_REVIEW'),zod.literal('APPROVED_TO_SEND'),zod.literal('SENT'),zod.literal('SIGNING_IN_PROGRESS'),zod.literal('SIGNED'),zod.literal('EXECUTED'),zod.literal('REJECTED'),zod.literal('VOID'),zod.literal('EXPIRED'),zod.literal('REPLACED'),zod.literal('STALE'),zod.literal(null)]).nullish(),
+  "to": zod.enum(['DRAFT', 'PREPARED_FOR_REVIEW', 'APPROVED_TO_SEND', 'SENT', 'SIGNING_IN_PROGRESS', 'SIGNED', 'EXECUTED', 'REJECTED', 'VOID', 'EXPIRED', 'REPLACED', 'STALE']),
+  "staleReason": zod.string().nullish(),
+  "nextAction": zod.string().nullish(),
   "occurredAt": zod.string().datetime({"offset":true}),
   "actorId": zod.string(),
   "actorRole": zod.enum(['OWNER', 'OPERATOR', 'SYSTEM_WORKER', 'PROVIDER']),
@@ -27820,7 +27844,7 @@ export const CreateContractResponse = zod.object({
   "documents": zod.array(zod.object({
   "id": zod.string().uuid(),
   "kind": zod.enum(['PURCHASE_TERMS_REVIEW', 'PURCHASE_AGREEMENT', 'ASSIGNMENT_AGREEMENT', 'SELLER_RESPONSE', 'AMENDMENT', 'REPLACEMENT_BUYER', 'EMD_ACKNOWLEDGMENT', 'CLOSING_DOCUMENT']),
-  "status": zod.enum(['DRAFT', 'PREPARED_FOR_REVIEW', 'APPROVED_TO_SEND', 'SENT', 'SIGNING_IN_PROGRESS', 'SIGNED', 'EXECUTED', 'REJECTED', 'VOID', 'EXPIRED', 'REPLACED']),
+  "status": zod.enum(['DRAFT', 'PREPARED_FOR_REVIEW', 'APPROVED_TO_SEND', 'SENT', 'SIGNING_IN_PROGRESS', 'SIGNED', 'EXECUTED', 'REJECTED', 'VOID', 'EXPIRED', 'REPLACED', 'STALE']),
   "attemptNumber": zod.number().int().min(1),
   "sourceContractVersion": zod.number().int().min(1),
   "sourceOfferId": zod.string().uuid(),
@@ -27834,6 +27858,8 @@ export const CreateContractResponse = zod.object({
   "generatedAt": zod.string().datetime({"offset":true}),
   "generatedBy": zod.string(),
   "downloadUrl": zod.string(),
+  "staleReason": zod.string().nullish(),
+  "nextAction": zod.string().nullish(),
   "templateKey": zod.string().optional(),
   "templateVersion": zod.number().int().min(1).optional(),
   "templateStatus": zod.enum(['REVIEW_COPY_ONLY', 'APPROVED_LEGAL']).optional(),
@@ -27841,8 +27867,10 @@ export const CreateContractResponse = zod.object({
   "partySnapshotHash": zod.string().regex(createContractResponseContractOneDocumentsItemPartySnapshotHashRegExp).optional(),
   "storageMode": zod.enum(['PERSISTENT_DATABASE_BLOB', 'PRIVATE_OBJECT_STORAGE']).optional(),
   "events": zod.array(zod.object({
-  "from": zod.union([zod.literal('DRAFT'),zod.literal('PREPARED_FOR_REVIEW'),zod.literal('APPROVED_TO_SEND'),zod.literal('SENT'),zod.literal('SIGNING_IN_PROGRESS'),zod.literal('SIGNED'),zod.literal('EXECUTED'),zod.literal('REJECTED'),zod.literal('VOID'),zod.literal('EXPIRED'),zod.literal('REPLACED'),zod.literal(null)]).nullish(),
-  "to": zod.enum(['DRAFT', 'PREPARED_FOR_REVIEW', 'APPROVED_TO_SEND', 'SENT', 'SIGNING_IN_PROGRESS', 'SIGNED', 'EXECUTED', 'REJECTED', 'VOID', 'EXPIRED', 'REPLACED']),
+  "from": zod.union([zod.literal('DRAFT'),zod.literal('PREPARED_FOR_REVIEW'),zod.literal('APPROVED_TO_SEND'),zod.literal('SENT'),zod.literal('SIGNING_IN_PROGRESS'),zod.literal('SIGNED'),zod.literal('EXECUTED'),zod.literal('REJECTED'),zod.literal('VOID'),zod.literal('EXPIRED'),zod.literal('REPLACED'),zod.literal('STALE'),zod.literal(null)]).nullish(),
+  "to": zod.enum(['DRAFT', 'PREPARED_FOR_REVIEW', 'APPROVED_TO_SEND', 'SENT', 'SIGNING_IN_PROGRESS', 'SIGNED', 'EXECUTED', 'REJECTED', 'VOID', 'EXPIRED', 'REPLACED', 'STALE']),
+  "staleReason": zod.string().nullish(),
+  "nextAction": zod.string().nullish(),
   "occurredAt": zod.string().datetime({"offset":true}),
   "actorId": zod.string(),
   "actorRole": zod.enum(['OWNER', 'OPERATOR', 'SYSTEM_WORKER', 'PROVIDER']),
@@ -29207,7 +29235,7 @@ export const PreparePurchaseReviewDocumentResponse = zod.object({
   "documents": zod.array(zod.object({
   "id": zod.string().uuid(),
   "kind": zod.enum(['PURCHASE_TERMS_REVIEW', 'PURCHASE_AGREEMENT', 'ASSIGNMENT_AGREEMENT', 'SELLER_RESPONSE', 'AMENDMENT', 'REPLACEMENT_BUYER', 'EMD_ACKNOWLEDGMENT', 'CLOSING_DOCUMENT']),
-  "status": zod.enum(['DRAFT', 'PREPARED_FOR_REVIEW', 'APPROVED_TO_SEND', 'SENT', 'SIGNING_IN_PROGRESS', 'SIGNED', 'EXECUTED', 'REJECTED', 'VOID', 'EXPIRED', 'REPLACED']),
+  "status": zod.enum(['DRAFT', 'PREPARED_FOR_REVIEW', 'APPROVED_TO_SEND', 'SENT', 'SIGNING_IN_PROGRESS', 'SIGNED', 'EXECUTED', 'REJECTED', 'VOID', 'EXPIRED', 'REPLACED', 'STALE']),
   "attemptNumber": zod.number().int().min(1),
   "sourceContractVersion": zod.number().int().min(1),
   "sourceOfferId": zod.string().uuid(),
@@ -29221,6 +29249,8 @@ export const PreparePurchaseReviewDocumentResponse = zod.object({
   "generatedAt": zod.string().datetime({"offset":true}),
   "generatedBy": zod.string(),
   "downloadUrl": zod.string(),
+  "staleReason": zod.string().nullish(),
+  "nextAction": zod.string().nullish(),
   "templateKey": zod.string().optional(),
   "templateVersion": zod.number().int().min(1).optional(),
   "templateStatus": zod.enum(['REVIEW_COPY_ONLY', 'APPROVED_LEGAL']).optional(),
@@ -29228,8 +29258,10 @@ export const PreparePurchaseReviewDocumentResponse = zod.object({
   "partySnapshotHash": zod.string().regex(preparePurchaseReviewDocumentResponseContractOneDocumentsItemPartySnapshotHashRegExp).optional(),
   "storageMode": zod.enum(['PERSISTENT_DATABASE_BLOB', 'PRIVATE_OBJECT_STORAGE']).optional(),
   "events": zod.array(zod.object({
-  "from": zod.union([zod.literal('DRAFT'),zod.literal('PREPARED_FOR_REVIEW'),zod.literal('APPROVED_TO_SEND'),zod.literal('SENT'),zod.literal('SIGNING_IN_PROGRESS'),zod.literal('SIGNED'),zod.literal('EXECUTED'),zod.literal('REJECTED'),zod.literal('VOID'),zod.literal('EXPIRED'),zod.literal('REPLACED'),zod.literal(null)]).nullish(),
-  "to": zod.enum(['DRAFT', 'PREPARED_FOR_REVIEW', 'APPROVED_TO_SEND', 'SENT', 'SIGNING_IN_PROGRESS', 'SIGNED', 'EXECUTED', 'REJECTED', 'VOID', 'EXPIRED', 'REPLACED']),
+  "from": zod.union([zod.literal('DRAFT'),zod.literal('PREPARED_FOR_REVIEW'),zod.literal('APPROVED_TO_SEND'),zod.literal('SENT'),zod.literal('SIGNING_IN_PROGRESS'),zod.literal('SIGNED'),zod.literal('EXECUTED'),zod.literal('REJECTED'),zod.literal('VOID'),zod.literal('EXPIRED'),zod.literal('REPLACED'),zod.literal('STALE'),zod.literal(null)]).nullish(),
+  "to": zod.enum(['DRAFT', 'PREPARED_FOR_REVIEW', 'APPROVED_TO_SEND', 'SENT', 'SIGNING_IN_PROGRESS', 'SIGNED', 'EXECUTED', 'REJECTED', 'VOID', 'EXPIRED', 'REPLACED', 'STALE']),
+  "staleReason": zod.string().nullish(),
+  "nextAction": zod.string().nullish(),
   "occurredAt": zod.string().datetime({"offset":true}),
   "actorId": zod.string(),
   "actorRole": zod.enum(['OWNER', 'OPERATOR', 'SYSTEM_WORKER', 'PROVIDER']),
@@ -30600,7 +30632,7 @@ export const TransitionTransactionDocumentResponse = zod.object({
   "documents": zod.array(zod.object({
   "id": zod.string().uuid(),
   "kind": zod.enum(['PURCHASE_TERMS_REVIEW', 'PURCHASE_AGREEMENT', 'ASSIGNMENT_AGREEMENT', 'SELLER_RESPONSE', 'AMENDMENT', 'REPLACEMENT_BUYER', 'EMD_ACKNOWLEDGMENT', 'CLOSING_DOCUMENT']),
-  "status": zod.enum(['DRAFT', 'PREPARED_FOR_REVIEW', 'APPROVED_TO_SEND', 'SENT', 'SIGNING_IN_PROGRESS', 'SIGNED', 'EXECUTED', 'REJECTED', 'VOID', 'EXPIRED', 'REPLACED']),
+  "status": zod.enum(['DRAFT', 'PREPARED_FOR_REVIEW', 'APPROVED_TO_SEND', 'SENT', 'SIGNING_IN_PROGRESS', 'SIGNED', 'EXECUTED', 'REJECTED', 'VOID', 'EXPIRED', 'REPLACED', 'STALE']),
   "attemptNumber": zod.number().int().min(1),
   "sourceContractVersion": zod.number().int().min(1),
   "sourceOfferId": zod.string().uuid(),
@@ -30614,6 +30646,8 @@ export const TransitionTransactionDocumentResponse = zod.object({
   "generatedAt": zod.string().datetime({"offset":true}),
   "generatedBy": zod.string(),
   "downloadUrl": zod.string(),
+  "staleReason": zod.string().nullish(),
+  "nextAction": zod.string().nullish(),
   "templateKey": zod.string().optional(),
   "templateVersion": zod.number().int().min(1).optional(),
   "templateStatus": zod.enum(['REVIEW_COPY_ONLY', 'APPROVED_LEGAL']).optional(),
@@ -30621,8 +30655,10 @@ export const TransitionTransactionDocumentResponse = zod.object({
   "partySnapshotHash": zod.string().regex(transitionTransactionDocumentResponseContractOneDocumentsItemPartySnapshotHashRegExp).optional(),
   "storageMode": zod.enum(['PERSISTENT_DATABASE_BLOB', 'PRIVATE_OBJECT_STORAGE']).optional(),
   "events": zod.array(zod.object({
-  "from": zod.union([zod.literal('DRAFT'),zod.literal('PREPARED_FOR_REVIEW'),zod.literal('APPROVED_TO_SEND'),zod.literal('SENT'),zod.literal('SIGNING_IN_PROGRESS'),zod.literal('SIGNED'),zod.literal('EXECUTED'),zod.literal('REJECTED'),zod.literal('VOID'),zod.literal('EXPIRED'),zod.literal('REPLACED'),zod.literal(null)]).nullish(),
-  "to": zod.enum(['DRAFT', 'PREPARED_FOR_REVIEW', 'APPROVED_TO_SEND', 'SENT', 'SIGNING_IN_PROGRESS', 'SIGNED', 'EXECUTED', 'REJECTED', 'VOID', 'EXPIRED', 'REPLACED']),
+  "from": zod.union([zod.literal('DRAFT'),zod.literal('PREPARED_FOR_REVIEW'),zod.literal('APPROVED_TO_SEND'),zod.literal('SENT'),zod.literal('SIGNING_IN_PROGRESS'),zod.literal('SIGNED'),zod.literal('EXECUTED'),zod.literal('REJECTED'),zod.literal('VOID'),zod.literal('EXPIRED'),zod.literal('REPLACED'),zod.literal('STALE'),zod.literal(null)]).nullish(),
+  "to": zod.enum(['DRAFT', 'PREPARED_FOR_REVIEW', 'APPROVED_TO_SEND', 'SENT', 'SIGNING_IN_PROGRESS', 'SIGNED', 'EXECUTED', 'REJECTED', 'VOID', 'EXPIRED', 'REPLACED', 'STALE']),
+  "staleReason": zod.string().nullish(),
+  "nextAction": zod.string().nullish(),
   "occurredAt": zod.string().datetime({"offset":true}),
   "actorId": zod.string(),
   "actorRole": zod.enum(['OWNER', 'OPERATOR', 'SYSTEM_WORKER', 'PROVIDER']),
@@ -30695,7 +30731,18 @@ export const GetTransactionDocumentReadinessResponse = zod.object({
   "requiredFields": zod.array(zod.string()),
   "templateHash": zod.string().nullable(),
   "approvalEvidenceRef": zod.string().nullable(),
-  "missingReason": zod.string().nullable()
+  "missingReason": zod.string().nullable(),
+  "approvedBy": zod.string().nullable(),
+  "approvedAt": zod.string().datetime({"offset":true}).nullable(),
+  "sourceRef": zod.string().nullable(),
+  "sourceProvenance": zod.record(zod.string(), zod.unknown()).nullable(),
+  "reviewState": zod.enum(['NOT_REVIEWED', 'SUBMITTED', 'APPROVED', 'REJECTED', 'EXPIRED']),
+  "reviewedBy": zod.string().nullable(),
+  "reviewedAt": zod.string().datetime({"offset":true}).nullable(),
+  "reviewerQualificationRef": zod.string().nullable(),
+  "effectiveAt": zod.string().datetime({"offset":true}).nullable(),
+  "expiresAt": zod.string().datetime({"offset":true}).nullable(),
+  "supportedDealTypes": zod.array(zod.string())
 })),
   "signingProvider": zod.object({
   "status": zod.enum(['CONNECTED', 'NOT_CONNECTED']),
@@ -30709,6 +30756,64 @@ export const GetTransactionDocumentReadinessResponse = zod.object({
 }),
   "canSendLegalDocuments": zod.boolean(),
   "blockers": zod.array(zod.string())
+})
+
+
+export const RecordTransactionTemplateReviewParams = zod.object({
+  "id": zod.coerce.string().uuid()
+})
+
+
+
+export const recordTransactionTemplateReviewBodyTemplateHashRegExp = new RegExp('^[a-f0-9]{64}$');
+
+
+
+
+export const recordTransactionTemplateReviewBodyReasonMin = 10;
+
+
+
+export const RecordTransactionTemplateReviewBody = zod.object({
+  "expectedVersion": zod.number().int().min(1),
+  "decision": zod.enum(['APPROVED', 'REJECTED']),
+  "sourceRef": zod.string().min(1),
+  "sourceProvenance": zod.record(zod.string(), zod.unknown()),
+  "templateStorageRef": zod.string().nullish(),
+  "templateHash": zod.string().regex(recordTransactionTemplateReviewBodyTemplateHashRegExp),
+  "reviewerIdentity": zod.string().min(1),
+  "reviewerQualificationRef": zod.string().min(1),
+  "reviewEvidenceRef": zod.string().min(1),
+  "effectiveAt": zod.string().datetime({"offset":true}),
+  "expiresAt": zod.string().datetime({"offset":true}).nullish(),
+  "supportedDealTypes": zod.array(zod.string()).min(1),
+  "reason": zod.string().min(recordTransactionTemplateReviewBodyReasonMin).optional()
+})
+
+
+
+
+export const RecordTransactionTemplateReviewResponse = zod.object({
+  "key": zod.string(),
+  "documentKind": zod.string(),
+  "jurisdiction": zod.string(),
+  "status": zod.enum(['REVIEW_COPY_ONLY', 'PORTAL_EVENT_RECORD', 'MISSING_APPROVED_TEMPLATE', 'APPROVED_LEGAL']),
+  "version": zod.number().int().min(1),
+  "requiredFields": zod.array(zod.string()),
+  "templateHash": zod.string().nullable(),
+  "approvalEvidenceRef": zod.string().nullable(),
+  "missingReason": zod.string().nullable(),
+  "approvedBy": zod.string().nullable(),
+  "approvedAt": zod.string().datetime({"offset":true}).nullable(),
+  "sourceRef": zod.string().nullable(),
+  "sourceProvenance": zod.record(zod.string(), zod.unknown()).nullable(),
+  "reviewState": zod.enum(['NOT_REVIEWED', 'SUBMITTED', 'APPROVED', 'REJECTED', 'EXPIRED']),
+  "reviewedBy": zod.string().nullable(),
+  "reviewedAt": zod.string().datetime({"offset":true}).nullable(),
+  "reviewerQualificationRef": zod.string().nullable(),
+  "effectiveAt": zod.string().datetime({"offset":true}).nullable(),
+  "expiresAt": zod.string().datetime({"offset":true}).nullable(),
+  "supportedDealTypes": zod.array(zod.string())
 })
 
 
@@ -32120,7 +32225,7 @@ export const ExecuteContractResponse = zod.object({
   "documents": zod.array(zod.object({
   "id": zod.string().uuid(),
   "kind": zod.enum(['PURCHASE_TERMS_REVIEW', 'PURCHASE_AGREEMENT', 'ASSIGNMENT_AGREEMENT', 'SELLER_RESPONSE', 'AMENDMENT', 'REPLACEMENT_BUYER', 'EMD_ACKNOWLEDGMENT', 'CLOSING_DOCUMENT']),
-  "status": zod.enum(['DRAFT', 'PREPARED_FOR_REVIEW', 'APPROVED_TO_SEND', 'SENT', 'SIGNING_IN_PROGRESS', 'SIGNED', 'EXECUTED', 'REJECTED', 'VOID', 'EXPIRED', 'REPLACED']),
+  "status": zod.enum(['DRAFT', 'PREPARED_FOR_REVIEW', 'APPROVED_TO_SEND', 'SENT', 'SIGNING_IN_PROGRESS', 'SIGNED', 'EXECUTED', 'REJECTED', 'VOID', 'EXPIRED', 'REPLACED', 'STALE']),
   "attemptNumber": zod.number().int().min(1),
   "sourceContractVersion": zod.number().int().min(1),
   "sourceOfferId": zod.string().uuid(),
@@ -32134,6 +32239,8 @@ export const ExecuteContractResponse = zod.object({
   "generatedAt": zod.string().datetime({"offset":true}),
   "generatedBy": zod.string(),
   "downloadUrl": zod.string(),
+  "staleReason": zod.string().nullish(),
+  "nextAction": zod.string().nullish(),
   "templateKey": zod.string().optional(),
   "templateVersion": zod.number().int().min(1).optional(),
   "templateStatus": zod.enum(['REVIEW_COPY_ONLY', 'APPROVED_LEGAL']).optional(),
@@ -32141,8 +32248,10 @@ export const ExecuteContractResponse = zod.object({
   "partySnapshotHash": zod.string().regex(executeContractResponseContractOneDocumentsItemPartySnapshotHashRegExp).optional(),
   "storageMode": zod.enum(['PERSISTENT_DATABASE_BLOB', 'PRIVATE_OBJECT_STORAGE']).optional(),
   "events": zod.array(zod.object({
-  "from": zod.union([zod.literal('DRAFT'),zod.literal('PREPARED_FOR_REVIEW'),zod.literal('APPROVED_TO_SEND'),zod.literal('SENT'),zod.literal('SIGNING_IN_PROGRESS'),zod.literal('SIGNED'),zod.literal('EXECUTED'),zod.literal('REJECTED'),zod.literal('VOID'),zod.literal('EXPIRED'),zod.literal('REPLACED'),zod.literal(null)]).nullish(),
-  "to": zod.enum(['DRAFT', 'PREPARED_FOR_REVIEW', 'APPROVED_TO_SEND', 'SENT', 'SIGNING_IN_PROGRESS', 'SIGNED', 'EXECUTED', 'REJECTED', 'VOID', 'EXPIRED', 'REPLACED']),
+  "from": zod.union([zod.literal('DRAFT'),zod.literal('PREPARED_FOR_REVIEW'),zod.literal('APPROVED_TO_SEND'),zod.literal('SENT'),zod.literal('SIGNING_IN_PROGRESS'),zod.literal('SIGNED'),zod.literal('EXECUTED'),zod.literal('REJECTED'),zod.literal('VOID'),zod.literal('EXPIRED'),zod.literal('REPLACED'),zod.literal('STALE'),zod.literal(null)]).nullish(),
+  "to": zod.enum(['DRAFT', 'PREPARED_FOR_REVIEW', 'APPROVED_TO_SEND', 'SENT', 'SIGNING_IN_PROGRESS', 'SIGNED', 'EXECUTED', 'REJECTED', 'VOID', 'EXPIRED', 'REPLACED', 'STALE']),
+  "staleReason": zod.string().nullish(),
+  "nextAction": zod.string().nullish(),
   "occurredAt": zod.string().datetime({"offset":true}),
   "actorId": zod.string(),
   "actorRole": zod.enum(['OWNER', 'OPERATOR', 'SYSTEM_WORKER', 'PROVIDER']),
@@ -33531,7 +33640,7 @@ export const RecordClosingMilestoneResponse = zod.object({
   "documents": zod.array(zod.object({
   "id": zod.string().uuid(),
   "kind": zod.enum(['PURCHASE_TERMS_REVIEW', 'PURCHASE_AGREEMENT', 'ASSIGNMENT_AGREEMENT', 'SELLER_RESPONSE', 'AMENDMENT', 'REPLACEMENT_BUYER', 'EMD_ACKNOWLEDGMENT', 'CLOSING_DOCUMENT']),
-  "status": zod.enum(['DRAFT', 'PREPARED_FOR_REVIEW', 'APPROVED_TO_SEND', 'SENT', 'SIGNING_IN_PROGRESS', 'SIGNED', 'EXECUTED', 'REJECTED', 'VOID', 'EXPIRED', 'REPLACED']),
+  "status": zod.enum(['DRAFT', 'PREPARED_FOR_REVIEW', 'APPROVED_TO_SEND', 'SENT', 'SIGNING_IN_PROGRESS', 'SIGNED', 'EXECUTED', 'REJECTED', 'VOID', 'EXPIRED', 'REPLACED', 'STALE']),
   "attemptNumber": zod.number().int().min(1),
   "sourceContractVersion": zod.number().int().min(1),
   "sourceOfferId": zod.string().uuid(),
@@ -33545,6 +33654,8 @@ export const RecordClosingMilestoneResponse = zod.object({
   "generatedAt": zod.string().datetime({"offset":true}),
   "generatedBy": zod.string(),
   "downloadUrl": zod.string(),
+  "staleReason": zod.string().nullish(),
+  "nextAction": zod.string().nullish(),
   "templateKey": zod.string().optional(),
   "templateVersion": zod.number().int().min(1).optional(),
   "templateStatus": zod.enum(['REVIEW_COPY_ONLY', 'APPROVED_LEGAL']).optional(),
@@ -33552,8 +33663,10 @@ export const RecordClosingMilestoneResponse = zod.object({
   "partySnapshotHash": zod.string().regex(recordClosingMilestoneResponseContractOneDocumentsItemPartySnapshotHashRegExp).optional(),
   "storageMode": zod.enum(['PERSISTENT_DATABASE_BLOB', 'PRIVATE_OBJECT_STORAGE']).optional(),
   "events": zod.array(zod.object({
-  "from": zod.union([zod.literal('DRAFT'),zod.literal('PREPARED_FOR_REVIEW'),zod.literal('APPROVED_TO_SEND'),zod.literal('SENT'),zod.literal('SIGNING_IN_PROGRESS'),zod.literal('SIGNED'),zod.literal('EXECUTED'),zod.literal('REJECTED'),zod.literal('VOID'),zod.literal('EXPIRED'),zod.literal('REPLACED'),zod.literal(null)]).nullish(),
-  "to": zod.enum(['DRAFT', 'PREPARED_FOR_REVIEW', 'APPROVED_TO_SEND', 'SENT', 'SIGNING_IN_PROGRESS', 'SIGNED', 'EXECUTED', 'REJECTED', 'VOID', 'EXPIRED', 'REPLACED']),
+  "from": zod.union([zod.literal('DRAFT'),zod.literal('PREPARED_FOR_REVIEW'),zod.literal('APPROVED_TO_SEND'),zod.literal('SENT'),zod.literal('SIGNING_IN_PROGRESS'),zod.literal('SIGNED'),zod.literal('EXECUTED'),zod.literal('REJECTED'),zod.literal('VOID'),zod.literal('EXPIRED'),zod.literal('REPLACED'),zod.literal('STALE'),zod.literal(null)]).nullish(),
+  "to": zod.enum(['DRAFT', 'PREPARED_FOR_REVIEW', 'APPROVED_TO_SEND', 'SENT', 'SIGNING_IN_PROGRESS', 'SIGNED', 'EXECUTED', 'REJECTED', 'VOID', 'EXPIRED', 'REPLACED', 'STALE']),
+  "staleReason": zod.string().nullish(),
+  "nextAction": zod.string().nullish(),
   "occurredAt": zod.string().datetime({"offset":true}),
   "actorId": zod.string(),
   "actorRole": zod.enum(['OWNER', 'OPERATOR', 'SYSTEM_WORKER', 'PROVIDER']),
@@ -34946,7 +35059,7 @@ export const RecordTransactionDeadlineScheduleResponse = zod.object({
   "documents": zod.array(zod.object({
   "id": zod.string().uuid(),
   "kind": zod.enum(['PURCHASE_TERMS_REVIEW', 'PURCHASE_AGREEMENT', 'ASSIGNMENT_AGREEMENT', 'SELLER_RESPONSE', 'AMENDMENT', 'REPLACEMENT_BUYER', 'EMD_ACKNOWLEDGMENT', 'CLOSING_DOCUMENT']),
-  "status": zod.enum(['DRAFT', 'PREPARED_FOR_REVIEW', 'APPROVED_TO_SEND', 'SENT', 'SIGNING_IN_PROGRESS', 'SIGNED', 'EXECUTED', 'REJECTED', 'VOID', 'EXPIRED', 'REPLACED']),
+  "status": zod.enum(['DRAFT', 'PREPARED_FOR_REVIEW', 'APPROVED_TO_SEND', 'SENT', 'SIGNING_IN_PROGRESS', 'SIGNED', 'EXECUTED', 'REJECTED', 'VOID', 'EXPIRED', 'REPLACED', 'STALE']),
   "attemptNumber": zod.number().int().min(1),
   "sourceContractVersion": zod.number().int().min(1),
   "sourceOfferId": zod.string().uuid(),
@@ -34960,6 +35073,8 @@ export const RecordTransactionDeadlineScheduleResponse = zod.object({
   "generatedAt": zod.string().datetime({"offset":true}),
   "generatedBy": zod.string(),
   "downloadUrl": zod.string(),
+  "staleReason": zod.string().nullish(),
+  "nextAction": zod.string().nullish(),
   "templateKey": zod.string().optional(),
   "templateVersion": zod.number().int().min(1).optional(),
   "templateStatus": zod.enum(['REVIEW_COPY_ONLY', 'APPROVED_LEGAL']).optional(),
@@ -34967,8 +35082,10 @@ export const RecordTransactionDeadlineScheduleResponse = zod.object({
   "partySnapshotHash": zod.string().regex(recordTransactionDeadlineScheduleResponseContractOneDocumentsItemPartySnapshotHashRegExp).optional(),
   "storageMode": zod.enum(['PERSISTENT_DATABASE_BLOB', 'PRIVATE_OBJECT_STORAGE']).optional(),
   "events": zod.array(zod.object({
-  "from": zod.union([zod.literal('DRAFT'),zod.literal('PREPARED_FOR_REVIEW'),zod.literal('APPROVED_TO_SEND'),zod.literal('SENT'),zod.literal('SIGNING_IN_PROGRESS'),zod.literal('SIGNED'),zod.literal('EXECUTED'),zod.literal('REJECTED'),zod.literal('VOID'),zod.literal('EXPIRED'),zod.literal('REPLACED'),zod.literal(null)]).nullish(),
-  "to": zod.enum(['DRAFT', 'PREPARED_FOR_REVIEW', 'APPROVED_TO_SEND', 'SENT', 'SIGNING_IN_PROGRESS', 'SIGNED', 'EXECUTED', 'REJECTED', 'VOID', 'EXPIRED', 'REPLACED']),
+  "from": zod.union([zod.literal('DRAFT'),zod.literal('PREPARED_FOR_REVIEW'),zod.literal('APPROVED_TO_SEND'),zod.literal('SENT'),zod.literal('SIGNING_IN_PROGRESS'),zod.literal('SIGNED'),zod.literal('EXECUTED'),zod.literal('REJECTED'),zod.literal('VOID'),zod.literal('EXPIRED'),zod.literal('REPLACED'),zod.literal('STALE'),zod.literal(null)]).nullish(),
+  "to": zod.enum(['DRAFT', 'PREPARED_FOR_REVIEW', 'APPROVED_TO_SEND', 'SENT', 'SIGNING_IN_PROGRESS', 'SIGNED', 'EXECUTED', 'REJECTED', 'VOID', 'EXPIRED', 'REPLACED', 'STALE']),
+  "staleReason": zod.string().nullish(),
+  "nextAction": zod.string().nullish(),
   "occurredAt": zod.string().datetime({"offset":true}),
   "actorId": zod.string(),
   "actorRole": zod.enum(['OWNER', 'OPERATOR', 'SYSTEM_WORKER', 'PROVIDER']),
@@ -36355,7 +36472,7 @@ export const RecordDealOutcomeResponse = zod.object({
   "documents": zod.array(zod.object({
   "id": zod.string().uuid(),
   "kind": zod.enum(['PURCHASE_TERMS_REVIEW', 'PURCHASE_AGREEMENT', 'ASSIGNMENT_AGREEMENT', 'SELLER_RESPONSE', 'AMENDMENT', 'REPLACEMENT_BUYER', 'EMD_ACKNOWLEDGMENT', 'CLOSING_DOCUMENT']),
-  "status": zod.enum(['DRAFT', 'PREPARED_FOR_REVIEW', 'APPROVED_TO_SEND', 'SENT', 'SIGNING_IN_PROGRESS', 'SIGNED', 'EXECUTED', 'REJECTED', 'VOID', 'EXPIRED', 'REPLACED']),
+  "status": zod.enum(['DRAFT', 'PREPARED_FOR_REVIEW', 'APPROVED_TO_SEND', 'SENT', 'SIGNING_IN_PROGRESS', 'SIGNED', 'EXECUTED', 'REJECTED', 'VOID', 'EXPIRED', 'REPLACED', 'STALE']),
   "attemptNumber": zod.number().int().min(1),
   "sourceContractVersion": zod.number().int().min(1),
   "sourceOfferId": zod.string().uuid(),
@@ -36369,6 +36486,8 @@ export const RecordDealOutcomeResponse = zod.object({
   "generatedAt": zod.string().datetime({"offset":true}),
   "generatedBy": zod.string(),
   "downloadUrl": zod.string(),
+  "staleReason": zod.string().nullish(),
+  "nextAction": zod.string().nullish(),
   "templateKey": zod.string().optional(),
   "templateVersion": zod.number().int().min(1).optional(),
   "templateStatus": zod.enum(['REVIEW_COPY_ONLY', 'APPROVED_LEGAL']).optional(),
@@ -36376,8 +36495,10 @@ export const RecordDealOutcomeResponse = zod.object({
   "partySnapshotHash": zod.string().regex(recordDealOutcomeResponseContractOneDocumentsItemPartySnapshotHashRegExp).optional(),
   "storageMode": zod.enum(['PERSISTENT_DATABASE_BLOB', 'PRIVATE_OBJECT_STORAGE']).optional(),
   "events": zod.array(zod.object({
-  "from": zod.union([zod.literal('DRAFT'),zod.literal('PREPARED_FOR_REVIEW'),zod.literal('APPROVED_TO_SEND'),zod.literal('SENT'),zod.literal('SIGNING_IN_PROGRESS'),zod.literal('SIGNED'),zod.literal('EXECUTED'),zod.literal('REJECTED'),zod.literal('VOID'),zod.literal('EXPIRED'),zod.literal('REPLACED'),zod.literal(null)]).nullish(),
-  "to": zod.enum(['DRAFT', 'PREPARED_FOR_REVIEW', 'APPROVED_TO_SEND', 'SENT', 'SIGNING_IN_PROGRESS', 'SIGNED', 'EXECUTED', 'REJECTED', 'VOID', 'EXPIRED', 'REPLACED']),
+  "from": zod.union([zod.literal('DRAFT'),zod.literal('PREPARED_FOR_REVIEW'),zod.literal('APPROVED_TO_SEND'),zod.literal('SENT'),zod.literal('SIGNING_IN_PROGRESS'),zod.literal('SIGNED'),zod.literal('EXECUTED'),zod.literal('REJECTED'),zod.literal('VOID'),zod.literal('EXPIRED'),zod.literal('REPLACED'),zod.literal('STALE'),zod.literal(null)]).nullish(),
+  "to": zod.enum(['DRAFT', 'PREPARED_FOR_REVIEW', 'APPROVED_TO_SEND', 'SENT', 'SIGNING_IN_PROGRESS', 'SIGNED', 'EXECUTED', 'REJECTED', 'VOID', 'EXPIRED', 'REPLACED', 'STALE']),
+  "staleReason": zod.string().nullish(),
+  "nextAction": zod.string().nullish(),
   "occurredAt": zod.string().datetime({"offset":true}),
   "actorId": zod.string(),
   "actorRole": zod.enum(['OWNER', 'OPERATOR', 'SYSTEM_WORKER', 'PROVIDER']),

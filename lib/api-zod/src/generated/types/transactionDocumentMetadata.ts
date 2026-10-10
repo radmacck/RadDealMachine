@@ -35,6 +35,10 @@ export interface TransactionDocumentMetadata {
   generatedAt: string;
   generatedBy: string;
   downloadUrl: string;
+  /** @nullable */
+  staleReason?: string | null;
+  /** @nullable */
+  nextAction?: string | null;
   templateKey?: string;
   /** @minimum 1 */
   templateVersion?: number;

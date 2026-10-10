@@ -5,6 +5,8 @@
  * Radical Deal OS seller intake, underwriting, conversations and approved offers
  * OpenAPI spec version: 1.0.0
  */
+import type { TransactionDocumentTemplateReadinessReviewState } from './transactionDocumentTemplateReadinessReviewState';
+import type { TransactionDocumentTemplateReadinessSourceProvenance } from './transactionDocumentTemplateReadinessSourceProvenance';
 import type { TransactionDocumentTemplateReadinessStatus } from './transactionDocumentTemplateReadinessStatus';
 
 export interface TransactionDocumentTemplateReadiness {
@@ -21,4 +23,24 @@ export interface TransactionDocumentTemplateReadiness {
   approvalEvidenceRef: string | null;
   /** @nullable */
   missingReason: string | null;
+  /** @nullable */
+  approvedBy: string | null;
+  /** @nullable */
+  approvedAt: string | null;
+  /** @nullable */
+  sourceRef: string | null;
+  /** @nullable */
+  sourceProvenance: TransactionDocumentTemplateReadinessSourceProvenance;
+  reviewState: TransactionDocumentTemplateReadinessReviewState;
+  /** @nullable */
+  reviewedBy: string | null;
+  /** @nullable */
+  reviewedAt: string | null;
+  /** @nullable */
+  reviewerQualificationRef: string | null;
+  /** @nullable */
+  effectiveAt: string | null;
+  /** @nullable */
+  expiresAt: string | null;
+  supportedDealTypes: string[];
 }

@@ -231,7 +231,7 @@ export async function downloadPurchaseReviewDocument(
     const artifact = storedDocumentArtifacts(row).find(item=>item.id===documentId);
     if (!artifact||artifact.kind!=="PURCHASE_TERMS_REVIEW")
       throw new DomainError("Transaction review document not found.",404);
-    if (["REJECTED","VOID","EXPIRED","REPLACED"].includes(String(artifact.status)))
+     if (["REJECTED","VOID","EXPIRED","REPLACED","STALE"].includes(String(artifact.status)))
       throw new DomainError(`This document is ${String(artifact.status).toLowerCase()} and cannot be downloaded as current.`,409);
     const offer = detail.offers.find(item=>item.id===String(artifact.sourceOfferId));
     if (!offer) throw new DomainError("The source authorized offer is missing; document cannot be validated.",409);
