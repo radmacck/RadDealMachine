@@ -242,3 +242,28 @@ The public dataset/catalog and documented query endpoint were accessed without a
 **Next buildable milestone:** add the qualified-review evidence and approved-template registration/decision path to the existing transaction document registry, then propagate approved clause versions into document staleness checks. **Earliest overall external blocker remains P2:** access to another permitted, independently exercisable property source.
 
 **Turn state:** implementation and verification stopped at turn end; no background Agent task is running. API, web, and mockup workflows are running.
+
+## Seller playbook citation authorization + buyer disposition guidance — 2026-10-10
+
+**Task #42 status:** Implemented and persisted-exercised in the existing playbook flow.
+
+- Extended `artifacts/api-server/src/services/seller-playbook-exercise.ts` to compare citation identity/provenance from the saved entry with revision-table records and actual seller-playbook endpoint reloads. A synthetic entry survives service revision v1→v2 and an owner endpoint revision v3 with identical citation provenance; 3 revision rows and 3 audit events remain.
+- The exercise invokes the registered handlers from `artifacts/api-server/src/routes/deals.ts` and the real `membership`/`roles("OWNER")` middleware against isolated PostgreSQL membership records. Owner GET/PUT and operator GET returned 200; pending-member GET and operator PUT returned 403. Denied responses contained no entries/citations; denied mutation created no revision; stale version edit remained rejected. This route-handler/middleware exercise uses a synthetic actor context and isolated DB; it is not an authenticated browser or live Clerk session.
+
+**Task #41 status:** Integrated into the existing seller call brief; general guidance is explicitly labeled internal synthesis.
+
+- `artifacts/radical-deal-os/src/components/seller-playbook-panel.tsx` now reads the existing persisted deal-operations/matching API and displays eligible buyer count, excluded buyer count with persisted mismatch reasons, explainable match reasons, persisted contract status/version, and the server's current next action.
+- The call-brief section adds buyer buy-box/verification/funding/capacity/closing checks, matching/disposition guidance, package-readiness caveats, and approval boundaries. It explicitly says a match is not approval, delivery, or commitment; it shows no synthetic-as-live metrics and does not send/distribute or change economics.
+- No new buyer-education source was accessed or claimed. The generic methods are labeled internal synthesized guidance; the existing Norton/Pace seller guidance retains its original source and access limitations.
+
+**Verification:**
+
+- `pnpm --filter @workspace/deal-domain test` — 104/104 passed.
+- `pnpm --filter @workspace/api-server run test:auth` — 7/7 passed.
+- `pnpm --filter @workspace/api-server run exercise:seller-playbook` — passed, synthetic isolated DB: 17 library entries; actual endpoint statuses owner GET 200, operator GET 200, pending GET 403, operator PUT 403, owner PUT 200; citation identity/provenance preserved through revision and endpoint reload; stale edit rejected; revision rows 3; audit events 3; persisted deal-operations returned 0 buyers and no contract in the isolated empty workspace, with a real next-action string; economics and offer authority unchanged; no real deal outcome validated.
+- API and web typechecks passed. API build and web build passed; web build continues to emit existing source-map resolution and >500 kB bundle warnings.
+- API, web, and mockup workflows are running. No authenticated-owner browser exercise was performed.
+
+**Remaining limitations / next milestone:** No real approved/current buyer records or buyer-distribution provider evidence were present in the isolated exercise; the buyer summary is live-API-backed but not proof of a real buyer network. The next safe buildable P8 milestone is the qualified-review evidence path for actually approved jurisdictional templates, followed by clause-version staleness propagation. Do not fabricate counsel approval or templates. P2 broader property sourcing remains the earliest overall blocker and still requires a newly permitted, independently exercisable source.
+
+**Turn state:** implementation stopped at turn end; there is no background Agent task. Existing API/web/mockup workflows remain running.

@@ -5,11 +5,52 @@
 import assert from "node:assert/strict";
 import { randomUUID } from "node:crypto";
 import { and, eq, sql } from "drizzle-orm";
-import { auditTable, db, leadsTable, offersTable, pool, sellerPlaybookRevisionsTable } from "@workspace/db";
+import { auditTable, db, leadsTable, offersTable, pool, sellerPlaybookRevisionsTable, membersTable } from "@workspace/db";
 import type { LeadInput } from "@workspace/deal-domain";
+import type { SellerPlaybookSource } from "@workspace/deal-domain";
 import { logger } from "../lib/logger";
 import * as dealStore from "./deal-store";
 import { getSellerPlaybook, updateSellerPlaybookEntry } from "./seller-playbook-store";
+import { dealOperations } from "./matching-store";
+import dealsRouter from "../routes/deals";
+import { membership } from "../middlewares/access";
+
+type TestResponse = { locals: Record<string, string>; statusCode: number; body?: unknown; status(code: number): TestResponse; json(value: unknown): TestResponse };
+type TestRequest = { params: Record<string, string>; body?: unknown };
+type RouteLayer = { route?: { path?: string; methods?: Record<string, boolean>; stack: Array<{ handle(req: TestRequest, res: TestResponse, next: (error?: unknown) => void): unknown }> } };
+type PlaybookEndpointEntry = { slug: string; sourceProvenance: SellerPlaybookSource[] };
+
+async function invokePlaybookRoute(method: "get" | "put", path: string, role: string, actor: string, params: Record<string, string>, body?: unknown) {
+  const layer = (dealsRouter as unknown as { stack: RouteLayer[] }).stack.find(item =>
+    item.route?.path === path && item.route.methods?.[method]);
+  assert.ok(layer?.route, `actual ${method.toUpperCase()} ${path} route is registered`);
+  const req: TestRequest = { params, body };
+  const res: TestResponse = {
+    locals: { role, actor }, statusCode: 200,
+    status(code) { this.statusCode = code; return this; },
+    json(value) { this.body = value; return this; },
+  };
+  for (const item of layer.route.stack) {
+    let nextCalled = false;
+    let nextError: unknown;
+    await Promise.resolve(item.handle(req, res, error => { nextCalled = true; nextError = error; }));
+    if (nextError) throw nextError;
+    if (!nextCalled) break;
+  }
+  return res;
+}
+
+async function exerciseActualMembership(actor: string) {
+  const req = {} as never;
+  const res: TestResponse = {
+    locals: { actor }, statusCode: 200,
+    status(code) { this.statusCode = code; return this; },
+    json(value) { this.body = value; return this; },
+  };
+  let nextCalled = false;
+  await Promise.resolve(membership(req, res as never, () => { nextCalled = true; }));
+  return { res, nextCalled };
+}
 
 async function exercise() {
   const actor = `synthetic-playbook-exercise:${randomUUID()}`;
@@ -34,6 +75,11 @@ async function exercise() {
   };
   let leadId: string | null = null;
   try {
+    await db.insert(membersTable).values([
+      { id: "synthetic-playbook-owner", role: "OWNER" },
+      { id: "synthetic-playbook-operator", role: "OPERATOR" },
+      { id: "synthetic-playbook-pending", role: "PENDING" },
+    ]);
     const created = await dealStore.createLead(leadInput, actor, now);
     leadId = created.id;
     const beforeEvidence = await dealStore.leadDetail(leadId, db, now);
@@ -157,6 +203,89 @@ async function exercise() {
     const revisions = await db.select().from(sellerPlaybookRevisionsTable)
       .where(eq(sellerPlaybookRevisionsTable.slug, matchedRelocation!.slug));
     assert.equal(revisions.length, 2);
+    const initialCitationIdentity = matchedRelocation!.sourceProvenance.map(source => ({
+      author: source.author, title: source.title, url: source.url, accessedAt: source.accessContext,
+    }));
+    const latestPersistedRevision = revisions.find(item => item.version === 2);
+    assert.ok(latestPersistedRevision);
+    assert.deepEqual(latestPersistedRevision!.sourceProvenance, matchedRelocation!.sourceProvenance,
+      "revision table must retain exact citation identity and provenance");
+
+    const ownerAccess = await exerciseActualMembership("synthetic-playbook-owner");
+    assert.equal(ownerAccess.nextCalled, true);
+    assert.equal(ownerAccess.res.locals.role, "OWNER");
+    const ownerRead = await invokePlaybookRoute("get", "/leads/:id/seller-playbook", "OWNER",
+      "synthetic-playbook-owner", { id: leadId });
+    assert.equal(ownerRead.statusCode, 200);
+    const operatorAccess = await exerciseActualMembership("synthetic-playbook-operator");
+    assert.equal(operatorAccess.nextCalled, true);
+    const operatorRead = await invokePlaybookRoute("get", "/leads/:id/seller-playbook", "OPERATOR",
+      "synthetic-playbook-operator", { id: leadId });
+    assert.equal(operatorRead.statusCode, 200);
+    for (const response of [ownerRead, operatorRead]) {
+      const result = response.body as { entries: PlaybookEndpointEntry[] };
+      const citationSlug: string = matchedRelocation!.slug;
+      const reloaded: PlaybookEndpointEntry | undefined = result.entries.find((entry: PlaybookEndpointEntry) => entry.slug === citationSlug);
+      assert.ok(reloaded);
+      assert.deepEqual(reloaded!.sourceProvenance.map(source => ({
+        author: source.author, title: source.title, url: source.url, accessedAt: source.accessContext,
+      })), initialCitationIdentity, "actual endpoint reload must retain citations");
+    }
+    const pendingAccess = await exerciseActualMembership("synthetic-playbook-pending");
+    assert.equal(pendingAccess.nextCalled, false);
+    assert.equal(pendingAccess.res.statusCode, 403, "membership gate must deny playbook reads");
+    assert.deepEqual(pendingAccess.res.body, { error: "Your account needs workspace owner approval." });
+    assert.equal("entries" in (pendingAccess.res.body as Record<string, unknown>), false,
+      "denied membership response must not expose playbook citations");
+    const operatorMutation = await invokePlaybookRoute("put", "/leads/:id/seller-playbook/:slug", "OPERATOR",
+      "synthetic-playbook-operator", { id: leadId, slug: matchedRelocation!.slug }, {
+        expectedVersion: 2, changeReason: "Synthetic unauthorized mutation",
+        content: {
+          title: currentContent.title, hypothesis: currentContent.hypothesis,
+          discoveryQuestions: currentContent.discoveryQuestions, empatheticResponse: currentContent.empatheticResponse,
+          negotiationOptions: currentContent.negotiationOptions, followUpGuidance: currentContent.followUpGuidance,
+          risks: currentContent.risks, escalationConditions: currentContent.escalationConditions,
+          confirmingEvidence: currentContent.confirmingEvidence, refutingEvidence: currentContent.refutingEvidence,
+          doNotPromise: currentContent.doNotPromise,
+        },
+      });
+    assert.equal(operatorMutation.statusCode, 403, "actual PUT endpoint must deny operators");
+    const afterDeniedMutation = await db.select().from(sellerPlaybookRevisionsTable)
+      .where(eq(sellerPlaybookRevisionsTable.slug, matchedRelocation!.slug));
+    assert.equal(afterDeniedMutation.length, 2, "denied endpoint mutation must not create revision history");
+    const ownerMutation = await invokePlaybookRoute("put", "/leads/:id/seller-playbook/:slug", "OWNER",
+      "synthetic-playbook-owner", { id: leadId, slug: matchedRelocation!.slug }, {
+        expectedVersion: 2, changeReason: "Synthetic owner endpoint revision",
+        content: {
+          title: currentContent.title, hypothesis: currentContent.hypothesis,
+          discoveryQuestions: currentContent.discoveryQuestions, empatheticResponse: currentContent.empatheticResponse,
+          negotiationOptions: currentContent.negotiationOptions, followUpGuidance: currentContent.followUpGuidance,
+          risks: currentContent.risks, escalationConditions: currentContent.escalationConditions,
+          confirmingEvidence: currentContent.confirmingEvidence, refutingEvidence: currentContent.refutingEvidence,
+          doNotPromise: currentContent.doNotPromise,
+        },
+      });
+    assert.equal(ownerMutation.statusCode, 200, "actual PUT endpoint must allow owner revision");
+    const ownerReload = await invokePlaybookRoute("get", "/leads/:id/seller-playbook", "OWNER",
+      "synthetic-playbook-owner", { id: leadId });
+    const ownerReloadBody = ownerReload.body as { entries: Array<{ slug: string; version: number; sourceProvenance: typeof matchedRelocation.sourceProvenance }> };
+    const reloadedRevision = ownerReloadBody.entries.find(entry => entry.slug === matchedRelocation!.slug);
+    assert.equal(reloadedRevision?.version, 3);
+    assert.deepEqual(reloadedRevision?.sourceProvenance.map(source => ({
+      author: source.author, title: source.title, url: source.url, accessedAt: source.accessContext,
+    })), initialCitationIdentity);
+    const finalRevisions = await db.select().from(sellerPlaybookRevisionsTable)
+      .where(eq(sellerPlaybookRevisionsTable.slug, matchedRelocation!.slug));
+    assert.equal(finalRevisions.length, 3);
+    assert.deepEqual(finalRevisions.find(item => item.version === 3)?.sourceProvenance,
+      matchedRelocation!.sourceProvenance, "owner endpoint revision must preserve citation provenance");
+    const finalAudits = await db.select().from(auditTable)
+      .where(eq(auditTable.entityId, `seller-playbook:${matchedRelocation!.slug}`));
+    assert.equal(finalAudits.filter(item => item.action === "SELLER_PLAYBOOK_REVISED").length, 2);
+    assert.equal(finalAudits.filter(item => item.action === "SELLER_PLAYBOOK_SEEDED").length, 1);
+    const persistedDealOps = await dealOperations(leadId, now);
+    assert.equal(persistedDealOps.matches.length, 0, "isolated workspace has no buyer evidence; no synthetic approved buyer may appear");
+    assert.equal(persistedDealOps.contract, null);
     logger.info({
       synthetic: true,
       libraryEntries: initial.entries.length,
@@ -168,6 +297,14 @@ async function exercise() {
       staleEditRejected: true,
       leadEconomicsAndStageUnchanged: true,
       auditRows: playbookAudits.length,
+      endpointAuthorization: { ownerRead: ownerRead.statusCode, operatorRead: operatorRead.statusCode,
+        pendingRead: pendingAccess.res.statusCode, operatorPut: operatorMutation.statusCode, ownerPut: ownerMutation.statusCode },
+      citationIdentityPreservedAcrossRevisionAndReload: true,
+      ownerEndpointRevisionVersion: reloadedRevision?.version,
+      revisionRows: finalRevisions.length,
+      auditEvents: finalAudits.length,
+      persistedDealOpsMatches: persistedDealOps.matches.length,
+      dealNextAction: persistedDealOps.nextAction,
     }, "Seller playbook persisted exercise PASSED (synthetic only)");
   } finally {
     if (leadId) {

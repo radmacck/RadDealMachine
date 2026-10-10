@@ -1,5 +1,7 @@
 import { useMemo, useState } from "react";
 import {
+  getGetDealOperationsQueryKey,
+  useGetDealOperations,
   getGetSellerPlaybookQueryKey,
   useGetSellerPlaybook,
   useUpdateSellerPlaybookEntry,
@@ -57,6 +59,7 @@ export function SellerPlaybookPanel({ leadId }: { leadId: string }) {
   const query = useGetSellerPlaybook(leadId, {
     query: { queryKey: getGetSellerPlaybookQueryKey(leadId), enabled: !!leadId },
   });
+  const dealOps = useGetDealOperations(leadId, { query: { queryKey: getGetDealOperationsQueryKey(leadId), enabled: !!leadId } });
   const update = useUpdateSellerPlaybookEntry();
   const [editingSlug, setEditingSlug] = useState<string | null>(null);
   const [draft, setDraft] = useState<Draft | null>(null);
@@ -137,6 +140,30 @@ export function SellerPlaybookPanel({ leadId }: { leadId: string }) {
           </p>
         </div>
       </div>
+      <section className="rounded-sm border border-border bg-background/50 p-3" data-testid="buyer-disposition-guidance">
+        <p className="eyebrow">Buyer & disposition guidance · internal synthesis</p>
+        <p className="mt-1 text-xs text-muted-foreground">General workflow guidance, not an externally validated claim. Current counts and reasons below come from persisted deal matching; a match is not buyer approval, delivery, or commitment.</p>
+        {dealOps.isLoading && <p className="mt-2 text-xs">Loading current buyer evidence…</p>}
+        {dealOps.error && <ErrorNotice error={dealOps.error} title="Buyer/disposition readiness could not be loaded" onRetry={() => void dealOps.refetch()} />}
+        {dealOps.data && (() => {
+          const buyers = dealOps.data.matches.filter((match) => match.destinationKind === "BUYER");
+          const eligible = buyers.filter((match) => match.eligible);
+          const excluded = buyers.filter((match) => !match.eligible);
+          return <div className="mt-2 space-y-2 text-xs">
+            <p><b>Current eligible buyers:</b> {eligible.length}; <b>excluded from this deal:</b> {excluded.length}. Eligibility reflects persisted current criteria and verification gates.</p>
+            {eligible.slice(0, 3).map((match) => <p key={match.buyerId}><b>{match.buyerName}</b> · score {match.score}: {match.reasons.join("; ") || "No positive reason recorded."}</p>)}
+            {excluded.slice(0, 3).map((match) => <p key={match.buyerId} className="text-muted-foreground"><b>{match.buyerName} excluded:</b> {match.mismatches.join("; ") || "Not eligible under current evidence."}</p>)}
+            <p><b>Deal/package state:</b> {dealOps.data.contract ? `contract ${dealOps.data.contract.status}, version ${dealOps.data.contract.version}` : "no contract snapshot persisted"}; package delivery is not inferred from this state.</p>
+            <p>Packet delivery, signature, funds, and final closing remain unverified here unless their separate persisted evidence is present in the transaction workflow.</p>
+            <p><b>Next action from persisted deal state:</b> {dealOps.data.nextAction}</p>
+          </div>;
+        })()}
+        <ul className="mt-2 list-disc space-y-1 pl-5 text-xs">
+          <li>Confirm each buyer’s buy-box fit, current verification, funding evidence, capacity, and closing readiness before disposition; stale or unverified profiles stay excluded.</li>
+          <li>Use the persisted match reasons and mismatches to decide whether to hold, re-underwrite, or prepare distribution; never promise a buyer or imply a package was delivered.</li>
+          <li>Check authorized economics, required documents, approved package version, and timing before any multi-buyer send. Human approval remains required for consequential terms and outbound actions.</li>
+        </ul>
+      </section>
       {update.error && <ErrorNotice error={update.error} title="Playbook revision was not saved" />}
       <div className="space-y-2">
         {orderedEntries.map((entry, index) => {
