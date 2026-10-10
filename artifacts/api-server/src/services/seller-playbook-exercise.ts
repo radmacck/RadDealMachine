@@ -5,7 +5,7 @@
 import assert from "node:assert/strict";
 import { randomUUID } from "node:crypto";
 import { and, eq, sql } from "drizzle-orm";
-import { auditTable, db, leadsTable, pool, sellerPlaybookRevisionsTable } from "@workspace/db";
+import { auditTable, db, leadsTable, offersTable, pool, sellerPlaybookRevisionsTable } from "@workspace/db";
 import type { LeadInput } from "@workspace/deal-domain";
 import { logger } from "../lib/logger";
 import * as dealStore from "./deal-store";
@@ -37,6 +37,12 @@ async function exercise() {
     const created = await dealStore.createLead(leadInput, actor, now);
     leadId = created.id;
     const beforeEvidence = await dealStore.leadDetail(leadId, db, now);
+    const offersBefore = await db.select({
+      id: offersTable.id,
+      status: offersTable.status,
+      payload: offersTable.payload,
+      updatedAt: offersTable.updatedAt,
+    }).from(offersTable).where(eq(offersTable.leadId, leadId));
     const initial = await getSellerPlaybook(leadId);
     assert.ok(initial.entries.length >= 14);
     const reoGuidance = initial.entries.find((entry) => entry.slug === "evidence-backed-reo-offer-review");
@@ -46,9 +52,12 @@ async function exercise() {
     assert.ok(reoGuidance!.sourceProvenance.some((source) => source.author?.includes("Jerry Norton")
       && source.topic?.includes("REO") && source.accessContext));
     assert.ok(followUpGuidance?.content.operationalIntelligence);
-    assert.equal(followUpGuidance!.content.operationalIntelligence!.claimStatus, "PUBLIC_DESCRIPTION_ONLY");
+    assert.equal(followUpGuidance!.content.operationalIntelligence!.claimStatus, "EDUCATOR_CLAIM_NOT_PROJECT_VALIDATED");
     assert.ok(followUpGuidance!.sourceProvenance.some((source) => source.author?.includes("Pace Morby")
-      && source.topic?.includes("text") && source.scopeLimit.includes("not accessed")));
+      && source.url.endsWith("/Texting-Script.pdf")
+      && source.materialType === "PUBLIC_PDF"
+      && source.topic?.includes("text")
+      && source.accessContext?.includes("without login, payment, or form submission")));
     const relocation = initial.entries.find((entry) => entry.slug === "relocation-or-deadline");
     assert.ok(relocation);
     assert.equal(relocation!.version, 1);
@@ -134,6 +143,13 @@ async function exercise() {
     assert.equal(afterRevision.lead.version, beforeRevision.lead.version);
     assert.equal(afterRevision.lead.askingPrice, beforeRevision.lead.askingPrice);
     assert.deepEqual(afterRevision.analysis, beforeRevision.analysis);
+    const offersAfter = await db.select({
+      id: offersTable.id,
+      status: offersTable.status,
+      payload: offersTable.payload,
+      updatedAt: offersTable.updatedAt,
+    }).from(offersTable).where(eq(offersTable.leadId, leadId));
+    assert.deepEqual(offersAfter, offersBefore, "playbook read/revision must not create or change offer authority");
     const playbookAudits = await db.select().from(auditTable)
       .where(eq(auditTable.entityId, `seller-playbook:${matchedRelocation!.slug}`));
     assert.ok(playbookAudits.some((row) => row.action === "SELLER_PLAYBOOK_REVISED"));
@@ -146,6 +162,7 @@ async function exercise() {
       libraryEntries: initial.entries.length,
       sourceBackedOperationalEntries: [reoGuidance!.slug, followUpGuidance!.slug],
       realDealOutcomeValidation: "none",
+      offerAuthorityUnchanged: true,
       sellerEvidenceId: sellerEvidence.id,
       revisionVersions: revised.revisions.map((item) => item.version),
       staleEditRejected: true,

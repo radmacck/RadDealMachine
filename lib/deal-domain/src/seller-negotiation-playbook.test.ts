@@ -54,11 +54,15 @@ test("source-backed guidance retains attribution, claim status, scope, and human
   assert.equal(reo.content.operationalIntelligence?.claimStatus, "EDUCATOR_CLAIM_NOT_PROJECT_VALIDATED");
   assert.match(reo.content.operationalIntelligence?.sourceClaim ?? "", /claims/);
   assert.match(reo.content.operationalIntelligence?.humanDecision ?? "", /Owner retains/);
-  assert.equal(texting.sourceProvenance[0]?.author, "Pace Morby (site attribution)");
-  assert.equal(texting.sourceProvenance[0]?.claimStatus, "PUBLIC_DESCRIPTION_ONLY");
-  assert.match(texting.sourceProvenance[0]?.accessContext ?? "", /no login, payment, form submission/);
+  assert.equal(texting.sourceProvenance[0]?.title, "Texting Script");
+  assert.match(texting.sourceProvenance[0]?.url ?? "", /\/Texting-Script\.pdf$/);
+  assert.match(texting.sourceProvenance[0]?.author ?? "", /Pace Morby.*official freebies catalog/);
+  assert.equal(texting.sourceProvenance[0]?.materialType, "PUBLIC_PDF");
+  assert.equal(texting.sourceProvenance[0]?.claimStatus, "SOURCE_CLAIM_NOT_PROJECT_VALIDATED");
+  assert.match(texting.sourceProvenance[0]?.accessContext ?? "", /direct link.*without login, payment, or form submission/);
   assert.equal(texting.content.operationalIntelligence?.outcomeValidation, "NO_REAL_DEAL_OUTCOME_VALIDATION");
-  assert.match(texting.content.operationalIntelligence?.nextQuestionOrAction ?? "", /permission record/);
-  assert.ok([...reo.content.negotiationOptions, ...texting.content.negotiationOptions]
-    .some((item) => /approval/i.test(item)));
+  assert.match(texting.content.operationalIntelligence?.sourceClaim ?? "", /property\/owner check.*invitation to discuss.*price\/timing questions/i);
+  assert.match(texting.content.operationalIntelligence?.synthesizedMethod ?? "", /confirm context.*discussion is welcome.*price\/timing/i);
+  assert.match(texting.content.operationalIntelligence?.humanDecision ?? "", /explicit approval.*provider confirmation/i);
+  assert.ok(texting.content.doNotPromise.some((item) => /do not send a text/i.test(item)));
 });

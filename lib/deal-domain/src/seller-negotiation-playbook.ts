@@ -12,7 +12,7 @@ export interface SellerPlaybookSource {
   accessContext?: string;
   topic?: string;
   marketJurisdiction?: string | null;
-  materialType?: "PUBLIC_ARTICLE" | "PUBLIC_RESOURCE_CATALOG" | "PUBLIC_INTERVIEW" | "OTHER";
+  materialType?: "PUBLIC_ARTICLE" | "PUBLIC_RESOURCE_CATALOG" | "PUBLIC_INTERVIEW" | "PUBLIC_PDF" | "OTHER";
   claimStatus?: "SOURCE_CLAIM_NOT_PROJECT_VALIDATED" | "PUBLIC_DESCRIPTION_ONLY";
 }
 
@@ -115,19 +115,19 @@ const JERRY_REO_SOURCE = {
   claimStatus: "SOURCE_CLAIM_NOT_PROJECT_VALIDATED",
 } satisfies SellerPlaybookSource;
 const PACE_FREEBIES_SOURCE = {
-  sourceId: "PACE_MORBY_PUBLIC_TEXTING_RESOURCE_DESCRIPTION",
-  title: "FREEBIES by Pace Morby — public resource catalog",
-  url: "https://resources.pacejmorby.com/all-freebies/",
+  sourceId: "PACE_MORBY_TEXTING_SCRIPT_PDF",
+  title: "Texting Script",
+  url: "https://resources.pacejmorby.com/wp-content/uploads/2024/01/Texting-Script.pdf",
   accessedAt: "2026-10-10T00:00:00.000Z",
-  relevance: "The public catalog describes a free texting-script resource spanning initial outreach and negotiation.",
-  scopeLimit: "Only the public catalog description was reviewed; the script itself was not accessed or reproduced. This does not establish efficacy, permission to contact, or any seller's motivation. No project outcome validation.",
-  author: "Pace Morby (site attribution)",
+  relevance: "The public one-page script sequences property/owner context, willingness to discuss, seller price/timing questions, and a follow-up conversation.",
+  scopeLimit: "The sequence is paraphrased, not copied. This educational material does not establish efficacy, permission to contact, or any seller's motivation. No project outcome validation.",
+  author: "Pace Morby (linked from the official freebies catalog; no PDF byline displayed)",
   publishedAt: null,
-  accessContext: "Public catalog page fetched; no login, payment, form submission, or gated download was attempted. No publication date displayed.",
-  topic: "Seller/buyer text outreach and negotiation resource description",
+  accessContext: "One-page PDF fetched from the direct link on Pace Morby's public freebies catalog without login, payment, or form submission. PDF metadata creation date was 2023-12-08; it is not treated as a publication date.",
+  topic: "Seller text outreach, price/timing questions, and follow-up conversation",
   marketJurisdiction: null,
-  materialType: "PUBLIC_RESOURCE_CATALOG",
-  claimStatus: "PUBLIC_DESCRIPTION_ONLY",
+  materialType: "PUBLIC_PDF",
+  claimStatus: "SOURCE_CLAIM_NOT_PROJECT_VALIDATED",
 } satisfies SellerPlaybookSource;
 
 function entry(
@@ -449,13 +449,13 @@ export const SELLER_NEGOTIATION_PLAYBOOK_SEEDS: SellerPlaybookSeed[] = [
     "permission-aware-text-follow-up",
     "Permission-aware seller follow-up",
     "OBJECTION_GUIDANCE",
-    "A public Pace Morby resource catalog advertises a texting script for outreach and negotiation, but the script itself was not accessed. The catalog description is not evidence of efficacy, consent, or a particular seller's motivation.",
-    ["texting", "text message", "follow up text", "seller outreach", "negotiation script"],
-    ["If contact is permitted and the seller is reached, what channel and follow-up timing do they prefer?", "What question remains unanswered from the last conversation?", "Would the seller prefer no further contact?"],
+    "A public Pace Morby script demonstrates a sequence of seller-contact topics. It is an educational example, not evidence of efficacy, consent, or a particular seller's motivation.",
+    ["texting", "text message", "follow up text", "seller outreach", "negotiation script", "price expectations", "timeline"],
+    ["After verifying the property/contact context, is the owner open to discussing a sale?", "If so, what price range and timing does the seller state?", "What question remains unanswered from the last conversation?", "Would the seller prefer no further contact?"],
     "Use the seller's stated contact preference, keep language factual and brief, and let the seller set the pace.",
-    ["Prepare only an internal follow-up suggestion that references the last persisted conversation; do not send it automatically.", "When authorized communication capability exists, require the existing role/permission checks and provider confirmation before recording delivery.", "Use the seller's actual response to update indicated evidence; do not infer consent from a public script resource."],
+    ["Use the source's topic order only as a preparation scaffold: verify context, ask whether discussion is welcome, then ask open price/timing questions.", "Prepare only an internal follow-up suggestion that references the last persisted conversation; do not send it automatically.", "When authorized communication capability exists, require the existing role/permission checks and provider confirmation before recording delivery.", "If asked for an offer, do not improvise a number; use current deterministic underwriting and explicit approval."],
     ["Keep no-response as unknown, observe opt-outs, and preserve the last confirmed channel and timestamp.", "A follow-up task is not proof that a text was sent or delivered."],
-    ["The public catalog does not expose the script text; no tactic beyond its description is attributed to Pace Morby.", "Contact consent, channel permission, opt-out, and communications law remain separate checks."],
+    ["The script is an educational example and does not show that a seller agrees with the process or that it produces a result.", "Contact consent, channel permission, opt-out, and communications law remain separate checks."],
     ["Escalate missing or conflicting contact-use permission, opt-out, representation, or a request involving protected communications."],
     ["A seller directly confirms a preferred channel/time and existing permission records allow it."],
     ["No response, an opt-out, stale permission, or an unverified route."],
@@ -463,14 +463,14 @@ export const SELLER_NEGOTIATION_PLAYBOOK_SEEDS: SellerPlaybookSeed[] = [
     [PACE_FREEBIES_SOURCE],
     {
       domain: "SELLER_CONVERSATION",
-      sourceClaim: "Pace Morby's public resource catalog describes a free text-script resource as covering outreach and negotiation; its actual script content was not accessed.",
-      claimStatus: "PUBLIC_DESCRIPTION_ONLY",
-      synthesizedMethod: "Turn the last persisted conversation and permission state into an internal, reviewable follow-up prompt. Never generate an external send event from this playbook.",
-      rationale: "Carry-forward context avoids re-entry while preserving permission, evidence, and human control over seller communication.",
-      supportingEvidence: ["A persisted prior seller response or requested follow-up.", "Current direct-contact route and source-specific contact-use permission."],
-      refutingEvidence: ["No seller response, explicit opt-out, stale route, or unresolved permission conflict."],
-      nextQuestionOrAction: "Review the last conversation, permission record, and seller-stated follow-up preference; if any are absent, resolve that gap before communication.",
-      humanDecision: "The authorized operator decides whether and when to contact; the system records delivery only after a connected provider confirms it.",
+      sourceClaim: "The one-page public script sequences an initial property/owner check, an invitation to discuss, seller price/timing questions, and a follow-up conversation.",
+      claimStatus: "EDUCATOR_CLAIM_NOT_PROJECT_VALIDATED",
+      synthesizedMethod: "Use the sequence as a call-preparation scaffold only: confirm context, ask whether a discussion is welcome, then ask open price/timing questions. Derive any follow-up prompt from persisted conversation and permission state; never generate an external send event.",
+      rationale: "Topic order can help avoid soliciting price or urgency before confirming who and what the conversation concerns; this is not a tested outcome claim.",
+      supportingEvidence: ["Current, reviewed direct-contact route and source-specific permission.", "Seller confirms willingness to discuss and supplies their own answer."],
+      refutingEvidence: ["No response, explicit opt-out, stale route, identity conflict, or unresolved permission."],
+      nextQuestionOrAction: "Confirm the property and recipient, ask whether discussion is welcome, then record the seller's own stated price/timing without assuming motivation.",
+      humanDecision: "The authorized operator decides whether and when to contact and what to say; offer amounts require separate deterministic underwriting and explicit approval. Delivery requires provider confirmation.",
       outcomeValidation: "NO_REAL_DEAL_OUTCOME_VALIDATION",
     },
   ),

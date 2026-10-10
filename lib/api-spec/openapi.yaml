@@ -1287,7 +1287,7 @@ components:
         accessContext: { type: string }
         topic: { type: string }
         marketJurisdiction: { type: string, nullable: true }
-        materialType: { type: string, enum: [PUBLIC_ARTICLE, PUBLIC_RESOURCE_CATALOG, PUBLIC_INTERVIEW, OTHER] }
+        materialType: { type: string, enum: [PUBLIC_ARTICLE, PUBLIC_RESOURCE_CATALOG, PUBLIC_INTERVIEW, PUBLIC_PDF, OTHER] }
         claimStatus: { type: string, enum: [SOURCE_CLAIM_NOT_PROJECT_VALIDATED, PUBLIC_DESCRIPTION_ONLY] }
     SellerPlaybookRevision:
       type: object

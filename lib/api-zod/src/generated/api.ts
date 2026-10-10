@@ -40510,7 +40510,7 @@ export const GetSellerPlaybookResponse = zod.object({
   "accessContext": zod.string().optional(),
   "topic": zod.string().optional(),
   "marketJurisdiction": zod.string().nullish(),
-  "materialType": zod.enum(['PUBLIC_ARTICLE', 'PUBLIC_RESOURCE_CATALOG', 'PUBLIC_INTERVIEW', 'OTHER']).optional(),
+  "materialType": zod.enum(['PUBLIC_ARTICLE', 'PUBLIC_RESOURCE_CATALOG', 'PUBLIC_INTERVIEW', 'PUBLIC_PDF', 'OTHER']).optional(),
   "claimStatus": zod.enum(['SOURCE_CLAIM_NOT_PROJECT_VALIDATED', 'PUBLIC_DESCRIPTION_ONLY']).optional()
 })).min(1),
   "updatedBy": zod.string(),
@@ -40690,7 +40690,7 @@ export const UpdateSellerPlaybookEntryResponse = zod.object({
   "accessContext": zod.string().optional(),
   "topic": zod.string().optional(),
   "marketJurisdiction": zod.string().nullish(),
-  "materialType": zod.enum(['PUBLIC_ARTICLE', 'PUBLIC_RESOURCE_CATALOG', 'PUBLIC_INTERVIEW', 'OTHER']).optional(),
+  "materialType": zod.enum(['PUBLIC_ARTICLE', 'PUBLIC_RESOURCE_CATALOG', 'PUBLIC_INTERVIEW', 'PUBLIC_PDF', 'OTHER']).optional(),
   "claimStatus": zod.enum(['SOURCE_CLAIM_NOT_PROJECT_VALIDATED', 'PUBLIC_DESCRIPTION_ONLY']).optional()
 })).min(1),
   "updatedBy": zod.string(),
