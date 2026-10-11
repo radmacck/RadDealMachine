@@ -3,8 +3,24 @@ import { db, leadsTable, transactionDocumentTemplatesTable } from "@workspace/db
 import { assertOperationsRole, DomainError, legalTemplateBlocker, type OfferActor } from "@workspace/deal-domain";
 import type { Store } from "./operations-records";
 import { unavailableSigningProvider } from "./transaction-signing-provider";
-import { TransactionTemplateReviewInput, TransactionDocumentTemplateReadiness } from "@workspace/api-zod";
 import { audit } from "./deal-store";
+import { z } from "zod";
+
+const templateReviewInputSchema = z.object({
+  expectedVersion: z.number().int().positive(),
+  decision: z.enum(["APPROVED","REJECTED"]),
+  sourceRef: z.string().min(1),
+  sourceProvenance: z.record(z.unknown()),
+  templateStorageRef: z.string().nullable().optional(),
+  templateHash: z.string().regex(/^[a-f0-9]{64}$/),
+  reviewerIdentity: z.string().min(1),
+  reviewerQualificationRef: z.string().min(1),
+  reviewEvidenceRef: z.string().min(1),
+  effectiveAt: z.string().datetime(),
+  expiresAt: z.string().datetime().nullable().optional(),
+  supportedDealTypes: z.array(z.string().min(1)).min(1),
+  reason: z.string().min(10),
+}).strict();
 
 const REQUIRED_DOCUMENTS = [
   {
@@ -157,7 +173,7 @@ export async function getTransactionDocumentReadiness(actor: OfferActor, leadId?
 
 export async function recordTransactionTemplateReview(id: string, input: unknown, actor: OfferActor, now = new Date()) {
   assertOperationsRole(actor, ["OWNER"]);
-  const parsed = TransactionTemplateReviewInput.parse(input);
+  const parsed = templateReviewInputSchema.parse(input);
   return db.transaction(async tx => {
     const [row] = await tx.select().from(transactionDocumentTemplatesTable).where(eq(transactionDocumentTemplatesTable.id,id)).for("update");
     if (!row) throw new DomainError("Transaction template registry entry was not found.",404);
@@ -184,7 +200,7 @@ export async function recordTransactionTemplateReview(id: string, input: unknown
       JSON.stringify({priorVersion:row.version,newVersion:updated.version,decision:parsed.decision,jurisdiction:row.jurisdiction,
         templateKey:row.templateKey,reviewerIdentity:parsed.reviewerIdentity,reviewerQualificationRef:parsed.reviewerQualificationRef,
         reviewEvidenceRef:parsed.reviewEvidenceRef,reason:parsed.reason}));
-    return TransactionDocumentTemplateReadiness.parse({
+    return {
       key:row.templateKey,documentKind:row.documentKind,jurisdiction:row.jurisdiction,status:updated.status,
       version:updated.version,requiredFields:row.requiredFields,templateHash:updated.templateHash,
       approvalEvidenceRef:updated.approvalEvidenceRef,missingReason:approved?null:"Review rejected; obtain a new qualified review.",
@@ -193,6 +209,6 @@ export async function recordTransactionTemplateReview(id: string, input: unknown
       reviewedBy:updated.reviewedBy,reviewedAt:updated.reviewedAt?.toISOString()??null,
       reviewerQualificationRef:updated.reviewerQualificationRef,effectiveAt:updated.effectiveAt?.toISOString()??null,
       expiresAt:updated.expiresAt?.toISOString()??null,supportedDealTypes:updated.supportedDealTypes,
-    });
+    };
   });
 }

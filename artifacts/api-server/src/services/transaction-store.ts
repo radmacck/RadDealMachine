@@ -274,6 +274,7 @@ export async function transitionTransactionDocument(
   const parsed = TransitionTransactionDocumentBody.parse(input);
   const allowedRoles = parsed.targetStatus==="VOID"||parsed.targetStatus==="EXPIRED"?["OWNER"]:["OWNER","OPERATOR"];
   assertOperationsRole(actor,allowedRoles);
+  let staleConflict: string | null = null;
   await db.transaction(async tx=>{
     const {row} = await lockedContract(tx,id,parsed.version);
     const artifacts = storedDocumentArtifacts(row);
@@ -284,6 +285,34 @@ export async function transitionTransactionDocument(
     const detail = await leadDetail(id,tx,now);
     const offer = detail.offers.find(item=>item.id===String(artifact.sourceOfferId));
     const actorRole = actor.role==="OWNER"?"OWNER":"OPERATOR";
+    if (["APPROVED_TO_SEND","SENT","SIGNING_IN_PROGRESS"].includes(parsed.targetStatus)) {
+      const staleReason = !offer ? "Source offer is missing."
+        : offer.effectiveStatus !== "COMMUNICATED" ? "Source offer is no longer currently authorized and communicated."
+        : offer.analysisSnapshotId !== detail.analysisSnapshotId || artifact.sourceAnalysisSnapshotId !== detail.analysisSnapshotId
+          ? "Underwriting snapshot changed after this document was prepared."
+        : offer.amount !== contract.purchasePrice || offer.earnestMoney !== contract.earnestMoney ||
+          offer.contingencies !== contract.contingencies || offer.assignmentIntent !== contract.assignmentAllowed
+          ? "Contract terms differ from the source offer."
+        : artifact.partySnapshotHash !== partySnapshotHash(detail.lead)
+          ? "Seller party identity/contact snapshot changed."
+        : null;
+      if (staleReason) {
+        staleConflict = staleReason;
+        const nextAction = "Reconcile changed evidence and obtain fresh owner authorization before preparing a replacement document.";
+        artifacts[index] = {
+          ...artifact,status:"STALE",staleReason,nextAction,staleAt:now.toISOString(),
+          events:[...(Array.isArray(artifact.events)?artifact.events:[]),{
+            from:current,to:"STALE",occurredAt:now.toISOString(),actorId:"system:document-freshness",
+            actorRole:"SYSTEM_WORKER",reason:staleReason,nextAction,
+          }],
+        };
+        await tx.update(contractsTable).set({payload:{...row.payload,documentArtifacts:artifacts},version:row.version+1,updatedAt:now})
+          .where(eq(contractsTable.id,row.id));
+        await audit(tx,"system:document-freshness","TRANSACTION_DOCUMENT_STALE",id,
+          `Blocked ${parsed.targetStatus} for ${documentId}; ${staleReason}`);
+        return;
+      }
+    }
     const decision = evaluateTransactionDocumentTransition(current,parsed.targetStatus,{
       actorRole,reason:parsed.reason,
       expiresAt:offer?.expiresAt??undefined,
@@ -305,6 +334,7 @@ export async function transitionTransactionDocument(
     await audit(tx,actor.id,`TRANSACTION_DOCUMENT_${parsed.targetStatus}`,id,
       `Document ${documentId} moved ${current} → ${parsed.targetStatus}; reason: ${parsed.reason}. No signature or external delivery is implied.`);
   });
+  if (staleConflict) throw new DomainError(`Document marked stale: ${staleConflict}`,409);
   return dealOperations(id,now);
 }
 

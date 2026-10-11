@@ -1,7 +1,7 @@
 import { asc, eq } from "drizzle-orm";
 import { isDeepStrictEqual } from "node:util";
 import { db, leadsTable, transactionClauseRequestsTable } from "@workspace/db";
-import { DomainError, assertOperationsRole, type OfferActor } from "@workspace/deal-domain";
+import { DomainError, assertOperationsRole, legalTemplateBlocker, type OfferActor } from "@workspace/deal-domain";
 import { CreateClauseReviewRequestBody, GetClauseReviewRequestsResponseItem } from "@workspace/api-zod";
 import { audit } from "./deal-store";
 import { propertyDocumentJurisdiction, ensureTransactionDocumentRegistry } from "./transaction-document-registry";

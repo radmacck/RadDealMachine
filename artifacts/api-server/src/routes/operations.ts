@@ -25,9 +25,7 @@ router.get("/transaction-documents/readiness",roles("OWNER","OPERATOR"),async(re
 });
 router.post("/transaction-document-templates/:id/review",roles("OWNER"),async(req,res)=>{
   const {id} = parse(z.object({id:z.string().uuid()}),req.params);
-  res.json(schemas.TransactionDocumentTemplateReadiness.parse(
-    await recordTransactionTemplateReview(id,parse(schemas.TransactionTemplateReviewInput,req.body),actor(res)),
-  ));
+  res.json(await recordTransactionTemplateReview(id,req.body,actor(res)));
 });
 router.get("/deals/:id/contract/clause-review-requests",roles("OWNER","OPERATOR"),async(req,res)=>{
   const {id} = parse(schemas.GetClauseReviewRequestsParams,req.params);

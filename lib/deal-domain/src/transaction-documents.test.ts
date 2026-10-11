@@ -8,12 +8,15 @@ test("legal template eligibility fails closed on provenance, jurisdiction, deal 
     status: "APPROVED_LEGAL", jurisdiction: "US/PA/PHILADELPHIA",
     templateHash: "sha256:synthetic", approvalEvidenceRef: "synthetic:review",
     approvedBy: "synthetic-qualified-reviewer", approvedAt: "2026-10-01T00:00:00.000Z",
+    sourceRef: "synthetic:template-source", sourceProvenance: { label: "synthetic fixture" },
+    reviewState: "APPROVED", reviewedBy: "synthetic-qualified-reviewer",
+    reviewedAt: "2026-10-01T00:00:00.000Z", reviewerQualificationRef: "synthetic:qualification",
     effectiveAt: "2026-10-01T00:00:00.000Z", expiresAt: "2026-11-01T00:00:00.000Z",
     supportedDealTypes: ["WHOLESALE_ASSIGNMENT"],
   };
   assert.equal(legalTemplateBlocker(approved, "US/PA/PHILADELPHIA", "WHOLESALE_ASSIGNMENT", now), null);
   assert.match(legalTemplateBlocker(approved, "US/NJ/UNKNOWN", "WHOLESALE_ASSIGNMENT", now)!, /jurisdiction/);
-  assert.match(legalTemplateBlocker({ ...approved, approvalEvidenceRef: null }, approved.jurisdiction, "WHOLESALE_ASSIGNMENT", now)!, /approval identity/);
+  assert.match(legalTemplateBlocker({ ...approved, approvalEvidenceRef: null }, approved.jurisdiction, "WHOLESALE_ASSIGNMENT", now)!, /qualified-review|approval/);
   assert.match(legalTemplateBlocker({ ...approved, supportedDealTypes: ["DOUBLE_CLOSE"] }, approved.jurisdiction, "WHOLESALE_ASSIGNMENT", now)!, /does not support/);
   assert.match(legalTemplateBlocker({ ...approved, effectiveAt: "2026-10-11T00:00:00.000Z" }, approved.jurisdiction, "WHOLESALE_ASSIGNMENT", now)!, /not yet effective/);
   assert.match(legalTemplateBlocker({ ...approved, expiresAt: "2026-10-09T00:00:00.000Z" }, approved.jurisdiction, "WHOLESALE_ASSIGNMENT", now)!, /expired/);

@@ -1,5 +1,4 @@
 import { eq, and, desc } from "drizzle-orm";
-import { createHash } from "node:crypto";
 import { db, buyersTable, contractsTable, matchesTable, jobsTable } from "@workspace/db";
 import { GetDealOperationsResponse } from "@workspace/api-zod";
 import { buyerReservations, matchBuyer, type BuyerMatch, type DealContract, type LeadDetail, DomainError } from "@workspace/deal-domain";
@@ -32,50 +31,7 @@ async function evaluatedMatches(detail: LeadDetail, contract: DealContract|null,
 export async function dealOperations(id: string, now = new Date()) {
   return db.transaction(async tx=>{
     const detail = await leadDetail(id,tx,now);
-    let contract = await getContractRecord(id,tx);
-    if (contract?.documents?.length) {
-      const [row] = await tx.select().from(contractsTable).where(eq(contractsTable.leadId,id));
-      const raw = Array.isArray(row?.payload.documentArtifacts)
-        ? row.payload.documentArtifacts.filter((item): item is Record<string,unknown> => !!item && typeof item === "object" && !Array.isArray(item))
-        : [];
-      let changed = false;
-      const partyHash = createHash("sha256").update(JSON.stringify({
-        leadId: detail.lead.id, sellerName: detail.lead.sellerName,
-        sellerPhone: detail.lead.sellerPhone ?? null, sellerEmail: detail.lead.sellerEmail ?? null,
-      })).digest("hex");
-      const refreshed = raw.map(artifact => {
-        if (!["PREPARED_FOR_REVIEW","APPROVED_TO_SEND","SENT","SIGNING_IN_PROGRESS"].includes(String(artifact.status))) return artifact;
-        const offer = detail.offers.find(item => item.id === String(artifact.sourceOfferId));
-        const reason = !offer ? "Source offer is missing."
-          : offer.effectiveStatus !== "COMMUNICATED" ? "Source offer is no longer currently authorized and communicated."
-          : offer.analysisSnapshotId !== detail.analysisSnapshotId ? "Underwriting snapshot changed after this document was prepared."
-          : offer.amount !== contract!.purchasePrice || offer.earnestMoney !== contract!.earnestMoney ||
-            offer.contingencies !== contract!.contingencies || offer.assignmentIntent !== contract!.assignmentAllowed
-              ? "Contract terms differ from the source offer."
-          : artifact.partySnapshotHash !== partyHash ? "Seller party identity/contact snapshot changed."
-          : null;
-        if (!reason) return artifact;
-        changed = true;
-        const nextAction = "Reconcile the changed evidence and obtain fresh owner authorization before preparing or sending a replacement document.";
-        return {
-          ...artifact, status: "STALE", staleReason: reason, nextAction, staleAt: now.toISOString(),
-          events: [...(Array.isArray(artifact.events) ? artifact.events : []), {
-            from: artifact.status, to: "STALE", occurredAt: now.toISOString(),
-            actorId: "system:document-freshness", actorRole: "SYSTEM_WORKER",
-            reason, nextAction,
-          }],
-        };
-      });
-      if (changed && row) {
-        await tx.update(contractsTable).set({
-          payload: { ...row.payload, documentArtifacts: refreshed },
-          version: row.version + 1, updatedAt: now,
-        }).where(eq(contractsTable.id,row.id));
-        await audit(tx,"system:document-freshness","TRANSACTION_DOCUMENT_STALE",id,
-          `Marked ${refreshed.filter(item=>item.status==="STALE").length} transaction document(s) stale after persisted source snapshot comparison.`);
-        contract = contract ? { ...contract, version: contract.version + 1, documents: refreshed as typeof contract.documents } : contract;
-      }
-    }
+    const contract = await getContractRecord(id,tx);
     const matches = await evaluatedMatches(detail,contract,tx,now);
     const rows = await tx.select().from(jobsTable).where(eq(jobsTable.leadId,id)).orderBy(desc(jobsTable.createdAt)).limit(10);
     const hasReviewDocument = !!contract?.documents?.some(document =>
