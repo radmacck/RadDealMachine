@@ -2749,6 +2749,9 @@ export type TransactionDocumentLifecycleInputTargetStatus = typeof TransactionDo
 
 
 export const TransactionDocumentLifecycleInputTargetStatus = {
+  APPROVED_TO_SEND: 'APPROVED_TO_SEND',
+  SENT: 'SENT',
+  SIGNING_IN_PROGRESS: 'SIGNING_IN_PROGRESS',
   REJECTED: 'REJECTED',
   VOID: 'VOID',
   EXPIRED: 'EXPIRED',

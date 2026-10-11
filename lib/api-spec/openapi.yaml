@@ -2392,7 +2392,7 @@ components:
       required: [version, targetStatus, reason]
       properties:
         version: { type: integer, minimum: 1 }
-        targetStatus: { type: string, enum: [REJECTED, VOID, EXPIRED] }
+        targetStatus: { type: string, enum: [APPROVED_TO_SEND, SENT, SIGNING_IN_PROGRESS, REJECTED, VOID, EXPIRED] }
         reason: { type: string, minLength: 10, maxLength: 2000 }
     ContractExecutionInput:
       type: object

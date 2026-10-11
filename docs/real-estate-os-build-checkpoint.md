@@ -267,3 +267,28 @@ The public dataset/catalog and documented query endpoint were accessed without a
 **Remaining limitations / next milestone:** No real approved/current buyer records or buyer-distribution provider evidence were present in the isolated exercise; the buyer summary is live-API-backed but not proof of a real buyer network. The next safe buildable P8 milestone is the qualified-review evidence path for actually approved jurisdictional templates, followed by clause-version staleness propagation. Do not fabricate counsel approval or templates. P2 broader property sourcing remains the earliest overall blocker and still requires a newly permitted, independently exercisable source.
 
 **Turn state:** implementation stopped at turn end; there is no background Agent task. Existing API/web/mockup workflows remain running.
+
+## Jurisdiction template review + stale transaction-document guard — 2026-10-10
+
+**Status: PARTIAL, not GREEN.** The code and isolated synthetic exercise now cover the core fail-closed eligibility and stale-send guard. No real legal template, qualified reviewer, legal approval, signature provider, or signed-in HTTP session was verified.
+
+- Added fail-closed template eligibility checks for matching jurisdiction, approved status, template hash, source/provenance, approval and review evidence, reviewer identity/qualification reference, effective/expiry dates, and supported deal type. Added registry fields for that review metadata and applied the development schema update with `pnpm --filter @workspace/db run push`.
+- Added the owner-only `POST /transaction-document-templates/{id}/review` API operation. The persisted isolated exercise records a synthetic template review, verifies the version increment and provenance, and verifies that an OPERATOR call is rejected by the service authorization gate. The route is wired through `roles("OWNER")`; the generic auth suite passed, but an authenticated HTTP integration test against this specific route was not run.
+- A read-only command-center fetch no longer writes transaction state. When an operator attempts an approval/send/signing transition for a document whose offer, analysis, terms, or party snapshot is stale, the write path persists `STALE`, reason, next action, transition event, and audit entry, then rejects the attempted transition. Download of a stale document remains blocked. The isolated transaction exercise asserts these behaviors on synthetic data.
+- Synthetic template-review metadata is an exercise fixture only; it is not a real approved legal template and does not enable legal-document sending. Template bytes/storage, signing, legal review, and real transaction use remain unavailable/unverified. No underwriting, offer-authority, or economic calculation is performed by the review service.
+
+**Verification completed:**
+- `pnpm --filter @workspace/api-spec run codegen` — passed; generated libraries typecheck passed.
+- `pnpm --filter @workspace/deal-domain test` — 105 passed, 0 failed.
+- `pnpm --filter @workspace/api-server run test:auth` — 7 passed, 0 failed. This covers the role middleware generally; see route-specific limitation above.
+- `pnpm --filter @workspace/api-server run typecheck` — passed.
+- `pnpm --filter @workspace/api-server run build` — passed.
+- `pnpm --filter @workspace/radical-deal-os run typecheck` — passed.
+- `PORT=20639 BASE_PATH=/ pnpm --filter @workspace/radical-deal-os run build` — passed with existing source-map resolution and >500 kB chunk warnings.
+- `pnpm --filter @workspace/api-server exec tsx src/services/isolated-exercise.ts transaction-exercise.ts` — passed in a temporary isolated PostgreSQL schema. It verified synthetic template review/versioning and role denial, stale unsigned document persistence, send/download blocking, audit event, and transaction readiness paths. It reported 1 synthetic transaction and 0 real transactions. A worker retry warning was logged during the exercise; the exercise completed successfully.
+
+**Remaining gaps:** The review API records owner-submitted reviewer/evidence references; the system does not independently validate a lawyer's identity or legal approval. No real legal template can become operational from this exercise. HTTP-level 401/403 coverage for the specific review route and a direct before/after persisted economics assertion remain unverified, so this milestone is not GREEN.
+
+**Next milestone:** Build the shortest usable, API-backed command-center path from actual permitted property observations through qualification blockers, available underwriting assumptions, call brief/notes, and one truthful next action. Do not manufacture contactability or buyer availability. Show a concrete blocker and feasible workaround where external capability is missing.
+
+**Turn state:** implementation stopped at turn end; no background Agent task is running. API, web, and mockup workflows are running.

@@ -29320,7 +29320,7 @@ export const transitionTransactionDocumentBodyReasonMax = 2000;
 
 export const TransitionTransactionDocumentBody = zod.object({
   "version": zod.number().int().min(1),
-  "targetStatus": zod.enum(['REJECTED', 'VOID', 'EXPIRED']),
+  "targetStatus": zod.enum(['APPROVED_TO_SEND', 'SENT', 'SIGNING_IN_PROGRESS', 'REJECTED', 'VOID', 'EXPIRED']),
   "reason": zod.string().min(transitionTransactionDocumentBodyReasonMin).max(transitionTransactionDocumentBodyReasonMax)
 })
 

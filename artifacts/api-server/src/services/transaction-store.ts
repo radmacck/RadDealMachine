@@ -276,7 +276,7 @@ export async function transitionTransactionDocument(
   assertOperationsRole(actor,allowedRoles);
   let staleConflict: string | null = null;
   await db.transaction(async tx=>{
-    const {row} = await lockedContract(tx,id,parsed.version);
+    const {row,contract} = await lockedContract(tx,id,parsed.version);
     const artifacts = storedDocumentArtifacts(row);
     const index = artifacts.findIndex(item=>item.id===documentId);
     if (index<0) throw new DomainError("Transaction document not found.",404);

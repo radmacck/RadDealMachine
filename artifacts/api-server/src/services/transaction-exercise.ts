@@ -1,8 +1,8 @@
 import assert from "node:assert/strict";
 import { randomUUID } from "node:crypto";
 import { PDFDocument } from "pdf-lib";
-import { db,pool,analysesTable,contractsTable,jobsTable,matchesTable,buyersTable,leadsTable,transactionDocumentBlobsTable,transactionReadinessExceptionsTable,dealDecisionWorkItemsTable } from "@workspace/db";
-import { eq } from "drizzle-orm";
+import { db,pool,analysesTable,contractsTable,jobsTable,matchesTable,buyersTable,leadsTable,transactionDocumentBlobsTable,transactionReadinessExceptionsTable,dealDecisionWorkItemsTable,transactionDocumentTemplatesTable } from "@workspace/db";
+import { and, eq } from "drizzle-orm";
 import { logger } from "../lib/logger";
 import * as seller from "./deal-store";
 import { exerciseEvidence } from "./exercise-evidence";
@@ -21,7 +21,7 @@ import {
   authorizeDealDistribution, getBuyerPortalDeal, getDealDistribution,
   respondToBuyerPortalDeal, shareDistributionRecipients,
 } from "./distribution-store";
-import { getTransactionDocumentReadiness } from "./transaction-document-registry";
+import { getTransactionDocumentReadiness, recordTransactionTemplateReview } from "./transaction-document-registry";
 import { evaluateAllTransactionReadiness, getTransactionReadinessReport } from "./transaction-readiness";
 const actor = {id:`synthetic-transaction:${randomUUID()}`,role:"OWNER"};
 const operator = {...actor,role:"OPERATOR"};
@@ -120,6 +120,26 @@ try {
     "Readiness must use the persisted deal property's state/county rather than an unspecified global registry.");
   assert.equal(registryState.signingProvider.status,"NOT_CONNECTED");
   assert.equal(registryState.storage.status,"PRIVATE_FILE_STORE_UNAVAILABLE");
+  const [reviewTemplate] = await db.select().from(transactionDocumentTemplatesTable)
+    .where(and(eq(transactionDocumentTemplatesTable.jurisdiction,"US/TX/SYNTHETIC-COUNTY"),
+      eq(transactionDocumentTemplatesTable.templateKey,"AMENDMENT")));
+  assert.ok(reviewTemplate,"A persisted jurisdiction template registry entry is required for review.");
+  const reviewInput = {
+    expectedVersion:reviewTemplate.version,decision:"APPROVED" as const,
+    sourceRef:"SYNTHETIC:approved-template-source",sourceProvenance:{synthetic:true,source:"exercise-only"},
+    templateStorageRef:"SYNTHETIC:template-bytes-not-present",templateHash:"a".repeat(64),
+    reviewerIdentity:"synthetic-qualified-reviewer",reviewerQualificationRef:"SYNTHETIC:reviewer-qualification",
+    reviewEvidenceRef:"SYNTHETIC:review-approval-evidence",effectiveAt:now.toISOString(),
+    supportedDealTypes:["PURCHASE"],reason:"SYNTHETIC persisted qualified-review path exercise.",
+  };
+  await assert.rejects(recordTransactionTemplateReview(reviewTemplate.id,reviewInput,operator,now),
+    (error:unknown)=>(error as {status?:number}).status===403,
+    "Template review decision is owner-gated.");
+  const reviewedTemplate = await recordTransactionTemplateReview(reviewTemplate.id,reviewInput,actor,now);
+  assert.equal(reviewedTemplate.status,"APPROVED_LEGAL");
+  assert.equal(reviewedTemplate.version,reviewTemplate.version+1);
+  assert.equal(reviewedTemplate.reviewState,"APPROVED");
+  assert.equal(reviewedTemplate.sourceProvenance.synthetic,true,"Synthetic review evidence must remain explicitly synthetic.");
   assert.ok(registryState.templates.some(item=>item.key==="PURCHASE_AGREEMENT"&&item.status==="MISSING_APPROVED_TEMPLATE"&&
     item.jurisdiction==="US/TX/SYNTHETIC-COUNTY"));
   assert.ok(registryState.templates.some(item=>item.key==="ASSIGNMENT_AGREEMENT"&&item.status==="MISSING_APPROVED_TEMPLATE"&&
@@ -168,7 +188,9 @@ try {
   await assert.rejects(transactions.executeContract(id,execute,operator,now),e=>(e as {status:number}).status===403);
   await assert.rejects(transactions.executeContract(id,{...execute,sellerSignedAt:future(1)},actor,now),/future/);
   // Recording after approval expiry is allowed ONLY for historically valid signatures.
-  const executionNow = new Date(now.getTime()+3*86400000);
+  // Evaluate after the title due date's local end-of-day boundary; the deadline engine
+  // intentionally does not mark a due-date milestone overdue before its local day ends.
+  const executionNow = new Date(now.getTime()+4*86400000);
   op = await transactions.executeContract(id,execute,actor,executionNow);
   const initialDeadlineSchedule = {
     version:op.contract!.version,deadlineScheduleVersion:op.contract!.deadlineScheduleVersion,
@@ -208,7 +230,7 @@ try {
   deadlineReport = await getTransactionReadinessReport(executionNow);
   assert.ok(deadlineReport.exceptions.some(item=>
     item.contractId===op.contract?.id&&item.issueKey===`MILESTONE_DEADLINE_OVERDUE:TITLE_CLEARED:${dateOnly(2)}`&&item.status==="OPEN"),
-    "An overdue title date is persisted as a distinct, evidence-linked transaction exception.");
+    `An overdue title date is persisted as a distinct, evidence-linked transaction exception. Observed: ${JSON.stringify(deadlineReport.exceptions.filter(item=>item.contractId===op.contract?.id).map(item=>({key:item.issueKey,status:item.status,reason:item.reason})))}`);
   assert.ok(deadlineReport.exceptions.some(item=>
     item.contractId===op.contract?.id&&item.issueKey===`MILESTONE_DEADLINE_UPCOMING:INSPECTION_COMPLETED:${dateOnly(4)}`&&item.status==="OPEN"),
     "A persisted contract review creates an upcoming inspection exception from its calendar date and reviewed time zone.");
@@ -977,14 +999,17 @@ try {
     assert.equal(staleOps.contract?.sellerSignedAt??null,null);
     assert.equal(staleOps.contract?.acquisitionSignedAt??null,null);
     assert.equal(staleOps.contract?.executedDocumentUrl??null,null);
-     staleOps = await transactions.transitionTransactionDocument(staleId,prepared.id,{
-       version:staleOps.contract!.version,targetStatus:"EXPIRED",reason:"SYNTHETIC expiry after the source offer deadline."},
-     actor,new Date(now.getTime()+3*86400000));
-     assert.equal(staleOps.contract?.documents?.find(doc=>doc.id===prepared.id)?.status,"EXPIRED",
-       "an elapsed authorized-offer deadline is recorded as persisted document expiry");
-     assert.ok(staleOps.contract?.documents?.find(doc=>doc.id===prepared.id)?.events?.some(event=>event.to==="EXPIRED"));
+     await assert.rejects(transactions.transitionTransactionDocument(staleId,prepared.id,{
+       version:staleOps.contract!.version,targetStatus:"SENT",reason:"SYNTHETIC send attempt after source evidence changed."},
+     actor,new Date(now.getTime()+3*86400000)),/marked stale/);
+     staleOps = await dealOperations(staleId,new Date(now.getTime()+3*86400000));
+     const staleArtifact = staleOps.contract?.documents?.find(doc=>doc.id===prepared.id);
+     assert.equal(staleArtifact?.status,"STALE","material source change must persistently stale an unsigned artifact before send");
+     assert.match(staleArtifact?.staleReason??"",/offer is no longer currently authorized/);
+     assert.match(staleArtifact?.nextAction??"",/fresh owner authorization/);
+     assert.ok(staleArtifact?.events?.some(event=>event.to==="STALE"),"stale transition must remain in document audit history");
      await assert.rejects(transactions.downloadPurchaseReviewDocument(staleId,prepared.id,operator,new Date(now.getTime()+3*86400000)),
-       /expired and cannot be downloaded/);
+       /document is stale/);
   }
   await verifyPreExecutionRevisionInvalidation();
   logger.info("Cancellation/restart PASSED: owner-only, fresh underwriting/approval/communication, distinct attempt, original cancellation/signatures/terms/buyer history retained; CLOSED cannot reopen.");
