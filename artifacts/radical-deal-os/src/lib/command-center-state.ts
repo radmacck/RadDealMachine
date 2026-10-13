@@ -69,6 +69,31 @@ export function filterAndSortDiscoveryPreview<T extends DiscoveryPreviewRecord>(
         : b.score - a.score || b.confidence - a.confidence || a.property.address.localeCompare(b.property.address));
 }
 
+export function acquisitionQueueActionHref(item: {
+  decision: string;
+  blockerCode: string | null;
+  lead: { id: string };
+}) {
+  if (item.decision === "CALL_NEXT") return `/calls?lead=${encodeURIComponent(item.lead.id)}`;
+  if (item.blockerCode?.startsWith("CONTACT_")) return `/deals/${encodeURIComponent(item.lead.id)}?work=contact`;
+  if (item.blockerCode === "UNDERWRITING_MISSING" || item.blockerCode === "UNDERWRITING_STALE") {
+    return `/deals/${encodeURIComponent(item.lead.id)}?work=uw`;
+  }
+  return `/deals/${encodeURIComponent(item.lead.id)}?work=intel`;
+}
+
+export function buyerIntakeHref() {
+  return "/buyers?tab=prospects&new=prospect";
+}
+
+export function buyerIntakeState(search: string) {
+  const params = new URLSearchParams(search);
+  return {
+    tab: params.get("tab") === "prospects" ? "prospects" as const : "pool" as const,
+    openProspect: params.get("new") === "prospect",
+  };
+}
+
 export type ApiViewState =
   | "LOADING"
   | "READY"

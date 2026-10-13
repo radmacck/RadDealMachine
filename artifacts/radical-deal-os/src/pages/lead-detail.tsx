@@ -37,7 +37,7 @@ export default function LeadDetailPage() {
   const invalidate = useInvalidateWork();
   const [addClass, setAddClass] = useState<ProvenanceClass | null>(null);
   const work = new URLSearchParams(window.location.search).get('work');
-  const [tab, setTab] = useState(work === 'source' ? 'source' : work === 'record' ? 'record' : work === 'uw' ? 'uw' : work === 'stage' ? 'stage' : work === 'offers' ? 'offers' : work === 'call' ? 'calls' : work === 'transaction' ? 'tx' : 'intel');
+  const [tab, setTab] = useState(work === 'source' ? 'source' : work === 'record' ? 'record' : work === 'uw' ? 'uw' : work === 'stage' ? 'stage' : work === 'offers' ? 'offers' : work === 'call' ? 'calls' : work === 'transaction' ? 'tx' : work === 'contact' ? 'intel' : 'intel');
   const [leadEpoch, setLeadEpoch] = useState(0);
   const [uwEpoch, setUwEpoch] = useState(0);
 
@@ -52,7 +52,7 @@ export default function LeadDetailPage() {
   const loaded = !!q.data;
   useEffect(() => {
     if (!loaded || !work) return;
-    setTab(work === 'source' ? 'source' : work === 'record' ? 'record' : work === 'uw' ? 'uw' : work === 'stage' ? 'stage' : work === 'offers' ? 'offers' : work === 'call' ? 'calls' : work === 'transaction' ? 'tx' : 'intel');
+    setTab(work === 'source' ? 'source' : work === 'record' ? 'record' : work === 'uw' ? 'uw' : work === 'stage' ? 'stage' : work === 'offers' ? 'offers' : work === 'call' ? 'calls' : work === 'transaction' ? 'tx' : work === 'contact' ? 'intel' : 'intel');
     document.getElementById('workflow')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
   }, [loaded, work]);
 

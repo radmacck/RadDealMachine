@@ -1,6 +1,7 @@
 import { ArrowRight, Headphones, ShieldAlert } from 'lucide-react';
 import { Link } from 'wouter';
 import type { AcquisitionQueueItem } from '@workspace/api-client-react';
+import { acquisitionQueueActionHref } from '@/lib/command-center-state';
 
 export function AcquisitionQueueCard({ item, compact = false }: {
   item: AcquisitionQueueItem;
@@ -67,9 +68,9 @@ export function AcquisitionQueueCard({ item, compact = false }: {
             : 'not calculated'
         }, MAO ${item.callBrief.analysis.mao.toLocaleString()} (calculation, not authority).` : 'No current underwriting.'}</div>
       </div>}
-      <Link className="mt-3 inline-flex items-center gap-1 text-sm font-semibold underline" href={`/calls?lead=${encodeURIComponent(item.lead.id)}`}
+      <Link className="mt-3 inline-flex items-center gap-1 text-sm font-semibold underline" href={acquisitionQueueActionHref(item)}
         aria-label={`${callable ? 'Open call brief' : 'Review blocked acquisition'} for ${item.lead.address}`}>
-        {callable ? 'Open call brief' : 'Review next step'} <ArrowRight className="h-3.5 w-3.5" />
+        {callable ? 'Open call brief' : item.blockerCode?.startsWith('CONTACT_') ? 'Review contact evidence' : item.blockerCode === 'UNDERWRITING_MISSING' || item.blockerCode === 'UNDERWRITING_STALE' ? 'Review underwriting' : 'Review property evidence'} <ArrowRight className="h-3.5 w-3.5" />
       </Link>
     </article>
   );

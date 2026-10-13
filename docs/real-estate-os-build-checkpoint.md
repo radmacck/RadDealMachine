@@ -414,3 +414,27 @@ The public dataset/catalog and documented query endpoint were accessed without a
 **Next blocker:** authenticated owner verification remains the next UI proof; independently, a real permitted direct seller contact route and real current buyer evidence are still absent, so no live seller-to-buyer deal can yet be proven.
 
 **Turn state:** stopped after implementation, exercises, builds, and workflow checks; no background task is executing.
+
+## Command-center seller contact and buyer qualification handoffs — 2026-10-13
+
+**Status: existing persisted intake workflows are now reachable from the relevant command-center actions; no provider or human evidence was fabricated.**
+
+- Blocked acquisition cards now route by persisted blocker: contact blockers open the lead’s Evidence tab at the seller-contact/contact-evidence panel; missing or stale underwriting opens Underwriting; other blockers open property Evidence. Only `CALL_NEXT` still opens the call brief. This prevents the prior dead-end of sending a blocked contact item into Calls.
+- Added a direct command-center link to the existing prospect intake flow. `/buyers?tab=prospects&new=prospect` opens the unverified-prospect tab and form when the signed-in user has research permission. Saving still creates only a discovered/unverified prospect; criteria, dated evidence, owner review, funding evidence and freshness gates remain necessary for current approval.
+- Kept the existing source-refresh handoff: the dashboard opens `/workers?kind=DISCOVER_PROPERTIES`; the existing worker page requires current source-term confirmation and queues the persisted, idempotent `DISCOVER_PROPERTIES` job. `exercise:property-source` exercised that job path against permitted public feeds. “Refresh desk” remains a UI refetch, not a claim that a source job was queued.
+- Existing provider-neutral seller-contact request lifecycle and manual evidence intake were reused. No live contact provider is configured; actual registry state remains unavailable. Manually entered phone/email/web routes remain source/permission/identity-reconciliation evidence and cannot clear CALL NEXT until reviewed. No outreach was sent.
+- Added command-center state-helper tests asserting blocked contact and underwriting routing, CALL NEXT routing, and buyer-intake deep-link state.
+
+**Checks:** web/API typechecks passed; API build passed; web build passed with existing sourcemap-resolution and large-chunk warnings. Command-center/API tests passed **14/14**, including HTTP 401 and controlled 500 behavior; auth tests passed **7/7**; deal-domain suite passed **105/105**.
+
+**Persisted exercises (synthetic isolation unless explicitly described as live source records):**
+- Seller contact exercise passed direct-route state, provenance/dedupe/ranking, postal-only, stale/conflict/unreviewed blocking, identity/authority separation, role/replay guards, and economics/stage invariants.
+- Seller contact provider exercise passed **12 synthetic requests**, including unavailable real registry, unexercised/policy/terms blocking, no-result, stale/duplicate/conflicting evidence, bounded retry/recovery, audit/economics invariants and no outreach.
+- Buyer exercise passed create/reload, owner-only verification, dated funding, stale evidence, version conflict, identity invalidation and queued matching. Buyer-pool exercise passed one-time response link, criteria carry-forward, replay/stale/replace/expiry and no automatic approval; it observed **112 source-derived prospect observations / 114 source observations** in its isolated exercise, not in the live workspace buyer pool. It sent no communications.
+- Live permitted property-source exercise passed: **594 unique public discoveries, 0 raw-to-active-lead promotions, 165 unmatched observations, 24 pages at 25/page**; 0 phone/email/web routes were present. `exercise:command-center` passed isolated persisted empty/provider/readiness/authorization/worker-state cases.
+
+**Browser/auth boundary:** screenshot still shows the public sign-in landing page; there is no legitimate owner session available to the capture browser. The newly added owner-only prospect dialog and signed-in blocked-contact links were not browser-clicked. Production authentication was not bypassed. No approved/current buyer or callable live seller was created.
+
+**Next blocker:** obtain a legitimate permitted seller contact route and real buyer qualification evidence; authenticated owner browser verification remains outstanding.
+
+**Turn state:** completed code/test/build/workflow checks; no background Agent task is running.

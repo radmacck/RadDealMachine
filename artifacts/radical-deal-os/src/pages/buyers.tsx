@@ -13,15 +13,17 @@ import { useAccess } from '@/hooks/use-access';
 import { useInvalidateWork } from '@/hooks/use-invalidate';
 import { useToast } from '@/hooks/use-toast';
 import { ago, money } from '@/lib/format';
+import { buyerIntakeState } from '@/lib/command-center-state';
 
 export default function Buyers() {
   const { canResearch } = useAccess();
   const [, nav] = useLocation();
   const { toast } = useToast();
   const invalidate = useInvalidateWork();
+  const intake = buyerIntakeState(window.location.search);
   const [open, setOpen] = useState(false);
-  const [prospectOpen, setProspectOpen] = useState(false);
-  const [tab, setTab] = useState<'pool' | 'prospects'>('pool');
+  const [prospectOpen, setProspectOpen] = useState(intake.openProspect && canResearch);
+  const [tab, setTab] = useState<'pool' | 'prospects'>(intake.tab);
   const [term, setTerm] = useState('');
   const q = useListBuyers({ query: { queryKey: getListBuyersQueryKey(), staleTime: 10_000, refetchInterval: 20_000 } });
   const create = useCreateBuyer();

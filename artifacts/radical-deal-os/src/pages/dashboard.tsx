@@ -21,6 +21,7 @@ import {
   discoveryContactState,
   discoveryOrigin,
   filterAndSortDiscoveryPreview,
+  buyerIntakeHref,
 } from '@/lib/command-center-state';
 import { AcquisitionQueueCard } from '@/components/acquisition-queue-card';
 import { OutcomeLearningPanel } from '@/components/outcome-learning-panel';
@@ -762,7 +763,7 @@ export default function Dashboard() {
             </section>
 
             <section className="fd-panel" data-testid="panel-buyers">
-              <div className="fd-section-head"><div className="fd-section-title"><UsersRound size={15} />Qualified buyers <small>{query ? `${qualifiedRows.length} of ${buyerRows.length}` : `${qualified.length} of ${d.buyers.length}`}</small></div><Link className="fd-text-link" href="/buyers" data-testid="link-buyers">All buyers</Link></div>
+              <div className="fd-section-head"><div className="fd-section-title"><UsersRound size={15} />Qualified buyers <small>{query ? `${qualifiedRows.length} of ${buyerRows.length}` : `${qualified.length} of ${d.buyers.length}`}</small></div><div className="flex gap-3"><Link className="fd-text-link" href={buyerIntakeHref()} data-testid="link-buyer-intake">Record buyer prospect</Link><Link className="fd-text-link" href="/buyers" data-testid="link-buyers">All buyers</Link></div></div>
               {buyerRows.length === 0 ? <div className="fd-empty">{query ? 'No buyers match that search.' : 'No buyers recorded. Prospects require evidenced, current-buying qualification before they are treated as qualified.'}</div> : (
                 <div className="fd-list">{buyerRows.slice(0, 3).map((buyer) => {
                   const qualifiedBuyer = isCurrentApprovedBuyer(buyer, now);

@@ -9,6 +9,9 @@ import {
   discoveryOrigin,
   discoveryContactState,
   filterAndSortDiscoveryPreview,
+  acquisitionQueueActionHref,
+  buyerIntakeHref,
+  buyerIntakeState,
 } from "./command-center-state";
 
 const emptyDesk = {
@@ -99,5 +102,21 @@ test("buyer readiness counts only current approved records and separates stale, 
     unverifiedExcludedCount: 1,
     syntheticExcludedCount: 1,
   });
+});
+
+test("blocked acquisition actions route to the actual contact or underwriting review, never into CALL NEXT", () => {
+  const lead = { id: "synthetic-lead-1" };
+  assert.equal(acquisitionQueueActionHref({ decision: "BLOCKED", blockerCode: "CONTACT_NO_DIRECT_ROUTE", lead }),
+    "/deals/synthetic-lead-1?work=contact");
+  assert.equal(acquisitionQueueActionHref({ decision: "BLOCKED", blockerCode: "UNDERWRITING_MISSING", lead }),
+    "/deals/synthetic-lead-1?work=uw");
+  assert.equal(acquisitionQueueActionHref({ decision: "CALL_NEXT", blockerCode: null, lead }),
+    "/calls?lead=synthetic-lead-1");
+});
+
+test("dashboard buyer intake opens the existing unverified prospect workflow", () => {
+  assert.equal(buyerIntakeHref(), "/buyers?tab=prospects&new=prospect");
+  assert.deepEqual(buyerIntakeState("?tab=prospects&new=prospect"), { tab: "prospects", openProspect: true });
+  assert.deepEqual(buyerIntakeState("?tab=pool"), { tab: "pool", openProspect: false });
 });
 
