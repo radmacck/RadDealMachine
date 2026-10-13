@@ -1,5 +1,46 @@
 import type { Buyer } from "@workspace/api-client-react";
 
+export type DiscoverySourceObservationLite = {
+  sourceId: string;
+  sourceName: string;
+  sourceUrl?: string;
+  lastObservedAt: string;
+};
+
+const exercisedPhiladelphiaSources = new Set([
+  "phila-opa", "phila-li-violations", "phila-li-unsafe", "phila-vacancy-indicators",
+  "phila-li-building-permits", "phila-li-demolitions", "phila-sheriff-deed-records",
+]);
+
+export function discoveryOrigin(observations: DiscoverySourceObservationLite[]) {
+  const ids = observations.map((item) => item.sourceId.toLowerCase());
+  if (ids.some((id) => /synthetic|fixture|test/.test(id))) return "SYNTHETIC_EXERCISE";
+  if (ids.length > 0 && ids.every((id) => exercisedPhiladelphiaSources.has(id))) return "LIVE_PUBLIC_SOURCE";
+  return ids.length ? "SOURCE_NOT_VERIFIED" : "NO_SOURCE_PROVENANCE";
+}
+
+export function discoveryContactState(status: string, paths: Array<{
+  channel: string;
+  routeValue?: string | null;
+  classification: string;
+  permissionStatus: string;
+  permissionEvidenceStatus?: string | null;
+  freshnessStatus: string;
+}>) {
+  const usablePhone = paths.some((path) => path.channel === "PHONE"
+    && !!path.routeValue?.trim()
+    && path.classification === "VERIFIED"
+    && path.permissionStatus === "PERMITTED"
+    && path.permissionEvidenceStatus === "SUPPORTS_ALLOWED"
+    && path.freshnessStatus === "CURRENT");
+  if (status === "CALL_READY" && usablePhone) return "CALL_READY";
+  if (paths.some((path) => path.channel === "PHONE" || path.channel === "EMAIL" || path.channel === "WEB")) {
+    return "DIRECT_ROUTE_NEEDS_REVIEW";
+  }
+  if (paths.some((path) => path.channel === "POSTAL")) return "POSTAL_ONLY";
+  return "NO_DIRECT_ROUTE";
+}
+
 export type ApiViewState =
   | "LOADING"
   | "READY"

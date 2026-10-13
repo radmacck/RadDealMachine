@@ -6,6 +6,8 @@ import {
   classifyApiViewState,
   isEmptyCommandCenter,
   isCurrentApprovedBuyer,
+  discoveryOrigin,
+  discoveryContactState,
 } from "./command-center-state";
 
 const emptyDesk = {
@@ -33,6 +35,26 @@ test("401 and 403 deny cached private command-center data instead of rendering i
 
 test("a failed refresh with cached data is explicitly stale, not current", () => {
   assert.equal(classifyApiViewState({ isLoading: false, isError: true, data: emptyDesk, error: new Error("network failed") }), "STALE");
+});
+
+test("discovery provenance labels only exercised source IDs as live and never relabels unknown records", () => {
+  assert.equal(discoveryOrigin([{ sourceId: "phila-opa", sourceName: "OPA", lastObservedAt: "2026-10-13T00:00:00Z" }]), "LIVE_PUBLIC_SOURCE");
+  assert.equal(discoveryOrigin([{ sourceId: "synthetic-fixture", sourceName: "Fixture", lastObservedAt: "2026-10-13T00:00:00Z" }]), "SYNTHETIC_EXERCISE");
+  assert.equal(discoveryOrigin([{ sourceId: "unknown", sourceName: "Unknown", lastObservedAt: "2026-10-13T00:00:00Z" }]), "SOURCE_NOT_VERIFIED");
+  assert.equal(discoveryOrigin([]), "NO_SOURCE_PROVENANCE");
+});
+
+test("discovery card fails closed for postal-only, stale, unpermitted, and non-CALL_READY routes", () => {
+  const postal = { channel: "POSTAL", classification: "OBSERVED", permissionStatus: "PERMITTED", permissionEvidenceStatus: "SUPPORTS_ALLOWED", freshnessStatus: "CURRENT" };
+  const phone = { channel: "PHONE", routeValue: "555-0100", classification: "VERIFIED", permissionStatus: "PERMITTED", permissionEvidenceStatus: "SUPPORTS_ALLOWED", freshnessStatus: "CURRENT" };
+  assert.equal(discoveryContactState("QUALIFIED_LEAD", [postal]), "POSTAL_ONLY");
+  assert.equal(discoveryContactState("CALL_READY", [phone]), "CALL_READY");
+  assert.equal(discoveryContactState("CALL_READY", [{ ...phone, freshnessStatus: "STALE" }]), "DIRECT_ROUTE_NEEDS_REVIEW");
+  assert.equal(discoveryContactState("CALL_READY", [{ ...phone, classification: "OBSERVED" }]), "DIRECT_ROUTE_NEEDS_REVIEW");
+  assert.equal(discoveryContactState("CALL_READY", [{ ...phone, permissionEvidenceStatus: "UNKNOWN" }]), "DIRECT_ROUTE_NEEDS_REVIEW");
+  assert.equal(discoveryContactState("CALL_READY", [{ ...phone, permissionStatus: "NOT_REVIEWED" }]), "DIRECT_ROUTE_NEEDS_REVIEW");
+  assert.equal(discoveryContactState("QUALIFIED_LEAD", [phone]), "DIRECT_ROUTE_NEEDS_REVIEW");
+  assert.equal(discoveryContactState("DISCOVERED_PROPERTY", []), "NO_DIRECT_ROUTE");
 });
 
 test("buyer readiness counts only current approved records and separates stale, unverified, and synthetic exclusions", () => {

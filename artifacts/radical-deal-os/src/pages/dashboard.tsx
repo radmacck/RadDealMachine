@@ -5,7 +5,10 @@ import {
   Headphones, House, Leaf, MapPin, Plus, RefreshCw, ShieldCheck, UsersRound,
   WalletCards, Zap,
 } from 'lucide-react';
-import { getGetCommandCenterQueryKey, getGetTransactionReadinessQueryKey, useGetCommandCenter, useGetTransactionReadiness, type CommandAction } from '@workspace/api-client-react';
+import {
+  getGetCommandCenterQueryKey, getGetTransactionReadinessQueryKey, getListPropertyDiscoveriesQueryKey, useGetCommandCenter,
+  useGetTransactionReadiness, useListPropertyDiscoveries, type CommandAction,
+} from '@workspace/api-client-react';
 import { StageBadge } from '@/components/stage-badge';
 import { useWorkspaceSearch } from '@/components/workspace-search';
 import { commandCenterCallDisplay } from '@/lib/command-center-display';
@@ -15,6 +18,8 @@ import {
   isCurrentApprovedBuyer,
   isEmptyCommandCenter,
   isSyntheticExerciseBuyer,
+  discoveryContactState,
+  discoveryOrigin,
 } from '@/lib/command-center-state';
 import { AcquisitionQueueCard } from '@/components/acquisition-queue-card';
 import { OutcomeLearningPanel } from '@/components/outcome-learning-panel';
@@ -54,17 +59,23 @@ const AUTOMATION_STATE_TONE: Record<string, string> = {
 export default function Dashboard() {
   const q = useGetCommandCenter({ query: { queryKey: getGetCommandCenterQueryKey(), refetchInterval: 15000 } });
   const transactionReadiness = useGetTransactionReadiness({ query: { queryKey: getGetTransactionReadinessQueryKey(), refetchInterval: 30000 } });
+  const discoveryParams = { marketKey: 'PHILADELPHIA_PA', limit: 8 };
+  const discoveryPool = useListPropertyDiscoveries(discoveryParams, {
+    query: { queryKey: getListPropertyDiscoveriesQueryKey(discoveryParams), refetchInterval: 30000, staleTime: 15000 },
+  });
   const [showAllActions, setShowAllActions] = useState(false);
   const [showAllTransactionExceptions, setShowAllTransactionExceptions] = useState(false);
   const { open: searchOpen, query: searchQuery, setQuery: setSearchQuery } = useWorkspaceSearch();
   const now = new Date();
   const workspaceState = classifyApiViewState(q, isEmptyCommandCenter);
   const transactionState = classifyApiViewState(transactionReadiness);
+  const discoveryState = classifyApiViewState(discoveryPool, (data) => data.records.length === 0);
   const mayRenderWorkspace = ["READY", "EMPTY", "STALE"].includes(workspaceState);
   const mayRenderReadiness = ["READY", "STALE"].includes(transactionState);
+  const discoveryData = ["READY", "EMPTY", "STALE"].includes(discoveryState) ? discoveryPool.data : undefined;
   const d = mayRenderWorkspace ? q.data : undefined;
   const readinessData = mayRenderReadiness ? transactionReadiness.data : undefined;
-  const refreshing = q.isFetching || transactionReadiness.isFetching;
+  const refreshing = q.isFetching || transactionReadiness.isFetching || discoveryPool.isFetching;
   const query = searchQuery.trim().toLowerCase();
   const matchesSearch = (...values: (string | number | null | undefined)[]) =>
     !query || values.some((value) => String(value ?? '').toLowerCase().includes(query));
@@ -129,7 +140,7 @@ export default function Dashboard() {
           <p className="fd-subtitle">Seller acquisition, buyer demand, and the deal that connects them. Start with the next action; the system keeps the workstreams distinct.</p>
         </div>
         <div className="fd-head-buttons">
-          <button className="fd-button" type="button" onClick={() => void Promise.allSettled([q.refetch(), transactionReadiness.refetch()])} disabled={refreshing} aria-busy={refreshing}>
+            <button className="fd-button" type="button" onClick={() => void Promise.allSettled([q.refetch(), transactionReadiness.refetch(), discoveryPool.refetch()])} disabled={refreshing || discoveryPool.isFetching} aria-busy={refreshing || discoveryPool.isFetching}>
             <RefreshCw size={14} className={refreshing ? 'animate-spin' : ''} />{refreshing ? 'Refreshing' : 'Refresh desk'}
           </button>
           <Link className="fd-button" href="/leads" data-testid="link-add-lead"><Plus size={15} />Manual seller intake</Link>
@@ -545,6 +556,75 @@ export default function Dashboard() {
               ))}</div>
             )}
             <p className="mt-2 text-xs text-muted-foreground">Discovery volume is not deal quality. {d.propertyDiscoveries.counts.DISCOVERED_PROPERTY} raw properties are preserved outside the active lead queue.</p>
+          </section>
+
+          <section className="fd-panel" data-testid="panel-live-property-discovery">
+            <div className="fd-section-head">
+              <div className="fd-section-title"><Compass size={15} />Philadelphia discovery and qualification <small>persisted source pool</small></div>
+              <Link className="fd-text-link" href="/sources">Open full paginated pool <ArrowRight size={12} style={{ verticalAlign: 'middle', marginLeft: 3 }} /></Link>
+            </div>
+                {discoveryState === 'LOADING' && <div role="status" className="fd-empty" data-testid="discovery-pool-loading">Loading persisted property records…</div>}
+                {discoveryState === 'UNAUTHENTICATED' && <div role="alert" className="fd-empty" data-testid="discovery-pool-unauthenticated">Sign in to view property-source records. Cached discovery data is hidden.</div>}
+                {discoveryState === 'FORBIDDEN' && <div role="alert" className="fd-empty" data-testid="discovery-pool-forbidden">Your workspace role cannot view property-source records. Cached discovery data is hidden.</div>}
+                {discoveryState === 'ERROR' && <div role="alert" className="fd-empty" data-testid="discovery-pool-error">Property discovery is unavailable: {errInfo(discoveryPool.error).message}. No sample records are substituted. <button className="fd-text-link" type="button" onClick={() => void discoveryPool.refetch()}>Retry</button></div>}
+                {discoveryState === 'STALE' && <div role="alert" className="fd-empty" data-testid="discovery-pool-stale">Refresh failed: {errInfo(discoveryPool.error).message}. Showing the saved source observations below; confirm each last-observed time before acting. <button className="fd-text-link" type="button" onClick={() => void discoveryPool.refetch()}>Retry</button></div>}
+            {discoveryData && (
+              <>
+                <p className="mb-3 text-xs text-muted-foreground" data-testid="discovery-pool-counts">
+                  Raw {discoveryData.counts.DISCOVERED_PROPERTY} · Candidates {discoveryData.counts.RELEVANT_CANDIDATE} · Qualified {discoveryData.counts.QUALIFIED_LEAD} · CALL READY {discoveryData.counts.CALL_READY} · Passed {discoveryData.counts.DISQUALIFIED}.
+                  Raw discoveries are never active leads by default.
+                </p>
+                {discoveryData.records.length === 0
+                  ? <div className="fd-empty" data-testid="discovery-pool-empty">No persisted property discoveries are available in this page. No synthetic fixtures are substituted.</div>
+                  : <div className="space-y-3">{discoveryData.records.slice(0, 5).map((item) => {
+                    const origin = discoveryOrigin(item.sourceObservations);
+                    const contactState = discoveryContactState(item.status, item.property.contactPaths);
+                    const analysis = item.leadId
+                      ? d.opportunities.find((opportunity) => opportunity.lead.id === item.leadId)?.analysis
+                      : undefined;
+                    const callable = contactState === 'CALL_READY' && !!item.leadId;
+                    return <article key={item.id} className="rounded border p-3" data-testid={`discovery-pool-item-${item.id}`}>
+                      <div className="flex flex-wrap items-center gap-2">
+                        <b>{item.property.address}</b>
+                        <span className="tag tone-muted">{item.status.replaceAll('_', ' ')}</span>
+                        <span className={`tag ${origin === 'LIVE_PUBLIC_SOURCE' ? 'tone-signal' : origin === 'SYNTHETIC_EXERCISE' ? 'tone-stop' : 'tone-warn'}`} data-testid={`discovery-origin-${item.id}`}>
+                          {origin === 'LIVE_PUBLIC_SOURCE' ? 'Live public source' : origin === 'SYNTHETIC_EXERCISE' ? 'Synthetic exercise' : origin === 'NO_SOURCE_PROVENANCE' ? 'No source provenance' : 'Source not verified'}
+                        </span>
+                        <span className="text-xs text-muted-foreground">{item.score}/100 · {Math.round(item.confidence * 100)}% confidence</span>
+                      </div>
+                      <p className="mt-1 text-xs"><b>Why:</b> {item.rankingReasons.slice(0, 3).join(' · ') || item.reason}</p>
+                      <p className="mt-1 text-xs"><b>Blocker:</b> {item.promotionBlockers[0] ?? item.missingInformation[0] ?? 'No qualification blocker recorded; call readiness is still checked separately.'}</p>
+                      <p className="mt-1 text-xs"><b>Next:</b> {contactState === 'NO_DIRECT_ROUTE' || contactState === 'POSTAL_ONLY'
+                        ? 'Obtain and document a lawful direct contact route or complete owner/contact research from permitted records; postal data alone is not callable.'
+                        : item.nextAction}</p>
+                      <p className="mt-1 text-xs"><b>Contact:</b> {contactState === 'CALL_READY'
+                        ? 'Current permitted phone route; server qualification also marks CALL READY.'
+                        : contactState === 'POSTAL_ONLY' ? 'Postal only — not a phone/email route; blocked from CALL NEXT.'
+                          : contactState === 'DIRECT_ROUTE_NEEDS_REVIEW' ? 'A direct route exists, but no current permitted phone route is cleared for CALL NEXT.'
+                            : 'No direct phone/email/web route; blocked from CALL NEXT.'}</p>
+                      {item.sourceObservations.length > 0 && <ul className="mt-2 space-y-1 border-t pt-2 text-xs text-muted-foreground">
+                        {item.sourceObservations.slice(0, 3).map((observation) => <li key={observation.id}>
+                          {observation.sourceName} · {observation.sourceId} · last observed {fmtDate(observation.lastObservedAt)} · {observation.classification ?? 'classification not supplied'} · {Math.round((observation.confidence ?? 0) * 100)}% source confidence
+                          {observation.sourceUrl && <> · <a className="underline" href={observation.sourceUrl} target="_blank" rel="noopener noreferrer">source record</a></>}
+                        </li>)}
+                      </ul>}
+                      <p className="mt-2 text-xs"><b>Underwriting:</b> {analysis
+                        ? `Current analysis ${analysis.classification}; ARV ${money(analysis.arv.expected)}, repairs ${analysis.repairEstimate.total ? `${money(analysis.repairEstimate.total.low)}–${money(analysis.repairEstimate.total.high)}` : 'missing'}, MAO ${money(analysis.mao)}.`
+                        : 'Not shown: no current persisted deal analysis is linked to this property.'}</p>
+                      {analysis && <details className="mt-1 text-xs">
+                        <summary className="cursor-pointer font-semibold">Underwriting assumptions and gaps</summary>
+                        <p className="mt-1">Calculated {fmtDate(analysis.calculatedAt)} · repair catalog {analysis.assumptions.repairRateCatalogVersion} · minimum comps {analysis.assumptions.minComps} · max comp age {analysis.assumptions.maxCompAgeDays} days · holding {analysis.assumptions.holdingMonths} months · contingency {Math.round(analysis.assumptions.contingencyPct * 100)}%.</p>
+                        {!!analysis.blockers.length && <p className="mt-1 text-destructive"><b>Blockers:</b> {analysis.blockers.join(' · ')}</p>}
+                        {!!analysis.risks.length && <p className="mt-1"><b>Risks:</b> {analysis.risks.join(' · ')}</p>}
+                      </details>}
+                      <Link className="fd-text-link mt-2 inline-block" data-testid={`discovery-next-${item.id}`}
+                        href={callable ? `/calls?lead=${encodeURIComponent(item.leadId!)}` : `/sources?discovery=${encodeURIComponent(item.id)}`}>
+                        {callable ? 'Open CALL NEXT brief' : 'Review source and qualification blockers'} <ArrowRight size={12} style={{ verticalAlign: 'middle', marginLeft: 3 }} />
+                      </Link>
+                    </article>;
+                  })}</div>}
+              </>
+            )}
           </section>
 
           <details className="fd-secondary-work">

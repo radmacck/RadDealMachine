@@ -327,3 +327,41 @@ The public dataset/catalog and documented query endpoint were accessed without a
 **Next milestone:** verify the existing command-center presentation with a legitimate owner session and surface the live empty/contact-blocked property pool without making synthetic fixtures look live. Existing project tasks #40 and #44 cover adjacent work; no new duplicate task was created.
 
 **Turn state:** stopped at turn end; no background Agent task is running.
+
+## Dashboard live discovery pool and call-note refresh — 2026-10-13
+
+**Status: API-backed source visibility and synthetic call-note path verified; signed-in browser and real seller path remain unverified.**
+
+- Added an authenticated command-center panel backed by the persisted, paginated Philadelphia property-discovery API. It shows raw/candidate/qualified/CALL READY/pass counts and up to five records with status, deterministic relevance reason/score/confidence, missing/promotion blockers, next action, source name/ID/URL, classification/confidence and last-observed time. The full pool remains on the existing paginated Sources page.
+- The panel labels only explicitly exercised Philadelphia connector IDs as `Live public source`; source IDs containing synthetic/fixture/test are shown as `Synthetic exercise`; other or missing provenance is explicitly unverified/no-provenance. It does not substitute fixture records.
+- Added a fail-closed contact presentation: postal-only, missing direct route, stale/unpermitted route, or non-CALL_READY status cannot expose the CALL NEXT link. No-route rows direct the operator to permitted owner/contact research or documented manual evidence, without claiming the action has happened. Underwriting is shown only when a current persisted analysis is linked, with assumption summary, calculation date, blockers and risks.
+- “Refresh desk” now refreshes the discovery pool as well as command-center and transaction readiness. Successful call-note persistence invalidates acquisition queue and property-discovery queries in addition to the existing lead/dashboard/audit queries. The existing call form remains disabled until the server confirms call-work readiness; no call is placed.
+- Added six command-center state tests (including live-vs-synthetic/unknown provenance labels and contact-readiness gates). Existing API auth tests and persisted property-source/acquisition-queue exercises cover authorization, no raw-discovery promotion, and call-note persistence/reconciliation.
+
+**Verification:** web typecheck passed; state tests **6/6 passed**; web build passed with existing source-map and >500 kB bundle warnings. API typecheck, auth tests **7/7**, and API build passed. Persisted live-source property exercise passed: **594** unique OPA discoveries, **0** raw discoveries auto-promoted to active leads, **165** unmatched observations; qualifying counts by source remain as in the preceding checkpoint section. Persisted synthetic acquisition-queue exercise passed, including note persistence and material-evidence invalidation. Anonymous HTTP checks returned **401** for both `/api/property-discoveries` and `/api/acquisition-queue`.
+
+**Browser/workflow:** preview screenshot reached the public sign-in landing page only; no legitimate signed-in session was available to the capture browser, so command-center UI acceptance is not claimed. Web and API workflows are RUNNING and their restart logs show Vite ready and API `Server listening`; mockup-sandbox is not started and is not required for this app.
+
+**Remaining gap/next task:** complete a signed-in owner browser smoke test using a legitimate session, then verify the rendered discovery records and call-note refresh from that session. Do not bypass auth or represent the synthetic call fixtures as live.
+
+**Turn state:** stopped after implementation and checks; no background Agent task is running.
+
+## Live discovery visibility in the command center — 2026-10-13
+
+**Status: persisted-source UI path implemented and build-tested; authenticated screen is not browser-verified.**
+
+- The authenticated dashboard now queries the persisted Philadelphia discovery endpoint directly in bounded pages, surfaces the status counts and the highest-ranked first five results, and links to the existing full paginated Sources page. Each row exposes qualification state, score/confidence, reason, blocker/next action, source name/ID/reference, classification/confidence and last-observed time. It labels only the previously exercised Philadelphia source IDs as live, explicit synthetic/test/fixture IDs as synthetic, and any other or absent provenance as unverified. It does not use dashboard fixtures.
+- CALL NEXT navigation is withheld unless the discovery is already server-marked `CALL_READY` and has a current, verified, permitted phone route with explicit `SUPPORTS_ALLOWED` evidence. Postal-only, missing, stale, unpermitted, unverified, or email/web-only paths remain blocked from the call link. No-route guidance says to pursue permitted owner/contact research or record legitimate evidence; it does not claim research or outreach occurred.
+- Current persisted underwriting is displayed only when linked to the property, with expected ARV/repair/MAO, calculation time, repair-catalog version, comp-age/minimum assumptions, holding and contingency assumptions, plus blockers/risks. It states that no current analysis is available otherwise.
+- “Refresh desk” now refreshes command-center, transaction-readiness, and discovery queries. The existing successful call-note mutation invalidates lead, command-center, acquisition-queue, audit, and discovery queries so the next action refreshes after persisted seller answers.
+- Added six UI-state helper tests for 401/403 and stale/empty behavior, source-versus-synthetic/unknown labels, and fail-closed contact readiness. Existing persisted property-source and acquisition-queue exercises passed: raw records were not automatically promoted; synthetic call-note evidence persisted and reevaluation occurred. API anonymous HTTP requests to `/api/property-discoveries` and `/api/acquisition-queue` both returned 401.
+
+**Checks:** web typecheck passed; command-center helper tests 6/6 passed; web build passed with existing sourcemap and >500 kB chunk warnings. API typecheck, auth tests 7/7, and API build passed. The live-source property exercise passed with 594 unique OPA discoveries, zero raw-to-active-lead promotions, and 165 unmatched observations; existing exercise source counts are in the preceding checkpoint section. The acquisition-queue persisted synthetic exercise passed. A first web build attempt without required `PORT` failed; rerun with `PORT=20639 BASE_PATH=/` passed. A first root-level `pnpm exec tsx` invocation could not find the binary; rerun through the API-server workspace passed all six tests.
+
+**Browser/auth limit:** the preview screenshot rendered the public sign-in landing page. The browser had no legitimate signed-in owner session, so no authenticated command-center screen or live signed-in interaction was verified. No auth bypass was attempted.
+
+**Workflow state:** web and API workflows are RUNNING; web logged Vite ready and API logged `Server listening`. Mockup sandbox is NOT_STARTED and was not needed.
+
+**Next milestone:** signed-in owner browser verification of the live discovery panel and call-note refresh, using a legitimate session. After that, prioritize freshness-aware source refresh/coverage only where permitted access is actually available. No real CALL NEXT seller is currently proven because the exercised sources have no direct seller phone/email/web routes.
+
+**Turn state:** implementation and checks completed; no background Agent task is running.
