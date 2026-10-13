@@ -438,3 +438,19 @@ The public dataset/catalog and documented query endpoint were accessed without a
 **Next blocker:** obtain a legitimate permitted seller contact route and real buyer qualification evidence; authenticated owner browser verification remains outstanding.
 
 **Turn state:** completed code/test/build/workflow checks; no background Agent task is running.
+
+## Seller contact review handoff correction — 2026-10-13
+
+**Status: implemented and locally verified; live call readiness remains blocked by the absence of a legitimate direct contact route.**
+
+- Fixed the lead-level “Review best available contact route” action. When a qualified lead has no seller phone, it previously sent the operator back to the source-discovery page, where a promoted discovery no longer exposes the evidence-entry form. It now opens that lead’s persisted contact-evidence panel directly (`/deals/{leadId}?work=contact`). The route uses the existing lead/contact evidence model and does not create a route, promotion, call, or outreach.
+- Added a pure route helper and regression test proving URL-safe lead IDs and direct navigation to the contact review workflow. The lead detail page maps `work=contact` to its existing Evidence tab.
+- This closes the dead-end after human promotion: sourced qualification → active lead → contact evidence review. Human-added contact evidence still requires legitimate provenance, permission and owner review; it does not by itself establish seller identity/signing authority or clear CALL NEXT.
+
+**Verification:** web typecheck and build passed (existing Vite sourcemap and bundle-size warnings); API typecheck/build passed; command-center/API tests **15/15** passed, including unauthenticated 401 and controlled 500 checks; auth suite **7/7** passed; domain suite **105/105** passed. Persisted synthetic seller-contact exercise passed route provenance, postal-only/stale/conflict blocking, identity/authority separation, replay protection, and economics/stage invariants. The existing command-center, buyer intake and live source worker exercises remain as recorded above; this change did not alter API or source behavior.
+
+**Runtime/auth boundary:** web, API and mockup preview workflows are running. Public preview remains the sign-in screen; no legitimate owner browser session is available, so authenticated clicking through this corrected route remains unverified.
+
+**Next blocker:** a lawful, current direct seller contact route is still absent from the available public feeds and workspace; no real seller can be promoted to CALL NEXT until such evidence is obtained and reviewed. No live approved buyer or transaction evidence is present either.
+
+**Turn state:** stopped after implementation and checks; no background Agent task is running.

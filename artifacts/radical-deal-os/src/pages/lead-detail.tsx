@@ -6,6 +6,7 @@ import {
   getGetLeadQueryKey, useAddIntelligence, useIntakePropertyEvidence, useGetLead, useSaveUnderwriting, useTransitionLead, useUpdateLead, useRecordCall,
   type LeadDetail, type ProvenanceClass,
 } from '@workspace/api-client-react';
+import { sellerContactReviewHref } from '@/lib/command-center-state';
 import { ErrorNotice, RowsSkeleton } from '@/components/state-views';
 import { StageBadge } from '@/components/stage-badge';
 import { AnalysisPanel } from '@/components/analysis-panel';
@@ -69,9 +70,7 @@ export default function LeadDetailPage() {
   const sellerConversationStage = ['CALL_READY','CONTACTED','CONVERSATION','OFFER_READY','OFFER_SENT','NEGOTIATING'].includes(lead.stage);
   const directCallReady = sellerConversationStage && !!lead.sellerPhone?.trim() && !!d.analysis &&
     !contactEvidenceBlocked && (lead.stage !== 'CALL_READY' || d.analysis.blockers.length === 0);
-  const contactRouteHref = !lead.sellerPhone?.trim() && lead.propertyQualification?.discoveryId
-    ? `/sources?discovery=${encodeURIComponent(lead.propertyQualification.discoveryId)}`
-    : `/deals/${lead.id}?work=${lead.sellerPhone?.trim() ? 'intel' : 'record'}`;
+  const contactRouteHref = sellerContactReviewHref(lead.id);
   const patch = (fn: (o: LeadDetail) => LeadDetail) => qc.setQueryData<LeadDetail>(getGetLeadQueryKey(id), (o) => (o ? fn(o) : o));
 
   return (

@@ -86,6 +86,10 @@ export function buyerIntakeHref() {
   return "/buyers?tab=prospects&new=prospect";
 }
 
+export function sellerContactReviewHref(leadId: string) {
+  return `/deals/${encodeURIComponent(leadId)}?work=contact`;
+}
+
 export function buyerIntakeState(search: string) {
   const params = new URLSearchParams(search);
   return {

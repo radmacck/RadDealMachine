@@ -12,6 +12,7 @@ import {
   acquisitionQueueActionHref,
   buyerIntakeHref,
   buyerIntakeState,
+  sellerContactReviewHref,
 } from "./command-center-state";
 
 const emptyDesk = {
@@ -118,5 +119,9 @@ test("dashboard buyer intake opens the existing unverified prospect workflow", (
   assert.equal(buyerIntakeHref(), "/buyers?tab=prospects&new=prospect");
   assert.deepEqual(buyerIntakeState("?tab=prospects&new=prospect"), { tab: "prospects", openProspect: true });
   assert.deepEqual(buyerIntakeState("?tab=pool"), { tab: "pool", openProspect: false });
+});
+
+test("missing seller contact routes directly to the lead's persisted contact-evidence workflow", () => {
+  assert.equal(sellerContactReviewHref("lead / 123"), "/deals/lead%20%2F%20123?work=contact");
 });
 
