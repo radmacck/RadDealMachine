@@ -12,6 +12,7 @@ import * as sellerContacts from "../services/seller-contact-store";
 import * as sellerContactEnrichment from "../services/seller-contact-enrichment";
 import * as acquisitionQueue from "../services/acquisition-queue-store";
 import * as sellerPlaybooks from "../services/seller-playbook-store";
+import { propagateStaleTransactionDocuments } from "../services/transaction-store";
 
 const router: IRouter = Router();
 // Trim strings before schema validation so required fields cannot be whitespace-only.
@@ -77,10 +78,12 @@ router.get("/leads/:id/contact-paths",contactResearch,async (req,res) => {
   send(res,contract.GetSellerContactPathsResponse,await sellerContacts.getSellerContactPaths(leadId(req)));
 });
 router.post("/leads/:id/contact-paths",contactResearch,async (req,res) => {
-  send(res,contract.RecordSellerContactObservationResponse,await sellerContacts.recordSellerContactObservation(
-    leadId(req),parse(contract.RecordSellerContactObservationBody,req.body),
+  const id=leadId(req);
+  const result=await sellerContacts.recordSellerContactObservation(id,parse(contract.RecordSellerContactObservationBody,req.body),
     {id:String(res.locals.actor),role:String(res.locals.role)},
-  ));
+  );
+  await propagateStaleTransactionDocuments(id);
+  send(res,contract.RecordSellerContactObservationResponse,result);
 });
 router.get("/leads/:id/contact-enrichment",research,async (req,res) => {
   send(res,contract.GetSellerContactEnrichmentResponse,
@@ -95,38 +98,56 @@ router.post("/leads/:id/contact-enrichment",research,async (req,res) => {
     ));
 });
 router.patch("/leads/:id",research,async (req,res) => {
-  send(res,contract.UpdateLeadResponse,await store.updateLead(leadId(req),parse(contract.UpdateLeadBody,req.body),String(res.locals.actor)));
+  const id=leadId(req), result=await store.updateLead(id,parse(contract.UpdateLeadBody,req.body),String(res.locals.actor));
+  await propagateStaleTransactionDocuments(id);
+  send(res,contract.UpdateLeadResponse,result);
 });
 router.post("/leads/:id/intelligence",research,async (req,res) => {
-  send(res,contract.AddIntelligenceResponse,await store.addIntelligence(leadId(req),parse(contract.AddIntelligenceBody,req.body),String(res.locals.actor)),201);
+  const id=leadId(req), result=await store.addIntelligence(id,parse(contract.AddIntelligenceBody,req.body),String(res.locals.actor));
+  await propagateStaleTransactionDocuments(id);
+  send(res,contract.AddIntelligenceResponse,result,201);
 });
 router.put("/leads/:id/underwriting",research,async (req,res) => {
-  send(res,contract.SaveUnderwritingResponse,await store.saveUnderwriting(leadId(req),parse(contract.SaveUnderwritingBody,req.body),String(res.locals.actor)));
+  const id=leadId(req), result=await store.saveUnderwriting(id,parse(contract.SaveUnderwritingBody,req.body),String(res.locals.actor));
+  await propagateStaleTransactionDocuments(id);
+  send(res,contract.SaveUnderwritingResponse,result);
 });
 router.post("/leads/:id/transition",roles("OWNER","ANALYST","OPERATOR"),async (req,res) => {
+  const id=leadId(req);
   const input = parse(contract.TransitionLeadBody,req.body);
-  send(res,contract.TransitionLeadResponse,await store.transitionLeadForActor(leadId(req),input,{id:String(res.locals.actor),role:String(res.locals.role)}));
+  const result=await store.transitionLeadForActor(id,input,{id:String(res.locals.actor),role:String(res.locals.role)});
+  await propagateStaleTransactionDocuments(id);
+  send(res,contract.TransitionLeadResponse,result);
 });
 router.post("/leads/:id/calls",operate,async (req,res) => {
-  send(res,contract.RecordCallResponse,await store.recordCall(leadId(req),parse(contract.RecordCallBody,req.body),String(res.locals.actor)),201);
+  const id=leadId(req), result=await store.recordCall(id,parse(contract.RecordCallBody,req.body),String(res.locals.actor));
+  await propagateStaleTransactionDocuments(id);
+  send(res,contract.RecordCallResponse,result,201);
 });
 router.post("/leads/:id/offers",research,async (req,res) => {
-  send(res,contract.CreateOfferDraftResponse,await offers.createOfferDraft(
-    leadId(req),parse(contract.CreateOfferDraftBody,req.body),
+  const id=leadId(req),result=await offers.createOfferDraft(id,parse(contract.CreateOfferDraftBody,req.body),
     {id:String(res.locals.actor),role:String(res.locals.role)},
-  ),201);
+  );
+  await propagateStaleTransactionDocuments(id);
+  send(res,contract.CreateOfferDraftResponse,result,201);
 });
 router.post("/leads/:id/offers/:offerId/authorize",roles("OWNER"),async (req,res) => {
   const {id,offerId} = parse(contract.AuthorizeOfferParams,req.params);
-  send(res,contract.AuthorizeOfferResponse,await offers.authorizeOffer(id,offerId,parse(contract.AuthorizeOfferBody,req.body),{id:String(res.locals.actor),role:String(res.locals.role)}));
+  const result=await offers.authorizeOffer(id,offerId,parse(contract.AuthorizeOfferBody,req.body),{id:String(res.locals.actor),role:String(res.locals.role)});
+  await propagateStaleTransactionDocuments(id);
+  send(res,contract.AuthorizeOfferResponse,result);
 });
 router.post("/leads/:id/offers/:offerId/communicate",operate,async (req,res) => {
   const {id,offerId} = parse(contract.CommunicateOfferParams,req.params);
-  send(res,contract.CommunicateOfferResponse,await offers.communicateOffer(id,offerId,parse(contract.CommunicateOfferBody,req.body),{id:String(res.locals.actor),role:String(res.locals.role)}));
+  const result=await offers.communicateOffer(id,offerId,parse(contract.CommunicateOfferBody,req.body),{id:String(res.locals.actor),role:String(res.locals.role)});
+  await propagateStaleTransactionDocuments(id);
+  send(res,contract.CommunicateOfferResponse,result);
 });
 router.post("/leads/:id/offers/:offerId/withdraw",research,async (req,res) => {
   const {id,offerId} = parse(contract.WithdrawOfferParams,req.params);
-  send(res,contract.WithdrawOfferResponse,await offers.withdrawOffer(id,offerId,parse(contract.WithdrawOfferBody,req.body),{id:String(res.locals.actor),role:String(res.locals.role)}));
+  const result=await offers.withdrawOffer(id,offerId,parse(contract.WithdrawOfferBody,req.body),{id:String(res.locals.actor),role:String(res.locals.role)});
+  await propagateStaleTransactionDocuments(id);
+  send(res,contract.WithdrawOfferResponse,result);
 });
 router.get("/call-next",async (_req,res) => send(res,contract.GetCallQueueResponse,await store.callQueue()));
 router.get("/acquisition-queue",async (_req,res) => {

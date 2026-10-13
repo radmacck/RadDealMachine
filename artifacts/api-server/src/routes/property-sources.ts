@@ -5,6 +5,7 @@ import * as contract from "@workspace/api-zod";
 import { authenticated, membership, roles } from "../middlewares/access";
 import * as sources from "../services/property-source-store";
 import * as discoveries from "../services/property-discovery-store";
+import { propagateStaleTransactionDocuments } from "../services/transaction-store";
 
 const router: IRouter = Router();
 router.use(authenticated,membership);
@@ -63,10 +64,14 @@ router.get("/leads/:id/source-research",async(req,res)=>{
 router.post("/leads/:id/source-research",research,async(req,res)=>{
   const {id} = parse(contract.RefreshSourceResearchParams,req.params);
   const input = parse(contract.RefreshSourceResearchBody,req.body);
-  res.json(await sources.refreshSourceResearch(id,input.version,input.termsReviewed,actor(res)));
+  const result=await sources.refreshSourceResearch(id,input.version,input.termsReviewed,actor(res));
+  await propagateStaleTransactionDocuments(id);
+  res.json(result);
 });
 router.post("/leads/:id/source-research/comps",research,async(req,res)=>{
   const {id} = parse(contract.AddSourceCompsParams,req.params);
-  res.json(await sources.addSourceComps(id,parse(contract.AddSourceCompsBody,req.body),actor(res)));
+  const result=await sources.addSourceComps(id,parse(contract.AddSourceCompsBody,req.body),actor(res));
+  await propagateStaleTransactionDocuments(id);
+  res.json(result);
 });
 export default router;

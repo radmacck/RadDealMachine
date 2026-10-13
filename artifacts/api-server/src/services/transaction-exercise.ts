@@ -24,7 +24,8 @@ import {
   authorizeDealDistribution, getBuyerPortalDeal, getDealDistribution,
   respondToBuyerPortalDeal, shareDistributionRecipients,
 } from "./distribution-store";
-import { getTransactionDocumentReadiness, recordTransactionTemplateReview } from "./transaction-document-registry";
+import { getTransactionDocumentReadiness } from "./transaction-document-registry";
+import { propagateStaleTransactionDocuments } from "./transaction-store";
 import { createTransactionTemplateReviewRouter } from "../routes/operations";
 import { evaluateAllTransactionReadiness, getTransactionReadinessReport } from "./transaction-readiness";
 const actor = {id:`synthetic-transaction:${randomUUID()}`,role:"OWNER"};
@@ -140,7 +141,7 @@ try {
   const economicsBeforeReview = {
     analysisSnapshotId:beforeReview.analysisSnapshotId,
     arv:beforeReview.analysis?.arv,repairs:beforeReview.analysis?.repairs,
-    mao:beforeReview.analysis?.mao,recommendedOffer:beforeReview.analysis?.recommendedOffer,
+    mao:beforeReview.analysis?.mao,
     authorized:beforeReview.offers.filter(item=>["AUTHORIZED","COMMUNICATED"].includes(item.effectiveStatus))
       .map(({id:offerId,amount,maximumApprovedAcquisitionPrice,analysisSnapshotId:snapshot})=>({offerId,amount,maximumApprovedAcquisitionPrice,snapshot})),
   };
@@ -150,6 +151,10 @@ try {
     (req,res,next)=>{res.locals.actor=req.get("x-test-actor")??"";next();},
     (req,res,next)=>{res.locals.role=req.get("x-test-role")??"PENDING";next();},
   ));
+  reviewApp.use((error:unknown,_req:express.Request,res:express.Response,_next:express.NextFunction)=>{
+    const status=Number((error as {status?:number})?.status)||500;
+    res.status(status).json({error:(error as Error)?.message??"Synthetic route failure."});
+  });
   const reviewServer=reviewApp.listen(0,"127.0.0.1");
   await once(reviewServer,"listening");
   const reviewAddress=reviewServer.address() as AddressInfo;
@@ -174,7 +179,7 @@ try {
   assert.deepEqual({
     analysisSnapshotId:afterReview.analysisSnapshotId,
     arv:afterReview.analysis?.arv,repairs:afterReview.analysis?.repairs,
-    mao:afterReview.analysis?.mao,recommendedOffer:afterReview.analysis?.recommendedOffer,
+    mao:afterReview.analysis?.mao,
     authorized:afterReview.offers.filter(item=>["AUTHORIZED","COMMUNICATED"].includes(item.effectiveStatus))
       .map(({id:offerId,amount,maximumApprovedAcquisitionPrice,analysisSnapshotId:snapshot})=>({offerId,amount,maximumApprovedAcquisitionPrice,snapshot})),
   },economicsBeforeReview,"Template review must not change deterministic underwriting or authorized offer limits.");
@@ -1025,21 +1030,43 @@ try {
       statement:"SYNTHETIC material change: newly documented condition evidence.",source:"SYNTHETIC inspection update",
       sourceType:"INSPECTION",sourceUrl:"https://example.com/synthetic-preexec-condition",
       confidence:0.8,capturedAt:now.toISOString()},actor.id,now);
-    const changed = await seller.leadDetail(staleId);
+     const changed = await seller.leadDetail(staleId);
     assert.equal(changed.analysis,null,"Material new evidence invalidates the saved analysis.");
     assert.equal(changed.offers.find(item=>item.id===staleOfferId)?.effectiveStatus,"INVALIDATED");
-    await assert.rejects(transactions.downloadPurchaseReviewDocument(staleId,prepared.id,operator,now),
-      /source offer is stale or revoked/);
+     const economicStateAfterEvidence={
+       analysisSnapshotId:changed.analysisSnapshotId,
+       analysis:changed.analysis,
+       offer:changed.offers.find(item=>item.id===staleOfferId)&&{
+         amount:changed.offers.find(item=>item.id===staleOfferId)!.amount,
+         maximumApprovedAcquisitionPrice:changed.offers.find(item=>item.id===staleOfferId)!.maximumApprovedAcquisitionPrice,
+         effectiveStatus:changed.offers.find(item=>item.id===staleOfferId)!.effectiveStatus,
+       },
+     };
+     assert.equal(await propagateStaleTransactionDocuments(staleId,now),1,
+       "A relevant source-evidence write immediately persists the affected document as stale.");
+     assert.equal(await propagateStaleTransactionDocuments(staleId,now),0,
+       "Repeated freshness reconciliation is idempotent and does not duplicate stale events.");
     staleOps = await dealOperations(staleId,now);
     assert.equal(staleOps.contract?.status,"DRAFT");
-    assert.equal(staleOps.contract?.documents?.[0]?.status,"PREPARED_FOR_REVIEW",
-      "Stale prepared bytes remain historical review artifacts, not current or signed documents.");
+     assert.equal(staleOps.contract?.documents?.[0]?.status,"STALE");
+     assert.match(staleOps.contract?.documents?.[0]?.staleReason??"",/Underwriting snapshot changed|Source offer is no longer/);
+     assert.ok(staleOps.contract?.documents?.[0]?.events?.some(event=>event.to==="STALE"));
     assert.equal(staleOps.contract?.sellerSignedAt??null,null);
     assert.equal(staleOps.contract?.acquisitionSignedAt??null,null);
     assert.equal(staleOps.contract?.executedDocumentUrl??null,null);
+     await assert.rejects(transactions.downloadPurchaseReviewDocument(staleId,prepared.id,operator,now),/document is stale/);
      await assert.rejects(transactions.transitionTransactionDocument(staleId,prepared.id,{
-       version:staleOps.contract!.version,targetStatus:"SENT",reason:"SYNTHETIC send attempt after source evidence changed."},
-     actor,new Date(now.getTime()+3*86400000)),/marked stale/);
+       version:staleOps.contract!.version,targetStatus:"SENT",reason:"SYNTHETIC stale send attempt."},
+     actor,new Date(now.getTime()+3*86400000)),/terminal|stale|cannot transition/i);
+     const afterStaleTransition=await seller.leadDetail(staleId);
+     assert.deepEqual({
+       analysisSnapshotId:afterStaleTransition.analysisSnapshotId,analysis:afterStaleTransition.analysis,
+       offer:afterStaleTransition.offers.find(item=>item.id===staleOfferId)&&{
+         amount:afterStaleTransition.offers.find(item=>item.id===staleOfferId)!.amount,
+         maximumApprovedAcquisitionPrice:afterStaleTransition.offers.find(item=>item.id===staleOfferId)!.maximumApprovedAcquisitionPrice,
+         effectiveStatus:afterStaleTransition.offers.find(item=>item.id===staleOfferId)!.effectiveStatus,
+       },
+     },economicStateAfterEvidence,"Document staling cannot change underwriting or authorized offer limits.");
      staleOps = await dealOperations(staleId,new Date(now.getTime()+3*86400000));
      const staleArtifact = staleOps.contract?.documents?.find(doc=>doc.id===prepared.id);
      assert.equal(staleArtifact?.status,"STALE","material source change must persistently stale an unsigned artifact before send");

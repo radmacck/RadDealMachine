@@ -121,7 +121,9 @@ router.post("/deals/:id/destinations/:buyerId/activity",roles("OWNER","ANALYST",
 });
 router.post("/deals/:id/contract",roles("OWNER","OPERATOR"),async(req,res)=>{
   const {id} = parse(schemas.CreateContractParams,req.params);
-  res.status(201).json(schemas.CreateContractResponse.parse(await transactions.createContract(id,parse(schemas.CreateContractBody,req.body),actor(res))));
+  const result=await transactions.createContract(id,parse(schemas.CreateContractBody,req.body),actor(res));
+  await transactions.propagateStaleTransactionDocuments(id);
+  res.status(201).json(schemas.CreateContractResponse.parse(result));
 });
 router.post("/deals/:id/contract/documents",roles("OWNER","OPERATOR"),async(req,res)=>{
   const {id} = parse(schemas.PreparePurchaseReviewDocumentParams,req.params);
@@ -150,7 +152,9 @@ router.get("/deals/:id/contract/documents/:documentId/file",roles("OWNER","OPERA
 });
 router.post("/deals/:id/contract/exception",roles("OWNER"),async(req,res)=>{
   const {id} = parse(schemas.RecordTransactionExceptionParams,req.params);
-  res.json(schemas.RecordTransactionExceptionResponse.parse(await recordTransactionException(id,parse(schemas.RecordTransactionExceptionBody,req.body),actor(res))));
+  const result=await recordTransactionException(id,parse(schemas.RecordTransactionExceptionBody,req.body),actor(res));
+  await transactions.propagateStaleTransactionDocuments(id);
+  res.json(schemas.RecordTransactionExceptionResponse.parse(result));
 });
 router.post("/deals/:id/contract/execution",roles("OWNER"),async(req,res)=>{
   const {id} = parse(schemas.ExecuteContractParams,req.params);

@@ -125,10 +125,10 @@ function partySnapshotHash(lead: Lead) {
 }
 
 export async function propagateStaleTransactionDocuments(leadId:string,now=new Date()) {
-  const detail=await leadDetail(leadId,db,now);
   return db.transaction(async tx=>{
     const [row]=await tx.select().from(contractsTable).where(eq(contractsTable.leadId,leadId)).for("update");
     if(!row)return 0;
+    const detail=await leadDetail(leadId,tx,now);
     const contract=contractRecord(row);
     const artifacts=storedDocumentArtifacts(row);
     let changed=0;
