@@ -124,6 +124,42 @@ function partySnapshotHash(lead: Lead) {
   })).digest("hex");
 }
 
+export async function propagateStaleTransactionDocuments(leadId:string,now=new Date()) {
+  const detail=await leadDetail(leadId,db,now);
+  return db.transaction(async tx=>{
+    const [row]=await tx.select().from(contractsTable).where(eq(contractsTable.leadId,leadId)).for("update");
+    if(!row)return 0;
+    const contract=contractRecord(row);
+    const artifacts=storedDocumentArtifacts(row);
+    let changed=0;
+    for(let index=0;index<artifacts.length;index++){
+      const artifact=artifacts[index]!;
+      if(!["DRAFT","PREPARED_FOR_REVIEW","APPROVED_TO_SEND"].includes(String(artifact.status)))continue;
+      const offer=detail.offers.find(item=>item.id===String(artifact.sourceOfferId));
+      const reason=!offer?"Source offer is missing."
+        :offer.effectiveStatus!=="COMMUNICATED"?"Source offer is no longer currently authorized and communicated."
+        :offer.analysisSnapshotId!==detail.analysisSnapshotId||artifact.sourceAnalysisSnapshotId!==detail.analysisSnapshotId
+          ?"Underwriting snapshot changed after this document was prepared."
+        :offer.amount!==contract.purchasePrice||offer.earnestMoney!==contract.earnestMoney||
+          offer.contingencies!==contract.contingencies||offer.assignmentIntent!==contract.assignmentAllowed
+          ?"Contract terms differ from the source offer."
+        :artifact.partySnapshotHash!==partySnapshotHash(detail.lead)
+          ?"Seller party identity/contact snapshot changed."
+        :null;
+      if(!reason)continue;
+      const nextAction="Reconcile changed evidence and obtain fresh owner authorization before preparing a replacement document.";
+      artifacts[index]={...artifact,status:"STALE",staleReason:reason,nextAction,staleAt:now.toISOString(),
+        events:[...(Array.isArray(artifact.events)?artifact.events:[]),{from:String(artifact.status),to:"STALE",
+          occurredAt:now.toISOString(),actorId:"system:document-freshness",actorRole:"SYSTEM_WORKER",reason,nextAction}]};
+      changed++;
+      await audit(tx,"system:document-freshness","TRANSACTION_DOCUMENT_STALE",leadId,`${String(artifact.id)}: ${reason}`);
+    }
+    if(changed)await tx.update(contractsTable).set({payload:{...row.payload,documentArtifacts:artifacts},
+      version:row.version+1,updatedAt:now}).where(eq(contractsTable.id,row.id));
+    return changed;
+  });
+}
+
 export async function preparePurchaseReviewDocument(
   id: string,input: z.infer<typeof PreparePurchaseReviewDocumentBody>,actor: OfferActor,now = new Date(),
 ) {

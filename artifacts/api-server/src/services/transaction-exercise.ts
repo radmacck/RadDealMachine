@@ -1,4 +1,7 @@
 import assert from "node:assert/strict";
+import express from "express";
+import { once } from "node:events";
+import { AddressInfo } from "node:net";
 import { randomUUID } from "node:crypto";
 import { PDFDocument } from "pdf-lib";
 import { db,pool,analysesTable,contractsTable,jobsTable,matchesTable,buyersTable,leadsTable,transactionDocumentBlobsTable,transactionReadinessExceptionsTable,dealDecisionWorkItemsTable,transactionDocumentTemplatesTable } from "@workspace/db";
@@ -22,6 +25,7 @@ import {
   respondToBuyerPortalDeal, shareDistributionRecipients,
 } from "./distribution-store";
 import { getTransactionDocumentReadiness, recordTransactionTemplateReview } from "./transaction-document-registry";
+import { createTransactionTemplateReviewRouter } from "../routes/operations";
 import { evaluateAllTransactionReadiness, getTransactionReadinessReport } from "./transaction-readiness";
 const actor = {id:`synthetic-transaction:${randomUUID()}`,role:"OWNER"};
 const operator = {...actor,role:"OPERATOR"};
@@ -132,14 +136,48 @@ try {
     reviewEvidenceRef:"SYNTHETIC:review-approval-evidence",effectiveAt:now.toISOString(),
     supportedDealTypes:["PURCHASE"],reason:"SYNTHETIC persisted qualified-review path exercise.",
   };
-  await assert.rejects(recordTransactionTemplateReview(reviewTemplate.id,reviewInput,operator,now),
-    (error:unknown)=>(error as {status?:number}).status===403,
-    "Template review decision is owner-gated.");
-  const reviewedTemplate = await recordTransactionTemplateReview(reviewTemplate.id,reviewInput,actor,now);
+  const beforeReview = await seller.leadDetail(id);
+  const economicsBeforeReview = {
+    analysisSnapshotId:beforeReview.analysisSnapshotId,
+    arv:beforeReview.analysis?.arv,repairs:beforeReview.analysis?.repairs,
+    mao:beforeReview.analysis?.mao,recommendedOffer:beforeReview.analysis?.recommendedOffer,
+    authorized:beforeReview.offers.filter(item=>["AUTHORIZED","COMMUNICATED"].includes(item.effectiveStatus))
+      .map(({id:offerId,amount,maximumApprovedAcquisitionPrice,analysisSnapshotId:snapshot})=>({offerId,amount,maximumApprovedAcquisitionPrice,snapshot})),
+  };
+  const reviewApp=express();
+  reviewApp.use(express.json());
+  reviewApp.use(createTransactionTemplateReviewRouter(
+    (req,res,next)=>{res.locals.actor=req.get("x-test-actor")??"";next();},
+    (req,res,next)=>{res.locals.role=req.get("x-test-role")??"PENDING";next();},
+  ));
+  const reviewServer=reviewApp.listen(0,"127.0.0.1");
+  await once(reviewServer,"listening");
+  const reviewAddress=reviewServer.address() as AddressInfo;
+  let ownerReviewResponse:Response;
+  try {
+    const reviewUrl=`http://127.0.0.1:${reviewAddress.port}/transaction-document-templates/${reviewTemplate.id}/review`;
+    const denied=await fetch(reviewUrl,{method:"POST",headers:{"content-type":"application/json","x-test-actor":operator.id,"x-test-role":"OPERATOR"},body:JSON.stringify(reviewInput)});
+    assert.equal(denied.status,403,"Actual review endpoint must reject non-owner roles.");
+    ownerReviewResponse=await fetch(reviewUrl,{method:"POST",headers:{"content-type":"application/json","x-test-actor":actor.id,"x-test-role":"OWNER"},body:JSON.stringify(reviewInput)});
+    assert.equal(ownerReviewResponse.status,200,"Owner session must reach and persist the actual review endpoint.");
+    const staleReview=await fetch(reviewUrl,{method:"POST",headers:{"content-type":"application/json","x-test-actor":actor.id,"x-test-role":"OWNER"},body:JSON.stringify(reviewInput)});
+    assert.equal(staleReview.status,409,"Stale template revision must be rejected over HTTP.");
+  } finally {
+    await new Promise<void>((resolve,reject)=>reviewServer.close(error=>error?reject(error):resolve()));
+  }
+  const reviewedTemplate=await ownerReviewResponse!.json() as {status:string;version:number;reviewState:string;sourceProvenance:{synthetic?:boolean}};
   assert.equal(reviewedTemplate.status,"APPROVED_LEGAL");
   assert.equal(reviewedTemplate.version,reviewTemplate.version+1);
   assert.equal(reviewedTemplate.reviewState,"APPROVED");
   assert.equal(reviewedTemplate.sourceProvenance.synthetic,true,"Synthetic review evidence must remain explicitly synthetic.");
+  const afterReview=await seller.leadDetail(id);
+  assert.deepEqual({
+    analysisSnapshotId:afterReview.analysisSnapshotId,
+    arv:afterReview.analysis?.arv,repairs:afterReview.analysis?.repairs,
+    mao:afterReview.analysis?.mao,recommendedOffer:afterReview.analysis?.recommendedOffer,
+    authorized:afterReview.offers.filter(item=>["AUTHORIZED","COMMUNICATED"].includes(item.effectiveStatus))
+      .map(({id:offerId,amount,maximumApprovedAcquisitionPrice,analysisSnapshotId:snapshot})=>({offerId,amount,maximumApprovedAcquisitionPrice,snapshot})),
+  },economicsBeforeReview,"Template review must not change deterministic underwriting or authorized offer limits.");
   assert.ok(registryState.templates.some(item=>item.key==="PURCHASE_AGREEMENT"&&item.status==="MISSING_APPROVED_TEMPLATE"&&
     item.jurisdiction==="US/TX/SYNTHETIC-COUNTY"));
   assert.ok(registryState.templates.some(item=>item.key==="ASSIGNMENT_AGREEMENT"&&item.status==="MISSING_APPROVED_TEMPLATE"&&

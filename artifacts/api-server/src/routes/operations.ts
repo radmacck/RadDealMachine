@@ -1,4 +1,4 @@
-import { Router, type IRouter } from "express";
+import { Router, type IRouter, type RequestHandler } from "express";
 import { z } from "zod";
 import * as schemas from "@workspace/api-zod";
 import { DomainError, WORKER_CAPABILITIES, type OfferActor } from "@workspace/deal-domain";
@@ -23,10 +23,16 @@ router.get("/transaction-documents/readiness",roles("OWNER","OPERATOR"),async(re
   const {leadId} = parse(z.object({leadId:z.string().uuid().optional()}),req.query);
   res.json(schemas.GetTransactionDocumentReadinessResponse.parse(await getTransactionDocumentReadiness(actor(res),leadId)));
 });
-router.post("/transaction-document-templates/:id/review",roles("OWNER"),async(req,res)=>{
-  const {id} = parse(z.object({id:z.string().uuid()}),req.params);
-  res.json(await recordTransactionTemplateReview(id,req.body,actor(res)));
-});
+export function createTransactionTemplateReviewRouter(auth?:RequestHandler,member?:RequestHandler) {
+  const reviewRouter=Router();
+  if(auth&&member) reviewRouter.use(auth,member);
+  reviewRouter.post("/transaction-document-templates/:id/review",roles("OWNER"),async(req,res)=>{
+    const {id} = parse(z.object({id:z.string().uuid()}),req.params);
+    res.json(await recordTransactionTemplateReview(id,req.body,actor(res)));
+  });
+  return reviewRouter;
+}
+router.use(createTransactionTemplateReviewRouter());
 router.get("/deals/:id/contract/clause-review-requests",roles("OWNER","OPERATOR"),async(req,res)=>{
   const {id} = parse(schemas.GetClauseReviewRequestsParams,req.params);
   res.json(schemas.GetClauseReviewRequestsResponse.parse(await listClauseReviewRequests(id,actor(res))));
