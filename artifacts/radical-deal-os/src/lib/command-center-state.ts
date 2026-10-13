@@ -41,6 +41,34 @@ export function discoveryContactState(status: string, paths: Array<{
   return "NO_DIRECT_ROUTE";
 }
 
+export type DiscoveryPreviewRecord = {
+  status: string;
+  score: number;
+  confidence: number;
+  lastObservedAt: string;
+  property: { address: string; recordedOwner: string | null };
+  reason: string;
+  rankingReasons: string[];
+  nextAction: string;
+  sourceObservations: Array<{ sourceName: string }>;
+};
+
+export function filterAndSortDiscoveryPreview<T extends DiscoveryPreviewRecord>(
+  records: T[], status: string, query: string, sort: "RELEVANCE" | "FRESHEST" | "ADDRESS",
+) {
+  const needle = query.trim().toLocaleLowerCase();
+  return records.filter((item) => (status === "ALL" || item.status === status)
+    && (!needle || [
+      item.property.address, item.property.recordedOwner, item.reason, item.nextAction,
+      ...item.rankingReasons, ...item.sourceObservations.map((observation) => observation.sourceName),
+    ].some((value) => String(value ?? "").toLocaleLowerCase().includes(needle))))
+    .sort((a, b) => sort === "ADDRESS"
+      ? a.property.address.localeCompare(b.property.address)
+      : sort === "FRESHEST"
+        ? b.lastObservedAt.localeCompare(a.lastObservedAt) || b.score - a.score
+        : b.score - a.score || b.confidence - a.confidence || a.property.address.localeCompare(b.property.address));
+}
+
 export type ApiViewState =
   | "LOADING"
   | "READY"

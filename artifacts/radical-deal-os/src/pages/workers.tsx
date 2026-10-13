@@ -165,7 +165,9 @@ export default function Workers() {
   const canHandoff = canResearch || canCall || isOwner;
   const { toast } = useToast();
   const invalidate = useInvalidateWork();
-  const [kind, setKind] = useState<WorkerJobInputKind>('MATCH_BUYERS');
+  const requestedKind = new URLSearchParams(window.location.search).get('kind');
+  const initialKind: WorkerJobInputKind = requestedKind === 'DISCOVER_PROPERTIES' ? 'DISCOVER_PROPERTIES' : 'MATCH_BUYERS';
+  const [kind, setKind] = useState<WorkerJobInputKind>(initialKind);
   const [leadId, setLeadId] = useState('');
   const [terms, setTerms] = useState(false);
   const [recurring, setRecurring] = useState(false);

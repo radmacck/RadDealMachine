@@ -365,3 +365,19 @@ The public dataset/catalog and documented query endpoint were accessed without a
 **Next milestone:** signed-in owner browser verification of the live discovery panel and call-note refresh, using a legitimate session. After that, prioritize freshness-aware source refresh/coverage only where permitted access is actually available. No real CALL NEXT seller is currently proven because the exercised sources have no direct seller phone/email/web routes.
 
 **Turn state:** implementation and checks completed; no background Agent task is running.
+
+## Command-center discovery controls and source-refresh handoff — 2026-10-13
+
+**Status: bounded operational UI slice verified by typecheck/build and focused tests; actual signed-in use and source-job submission remain unverified.**
+
+- Increased the dashboard's bounded discovery preview from 8 to 25 persisted records. Added an inline search across loaded address/owner/reason/action/source fields; status filters for discovered, candidate, qualified, CALL READY, and passed; and deterministic relevance/freshness/address sorting. It states that filters cover only the currently loaded page and links to the existing paginated Sources view for the full pool.
+- Changed “Refresh desk” to “Refresh views”: it refetches persisted dashboard, transaction-readiness, and discovery queries and does not imply a source connector ran. Added a “Review & queue source refresh” link to the existing worker page, preselecting `DISCOVER_PROPERTIES`. The existing worker page retains role checks, current-terms confirmation, durable job status and recurring-policy controls; the dashboard does not bypass those gates or claim refresh completion.
+- Added a deterministic pure filtering/sorting helper and explicit synthetic-record tests for status, search, ranking ties, latest observation and address ordering. Existing contact gating remains fail-closed.
+
+**Checks this turn:** `pnpm --filter @workspace/radical-deal-os run typecheck` passed; focused UI state tests passed **7/7**; `PORT=20639 BASE_PATH=/ pnpm --filter @workspace/radical-deal-os run build` passed with existing sourcemap and bundle-size warnings. API typecheck passed, auth tests **7/7**, API build passed. The live permitted source exercise passed again: 594 persisted unique discoveries, 0 raw-to-lead promotions, 165 unmatched observations; OPA, L&I violations, unsafe buildings, vacancy, permits, demolitions, and sheriff deed were `LIVE_AND_OBSERVED`; Zillow/Redfin listing-description capability remained unavailable with no registered terms-reviewed connector. The synthetic persisted acquisition-queue/call-note exercise passed. A first UI typecheck attempt caught an incorrect helper timestamp/type contract; it was corrected before final passing typecheck/build. No code changes were required in the API.
+
+**Runtime/browser:** all three configured workflows were running after restart (web Vite ready, API listening, mockup preview ready). Preview screenshot still showed the public sign-in page; no authenticated owner session was available to exercise the dashboard, queue the worker, or verify note refresh in browser. No source refresh job was submitted in this turn and no live seller contact or buyer data was fabricated.
+
+**Next blocker:** obtain a legitimate owner browser session for signed-in verification; after that, exercise the existing terms-reviewed worker route through the UI and confirm its persisted run result. The property feed remains live but does not provide a permitted direct seller contact route.
+
+**Turn state:** stopped after the coherent UI delivery and checks; no background Agent task is running. The separately queued follow-ups remain subject to task-feed concurrency and have not been executed by this turn.

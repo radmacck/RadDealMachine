@@ -8,6 +8,7 @@ import {
   isCurrentApprovedBuyer,
   discoveryOrigin,
   discoveryContactState,
+  filterAndSortDiscoveryPreview,
 } from "./command-center-state";
 
 const emptyDesk = {
@@ -55,6 +56,21 @@ test("discovery card fails closed for postal-only, stale, unpermitted, and non-C
   assert.equal(discoveryContactState("CALL_READY", [{ ...phone, permissionStatus: "NOT_REVIEWED" }]), "DIRECT_ROUTE_NEEDS_REVIEW");
   assert.equal(discoveryContactState("QUALIFIED_LEAD", [phone]), "DIRECT_ROUTE_NEEDS_REVIEW");
   assert.equal(discoveryContactState("DISCOVERED_PROPERTY", []), "NO_DIRECT_ROUTE");
+});
+
+test("discovery preview search, status filter, and sort are deterministic over explicitly synthetic records", () => {
+  const rows = [
+    { status: "DISCOVERED_PROPERTY", score: 12, confidence: 0.5, lastObservedAt: "2026-10-01T00:00:00Z", property: { address: "Synthetic 3 Main St", recordedOwner: null }, reason: "synthetic raw", rankingReasons: [], nextAction: "research", sourceObservations: [{ sourceName: "Synthetic fixture" }] },
+    { status: "QUALIFIED_LEAD", score: 80, confidence: 0.8, lastObservedAt: "2026-10-02T00:00:00Z", property: { address: "Synthetic 2 Main St", recordedOwner: "Synthetic owner" }, reason: "synthetic qualified", rankingReasons: ["strong synthetic signal"], nextAction: "review", sourceObservations: [{ sourceName: "Synthetic exercise" }] },
+    { status: "QUALIFIED_LEAD", score: 80, confidence: 0.9, lastObservedAt: "2026-10-03T00:00:00Z", property: { address: "Synthetic 1 Main St", recordedOwner: null }, reason: "synthetic qualified", rankingReasons: ["strong synthetic signal"], nextAction: "review", sourceObservations: [{ sourceName: "Synthetic exercise" }] },
+  ];
+  assert.deepEqual(filterAndSortDiscoveryPreview(rows, "QUALIFIED_LEAD", "synthetic exercise", "RELEVANCE").map((row) => row.property.address),
+    ["Synthetic 1 Main St", "Synthetic 2 Main St"]);
+  assert.deepEqual(filterAndSortDiscoveryPreview(rows, "ALL", "", "FRESHEST").map((row) => row.property.address),
+    ["Synthetic 1 Main St", "Synthetic 2 Main St", "Synthetic 3 Main St"]);
+  assert.deepEqual(filterAndSortDiscoveryPreview(rows, "ALL", "", "ADDRESS").map((row) => row.property.address),
+    ["Synthetic 1 Main St", "Synthetic 2 Main St", "Synthetic 3 Main St"]);
+  assert.deepEqual(filterAndSortDiscoveryPreview(rows, "CALL_READY", "", "RELEVANCE"), []);
 });
 
 test("buyer readiness counts only current approved records and separates stale, unverified, and synthetic exclusions", () => {

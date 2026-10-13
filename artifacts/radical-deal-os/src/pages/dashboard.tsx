@@ -20,6 +20,7 @@ import {
   isSyntheticExerciseBuyer,
   discoveryContactState,
   discoveryOrigin,
+  filterAndSortDiscoveryPreview,
 } from '@/lib/command-center-state';
 import { AcquisitionQueueCard } from '@/components/acquisition-queue-card';
 import { OutcomeLearningPanel } from '@/components/outcome-learning-panel';
@@ -59,12 +60,15 @@ const AUTOMATION_STATE_TONE: Record<string, string> = {
 export default function Dashboard() {
   const q = useGetCommandCenter({ query: { queryKey: getGetCommandCenterQueryKey(), refetchInterval: 15000 } });
   const transactionReadiness = useGetTransactionReadiness({ query: { queryKey: getGetTransactionReadinessQueryKey(), refetchInterval: 30000 } });
-  const discoveryParams = { marketKey: 'PHILADELPHIA_PA', limit: 8 };
+  const discoveryParams = { marketKey: 'PHILADELPHIA_PA', limit: 25 };
   const discoveryPool = useListPropertyDiscoveries(discoveryParams, {
     query: { queryKey: getListPropertyDiscoveriesQueryKey(discoveryParams), refetchInterval: 30000, staleTime: 15000 },
   });
   const [showAllActions, setShowAllActions] = useState(false);
   const [showAllTransactionExceptions, setShowAllTransactionExceptions] = useState(false);
+  const [discoveryStatusFilter, setDiscoveryStatusFilter] = useState("ALL");
+  const [discoverySort, setDiscoverySort] = useState<"RELEVANCE" | "FRESHEST" | "ADDRESS">("RELEVANCE");
+  const [discoverySearch, setDiscoverySearch] = useState("");
   const { open: searchOpen, query: searchQuery, setQuery: setSearchQuery } = useWorkspaceSearch();
   const now = new Date();
   const workspaceState = classifyApiViewState(q, isEmptyCommandCenter);
@@ -79,6 +83,9 @@ export default function Dashboard() {
   const query = searchQuery.trim().toLowerCase();
   const matchesSearch = (...values: (string | number | null | undefined)[]) =>
     !query || values.some((value) => String(value ?? '').toLowerCase().includes(query));
+  const discoveryRows = filterAndSortDiscoveryPreview(
+    discoveryData?.records ?? [], discoveryStatusFilter, discoverySearch, discoverySort,
+  );
   const actions = d ? [...d.actions].filter((item) => matchesSearch(item.title, item.reason, LABEL[item.category])).sort((a, b) => b.priority - a.priority) : [];
   const primaryAction = actions[0];
   const secondaryActions = showAllActions ? actions.slice(1) : actions.slice(1, 3);
@@ -141,7 +148,7 @@ export default function Dashboard() {
         </div>
         <div className="fd-head-buttons">
             <button className="fd-button" type="button" onClick={() => void Promise.allSettled([q.refetch(), transactionReadiness.refetch(), discoveryPool.refetch()])} disabled={refreshing || discoveryPool.isFetching} aria-busy={refreshing || discoveryPool.isFetching}>
-            <RefreshCw size={14} className={refreshing ? 'animate-spin' : ''} />{refreshing ? 'Refreshing' : 'Refresh desk'}
+            <RefreshCw size={14} className={refreshing ? 'animate-spin' : ''} />{refreshing ? 'Refreshing views' : 'Refresh views'}
           </button>
           <Link className="fd-button" href="/leads" data-testid="link-add-lead"><Plus size={15} />Manual seller intake</Link>
         </div>
@@ -563,6 +570,35 @@ export default function Dashboard() {
               <div className="fd-section-title"><Compass size={15} />Philadelphia discovery and qualification <small>persisted source pool</small></div>
               <Link className="fd-text-link" href="/sources">Open full paginated pool <ArrowRight size={12} style={{ verticalAlign: 'middle', marginLeft: 3 }} /></Link>
             </div>
+            <div className="mb-3 flex flex-wrap items-end gap-3">
+              <label htmlFor="dashboard-discovery-search" className="text-xs">Search loaded properties
+                <input id="dashboard-discovery-search" data-testid="input-discovery-search" className="ml-2 rounded border bg-background px-2 py-1 text-sm"
+                  value={discoverySearch} onChange={(event) => setDiscoverySearch(event.target.value)} placeholder="Address, owner, source, reason" />
+              </label>
+              <label className="text-xs">Status
+                <select aria-label="Filter property discoveries by status" className="ml-2 rounded border bg-background px-2 py-1 text-sm"
+                  value={discoveryStatusFilter} onChange={(event) => setDiscoveryStatusFilter(event.target.value)}>
+                  <option value="ALL">All statuses</option>
+                  <option value="DISCOVERED_PROPERTY">Discovered</option>
+                  <option value="RELEVANT_CANDIDATE">Relevant candidate</option>
+                  <option value="QUALIFIED_LEAD">Qualified lead</option>
+                  <option value="CALL_READY">Call ready</option>
+                  <option value="DISQUALIFIED">Passed</option>
+                </select>
+              </label>
+              <label className="text-xs">Sort
+                <select aria-label="Sort property discoveries" className="ml-2 rounded border bg-background px-2 py-1 text-sm"
+                  value={discoverySort} onChange={(event) => setDiscoverySort(event.target.value as typeof discoverySort)}>
+                  <option value="RELEVANCE">Highest relevance</option>
+                  <option value="FRESHEST">Most recently observed</option>
+                  <option value="ADDRESS">Address A–Z</option>
+                </select>
+              </label>
+              <span className="text-xs text-muted-foreground">{discoveryRows.length} shown from at most {discoveryData?.records.length ?? 0} loaded records. Open the full pool for pagination.</span>
+              <Link className="fd-text-link ml-auto" href="/workers?kind=DISCOVER_PROPERTIES" data-testid="link-queue-property-refresh">
+                Review &amp; queue source refresh <ArrowRight size={12} style={{ verticalAlign: 'middle', marginLeft: 3 }} />
+              </Link>
+            </div>
                 {discoveryState === 'LOADING' && <div role="status" className="fd-empty" data-testid="discovery-pool-loading">Loading persisted property records…</div>}
                 {discoveryState === 'UNAUTHENTICATED' && <div role="alert" className="fd-empty" data-testid="discovery-pool-unauthenticated">Sign in to view property-source records. Cached discovery data is hidden.</div>}
                 {discoveryState === 'FORBIDDEN' && <div role="alert" className="fd-empty" data-testid="discovery-pool-forbidden">Your workspace role cannot view property-source records. Cached discovery data is hidden.</div>}
@@ -576,7 +612,9 @@ export default function Dashboard() {
                 </p>
                 {discoveryData.records.length === 0
                   ? <div className="fd-empty" data-testid="discovery-pool-empty">No persisted property discoveries are available in this page. No synthetic fixtures are substituted.</div>
-                  : <div className="space-y-3">{discoveryData.records.slice(0, 5).map((item) => {
+                  : discoveryRows.length === 0
+                    ? <div className="fd-empty" data-testid="discovery-pool-filtered-empty">No records on this page match the selected status and search.</div>
+                    : <div className="space-y-3">{discoveryRows.slice(0, 5).map((item) => {
                     const origin = discoveryOrigin(item.sourceObservations);
                     const contactState = discoveryContactState(item.status, item.property.contactPaths);
                     const analysis = item.leadId
