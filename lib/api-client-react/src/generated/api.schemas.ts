@@ -1248,6 +1248,7 @@ export interface PropertyContactResearchCase {
   missingRequirements: string[];
   nextAction: string;
   auditHistory: PropertyContactResearchCaseAuditHistoryItem[];
+  candidateRoutes?: PropertyContactPath[];
   synthetic: boolean;
 }
 
@@ -1298,6 +1299,135 @@ export interface PropertyDiscovery {
   firstObservedAt: string;
   lastObservedAt: string;
   contactResearchCase?: PropertyContactResearchCase;
+}
+
+export type PropertyContactRouteCandidateInputChannel = typeof PropertyContactRouteCandidateInputChannel[keyof typeof PropertyContactRouteCandidateInputChannel];
+
+
+export const PropertyContactRouteCandidateInputChannel = {
+  PHONE: 'PHONE',
+  EMAIL: 'EMAIL',
+  WEB: 'WEB',
+  OTHER: 'OTHER',
+} as const;
+
+export type PropertyContactRouteCandidateInputRecipientRole = typeof PropertyContactRouteCandidateInputRecipientRole[keyof typeof PropertyContactRouteCandidateInputRecipientRole];
+
+
+export const PropertyContactRouteCandidateInputRecipientRole = {
+  RECORDED_OWNER: 'RECORDED_OWNER',
+  SELLER_SELF_IDENTIFIED: 'SELLER_SELF_IDENTIFIED',
+  AUTHORIZED_AGENT_CLAIM: 'AUTHORIZED_AGENT_CLAIM',
+  DIRECTORY_CONTACT: 'DIRECTORY_CONTACT',
+  UNKNOWN: 'UNKNOWN',
+} as const;
+
+export type PropertyContactRouteCandidateInputSourceType = typeof PropertyContactRouteCandidateInputSourceType[keyof typeof PropertyContactRouteCandidateInputSourceType];
+
+
+export const PropertyContactRouteCandidateInputSourceType = {
+  PUBLIC_RECORD: 'PUBLIC_RECORD',
+  PUBLIC_PAGE: 'PUBLIC_PAGE',
+  PERMITTED_LISTING: 'PERMITTED_LISTING',
+  SELLER: 'SELLER',
+  ANALYST: 'ANALYST',
+} as const;
+
+export type PropertyContactRouteCandidateInputPermissionStatus = typeof PropertyContactRouteCandidateInputPermissionStatus[keyof typeof PropertyContactRouteCandidateInputPermissionStatus];
+
+
+export const PropertyContactRouteCandidateInputPermissionStatus = {
+  NOT_REVIEWED: 'NOT_REVIEWED',
+  PERMITTED: 'PERMITTED',
+  PROHIBITED: 'PROHIBITED',
+} as const;
+
+export type PropertyContactRouteCandidateInputPermissionBasis = typeof PropertyContactRouteCandidateInputPermissionBasis[keyof typeof PropertyContactRouteCandidateInputPermissionBasis];
+
+
+export const PropertyContactRouteCandidateInputPermissionBasis = {
+  CONSENT: 'CONSENT',
+  PUBLIC_SOURCE_TERMS: 'PUBLIC_SOURCE_TERMS',
+  PUBLIC_DATA_REUSE: 'PUBLIC_DATA_REUSE',
+  OTHER_DOCUMENTED: 'OTHER_DOCUMENTED',
+  UNKNOWN: 'UNKNOWN',
+} as const;
+
+export type PropertyContactRouteCandidateInputIdentityEvidenceStatus = typeof PropertyContactRouteCandidateInputIdentityEvidenceStatus[keyof typeof PropertyContactRouteCandidateInputIdentityEvidenceStatus];
+
+
+export const PropertyContactRouteCandidateInputIdentityEvidenceStatus = {
+  NONE: 'NONE',
+  CLAIMED: 'CLAIMED',
+  SUPPORTING_RECORD: 'SUPPORTING_RECORD',
+} as const;
+
+export type PropertyContactRouteCandidateInputRouteVerificationStatus = typeof PropertyContactRouteCandidateInputRouteVerificationStatus[keyof typeof PropertyContactRouteCandidateInputRouteVerificationStatus];
+
+
+export const PropertyContactRouteCandidateInputRouteVerificationStatus = {
+  UNREVIEWED: 'UNREVIEWED',
+  CONFIRMED: 'CONFIRMED',
+  REJECTED: 'REJECTED',
+} as const;
+
+export interface PropertyContactRouteCandidateInput {
+  channel: PropertyContactRouteCandidateInputChannel;
+  /**
+     * @minLength 3
+     * @maxLength 500
+     */
+  routeValue: string;
+  /**
+     * @minLength 2
+     * @maxLength 200
+     */
+  recipient: string;
+  recipientRole: PropertyContactRouteCandidateInputRecipientRole;
+  /**
+     * @minLength 2
+     * @maxLength 100
+     */
+  sourceId: string;
+  /**
+     * @minLength 2
+     * @maxLength 200
+     */
+  sourceName: string;
+  /**
+     * @minLength 1
+     * @maxLength 200
+     */
+  sourceRecordId: string;
+  sourceUrl: string;
+  sourceType?: PropertyContactRouteCandidateInputSourceType;
+  capturedAt: string;
+  /**
+     * @minimum 0
+     * @maximum 1
+     */
+  confidence: number;
+  permissionStatus: PropertyContactRouteCandidateInputPermissionStatus;
+  permissionBasis: PropertyContactRouteCandidateInputPermissionBasis;
+  /**
+     * @maxLength 1000
+     * @nullable
+     */
+  permissionScope?: string | null;
+  /** @nullable */
+  permissionEvidenceUrl?: string | null;
+  identityEvidenceStatus?: PropertyContactRouteCandidateInputIdentityEvidenceStatus;
+  /**
+     * @maxLength 500
+     * @nullable
+     */
+  identityEvidenceRef?: string | null;
+  routeVerificationStatus: PropertyContactRouteCandidateInputRouteVerificationStatus;
+  /**
+     * @maxLength 1000
+     * @nullable
+     */
+  verificationNote?: string | null;
 }
 
 export type PropertyContactResearchInputStatus = typeof PropertyContactResearchInputStatus[keyof typeof PropertyContactResearchInputStatus];
@@ -1373,6 +1503,7 @@ export interface PropertyContactResearchInput {
      * @maxLength 2000
      */
   note: string;
+  candidateRoute?: PropertyContactRouteCandidateInput | null;
 }
 
 export type PropertyDiscoveryListCounts = {

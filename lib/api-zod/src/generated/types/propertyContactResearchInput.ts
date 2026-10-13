@@ -9,6 +9,7 @@ import type { PropertyContactResearchInputIdentityMatch } from './propertyContac
 import type { PropertyContactResearchInputPermissionBasis } from './propertyContactResearchInputPermissionBasis';
 import type { PropertyContactResearchInputSourceType } from './propertyContactResearchInputSourceType';
 import type { PropertyContactResearchInputStatus } from './propertyContactResearchInputStatus';
+import type { PropertyContactRouteCandidateInput } from './propertyContactRouteCandidateInput';
 
 export interface PropertyContactResearchInput {
   /** @minimum 1 */
@@ -40,4 +41,5 @@ export interface PropertyContactResearchInput {
      * @maxLength 2000
      */
   note: string;
+  candidateRoute?: PropertyContactRouteCandidateInput | null;
 }

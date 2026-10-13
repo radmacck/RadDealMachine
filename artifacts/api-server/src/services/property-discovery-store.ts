@@ -14,7 +14,7 @@ import {
   RecordPublicPropertyDiscoveryResponse, SavePropertyDiscoveryCriteriaBody,
   SavePropertyDiscoveryCriteriaResponse,
 } from "@workspace/api-zod";
-import { SavePropertyContactResearchCaseBody } from "@workspace/api-zod";
+import { SavePropertyContactResearchCaseBody, type PropertyContactRouteCandidateInput } from "@workspace/api-zod";
 import {
   DEFAULT_PROPERTY_QUALIFICATION_CRITERIA, DomainError, PROPERTY_SIGNAL_GROUP_BY_KEY,
   evaluateCurrentBuyerDemand, evaluatePropertyRelevance, extractListingDescriptionIntelligence, validateProvenance,
@@ -22,9 +22,9 @@ import {
   type PropertySignalGroup, type PropertyDiscoveryStatus, type OfferActor,
 } from "@workspace/deal-domain";
 import {
-  rankContactPaths,
+  contactPathKey, rankContactPaths, reconcileContactPaths,
   propertyById,
-  type PropertySourceRefresh,
+  type PropertyContactPath, type PropertySourceRefresh,
 } from "@workspace/property-sources";
 import { audit, createLead, move } from "./deal-store";
 import { allBuyerRecords, queueJob } from "./operations-records";
@@ -57,8 +57,116 @@ type DiscoveryPayload = {
     permissionBasis: "UNKNOWN" | "PUBLIC_SOURCE_TERMS" | "CONSENT" | "OTHER_DOCUMENTED" | "PROHIBITED";
     evidenceReference: string | null; note: string; missingRequirements: string[];
     nextAction: string; auditHistory: Array<{at:string;actor:string;action:string;reason:string}>; synthetic: boolean;
+    candidateRoutes?: PropertyContactPath[];
   };
 };
+
+function routeIsTransferable(path: PropertyContactPath, now: Date) {
+  return path.channel !== "POSTAL" && path.permissionStatus === "PERMITTED" &&
+    path.permissionEvidenceStatus === "SUPPORTS_ALLOWED" &&
+    path.routeVerificationStatus === "CONFIRMED" &&
+    path.recipientRole === "SELLER_SELF_IDENTIFIED" &&
+    path.recipientIdentityEvidenceStatus === "SUPPORTING_RECORD" &&
+    path.classification === "VERIFIED" &&
+    path.freshnessStatus === "CURRENT" && Date.parse(path.freshUntilAt) > now.getTime() &&
+    path.identityConflictStatus !== "MULTIPLE_RECIPIENTS" &&
+    path.identityConflictStatus !== "MULTIPLE_ROLES";
+}
+
+function contactRouteGaps(caseRecord: NonNullable<DiscoveryPayload["contactResearchCase"]>, now: Date) {
+  const routes = reconcileContactPaths(caseRecord.candidateRoutes ?? [], now);
+  const phones = routes.filter(path => path.channel === "PHONE");
+  const gaps: string[] = [];
+  if (!phones.length) gaps.push("No direct phone route candidate is recorded; postal addresses do not enable CALL NEXT.");
+  if (phones.some(path => path.freshnessStatus !== "CURRENT")) gaps.push("A phone route is stale; refresh it from a permitted source.");
+  if (phones.some(path => path.identityConflictStatus === "MULTIPLE_RECIPIENTS" || path.identityConflictStatus === "MULTIPLE_ROLES") ||
+    (phones.filter(path => path.permissionStatus === "PERMITTED" && path.routeVerificationStatus === "CONFIRMED").length > 1)) {
+    gaps.push("Phone routes or recipient identities conflict; resolve the conflict before use.");
+  }
+  if (phones.some(path => path.permissionStatus !== "PERMITTED" || path.permissionEvidenceStatus !== "SUPPORTS_ALLOWED"))
+    gaps.push("Document owner-reviewed permission evidence and permitted scope for the route.");
+  if (phones.some(path => path.routeVerificationStatus !== "CONFIRMED" || path.classification !== "VERIFIED"))
+    gaps.push("Owner must confirm the route with a written verification note.");
+  if (caseRecord.identityMatch !== "SELLER_SELF_IDENTIFIED" ||
+    phones.some(path => path.recipientRole !== "SELLER_SELF_IDENTIFIED" || path.recipientIdentityEvidenceStatus !== "SUPPORTING_RECORD"))
+    gaps.push("Match the route recipient to the seller with supporting identity evidence.");
+  if (phones.some(path => path.confidence < 0.85))
+    gaps.push("Route confidence must be at least 0.85 for owner confirmation.");
+  return [...new Set(gaps)];
+}
+
+function validateCandidateRoute(route: PropertyContactRouteCandidateInput, actor: OfferActor, identityMatch: string, now: Date) {
+  const capturedAt = new Date(route.capturedAt);
+  if (!Number.isFinite(capturedAt.getTime()) || capturedAt > now)
+    throw new DomainError("Route observation time must be valid and cannot be in the future.", 400);
+  if (!route.sourceUrl.startsWith("https://") || (route.permissionEvidenceUrl && !route.permissionEvidenceUrl.startsWith("https://")))
+    throw new DomainError("Route source and permission evidence must use HTTPS.", 400);
+  const value = route.routeValue.trim();
+  if (route.channel === "PHONE") {
+    const digits = value.replace(/\D/g, "");
+    if (!/^[+\d().\s-]+$/.test(value) || digits.length < 10 || digits.length > 15)
+      throw new DomainError("Phone routes must contain 10–15 digits and only standard phone punctuation.", 400);
+  } else if (route.channel === "EMAIL") {
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value))
+      throw new DomainError("Enter a valid email route.", 400);
+  } else if (route.channel === "WEB") {
+    try {
+      const url = new URL(value);
+      if (url.protocol !== "https:") throw new Error();
+    } catch {
+      throw new DomainError("Web contact routes must be valid HTTPS URLs.", 400);
+    }
+  }
+  if (route.permissionStatus === "PERMITTED" &&
+    (actor.role !== "OWNER" || !route.permissionEvidenceUrl || route.permissionBasis === "UNKNOWN" || !route.permissionScope?.trim()))
+    throw new DomainError("Only an owner can mark a route permitted, with HTTPS permission evidence and a documented basis and scope.", 403);
+  if (route.permissionStatus === "PROHIBITED" && actor.role !== "OWNER")
+    throw new DomainError("Only an owner can mark a contact route prohibited.", 403);
+  if (route.routeVerificationStatus !== "UNREVIEWED" &&
+    (actor.role !== "OWNER" || !route.verificationNote?.trim()))
+    throw new DomainError("Route confirmation or rejection requires an owner and a written evidence note.", 403);
+  if (route.routeVerificationStatus === "CONFIRMED" &&
+    (identityMatch !== "SELLER_SELF_IDENTIFIED" || route.recipientRole !== "SELLER_SELF_IDENTIFIED" ||
+      route.identityEvidenceStatus !== "SUPPORTING_RECORD" || !route.identityEvidenceRef?.trim() ||
+      route.permissionStatus !== "PERMITTED" || route.confidence < 0.85))
+    throw new DomainError("Confirming a route requires source-backed seller identity, permitted use, and confidence of at least 0.85.", 400);
+  const freshUntilAt = new Date(capturedAt.getTime() + 30 * 24 * 60 * 60 * 1000);
+  return {
+    id: randomUUID(),
+    channel: route.channel,
+    recipient: route.recipient.trim(),
+    routeValue: value,
+    postalCode: null,
+    classification: route.routeVerificationStatus === "CONFIRMED" ? "VERIFIED" as const : "OBSERVED" as const,
+    confidence: route.confidence,
+    sourceId: route.sourceId,
+    sourceName: route.sourceName.trim(),
+    sourceRecordId: route.sourceRecordId.trim(),
+    sourceUrl: route.sourceUrl,
+    capturedAt: capturedAt.toISOString(),
+    freshUntilAt: freshUntilAt.toISOString(),
+    freshnessStatus: freshUntilAt > now ? "CURRENT" as const : "STALE" as const,
+    permissionStatus: route.permissionStatus,
+    permissionEvidenceStatus: route.permissionStatus === "PERMITTED" ? "SUPPORTS_ALLOWED" as const :
+      route.permissionStatus === "PROHIBITED" ? "BLOCKED" as const : "UNKNOWN" as const,
+    legalBasis: route.permissionBasis,
+    legalBasisScope: route.permissionScope ?? null,
+    legalBasisEvidenceUrl: route.permissionEvidenceUrl ?? null,
+    contactPermissionEvidenceUrl: route.permissionEvidenceUrl ?? null,
+    permissionReviewedAt: route.permissionStatus === "NOT_REVIEWED" ? null : now.toISOString(),
+    sourceType: route.sourceType ?? "ANALYST",
+    recipientRole: route.recipientRole,
+    routeVerificationStatus: route.routeVerificationStatus,
+    routeReviewedAt: route.routeVerificationStatus === "UNREVIEWED" ? null : now.toISOString(),
+    verificationNote: route.verificationNote ?? null,
+    identityStatus: "UNVERIFIED" as const,
+    signingAuthorityStatus: "NOT_ESTABLISHED" as const,
+    recipientIdentityEvidenceStatus: route.identityEvidenceStatus,
+    recipientIdentityEvidenceRef: route.identityEvidenceRef ?? null,
+    epistemicStatus: route.identityEvidenceStatus === "SUPPORTING_RECORD" ? "OBSERVED" as const : "INDICATED" as const,
+    identityConflictStatus: "NONE" as const,
+  } satisfies PropertyContactPath;
+}
 
 const sha = (value: string) => createHash("sha256").update(value).digest("hex");
 const normalAddress = (value: string) => value.toUpperCase().replace(/[^A-Z0-9]/g, "");
@@ -447,6 +555,7 @@ async function toDiscoveryResponse(
     lastObservedAt: iso(row.updatedAt),
     ...(payload.contactResearchCase ? { contactResearchCase: {
       ...payload.contactResearchCase,
+      candidateRoutes: reconcileContactPaths(payload.contactResearchCase.candidateRoutes ?? [], now),
       status: Date.parse(payload.contactResearchCase.observedAt) < now.getTime() - 30 * 24 * 60 * 60 * 1000
         ? "NEEDS_REVIEW" as const : payload.contactResearchCase.status,
       missingRequirements: [...new Set([
@@ -457,20 +566,15 @@ async function toDiscoveryResponse(
           ? ["Document a permitted source/use basis before relying on contact data."] : []),
         ...(payload.contactResearchCase.permissionBasis === "PROHIBITED"
           ? ["This source/use is prohibited; do not use its contact details."] : []),
-        ...(!payload.property.contactPaths.some(path => path.channel === "PHONE" && path.classification === "VERIFIED" &&
-          path.permissionStatus === "PERMITTED" && path.permissionEvidenceStatus === "SUPPORTS_ALLOWED" &&
-          path.freshnessStatus === "CURRENT" && path.routeVerificationStatus === "CONFIRMED")
-          ? ["No current owner-reviewed permitted direct phone route is attached; CALL NEXT remains blocked."] : []),
+        ...contactRouteGaps(payload.contactResearchCase, now),
       ])],
       nextAction: Date.parse(payload.contactResearchCase.observedAt) < now.getTime() - 30 * 24 * 60 * 60 * 1000
         ? "Refresh this contact research from a currently permitted source and review recipient identity; no call is authorized."
         : payload.contactResearchCase.permissionBasis === "PROHIBITED"
           ? "Stop use of this source. Record only contact evidence from a permitted source."
-          : payload.property.contactPaths.some(path => path.channel === "PHONE" && path.classification === "VERIFIED" &&
-            path.permissionStatus === "PERMITTED" && path.permissionEvidenceStatus === "SUPPORTS_ALLOWED" &&
-            path.freshnessStatus === "CURRENT" && path.routeVerificationStatus === "CONFIRMED")
-            ? "Promote only after relevance qualification, then review the carried contact route in the lead Evidence panel; CALL NEXT still requires underwriting."
-            : "Continue lawful public-record research. If promoted after qualification, attach direct-route evidence in the lead Evidence panel for owner review; postal addresses do not clear CALL NEXT.",
+          : contactRouteGaps(payload.contactResearchCase, now).length === 0
+            ? "After human qualification, promote to the existing lead. The verified route will be carried into persisted contact evidence; underwriting and call-readiness gates still apply."
+            : contactRouteGaps(payload.contactResearchCase, now)[0]!,
     } } : {}),
   });
 }
@@ -499,10 +603,21 @@ export async function savePropertyContactResearchCase(
     }
     const payload = parsePayload(current.payload);
     const prior = payload.contactResearchCase;
+    const candidateRoutes = [...(prior?.candidateRoutes ?? [])];
+    if (request.candidateRoute) {
+      const path = validateCandidateRoute(request.candidateRoute, actor, request.identityMatch, now);
+      const duplicate = candidateRoutes.find(existing =>
+        contactPathKey(existing) === contactPathKey(path) &&
+        existing.sourceId === path.sourceId && existing.sourceRecordId === path.sourceRecordId &&
+        existing.capturedAt === path.capturedAt);
+      if (!duplicate) candidateRoutes.push(path);
+      if (candidateRoutes.length > 30) candidateRoutes.splice(0, candidateRoutes.length - 30);
+    }
     const sourceRows = await tx.select({ sourceKey: propertySourceObservationsTable.sourceKey })
       .from(propertySourceObservationsTable)
       .where(eq(propertySourceObservationsTable.discoveryId, current.id));
     const synthetic = /synthetic|fixture|exercise/i.test(request.sourceName) ||
+      /synthetic|fixture|exercise/i.test(request.candidateRoute?.sourceName ?? "") ||
       sourceRows.some(row => /synthetic|fixture|exercise/i.test(row.sourceKey));
     const missingRequirements = [
       ...(request.identityMatch === "RECORDED_OWNER_ONLY" ? ["Recorded ownership does not establish seller identity or signing authority."] : []),
@@ -510,10 +625,13 @@ export async function savePropertyContactResearchCase(
       ...(request.permissionBasis === "UNKNOWN" ? ["Document the lawful basis and source terms before relying on contact data."] : []),
       ...(request.permissionBasis === "PROHIBITED" ? ["This source/use is blocked; do not use or retain a direct route from it."] : []),
       ...(request.evidenceReference ? [] : ["Add a precise record/page/document reference for review."]),
-      ...(!payload.property.contactPaths.some(path => path.channel === "PHONE" && path.classification === "VERIFIED" &&
-        path.permissionStatus === "PERMITTED" && path.permissionEvidenceStatus === "SUPPORTS_ALLOWED" &&
-        path.freshnessStatus === "CURRENT" && path.routeVerificationStatus === "CONFIRMED")
-        ? ["No owner-reviewed permitted direct phone route is attached; CALL NEXT remains blocked."] : []),
+      ...contactRouteGaps({
+        status: request.status, version: 1, confidence: request.confidence, sourceName: request.sourceName,
+        sourceType: request.sourceType, sourceUrl: request.sourceUrl ?? null, observedAt: observedAt.toISOString(),
+        identityMatch: request.identityMatch, permissionBasis: request.permissionBasis,
+        evidenceReference: request.evidenceReference ?? null, note: request.note, missingRequirements: [],
+        nextAction: "", auditHistory: [], synthetic: false, candidateRoutes,
+      }, now),
     ];
     const action = request.permissionBasis === "PROHIBITED"
       ? "Stop use of this source and obtain evidence through a permitted route."
@@ -540,6 +658,7 @@ export async function savePropertyContactResearchCase(
         reason: `${request.status}; source=${request.sourceName}; confidence=${request.confidence}; identity=${request.identityMatch}; permission=${request.permissionBasis}. No direct contact route, lead promotion, call, outreach, or economics change was created.`,
       }].slice(-50),
       synthetic: Boolean(synthetic),
+      candidateRoutes,
     } as const;
     if (prior && isDeepStrictEqual(
       { ...prior, version: undefined, auditHistory: undefined },
@@ -1736,6 +1855,14 @@ export async function promotePropertyDiscovery(
     }
     if (current.status === "DISQUALIFIED") throw new DomainError("A passed property must be explicitly restored before it can be promoted.", 409);
     const payload = parsePayload(current.payload);
+    if (payload.contactResearchCase?.identityMatch === "SELLER_SELF_IDENTIFIED") {
+      const approvedRoutes = reconcileContactPaths(payload.contactResearchCase.candidateRoutes ?? [], now)
+        .filter(path => routeIsTransferable(path, now));
+      payload.property = {
+        ...payload.property,
+        contactPaths: reconcileContactPaths([...payload.property.contactPaths, ...approvedRoutes], now),
+      };
+    }
     const criteria = await getCriteriaFrom(tx, current.marketKey);
     const evaluation = evaluatePropertyRelevance(payload.signals, criteria);
     const missingFacts = factCompletenessBlockers(payload.property);

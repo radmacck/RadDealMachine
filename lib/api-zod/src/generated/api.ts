@@ -13684,6 +13684,17 @@ export const getCommandCenterResponsePropertyDiscoveriesRecordsItemDemandFitEvid
 export const getCommandCenterResponsePropertyDiscoveriesRecordsItemContactResearchCaseConfidenceMin = 0;
 export const getCommandCenterResponsePropertyDiscoveriesRecordsItemContactResearchCaseConfidenceMax = 1;
 
+export const getCommandCenterResponsePropertyDiscoveriesRecordsItemContactResearchCaseCandidateRoutesItemRouteValueMax = 2000;
+
+export const getCommandCenterResponsePropertyDiscoveriesRecordsItemContactResearchCaseCandidateRoutesItemConfidenceMin = 0;
+export const getCommandCenterResponsePropertyDiscoveriesRecordsItemContactResearchCaseCandidateRoutesItemConfidenceMax = 1;
+
+
+export const getCommandCenterResponsePropertyDiscoveriesRecordsItemContactResearchCaseCandidateRoutesItemSupportingObservationsItemConfidenceMin = 0;
+export const getCommandCenterResponsePropertyDiscoveriesRecordsItemContactResearchCaseCandidateRoutesItemSupportingObservationsItemConfidenceMax = 1;
+
+export const getCommandCenterResponsePropertyDiscoveriesRecordsItemContactResearchCaseCandidateRoutesItemRecipientIdentityClaimCountMin = 0;
+
 export const getCommandCenterResponsePropertyDiscoveriesNextCursorMax = 512;
 
 export const getCommandCenterResponsePropertyDiscoveriesUnmatchedSourceObservationsItemPropertyIdRegExp = new RegExp('^\\d{9}$');
@@ -16484,6 +16495,73 @@ export const GetCommandCenterResponse = zod.object({
   "action": zod.string(),
   "reason": zod.string()
 })),
+  "candidateRoutes": zod.array(zod.object({
+  "id": zod.string(),
+  "channel": zod.enum(['POSTAL', 'PHONE', 'EMAIL', 'WEB', 'OTHER']),
+  "recipient": zod.string().nullish(),
+  "routeValue": zod.string().max(getCommandCenterResponsePropertyDiscoveriesRecordsItemContactResearchCaseCandidateRoutesItemRouteValueMax).nullish(),
+  "addressLines": zod.array(zod.string()).optional(),
+  "cityState": zod.string().nullish(),
+  "postalCode": zod.string().nullish(),
+  "classification": zod.enum(['OBSERVED', 'VERIFIED']),
+  "confidence": zod.number().min(getCommandCenterResponsePropertyDiscoveriesRecordsItemContactResearchCaseCandidateRoutesItemConfidenceMin).max(getCommandCenterResponsePropertyDiscoveriesRecordsItemContactResearchCaseCandidateRoutesItemConfidenceMax),
+  "sourceId": zod.string(),
+  "sourceName": zod.string(),
+  "sourceRecordId": zod.string(),
+  "sourceUrl": zod.string().url().optional(),
+  "capturedAt": zod.string().datetime({"offset":true}),
+  "freshUntilAt": zod.string().datetime({"offset":true}),
+  "freshnessStatus": zod.enum(['CURRENT', 'STALE']),
+  "permissionStatus": zod.enum(['NOT_REVIEWED', 'PERMITTED', 'PROHIBITED']),
+  "permissionEvidenceStatus": zod.union([zod.literal('SUPPORTS_ALLOWED'),zod.literal('UNKNOWN'),zod.literal('BLOCKED'),zod.literal(null)]).nullish(),
+  "legalBasis": zod.union([zod.literal('CONSENT'),zod.literal('PUBLIC_SOURCE_TERMS'),zod.literal('PUBLIC_DATA_REUSE'),zod.literal('OTHER_DOCUMENTED'),zod.literal('UNKNOWN'),zod.literal(null)]).nullish(),
+  "legalBasisScope": zod.string().nullish(),
+  "legalBasisEvidenceUrl": zod.string().url().nullish(),
+  "providerId": zod.string().nullish(),
+  "epistemicStatus": zod.union([zod.literal('OBSERVED'),zod.literal('INDICATED'),zod.literal('AI_HYPOTHESIS'),zod.literal(null)]).nullish(),
+  "recipientIdentityEvidenceStatus": zod.union([zod.literal('NONE'),zod.literal('CLAIMED'),zod.literal('SUPPORTING_RECORD'),zod.literal(null)]).nullish(),
+  "recipientIdentityEvidenceRef": zod.string().nullish(),
+  "contactPermissionEvidenceUrl": zod.string().url().nullish(),
+  "permissionReviewedAt": zod.string().datetime({"offset":true}).nullish(),
+  "sourceType": zod.enum(['PUBLIC_RECORD', 'PUBLIC_PAGE', 'PERMITTED_LISTING', 'SELLER', 'ANALYST']).optional(),
+  "recipientRole": zod.enum(['RECORDED_OWNER', 'SELLER_SELF_IDENTIFIED', 'AUTHORIZED_AGENT_CLAIM', 'DIRECTORY_CONTACT', 'UNKNOWN']).optional(),
+  "routeVerificationStatus": zod.enum(['UNREVIEWED', 'CONFIRMED', 'REJECTED']).optional(),
+  "routeReviewedAt": zod.string().datetime({"offset":true}).nullish(),
+  "verificationNote": zod.string().nullish(),
+  "identityStatus": zod.enum(['UNVERIFIED']).optional(),
+  "signingAuthorityStatus": zod.enum(['NOT_ESTABLISHED']).optional(),
+  "supportingObservationCount": zod.number().int().min(1).optional(),
+  "supportingObservations": zod.array(zod.object({
+  "id": zod.string(),
+  "recipient": zod.string().nullable(),
+  "recipientRole": zod.enum(['RECORDED_OWNER', 'SELLER_SELF_IDENTIFIED', 'AUTHORIZED_AGENT_CLAIM', 'DIRECTORY_CONTACT', 'UNKNOWN']),
+  "sourceId": zod.string(),
+  "sourceName": zod.string(),
+  "sourceRecordId": zod.string(),
+  "sourceUrl": zod.string().url().nullable(),
+  "capturedAt": zod.string().datetime({"offset":true}),
+  "freshUntilAt": zod.string().datetime({"offset":true}),
+  "classification": zod.enum(['OBSERVED', 'VERIFIED']),
+  "confidence": zod.number().min(getCommandCenterResponsePropertyDiscoveriesRecordsItemContactResearchCaseCandidateRoutesItemSupportingObservationsItemConfidenceMin).max(getCommandCenterResponsePropertyDiscoveriesRecordsItemContactResearchCaseCandidateRoutesItemSupportingObservationsItemConfidenceMax),
+  "permissionStatus": zod.enum(['NOT_REVIEWED', 'PERMITTED', 'PROHIBITED']),
+  "permissionEvidenceStatus": zod.union([zod.literal('SUPPORTS_ALLOWED'),zod.literal('UNKNOWN'),zod.literal('BLOCKED'),zod.literal(null)]).nullable(),
+  "legalBasis": zod.union([zod.literal('CONSENT'),zod.literal('PUBLIC_SOURCE_TERMS'),zod.literal('PUBLIC_DATA_REUSE'),zod.literal('OTHER_DOCUMENTED'),zod.literal('UNKNOWN'),zod.literal(null)]).nullable(),
+  "legalBasisScope": zod.string().nullable(),
+  "legalBasisEvidenceUrl": zod.string().url().nullable(),
+  "providerId": zod.string().nullable(),
+  "epistemicStatus": zod.union([zod.literal('OBSERVED'),zod.literal('INDICATED'),zod.literal('AI_HYPOTHESIS'),zod.literal(null)]).nullable(),
+  "recipientIdentityEvidenceStatus": zod.union([zod.literal('NONE'),zod.literal('CLAIMED'),zod.literal('SUPPORTING_RECORD'),zod.literal(null)]).nullable(),
+  "recipientIdentityEvidenceRef": zod.string().nullable(),
+  "contactPermissionEvidenceUrl": zod.string().url().nullable(),
+  "permissionReviewedAt": zod.string().datetime({"offset":true}).nullable(),
+  "routeVerificationStatus": zod.enum(['UNREVIEWED', 'CONFIRMED', 'REJECTED']),
+  "routeReviewedAt": zod.string().datetime({"offset":true}).nullable(),
+  "verificationNote": zod.string().nullable()
+})).optional(),
+  "identityConflictStatus": zod.enum(['NONE', 'MULTIPLE_RECIPIENTS', 'MULTIPLE_ROLES']).optional(),
+  "recipientIdentityClaimCount": zod.number().int().min(getCommandCenterResponsePropertyDiscoveriesRecordsItemContactResearchCaseCandidateRoutesItemRecipientIdentityClaimCountMin).optional(),
+  "rankingReasons": zod.array(zod.string()).optional()
+})).optional(),
   "synthetic": zod.boolean()
 }).optional()
 })),
@@ -37461,6 +37539,17 @@ export const listPropertyDiscoveriesResponseRecordsItemDemandFitEvidenceItemRevi
 export const listPropertyDiscoveriesResponseRecordsItemContactResearchCaseConfidenceMin = 0;
 export const listPropertyDiscoveriesResponseRecordsItemContactResearchCaseConfidenceMax = 1;
 
+export const listPropertyDiscoveriesResponseRecordsItemContactResearchCaseCandidateRoutesItemRouteValueMax = 2000;
+
+export const listPropertyDiscoveriesResponseRecordsItemContactResearchCaseCandidateRoutesItemConfidenceMin = 0;
+export const listPropertyDiscoveriesResponseRecordsItemContactResearchCaseCandidateRoutesItemConfidenceMax = 1;
+
+
+export const listPropertyDiscoveriesResponseRecordsItemContactResearchCaseCandidateRoutesItemSupportingObservationsItemConfidenceMin = 0;
+export const listPropertyDiscoveriesResponseRecordsItemContactResearchCaseCandidateRoutesItemSupportingObservationsItemConfidenceMax = 1;
+
+export const listPropertyDiscoveriesResponseRecordsItemContactResearchCaseCandidateRoutesItemRecipientIdentityClaimCountMin = 0;
+
 export const listPropertyDiscoveriesResponseNextCursorMax = 512;
 
 export const listPropertyDiscoveriesResponseUnmatchedSourceObservationsItemPropertyIdRegExp = new RegExp('^\\d{9}$');
@@ -37705,6 +37794,73 @@ export const ListPropertyDiscoveriesResponse = zod.object({
   "action": zod.string(),
   "reason": zod.string()
 })),
+  "candidateRoutes": zod.array(zod.object({
+  "id": zod.string(),
+  "channel": zod.enum(['POSTAL', 'PHONE', 'EMAIL', 'WEB', 'OTHER']),
+  "recipient": zod.string().nullish(),
+  "routeValue": zod.string().max(listPropertyDiscoveriesResponseRecordsItemContactResearchCaseCandidateRoutesItemRouteValueMax).nullish(),
+  "addressLines": zod.array(zod.string()).optional(),
+  "cityState": zod.string().nullish(),
+  "postalCode": zod.string().nullish(),
+  "classification": zod.enum(['OBSERVED', 'VERIFIED']),
+  "confidence": zod.number().min(listPropertyDiscoveriesResponseRecordsItemContactResearchCaseCandidateRoutesItemConfidenceMin).max(listPropertyDiscoveriesResponseRecordsItemContactResearchCaseCandidateRoutesItemConfidenceMax),
+  "sourceId": zod.string(),
+  "sourceName": zod.string(),
+  "sourceRecordId": zod.string(),
+  "sourceUrl": zod.string().url().optional(),
+  "capturedAt": zod.string().datetime({"offset":true}),
+  "freshUntilAt": zod.string().datetime({"offset":true}),
+  "freshnessStatus": zod.enum(['CURRENT', 'STALE']),
+  "permissionStatus": zod.enum(['NOT_REVIEWED', 'PERMITTED', 'PROHIBITED']),
+  "permissionEvidenceStatus": zod.union([zod.literal('SUPPORTS_ALLOWED'),zod.literal('UNKNOWN'),zod.literal('BLOCKED'),zod.literal(null)]).nullish(),
+  "legalBasis": zod.union([zod.literal('CONSENT'),zod.literal('PUBLIC_SOURCE_TERMS'),zod.literal('PUBLIC_DATA_REUSE'),zod.literal('OTHER_DOCUMENTED'),zod.literal('UNKNOWN'),zod.literal(null)]).nullish(),
+  "legalBasisScope": zod.string().nullish(),
+  "legalBasisEvidenceUrl": zod.string().url().nullish(),
+  "providerId": zod.string().nullish(),
+  "epistemicStatus": zod.union([zod.literal('OBSERVED'),zod.literal('INDICATED'),zod.literal('AI_HYPOTHESIS'),zod.literal(null)]).nullish(),
+  "recipientIdentityEvidenceStatus": zod.union([zod.literal('NONE'),zod.literal('CLAIMED'),zod.literal('SUPPORTING_RECORD'),zod.literal(null)]).nullish(),
+  "recipientIdentityEvidenceRef": zod.string().nullish(),
+  "contactPermissionEvidenceUrl": zod.string().url().nullish(),
+  "permissionReviewedAt": zod.string().datetime({"offset":true}).nullish(),
+  "sourceType": zod.enum(['PUBLIC_RECORD', 'PUBLIC_PAGE', 'PERMITTED_LISTING', 'SELLER', 'ANALYST']).optional(),
+  "recipientRole": zod.enum(['RECORDED_OWNER', 'SELLER_SELF_IDENTIFIED', 'AUTHORIZED_AGENT_CLAIM', 'DIRECTORY_CONTACT', 'UNKNOWN']).optional(),
+  "routeVerificationStatus": zod.enum(['UNREVIEWED', 'CONFIRMED', 'REJECTED']).optional(),
+  "routeReviewedAt": zod.string().datetime({"offset":true}).nullish(),
+  "verificationNote": zod.string().nullish(),
+  "identityStatus": zod.enum(['UNVERIFIED']).optional(),
+  "signingAuthorityStatus": zod.enum(['NOT_ESTABLISHED']).optional(),
+  "supportingObservationCount": zod.number().int().min(1).optional(),
+  "supportingObservations": zod.array(zod.object({
+  "id": zod.string(),
+  "recipient": zod.string().nullable(),
+  "recipientRole": zod.enum(['RECORDED_OWNER', 'SELLER_SELF_IDENTIFIED', 'AUTHORIZED_AGENT_CLAIM', 'DIRECTORY_CONTACT', 'UNKNOWN']),
+  "sourceId": zod.string(),
+  "sourceName": zod.string(),
+  "sourceRecordId": zod.string(),
+  "sourceUrl": zod.string().url().nullable(),
+  "capturedAt": zod.string().datetime({"offset":true}),
+  "freshUntilAt": zod.string().datetime({"offset":true}),
+  "classification": zod.enum(['OBSERVED', 'VERIFIED']),
+  "confidence": zod.number().min(listPropertyDiscoveriesResponseRecordsItemContactResearchCaseCandidateRoutesItemSupportingObservationsItemConfidenceMin).max(listPropertyDiscoveriesResponseRecordsItemContactResearchCaseCandidateRoutesItemSupportingObservationsItemConfidenceMax),
+  "permissionStatus": zod.enum(['NOT_REVIEWED', 'PERMITTED', 'PROHIBITED']),
+  "permissionEvidenceStatus": zod.union([zod.literal('SUPPORTS_ALLOWED'),zod.literal('UNKNOWN'),zod.literal('BLOCKED'),zod.literal(null)]).nullable(),
+  "legalBasis": zod.union([zod.literal('CONSENT'),zod.literal('PUBLIC_SOURCE_TERMS'),zod.literal('PUBLIC_DATA_REUSE'),zod.literal('OTHER_DOCUMENTED'),zod.literal('UNKNOWN'),zod.literal(null)]).nullable(),
+  "legalBasisScope": zod.string().nullable(),
+  "legalBasisEvidenceUrl": zod.string().url().nullable(),
+  "providerId": zod.string().nullable(),
+  "epistemicStatus": zod.union([zod.literal('OBSERVED'),zod.literal('INDICATED'),zod.literal('AI_HYPOTHESIS'),zod.literal(null)]).nullable(),
+  "recipientIdentityEvidenceStatus": zod.union([zod.literal('NONE'),zod.literal('CLAIMED'),zod.literal('SUPPORTING_RECORD'),zod.literal(null)]).nullable(),
+  "recipientIdentityEvidenceRef": zod.string().nullable(),
+  "contactPermissionEvidenceUrl": zod.string().url().nullable(),
+  "permissionReviewedAt": zod.string().datetime({"offset":true}).nullable(),
+  "routeVerificationStatus": zod.enum(['UNREVIEWED', 'CONFIRMED', 'REJECTED']),
+  "routeReviewedAt": zod.string().datetime({"offset":true}).nullable(),
+  "verificationNote": zod.string().nullable()
+})).optional(),
+  "identityConflictStatus": zod.enum(['NONE', 'MULTIPLE_RECIPIENTS', 'MULTIPLE_ROLES']).optional(),
+  "recipientIdentityClaimCount": zod.number().int().min(listPropertyDiscoveriesResponseRecordsItemContactResearchCaseCandidateRoutesItemRecipientIdentityClaimCountMin).optional(),
+  "rankingReasons": zod.array(zod.string()).optional()
+})).optional(),
   "synthetic": zod.boolean()
 }).optional()
 })),
@@ -37844,6 +38000,17 @@ export const recordPublicPropertyDiscoveryResponseDemandFitEvidenceItemReviewerC
 
 export const recordPublicPropertyDiscoveryResponseContactResearchCaseConfidenceMin = 0;
 export const recordPublicPropertyDiscoveryResponseContactResearchCaseConfidenceMax = 1;
+
+export const recordPublicPropertyDiscoveryResponseContactResearchCaseCandidateRoutesItemRouteValueMax = 2000;
+
+export const recordPublicPropertyDiscoveryResponseContactResearchCaseCandidateRoutesItemConfidenceMin = 0;
+export const recordPublicPropertyDiscoveryResponseContactResearchCaseCandidateRoutesItemConfidenceMax = 1;
+
+
+export const recordPublicPropertyDiscoveryResponseContactResearchCaseCandidateRoutesItemSupportingObservationsItemConfidenceMin = 0;
+export const recordPublicPropertyDiscoveryResponseContactResearchCaseCandidateRoutesItemSupportingObservationsItemConfidenceMax = 1;
+
+export const recordPublicPropertyDiscoveryResponseContactResearchCaseCandidateRoutesItemRecipientIdentityClaimCountMin = 0;
 
 
 
@@ -38043,6 +38210,73 @@ export const RecordPublicPropertyDiscoveryResponse = zod.object({
   "action": zod.string(),
   "reason": zod.string()
 })),
+  "candidateRoutes": zod.array(zod.object({
+  "id": zod.string(),
+  "channel": zod.enum(['POSTAL', 'PHONE', 'EMAIL', 'WEB', 'OTHER']),
+  "recipient": zod.string().nullish(),
+  "routeValue": zod.string().max(recordPublicPropertyDiscoveryResponseContactResearchCaseCandidateRoutesItemRouteValueMax).nullish(),
+  "addressLines": zod.array(zod.string()).optional(),
+  "cityState": zod.string().nullish(),
+  "postalCode": zod.string().nullish(),
+  "classification": zod.enum(['OBSERVED', 'VERIFIED']),
+  "confidence": zod.number().min(recordPublicPropertyDiscoveryResponseContactResearchCaseCandidateRoutesItemConfidenceMin).max(recordPublicPropertyDiscoveryResponseContactResearchCaseCandidateRoutesItemConfidenceMax),
+  "sourceId": zod.string(),
+  "sourceName": zod.string(),
+  "sourceRecordId": zod.string(),
+  "sourceUrl": zod.string().url().optional(),
+  "capturedAt": zod.string().datetime({"offset":true}),
+  "freshUntilAt": zod.string().datetime({"offset":true}),
+  "freshnessStatus": zod.enum(['CURRENT', 'STALE']),
+  "permissionStatus": zod.enum(['NOT_REVIEWED', 'PERMITTED', 'PROHIBITED']),
+  "permissionEvidenceStatus": zod.union([zod.literal('SUPPORTS_ALLOWED'),zod.literal('UNKNOWN'),zod.literal('BLOCKED'),zod.literal(null)]).nullish(),
+  "legalBasis": zod.union([zod.literal('CONSENT'),zod.literal('PUBLIC_SOURCE_TERMS'),zod.literal('PUBLIC_DATA_REUSE'),zod.literal('OTHER_DOCUMENTED'),zod.literal('UNKNOWN'),zod.literal(null)]).nullish(),
+  "legalBasisScope": zod.string().nullish(),
+  "legalBasisEvidenceUrl": zod.string().url().nullish(),
+  "providerId": zod.string().nullish(),
+  "epistemicStatus": zod.union([zod.literal('OBSERVED'),zod.literal('INDICATED'),zod.literal('AI_HYPOTHESIS'),zod.literal(null)]).nullish(),
+  "recipientIdentityEvidenceStatus": zod.union([zod.literal('NONE'),zod.literal('CLAIMED'),zod.literal('SUPPORTING_RECORD'),zod.literal(null)]).nullish(),
+  "recipientIdentityEvidenceRef": zod.string().nullish(),
+  "contactPermissionEvidenceUrl": zod.string().url().nullish(),
+  "permissionReviewedAt": zod.string().datetime({"offset":true}).nullish(),
+  "sourceType": zod.enum(['PUBLIC_RECORD', 'PUBLIC_PAGE', 'PERMITTED_LISTING', 'SELLER', 'ANALYST']).optional(),
+  "recipientRole": zod.enum(['RECORDED_OWNER', 'SELLER_SELF_IDENTIFIED', 'AUTHORIZED_AGENT_CLAIM', 'DIRECTORY_CONTACT', 'UNKNOWN']).optional(),
+  "routeVerificationStatus": zod.enum(['UNREVIEWED', 'CONFIRMED', 'REJECTED']).optional(),
+  "routeReviewedAt": zod.string().datetime({"offset":true}).nullish(),
+  "verificationNote": zod.string().nullish(),
+  "identityStatus": zod.enum(['UNVERIFIED']).optional(),
+  "signingAuthorityStatus": zod.enum(['NOT_ESTABLISHED']).optional(),
+  "supportingObservationCount": zod.number().int().min(1).optional(),
+  "supportingObservations": zod.array(zod.object({
+  "id": zod.string(),
+  "recipient": zod.string().nullable(),
+  "recipientRole": zod.enum(['RECORDED_OWNER', 'SELLER_SELF_IDENTIFIED', 'AUTHORIZED_AGENT_CLAIM', 'DIRECTORY_CONTACT', 'UNKNOWN']),
+  "sourceId": zod.string(),
+  "sourceName": zod.string(),
+  "sourceRecordId": zod.string(),
+  "sourceUrl": zod.string().url().nullable(),
+  "capturedAt": zod.string().datetime({"offset":true}),
+  "freshUntilAt": zod.string().datetime({"offset":true}),
+  "classification": zod.enum(['OBSERVED', 'VERIFIED']),
+  "confidence": zod.number().min(recordPublicPropertyDiscoveryResponseContactResearchCaseCandidateRoutesItemSupportingObservationsItemConfidenceMin).max(recordPublicPropertyDiscoveryResponseContactResearchCaseCandidateRoutesItemSupportingObservationsItemConfidenceMax),
+  "permissionStatus": zod.enum(['NOT_REVIEWED', 'PERMITTED', 'PROHIBITED']),
+  "permissionEvidenceStatus": zod.union([zod.literal('SUPPORTS_ALLOWED'),zod.literal('UNKNOWN'),zod.literal('BLOCKED'),zod.literal(null)]).nullable(),
+  "legalBasis": zod.union([zod.literal('CONSENT'),zod.literal('PUBLIC_SOURCE_TERMS'),zod.literal('PUBLIC_DATA_REUSE'),zod.literal('OTHER_DOCUMENTED'),zod.literal('UNKNOWN'),zod.literal(null)]).nullable(),
+  "legalBasisScope": zod.string().nullable(),
+  "legalBasisEvidenceUrl": zod.string().url().nullable(),
+  "providerId": zod.string().nullable(),
+  "epistemicStatus": zod.union([zod.literal('OBSERVED'),zod.literal('INDICATED'),zod.literal('AI_HYPOTHESIS'),zod.literal(null)]).nullable(),
+  "recipientIdentityEvidenceStatus": zod.union([zod.literal('NONE'),zod.literal('CLAIMED'),zod.literal('SUPPORTING_RECORD'),zod.literal(null)]).nullable(),
+  "recipientIdentityEvidenceRef": zod.string().nullable(),
+  "contactPermissionEvidenceUrl": zod.string().url().nullable(),
+  "permissionReviewedAt": zod.string().datetime({"offset":true}).nullable(),
+  "routeVerificationStatus": zod.enum(['UNREVIEWED', 'CONFIRMED', 'REJECTED']),
+  "routeReviewedAt": zod.string().datetime({"offset":true}).nullable(),
+  "verificationNote": zod.string().nullable()
+})).optional(),
+  "identityConflictStatus": zod.enum(['NONE', 'MULTIPLE_RECIPIENTS', 'MULTIPLE_ROLES']).optional(),
+  "recipientIdentityClaimCount": zod.number().int().min(recordPublicPropertyDiscoveryResponseContactResearchCaseCandidateRoutesItemRecipientIdentityClaimCountMin).optional(),
+  "rankingReasons": zod.array(zod.string()).optional()
+})).optional(),
   "synthetic": zod.boolean()
 }).optional()
 })
@@ -38269,6 +38503,17 @@ export const addPropertyRelevanceSignalResponseDemandFitEvidenceItemReviewerConf
 export const addPropertyRelevanceSignalResponseContactResearchCaseConfidenceMin = 0;
 export const addPropertyRelevanceSignalResponseContactResearchCaseConfidenceMax = 1;
 
+export const addPropertyRelevanceSignalResponseContactResearchCaseCandidateRoutesItemRouteValueMax = 2000;
+
+export const addPropertyRelevanceSignalResponseContactResearchCaseCandidateRoutesItemConfidenceMin = 0;
+export const addPropertyRelevanceSignalResponseContactResearchCaseCandidateRoutesItemConfidenceMax = 1;
+
+
+export const addPropertyRelevanceSignalResponseContactResearchCaseCandidateRoutesItemSupportingObservationsItemConfidenceMin = 0;
+export const addPropertyRelevanceSignalResponseContactResearchCaseCandidateRoutesItemSupportingObservationsItemConfidenceMax = 1;
+
+export const addPropertyRelevanceSignalResponseContactResearchCaseCandidateRoutesItemRecipientIdentityClaimCountMin = 0;
+
 
 
 export const AddPropertyRelevanceSignalResponse = zod.object({
@@ -38467,6 +38712,73 @@ export const AddPropertyRelevanceSignalResponse = zod.object({
   "action": zod.string(),
   "reason": zod.string()
 })),
+  "candidateRoutes": zod.array(zod.object({
+  "id": zod.string(),
+  "channel": zod.enum(['POSTAL', 'PHONE', 'EMAIL', 'WEB', 'OTHER']),
+  "recipient": zod.string().nullish(),
+  "routeValue": zod.string().max(addPropertyRelevanceSignalResponseContactResearchCaseCandidateRoutesItemRouteValueMax).nullish(),
+  "addressLines": zod.array(zod.string()).optional(),
+  "cityState": zod.string().nullish(),
+  "postalCode": zod.string().nullish(),
+  "classification": zod.enum(['OBSERVED', 'VERIFIED']),
+  "confidence": zod.number().min(addPropertyRelevanceSignalResponseContactResearchCaseCandidateRoutesItemConfidenceMin).max(addPropertyRelevanceSignalResponseContactResearchCaseCandidateRoutesItemConfidenceMax),
+  "sourceId": zod.string(),
+  "sourceName": zod.string(),
+  "sourceRecordId": zod.string(),
+  "sourceUrl": zod.string().url().optional(),
+  "capturedAt": zod.string().datetime({"offset":true}),
+  "freshUntilAt": zod.string().datetime({"offset":true}),
+  "freshnessStatus": zod.enum(['CURRENT', 'STALE']),
+  "permissionStatus": zod.enum(['NOT_REVIEWED', 'PERMITTED', 'PROHIBITED']),
+  "permissionEvidenceStatus": zod.union([zod.literal('SUPPORTS_ALLOWED'),zod.literal('UNKNOWN'),zod.literal('BLOCKED'),zod.literal(null)]).nullish(),
+  "legalBasis": zod.union([zod.literal('CONSENT'),zod.literal('PUBLIC_SOURCE_TERMS'),zod.literal('PUBLIC_DATA_REUSE'),zod.literal('OTHER_DOCUMENTED'),zod.literal('UNKNOWN'),zod.literal(null)]).nullish(),
+  "legalBasisScope": zod.string().nullish(),
+  "legalBasisEvidenceUrl": zod.string().url().nullish(),
+  "providerId": zod.string().nullish(),
+  "epistemicStatus": zod.union([zod.literal('OBSERVED'),zod.literal('INDICATED'),zod.literal('AI_HYPOTHESIS'),zod.literal(null)]).nullish(),
+  "recipientIdentityEvidenceStatus": zod.union([zod.literal('NONE'),zod.literal('CLAIMED'),zod.literal('SUPPORTING_RECORD'),zod.literal(null)]).nullish(),
+  "recipientIdentityEvidenceRef": zod.string().nullish(),
+  "contactPermissionEvidenceUrl": zod.string().url().nullish(),
+  "permissionReviewedAt": zod.string().datetime({"offset":true}).nullish(),
+  "sourceType": zod.enum(['PUBLIC_RECORD', 'PUBLIC_PAGE', 'PERMITTED_LISTING', 'SELLER', 'ANALYST']).optional(),
+  "recipientRole": zod.enum(['RECORDED_OWNER', 'SELLER_SELF_IDENTIFIED', 'AUTHORIZED_AGENT_CLAIM', 'DIRECTORY_CONTACT', 'UNKNOWN']).optional(),
+  "routeVerificationStatus": zod.enum(['UNREVIEWED', 'CONFIRMED', 'REJECTED']).optional(),
+  "routeReviewedAt": zod.string().datetime({"offset":true}).nullish(),
+  "verificationNote": zod.string().nullish(),
+  "identityStatus": zod.enum(['UNVERIFIED']).optional(),
+  "signingAuthorityStatus": zod.enum(['NOT_ESTABLISHED']).optional(),
+  "supportingObservationCount": zod.number().int().min(1).optional(),
+  "supportingObservations": zod.array(zod.object({
+  "id": zod.string(),
+  "recipient": zod.string().nullable(),
+  "recipientRole": zod.enum(['RECORDED_OWNER', 'SELLER_SELF_IDENTIFIED', 'AUTHORIZED_AGENT_CLAIM', 'DIRECTORY_CONTACT', 'UNKNOWN']),
+  "sourceId": zod.string(),
+  "sourceName": zod.string(),
+  "sourceRecordId": zod.string(),
+  "sourceUrl": zod.string().url().nullable(),
+  "capturedAt": zod.string().datetime({"offset":true}),
+  "freshUntilAt": zod.string().datetime({"offset":true}),
+  "classification": zod.enum(['OBSERVED', 'VERIFIED']),
+  "confidence": zod.number().min(addPropertyRelevanceSignalResponseContactResearchCaseCandidateRoutesItemSupportingObservationsItemConfidenceMin).max(addPropertyRelevanceSignalResponseContactResearchCaseCandidateRoutesItemSupportingObservationsItemConfidenceMax),
+  "permissionStatus": zod.enum(['NOT_REVIEWED', 'PERMITTED', 'PROHIBITED']),
+  "permissionEvidenceStatus": zod.union([zod.literal('SUPPORTS_ALLOWED'),zod.literal('UNKNOWN'),zod.literal('BLOCKED'),zod.literal(null)]).nullable(),
+  "legalBasis": zod.union([zod.literal('CONSENT'),zod.literal('PUBLIC_SOURCE_TERMS'),zod.literal('PUBLIC_DATA_REUSE'),zod.literal('OTHER_DOCUMENTED'),zod.literal('UNKNOWN'),zod.literal(null)]).nullable(),
+  "legalBasisScope": zod.string().nullable(),
+  "legalBasisEvidenceUrl": zod.string().url().nullable(),
+  "providerId": zod.string().nullable(),
+  "epistemicStatus": zod.union([zod.literal('OBSERVED'),zod.literal('INDICATED'),zod.literal('AI_HYPOTHESIS'),zod.literal(null)]).nullable(),
+  "recipientIdentityEvidenceStatus": zod.union([zod.literal('NONE'),zod.literal('CLAIMED'),zod.literal('SUPPORTING_RECORD'),zod.literal(null)]).nullable(),
+  "recipientIdentityEvidenceRef": zod.string().nullable(),
+  "contactPermissionEvidenceUrl": zod.string().url().nullable(),
+  "permissionReviewedAt": zod.string().datetime({"offset":true}).nullable(),
+  "routeVerificationStatus": zod.enum(['UNREVIEWED', 'CONFIRMED', 'REJECTED']),
+  "routeReviewedAt": zod.string().datetime({"offset":true}).nullable(),
+  "verificationNote": zod.string().nullable()
+})).optional(),
+  "identityConflictStatus": zod.enum(['NONE', 'MULTIPLE_RECIPIENTS', 'MULTIPLE_ROLES']).optional(),
+  "recipientIdentityClaimCount": zod.number().int().min(addPropertyRelevanceSignalResponseContactResearchCaseCandidateRoutesItemRecipientIdentityClaimCountMin).optional(),
+  "rankingReasons": zod.array(zod.string()).optional()
+})).optional(),
   "synthetic": zod.boolean()
 }).optional()
 })
@@ -38552,6 +38864,17 @@ export const promotePropertyDiscoveryResponseDiscoveryDemandFitEvidenceItemRevie
 
 export const promotePropertyDiscoveryResponseDiscoveryContactResearchCaseConfidenceMin = 0;
 export const promotePropertyDiscoveryResponseDiscoveryContactResearchCaseConfidenceMax = 1;
+
+export const promotePropertyDiscoveryResponseDiscoveryContactResearchCaseCandidateRoutesItemRouteValueMax = 2000;
+
+export const promotePropertyDiscoveryResponseDiscoveryContactResearchCaseCandidateRoutesItemConfidenceMin = 0;
+export const promotePropertyDiscoveryResponseDiscoveryContactResearchCaseCandidateRoutesItemConfidenceMax = 1;
+
+
+export const promotePropertyDiscoveryResponseDiscoveryContactResearchCaseCandidateRoutesItemSupportingObservationsItemConfidenceMin = 0;
+export const promotePropertyDiscoveryResponseDiscoveryContactResearchCaseCandidateRoutesItemSupportingObservationsItemConfidenceMax = 1;
+
+export const promotePropertyDiscoveryResponseDiscoveryContactResearchCaseCandidateRoutesItemRecipientIdentityClaimCountMin = 0;
 
 
 
@@ -38752,6 +39075,73 @@ export const PromotePropertyDiscoveryResponse = zod.object({
   "action": zod.string(),
   "reason": zod.string()
 })),
+  "candidateRoutes": zod.array(zod.object({
+  "id": zod.string(),
+  "channel": zod.enum(['POSTAL', 'PHONE', 'EMAIL', 'WEB', 'OTHER']),
+  "recipient": zod.string().nullish(),
+  "routeValue": zod.string().max(promotePropertyDiscoveryResponseDiscoveryContactResearchCaseCandidateRoutesItemRouteValueMax).nullish(),
+  "addressLines": zod.array(zod.string()).optional(),
+  "cityState": zod.string().nullish(),
+  "postalCode": zod.string().nullish(),
+  "classification": zod.enum(['OBSERVED', 'VERIFIED']),
+  "confidence": zod.number().min(promotePropertyDiscoveryResponseDiscoveryContactResearchCaseCandidateRoutesItemConfidenceMin).max(promotePropertyDiscoveryResponseDiscoveryContactResearchCaseCandidateRoutesItemConfidenceMax),
+  "sourceId": zod.string(),
+  "sourceName": zod.string(),
+  "sourceRecordId": zod.string(),
+  "sourceUrl": zod.string().url().optional(),
+  "capturedAt": zod.string().datetime({"offset":true}),
+  "freshUntilAt": zod.string().datetime({"offset":true}),
+  "freshnessStatus": zod.enum(['CURRENT', 'STALE']),
+  "permissionStatus": zod.enum(['NOT_REVIEWED', 'PERMITTED', 'PROHIBITED']),
+  "permissionEvidenceStatus": zod.union([zod.literal('SUPPORTS_ALLOWED'),zod.literal('UNKNOWN'),zod.literal('BLOCKED'),zod.literal(null)]).nullish(),
+  "legalBasis": zod.union([zod.literal('CONSENT'),zod.literal('PUBLIC_SOURCE_TERMS'),zod.literal('PUBLIC_DATA_REUSE'),zod.literal('OTHER_DOCUMENTED'),zod.literal('UNKNOWN'),zod.literal(null)]).nullish(),
+  "legalBasisScope": zod.string().nullish(),
+  "legalBasisEvidenceUrl": zod.string().url().nullish(),
+  "providerId": zod.string().nullish(),
+  "epistemicStatus": zod.union([zod.literal('OBSERVED'),zod.literal('INDICATED'),zod.literal('AI_HYPOTHESIS'),zod.literal(null)]).nullish(),
+  "recipientIdentityEvidenceStatus": zod.union([zod.literal('NONE'),zod.literal('CLAIMED'),zod.literal('SUPPORTING_RECORD'),zod.literal(null)]).nullish(),
+  "recipientIdentityEvidenceRef": zod.string().nullish(),
+  "contactPermissionEvidenceUrl": zod.string().url().nullish(),
+  "permissionReviewedAt": zod.string().datetime({"offset":true}).nullish(),
+  "sourceType": zod.enum(['PUBLIC_RECORD', 'PUBLIC_PAGE', 'PERMITTED_LISTING', 'SELLER', 'ANALYST']).optional(),
+  "recipientRole": zod.enum(['RECORDED_OWNER', 'SELLER_SELF_IDENTIFIED', 'AUTHORIZED_AGENT_CLAIM', 'DIRECTORY_CONTACT', 'UNKNOWN']).optional(),
+  "routeVerificationStatus": zod.enum(['UNREVIEWED', 'CONFIRMED', 'REJECTED']).optional(),
+  "routeReviewedAt": zod.string().datetime({"offset":true}).nullish(),
+  "verificationNote": zod.string().nullish(),
+  "identityStatus": zod.enum(['UNVERIFIED']).optional(),
+  "signingAuthorityStatus": zod.enum(['NOT_ESTABLISHED']).optional(),
+  "supportingObservationCount": zod.number().int().min(1).optional(),
+  "supportingObservations": zod.array(zod.object({
+  "id": zod.string(),
+  "recipient": zod.string().nullable(),
+  "recipientRole": zod.enum(['RECORDED_OWNER', 'SELLER_SELF_IDENTIFIED', 'AUTHORIZED_AGENT_CLAIM', 'DIRECTORY_CONTACT', 'UNKNOWN']),
+  "sourceId": zod.string(),
+  "sourceName": zod.string(),
+  "sourceRecordId": zod.string(),
+  "sourceUrl": zod.string().url().nullable(),
+  "capturedAt": zod.string().datetime({"offset":true}),
+  "freshUntilAt": zod.string().datetime({"offset":true}),
+  "classification": zod.enum(['OBSERVED', 'VERIFIED']),
+  "confidence": zod.number().min(promotePropertyDiscoveryResponseDiscoveryContactResearchCaseCandidateRoutesItemSupportingObservationsItemConfidenceMin).max(promotePropertyDiscoveryResponseDiscoveryContactResearchCaseCandidateRoutesItemSupportingObservationsItemConfidenceMax),
+  "permissionStatus": zod.enum(['NOT_REVIEWED', 'PERMITTED', 'PROHIBITED']),
+  "permissionEvidenceStatus": zod.union([zod.literal('SUPPORTS_ALLOWED'),zod.literal('UNKNOWN'),zod.literal('BLOCKED'),zod.literal(null)]).nullable(),
+  "legalBasis": zod.union([zod.literal('CONSENT'),zod.literal('PUBLIC_SOURCE_TERMS'),zod.literal('PUBLIC_DATA_REUSE'),zod.literal('OTHER_DOCUMENTED'),zod.literal('UNKNOWN'),zod.literal(null)]).nullable(),
+  "legalBasisScope": zod.string().nullable(),
+  "legalBasisEvidenceUrl": zod.string().url().nullable(),
+  "providerId": zod.string().nullable(),
+  "epistemicStatus": zod.union([zod.literal('OBSERVED'),zod.literal('INDICATED'),zod.literal('AI_HYPOTHESIS'),zod.literal(null)]).nullable(),
+  "recipientIdentityEvidenceStatus": zod.union([zod.literal('NONE'),zod.literal('CLAIMED'),zod.literal('SUPPORTING_RECORD'),zod.literal(null)]).nullable(),
+  "recipientIdentityEvidenceRef": zod.string().nullable(),
+  "contactPermissionEvidenceUrl": zod.string().url().nullable(),
+  "permissionReviewedAt": zod.string().datetime({"offset":true}).nullable(),
+  "routeVerificationStatus": zod.enum(['UNREVIEWED', 'CONFIRMED', 'REJECTED']),
+  "routeReviewedAt": zod.string().datetime({"offset":true}).nullable(),
+  "verificationNote": zod.string().nullable()
+})).optional(),
+  "identityConflictStatus": zod.enum(['NONE', 'MULTIPLE_RECIPIENTS', 'MULTIPLE_ROLES']).optional(),
+  "recipientIdentityClaimCount": zod.number().int().min(promotePropertyDiscoveryResponseDiscoveryContactResearchCaseCandidateRoutesItemRecipientIdentityClaimCountMin).optional(),
+  "rankingReasons": zod.array(zod.string()).optional()
+})).optional(),
   "synthetic": zod.boolean()
 }).optional()
 }),
@@ -38839,6 +39229,17 @@ export const disqualifyPropertyDiscoveryResponseDemandFitEvidenceItemReviewerCon
 
 export const disqualifyPropertyDiscoveryResponseContactResearchCaseConfidenceMin = 0;
 export const disqualifyPropertyDiscoveryResponseContactResearchCaseConfidenceMax = 1;
+
+export const disqualifyPropertyDiscoveryResponseContactResearchCaseCandidateRoutesItemRouteValueMax = 2000;
+
+export const disqualifyPropertyDiscoveryResponseContactResearchCaseCandidateRoutesItemConfidenceMin = 0;
+export const disqualifyPropertyDiscoveryResponseContactResearchCaseCandidateRoutesItemConfidenceMax = 1;
+
+
+export const disqualifyPropertyDiscoveryResponseContactResearchCaseCandidateRoutesItemSupportingObservationsItemConfidenceMin = 0;
+export const disqualifyPropertyDiscoveryResponseContactResearchCaseCandidateRoutesItemSupportingObservationsItemConfidenceMax = 1;
+
+export const disqualifyPropertyDiscoveryResponseContactResearchCaseCandidateRoutesItemRecipientIdentityClaimCountMin = 0;
 
 
 
@@ -39038,6 +39439,73 @@ export const DisqualifyPropertyDiscoveryResponse = zod.object({
   "action": zod.string(),
   "reason": zod.string()
 })),
+  "candidateRoutes": zod.array(zod.object({
+  "id": zod.string(),
+  "channel": zod.enum(['POSTAL', 'PHONE', 'EMAIL', 'WEB', 'OTHER']),
+  "recipient": zod.string().nullish(),
+  "routeValue": zod.string().max(disqualifyPropertyDiscoveryResponseContactResearchCaseCandidateRoutesItemRouteValueMax).nullish(),
+  "addressLines": zod.array(zod.string()).optional(),
+  "cityState": zod.string().nullish(),
+  "postalCode": zod.string().nullish(),
+  "classification": zod.enum(['OBSERVED', 'VERIFIED']),
+  "confidence": zod.number().min(disqualifyPropertyDiscoveryResponseContactResearchCaseCandidateRoutesItemConfidenceMin).max(disqualifyPropertyDiscoveryResponseContactResearchCaseCandidateRoutesItemConfidenceMax),
+  "sourceId": zod.string(),
+  "sourceName": zod.string(),
+  "sourceRecordId": zod.string(),
+  "sourceUrl": zod.string().url().optional(),
+  "capturedAt": zod.string().datetime({"offset":true}),
+  "freshUntilAt": zod.string().datetime({"offset":true}),
+  "freshnessStatus": zod.enum(['CURRENT', 'STALE']),
+  "permissionStatus": zod.enum(['NOT_REVIEWED', 'PERMITTED', 'PROHIBITED']),
+  "permissionEvidenceStatus": zod.union([zod.literal('SUPPORTS_ALLOWED'),zod.literal('UNKNOWN'),zod.literal('BLOCKED'),zod.literal(null)]).nullish(),
+  "legalBasis": zod.union([zod.literal('CONSENT'),zod.literal('PUBLIC_SOURCE_TERMS'),zod.literal('PUBLIC_DATA_REUSE'),zod.literal('OTHER_DOCUMENTED'),zod.literal('UNKNOWN'),zod.literal(null)]).nullish(),
+  "legalBasisScope": zod.string().nullish(),
+  "legalBasisEvidenceUrl": zod.string().url().nullish(),
+  "providerId": zod.string().nullish(),
+  "epistemicStatus": zod.union([zod.literal('OBSERVED'),zod.literal('INDICATED'),zod.literal('AI_HYPOTHESIS'),zod.literal(null)]).nullish(),
+  "recipientIdentityEvidenceStatus": zod.union([zod.literal('NONE'),zod.literal('CLAIMED'),zod.literal('SUPPORTING_RECORD'),zod.literal(null)]).nullish(),
+  "recipientIdentityEvidenceRef": zod.string().nullish(),
+  "contactPermissionEvidenceUrl": zod.string().url().nullish(),
+  "permissionReviewedAt": zod.string().datetime({"offset":true}).nullish(),
+  "sourceType": zod.enum(['PUBLIC_RECORD', 'PUBLIC_PAGE', 'PERMITTED_LISTING', 'SELLER', 'ANALYST']).optional(),
+  "recipientRole": zod.enum(['RECORDED_OWNER', 'SELLER_SELF_IDENTIFIED', 'AUTHORIZED_AGENT_CLAIM', 'DIRECTORY_CONTACT', 'UNKNOWN']).optional(),
+  "routeVerificationStatus": zod.enum(['UNREVIEWED', 'CONFIRMED', 'REJECTED']).optional(),
+  "routeReviewedAt": zod.string().datetime({"offset":true}).nullish(),
+  "verificationNote": zod.string().nullish(),
+  "identityStatus": zod.enum(['UNVERIFIED']).optional(),
+  "signingAuthorityStatus": zod.enum(['NOT_ESTABLISHED']).optional(),
+  "supportingObservationCount": zod.number().int().min(1).optional(),
+  "supportingObservations": zod.array(zod.object({
+  "id": zod.string(),
+  "recipient": zod.string().nullable(),
+  "recipientRole": zod.enum(['RECORDED_OWNER', 'SELLER_SELF_IDENTIFIED', 'AUTHORIZED_AGENT_CLAIM', 'DIRECTORY_CONTACT', 'UNKNOWN']),
+  "sourceId": zod.string(),
+  "sourceName": zod.string(),
+  "sourceRecordId": zod.string(),
+  "sourceUrl": zod.string().url().nullable(),
+  "capturedAt": zod.string().datetime({"offset":true}),
+  "freshUntilAt": zod.string().datetime({"offset":true}),
+  "classification": zod.enum(['OBSERVED', 'VERIFIED']),
+  "confidence": zod.number().min(disqualifyPropertyDiscoveryResponseContactResearchCaseCandidateRoutesItemSupportingObservationsItemConfidenceMin).max(disqualifyPropertyDiscoveryResponseContactResearchCaseCandidateRoutesItemSupportingObservationsItemConfidenceMax),
+  "permissionStatus": zod.enum(['NOT_REVIEWED', 'PERMITTED', 'PROHIBITED']),
+  "permissionEvidenceStatus": zod.union([zod.literal('SUPPORTS_ALLOWED'),zod.literal('UNKNOWN'),zod.literal('BLOCKED'),zod.literal(null)]).nullable(),
+  "legalBasis": zod.union([zod.literal('CONSENT'),zod.literal('PUBLIC_SOURCE_TERMS'),zod.literal('PUBLIC_DATA_REUSE'),zod.literal('OTHER_DOCUMENTED'),zod.literal('UNKNOWN'),zod.literal(null)]).nullable(),
+  "legalBasisScope": zod.string().nullable(),
+  "legalBasisEvidenceUrl": zod.string().url().nullable(),
+  "providerId": zod.string().nullable(),
+  "epistemicStatus": zod.union([zod.literal('OBSERVED'),zod.literal('INDICATED'),zod.literal('AI_HYPOTHESIS'),zod.literal(null)]).nullable(),
+  "recipientIdentityEvidenceStatus": zod.union([zod.literal('NONE'),zod.literal('CLAIMED'),zod.literal('SUPPORTING_RECORD'),zod.literal(null)]).nullable(),
+  "recipientIdentityEvidenceRef": zod.string().nullable(),
+  "contactPermissionEvidenceUrl": zod.string().url().nullable(),
+  "permissionReviewedAt": zod.string().datetime({"offset":true}).nullable(),
+  "routeVerificationStatus": zod.enum(['UNREVIEWED', 'CONFIRMED', 'REJECTED']),
+  "routeReviewedAt": zod.string().datetime({"offset":true}).nullable(),
+  "verificationNote": zod.string().nullable()
+})).optional(),
+  "identityConflictStatus": zod.enum(['NONE', 'MULTIPLE_RECIPIENTS', 'MULTIPLE_ROLES']).optional(),
+  "recipientIdentityClaimCount": zod.number().int().min(disqualifyPropertyDiscoveryResponseContactResearchCaseCandidateRoutesItemRecipientIdentityClaimCountMin).optional(),
+  "rankingReasons": zod.array(zod.string()).optional()
+})).optional(),
   "synthetic": zod.boolean()
 }).optional()
 })
@@ -39062,6 +39530,29 @@ export const savePropertyContactResearchCaseBodyEvidenceReferenceMax = 500;
 export const savePropertyContactResearchCaseBodyNoteMin = 3;
 export const savePropertyContactResearchCaseBodyNoteMax = 2000;
 
+export const savePropertyContactResearchCaseBodyCandidateRouteOneRouteValueMin = 3;
+export const savePropertyContactResearchCaseBodyCandidateRouteOneRouteValueMax = 500;
+
+export const savePropertyContactResearchCaseBodyCandidateRouteOneRecipientMin = 2;
+export const savePropertyContactResearchCaseBodyCandidateRouteOneRecipientMax = 200;
+
+export const savePropertyContactResearchCaseBodyCandidateRouteOneSourceIdMin = 2;
+export const savePropertyContactResearchCaseBodyCandidateRouteOneSourceIdMax = 100;
+
+export const savePropertyContactResearchCaseBodyCandidateRouteOneSourceNameMin = 2;
+export const savePropertyContactResearchCaseBodyCandidateRouteOneSourceNameMax = 200;
+
+export const savePropertyContactResearchCaseBodyCandidateRouteOneSourceRecordIdMax = 200;
+
+export const savePropertyContactResearchCaseBodyCandidateRouteOneConfidenceMin = 0;
+export const savePropertyContactResearchCaseBodyCandidateRouteOneConfidenceMax = 1;
+
+export const savePropertyContactResearchCaseBodyCandidateRouteOnePermissionScopeMax = 1000;
+
+export const savePropertyContactResearchCaseBodyCandidateRouteOneIdentityEvidenceRefMax = 500;
+
+export const savePropertyContactResearchCaseBodyCandidateRouteOneVerificationNoteMax = 1000;
+
 
 
 export const SavePropertyContactResearchCaseBody = zod.object({
@@ -39075,7 +39566,28 @@ export const SavePropertyContactResearchCaseBody = zod.object({
   "identityMatch": zod.enum(['UNKNOWN', 'RECORDED_OWNER_ONLY', 'SELLER_SELF_IDENTIFIED', 'CONFLICTING', 'NOT_MATCHED']),
   "permissionBasis": zod.enum(['UNKNOWN', 'PUBLIC_SOURCE_TERMS', 'CONSENT', 'OTHER_DOCUMENTED', 'PROHIBITED']),
   "evidenceReference": zod.string().max(savePropertyContactResearchCaseBodyEvidenceReferenceMax).nullish(),
-  "note": zod.string().min(savePropertyContactResearchCaseBodyNoteMin).max(savePropertyContactResearchCaseBodyNoteMax)
+  "note": zod.string().min(savePropertyContactResearchCaseBodyNoteMin).max(savePropertyContactResearchCaseBodyNoteMax),
+  "candidateRoute": zod.union([zod.object({
+  "channel": zod.enum(['PHONE', 'EMAIL', 'WEB', 'OTHER']),
+  "routeValue": zod.string().min(savePropertyContactResearchCaseBodyCandidateRouteOneRouteValueMin).max(savePropertyContactResearchCaseBodyCandidateRouteOneRouteValueMax),
+  "recipient": zod.string().min(savePropertyContactResearchCaseBodyCandidateRouteOneRecipientMin).max(savePropertyContactResearchCaseBodyCandidateRouteOneRecipientMax),
+  "recipientRole": zod.enum(['RECORDED_OWNER', 'SELLER_SELF_IDENTIFIED', 'AUTHORIZED_AGENT_CLAIM', 'DIRECTORY_CONTACT', 'UNKNOWN']),
+  "sourceId": zod.string().min(savePropertyContactResearchCaseBodyCandidateRouteOneSourceIdMin).max(savePropertyContactResearchCaseBodyCandidateRouteOneSourceIdMax),
+  "sourceName": zod.string().min(savePropertyContactResearchCaseBodyCandidateRouteOneSourceNameMin).max(savePropertyContactResearchCaseBodyCandidateRouteOneSourceNameMax),
+  "sourceRecordId": zod.string().min(1).max(savePropertyContactResearchCaseBodyCandidateRouteOneSourceRecordIdMax),
+  "sourceUrl": zod.string().url(),
+  "sourceType": zod.enum(['PUBLIC_RECORD', 'PUBLIC_PAGE', 'PERMITTED_LISTING', 'SELLER', 'ANALYST']).optional(),
+  "capturedAt": zod.string().datetime({"offset":true}),
+  "confidence": zod.number().min(savePropertyContactResearchCaseBodyCandidateRouteOneConfidenceMin).max(savePropertyContactResearchCaseBodyCandidateRouteOneConfidenceMax),
+  "permissionStatus": zod.enum(['NOT_REVIEWED', 'PERMITTED', 'PROHIBITED']),
+  "permissionBasis": zod.enum(['CONSENT', 'PUBLIC_SOURCE_TERMS', 'PUBLIC_DATA_REUSE', 'OTHER_DOCUMENTED', 'UNKNOWN']),
+  "permissionScope": zod.string().max(savePropertyContactResearchCaseBodyCandidateRouteOnePermissionScopeMax).nullish(),
+  "permissionEvidenceUrl": zod.string().url().nullish(),
+  "identityEvidenceStatus": zod.enum(['NONE', 'CLAIMED', 'SUPPORTING_RECORD']).optional(),
+  "identityEvidenceRef": zod.string().max(savePropertyContactResearchCaseBodyCandidateRouteOneIdentityEvidenceRefMax).nullish(),
+  "routeVerificationStatus": zod.enum(['UNREVIEWED', 'CONFIRMED', 'REJECTED']),
+  "verificationNote": zod.string().max(savePropertyContactResearchCaseBodyCandidateRouteOneVerificationNoteMax).nullish()
+}),zod.null()]).optional()
 })
 
 export const savePropertyContactResearchCaseResponseScoreMin = 0;
@@ -39143,6 +39655,17 @@ export const savePropertyContactResearchCaseResponseDemandFitEvidenceItemReviewe
 
 export const savePropertyContactResearchCaseResponseContactResearchCaseConfidenceMin = 0;
 export const savePropertyContactResearchCaseResponseContactResearchCaseConfidenceMax = 1;
+
+export const savePropertyContactResearchCaseResponseContactResearchCaseCandidateRoutesItemRouteValueMax = 2000;
+
+export const savePropertyContactResearchCaseResponseContactResearchCaseCandidateRoutesItemConfidenceMin = 0;
+export const savePropertyContactResearchCaseResponseContactResearchCaseCandidateRoutesItemConfidenceMax = 1;
+
+
+export const savePropertyContactResearchCaseResponseContactResearchCaseCandidateRoutesItemSupportingObservationsItemConfidenceMin = 0;
+export const savePropertyContactResearchCaseResponseContactResearchCaseCandidateRoutesItemSupportingObservationsItemConfidenceMax = 1;
+
+export const savePropertyContactResearchCaseResponseContactResearchCaseCandidateRoutesItemRecipientIdentityClaimCountMin = 0;
 
 
 
@@ -39342,6 +39865,73 @@ export const SavePropertyContactResearchCaseResponse = zod.object({
   "action": zod.string(),
   "reason": zod.string()
 })),
+  "candidateRoutes": zod.array(zod.object({
+  "id": zod.string(),
+  "channel": zod.enum(['POSTAL', 'PHONE', 'EMAIL', 'WEB', 'OTHER']),
+  "recipient": zod.string().nullish(),
+  "routeValue": zod.string().max(savePropertyContactResearchCaseResponseContactResearchCaseCandidateRoutesItemRouteValueMax).nullish(),
+  "addressLines": zod.array(zod.string()).optional(),
+  "cityState": zod.string().nullish(),
+  "postalCode": zod.string().nullish(),
+  "classification": zod.enum(['OBSERVED', 'VERIFIED']),
+  "confidence": zod.number().min(savePropertyContactResearchCaseResponseContactResearchCaseCandidateRoutesItemConfidenceMin).max(savePropertyContactResearchCaseResponseContactResearchCaseCandidateRoutesItemConfidenceMax),
+  "sourceId": zod.string(),
+  "sourceName": zod.string(),
+  "sourceRecordId": zod.string(),
+  "sourceUrl": zod.string().url().optional(),
+  "capturedAt": zod.string().datetime({"offset":true}),
+  "freshUntilAt": zod.string().datetime({"offset":true}),
+  "freshnessStatus": zod.enum(['CURRENT', 'STALE']),
+  "permissionStatus": zod.enum(['NOT_REVIEWED', 'PERMITTED', 'PROHIBITED']),
+  "permissionEvidenceStatus": zod.union([zod.literal('SUPPORTS_ALLOWED'),zod.literal('UNKNOWN'),zod.literal('BLOCKED'),zod.literal(null)]).nullish(),
+  "legalBasis": zod.union([zod.literal('CONSENT'),zod.literal('PUBLIC_SOURCE_TERMS'),zod.literal('PUBLIC_DATA_REUSE'),zod.literal('OTHER_DOCUMENTED'),zod.literal('UNKNOWN'),zod.literal(null)]).nullish(),
+  "legalBasisScope": zod.string().nullish(),
+  "legalBasisEvidenceUrl": zod.string().url().nullish(),
+  "providerId": zod.string().nullish(),
+  "epistemicStatus": zod.union([zod.literal('OBSERVED'),zod.literal('INDICATED'),zod.literal('AI_HYPOTHESIS'),zod.literal(null)]).nullish(),
+  "recipientIdentityEvidenceStatus": zod.union([zod.literal('NONE'),zod.literal('CLAIMED'),zod.literal('SUPPORTING_RECORD'),zod.literal(null)]).nullish(),
+  "recipientIdentityEvidenceRef": zod.string().nullish(),
+  "contactPermissionEvidenceUrl": zod.string().url().nullish(),
+  "permissionReviewedAt": zod.string().datetime({"offset":true}).nullish(),
+  "sourceType": zod.enum(['PUBLIC_RECORD', 'PUBLIC_PAGE', 'PERMITTED_LISTING', 'SELLER', 'ANALYST']).optional(),
+  "recipientRole": zod.enum(['RECORDED_OWNER', 'SELLER_SELF_IDENTIFIED', 'AUTHORIZED_AGENT_CLAIM', 'DIRECTORY_CONTACT', 'UNKNOWN']).optional(),
+  "routeVerificationStatus": zod.enum(['UNREVIEWED', 'CONFIRMED', 'REJECTED']).optional(),
+  "routeReviewedAt": zod.string().datetime({"offset":true}).nullish(),
+  "verificationNote": zod.string().nullish(),
+  "identityStatus": zod.enum(['UNVERIFIED']).optional(),
+  "signingAuthorityStatus": zod.enum(['NOT_ESTABLISHED']).optional(),
+  "supportingObservationCount": zod.number().int().min(1).optional(),
+  "supportingObservations": zod.array(zod.object({
+  "id": zod.string(),
+  "recipient": zod.string().nullable(),
+  "recipientRole": zod.enum(['RECORDED_OWNER', 'SELLER_SELF_IDENTIFIED', 'AUTHORIZED_AGENT_CLAIM', 'DIRECTORY_CONTACT', 'UNKNOWN']),
+  "sourceId": zod.string(),
+  "sourceName": zod.string(),
+  "sourceRecordId": zod.string(),
+  "sourceUrl": zod.string().url().nullable(),
+  "capturedAt": zod.string().datetime({"offset":true}),
+  "freshUntilAt": zod.string().datetime({"offset":true}),
+  "classification": zod.enum(['OBSERVED', 'VERIFIED']),
+  "confidence": zod.number().min(savePropertyContactResearchCaseResponseContactResearchCaseCandidateRoutesItemSupportingObservationsItemConfidenceMin).max(savePropertyContactResearchCaseResponseContactResearchCaseCandidateRoutesItemSupportingObservationsItemConfidenceMax),
+  "permissionStatus": zod.enum(['NOT_REVIEWED', 'PERMITTED', 'PROHIBITED']),
+  "permissionEvidenceStatus": zod.union([zod.literal('SUPPORTS_ALLOWED'),zod.literal('UNKNOWN'),zod.literal('BLOCKED'),zod.literal(null)]).nullable(),
+  "legalBasis": zod.union([zod.literal('CONSENT'),zod.literal('PUBLIC_SOURCE_TERMS'),zod.literal('PUBLIC_DATA_REUSE'),zod.literal('OTHER_DOCUMENTED'),zod.literal('UNKNOWN'),zod.literal(null)]).nullable(),
+  "legalBasisScope": zod.string().nullable(),
+  "legalBasisEvidenceUrl": zod.string().url().nullable(),
+  "providerId": zod.string().nullable(),
+  "epistemicStatus": zod.union([zod.literal('OBSERVED'),zod.literal('INDICATED'),zod.literal('AI_HYPOTHESIS'),zod.literal(null)]).nullable(),
+  "recipientIdentityEvidenceStatus": zod.union([zod.literal('NONE'),zod.literal('CLAIMED'),zod.literal('SUPPORTING_RECORD'),zod.literal(null)]).nullable(),
+  "recipientIdentityEvidenceRef": zod.string().nullable(),
+  "contactPermissionEvidenceUrl": zod.string().url().nullable(),
+  "permissionReviewedAt": zod.string().datetime({"offset":true}).nullable(),
+  "routeVerificationStatus": zod.enum(['UNREVIEWED', 'CONFIRMED', 'REJECTED']),
+  "routeReviewedAt": zod.string().datetime({"offset":true}).nullable(),
+  "verificationNote": zod.string().nullable()
+})).optional(),
+  "identityConflictStatus": zod.enum(['NONE', 'MULTIPLE_RECIPIENTS', 'MULTIPLE_ROLES']).optional(),
+  "recipientIdentityClaimCount": zod.number().int().min(savePropertyContactResearchCaseResponseContactResearchCaseCandidateRoutesItemRecipientIdentityClaimCountMin).optional(),
+  "rankingReasons": zod.array(zod.string()).optional()
+})).optional(),
   "synthetic": zod.boolean()
 }).optional()
 })

@@ -5,6 +5,7 @@
  * Radical Deal OS seller intake, underwriting, conversations and approved offers
  * OpenAPI spec version: 1.0.0
  */
+import type { PropertyContactPath } from './propertyContactPath';
 import type { PropertyContactResearchCaseAuditHistoryItem } from './propertyContactResearchCaseAuditHistoryItem';
 import type { PropertyContactResearchCaseIdentityMatch } from './propertyContactResearchCaseIdentityMatch';
 import type { PropertyContactResearchCasePermissionBasis } from './propertyContactResearchCasePermissionBasis';
@@ -33,5 +34,6 @@ export interface PropertyContactResearchCase {
   missingRequirements: string[];
   nextAction: string;
   auditHistory: PropertyContactResearchCaseAuditHistoryItem[];
+  candidateRoutes?: PropertyContactPath[];
   synthetic: boolean;
 }

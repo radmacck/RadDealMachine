@@ -38,8 +38,37 @@ function ContactResearchCaseEditor({
   const [permission, setPermission] = useState<PropertyContactResearchInput['permissionBasis']>('UNKNOWN');
   const [status, setStatus] = useState<PropertyContactResearchInput['status']>('OPEN');
   const [confidence, setConfidence] = useState('0.5');
+  const [routeChannel, setRouteChannel] = useState<'PHONE'|'EMAIL'|'WEB'|'OTHER'>('PHONE');
+  const [routeValue, setRouteValue] = useState('');
+  const [recipient, setRecipient] = useState('');
+  const [recipientRole, setRecipientRole] = useState<'RECORDED_OWNER'|'SELLER_SELF_IDENTIFIED'|'AUTHORIZED_AGENT_CLAIM'|'DIRECTORY_CONTACT'|'UNKNOWN'>('UNKNOWN');
+  const [routeSourceId, setRouteSourceId] = useState('');
+  const [routeSourceName, setRouteSourceName] = useState('');
+  const [routeRecordId, setRouteRecordId] = useState('');
+  const [routeSourceUrl, setRouteSourceUrl] = useState('');
+  const [routeObservedAt, setRouteObservedAt] = useState(new Date(Date.now() - 60_000).toISOString().slice(0, 16));
+  const [routeConfidence, setRouteConfidence] = useState('0.7');
+  const [routePermission, setRoutePermission] = useState<'NOT_REVIEWED'|'PERMITTED'|'PROHIBITED'>('NOT_REVIEWED');
+  const [routeBasis, setRouteBasis] = useState<'CONSENT'|'PUBLIC_SOURCE_TERMS'|'PUBLIC_DATA_REUSE'|'OTHER_DOCUMENTED'|'UNKNOWN'>('UNKNOWN');
+  const [permissionScope, setPermissionScope] = useState('');
+  const [permissionEvidenceUrl, setPermissionEvidenceUrl] = useState('');
+  const [identityEvidenceRef, setIdentityEvidenceRef] = useState('');
+  const [routeVerification, setRouteVerification] = useState<'UNREVIEWED'|'CONFIRMED'|'REJECTED'>('UNREVIEWED');
+  const [verificationNote, setVerificationNote] = useState('');
+  const validRouteObservedAt = Number.isFinite(new Date(routeObservedAt).getTime());
+  const candidateRoute = routeValue.trim() && validRouteObservedAt ? {
+    channel: routeChannel, routeValue: routeValue.trim(), recipient: recipient.trim(), recipientRole,
+    sourceId: routeSourceId.trim(), sourceName: routeSourceName.trim(), sourceRecordId: routeRecordId.trim(),
+    sourceUrl: routeSourceUrl.trim(), sourceType: 'ANALYST' as const,
+    capturedAt: new Date(routeObservedAt).toISOString(), confidence: Number(routeConfidence),
+    permissionStatus: routePermission, permissionBasis: routeBasis, permissionScope: permissionScope.trim() || null,
+    permissionEvidenceUrl: permissionEvidenceUrl.trim() || null,
+    identityEvidenceStatus: identityEvidenceRef.trim() ? 'SUPPORTING_RECORD' as const : 'NONE' as const,
+    identityEvidenceRef: identityEvidenceRef.trim() || null,
+    routeVerificationStatus: routeVerification, verificationNote: verificationNote.trim() || null,
+  } : undefined;
   return <div className="mt-3 space-y-2 border-t pt-3" data-testid="form-contact-research-case">
-    <p className="text-xs text-muted-foreground">Record research process/evidence only. Do not paste a phone/email here. Once this discovery is legitimately qualified and promoted, add any actual direct route in the lead’s Contact Evidence panel. This case cannot clear CALL NEXT.</p>
+    <p className="text-xs text-muted-foreground">Record the source-backed route candidate here. Only an owner-confirmed, permitted, current route matched to a self-identified seller can transfer on human promotion. Postal routes never clear CALL NEXT.</p>
     <div className="grid gap-2 sm:grid-cols-2">
       <label className="grid gap-1 text-xs">Source name<Input value={name} onChange={e => setName(e.target.value)} /></label>
       <label className="grid gap-1 text-xs">Source reference URL<Input value={url} onChange={e => setUrl(e.target.value)} placeholder="https://…" /></label>
@@ -55,11 +84,33 @@ function ContactResearchCaseEditor({
       <label className="grid gap-1 text-xs">Confidence (0–1)<Input type="number" min="0" max="1" step="0.05" value={confidence} onChange={e=>setConfidence(e.target.value)} /></label>
     </div>
     <label className="grid gap-1 text-xs">What was checked / what did the evidence actually say?<textarea className="min-h-16 rounded border bg-background p-2 text-sm" value={note} onChange={e=>setNote(e.target.value)} maxLength={2000} /></label>
-    <Button type="button" variant="outline" disabled={pending || name.trim().length < 2 || note.trim().length < 3 || (url.trim() !== '' && !url.trim().startsWith('https://'))} onClick={()=>onSave({
+    <details className="rounded border p-3">
+      <summary className="cursor-pointer text-xs font-medium">Add candidate direct route (optional)</summary>
+      <div className="mt-2 grid gap-2 sm:grid-cols-2">
+        <label className="grid gap-1 text-xs">Channel<select className="h-9 rounded border bg-background px-2 text-sm" value={routeChannel} onChange={e=>setRouteChannel(e.target.value as typeof routeChannel)}>{(['PHONE','EMAIL','WEB','OTHER'] as const).map(x=><option key={x}>{x}</option>)}</select></label>
+        <label className="grid gap-1 text-xs">Route value<Input value={routeValue} onChange={e=>setRouteValue(e.target.value)} placeholder="Phone, email or HTTPS contact URL" /></label>
+        <label className="grid gap-1 text-xs">Named recipient<Input value={recipient} onChange={e=>setRecipient(e.target.value)} /></label>
+        <label className="grid gap-1 text-xs">Recipient role<select className="h-9 rounded border bg-background px-2 text-sm" value={recipientRole} onChange={e=>setRecipientRole(e.target.value as typeof recipientRole)}>{(['RECORDED_OWNER','SELLER_SELF_IDENTIFIED','AUTHORIZED_AGENT_CLAIM','DIRECTORY_CONTACT','UNKNOWN'] as const).map(x=><option key={x}>{x}</option>)}</select></label>
+        <label className="grid gap-1 text-xs">Source ID<Input value={routeSourceId} onChange={e=>setRouteSourceId(e.target.value)} /></label>
+        <label className="grid gap-1 text-xs">Source name<Input value={routeSourceName} onChange={e=>setRouteSourceName(e.target.value)} /></label>
+        <label className="grid gap-1 text-xs">Source record ID<Input value={routeRecordId} onChange={e=>setRouteRecordId(e.target.value)} /></label>
+        <label className="grid gap-1 text-xs">Source URL<Input value={routeSourceUrl} onChange={e=>setRouteSourceUrl(e.target.value)} placeholder="https://…" /></label>
+        <label className="grid gap-1 text-xs">Observed at<Input type="datetime-local" value={routeObservedAt} onChange={e=>setRouteObservedAt(e.target.value)} /></label>
+        <label className="grid gap-1 text-xs">Route confidence (0–1)<Input type="number" min="0" max="1" step="0.05" value={routeConfidence} onChange={e=>setRouteConfidence(e.target.value)} /></label>
+        <label className="grid gap-1 text-xs">Permission status<select className="h-9 rounded border bg-background px-2 text-sm" value={routePermission} onChange={e=>setRoutePermission(e.target.value as typeof routePermission)}>{(['NOT_REVIEWED','PERMITTED','PROHIBITED'] as const).map(x=><option key={x}>{x}</option>)}</select></label>
+        <label className="grid gap-1 text-xs">Permission basis<select className="h-9 rounded border bg-background px-2 text-sm" value={routeBasis} onChange={e=>setRouteBasis(e.target.value as typeof routeBasis)}>{(['UNKNOWN','CONSENT','PUBLIC_SOURCE_TERMS','PUBLIC_DATA_REUSE','OTHER_DOCUMENTED'] as const).map(x=><option key={x}>{x}</option>)}</select></label>
+        <label className="grid gap-1 text-xs">Permission scope<Input value={permissionScope} onChange={e=>setPermissionScope(e.target.value)} /></label>
+        <label className="grid gap-1 text-xs">Permission evidence URL<Input value={permissionEvidenceUrl} onChange={e=>setPermissionEvidenceUrl(e.target.value)} placeholder="https://…" /></label>
+        <label className="grid gap-1 text-xs">Seller identity evidence reference<Input value={identityEvidenceRef} onChange={e=>setIdentityEvidenceRef(e.target.value)} /></label>
+        <label className="grid gap-1 text-xs">Verification<select className="h-9 rounded border bg-background px-2 text-sm" value={routeVerification} onChange={e=>setRouteVerification(e.target.value as typeof routeVerification)}>{(['UNREVIEWED','CONFIRMED','REJECTED'] as const).map(x=><option key={x}>{x}</option>)}</select></label>
+        <label className="grid gap-1 text-xs sm:col-span-2">Owner verification note<textarea className="min-h-12 rounded border bg-background p-2 text-sm" value={verificationNote} onChange={e=>setVerificationNote(e.target.value)} /></label>
+      </div>
+    </details>
+    <Button type="button" variant="outline" disabled={pending || name.trim().length < 2 || note.trim().length < 3 || (url.trim() !== '' && !url.trim().startsWith('https://')) || (!!routeValue.trim() && (!recipient.trim() || !routeSourceId.trim() || !routeSourceName.trim() || !routeRecordId.trim() || !routeSourceUrl.trim().startsWith('https://')))} onClick={()=>onSave({
       version, status, confidence: Number(confidence), sourceName: name.trim(),
       sourceType: url.trim() ? 'PUBLIC_RECORD' : 'OTHER', sourceUrl: url.trim() || null,
       observedAt: new Date().toISOString(), identityMatch: identity, permissionBasis: permission,
-      evidenceReference: null, note: note.trim(),
+      evidenceReference: null, note: note.trim(), candidateRoute,
     })}>{pending ? 'Saving case…' : 'Save contact research case'}</Button>
   </div>;
 }
@@ -549,7 +600,10 @@ export default function Sources() {
                           <p><b>Observed:</b> {item.contactResearchCase.observedAt} · confidence {item.contactResearchCase.confidence.toFixed(2)}</p>
                           <p><b>Next:</b> {item.contactResearchCase.nextAction}</p>
                           <p><b>Missing:</b> {item.contactResearchCase.missingRequirements.join(' ') || 'No case-level gaps recorded.'}</p>
-                          <p><b>History:</b> {item.contactResearchCase.auditHistory.length} saved event(s).</p>
+                           <p><b>History:</b> {item.contactResearchCase.auditHistory.length} saved event(s).</p>
+                           {(item.contactResearchCase.candidateRoutes ?? []).map((path) => <p key={path.id} className="border-t pt-1">
+                             <b>{path.channel}:</b> {path.routeValue ?? 'route unavailable'} · {path.recipientRole ?? 'role unknown'} · {path.permissionStatus} · {path.routeVerificationStatus ?? 'UNREVIEWED'} · {path.freshnessStatus} through {new Date(path.freshUntilAt).toLocaleDateString()} · {path.sourceName} / {path.sourceRecordId}
+                           </p>)}
                         </div> : <p className="mt-2 text-xs text-muted-foreground">No case is on file. Recording research does not create a lead or make the property callable.</p>}
                         <ContactResearchCaseEditor
                           version={item.version}
@@ -557,7 +611,7 @@ export default function Sources() {
                           sourceUrl={item.sourceObservations[0]?.sourceUrl ?? null}
                           pending={saveContactResearch.isPending}
                           onSave={(data) => saveContactResearch.mutate({ id: item.id, data }, {
-                            onSuccess: () => { invalidateDiscoveries(); toast({ title: 'Contact research saved', description: 'The discovery remains non-callable; any direct route must be separately reviewed on a promoted lead.' }); },
+                            onSuccess: () => { invalidateDiscoveries(); toast({ title: 'Contact research saved', description: 'Route candidates transfer only after human promotion and only when owner verification, current freshness, permitted use, and seller identity evidence pass.' }); },
                           })}
                         />
                         {saveContactResearch.isError && <ErrorNotice error={saveContactResearch.error} />}
