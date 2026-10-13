@@ -7,7 +7,7 @@ import {
 } from 'lucide-react';
 import {
   getGetCommandCenterQueryKey, getGetTransactionReadinessQueryKey, getListPropertyDiscoveriesQueryKey, useGetCommandCenter,
-  useGetTransactionReadiness, useListPropertyDiscoveries, type CommandAction,
+  useGetTransactionReadiness, useListPropertyDiscoveries, type CommandAction, type ListPropertyDiscoveriesParams, type PropertyDiscoveryStatus,
 } from '@workspace/api-client-react';
 import { StageBadge } from '@/components/stage-badge';
 import { useWorkspaceSearch } from '@/components/workspace-search';
@@ -60,16 +60,23 @@ const AUTOMATION_STATE_TONE: Record<string, string> = {
 export default function Dashboard() {
   const q = useGetCommandCenter({ query: { queryKey: getGetCommandCenterQueryKey(), refetchInterval: 15000 } });
   const transactionReadiness = useGetTransactionReadiness({ query: { queryKey: getGetTransactionReadinessQueryKey(), refetchInterval: 30000 } });
-  const discoveryParams = { marketKey: 'PHILADELPHIA_PA', limit: 25 };
-  const discoveryPool = useListPropertyDiscoveries(discoveryParams, {
-    query: { queryKey: getListPropertyDiscoveriesQueryKey(discoveryParams), refetchInterval: 30000, staleTime: 15000 },
-  });
+  const [discoveryCursor, setDiscoveryCursor] = useState<string | undefined>();
+  const [discoveryPageHistory, setDiscoveryPageHistory] = useState<Array<string | undefined>>([]);
   const [showAllActions, setShowAllActions] = useState(false);
   const [showAllTransactionExceptions, setShowAllTransactionExceptions] = useState(false);
-  const [discoveryStatusFilter, setDiscoveryStatusFilter] = useState("ALL");
+  const [discoveryStatusFilter, setDiscoveryStatusFilter] = useState<PropertyDiscoveryStatus | "ALL">("ALL");
   const [discoverySort, setDiscoverySort] = useState<"RELEVANCE" | "FRESHEST" | "ADDRESS">("RELEVANCE");
   const [discoverySearch, setDiscoverySearch] = useState("");
   const { open: searchOpen, query: searchQuery, setQuery: setSearchQuery } = useWorkspaceSearch();
+  const discoveryParams: ListPropertyDiscoveriesParams = {
+    marketKey: 'PHILADELPHIA_PA',
+    limit: 25,
+    ...(discoveryStatusFilter !== 'ALL' ? { status: discoveryStatusFilter as NonNullable<ListPropertyDiscoveriesParams['status']> } : {}),
+    ...(discoveryCursor ? { cursor: discoveryCursor } : {}),
+  };
+  const discoveryPool = useListPropertyDiscoveries(discoveryParams, {
+    query: { queryKey: getListPropertyDiscoveriesQueryKey(discoveryParams), refetchInterval: 30000, staleTime: 15000 },
+  });
   const now = new Date();
   const workspaceState = classifyApiViewState(q, isEmptyCommandCenter);
   const transactionState = classifyApiViewState(transactionReadiness);
@@ -86,6 +93,21 @@ export default function Dashboard() {
   const discoveryRows = filterAndSortDiscoveryPreview(
     discoveryData?.records ?? [], discoveryStatusFilter, discoverySearch, discoverySort,
   );
+  const changeDiscoveryStatus = (value: PropertyDiscoveryStatus | "ALL") => {
+    setDiscoveryStatusFilter(value);
+    setDiscoveryCursor(undefined);
+    setDiscoveryPageHistory([]);
+  };
+  const nextDiscoveryPage = () => {
+    if (!discoveryData?.nextCursor) return;
+    setDiscoveryPageHistory((history) => [...history, discoveryCursor]);
+    setDiscoveryCursor(discoveryData.nextCursor);
+  };
+  const previousDiscoveryPage = () => {
+    if (!discoveryPageHistory.length) return;
+    setDiscoveryCursor(discoveryPageHistory.at(-1));
+    setDiscoveryPageHistory((history) => history.slice(0, -1));
+  };
   const actions = d ? [...d.actions].filter((item) => matchesSearch(item.title, item.reason, LABEL[item.category])).sort((a, b) => b.priority - a.priority) : [];
   const primaryAction = actions[0];
   const secondaryActions = showAllActions ? actions.slice(1) : actions.slice(1, 3);
@@ -147,7 +169,11 @@ export default function Dashboard() {
           <p className="fd-subtitle">Seller acquisition, buyer demand, and the deal that connects them. Start with the next action; the system keeps the workstreams distinct.</p>
         </div>
         <div className="fd-head-buttons">
-            <button className="fd-button" type="button" onClick={() => void Promise.allSettled([q.refetch(), transactionReadiness.refetch(), discoveryPool.refetch()])} disabled={refreshing || discoveryPool.isFetching} aria-busy={refreshing || discoveryPool.isFetching}>
+          <button className="fd-button" type="button" onClick={() => {
+            setDiscoveryCursor(undefined);
+            setDiscoveryPageHistory([]);
+            void Promise.allSettled([q.refetch(), transactionReadiness.refetch(), discoveryPool.refetch()]);
+          }} disabled={refreshing || discoveryPool.isFetching} aria-busy={refreshing || discoveryPool.isFetching}>
             <RefreshCw size={14} className={refreshing ? 'animate-spin' : ''} />{refreshing ? 'Refreshing views' : 'Refresh views'}
           </button>
           <Link className="fd-button" href="/leads" data-testid="link-add-lead"><Plus size={15} />Manual seller intake</Link>
@@ -577,7 +603,7 @@ export default function Dashboard() {
               </label>
               <label className="text-xs">Status
                 <select aria-label="Filter property discoveries by status" className="ml-2 rounded border bg-background px-2 py-1 text-sm"
-                  value={discoveryStatusFilter} onChange={(event) => setDiscoveryStatusFilter(event.target.value)}>
+                  value={discoveryStatusFilter} onChange={(event) => changeDiscoveryStatus(event.target.value as PropertyDiscoveryStatus | "ALL")}>
                   <option value="ALL">All statuses</option>
                   <option value="DISCOVERED_PROPERTY">Discovered</option>
                   <option value="RELEVANT_CANDIDATE">Relevant candidate</option>
@@ -594,11 +620,18 @@ export default function Dashboard() {
                   <option value="ADDRESS">Address A–Z</option>
                 </select>
               </label>
-              <span className="text-xs text-muted-foreground">{discoveryRows.length} shown from at most {discoveryData?.records.length ?? 0} loaded records. Open the full pool for pagination.</span>
+              <span className="text-xs text-muted-foreground">{discoveryRows.length} shown on page {discoveryPageHistory.length + 1} · {discoveryData?.counts.DISCOVERED_PROPERTY ?? 0} raw · {discoveryData?.counts.RELEVANT_CANDIDATE ?? 0} candidates · {discoveryData?.counts.QUALIFIED_LEAD ?? 0} qualified.</span>
               <Link className="fd-text-link ml-auto" href="/workers?kind=DISCOVER_PROPERTIES" data-testid="link-queue-property-refresh">
                 Review &amp; queue source refresh <ArrowRight size={12} style={{ verticalAlign: 'middle', marginLeft: 3 }} />
               </Link>
             </div>
+            {discoveryData && (
+              <nav className="mb-3 flex items-center justify-between rounded border bg-muted/20 px-3 py-2" aria-label="Property discovery pages" data-testid="dashboard-discovery-pagination">
+                <button type="button" className="fd-button" disabled={!discoveryPageHistory.length || discoveryPool.isFetching} onClick={previousDiscoveryPage}>Previous</button>
+                <span className="text-xs text-muted-foreground">Page {discoveryPageHistory.length + 1} · {discoveryData.records.length} persisted records · {discoveryData.hasMore ? 'more available' : 'latest page'}</span>
+                <button type="button" className="fd-button" disabled={!discoveryData.hasMore || discoveryPool.isFetching} onClick={nextDiscoveryPage}>Next</button>
+              </nav>
+            )}
                 {discoveryState === 'LOADING' && <div role="status" className="fd-empty" data-testid="discovery-pool-loading">Loading persisted property records…</div>}
                 {discoveryState === 'UNAUTHENTICATED' && <div role="alert" className="fd-empty" data-testid="discovery-pool-unauthenticated">Sign in to view property-source records. Cached discovery data is hidden.</div>}
                 {discoveryState === 'FORBIDDEN' && <div role="alert" className="fd-empty" data-testid="discovery-pool-forbidden">Your workspace role cannot view property-source records. Cached discovery data is hidden.</div>}

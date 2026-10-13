@@ -381,3 +381,36 @@ The public dataset/catalog and documented query endpoint were accessed without a
 **Next blocker:** obtain a legitimate owner browser session for signed-in verification; after that, exercise the existing terms-reviewed worker route through the UI and confirm its persisted run result. The property feed remains live but does not provide a permitted direct seller contact route.
 
 **Turn state:** stopped after the coherent UI delivery and checks; no background Agent task is running. The separately queued follow-ups remain subject to task-feed concurrency and have not been executed by this turn.
+
+## Dashboard discovery pagination connected to persisted qualification pool — 2026-10-13
+
+**Status: implemented and typechecked/built; signed-in UI pagination remains unverified. This does not make P10 or the live end-to-end seller workflow GREEN.**
+
+- The authenticated dashboard’s Philadelphia discovery query now carries its selected qualification status and stable API cursor, with bounded pages of 25. Previous/next controls traverse the saved discovery pool; changing status or refreshing resets to the first page. Counts remain server-provided, while search and ranking sort operate on the currently loaded page. The existing Sources page remains the full evidence/review surface.
+- Kept qualification gates, source provenance, stale/error/401/403 UI behavior, direct-contact fail-closed behavior, and existing persisted call-note invalidation unchanged. No fabricated analysis, contacts, seller claims, buyers, outreach, or offers were introduced.
+- API property-source exercise passed against permitted public Philadelphia data in its isolated schema: **594 unique persisted public discoveries; 0 raw discoveries promoted to active leads; 165 unmatched observations; 24 pages at 25 properties/page**. Live feeds reported OPA 594, L&I violations 96, unsafe 87, vacancy 87, permits 90, demolitions 104, sheriff deed 730 observations (651 source event records); cross-source deduplication retained observations. Direct contact routes remained unavailable (0 phone/email/web). The source exercise's 110 synthetic pagination fixtures remained synthetic and separate.
+- Persisted synthetic acquisition-queue exercise passed: current direct-route CALL NEXT, postal/no-route/stale/conflict blocks, missing-underwriting block, audited call start/result, material seller evidence invalidation, and non-material note preserving analysis. Persisted command-center exercise passed for zero-data state, unavailable providers/templates, worker states, and authorization boundaries. These are synthetic exercises, not live seller workflow proof.
+
+**Checks:** web and API typechecks passed. `test:command-center` passed **12/12**; auth tests passed **7/7**; property-discovery ranking tests passed **2/2**. API build and web build passed; web build retains sourcemap and >500 kB bundle warnings. The first web typecheck during pagination wiring failed on declaration order and generated status typing; both were corrected, and the final web typecheck passed.
+
+**Browser boundary:** signed-in owner session was unavailable. No authentication bypass was attempted; therefore dashboard pagination, source-refresh worker handoff, and call-note reload were not browser-exercised. No source job was queued.
+
+**Next blocker:** legitimate signed-in owner browser verification of the command-center-to-source-review flow; real direct seller contact and current approved buyer evidence remain unavailable dependencies for a live CALL NEXT-to-disposition transaction.
+
+**Turn state:** implementation/checks completed; no background Agent task is running.
+
+## Dashboard cursor traversal for the persisted acquisition pool — 2026-10-13
+
+**Status: code and API pagination behavior verified; authenticated browser interaction remains unverified.**
+
+- The command-center discovery panel now requests server-side qualification status and bounded cursor pages (25 records), with previous/next navigation, page counts, and reset-to-first-page behavior when the status changes or the operator refreshes. Search/sort apply to the loaded page; the full evidence and promotion workflow remains in Sources. No second discovery store or lead path was introduced.
+- Fixed the dashboard request typing/order after the first typecheck identified state used before declaration and a mismatch between discovery status types. Final web/API typechecks passed.
+- `test:command-center` passed **12/12** (API route behavior, UI state distinctions, live/synthetic provenance labels, fail-closed contact readiness); `test:auth` passed **7/7**; `test:property-discovery-ranking` passed **2/2**.
+- `exercise:property-source` passed with live permitted public records in an isolated schema: **594 unique discoveries, 0 raw-to-lead promotions, 165 unmatched observations, 24 property pages at 25/page**. Feeds exercised: OPA, L&I violations, unsafe buildings, vacancy, permits, demolitions, and sheriff deeds. Direct contact routes: **0 phone, 0 email, 0 web**. Synthetic pagination/qualification fixtures remained separate.
+- `exercise:acquisition-queue` passed with synthetic cases for permitted direct-route CALL NEXT, postal/no-route/stale/conflicting contact blocks, missing underwriting, audited call start/result, material evidence invalidation, and non-material note preservation. `exercise:command-center` passed its isolated persisted readiness/provider/worker/authorization cases.
+- API build passed. Web build passed with existing sourcemap and bundle-size warnings. All configured web, API, and mockup workflows were restarted and reported RUNNING.
+- Browser screenshot still showed the public sign-in/registration landing page. No legitimate signed-in session was available; dashboard cursor clicks, note reload in browser, and source-worker queuing were not claimed or attempted through an auth bypass. No source job was queued.
+
+**Next blocker:** authenticated owner verification remains the next UI proof; independently, a real permitted direct seller contact route and real current buyer evidence are still absent, so no live seller-to-buyer deal can yet be proven.
+
+**Turn state:** stopped after implementation, exercises, builds, and workflow checks; no background task is executing.
