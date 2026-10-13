@@ -14,6 +14,7 @@ import {
   RecordPublicPropertyDiscoveryResponse, SavePropertyDiscoveryCriteriaBody,
   SavePropertyDiscoveryCriteriaResponse,
 } from "@workspace/api-zod";
+import { SavePropertyContactResearchCaseBody } from "@workspace/api-zod";
 import {
   DEFAULT_PROPERTY_QUALIFICATION_CRITERIA, DomainError, PROPERTY_SIGNAL_GROUP_BY_KEY,
   evaluateCurrentBuyerDemand, evaluatePropertyRelevance, extractListingDescriptionIntelligence, validateProvenance,
@@ -47,6 +48,16 @@ type DiscoveryPayload = {
   demandAlignment?: { fit: BuyerDemandFit; computedAt: string };
   promotion?: { actor: string; at: string; reviewReason: string };
   disposition?: { actor: string; at: string; reason: string };
+  contactResearchCase?: {
+    status: "OPEN" | "EVIDENCE_RECORDED" | "NO_DIRECT_ROUTE_FOUND" | "NEEDS_REVIEW" | "BLOCKED";
+    version: number; confidence: number; sourceName: string;
+    sourceType: "PUBLIC_RECORD" | "PUBLIC_PAGE" | "OWNER_SUPPLIED" | "OTHER";
+    sourceUrl: string | null; observedAt: string;
+    identityMatch: "UNKNOWN" | "RECORDED_OWNER_ONLY" | "SELLER_SELF_IDENTIFIED" | "CONFLICTING" | "NOT_MATCHED";
+    permissionBasis: "UNKNOWN" | "PUBLIC_SOURCE_TERMS" | "CONSENT" | "OTHER_DOCUMENTED" | "PROHIBITED";
+    evidenceReference: string | null; note: string; missingRequirements: string[];
+    nextAction: string; auditHistory: Array<{at:string;actor:string;action:string;reason:string}>; synthetic: boolean;
+  };
 };
 
 const sha = (value: string) => createHash("sha256").update(value).digest("hex");
@@ -249,6 +260,8 @@ function parsePayload(value: Record<string, unknown>): DiscoveryPayload {
       ? { demandAlignment: value.demandAlignment as DiscoveryPayload["demandAlignment"] } : {}),
     ...(value.promotion ? { promotion: value.promotion as DiscoveryPayload["promotion"] } : {}),
     ...(value.disposition ? { disposition: value.disposition as DiscoveryPayload["disposition"] } : {}),
+    ...(value.contactResearchCase && typeof value.contactResearchCase === "object"
+      ? { contactResearchCase: value.contactResearchCase as DiscoveryPayload["contactResearchCase"] } : {}),
   };
 }
 
@@ -432,6 +445,113 @@ async function toDiscoveryResponse(
     promotionBlockers,
     firstObservedAt: payload.firstObservedAt,
     lastObservedAt: iso(row.updatedAt),
+    ...(payload.contactResearchCase ? { contactResearchCase: {
+      ...payload.contactResearchCase,
+      status: Date.parse(payload.contactResearchCase.observedAt) < now.getTime() - 30 * 24 * 60 * 60 * 1000
+        ? "NEEDS_REVIEW" as const : payload.contactResearchCase.status,
+      missingRequirements: [...new Set([
+        ...payload.contactResearchCase.missingRequirements,
+        ...(payload.contactResearchCase.identityMatch === "RECORDED_OWNER_ONLY"
+          ? ["Recorded ownership is not verified seller identity or signing authority."] : []),
+        ...(payload.contactResearchCase.permissionBasis === "UNKNOWN"
+          ? ["Document a permitted source/use basis before relying on contact data."] : []),
+        ...(payload.contactResearchCase.permissionBasis === "PROHIBITED"
+          ? ["This source/use is prohibited; do not use its contact details."] : []),
+        ...(!payload.property.contactPaths.some(path => path.channel === "PHONE" && path.classification === "VERIFIED" &&
+          path.permissionStatus === "PERMITTED" && path.permissionEvidenceStatus === "SUPPORTS_ALLOWED" &&
+          path.freshnessStatus === "CURRENT" && path.routeVerificationStatus === "CONFIRMED")
+          ? ["No current owner-reviewed permitted direct phone route is attached; CALL NEXT remains blocked."] : []),
+      ])],
+      nextAction: Date.parse(payload.contactResearchCase.observedAt) < now.getTime() - 30 * 24 * 60 * 60 * 1000
+        ? "Refresh this contact research from a currently permitted source and review recipient identity; no call is authorized."
+        : payload.contactResearchCase.permissionBasis === "PROHIBITED"
+          ? "Stop use of this source. Record only contact evidence from a permitted source."
+          : payload.property.contactPaths.some(path => path.channel === "PHONE" && path.classification === "VERIFIED" &&
+            path.permissionStatus === "PERMITTED" && path.permissionEvidenceStatus === "SUPPORTS_ALLOWED" &&
+            path.freshnessStatus === "CURRENT" && path.routeVerificationStatus === "CONFIRMED")
+            ? "Promote only after relevance qualification, then review the carried contact route in the lead Evidence panel; CALL NEXT still requires underwriting."
+            : "Continue lawful public-record research. If promoted after qualification, attach direct-route evidence in the lead Evidence panel for owner review; postal addresses do not clear CALL NEXT.",
+    } } : {}),
+  });
+}
+
+export async function savePropertyContactResearchCase(
+  discoveryId: string,
+  untrusted: unknown,
+  actor: OfferActor,
+  now = new Date(),
+) {
+  requireReviewer(actor);
+  const request = SavePropertyContactResearchCaseBody.parse(untrusted);
+  return db.transaction(async tx => {
+    const [current] = await tx.select().from(propertyDiscoveriesTable)
+      .where(eq(propertyDiscoveriesTable.id, discoveryId)).for("update");
+    if (!current) throw new DomainError("Property discovery not found.", 404);
+    if (current.version !== request.version) throw new DomainError("Property discovery changed. Reload before saving contact research.", 409);
+    if (current.leadId || ["QUALIFIED_LEAD", "CALL_READY"].includes(current.status)) {
+      throw new DomainError("This property is already promoted. Use its existing lead contact-evidence workflow.", 409);
+    }
+    const observedAt = new Date(request.observedAt);
+    if (!Number.isFinite(observedAt.getTime()) || observedAt > now) throw new DomainError("Contact research observation time must be valid and not in the future.", 400);
+    if (request.sourceUrl && !request.sourceUrl.startsWith("https://")) throw new DomainError("Contact research source URL must use HTTPS.", 400);
+    if (["PUBLIC_RECORD", "PUBLIC_PAGE"].includes(request.sourceType) && request.permissionBasis === "UNKNOWN") {
+      // Preserve the record as research, but make the permission gap explicit.
+    }
+    const payload = parsePayload(current.payload);
+    const prior = payload.contactResearchCase;
+    const sourceRows = await tx.select({ sourceKey: propertySourceObservationsTable.sourceKey })
+      .from(propertySourceObservationsTable)
+      .where(eq(propertySourceObservationsTable.discoveryId, current.id));
+    const synthetic = /synthetic|fixture|exercise/i.test(request.sourceName) ||
+      sourceRows.some(row => /synthetic|fixture|exercise/i.test(row.sourceKey));
+    const missingRequirements = [
+      ...(request.identityMatch === "RECORDED_OWNER_ONLY" ? ["Recorded ownership does not establish seller identity or signing authority."] : []),
+      ...(request.identityMatch === "CONFLICTING" ? ["Resolve the conflicting recipient identity before using any route."] : []),
+      ...(request.permissionBasis === "UNKNOWN" ? ["Document the lawful basis and source terms before relying on contact data."] : []),
+      ...(request.permissionBasis === "PROHIBITED" ? ["This source/use is blocked; do not use or retain a direct route from it."] : []),
+      ...(request.evidenceReference ? [] : ["Add a precise record/page/document reference for review."]),
+      ...(!payload.property.contactPaths.some(path => path.channel === "PHONE" && path.classification === "VERIFIED" &&
+        path.permissionStatus === "PERMITTED" && path.permissionEvidenceStatus === "SUPPORTS_ALLOWED" &&
+        path.freshnessStatus === "CURRENT" && path.routeVerificationStatus === "CONFIRMED")
+        ? ["No owner-reviewed permitted direct phone route is attached; CALL NEXT remains blocked."] : []),
+    ];
+    const action = request.permissionBasis === "PROHIBITED"
+      ? "Stop use of this source and obtain evidence through a permitted route."
+      : request.status === "NO_DIRECT_ROUTE_FOUND"
+        ? "Keep the property out of CALL NEXT; continue permitted public-record research or complete the owner-reviewed manual contact checklist after qualification."
+        : "Review the cited source and recipient identity. If the property is later promoted, record any actual direct route in its existing lead Evidence panel.";
+    const caseRecord = {
+      status: request.permissionBasis === "PROHIBITED" ? "BLOCKED" : request.status,
+      version: (prior?.version ?? 0) + 1,
+      confidence: request.confidence,
+      sourceName: request.sourceName,
+      sourceType: request.sourceType,
+      sourceUrl: request.sourceUrl ?? null,
+      observedAt: observedAt.toISOString(),
+      identityMatch: request.identityMatch,
+      permissionBasis: request.permissionBasis,
+      evidenceReference: request.evidenceReference ?? null,
+      note: request.note.trim(),
+      missingRequirements,
+      nextAction: action,
+      auditHistory: [...(prior?.auditHistory ?? []), {
+        at: now.toISOString(), actor: actor.id,
+        action: prior ? "CONTACT_RESEARCH_UPDATED" : "CONTACT_RESEARCH_OPENED",
+        reason: `${request.status}; source=${request.sourceName}; confidence=${request.confidence}; identity=${request.identityMatch}; permission=${request.permissionBasis}. No direct contact route, lead promotion, call, outreach, or economics change was created.`,
+      }].slice(-50),
+      synthetic: Boolean(synthetic),
+    } as const;
+    if (prior && isDeepStrictEqual(
+      { ...prior, version: undefined, auditHistory: undefined },
+      { ...caseRecord, version: undefined, auditHistory: undefined },
+    )) return discoveryResponse(current, tx);
+    const payloadRecord = { ...current.payload, contactResearchCase: caseRecord };
+    const [saved] = await tx.update(propertyDiscoveriesTable).set({
+      payload: payloadRecord, version: current.version + 1, updatedAt: now,
+    }).where(eq(propertyDiscoveriesTable.id, discoveryId)).returning();
+    await audit(tx, actor.id, "PROPERTY_CONTACT_RESEARCH_RECORDED", discoveryId, caseRecord.auditHistory.at(-1)!.reason);
+    if (!saved) throw new DomainError("Could not save contact research.", 500);
+    return discoveryResponse(saved, tx);
   });
 }
 

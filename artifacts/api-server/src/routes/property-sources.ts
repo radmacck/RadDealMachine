@@ -49,6 +49,12 @@ router.post("/property-discoveries/:id/signals",review,async(req,res)=>{
   const p = parse(contract.AddPropertyRelevanceSignalParams,req.params);
   res.json(await discoveries.addPropertyRelevanceSignal(p.id,parse(contract.AddPropertyRelevanceSignalBody,req.body),actor(res)));
 });
+router.post("/property-discoveries/:id/contact-research",review,async(req,res)=>{
+  const p = parse(contract.SavePropertyContactResearchCaseParams,req.params);
+  res.json(await discoveries.savePropertyContactResearchCase(
+    p.id,parse(contract.SavePropertyContactResearchCaseBody,req.body),actor(res),
+  ));
+});
 router.post("/property-discoveries/:id/promote",review,async(req,res)=>{
   const p = parse(contract.PromotePropertyDiscoveryParams,req.params);
   res.status(201).json(await discoveries.promotePropertyDiscovery(p.id,parse(contract.PromotePropertyDiscoveryBody,req.body),actor(res)));

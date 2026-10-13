@@ -17,7 +17,7 @@ import { commandCenter } from "./command-center";
 import {
   addPropertyRelevanceSignal, disqualifyPropertyDiscovery, listPropertyDiscoveries,
   linkUnmatchedPropertySourceObservations, persistUnmatchedPropertySourceObservations,
-  promotePropertyDiscovery, recordPropertyObservation, recordPublicPropertyDiscovery,
+  promotePropertyDiscovery, recordPropertyObservation, recordPublicPropertyDiscovery, savePropertyContactResearchCase,
   refreshPropertySourceEvidence, stalePropertySourceRefreshTargets,
 } from "./property-discovery-store";
 import { addSourceComps, getPropertySourceCoverage, getSourceResearch, importPublicProperty, listPropertySources, refreshSourceResearch, searchPublicProperties } from "./property-source-store";
@@ -530,6 +530,35 @@ try {
   assert.ok(first.sourceObservationCount >= 4, "A source-backed property keeps separate OPA, L&I, unsafe-building and vacancy observations.");
   assert.match(first.reason, /not a lead|signal|candidate/i);
   assert.ok(first.signals.every(signal => signal.source && signal.sourceUrl && signal.evidenceRef && signal.capturedAt));
+  const contactCaseInput = {
+    version: first.version,
+    status: "OPEN" as const,
+    confidence: 0.6,
+    sourceName: "SYNTHETIC contact research case exercise",
+    sourceType: "OTHER" as const,
+    sourceUrl: null,
+    observedAt: now.toISOString(),
+    identityMatch: "RECORDED_OWNER_ONLY" as const,
+    permissionBasis: "UNKNOWN" as const,
+    evidenceReference: null,
+    note: "SYNTHETIC: assessed owner mailing record found; no direct route established.",
+  };
+  const contactCase = await savePropertyContactResearchCase(first.id, contactCaseInput, actor, now);
+  assert.equal(contactCase.contactResearchCase?.synthetic, true);
+  assert.equal(contactCase.contactResearchCase?.status, "OPEN");
+  assert.ok(contactCase.contactResearchCase?.missingRequirements.some((x) => x.includes("does not establish seller identity")));
+  assert.ok(contactCase.contactResearchCase?.missingRequirements.some((x) => x.includes("direct phone route")));
+  assert.equal(contactCase.leadId, null, "A contact research case cannot promote a raw discovery.");
+  assert.ok(contactCase.property.contactPaths.every(path => path.channel !== "PHONE" || path.routeVerificationStatus !== "CONFIRMED"),
+    "Contact research notes must not create a confirmed route.");
+  const replayedContactCase = await savePropertyContactResearchCase(contactCase.id, {
+    ...contactCaseInput, version: contactCase.version,
+  }, actor, now);
+  assert.equal(replayedContactCase.contactResearchCase?.version, contactCase.contactResearchCase?.version);
+  assert.equal(replayedContactCase.contactResearchCase?.auditHistory.length, contactCase.contactResearchCase?.auditHistory.length,
+    "Exact replay must not duplicate audit events.");
+  await assert.rejects(savePropertyContactResearchCase(contactCase.id, contactCaseInput, actor, now), /changed|reload/i);
+  await assert.rejects(savePropertyContactResearchCase(contactCase.id, contactCaseInput, { ...actor, role: "VIEWER" }, now), /role|only/i);
   const matchedLeads = await db.select().from(leadsTable).where(sql`${leadsTable.payload}->>'address' = ${property.address}`);
   assert.equal(matchedLeads.length, 0, "Saving the source observation must not create a lead row.");
 

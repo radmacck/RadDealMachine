@@ -6,6 +6,7 @@
  * OpenAPI spec version: 1.0.0
  */
 import type { BuyerDemandFit } from './buyerDemandFit';
+import type { PropertyContactResearchCase } from './propertyContactResearchCase';
 import type { PropertyDiscoveryStatus } from './propertyDiscoveryStatus';
 import type { PropertyRelevanceSignal } from './propertyRelevanceSignal';
 import type { PropertySourceObservation } from './propertySourceObservation';
@@ -57,4 +58,5 @@ export interface PropertyDiscovery {
   promotionBlockers: string[];
   firstObservedAt: string;
   lastObservedAt: string;
+  contactResearchCase?: PropertyContactResearchCase;
 }

@@ -13680,6 +13680,10 @@ export const getCommandCenterResponsePropertyDiscoveriesRecordsItemDemandFitEvid
 
 
 
+
+export const getCommandCenterResponsePropertyDiscoveriesRecordsItemContactResearchCaseConfidenceMin = 0;
+export const getCommandCenterResponsePropertyDiscoveriesRecordsItemContactResearchCaseConfidenceMax = 1;
+
 export const getCommandCenterResponsePropertyDiscoveriesNextCursorMax = 512;
 
 export const getCommandCenterResponsePropertyDiscoveriesUnmatchedSourceObservationsItemPropertyIdRegExp = new RegExp('^\\d{9}$');
@@ -16459,7 +16463,29 @@ export const GetCommandCenterResponse = zod.object({
   "canPromote": zod.boolean(),
   "promotionBlockers": zod.array(zod.string()),
   "firstObservedAt": zod.string().datetime({"offset":true}),
-  "lastObservedAt": zod.string().datetime({"offset":true})
+  "lastObservedAt": zod.string().datetime({"offset":true}),
+  "contactResearchCase": zod.object({
+  "status": zod.enum(['OPEN', 'EVIDENCE_RECORDED', 'NO_DIRECT_ROUTE_FOUND', 'NEEDS_REVIEW', 'BLOCKED']),
+  "version": zod.number().int().min(1),
+  "confidence": zod.number().min(getCommandCenterResponsePropertyDiscoveriesRecordsItemContactResearchCaseConfidenceMin).max(getCommandCenterResponsePropertyDiscoveriesRecordsItemContactResearchCaseConfidenceMax),
+  "sourceName": zod.string(),
+  "sourceType": zod.enum(['PUBLIC_RECORD', 'PUBLIC_PAGE', 'OWNER_SUPPLIED', 'OTHER']),
+  "sourceUrl": zod.string().url().nullish(),
+  "observedAt": zod.string().datetime({"offset":true}),
+  "identityMatch": zod.enum(['UNKNOWN', 'RECORDED_OWNER_ONLY', 'SELLER_SELF_IDENTIFIED', 'CONFLICTING', 'NOT_MATCHED']),
+  "permissionBasis": zod.enum(['UNKNOWN', 'PUBLIC_SOURCE_TERMS', 'CONSENT', 'OTHER_DOCUMENTED', 'PROHIBITED']),
+  "evidenceReference": zod.string().nullish(),
+  "note": zod.string().optional(),
+  "missingRequirements": zod.array(zod.string()),
+  "nextAction": zod.string(),
+  "auditHistory": zod.array(zod.object({
+  "at": zod.string().datetime({"offset":true}),
+  "actor": zod.string(),
+  "action": zod.string(),
+  "reason": zod.string()
+})),
+  "synthetic": zod.boolean()
+}).optional()
 })),
   "nextCursor": zod.string().max(getCommandCenterResponsePropertyDiscoveriesNextCursorMax).nullable(),
   "hasMore": zod.boolean(),
@@ -37431,6 +37457,10 @@ export const listPropertyDiscoveriesResponseRecordsItemDemandFitEvidenceItemRevi
 
 
 
+
+export const listPropertyDiscoveriesResponseRecordsItemContactResearchCaseConfidenceMin = 0;
+export const listPropertyDiscoveriesResponseRecordsItemContactResearchCaseConfidenceMax = 1;
+
 export const listPropertyDiscoveriesResponseNextCursorMax = 512;
 
 export const listPropertyDiscoveriesResponseUnmatchedSourceObservationsItemPropertyIdRegExp = new RegExp('^\\d{9}$');
@@ -37654,7 +37684,29 @@ export const ListPropertyDiscoveriesResponse = zod.object({
   "canPromote": zod.boolean(),
   "promotionBlockers": zod.array(zod.string()),
   "firstObservedAt": zod.string().datetime({"offset":true}),
-  "lastObservedAt": zod.string().datetime({"offset":true})
+  "lastObservedAt": zod.string().datetime({"offset":true}),
+  "contactResearchCase": zod.object({
+  "status": zod.enum(['OPEN', 'EVIDENCE_RECORDED', 'NO_DIRECT_ROUTE_FOUND', 'NEEDS_REVIEW', 'BLOCKED']),
+  "version": zod.number().int().min(1),
+  "confidence": zod.number().min(listPropertyDiscoveriesResponseRecordsItemContactResearchCaseConfidenceMin).max(listPropertyDiscoveriesResponseRecordsItemContactResearchCaseConfidenceMax),
+  "sourceName": zod.string(),
+  "sourceType": zod.enum(['PUBLIC_RECORD', 'PUBLIC_PAGE', 'OWNER_SUPPLIED', 'OTHER']),
+  "sourceUrl": zod.string().url().nullish(),
+  "observedAt": zod.string().datetime({"offset":true}),
+  "identityMatch": zod.enum(['UNKNOWN', 'RECORDED_OWNER_ONLY', 'SELLER_SELF_IDENTIFIED', 'CONFLICTING', 'NOT_MATCHED']),
+  "permissionBasis": zod.enum(['UNKNOWN', 'PUBLIC_SOURCE_TERMS', 'CONSENT', 'OTHER_DOCUMENTED', 'PROHIBITED']),
+  "evidenceReference": zod.string().nullish(),
+  "note": zod.string().optional(),
+  "missingRequirements": zod.array(zod.string()),
+  "nextAction": zod.string(),
+  "auditHistory": zod.array(zod.object({
+  "at": zod.string().datetime({"offset":true}),
+  "actor": zod.string(),
+  "action": zod.string(),
+  "reason": zod.string()
+})),
+  "synthetic": zod.boolean()
+}).optional()
 })),
   "nextCursor": zod.string().max(listPropertyDiscoveriesResponseNextCursorMax).nullable(),
   "hasMore": zod.boolean(),
@@ -37788,6 +37840,10 @@ export const recordPublicPropertyDiscoveryResponseDemandFitEvidenceItemReviewerC
 
 
 
+
+
+export const recordPublicPropertyDiscoveryResponseContactResearchCaseConfidenceMin = 0;
+export const recordPublicPropertyDiscoveryResponseContactResearchCaseConfidenceMax = 1;
 
 
 
@@ -37966,7 +38022,29 @@ export const RecordPublicPropertyDiscoveryResponse = zod.object({
   "canPromote": zod.boolean(),
   "promotionBlockers": zod.array(zod.string()),
   "firstObservedAt": zod.string().datetime({"offset":true}),
-  "lastObservedAt": zod.string().datetime({"offset":true})
+  "lastObservedAt": zod.string().datetime({"offset":true}),
+  "contactResearchCase": zod.object({
+  "status": zod.enum(['OPEN', 'EVIDENCE_RECORDED', 'NO_DIRECT_ROUTE_FOUND', 'NEEDS_REVIEW', 'BLOCKED']),
+  "version": zod.number().int().min(1),
+  "confidence": zod.number().min(recordPublicPropertyDiscoveryResponseContactResearchCaseConfidenceMin).max(recordPublicPropertyDiscoveryResponseContactResearchCaseConfidenceMax),
+  "sourceName": zod.string(),
+  "sourceType": zod.enum(['PUBLIC_RECORD', 'PUBLIC_PAGE', 'OWNER_SUPPLIED', 'OTHER']),
+  "sourceUrl": zod.string().url().nullish(),
+  "observedAt": zod.string().datetime({"offset":true}),
+  "identityMatch": zod.enum(['UNKNOWN', 'RECORDED_OWNER_ONLY', 'SELLER_SELF_IDENTIFIED', 'CONFLICTING', 'NOT_MATCHED']),
+  "permissionBasis": zod.enum(['UNKNOWN', 'PUBLIC_SOURCE_TERMS', 'CONSENT', 'OTHER_DOCUMENTED', 'PROHIBITED']),
+  "evidenceReference": zod.string().nullish(),
+  "note": zod.string().optional(),
+  "missingRequirements": zod.array(zod.string()),
+  "nextAction": zod.string(),
+  "auditHistory": zod.array(zod.object({
+  "at": zod.string().datetime({"offset":true}),
+  "actor": zod.string(),
+  "action": zod.string(),
+  "reason": zod.string()
+})),
+  "synthetic": zod.boolean()
+}).optional()
 })
 
 
@@ -38188,6 +38266,10 @@ export const addPropertyRelevanceSignalResponseDemandFitEvidenceItemReviewerConf
 
 
 
+export const addPropertyRelevanceSignalResponseContactResearchCaseConfidenceMin = 0;
+export const addPropertyRelevanceSignalResponseContactResearchCaseConfidenceMax = 1;
+
+
 
 export const AddPropertyRelevanceSignalResponse = zod.object({
   "id": zod.string().uuid(),
@@ -38364,7 +38446,29 @@ export const AddPropertyRelevanceSignalResponse = zod.object({
   "canPromote": zod.boolean(),
   "promotionBlockers": zod.array(zod.string()),
   "firstObservedAt": zod.string().datetime({"offset":true}),
-  "lastObservedAt": zod.string().datetime({"offset":true})
+  "lastObservedAt": zod.string().datetime({"offset":true}),
+  "contactResearchCase": zod.object({
+  "status": zod.enum(['OPEN', 'EVIDENCE_RECORDED', 'NO_DIRECT_ROUTE_FOUND', 'NEEDS_REVIEW', 'BLOCKED']),
+  "version": zod.number().int().min(1),
+  "confidence": zod.number().min(addPropertyRelevanceSignalResponseContactResearchCaseConfidenceMin).max(addPropertyRelevanceSignalResponseContactResearchCaseConfidenceMax),
+  "sourceName": zod.string(),
+  "sourceType": zod.enum(['PUBLIC_RECORD', 'PUBLIC_PAGE', 'OWNER_SUPPLIED', 'OTHER']),
+  "sourceUrl": zod.string().url().nullish(),
+  "observedAt": zod.string().datetime({"offset":true}),
+  "identityMatch": zod.enum(['UNKNOWN', 'RECORDED_OWNER_ONLY', 'SELLER_SELF_IDENTIFIED', 'CONFLICTING', 'NOT_MATCHED']),
+  "permissionBasis": zod.enum(['UNKNOWN', 'PUBLIC_SOURCE_TERMS', 'CONSENT', 'OTHER_DOCUMENTED', 'PROHIBITED']),
+  "evidenceReference": zod.string().nullish(),
+  "note": zod.string().optional(),
+  "missingRequirements": zod.array(zod.string()),
+  "nextAction": zod.string(),
+  "auditHistory": zod.array(zod.object({
+  "at": zod.string().datetime({"offset":true}),
+  "actor": zod.string(),
+  "action": zod.string(),
+  "reason": zod.string()
+})),
+  "synthetic": zod.boolean()
+}).optional()
 })
 
 
@@ -38444,6 +38548,10 @@ export const promotePropertyDiscoveryResponseDiscoveryDemandFitEvidenceItemRevie
 
 
 
+
+
+export const promotePropertyDiscoveryResponseDiscoveryContactResearchCaseConfidenceMin = 0;
+export const promotePropertyDiscoveryResponseDiscoveryContactResearchCaseConfidenceMax = 1;
 
 
 
@@ -38623,7 +38731,29 @@ export const PromotePropertyDiscoveryResponse = zod.object({
   "canPromote": zod.boolean(),
   "promotionBlockers": zod.array(zod.string()),
   "firstObservedAt": zod.string().datetime({"offset":true}),
-  "lastObservedAt": zod.string().datetime({"offset":true})
+  "lastObservedAt": zod.string().datetime({"offset":true}),
+  "contactResearchCase": zod.object({
+  "status": zod.enum(['OPEN', 'EVIDENCE_RECORDED', 'NO_DIRECT_ROUTE_FOUND', 'NEEDS_REVIEW', 'BLOCKED']),
+  "version": zod.number().int().min(1),
+  "confidence": zod.number().min(promotePropertyDiscoveryResponseDiscoveryContactResearchCaseConfidenceMin).max(promotePropertyDiscoveryResponseDiscoveryContactResearchCaseConfidenceMax),
+  "sourceName": zod.string(),
+  "sourceType": zod.enum(['PUBLIC_RECORD', 'PUBLIC_PAGE', 'OWNER_SUPPLIED', 'OTHER']),
+  "sourceUrl": zod.string().url().nullish(),
+  "observedAt": zod.string().datetime({"offset":true}),
+  "identityMatch": zod.enum(['UNKNOWN', 'RECORDED_OWNER_ONLY', 'SELLER_SELF_IDENTIFIED', 'CONFLICTING', 'NOT_MATCHED']),
+  "permissionBasis": zod.enum(['UNKNOWN', 'PUBLIC_SOURCE_TERMS', 'CONSENT', 'OTHER_DOCUMENTED', 'PROHIBITED']),
+  "evidenceReference": zod.string().nullish(),
+  "note": zod.string().optional(),
+  "missingRequirements": zod.array(zod.string()),
+  "nextAction": zod.string(),
+  "auditHistory": zod.array(zod.object({
+  "at": zod.string().datetime({"offset":true}),
+  "actor": zod.string(),
+  "action": zod.string(),
+  "reason": zod.string()
+})),
+  "synthetic": zod.boolean()
+}).optional()
 }),
   "leadId": zod.string().uuid()
 })
@@ -38705,6 +38835,10 @@ export const disqualifyPropertyDiscoveryResponseDemandFitEvidenceItemReviewerCon
 
 
 
+
+
+export const disqualifyPropertyDiscoveryResponseContactResearchCaseConfidenceMin = 0;
+export const disqualifyPropertyDiscoveryResponseContactResearchCaseConfidenceMax = 1;
 
 
 
@@ -38883,7 +39017,333 @@ export const DisqualifyPropertyDiscoveryResponse = zod.object({
   "canPromote": zod.boolean(),
   "promotionBlockers": zod.array(zod.string()),
   "firstObservedAt": zod.string().datetime({"offset":true}),
-  "lastObservedAt": zod.string().datetime({"offset":true})
+  "lastObservedAt": zod.string().datetime({"offset":true}),
+  "contactResearchCase": zod.object({
+  "status": zod.enum(['OPEN', 'EVIDENCE_RECORDED', 'NO_DIRECT_ROUTE_FOUND', 'NEEDS_REVIEW', 'BLOCKED']),
+  "version": zod.number().int().min(1),
+  "confidence": zod.number().min(disqualifyPropertyDiscoveryResponseContactResearchCaseConfidenceMin).max(disqualifyPropertyDiscoveryResponseContactResearchCaseConfidenceMax),
+  "sourceName": zod.string(),
+  "sourceType": zod.enum(['PUBLIC_RECORD', 'PUBLIC_PAGE', 'OWNER_SUPPLIED', 'OTHER']),
+  "sourceUrl": zod.string().url().nullish(),
+  "observedAt": zod.string().datetime({"offset":true}),
+  "identityMatch": zod.enum(['UNKNOWN', 'RECORDED_OWNER_ONLY', 'SELLER_SELF_IDENTIFIED', 'CONFLICTING', 'NOT_MATCHED']),
+  "permissionBasis": zod.enum(['UNKNOWN', 'PUBLIC_SOURCE_TERMS', 'CONSENT', 'OTHER_DOCUMENTED', 'PROHIBITED']),
+  "evidenceReference": zod.string().nullish(),
+  "note": zod.string().optional(),
+  "missingRequirements": zod.array(zod.string()),
+  "nextAction": zod.string(),
+  "auditHistory": zod.array(zod.object({
+  "at": zod.string().datetime({"offset":true}),
+  "actor": zod.string(),
+  "action": zod.string(),
+  "reason": zod.string()
+})),
+  "synthetic": zod.boolean()
+}).optional()
+})
+
+
+/**
+ * Persists owner-reviewed contact research metadata on a discovery. It never creates a lead or clears CALL READY.
+ */
+export const SavePropertyContactResearchCaseParams = zod.object({
+  "id": zod.coerce.string().uuid()
+})
+
+
+export const savePropertyContactResearchCaseBodyConfidenceMin = 0;
+export const savePropertyContactResearchCaseBodyConfidenceMax = 1;
+
+export const savePropertyContactResearchCaseBodySourceNameMin = 2;
+export const savePropertyContactResearchCaseBodySourceNameMax = 200;
+
+export const savePropertyContactResearchCaseBodyEvidenceReferenceMax = 500;
+
+export const savePropertyContactResearchCaseBodyNoteMin = 3;
+export const savePropertyContactResearchCaseBodyNoteMax = 2000;
+
+
+
+export const SavePropertyContactResearchCaseBody = zod.object({
+  "version": zod.number().int().min(1),
+  "status": zod.enum(['OPEN', 'EVIDENCE_RECORDED', 'NO_DIRECT_ROUTE_FOUND', 'NEEDS_REVIEW', 'BLOCKED']),
+  "confidence": zod.number().min(savePropertyContactResearchCaseBodyConfidenceMin).max(savePropertyContactResearchCaseBodyConfidenceMax),
+  "sourceName": zod.string().min(savePropertyContactResearchCaseBodySourceNameMin).max(savePropertyContactResearchCaseBodySourceNameMax),
+  "sourceType": zod.enum(['PUBLIC_RECORD', 'PUBLIC_PAGE', 'OWNER_SUPPLIED', 'OTHER']),
+  "sourceUrl": zod.string().url().nullish(),
+  "observedAt": zod.string().datetime({"offset":true}),
+  "identityMatch": zod.enum(['UNKNOWN', 'RECORDED_OWNER_ONLY', 'SELLER_SELF_IDENTIFIED', 'CONFLICTING', 'NOT_MATCHED']),
+  "permissionBasis": zod.enum(['UNKNOWN', 'PUBLIC_SOURCE_TERMS', 'CONSENT', 'OTHER_DOCUMENTED', 'PROHIBITED']),
+  "evidenceReference": zod.string().max(savePropertyContactResearchCaseBodyEvidenceReferenceMax).nullish(),
+  "note": zod.string().min(savePropertyContactResearchCaseBodyNoteMin).max(savePropertyContactResearchCaseBodyNoteMax)
+})
+
+export const savePropertyContactResearchCaseResponseScoreMin = 0;
+export const savePropertyContactResearchCaseResponseScoreMax = 100;
+
+export const savePropertyContactResearchCaseResponsePriorityScoreMin = 0;
+export const savePropertyContactResearchCaseResponsePriorityScoreMax = 120;
+
+export const savePropertyContactResearchCaseResponseConfidenceMin = 0;
+export const savePropertyContactResearchCaseResponseConfidenceMax = 1;
+
+
+export const savePropertyContactResearchCaseResponsePropertyContactPathsItemRouteValueMax = 2000;
+
+export const savePropertyContactResearchCaseResponsePropertyContactPathsItemConfidenceMin = 0;
+export const savePropertyContactResearchCaseResponsePropertyContactPathsItemConfidenceMax = 1;
+
+
+export const savePropertyContactResearchCaseResponsePropertyContactPathsItemSupportingObservationsItemConfidenceMin = 0;
+export const savePropertyContactResearchCaseResponsePropertyContactPathsItemSupportingObservationsItemConfidenceMax = 1;
+
+export const savePropertyContactResearchCaseResponsePropertyContactPathsItemRecipientIdentityClaimCountMin = 0;
+
+export const savePropertyContactResearchCaseResponseSignalsItemConfidenceMin = 0;
+export const savePropertyContactResearchCaseResponseSignalsItemConfidenceMax = 1;
+
+export const savePropertyContactResearchCaseResponseSignalsItemScoreContributionMin = 0;
+export const savePropertyContactResearchCaseResponseSignalsItemScoreContributionMax = 100;
+
+
+export const savePropertyContactResearchCaseResponseSourceObservationsItemRecordCountMin = 0;
+
+export const savePropertyContactResearchCaseResponseSourceObservationsItemConfidenceMin = 0;
+export const savePropertyContactResearchCaseResponseSourceObservationsItemConfidenceMax = 1;
+
+export const savePropertyContactResearchCaseResponseSourceObservationsItemHistoryItemRecordCountMin = 0;
+
+export const savePropertyContactResearchCaseResponseSourceObservationsItemHistoryItemConfidenceMin = 0;
+export const savePropertyContactResearchCaseResponseSourceObservationsItemHistoryItemConfidenceMax = 1;
+
+export const savePropertyContactResearchCaseResponseSourceObservationsItemHistoryMax = 20;
+
+export const savePropertyContactResearchCaseResponseRankingReasonsItemMax = 1000;
+
+export const savePropertyContactResearchCaseResponseRankingReasonsMax = 12;
+
+export const savePropertyContactResearchCaseResponseDemandFitAlignedBuyerCountMin = 0;
+
+export const savePropertyContactResearchCaseResponseDemandFitCurrentQualifiedBuyerCountMin = 0;
+
+export const savePropertyContactResearchCaseResponseDemandFitUnqualifiedBuyerCountMin = 0;
+
+export const savePropertyContactResearchCaseResponseDemandFitExcludedForKnownCriteriaMismatchMin = 0;
+
+export const savePropertyContactResearchCaseResponseDemandFitPriorityBonusMin = 0;
+export const savePropertyContactResearchCaseResponseDemandFitPriorityBonusMax = 15;
+
+
+export const savePropertyContactResearchCaseResponseDemandFitEvidenceItemReviewerConfidenceMin = 0;
+export const savePropertyContactResearchCaseResponseDemandFitEvidenceItemReviewerConfidenceMax = 1;
+
+
+
+
+
+export const savePropertyContactResearchCaseResponseContactResearchCaseConfidenceMin = 0;
+export const savePropertyContactResearchCaseResponseContactResearchCaseConfidenceMax = 1;
+
+
+
+export const SavePropertyContactResearchCaseResponse = zod.object({
+  "id": zod.string().uuid(),
+  "marketKey": zod.string(),
+  "status": zod.enum(['DISCOVERED_PROPERTY', 'RELEVANT_CANDIDATE', 'QUALIFIED_LEAD', 'CALL_READY', 'DISQUALIFIED']),
+  "score": zod.number().int().min(savePropertyContactResearchCaseResponseScoreMin).max(savePropertyContactResearchCaseResponseScoreMax),
+  "priorityScore": zod.number().int().min(savePropertyContactResearchCaseResponsePriorityScoreMin).max(savePropertyContactResearchCaseResponsePriorityScoreMax),
+  "confidence": zod.number().min(savePropertyContactResearchCaseResponseConfidenceMin).max(savePropertyContactResearchCaseResponseConfidenceMax),
+  "version": zod.number().int().min(1),
+  "property": zod.object({
+  "id": zod.string(),
+  "parcelId": zod.string().nullish(),
+  "provider": zod.string(),
+  "classification": zod.enum(['OBSERVED']),
+  "address": zod.string(),
+  "city": zod.string(),
+  "county": zod.string(),
+  "state": zod.string(),
+  "zip": zod.string(),
+  "propertyType": zod.enum(['SINGLE_FAMILY', 'TOWNHOUSE']),
+  "sqft": zod.number().nullable(),
+  "beds": zod.number().int().nullable(),
+  "baths": zod.number().nullable(),
+  "recordedOwner": zod.string().nullable(),
+  "entityCandidate": zod.boolean(),
+  "assessedValue": zod.number().nullable(),
+  "lastSalePrice": zod.number().nullable(),
+  "lastSaleAt": zod.string().nullable(),
+  "interiorCondition": zod.string().nullable(),
+  "exteriorCondition": zod.string().nullable(),
+  "lat": zod.number().nullable(),
+  "lng": zod.number().nullable(),
+  "contactPaths": zod.array(zod.object({
+  "id": zod.string(),
+  "channel": zod.enum(['POSTAL', 'PHONE', 'EMAIL', 'WEB', 'OTHER']),
+  "recipient": zod.string().nullish(),
+  "routeValue": zod.string().max(savePropertyContactResearchCaseResponsePropertyContactPathsItemRouteValueMax).nullish(),
+  "addressLines": zod.array(zod.string()).optional(),
+  "cityState": zod.string().nullish(),
+  "postalCode": zod.string().nullish(),
+  "classification": zod.enum(['OBSERVED', 'VERIFIED']),
+  "confidence": zod.number().min(savePropertyContactResearchCaseResponsePropertyContactPathsItemConfidenceMin).max(savePropertyContactResearchCaseResponsePropertyContactPathsItemConfidenceMax),
+  "sourceId": zod.string(),
+  "sourceName": zod.string(),
+  "sourceRecordId": zod.string(),
+  "sourceUrl": zod.string().url().optional(),
+  "capturedAt": zod.string().datetime({"offset":true}),
+  "freshUntilAt": zod.string().datetime({"offset":true}),
+  "freshnessStatus": zod.enum(['CURRENT', 'STALE']),
+  "permissionStatus": zod.enum(['NOT_REVIEWED', 'PERMITTED', 'PROHIBITED']),
+  "permissionEvidenceStatus": zod.union([zod.literal('SUPPORTS_ALLOWED'),zod.literal('UNKNOWN'),zod.literal('BLOCKED'),zod.literal(null)]).nullish(),
+  "legalBasis": zod.union([zod.literal('CONSENT'),zod.literal('PUBLIC_SOURCE_TERMS'),zod.literal('PUBLIC_DATA_REUSE'),zod.literal('OTHER_DOCUMENTED'),zod.literal('UNKNOWN'),zod.literal(null)]).nullish(),
+  "legalBasisScope": zod.string().nullish(),
+  "legalBasisEvidenceUrl": zod.string().url().nullish(),
+  "providerId": zod.string().nullish(),
+  "epistemicStatus": zod.union([zod.literal('OBSERVED'),zod.literal('INDICATED'),zod.literal('AI_HYPOTHESIS'),zod.literal(null)]).nullish(),
+  "recipientIdentityEvidenceStatus": zod.union([zod.literal('NONE'),zod.literal('CLAIMED'),zod.literal('SUPPORTING_RECORD'),zod.literal(null)]).nullish(),
+  "recipientIdentityEvidenceRef": zod.string().nullish(),
+  "contactPermissionEvidenceUrl": zod.string().url().nullish(),
+  "permissionReviewedAt": zod.string().datetime({"offset":true}).nullish(),
+  "sourceType": zod.enum(['PUBLIC_RECORD', 'PUBLIC_PAGE', 'PERMITTED_LISTING', 'SELLER', 'ANALYST']).optional(),
+  "recipientRole": zod.enum(['RECORDED_OWNER', 'SELLER_SELF_IDENTIFIED', 'AUTHORIZED_AGENT_CLAIM', 'DIRECTORY_CONTACT', 'UNKNOWN']).optional(),
+  "routeVerificationStatus": zod.enum(['UNREVIEWED', 'CONFIRMED', 'REJECTED']).optional(),
+  "routeReviewedAt": zod.string().datetime({"offset":true}).nullish(),
+  "verificationNote": zod.string().nullish(),
+  "identityStatus": zod.enum(['UNVERIFIED']).optional(),
+  "signingAuthorityStatus": zod.enum(['NOT_ESTABLISHED']).optional(),
+  "supportingObservationCount": zod.number().int().min(1).optional(),
+  "supportingObservations": zod.array(zod.object({
+  "id": zod.string(),
+  "recipient": zod.string().nullable(),
+  "recipientRole": zod.enum(['RECORDED_OWNER', 'SELLER_SELF_IDENTIFIED', 'AUTHORIZED_AGENT_CLAIM', 'DIRECTORY_CONTACT', 'UNKNOWN']),
+  "sourceId": zod.string(),
+  "sourceName": zod.string(),
+  "sourceRecordId": zod.string(),
+  "sourceUrl": zod.string().url().nullable(),
+  "capturedAt": zod.string().datetime({"offset":true}),
+  "freshUntilAt": zod.string().datetime({"offset":true}),
+  "classification": zod.enum(['OBSERVED', 'VERIFIED']),
+  "confidence": zod.number().min(savePropertyContactResearchCaseResponsePropertyContactPathsItemSupportingObservationsItemConfidenceMin).max(savePropertyContactResearchCaseResponsePropertyContactPathsItemSupportingObservationsItemConfidenceMax),
+  "permissionStatus": zod.enum(['NOT_REVIEWED', 'PERMITTED', 'PROHIBITED']),
+  "permissionEvidenceStatus": zod.union([zod.literal('SUPPORTS_ALLOWED'),zod.literal('UNKNOWN'),zod.literal('BLOCKED'),zod.literal(null)]).nullable(),
+  "legalBasis": zod.union([zod.literal('CONSENT'),zod.literal('PUBLIC_SOURCE_TERMS'),zod.literal('PUBLIC_DATA_REUSE'),zod.literal('OTHER_DOCUMENTED'),zod.literal('UNKNOWN'),zod.literal(null)]).nullable(),
+  "legalBasisScope": zod.string().nullable(),
+  "legalBasisEvidenceUrl": zod.string().url().nullable(),
+  "providerId": zod.string().nullable(),
+  "epistemicStatus": zod.union([zod.literal('OBSERVED'),zod.literal('INDICATED'),zod.literal('AI_HYPOTHESIS'),zod.literal(null)]).nullable(),
+  "recipientIdentityEvidenceStatus": zod.union([zod.literal('NONE'),zod.literal('CLAIMED'),zod.literal('SUPPORTING_RECORD'),zod.literal(null)]).nullable(),
+  "recipientIdentityEvidenceRef": zod.string().nullable(),
+  "contactPermissionEvidenceUrl": zod.string().url().nullable(),
+  "permissionReviewedAt": zod.string().datetime({"offset":true}).nullable(),
+  "routeVerificationStatus": zod.enum(['UNREVIEWED', 'CONFIRMED', 'REJECTED']),
+  "routeReviewedAt": zod.string().datetime({"offset":true}).nullable(),
+  "verificationNote": zod.string().nullable()
+})).optional(),
+  "identityConflictStatus": zod.enum(['NONE', 'MULTIPLE_RECIPIENTS', 'MULTIPLE_ROLES']).optional(),
+  "recipientIdentityClaimCount": zod.number().int().min(savePropertyContactResearchCaseResponsePropertyContactPathsItemRecipientIdentityClaimCountMin).optional(),
+  "rankingReasons": zod.array(zod.string()).optional()
+})),
+  "sourceUrl": zod.string(),
+  "capturedAt": zod.string()
+}),
+  "signals": zod.array(zod.object({
+  "id": zod.string(),
+  "key": zod.enum(['ENTITY_OWNER', 'LONG_TERM_HOLD', 'REPORTED_POOR_CONDITION', 'OPEN_CODE_VIOLATION', 'UNSAFE_BUILDING_RECORD', 'SELLER_MOTIVATION', 'TAX_DELINQUENCY', 'FORECLOSURE', 'PROBATE', 'ABSENTEE_OWNER', 'STALE_LISTING', 'REPEATED_PRICE_REDUCTION', 'BELOW_MARKET', 'VACANCY', 'EQUITY_OPPORTUNITY', 'MARKET_FIT']),
+  "group": zod.enum(['OWNERSHIP_CONTEXT', 'CONDITION', 'MOTIVATION', 'DISTRESS', 'LISTING_PRESSURE', 'VACANCY', 'FINANCIAL_OPPORTUNITY', 'MARKET_FIT']),
+  "classification": zod.enum(['VERIFIED', 'OBSERVED', 'INDICATED', 'AI_HYPOTHESIS']),
+  "sourceType": zod.enum(['PUBLIC_RECORD', 'PERMITTED_LISTING', 'SELLER', 'INSPECTION', 'PUBLIC_PAGE', 'ANALYST', 'MODEL']),
+  "statement": zod.string(),
+  "source": zod.string(),
+  "sourceUrl": zod.string().nullable(),
+  "evidenceRef": zod.string().nullable(),
+  "capturedAt": zod.string().datetime({"offset":true}),
+  "confidence": zod.number().min(savePropertyContactResearchCaseResponseSignalsItemConfidenceMin).max(savePropertyContactResearchCaseResponseSignalsItemConfidenceMax),
+  "scoreContribution": zod.number().int().min(savePropertyContactResearchCaseResponseSignalsItemScoreContributionMin).max(savePropertyContactResearchCaseResponseSignalsItemScoreContributionMax)
+})),
+  "sourceObservations": zod.array(zod.object({
+  "id": zod.string().uuid(),
+  "sourceKey": zod.string(),
+  "sourceId": zod.string(),
+  "sourceName": zod.string(),
+  "sourceUrl": zod.string().url(),
+  "firstObservedAt": zod.string().datetime({"offset":true}),
+  "lastObservedAt": zod.string().datetime({"offset":true}),
+  "seenCount": zod.number().int().min(1),
+  "state": zod.string(),
+  "recordCount": zod.number().int().min(savePropertyContactResearchCaseResponseSourceObservationsItemRecordCountMin),
+  "recordIdentities": zod.array(zod.string()),
+  "latestSourceEventAt": zod.string().datetime({"offset":true}).nullable(),
+  "classification": zod.union([zod.enum(['VERIFIED', 'OBSERVED', 'INDICATED', 'AI_HYPOTHESIS']),zod.null()]),
+  "confidence": zod.number().min(savePropertyContactResearchCaseResponseSourceObservationsItemConfidenceMin).max(savePropertyContactResearchCaseResponseSourceObservationsItemConfidenceMax).nullable(),
+  "evidenceRef": zod.string().nullable(),
+  "history": zod.array(zod.object({
+  "observedAt": zod.string().datetime({"offset":true}),
+  "state": zod.string(),
+  "recordCount": zod.number().int().min(savePropertyContactResearchCaseResponseSourceObservationsItemHistoryItemRecordCountMin),
+  "recordIdentities": zod.array(zod.string()),
+  "latestSourceEventAt": zod.string().datetime({"offset":true}).nullable(),
+  "classification": zod.union([zod.enum(['VERIFIED', 'OBSERVED', 'INDICATED', 'AI_HYPOTHESIS']),zod.null()]),
+  "confidence": zod.number().min(savePropertyContactResearchCaseResponseSourceObservationsItemHistoryItemConfidenceMin).max(savePropertyContactResearchCaseResponseSourceObservationsItemHistoryItemConfidenceMax).nullable(),
+  "evidenceRef": zod.string().nullable()
+})).max(savePropertyContactResearchCaseResponseSourceObservationsItemHistoryMax)
+})),
+  "reason": zod.string(),
+  "rankingReasons": zod.array(zod.string().max(savePropertyContactResearchCaseResponseRankingReasonsItemMax)).min(1).max(savePropertyContactResearchCaseResponseRankingReasonsMax),
+  "missingInformation": zod.array(zod.string()),
+  "nextAction": zod.string(),
+  "demandFit": zod.object({
+  "status": zod.enum(['ALIGNED_ON_KNOWN_FIELDS', 'NO_VERIFIED_DEMAND']),
+  "alignedBuyerCount": zod.number().int().min(savePropertyContactResearchCaseResponseDemandFitAlignedBuyerCountMin),
+  "currentQualifiedBuyerCount": zod.number().int().min(savePropertyContactResearchCaseResponseDemandFitCurrentQualifiedBuyerCountMin),
+  "unqualifiedBuyerCount": zod.number().int().min(savePropertyContactResearchCaseResponseDemandFitUnqualifiedBuyerCountMin),
+  "excludedForKnownCriteriaMismatch": zod.number().int().min(savePropertyContactResearchCaseResponseDemandFitExcludedForKnownCriteriaMismatchMin),
+  "priorityBonus": zod.number().int().min(savePropertyContactResearchCaseResponseDemandFitPriorityBonusMin).max(savePropertyContactResearchCaseResponseDemandFitPriorityBonusMax),
+  "reason": zod.string(),
+  "missingInformation": zod.array(zod.string()),
+  "evidence": zod.array(zod.object({
+  "buyerId": zod.string().uuid(),
+  "buyerVersion": zod.number().int().min(1),
+  "criteriaEvidenceAt": zod.string().datetime({"offset":true}),
+  "buyingEvidenceAt": zod.string().datetime({"offset":true}),
+  "identityVerifiedAt": zod.string().datetime({"offset":true}),
+  "validUntil": zod.string().datetime({"offset":true}),
+  "reviewerConfidence": zod.number().min(savePropertyContactResearchCaseResponseDemandFitEvidenceItemReviewerConfidenceMin).max(savePropertyContactResearchCaseResponseDemandFitEvidenceItemReviewerConfidenceMax),
+  "reason": zod.string()
+})),
+  "snapshotComputedAt": zod.string().datetime({"offset":true}).nullable(),
+  "snapshotFresh": zod.boolean()
+}),
+  "sourceObservationCount": zod.number().int().min(1),
+  "relatedOwnerPropertyCount": zod.number().int().min(1),
+  "leadId": zod.string().uuid().nullable(),
+  "criteriaVersion": zod.number().int().min(1),
+  "canPromote": zod.boolean(),
+  "promotionBlockers": zod.array(zod.string()),
+  "firstObservedAt": zod.string().datetime({"offset":true}),
+  "lastObservedAt": zod.string().datetime({"offset":true}),
+  "contactResearchCase": zod.object({
+  "status": zod.enum(['OPEN', 'EVIDENCE_RECORDED', 'NO_DIRECT_ROUTE_FOUND', 'NEEDS_REVIEW', 'BLOCKED']),
+  "version": zod.number().int().min(1),
+  "confidence": zod.number().min(savePropertyContactResearchCaseResponseContactResearchCaseConfidenceMin).max(savePropertyContactResearchCaseResponseContactResearchCaseConfidenceMax),
+  "sourceName": zod.string(),
+  "sourceType": zod.enum(['PUBLIC_RECORD', 'PUBLIC_PAGE', 'OWNER_SUPPLIED', 'OTHER']),
+  "sourceUrl": zod.string().url().nullish(),
+  "observedAt": zod.string().datetime({"offset":true}),
+  "identityMatch": zod.enum(['UNKNOWN', 'RECORDED_OWNER_ONLY', 'SELLER_SELF_IDENTIFIED', 'CONFLICTING', 'NOT_MATCHED']),
+  "permissionBasis": zod.enum(['UNKNOWN', 'PUBLIC_SOURCE_TERMS', 'CONSENT', 'OTHER_DOCUMENTED', 'PROHIBITED']),
+  "evidenceReference": zod.string().nullish(),
+  "note": zod.string().optional(),
+  "missingRequirements": zod.array(zod.string()),
+  "nextAction": zod.string(),
+  "auditHistory": zod.array(zod.object({
+  "at": zod.string().datetime({"offset":true}),
+  "actor": zod.string(),
+  "action": zod.string(),
+  "reason": zod.string()
+})),
+  "synthetic": zod.boolean()
+}).optional()
 })
 
 

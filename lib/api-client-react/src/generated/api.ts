@@ -86,6 +86,7 @@ import type {
   OutcomeLearningReport,
   OutcomeObservation,
   PrepareTransactionDocumentInput,
+  PropertyContactResearchInput,
   PropertyDiscovery,
   PropertyDiscoveryDispositionInput,
   PropertyDiscoveryList,
@@ -7148,6 +7149,92 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
         TContext
       > => {
       return useMutation(getDisqualifyPropertyDiscoveryMutationOptions(options));
+    }
+
+export const getSavePropertyContactResearchCaseUrl = (id: string,) => {
+
+
+
+
+  return `/api/property-discoveries/${id}/contact-research`
+}
+
+/**
+ * Persists owner-reviewed contact research metadata on a discovery. It never creates a lead or clears CALL READY.
+ */
+export const savePropertyContactResearchCase = async (id: string,
+    propertyContactResearchInput: PropertyContactResearchInput, options?: Parameters<typeof customFetch>[1]): Promise<PropertyDiscovery> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return customFetch<PropertyDiscovery>(getSavePropertyContactResearchCaseUrl(id),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(propertyContactResearchInput)
+  }
+);}
+
+
+
+
+
+export const getSavePropertyContactResearchCaseMutationKey = () => ['savePropertyContactResearchCase'] as const;
+
+export const getSavePropertyContactResearchCaseMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof savePropertyContactResearchCase>>, TError,SavePropertyContactResearchCaseMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof savePropertyContactResearchCase>>, TError,SavePropertyContactResearchCaseMutationVariables, TContext> => {
+
+const mutationKey = getSavePropertyContactResearchCaseMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof savePropertyContactResearchCase>>, SavePropertyContactResearchCaseMutationVariables> = (props) => {
+          const {id,data} = props ?? {};
+
+          return  savePropertyContactResearchCase(id,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type SavePropertyContactResearchCaseMutationResult = NonNullable<Awaited<ReturnType<typeof savePropertyContactResearchCase>>>
+    export type SavePropertyContactResearchCaseMutationBody = BodyType<PropertyContactResearchInput>
+    export type SavePropertyContactResearchCaseMutationError = ErrorType<unknown>
+    export type SavePropertyContactResearchCaseMutationVariables = {id: string;data: BodyType<PropertyContactResearchInput>}
+
+    export const useSavePropertyContactResearchCase = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof savePropertyContactResearchCase>>, TError,SavePropertyContactResearchCaseMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof savePropertyContactResearchCase>>,
+        TError,
+        SavePropertyContactResearchCaseMutationVariables,
+        TContext
+      > => {
+      return useMutation(getSavePropertyContactResearchCaseMutationOptions(options));
     }
 
 export const getGetSourceResearchUrl = (id: string,) => {

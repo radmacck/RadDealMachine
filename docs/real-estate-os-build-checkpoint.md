@@ -346,6 +346,34 @@ The public dataset/catalog and documented query endpoint were accessed without a
 
 **Turn state:** stopped after implementation and checks; no background Agent task is running.
 
+## Contact-research case and buyer-readiness handoff — 2026-10-13
+
+**Status: persisted discovery-contact workflow implemented and synthetic behavior exercised; direct-route capture on an unpromoted discovery and authenticated browser use remain incomplete.**
+
+- Added a versioned `contactResearchCase` to the existing property-discovery payload/response, with status, confidence, source name/type/reference, observed-at, identity-match state, permission basis, evidence reference, note, missing requirements, next action, up to 50 audit entries, and explicit synthetic labeling. No parallel contact table was introduced.
+- Added an owner/operator/analyst endpoint to save the case. It checks discovery version under row lock, rejects promoted properties (those use the existing lead contact-evidence workflow), validates source URLs/timestamps, records audit history, and treats an exact replay as idempotent. Stale research renders as `NEEDS_REVIEW`. Recorded-owner evidence is explicitly not seller identity/signing authority; unknown/prohibited permission and absent verified direct phone remain blockers.
+- Added the case editor and persisted case summary inside the existing Sources qualification detail. It routes actual direct-route evidence through the existing promoted-lead Contact Evidence panel; this case records research metadata only. It cannot create a contact route, lead, call, buyer match, or economics change.
+- Reused buyer intake, qualification, current-verification, and matching rather than creating a second buyer system. Existing Buyer page captures structured criteria; owner verification requires dated identity/current-buying/criteria/funding evidence, expires within 30 days, and only current approved records are match-eligible. Command Center already links to buyer evidence/intake and separates current, stale, unverified, and synthetic counts.
+
+**Verification completed:**
+- `pnpm --filter @workspace/api-spec run codegen` — passed; generated workspace library typechecks passed.
+- API and web `typecheck` — passed.
+- `pnpm --filter @workspace/api-server run test:property-discovery-ranking` — 2/2 passed.
+- `pnpm --filter @workspace/api-server run test:auth` — 7/7 passed.
+- `pnpm --filter @workspace/api-server run test:command-center` — 15/15 passed.
+- API and web builds — passed. Existing web sourcemap-resolution and >500 kB chunk warnings remain.
+- `pnpm --filter @workspace/api-server run exercise:property-source` — passed in an isolated persisted schema, including synthetic case save/reload, owner-only access rule, stale-version rejection, exact replay without duplicate audit, no route creation, and no promotion. The same exercise used live permitted public records: 594 unique OPA discoveries, zero raw-to-active-lead promotions, 165 unmatched observations; L&I violations 96, unsafe buildings 87, vacancy 87, permits 90, demolitions 104, sheriff deeds 730 observations/651 source records across 17 pages. It found zero persisted POSTAL/PHONE/EMAIL/WEB/OTHER routes in that exercise.
+- `pnpm --filter @workspace/api-server run exercise:buyer-pool` — passed in isolated PostgreSQL: 112 source-derived prospect observations/114 source observations, no real workspace prospects seeded, no outreach sent, and no inferred approval.
+- `pnpm --filter @workspace/api-server run exercise:buyers` — passed with synthetic records for create/reload, owner-only verification, dated funding, stale evidence, version conflicts and identity invalidation.
+
+**Boundaries / not GREEN for live operations:** The contact-research case records the search/review state, not a phone/email value. Direct-route evidence is entered only after a discovery is qualified/promoted, through the already-existing lead evidence form; attaching a verified direct route before promotion is still unsupported. This avoids turning a raw discovery into a lead, but means the user's desired full pre-promotion contact-enrichment handoff is partial. No real approved/current buyer or seller contact route was established. The preview screenshot remains the public sign-in page; no legitimate authenticated owner session was available, so signed-in browser workflow was not verified. Buyer exercises are synthetic/isolated; source-prospect observations in the exercise are not real approved buyers. No outreach, underwriting change, offer, signature, funds, or closing was claimed.
+
+**Runtime:** API, web and component-preview workflows are RUNNING after restart; API logged `Server listening`, and Vite logged ready. The app is not GREEN for end-to-end live deal flow.
+
+**Next concrete blocker:** Support provenance-backed direct-route evidence on a discovery and carry it safely into the existing lead contact model only after human qualification/promotion, with the same owner permission and fail-closed CALL NEXT gates. No live direct seller contact route is currently available from the exercised feeds.
+
+**Turn state:** implementation and checks completed; no background Agent task is running.
+
 ## Live discovery visibility in the command center — 2026-10-13
 
 **Status: persisted-source UI path implemented and build-tested; authenticated screen is not browser-verified.**

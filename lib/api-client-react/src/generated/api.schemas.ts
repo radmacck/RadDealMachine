@@ -1176,6 +1176,81 @@ export interface PublicProperty {
   capturedAt: string;
 }
 
+export type PropertyContactResearchCaseStatus = typeof PropertyContactResearchCaseStatus[keyof typeof PropertyContactResearchCaseStatus];
+
+
+export const PropertyContactResearchCaseStatus = {
+  OPEN: 'OPEN',
+  EVIDENCE_RECORDED: 'EVIDENCE_RECORDED',
+  NO_DIRECT_ROUTE_FOUND: 'NO_DIRECT_ROUTE_FOUND',
+  NEEDS_REVIEW: 'NEEDS_REVIEW',
+  BLOCKED: 'BLOCKED',
+} as const;
+
+export type PropertyContactResearchCaseSourceType = typeof PropertyContactResearchCaseSourceType[keyof typeof PropertyContactResearchCaseSourceType];
+
+
+export const PropertyContactResearchCaseSourceType = {
+  PUBLIC_RECORD: 'PUBLIC_RECORD',
+  PUBLIC_PAGE: 'PUBLIC_PAGE',
+  OWNER_SUPPLIED: 'OWNER_SUPPLIED',
+  OTHER: 'OTHER',
+} as const;
+
+export type PropertyContactResearchCaseIdentityMatch = typeof PropertyContactResearchCaseIdentityMatch[keyof typeof PropertyContactResearchCaseIdentityMatch];
+
+
+export const PropertyContactResearchCaseIdentityMatch = {
+  UNKNOWN: 'UNKNOWN',
+  RECORDED_OWNER_ONLY: 'RECORDED_OWNER_ONLY',
+  SELLER_SELF_IDENTIFIED: 'SELLER_SELF_IDENTIFIED',
+  CONFLICTING: 'CONFLICTING',
+  NOT_MATCHED: 'NOT_MATCHED',
+} as const;
+
+export type PropertyContactResearchCasePermissionBasis = typeof PropertyContactResearchCasePermissionBasis[keyof typeof PropertyContactResearchCasePermissionBasis];
+
+
+export const PropertyContactResearchCasePermissionBasis = {
+  UNKNOWN: 'UNKNOWN',
+  PUBLIC_SOURCE_TERMS: 'PUBLIC_SOURCE_TERMS',
+  CONSENT: 'CONSENT',
+  OTHER_DOCUMENTED: 'OTHER_DOCUMENTED',
+  PROHIBITED: 'PROHIBITED',
+} as const;
+
+export type PropertyContactResearchCaseAuditHistoryItem = {
+  at: string;
+  actor: string;
+  action: string;
+  reason: string;
+};
+
+export interface PropertyContactResearchCase {
+  status: PropertyContactResearchCaseStatus;
+  /** @minimum 1 */
+  version: number;
+  /**
+     * @minimum 0
+     * @maximum 1
+     */
+  confidence: number;
+  sourceName: string;
+  sourceType: PropertyContactResearchCaseSourceType;
+  /** @nullable */
+  sourceUrl?: string | null;
+  observedAt: string;
+  identityMatch: PropertyContactResearchCaseIdentityMatch;
+  permissionBasis: PropertyContactResearchCasePermissionBasis;
+  /** @nullable */
+  evidenceReference?: string | null;
+  note?: string;
+  missingRequirements: string[];
+  nextAction: string;
+  auditHistory: PropertyContactResearchCaseAuditHistoryItem[];
+  synthetic: boolean;
+}
+
 export interface PropertyDiscovery {
   id: string;
   marketKey: string;
@@ -1222,6 +1297,82 @@ export interface PropertyDiscovery {
   promotionBlockers: string[];
   firstObservedAt: string;
   lastObservedAt: string;
+  contactResearchCase?: PropertyContactResearchCase;
+}
+
+export type PropertyContactResearchInputStatus = typeof PropertyContactResearchInputStatus[keyof typeof PropertyContactResearchInputStatus];
+
+
+export const PropertyContactResearchInputStatus = {
+  OPEN: 'OPEN',
+  EVIDENCE_RECORDED: 'EVIDENCE_RECORDED',
+  NO_DIRECT_ROUTE_FOUND: 'NO_DIRECT_ROUTE_FOUND',
+  NEEDS_REVIEW: 'NEEDS_REVIEW',
+  BLOCKED: 'BLOCKED',
+} as const;
+
+export type PropertyContactResearchInputSourceType = typeof PropertyContactResearchInputSourceType[keyof typeof PropertyContactResearchInputSourceType];
+
+
+export const PropertyContactResearchInputSourceType = {
+  PUBLIC_RECORD: 'PUBLIC_RECORD',
+  PUBLIC_PAGE: 'PUBLIC_PAGE',
+  OWNER_SUPPLIED: 'OWNER_SUPPLIED',
+  OTHER: 'OTHER',
+} as const;
+
+export type PropertyContactResearchInputIdentityMatch = typeof PropertyContactResearchInputIdentityMatch[keyof typeof PropertyContactResearchInputIdentityMatch];
+
+
+export const PropertyContactResearchInputIdentityMatch = {
+  UNKNOWN: 'UNKNOWN',
+  RECORDED_OWNER_ONLY: 'RECORDED_OWNER_ONLY',
+  SELLER_SELF_IDENTIFIED: 'SELLER_SELF_IDENTIFIED',
+  CONFLICTING: 'CONFLICTING',
+  NOT_MATCHED: 'NOT_MATCHED',
+} as const;
+
+export type PropertyContactResearchInputPermissionBasis = typeof PropertyContactResearchInputPermissionBasis[keyof typeof PropertyContactResearchInputPermissionBasis];
+
+
+export const PropertyContactResearchInputPermissionBasis = {
+  UNKNOWN: 'UNKNOWN',
+  PUBLIC_SOURCE_TERMS: 'PUBLIC_SOURCE_TERMS',
+  CONSENT: 'CONSENT',
+  OTHER_DOCUMENTED: 'OTHER_DOCUMENTED',
+  PROHIBITED: 'PROHIBITED',
+} as const;
+
+export interface PropertyContactResearchInput {
+  /** @minimum 1 */
+  version: number;
+  status: PropertyContactResearchInputStatus;
+  /**
+     * @minimum 0
+     * @maximum 1
+     */
+  confidence: number;
+  /**
+     * @minLength 2
+     * @maxLength 200
+     */
+  sourceName: string;
+  sourceType: PropertyContactResearchInputSourceType;
+  /** @nullable */
+  sourceUrl?: string | null;
+  observedAt: string;
+  identityMatch: PropertyContactResearchInputIdentityMatch;
+  permissionBasis: PropertyContactResearchInputPermissionBasis;
+  /**
+     * @maxLength 500
+     * @nullable
+     */
+  evidenceReference?: string | null;
+  /**
+     * @minLength 3
+     * @maxLength 2000
+     */
+  note: string;
 }
 
 export type PropertyDiscoveryListCounts = {

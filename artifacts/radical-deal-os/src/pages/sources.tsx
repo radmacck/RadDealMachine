@@ -5,10 +5,10 @@ import {
   getGetCommandCenterQueryKey, getListPropertyDiscoveriesQueryKey, getSearchPublicPropertiesQueryKey,
   useAddPropertyRelevanceSignal, useDisqualifyPropertyDiscovery, useDiscoverBuyer, useListPropertyDiscoveries,
   useGetPropertySourceCoverage, usePromotePropertyDiscovery, useRecordPublicPropertyDiscovery,
-  useSavePropertyDiscoveryCriteria, useSearchPublicProperties,
+  useSavePropertyDiscoveryCriteria, useSearchPublicProperties, useSavePropertyContactResearchCase,
   type PropertyEvidenceClassification, type PropertyEvidenceSourceType, type PropertySignalKey,
   type PropertyDiscoveryStatus, type PropertySignalGroup, type PublicProperty, type SearchPublicPropertiesParams,
-  type ListPropertyDiscoveriesParams,
+  type ListPropertyDiscoveriesParams, type PropertyContactResearchInput,
 } from '@workspace/api-client-react';
 import { PageHeader } from '@/components/page-header';
 import { EmptyState, ErrorNotice, RowsSkeleton } from '@/components/state-views';
@@ -21,6 +21,48 @@ import { useToast } from '@/hooks/use-toast';
 
 type Lane = 'properties' | 'buyer_candidates';
 const DISCOVERY_PAGE_SIZE = 25;
+
+function ContactResearchCaseEditor({
+  version, sourceName, sourceUrl, pending, onSave,
+}: {
+  version: number;
+  sourceName: string;
+  sourceUrl: string | null;
+  pending: boolean;
+  onSave: (data: PropertyContactResearchInput) => void;
+}) {
+  const [name, setName] = useState(sourceName);
+  const [url, setUrl] = useState(sourceUrl ?? '');
+  const [note, setNote] = useState('');
+  const [identity, setIdentity] = useState<PropertyContactResearchInput['identityMatch']>('RECORDED_OWNER_ONLY');
+  const [permission, setPermission] = useState<PropertyContactResearchInput['permissionBasis']>('UNKNOWN');
+  const [status, setStatus] = useState<PropertyContactResearchInput['status']>('OPEN');
+  const [confidence, setConfidence] = useState('0.5');
+  return <div className="mt-3 space-y-2 border-t pt-3" data-testid="form-contact-research-case">
+    <p className="text-xs text-muted-foreground">Record research process/evidence only. Do not paste a phone/email here. Once this discovery is legitimately qualified and promoted, add any actual direct route in the lead’s Contact Evidence panel. This case cannot clear CALL NEXT.</p>
+    <div className="grid gap-2 sm:grid-cols-2">
+      <label className="grid gap-1 text-xs">Source name<Input value={name} onChange={e => setName(e.target.value)} /></label>
+      <label className="grid gap-1 text-xs">Source reference URL<Input value={url} onChange={e => setUrl(e.target.value)} placeholder="https://…" /></label>
+      <label className="grid gap-1 text-xs">Research status<select className="h-9 rounded border bg-background px-2 text-sm" value={status} onChange={e => setStatus(e.target.value as typeof status)}>
+        {(['OPEN','EVIDENCE_RECORDED','NO_DIRECT_ROUTE_FOUND','NEEDS_REVIEW','BLOCKED'] as const).map(x=><option key={x}>{x}</option>)}
+      </select></label>
+      <label className="grid gap-1 text-xs">Identity evidence<select className="h-9 rounded border bg-background px-2 text-sm" value={identity} onChange={e=>setIdentity(e.target.value as typeof identity)}>
+        {(['UNKNOWN','RECORDED_OWNER_ONLY','SELLER_SELF_IDENTIFIED','CONFLICTING','NOT_MATCHED'] as const).map(x=><option key={x}>{x}</option>)}
+      </select></label>
+      <label className="grid gap-1 text-xs">Permission basis<select className="h-9 rounded border bg-background px-2 text-sm" value={permission} onChange={e=>setPermission(e.target.value as typeof permission)}>
+        {(['UNKNOWN','PUBLIC_SOURCE_TERMS','CONSENT','OTHER_DOCUMENTED','PROHIBITED'] as const).map(x=><option key={x}>{x}</option>)}
+      </select></label>
+      <label className="grid gap-1 text-xs">Confidence (0–1)<Input type="number" min="0" max="1" step="0.05" value={confidence} onChange={e=>setConfidence(e.target.value)} /></label>
+    </div>
+    <label className="grid gap-1 text-xs">What was checked / what did the evidence actually say?<textarea className="min-h-16 rounded border bg-background p-2 text-sm" value={note} onChange={e=>setNote(e.target.value)} maxLength={2000} /></label>
+    <Button type="button" variant="outline" disabled={pending || name.trim().length < 2 || note.trim().length < 3 || (url.trim() !== '' && !url.trim().startsWith('https://'))} onClick={()=>onSave({
+      version, status, confidence: Number(confidence), sourceName: name.trim(),
+      sourceType: url.trim() ? 'PUBLIC_RECORD' : 'OTHER', sourceUrl: url.trim() || null,
+      observedAt: new Date().toISOString(), identityMatch: identity, permissionBasis: permission,
+      evidenceReference: null, note: note.trim(),
+    })}>{pending ? 'Saving case…' : 'Save contact research case'}</Button>
+  </div>;
+}
 
 export default function Sources() {
   const { canResearch, access } = useAccess();
@@ -71,6 +113,7 @@ export default function Sources() {
   const addSignal = useAddPropertyRelevanceSignal();
   const promoteDiscovery = usePromotePropertyDiscovery();
   const passDiscovery = useDisqualifyPropertyDiscovery();
+  const saveContactResearch = useSavePropertyContactResearchCase();
   const saveCriteria = useSavePropertyDiscoveryCriteria();
   const discover = useDiscoverBuyer();
   const src = search.data?.source ?? sourceCoverage.data?.registeredSources[0];
@@ -498,6 +541,27 @@ export default function Sources() {
                   <details className="mt-3 rounded border p-3" open={openDiscoveryId === item.id} onToggle={(e) => { if ((e.currentTarget as HTMLDetailsElement).open) setOpenDiscoveryId(item.id); }}>
                     <summary className="cursor-pointer text-sm font-medium">Add sourced evidence or decide this candidate</summary>
                     <div className="mt-3 space-y-3">
+                      <details className="rounded border p-3">
+                        <summary className="cursor-pointer text-sm">Seller contact research case</summary>
+                        {item.contactResearchCase ? <div className="mt-2 space-y-1 text-xs" data-testid={`contact-research-case-${item.id}`}>
+                          <p><b>Status:</b> {item.contactResearchCase.status} · {item.contactResearchCase.synthetic ? 'SYNTHETIC EXERCISE' : 'workspace record'}</p>
+                          <p><b>Evidence:</b> {item.contactResearchCase.sourceName} · {item.contactResearchCase.sourceType} · {item.contactResearchCase.identityMatch} · permission {item.contactResearchCase.permissionBasis}</p>
+                          <p><b>Observed:</b> {item.contactResearchCase.observedAt} · confidence {item.contactResearchCase.confidence.toFixed(2)}</p>
+                          <p><b>Next:</b> {item.contactResearchCase.nextAction}</p>
+                          <p><b>Missing:</b> {item.contactResearchCase.missingRequirements.join(' ') || 'No case-level gaps recorded.'}</p>
+                          <p><b>History:</b> {item.contactResearchCase.auditHistory.length} saved event(s).</p>
+                        </div> : <p className="mt-2 text-xs text-muted-foreground">No case is on file. Recording research does not create a lead or make the property callable.</p>}
+                        <ContactResearchCaseEditor
+                          version={item.version}
+                          sourceName={item.sourceObservations[0]?.sourceName ?? 'Philadelphia public property discovery'}
+                          sourceUrl={item.sourceObservations[0]?.sourceUrl ?? null}
+                          pending={saveContactResearch.isPending}
+                          onSave={(data) => saveContactResearch.mutate({ id: item.id, data }, {
+                            onSuccess: () => { invalidateDiscoveries(); toast({ title: 'Contact research saved', description: 'The discovery remains non-callable; any direct route must be separately reviewed on a promoted lead.' }); },
+                          })}
+                        />
+                        {saveContactResearch.isError && <ErrorNotice error={saveContactResearch.error} />}
+                      </details>
                       <div className="grid gap-2 sm:grid-cols-2">
                         <label className="grid gap-1 text-xs">Signal
                           <select className="h-9 rounded border bg-background px-2 text-sm" value={signalKey} onChange={(e) => setSignalKey(e.target.value as PropertySignalKey)}>
