@@ -85,6 +85,15 @@ function PurchaseReviewDocuments({ contract, onDone }: { contract: DealContract;
   const clauseRequests = useGetClauseReviewRequests(contract.leadId);
   const createClauseRequest = useCreateClauseReviewRequest();
   const documents = contract.documents ?? [];
+  const currentAttempt = contract.attemptNumber ?? 1;
+  const preparedReviewCopy = documents.find((document) =>
+    document.kind === 'PURCHASE_TERMS_REVIEW' && document.attemptNumber === currentAttempt
+      && document.status === 'PREPARED_FOR_REVIEW');
+  const signedEvidenceRecorded = Boolean(
+    contract.executedDocumentUrl && contract.sellerSignedAt && contract.acquisitionSignedAt,
+  );
+  const earnestEvidence = contract.milestones.find((milestone) => milestone.kind === 'EARNEST_MONEY_CONFIRMED');
+  const deadlineSchedule = contract.deadlineSchedule;
   const createReviewCopy = () => prepare.mutate(
     { id: contract.leadId, data: { version: contract.version } },
     {
@@ -142,6 +151,66 @@ function PurchaseReviewDocuments({ contract, onDone }: { contract: DealContract;
     } });
   };
   return <section className="space-y-3 border-t border-border pt-4" data-testid="panel-purchase-review-documents">
+    <div className="rounded border border-border p-3" data-testid="panel-contract-readiness-tracker">
+      <h3 className="text-sm font-semibold">Contract readiness · attempt {currentAttempt} · version {contract.version}</h3>
+      <p className="mt-1 text-xs text-muted-foreground">
+        Locked terms from offer {contract.offerId}: purchase {money(contract.purchasePrice)} · earnest money {money(contract.earnestMoney)} · assignment {contract.assignmentAllowed ? money(contract.assignmentTarget) : 'not authorized'}.
+        This snapshot is not editable here.
+      </p>
+      <div className="mt-3 grid gap-3 sm:grid-cols-2">
+        <div className="border-l-2 border-signal pl-2 text-xs">
+          <b>Legal template review</b>
+          <p>{readiness.isLoading ? 'Loading jurisdiction and template evidence…'
+            : readiness.isError ? 'Unavailable; do not infer legal approval.'
+              : readiness.data?.canSendLegalDocuments ? 'Readiness checks passed for the currently approved template set.'
+                : `${readiness.data?.templates.filter((item) => item.status !== 'APPROVED_LEGAL').length ?? 'Unknown'} required template(s) remain unapproved or unavailable.`}</p>
+        </div>
+        <div className="border-l-2 border-signal pl-2 text-xs">
+          <b>Document preparation</b>
+          <p>{preparedReviewCopy
+            ? `Review worksheet ${preparedReviewCopy.id} prepared at ${fmtDate(preparedReviewCopy.generatedAt)}. It is not a legal contract or signature request.`
+            : 'No current-attempt review worksheet is prepared. Missing approved templates still block a sendable legal document.'}</p>
+        </div>
+        <div className="border-l-2 border-warn pl-2 text-xs">
+          <b>Buyer terms</b>
+          <p>{contract.committedBuyerId && contract.agreedBuyerPrice != null
+            ? `Owner-reviewed buyer commitment recorded for buyer ${contract.committedBuyerId} at ${money(contract.agreedBuyerPrice)}. Assignment signature remains a separate milestone.`
+            : 'No owner-reviewed buyer commitment is recorded. A match or interest response is not buyer approval, signature, or commitment.'}</p>
+        </div>
+        <div className="border-l-2 border-warn pl-2 text-xs">
+          <b>Signature request</b>
+          <p>{readiness.data?.signingProvider.status === 'CONNECTED'
+            ? 'Provider is connected, but no request is treated as sent without a persisted provider receipt.'
+            : readiness.data?.signingProvider.status === 'NOT_CONNECTED'
+              ? 'NOT_CONNECTED · no signature request was sent. Signatures are recorded only from independently reviewed evidence.'
+              : 'Provider status is unavailable; no signature request or delivery is claimed.'}</p>
+        </div>
+        <div className="border-l-2 border-warn pl-2 text-xs">
+          <b>Executed signatures</b>
+          <p>{signedEvidenceRecorded
+            ? `Both party timestamps and executed-document evidence are recorded: seller ${fmtDate(contract.sellerSignedAt!)} · acquisition ${fmtDate(contract.acquisitionSignedAt!)}.`
+            : 'Not recorded as complete. A prepared worksheet, click, or provider connection is not signature evidence.'}</p>
+        </div>
+        <div className="border-l-2 border-warn pl-2 text-xs">
+          <b>Earnest money</b>
+          <p>{contract.earnestMoney <= 0
+            ? 'Not required by the locked terms.'
+            : earnestEvidence
+              ? `${money(earnestEvidence.amount ?? 0)} evidence recorded at ${fmtDate(earnestEvidence.effectiveAt ?? earnestEvidence.recordedAt)} · ${earnestEvidence.evidenceKind?.replaceAll('_', ' ') ?? 'evidence type not recorded'}.`
+              : `${money(contract.earnestMoney)} required by the locked terms; no confirmed evidence is recorded.`}</p>
+          {earnestEvidence?.evidenceUrl && <EvidenceLink url={earnestEvidence.evidenceUrl} label="earnest-money evidence" />}
+        </div>
+        <div className="border-l-2 border-warn pl-2 text-xs">
+          <b>Closing deadlines</b>
+          <p>{deadlineSchedule
+            ? `Reviewed schedule v${deadlineSchedule.version} · ${deadlineSchedule.items.filter((item) => item.disposition === 'DUE_DATE').length} dated milestone(s) · source ${deadlineSchedule.sourceEvidenceUrl}.`
+            : 'No current owner-reviewed milestone schedule is recorded; review title, inspection, earnest-money, assignment, and funds dates against the executed terms.'}</p>
+        </div>
+      </div>
+      <p className="mt-2 text-[11px] text-muted-foreground">
+        Special clauses remain review-only until a qualified reviewer approves the jurisdiction-compatible language. No legal approval, signature request, transfer, or closing is inferred.
+      </p>
+    </div>
     <div className="flex items-start gap-3">
       <FileText className="mt-0.5 h-4 w-4 shrink-0 text-signal" />
       <div>
@@ -765,10 +834,94 @@ export function DealOperationsPanel({ detail }: { detail: LeadDetail }) {
   const excluded = ops.matches.filter((m) => !m.eligible);
   const destinations = ops.matches.filter((m) => (m.destinationKind ?? 'BUYER') !== 'BUYER');
   const destinationActivity = c?.destinationActivityHistory ?? [];
+  const timeline: { at: string; title: string; detail: string; evidence: string; href?: string }[] = [
+    ...detail.transitions.map((event) => ({
+      at: event.createdAt, title: `${event.from} → ${event.to}`,
+      detail: `${event.reason} Next: ${event.nextAction}`,
+      evidence: `Stage transition recorded by ${event.actor}.`,
+    })),
+    ...detail.calls.map((event) => ({
+      at: event.createdAt, title: `Seller call: ${event.outcome.replaceAll('_', ' ')}`,
+      detail: event.notes || event.nextAction,
+      evidence: event.evidenceClassification === 'OBSERVED'
+        ? 'Operator-recorded call observation; not an external recording.'
+        : 'Seller-reported/indicated content; not independently verified.',
+    })),
+    ...ops.matches.map((match) => ({
+      at: match.updatedAt, title: `Buyer state: ${match.status.replaceAll('_', ' ')} · ${match.buyerName}`,
+      detail: match.eligible ? 'Currently eligible match; this is not a commitment.'
+        : match.reasons.concat(match.mismatches).join('; ') || 'Not eligible under current criteria.',
+      evidence: match.status === 'COMMITTED'
+        ? 'Response record exists; binding terms/signatures and settlement remain separate evidence.'
+        : 'Matching/interest state only; no buyer approval or commitment is inferred.',
+    })),
+    ...(c?.history ?? []).map((event) => ({
+      at: event.recordedAt, title: `Transaction: ${event.kind.replaceAll('_', ' ')}`,
+      detail: event.note, evidence: `Operator/audit history; effective ${event.effectiveAt}. ${event.evidenceUrl}`,
+    })),
+    ...destinationActivity.map((event) => ({
+      at: event.recordedAt, title: `Distribution record: ${event.kind.replaceAll('_', ' ')} · ${event.destinationName}`,
+      detail: event.note,
+      evidence: `Recorded ${event.recordedAt}; provider delivery is not inferred from this event. ${event.evidenceUrl}`,
+    })),
+    ...(c?.deadlineSchedule ? [{
+      at: c.deadlineSchedule.recordedAt,
+      title: `Owner-reviewed deadline schedule v${c.deadlineSchedule.version}`,
+      detail: c.deadlineSchedule.items.map((item) => `${item.kind.replaceAll('_', ' ')}: ${item.disposition.replaceAll('_', ' ')}${item.dueDate ? ` ${item.dueDate} (${item.timeZone})` : ''}`).join('; '),
+      evidence: `Terms hash ${c.deadlineSchedule.termsHash}; source ${c.deadlineSchedule.sourceEvidenceUrl}. A schedule is not completion evidence.`,
+    }] : []),
+    ...(c?.documents ?? []).map((event) => ({
+      at: event.generatedAt, title: `Document: ${event.status.replaceAll('_', ' ')}`,
+      detail: `${event.fileName} · version ${event.sourceContractVersion}`,
+      evidence: 'Prepared document record; does not establish sending, signature, or legal approval.',
+    })),
+    ...(c?.milestones ?? []).map((event) => ({
+      at: event.recordedAt, title: `Closing milestone: ${event.kind.replaceAll('_', ' ')}`,
+      detail: event.note,
+      evidence: `Operator-recorded evidence reference; occurred ${event.effectiveAt ?? 'time not recorded'}. ${event.evidenceUrl}`,
+    })),
+    ...(c?.outcomeRecordedAt ? [{
+      at: c.outcomeRecordedAt, title: c.status === 'CLOSED' ? 'Closing outcome recorded' : `Outcome recorded: ${c.status}`,
+      detail: `${c.outcomeNote ?? 'No outcome note recorded.'}${c.assignmentFeeReceived != null ? ` Assignment fee recorded: ${money(c.assignmentFeeReceived)}.` : ''}${c.closingCosts != null ? ` Closing costs recorded: ${money(c.closingCosts)}.` : ''}${c.netProceeds != null ? ` Net proceeds recorded: ${money(c.netProceeds)}.` : ''}`,
+      evidence: `Operator-entered outcome claim; settlement reference ${c.outcomeEvidenceUrl ?? 'missing'}. Not provider-verified.`,
+    }] : []),
+  ].filter((event) => Number.isFinite(Date.parse(event.at)))
+    .sort((a, b) => Date.parse(b.at) - Date.parse(a.at));
 
   return (
     <div className="space-y-4" data-testid="panel-deal-operations">
       <div className="ledger border-l-4 border-l-signal p-3 text-sm" data-testid="text-ops-next"><b>Next action:</b> {ops.nextAction || 'none recorded'}</div>
+      <Block title="Deal timeline & next action" tid="panel-deal-timeline">
+        <p className="text-xs text-muted-foreground">
+          Chronological persisted records across stage changes, seller calls, buyer matching, distribution, documents, funds, deadlines and closing. Operator-entered references are not provider verification; unresolved hypotheses remain hypotheses and unsupported evidence stays a blocker.
+        </p>
+        <div className="grid gap-2 border-y border-border py-2 text-xs sm:grid-cols-2 lg:grid-cols-4" data-testid="deal-lifecycle-coverage">
+          <p><b>Acquisition:</b> {detail.lead.stage} · {detail.transitions.length} persisted stage changes</p>
+          <p><b>Underwriting:</b> {detail.analysisSnapshotId ? `snapshot ${detail.analysisSnapshotId}` : 'no current analysis snapshot'}</p>
+          <p><b>Seller contact:</b> {detail.calls.length} operator call records. The persisted route gate—not a call note—must prove permission and identity before calling.</p>
+          <p><b>Buyer verification:</b> {eligible.length} currently eligible matches of {ops.matches.length}; interest is not commitment.</p>
+          <p><b>Distribution:</b> {destinationActivity.length} recorded destination events; delivery requires provider confirmation.</p>
+          <p><b>Contract/funds:</b> {c ? `${c.status}; ${c.milestones.length} milestone records` : 'no transaction record'}</p>
+          <p><b>Closing:</b> {c?.outcomeRecordedAt ? 'outcome claim recorded' : 'no closing outcome recorded'}</p>
+          <p><b>Post-deal learning:</b> actual outcomes inform recommendations only; economics and authority are never changed automatically.</p>
+        </div>
+        {detail.workGuidance && (
+          <div className="my-2 border-l-2 border-signal pl-3 text-sm" data-testid="timeline-next-action">
+            <b>{detail.workGuidance.title}</b> · {detail.workGuidance.currentState}
+            <p className="text-xs text-muted-foreground">{detail.workGuidance.why} Next: {detail.workGuidance.cta}. Responsible: {detail.workGuidance.responsibleRole}; due {fmtDate(detail.workGuidance.dueAt ?? null)}.</p>
+            {detail.workGuidance.missingFacts.length > 0 && <p className="mt-1 text-xs text-destructive">Blockers: {detail.workGuidance.missingFacts.join('; ')}</p>}
+          </div>
+        )}
+        {timeline.length === 0 ? <p className="text-sm text-muted-foreground">No persisted lifecycle events are available for this deal yet. Current next action: {ops.nextAction || 'review acquisition evidence'}.</p> : (
+          <ol className="max-h-96 space-y-2 overflow-auto border-l border-border pl-3" data-testid="list-deal-timeline">
+            {timeline.map((event, index) => <li key={`${event.at}-${event.title}-${index}`} className="border-b border-border pb-2 text-xs">
+              <p className="font-semibold">{event.title} <span className="font-normal text-muted-foreground">· {fmtDate(event.at)}</span></p>
+              <p className="whitespace-pre-wrap">{event.detail}</p>
+              <p className="text-muted-foreground">{event.evidence}</p>
+            </li>)}
+          </ol>
+        )}
+      </Block>
 
       <Block title="Contract" tid="panel-contract">
         {!c ? <CreateContract detail={detail} onDone={done} /> : (

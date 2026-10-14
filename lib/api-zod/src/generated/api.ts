@@ -876,6 +876,10 @@ export const recordTransactionExceptionResponseContractOneCommitmentSnapshotOneB
 export const recordTransactionExceptionResponseContractOneCommitmentSnapshotOneBuyerTwoVerificationHistoryItemCriteriaOneMinCapRateMin = 0;
 export const recordTransactionExceptionResponseContractOneCommitmentSnapshotOneBuyerTwoVerificationHistoryItemCriteriaOneMinCapRateMax = 1;
 
+export const recordTransactionExceptionResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationTaskOneOutreachReadinessWorkflowStateMax = 16;
+
+export const recordTransactionExceptionResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationTaskOneOutreachReadinessPermissionStatusMax = 32;
+
 export const recordTransactionExceptionResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaStatesItemMin = 2;
 export const recordTransactionExceptionResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaStatesItemMax = 2;
 
@@ -1456,6 +1460,8 @@ export const RecordTransactionExceptionResponse = zod.object({
   "contactRouteStatus": zod.enum(['NONE', 'PRESENT_UNVERIFIED']),
   "providerStatus": zod.enum(['NOT_CONNECTED', 'CONNECTED']),
   "deliveryStatus": zod.enum(['NOT_SENT']),
+  "workflowState": zod.string().max(recordTransactionExceptionResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationTaskOneOutreachReadinessWorkflowStateMax),
+  "permissionStatus": zod.string().max(recordTransactionExceptionResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationTaskOneOutreachReadinessPermissionStatusMax),
   "availableChannels": zod.array(zod.enum(['EMAIL', 'SMS', 'VOICE'])),
   "missingCapabilities": zod.array(zod.string()),
   "nextAction": zod.string(),
@@ -13006,6 +13012,10 @@ export const getCommandCenterResponseOperationsItemContractOneCommitmentSnapshot
 export const getCommandCenterResponseOperationsItemContractOneCommitmentSnapshotOneBuyerTwoVerificationHistoryItemCriteriaOneMinCapRateMin = 0;
 export const getCommandCenterResponseOperationsItemContractOneCommitmentSnapshotOneBuyerTwoVerificationHistoryItemCriteriaOneMinCapRateMax = 1;
 
+export const getCommandCenterResponseOperationsItemContractOneCommitmentSnapshotOneBuyerTwoQualificationTaskOneOutreachReadinessWorkflowStateMax = 16;
+
+export const getCommandCenterResponseOperationsItemContractOneCommitmentSnapshotOneBuyerTwoQualificationTaskOneOutreachReadinessPermissionStatusMax = 32;
+
 export const getCommandCenterResponseOperationsItemContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaStatesItemMin = 2;
 export const getCommandCenterResponseOperationsItemContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaStatesItemMax = 2;
 
@@ -13553,6 +13563,10 @@ export const getCommandCenterResponseBuyersItemTwoVerificationHistoryItemCriteri
 export const getCommandCenterResponseBuyersItemTwoVerificationHistoryItemCriteriaOneMinCapRateMin = 0;
 export const getCommandCenterResponseBuyersItemTwoVerificationHistoryItemCriteriaOneMinCapRateMax = 1;
 
+export const getCommandCenterResponseBuyersItemTwoQualificationTaskOneOutreachReadinessWorkflowStateMax = 16;
+
+export const getCommandCenterResponseBuyersItemTwoQualificationTaskOneOutreachReadinessPermissionStatusMax = 32;
+
 export const getCommandCenterResponseBuyersItemTwoQualificationPortalSelfReportCriteriaStatesItemMin = 2;
 export const getCommandCenterResponseBuyersItemTwoQualificationPortalSelfReportCriteriaStatesItemMax = 2;
 
@@ -13722,6 +13736,30 @@ export const getCommandCenterResponsePropertyDiscoveriesCountsQUALIFIEDLEADMin =
 export const getCommandCenterResponsePropertyDiscoveriesCountsCALLREADYMin = 0;
 
 export const getCommandCenterResponsePropertyDiscoveriesCountsDISQUALIFIEDMin = 0;
+
+export const getCommandCenterResponsePropertyDiscoveriesContactCoverageDiscoveryCountMin = 0;
+
+export const getCommandCenterResponsePropertyDiscoveriesContactCoveragePropertiesWithDirectRouteCandidatesMin = 0;
+
+export const getCommandCenterResponsePropertyDiscoveriesContactCoveragePropertiesWithCurrentPermittedVerifiedSellerRouteMin = 0;
+
+export const getCommandCenterResponsePropertyDiscoveriesContactCoveragePropertiesWithStaleRouteMin = 0;
+
+export const getCommandCenterResponsePropertyDiscoveriesContactCoveragePropertiesWithIdentityConflictMin = 0;
+
+export const getCommandCenterResponsePropertyDiscoveriesContactCoveragePropertiesWithPermissionBlockerMin = 0;
+
+export const getCommandCenterResponsePropertyDiscoveriesContactCoveragePropertiesWithIdentityOrVerificationBlockerMin = 0;
+
+export const getCommandCenterResponsePropertyDiscoveriesContactCoveragePostalOnlyPropertiesMin = 0;
+
+export const getCommandCenterResponsePropertyDiscoveriesContactCoveragePropertiesWithoutDirectRouteMin = 0;
+
+export const getCommandCenterResponsePropertyDiscoveriesContactCoveragePublicFeedPropertiesWithDirectRouteMin = 0;
+
+export const getCommandCenterResponsePropertyDiscoveriesContactCoveragePublicFeedPropertiesWithCurrentPermittedVerifiedRouteMin = 0;
+
+export const getCommandCenterResponsePropertyDiscoveriesContactCoverageSyntheticRouteCandidatesMin = 0;
 
 export const getCommandCenterResponsePropertyDiscoveriesCriteriaOneCandidateThresholdMax = 100;
 
@@ -15442,6 +15480,8 @@ export const GetCommandCenterResponse = zod.object({
   "contactRouteStatus": zod.enum(['NONE', 'PRESENT_UNVERIFIED']),
   "providerStatus": zod.enum(['NOT_CONNECTED', 'CONNECTED']),
   "deliveryStatus": zod.enum(['NOT_SENT']),
+  "workflowState": zod.string().max(getCommandCenterResponseOperationsItemContractOneCommitmentSnapshotOneBuyerTwoQualificationTaskOneOutreachReadinessWorkflowStateMax),
+  "permissionStatus": zod.string().max(getCommandCenterResponseOperationsItemContractOneCommitmentSnapshotOneBuyerTwoQualificationTaskOneOutreachReadinessPermissionStatusMax),
   "availableChannels": zod.array(zod.enum(['EMAIL', 'SMS', 'VOICE'])),
   "missingCapabilities": zod.array(zod.string()),
   "nextAction": zod.string(),
@@ -16228,6 +16268,8 @@ export const GetCommandCenterResponse = zod.object({
   "contactRouteStatus": zod.enum(['NONE', 'PRESENT_UNVERIFIED']),
   "providerStatus": zod.enum(['NOT_CONNECTED', 'CONNECTED']),
   "deliveryStatus": zod.enum(['NOT_SENT']),
+  "workflowState": zod.string().max(getCommandCenterResponseBuyersItemTwoQualificationTaskOneOutreachReadinessWorkflowStateMax),
+  "permissionStatus": zod.string().max(getCommandCenterResponseBuyersItemTwoQualificationTaskOneOutreachReadinessPermissionStatusMax),
   "availableChannels": zod.array(zod.enum(['EMAIL', 'SMS', 'VOICE'])),
   "missingCapabilities": zod.array(zod.string()),
   "nextAction": zod.string(),
@@ -16606,6 +16648,22 @@ export const GetCommandCenterResponse = zod.object({
   "QUALIFIED_LEAD": zod.number().int().min(getCommandCenterResponsePropertyDiscoveriesCountsQUALIFIEDLEADMin),
   "CALL_READY": zod.number().int().min(getCommandCenterResponsePropertyDiscoveriesCountsCALLREADYMin),
   "DISQUALIFIED": zod.number().int().min(getCommandCenterResponsePropertyDiscoveriesCountsDISQUALIFIEDMin)
+}),
+  "contactCoverage": zod.object({
+  "checkedAt": zod.string().datetime({"offset":true}),
+  "discoveryCount": zod.number().int().min(getCommandCenterResponsePropertyDiscoveriesContactCoverageDiscoveryCountMin),
+  "propertiesWithDirectRouteCandidates": zod.number().int().min(getCommandCenterResponsePropertyDiscoveriesContactCoveragePropertiesWithDirectRouteCandidatesMin),
+  "propertiesWithCurrentPermittedVerifiedSellerRoute": zod.number().int().min(getCommandCenterResponsePropertyDiscoveriesContactCoveragePropertiesWithCurrentPermittedVerifiedSellerRouteMin),
+  "propertiesWithStaleRoute": zod.number().int().min(getCommandCenterResponsePropertyDiscoveriesContactCoveragePropertiesWithStaleRouteMin),
+  "propertiesWithIdentityConflict": zod.number().int().min(getCommandCenterResponsePropertyDiscoveriesContactCoveragePropertiesWithIdentityConflictMin),
+  "propertiesWithPermissionBlocker": zod.number().int().min(getCommandCenterResponsePropertyDiscoveriesContactCoveragePropertiesWithPermissionBlockerMin),
+  "propertiesWithIdentityOrVerificationBlocker": zod.number().int().min(getCommandCenterResponsePropertyDiscoveriesContactCoveragePropertiesWithIdentityOrVerificationBlockerMin),
+  "postalOnlyProperties": zod.number().int().min(getCommandCenterResponsePropertyDiscoveriesContactCoveragePostalOnlyPropertiesMin),
+  "propertiesWithoutDirectRoute": zod.number().int().min(getCommandCenterResponsePropertyDiscoveriesContactCoveragePropertiesWithoutDirectRouteMin),
+  "publicFeedPropertiesWithDirectRoute": zod.number().int().min(getCommandCenterResponsePropertyDiscoveriesContactCoveragePublicFeedPropertiesWithDirectRouteMin),
+  "publicFeedPropertiesWithCurrentPermittedVerifiedRoute": zod.number().int().min(getCommandCenterResponsePropertyDiscoveriesContactCoveragePublicFeedPropertiesWithCurrentPermittedVerifiedRouteMin),
+  "syntheticRouteCandidates": zod.number().int().min(getCommandCenterResponsePropertyDiscoveriesContactCoverageSyntheticRouteCandidatesMin),
+  "nextAction": zod.string()
 }),
   "criteria": zod.object({
   "candidateThreshold": zod.number().int().min(1).max(getCommandCenterResponsePropertyDiscoveriesCriteriaOneCandidateThresholdMax),
@@ -16987,6 +17045,10 @@ export const listBuyersResponseTwoVerificationHistoryItemCriteriaOneMinSpreadMax
 export const listBuyersResponseTwoVerificationHistoryItemCriteriaOneMinCapRateMin = 0;
 export const listBuyersResponseTwoVerificationHistoryItemCriteriaOneMinCapRateMax = 1;
 
+export const listBuyersResponseTwoQualificationTaskOneOutreachReadinessWorkflowStateMax = 16;
+
+export const listBuyersResponseTwoQualificationTaskOneOutreachReadinessPermissionStatusMax = 32;
+
 export const listBuyersResponseTwoQualificationPortalSelfReportCriteriaStatesItemMin = 2;
 export const listBuyersResponseTwoQualificationPortalSelfReportCriteriaStatesItemMax = 2;
 
@@ -17204,6 +17266,8 @@ export const ListBuyersResponseItem = zod.object({
   "contactRouteStatus": zod.enum(['NONE', 'PRESENT_UNVERIFIED']),
   "providerStatus": zod.enum(['NOT_CONNECTED', 'CONNECTED']),
   "deliveryStatus": zod.enum(['NOT_SENT']),
+  "workflowState": zod.string().max(listBuyersResponseTwoQualificationTaskOneOutreachReadinessWorkflowStateMax),
+  "permissionStatus": zod.string().max(listBuyersResponseTwoQualificationTaskOneOutreachReadinessPermissionStatusMax),
   "availableChannels": zod.array(zod.enum(['EMAIL', 'SMS', 'VOICE'])),
   "missingCapabilities": zod.array(zod.string()),
   "nextAction": zod.string(),
@@ -17545,6 +17609,10 @@ export const createBuyerResponseTwoVerificationHistoryItemCriteriaOneMinSpreadMa
 export const createBuyerResponseTwoVerificationHistoryItemCriteriaOneMinCapRateMin = 0;
 export const createBuyerResponseTwoVerificationHistoryItemCriteriaOneMinCapRateMax = 1;
 
+export const createBuyerResponseTwoQualificationTaskOneOutreachReadinessWorkflowStateMax = 16;
+
+export const createBuyerResponseTwoQualificationTaskOneOutreachReadinessPermissionStatusMax = 32;
+
 export const createBuyerResponseTwoQualificationPortalSelfReportCriteriaStatesItemMin = 2;
 export const createBuyerResponseTwoQualificationPortalSelfReportCriteriaStatesItemMax = 2;
 
@@ -17762,6 +17830,8 @@ export const CreateBuyerResponse = zod.object({
   "contactRouteStatus": zod.enum(['NONE', 'PRESENT_UNVERIFIED']),
   "providerStatus": zod.enum(['NOT_CONNECTED', 'CONNECTED']),
   "deliveryStatus": zod.enum(['NOT_SENT']),
+  "workflowState": zod.string().max(createBuyerResponseTwoQualificationTaskOneOutreachReadinessWorkflowStateMax),
+  "permissionStatus": zod.string().max(createBuyerResponseTwoQualificationTaskOneOutreachReadinessPermissionStatusMax),
   "availableChannels": zod.array(zod.enum(['EMAIL', 'SMS', 'VOICE'])),
   "missingCapabilities": zod.array(zod.string()),
   "nextAction": zod.string(),
@@ -18482,6 +18552,10 @@ export const getBuyerResponseTwoVerificationHistoryItemCriteriaOneMinSpreadMax =
 export const getBuyerResponseTwoVerificationHistoryItemCriteriaOneMinCapRateMin = 0;
 export const getBuyerResponseTwoVerificationHistoryItemCriteriaOneMinCapRateMax = 1;
 
+export const getBuyerResponseTwoQualificationTaskOneOutreachReadinessWorkflowStateMax = 16;
+
+export const getBuyerResponseTwoQualificationTaskOneOutreachReadinessPermissionStatusMax = 32;
+
 export const getBuyerResponseTwoQualificationPortalSelfReportCriteriaStatesItemMin = 2;
 export const getBuyerResponseTwoQualificationPortalSelfReportCriteriaStatesItemMax = 2;
 
@@ -18699,6 +18773,8 @@ export const GetBuyerResponse = zod.object({
   "contactRouteStatus": zod.enum(['NONE', 'PRESENT_UNVERIFIED']),
   "providerStatus": zod.enum(['NOT_CONNECTED', 'CONNECTED']),
   "deliveryStatus": zod.enum(['NOT_SENT']),
+  "workflowState": zod.string().max(getBuyerResponseTwoQualificationTaskOneOutreachReadinessWorkflowStateMax),
+  "permissionStatus": zod.string().max(getBuyerResponseTwoQualificationTaskOneOutreachReadinessPermissionStatusMax),
   "availableChannels": zod.array(zod.enum(['EMAIL', 'SMS', 'VOICE'])),
   "missingCapabilities": zod.array(zod.string()),
   "nextAction": zod.string(),
@@ -19046,6 +19122,10 @@ export const updateBuyerResponseTwoVerificationHistoryItemCriteriaOneMinSpreadMa
 export const updateBuyerResponseTwoVerificationHistoryItemCriteriaOneMinCapRateMin = 0;
 export const updateBuyerResponseTwoVerificationHistoryItemCriteriaOneMinCapRateMax = 1;
 
+export const updateBuyerResponseTwoQualificationTaskOneOutreachReadinessWorkflowStateMax = 16;
+
+export const updateBuyerResponseTwoQualificationTaskOneOutreachReadinessPermissionStatusMax = 32;
+
 export const updateBuyerResponseTwoQualificationPortalSelfReportCriteriaStatesItemMin = 2;
 export const updateBuyerResponseTwoQualificationPortalSelfReportCriteriaStatesItemMax = 2;
 
@@ -19263,6 +19343,8 @@ export const UpdateBuyerResponse = zod.object({
   "contactRouteStatus": zod.enum(['NONE', 'PRESENT_UNVERIFIED']),
   "providerStatus": zod.enum(['NOT_CONNECTED', 'CONNECTED']),
   "deliveryStatus": zod.enum(['NOT_SENT']),
+  "workflowState": zod.string().max(updateBuyerResponseTwoQualificationTaskOneOutreachReadinessWorkflowStateMax),
+  "permissionStatus": zod.string().max(updateBuyerResponseTwoQualificationTaskOneOutreachReadinessPermissionStatusMax),
   "availableChannels": zod.array(zod.enum(['EMAIL', 'SMS', 'VOICE'])),
   "missingCapabilities": zod.array(zod.string()),
   "nextAction": zod.string(),
@@ -19531,6 +19613,10 @@ export const verifyBuyerResponseTwoVerificationHistoryItemCriteriaOneMinSpreadMa
 export const verifyBuyerResponseTwoVerificationHistoryItemCriteriaOneMinCapRateMin = 0;
 export const verifyBuyerResponseTwoVerificationHistoryItemCriteriaOneMinCapRateMax = 1;
 
+export const verifyBuyerResponseTwoQualificationTaskOneOutreachReadinessWorkflowStateMax = 16;
+
+export const verifyBuyerResponseTwoQualificationTaskOneOutreachReadinessPermissionStatusMax = 32;
+
 export const verifyBuyerResponseTwoQualificationPortalSelfReportCriteriaStatesItemMin = 2;
 export const verifyBuyerResponseTwoQualificationPortalSelfReportCriteriaStatesItemMax = 2;
 
@@ -19748,6 +19834,8 @@ export const VerifyBuyerResponse = zod.object({
   "contactRouteStatus": zod.enum(['NONE', 'PRESENT_UNVERIFIED']),
   "providerStatus": zod.enum(['NOT_CONNECTED', 'CONNECTED']),
   "deliveryStatus": zod.enum(['NOT_SENT']),
+  "workflowState": zod.string().max(verifyBuyerResponseTwoQualificationTaskOneOutreachReadinessWorkflowStateMax),
+  "permissionStatus": zod.string().max(verifyBuyerResponseTwoQualificationTaskOneOutreachReadinessPermissionStatusMax),
   "availableChannels": zod.array(zod.enum(['EMAIL', 'SMS', 'VOICE'])),
   "missingCapabilities": zod.array(zod.string()),
   "nextAction": zod.string(),
@@ -19804,6 +19892,41 @@ export const VerifyBuyerResponse = zod.object({
   "createdAt": zod.string(),
   "updatedAt": zod.string()
 }))
+
+
+export const RecordBuyerContactPermissionParams = zod.object({
+  "id": zod.coerce.string()
+})
+
+
+export const recordBuyerContactPermissionBodySourceMin = 3;
+export const recordBuyerContactPermissionBodySourceMax = 2000;
+
+export const recordBuyerContactPermissionBodyEvidenceUrlMin = 8;
+export const recordBuyerContactPermissionBodyEvidenceUrlMax = 2000;
+
+
+
+export const RecordBuyerContactPermissionBody = zod.object({
+  "version": zod.number().int().min(1),
+  "status": zod.enum(['GRANTED', 'OPTED_OUT']),
+  "channels": zod.array(zod.enum(['EMAIL', 'SMS', 'VOICE'])),
+  "source": zod.string().min(recordBuyerContactPermissionBodySourceMin).max(recordBuyerContactPermissionBodySourceMax),
+  "evidenceUrl": zod.string().min(recordBuyerContactPermissionBodyEvidenceUrlMin).max(recordBuyerContactPermissionBodyEvidenceUrlMax),
+  "capturedAt": zod.string().datetime({"offset":true}),
+  "validUntil": zod.string().datetime({"offset":true}).nullable()
+})
+
+export const RecordBuyerContactPermissionResponse = zod.object({
+  "status": zod.enum(['GRANTED', 'OPTED_OUT']),
+  "channels": zod.array(zod.enum(['EMAIL', 'SMS', 'VOICE'])),
+  "source": zod.string(),
+  "evidenceUrl": zod.string(),
+  "capturedAt": zod.string().datetime({"offset":true}),
+  "validUntil": zod.string().datetime({"offset":true}).nullable(),
+  "reviewedBy": zod.string(),
+  "reviewedAt": zod.string().datetime({"offset":true})
+})
 
 
 export const CreateBuyerQualificationPortalInviteParams = zod.object({
@@ -19995,6 +20118,10 @@ export const getDealOperationsResponseContractOneCommitmentSnapshotOneBuyerTwoVe
 
 export const getDealOperationsResponseContractOneCommitmentSnapshotOneBuyerTwoVerificationHistoryItemCriteriaOneMinCapRateMin = 0;
 export const getDealOperationsResponseContractOneCommitmentSnapshotOneBuyerTwoVerificationHistoryItemCriteriaOneMinCapRateMax = 1;
+
+export const getDealOperationsResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationTaskOneOutreachReadinessWorkflowStateMax = 16;
+
+export const getDealOperationsResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationTaskOneOutreachReadinessPermissionStatusMax = 32;
 
 export const getDealOperationsResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaStatesItemMin = 2;
 export const getDealOperationsResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaStatesItemMax = 2;
@@ -20576,6 +20703,8 @@ export const GetDealOperationsResponse = zod.object({
   "contactRouteStatus": zod.enum(['NONE', 'PRESENT_UNVERIFIED']),
   "providerStatus": zod.enum(['NOT_CONNECTED', 'CONNECTED']),
   "deliveryStatus": zod.enum(['NOT_SENT']),
+  "workflowState": zod.string().max(getDealOperationsResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationTaskOneOutreachReadinessWorkflowStateMax),
+  "permissionStatus": zod.string().max(getDealOperationsResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationTaskOneOutreachReadinessPermissionStatusMax),
   "availableChannels": zod.array(zod.enum(['EMAIL', 'SMS', 'VOICE'])),
   "missingCapabilities": zod.array(zod.string()),
   "nextAction": zod.string(),
@@ -21380,6 +21509,10 @@ export const refreshMatchesResponseContractOneCommitmentSnapshotOneBuyerTwoVerif
 export const refreshMatchesResponseContractOneCommitmentSnapshotOneBuyerTwoVerificationHistoryItemCriteriaOneMinCapRateMin = 0;
 export const refreshMatchesResponseContractOneCommitmentSnapshotOneBuyerTwoVerificationHistoryItemCriteriaOneMinCapRateMax = 1;
 
+export const refreshMatchesResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationTaskOneOutreachReadinessWorkflowStateMax = 16;
+
+export const refreshMatchesResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationTaskOneOutreachReadinessPermissionStatusMax = 32;
+
 export const refreshMatchesResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaStatesItemMin = 2;
 export const refreshMatchesResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaStatesItemMax = 2;
 
@@ -21960,6 +22093,8 @@ export const RefreshMatchesResponse = zod.object({
   "contactRouteStatus": zod.enum(['NONE', 'PRESENT_UNVERIFIED']),
   "providerStatus": zod.enum(['NOT_CONNECTED', 'CONNECTED']),
   "deliveryStatus": zod.enum(['NOT_SENT']),
+  "workflowState": zod.string().max(refreshMatchesResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationTaskOneOutreachReadinessWorkflowStateMax),
+  "permissionStatus": zod.string().max(refreshMatchesResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationTaskOneOutreachReadinessPermissionStatusMax),
   "availableChannels": zod.array(zod.enum(['EMAIL', 'SMS', 'VOICE'])),
   "missingCapabilities": zod.array(zod.string()),
   "nextAction": zod.string(),
@@ -22786,6 +22921,10 @@ export const recordBuyerResponseResponseContractOneCommitmentSnapshotOneBuyerTwo
 export const recordBuyerResponseResponseContractOneCommitmentSnapshotOneBuyerTwoVerificationHistoryItemCriteriaOneMinCapRateMin = 0;
 export const recordBuyerResponseResponseContractOneCommitmentSnapshotOneBuyerTwoVerificationHistoryItemCriteriaOneMinCapRateMax = 1;
 
+export const recordBuyerResponseResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationTaskOneOutreachReadinessWorkflowStateMax = 16;
+
+export const recordBuyerResponseResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationTaskOneOutreachReadinessPermissionStatusMax = 32;
+
 export const recordBuyerResponseResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaStatesItemMin = 2;
 export const recordBuyerResponseResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaStatesItemMax = 2;
 
@@ -23366,6 +23505,8 @@ export const RecordBuyerResponseResponse = zod.object({
   "contactRouteStatus": zod.enum(['NONE', 'PRESENT_UNVERIFIED']),
   "providerStatus": zod.enum(['NOT_CONNECTED', 'CONNECTED']),
   "deliveryStatus": zod.enum(['NOT_SENT']),
+  "workflowState": zod.string().max(recordBuyerResponseResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationTaskOneOutreachReadinessWorkflowStateMax),
+  "permissionStatus": zod.string().max(recordBuyerResponseResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationTaskOneOutreachReadinessPermissionStatusMax),
   "availableChannels": zod.array(zod.enum(['EMAIL', 'SMS', 'VOICE'])),
   "missingCapabilities": zod.array(zod.string()),
   "nextAction": zod.string(),
@@ -25449,6 +25590,10 @@ export const recordDestinationActivityResponseContractOneCommitmentSnapshotOneBu
 export const recordDestinationActivityResponseContractOneCommitmentSnapshotOneBuyerTwoVerificationHistoryItemCriteriaOneMinCapRateMin = 0;
 export const recordDestinationActivityResponseContractOneCommitmentSnapshotOneBuyerTwoVerificationHistoryItemCriteriaOneMinCapRateMax = 1;
 
+export const recordDestinationActivityResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationTaskOneOutreachReadinessWorkflowStateMax = 16;
+
+export const recordDestinationActivityResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationTaskOneOutreachReadinessPermissionStatusMax = 32;
+
 export const recordDestinationActivityResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaStatesItemMin = 2;
 export const recordDestinationActivityResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaStatesItemMax = 2;
 
@@ -26029,6 +26174,8 @@ export const RecordDestinationActivityResponse = zod.object({
   "contactRouteStatus": zod.enum(['NONE', 'PRESENT_UNVERIFIED']),
   "providerStatus": zod.enum(['NOT_CONNECTED', 'CONNECTED']),
   "deliveryStatus": zod.enum(['NOT_SENT']),
+  "workflowState": zod.string().max(recordDestinationActivityResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationTaskOneOutreachReadinessWorkflowStateMax),
+  "permissionStatus": zod.string().max(recordDestinationActivityResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationTaskOneOutreachReadinessPermissionStatusMax),
   "availableChannels": zod.array(zod.enum(['EMAIL', 'SMS', 'VOICE'])),
   "missingCapabilities": zod.array(zod.string()),
   "nextAction": zod.string(),
@@ -26842,6 +26989,10 @@ export const createContractResponseContractOneCommitmentSnapshotOneBuyerTwoVerif
 export const createContractResponseContractOneCommitmentSnapshotOneBuyerTwoVerificationHistoryItemCriteriaOneMinCapRateMin = 0;
 export const createContractResponseContractOneCommitmentSnapshotOneBuyerTwoVerificationHistoryItemCriteriaOneMinCapRateMax = 1;
 
+export const createContractResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationTaskOneOutreachReadinessWorkflowStateMax = 16;
+
+export const createContractResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationTaskOneOutreachReadinessPermissionStatusMax = 32;
+
 export const createContractResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaStatesItemMin = 2;
 export const createContractResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaStatesItemMax = 2;
 
@@ -27422,6 +27573,8 @@ export const CreateContractResponse = zod.object({
   "contactRouteStatus": zod.enum(['NONE', 'PRESENT_UNVERIFIED']),
   "providerStatus": zod.enum(['NOT_CONNECTED', 'CONNECTED']),
   "deliveryStatus": zod.enum(['NOT_SENT']),
+  "workflowState": zod.string().max(createContractResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationTaskOneOutreachReadinessWorkflowStateMax),
+  "permissionStatus": zod.string().max(createContractResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationTaskOneOutreachReadinessPermissionStatusMax),
   "availableChannels": zod.array(zod.enum(['EMAIL', 'SMS', 'VOICE'])),
   "missingCapabilities": zod.array(zod.string()),
   "nextAction": zod.string(),
@@ -28233,6 +28386,10 @@ export const preparePurchaseReviewDocumentResponseContractOneCommitmentSnapshotO
 export const preparePurchaseReviewDocumentResponseContractOneCommitmentSnapshotOneBuyerTwoVerificationHistoryItemCriteriaOneMinCapRateMin = 0;
 export const preparePurchaseReviewDocumentResponseContractOneCommitmentSnapshotOneBuyerTwoVerificationHistoryItemCriteriaOneMinCapRateMax = 1;
 
+export const preparePurchaseReviewDocumentResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationTaskOneOutreachReadinessWorkflowStateMax = 16;
+
+export const preparePurchaseReviewDocumentResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationTaskOneOutreachReadinessPermissionStatusMax = 32;
+
 export const preparePurchaseReviewDocumentResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaStatesItemMin = 2;
 export const preparePurchaseReviewDocumentResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaStatesItemMax = 2;
 
@@ -28813,6 +28970,8 @@ export const PreparePurchaseReviewDocumentResponse = zod.object({
   "contactRouteStatus": zod.enum(['NONE', 'PRESENT_UNVERIFIED']),
   "providerStatus": zod.enum(['NOT_CONNECTED', 'CONNECTED']),
   "deliveryStatus": zod.enum(['NOT_SENT']),
+  "workflowState": zod.string().max(preparePurchaseReviewDocumentResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationTaskOneOutreachReadinessWorkflowStateMax),
+  "permissionStatus": zod.string().max(preparePurchaseReviewDocumentResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationTaskOneOutreachReadinessPermissionStatusMax),
   "availableChannels": zod.array(zod.enum(['EMAIL', 'SMS', 'VOICE'])),
   "missingCapabilities": zod.array(zod.string()),
   "nextAction": zod.string(),
@@ -29630,6 +29789,10 @@ export const transitionTransactionDocumentResponseContractOneCommitmentSnapshotO
 export const transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneBuyerTwoVerificationHistoryItemCriteriaOneMinCapRateMin = 0;
 export const transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneBuyerTwoVerificationHistoryItemCriteriaOneMinCapRateMax = 1;
 
+export const transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationTaskOneOutreachReadinessWorkflowStateMax = 16;
+
+export const transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationTaskOneOutreachReadinessPermissionStatusMax = 32;
+
 export const transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaStatesItemMin = 2;
 export const transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaStatesItemMax = 2;
 
@@ -30210,6 +30373,8 @@ export const TransitionTransactionDocumentResponse = zod.object({
   "contactRouteStatus": zod.enum(['NONE', 'PRESENT_UNVERIFIED']),
   "providerStatus": zod.enum(['NOT_CONNECTED', 'CONNECTED']),
   "deliveryStatus": zod.enum(['NOT_SENT']),
+  "workflowState": zod.string().max(transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationTaskOneOutreachReadinessWorkflowStateMax),
+  "permissionStatus": zod.string().max(transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationTaskOneOutreachReadinessPermissionStatusMax),
   "availableChannels": zod.array(zod.enum(['EMAIL', 'SMS', 'VOICE'])),
   "missingCapabilities": zod.array(zod.string()),
   "nextAction": zod.string(),
@@ -31223,6 +31388,10 @@ export const executeContractResponseContractOneCommitmentSnapshotOneBuyerTwoVeri
 export const executeContractResponseContractOneCommitmentSnapshotOneBuyerTwoVerificationHistoryItemCriteriaOneMinCapRateMin = 0;
 export const executeContractResponseContractOneCommitmentSnapshotOneBuyerTwoVerificationHistoryItemCriteriaOneMinCapRateMax = 1;
 
+export const executeContractResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationTaskOneOutreachReadinessWorkflowStateMax = 16;
+
+export const executeContractResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationTaskOneOutreachReadinessPermissionStatusMax = 32;
+
 export const executeContractResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaStatesItemMin = 2;
 export const executeContractResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaStatesItemMax = 2;
 
@@ -31803,6 +31972,8 @@ export const ExecuteContractResponse = zod.object({
   "contactRouteStatus": zod.enum(['NONE', 'PRESENT_UNVERIFIED']),
   "providerStatus": zod.enum(['NOT_CONNECTED', 'CONNECTED']),
   "deliveryStatus": zod.enum(['NOT_SENT']),
+  "workflowState": zod.string().max(executeContractResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationTaskOneOutreachReadinessWorkflowStateMax),
+  "permissionStatus": zod.string().max(executeContractResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationTaskOneOutreachReadinessPermissionStatusMax),
   "availableChannels": zod.array(zod.enum(['EMAIL', 'SMS', 'VOICE'])),
   "missingCapabilities": zod.array(zod.string()),
   "nextAction": zod.string(),
@@ -32638,6 +32809,10 @@ export const recordClosingMilestoneResponseContractOneCommitmentSnapshotOneBuyer
 export const recordClosingMilestoneResponseContractOneCommitmentSnapshotOneBuyerTwoVerificationHistoryItemCriteriaOneMinCapRateMin = 0;
 export const recordClosingMilestoneResponseContractOneCommitmentSnapshotOneBuyerTwoVerificationHistoryItemCriteriaOneMinCapRateMax = 1;
 
+export const recordClosingMilestoneResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationTaskOneOutreachReadinessWorkflowStateMax = 16;
+
+export const recordClosingMilestoneResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationTaskOneOutreachReadinessPermissionStatusMax = 32;
+
 export const recordClosingMilestoneResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaStatesItemMin = 2;
 export const recordClosingMilestoneResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaStatesItemMax = 2;
 
@@ -33218,6 +33393,8 @@ export const RecordClosingMilestoneResponse = zod.object({
   "contactRouteStatus": zod.enum(['NONE', 'PRESENT_UNVERIFIED']),
   "providerStatus": zod.enum(['NOT_CONNECTED', 'CONNECTED']),
   "deliveryStatus": zod.enum(['NOT_SENT']),
+  "workflowState": zod.string().max(recordClosingMilestoneResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationTaskOneOutreachReadinessWorkflowStateMax),
+  "permissionStatus": zod.string().max(recordClosingMilestoneResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationTaskOneOutreachReadinessPermissionStatusMax),
   "availableChannels": zod.array(zod.enum(['EMAIL', 'SMS', 'VOICE'])),
   "missingCapabilities": zod.array(zod.string()),
   "nextAction": zod.string(),
@@ -34057,6 +34234,10 @@ export const recordTransactionDeadlineScheduleResponseContractOneCommitmentSnaps
 export const recordTransactionDeadlineScheduleResponseContractOneCommitmentSnapshotOneBuyerTwoVerificationHistoryItemCriteriaOneMinCapRateMin = 0;
 export const recordTransactionDeadlineScheduleResponseContractOneCommitmentSnapshotOneBuyerTwoVerificationHistoryItemCriteriaOneMinCapRateMax = 1;
 
+export const recordTransactionDeadlineScheduleResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationTaskOneOutreachReadinessWorkflowStateMax = 16;
+
+export const recordTransactionDeadlineScheduleResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationTaskOneOutreachReadinessPermissionStatusMax = 32;
+
 export const recordTransactionDeadlineScheduleResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaStatesItemMin = 2;
 export const recordTransactionDeadlineScheduleResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaStatesItemMax = 2;
 
@@ -34637,6 +34818,8 @@ export const RecordTransactionDeadlineScheduleResponse = zod.object({
   "contactRouteStatus": zod.enum(['NONE', 'PRESENT_UNVERIFIED']),
   "providerStatus": zod.enum(['NOT_CONNECTED', 'CONNECTED']),
   "deliveryStatus": zod.enum(['NOT_SENT']),
+  "workflowState": zod.string().max(recordTransactionDeadlineScheduleResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationTaskOneOutreachReadinessWorkflowStateMax),
+  "permissionStatus": zod.string().max(recordTransactionDeadlineScheduleResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationTaskOneOutreachReadinessPermissionStatusMax),
   "availableChannels": zod.array(zod.enum(['EMAIL', 'SMS', 'VOICE'])),
   "missingCapabilities": zod.array(zod.string()),
   "nextAction": zod.string(),
@@ -35470,6 +35653,10 @@ export const recordDealOutcomeResponseContractOneCommitmentSnapshotOneBuyerTwoVe
 export const recordDealOutcomeResponseContractOneCommitmentSnapshotOneBuyerTwoVerificationHistoryItemCriteriaOneMinCapRateMin = 0;
 export const recordDealOutcomeResponseContractOneCommitmentSnapshotOneBuyerTwoVerificationHistoryItemCriteriaOneMinCapRateMax = 1;
 
+export const recordDealOutcomeResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationTaskOneOutreachReadinessWorkflowStateMax = 16;
+
+export const recordDealOutcomeResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationTaskOneOutreachReadinessPermissionStatusMax = 32;
+
 export const recordDealOutcomeResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaStatesItemMin = 2;
 export const recordDealOutcomeResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationPortalSelfReportCriteriaStatesItemMax = 2;
 
@@ -36050,6 +36237,8 @@ export const RecordDealOutcomeResponse = zod.object({
   "contactRouteStatus": zod.enum(['NONE', 'PRESENT_UNVERIFIED']),
   "providerStatus": zod.enum(['NOT_CONNECTED', 'CONNECTED']),
   "deliveryStatus": zod.enum(['NOT_SENT']),
+  "workflowState": zod.string().max(recordDealOutcomeResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationTaskOneOutreachReadinessWorkflowStateMax),
+  "permissionStatus": zod.string().max(recordDealOutcomeResponseContractOneCommitmentSnapshotOneBuyerTwoQualificationTaskOneOutreachReadinessPermissionStatusMax),
   "availableChannels": zod.array(zod.enum(['EMAIL', 'SMS', 'VOICE'])),
   "missingCapabilities": zod.array(zod.string()),
   "nextAction": zod.string(),
@@ -36864,6 +37053,10 @@ export const requestBuyerQualificationResponseTwoVerificationHistoryItemCriteria
 export const requestBuyerQualificationResponseTwoVerificationHistoryItemCriteriaOneMinCapRateMin = 0;
 export const requestBuyerQualificationResponseTwoVerificationHistoryItemCriteriaOneMinCapRateMax = 1;
 
+export const requestBuyerQualificationResponseTwoQualificationTaskOneOutreachReadinessWorkflowStateMax = 16;
+
+export const requestBuyerQualificationResponseTwoQualificationTaskOneOutreachReadinessPermissionStatusMax = 32;
+
 export const requestBuyerQualificationResponseTwoQualificationPortalSelfReportCriteriaStatesItemMin = 2;
 export const requestBuyerQualificationResponseTwoQualificationPortalSelfReportCriteriaStatesItemMax = 2;
 
@@ -37081,6 +37274,8 @@ export const RequestBuyerQualificationResponse = zod.object({
   "contactRouteStatus": zod.enum(['NONE', 'PRESENT_UNVERIFIED']),
   "providerStatus": zod.enum(['NOT_CONNECTED', 'CONNECTED']),
   "deliveryStatus": zod.enum(['NOT_SENT']),
+  "workflowState": zod.string().max(requestBuyerQualificationResponseTwoQualificationTaskOneOutreachReadinessWorkflowStateMax),
+  "permissionStatus": zod.string().max(requestBuyerQualificationResponseTwoQualificationTaskOneOutreachReadinessPermissionStatusMax),
   "availableChannels": zod.array(zod.enum(['EMAIL', 'SMS', 'VOICE'])),
   "missingCapabilities": zod.array(zod.string()),
   "nextAction": zod.string(),
@@ -37618,6 +37813,30 @@ export const listPropertyDiscoveriesResponseCountsCALLREADYMin = 0;
 
 export const listPropertyDiscoveriesResponseCountsDISQUALIFIEDMin = 0;
 
+export const listPropertyDiscoveriesResponseContactCoverageDiscoveryCountMin = 0;
+
+export const listPropertyDiscoveriesResponseContactCoveragePropertiesWithDirectRouteCandidatesMin = 0;
+
+export const listPropertyDiscoveriesResponseContactCoveragePropertiesWithCurrentPermittedVerifiedSellerRouteMin = 0;
+
+export const listPropertyDiscoveriesResponseContactCoveragePropertiesWithStaleRouteMin = 0;
+
+export const listPropertyDiscoveriesResponseContactCoveragePropertiesWithIdentityConflictMin = 0;
+
+export const listPropertyDiscoveriesResponseContactCoveragePropertiesWithPermissionBlockerMin = 0;
+
+export const listPropertyDiscoveriesResponseContactCoveragePropertiesWithIdentityOrVerificationBlockerMin = 0;
+
+export const listPropertyDiscoveriesResponseContactCoveragePostalOnlyPropertiesMin = 0;
+
+export const listPropertyDiscoveriesResponseContactCoveragePropertiesWithoutDirectRouteMin = 0;
+
+export const listPropertyDiscoveriesResponseContactCoveragePublicFeedPropertiesWithDirectRouteMin = 0;
+
+export const listPropertyDiscoveriesResponseContactCoveragePublicFeedPropertiesWithCurrentPermittedVerifiedRouteMin = 0;
+
+export const listPropertyDiscoveriesResponseContactCoverageSyntheticRouteCandidatesMin = 0;
+
 export const listPropertyDiscoveriesResponseCriteriaOneCandidateThresholdMax = 100;
 
 export const listPropertyDiscoveriesResponseCriteriaOneQualifiedLeadThresholdMax = 100;
@@ -37945,6 +38164,22 @@ export const ListPropertyDiscoveriesResponse = zod.object({
   "QUALIFIED_LEAD": zod.number().int().min(listPropertyDiscoveriesResponseCountsQUALIFIEDLEADMin),
   "CALL_READY": zod.number().int().min(listPropertyDiscoveriesResponseCountsCALLREADYMin),
   "DISQUALIFIED": zod.number().int().min(listPropertyDiscoveriesResponseCountsDISQUALIFIEDMin)
+}),
+  "contactCoverage": zod.object({
+  "checkedAt": zod.string().datetime({"offset":true}),
+  "discoveryCount": zod.number().int().min(listPropertyDiscoveriesResponseContactCoverageDiscoveryCountMin),
+  "propertiesWithDirectRouteCandidates": zod.number().int().min(listPropertyDiscoveriesResponseContactCoveragePropertiesWithDirectRouteCandidatesMin),
+  "propertiesWithCurrentPermittedVerifiedSellerRoute": zod.number().int().min(listPropertyDiscoveriesResponseContactCoveragePropertiesWithCurrentPermittedVerifiedSellerRouteMin),
+  "propertiesWithStaleRoute": zod.number().int().min(listPropertyDiscoveriesResponseContactCoveragePropertiesWithStaleRouteMin),
+  "propertiesWithIdentityConflict": zod.number().int().min(listPropertyDiscoveriesResponseContactCoveragePropertiesWithIdentityConflictMin),
+  "propertiesWithPermissionBlocker": zod.number().int().min(listPropertyDiscoveriesResponseContactCoveragePropertiesWithPermissionBlockerMin),
+  "propertiesWithIdentityOrVerificationBlocker": zod.number().int().min(listPropertyDiscoveriesResponseContactCoveragePropertiesWithIdentityOrVerificationBlockerMin),
+  "postalOnlyProperties": zod.number().int().min(listPropertyDiscoveriesResponseContactCoveragePostalOnlyPropertiesMin),
+  "propertiesWithoutDirectRoute": zod.number().int().min(listPropertyDiscoveriesResponseContactCoveragePropertiesWithoutDirectRouteMin),
+  "publicFeedPropertiesWithDirectRoute": zod.number().int().min(listPropertyDiscoveriesResponseContactCoveragePublicFeedPropertiesWithDirectRouteMin),
+  "publicFeedPropertiesWithCurrentPermittedVerifiedRoute": zod.number().int().min(listPropertyDiscoveriesResponseContactCoveragePublicFeedPropertiesWithCurrentPermittedVerifiedRouteMin),
+  "syntheticRouteCandidates": zod.number().int().min(listPropertyDiscoveriesResponseContactCoverageSyntheticRouteCandidatesMin),
+  "nextAction": zod.string()
 }),
   "criteria": zod.object({
   "candidateThreshold": zod.number().int().min(1).max(listPropertyDiscoveriesResponseCriteriaOneCandidateThresholdMax),
@@ -41435,6 +41670,10 @@ export const discoverBuyerResponseTwoVerificationHistoryItemCriteriaOneMinSpread
 export const discoverBuyerResponseTwoVerificationHistoryItemCriteriaOneMinCapRateMin = 0;
 export const discoverBuyerResponseTwoVerificationHistoryItemCriteriaOneMinCapRateMax = 1;
 
+export const discoverBuyerResponseTwoQualificationTaskOneOutreachReadinessWorkflowStateMax = 16;
+
+export const discoverBuyerResponseTwoQualificationTaskOneOutreachReadinessPermissionStatusMax = 32;
+
 export const discoverBuyerResponseTwoQualificationPortalSelfReportCriteriaStatesItemMin = 2;
 export const discoverBuyerResponseTwoQualificationPortalSelfReportCriteriaStatesItemMax = 2;
 
@@ -41652,6 +41891,8 @@ export const DiscoverBuyerResponse = zod.object({
   "contactRouteStatus": zod.enum(['NONE', 'PRESENT_UNVERIFIED']),
   "providerStatus": zod.enum(['NOT_CONNECTED', 'CONNECTED']),
   "deliveryStatus": zod.enum(['NOT_SENT']),
+  "workflowState": zod.string().max(discoverBuyerResponseTwoQualificationTaskOneOutreachReadinessWorkflowStateMax),
+  "permissionStatus": zod.string().max(discoverBuyerResponseTwoQualificationTaskOneOutreachReadinessPermissionStatusMax),
   "availableChannels": zod.array(zod.enum(['EMAIL', 'SMS', 'VOICE'])),
   "missingCapabilities": zod.array(zod.string()),
   "nextAction": zod.string(),

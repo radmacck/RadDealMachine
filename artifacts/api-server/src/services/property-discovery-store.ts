@@ -62,7 +62,7 @@ type DiscoveryPayload = {
 };
 
 function routeIsTransferable(path: PropertyContactPath, now: Date) {
-  return path.channel !== "POSTAL" && path.permissionStatus === "PERMITTED" &&
+  return ["PHONE", "EMAIL", "WEB"].includes(path.channel) && path.permissionStatus === "PERMITTED" &&
     path.permissionEvidenceStatus === "SUPPORTS_ALLOWED" &&
     path.routeVerificationStatus === "CONFIRMED" &&
     path.recipientRole === "SELLER_SELF_IDENTIFIED" &&
@@ -71,6 +71,10 @@ function routeIsTransferable(path: PropertyContactPath, now: Date) {
     path.freshnessStatus === "CURRENT" && Date.parse(path.freshUntilAt) > now.getTime() &&
     path.identityConflictStatus !== "MULTIPLE_RECIPIENTS" &&
     path.identityConflictStatus !== "MULTIPLE_ROLES";
+}
+
+function isDirectContactPath(path: PropertyContactPath) {
+  return ["PHONE", "EMAIL", "WEB"].includes(path.channel);
 }
 
 function contactRouteGaps(caseRecord: NonNullable<DiscoveryPayload["contactResearchCase"]>, now: Date) {
@@ -689,6 +693,98 @@ async function discoveryResponse(row: typeof propertyDiscoveriesTable.$inferSele
   return toDiscoveryResponse(row, criteria, sourceObservations.length || 1, owners?.total ?? 1, database, sourceObservations);
 }
 
+function isSyntheticRoute(path: PropertyContactPath, syntheticSource = false) {
+  return syntheticSource || /synthetic|fixture|exercise/i.test(
+    `${path.sourceId} ${path.sourceName} ${path.sourceRecordId}`,
+  );
+}
+
+function contactCoverageSummary(
+  rows: Array<typeof propertyDiscoveriesTable.$inferSelect>,
+  sourceRows: Array<typeof propertySourceObservationsTable.$inferSelect>,
+  now: Date,
+) {
+  const sourcesByDiscovery = new Map<string, typeof sourceRows>();
+  for (const source of sourceRows) {
+    const existing = sourcesByDiscovery.get(source.discoveryId) ?? [];
+    existing.push(source);
+    sourcesByDiscovery.set(source.discoveryId, existing);
+  }
+  const result = {
+    checkedAt: now.toISOString(),
+    discoveryCount: rows.length,
+    propertiesWithDirectRouteCandidates: 0,
+    propertiesWithCurrentPermittedVerifiedSellerRoute: 0,
+    propertiesWithStaleRoute: 0,
+    propertiesWithIdentityConflict: 0,
+    propertiesWithPermissionBlocker: 0,
+    propertiesWithIdentityOrVerificationBlocker: 0,
+    postalOnlyProperties: 0,
+    propertiesWithoutDirectRoute: 0,
+    publicFeedPropertiesWithDirectRoute: 0,
+    publicFeedPropertiesWithCurrentPermittedVerifiedRoute: 0,
+    syntheticRouteCandidates: 0,
+    nextAction: "",
+  };
+  for (const row of rows) {
+    const payload = parsePayload(row.payload);
+    const persistedSources = sourcesByDiscovery.get(row.id) ?? [];
+    const sourcePaths = persistedSources.flatMap(source => {
+      const observation = sourcePayload(source.payload);
+      return Array.isArray(observation.contactPaths)
+        ? observation.contactPaths as PropertyContactPath[]
+        : [];
+    });
+    const manualPaths = payload.contactResearchCase?.candidateRoutes ?? [];
+    const syntheticManualKeys = new Set(manualPaths
+      .filter(path => payload.contactResearchCase?.synthetic)
+      .map(contactPathKey));
+    const rankedPaths = rankContactPaths([
+      ...payload.property.contactPaths,
+      ...sourcePaths,
+      ...manualPaths,
+    ], now);
+    const syntheticPaths = rankedPaths.filter(path =>
+      isSyntheticRoute(path, syntheticManualKeys.has(contactPathKey(path)) ||
+        persistedSources.some(source => /synthetic|fixture|exercise/i.test(source.sourceKey) &&
+          sourcePaths.some(candidate => contactPathKey(candidate) === contactPathKey(path)))),
+    );
+    result.syntheticRouteCandidates += syntheticPaths.filter(isDirectContactPath).length;
+    const realPaths = rankedPaths.filter(path => !syntheticPaths.includes(path));
+    const direct = realPaths.filter(isDirectContactPath);
+    const publicFeedPaths = rankContactPaths(sourcePaths.filter(path =>
+      !isSyntheticRoute(path, persistedSources.some(source =>
+        /synthetic|fixture|exercise/i.test(source.sourceKey) &&
+        sourcePaths.some(candidate => contactPathKey(candidate) === contactPathKey(path)),
+      )),
+    ), now).filter(isDirectContactPath);
+    const transferable = direct.filter(path => routeIsTransferable(path, now));
+    if (direct.length) result.propertiesWithDirectRouteCandidates++;
+    else {
+      result.propertiesWithoutDirectRoute++;
+      if (realPaths.some(path => path.channel === "POSTAL")) result.postalOnlyProperties++;
+    }
+    if (transferable.length) result.propertiesWithCurrentPermittedVerifiedSellerRoute++;
+    if (direct.some(path => path.freshnessStatus === "STALE")) result.propertiesWithStaleRoute++;
+    if (direct.some(path => path.identityConflictStatus === "MULTIPLE_RECIPIENTS" || path.identityConflictStatus === "MULTIPLE_ROLES")) {
+      result.propertiesWithIdentityConflict++;
+    }
+    if (direct.some(path => path.permissionStatus !== "PERMITTED" || path.permissionEvidenceStatus !== "SUPPORTS_ALLOWED")) {
+      result.propertiesWithPermissionBlocker++;
+    }
+    if (direct.some(path => path.recipientRole !== "SELLER_SELF_IDENTIFIED" || path.recipientIdentityEvidenceStatus !== "SUPPORTING_RECORD" ||
+      path.routeVerificationStatus !== "CONFIRMED" || path.classification !== "VERIFIED")) {
+      result.propertiesWithIdentityOrVerificationBlocker++;
+    }
+    if (publicFeedPaths.length) result.publicFeedPropertiesWithDirectRoute++;
+    if (publicFeedPaths.some(path => routeIsTransferable(path, now))) result.publicFeedPropertiesWithCurrentPermittedVerifiedRoute++;
+  }
+  result.nextAction = result.propertiesWithCurrentPermittedVerifiedSellerRoute
+    ? "Review each route's provenance, permission, identity, freshness, and underwriting; a verified contact route alone does not clear CALL NEXT."
+    : "No current permitted verified seller route is recorded. Continue only through permitted public records or owner-reviewed manual capture; record provenance, permission, recipient identity, observed time, and resolve conflicts. Postal data is not callable.";
+  return result;
+}
+
 export async function listPropertyDiscoveries(options: {
   marketKey?: string;
   status?: string;
@@ -851,6 +947,14 @@ export async function listPropertyDiscoveries(options: {
     .groupBy(propertyDiscoveriesTable.ownerKey) : [];
   const ownerCount = new Map(owners.flatMap(item => item.ownerKey ? [[item.ownerKey, item.total] as const] : []));
   const now = new Date();
+  const coverageRows = await database.select().from(propertyDiscoveriesTable)
+    .where(eq(propertyDiscoveriesTable.marketKey, marketKey));
+  const coverageIds = coverageRows.map(row => row.id);
+  const coverageSourceRows = coverageIds.length
+    ? await database.select().from(propertySourceObservationsTable)
+      .where(inArray(propertySourceObservationsTable.discoveryId, coverageIds))
+    : [];
+  const contactCoverage = contactCoverageSummary(coverageRows, coverageSourceRows, now);
   const currentBuyers = await allBuyerRecords(database, now);
   const records = await Promise.all(rows.map((row) => toDiscoveryResponse(
     row,
@@ -870,6 +974,7 @@ export async function listPropertyDiscoveries(options: {
     unmatchedNextCursor,
     unmatchedHasMore,
     counts,
+    contactCoverage,
     criteria,
   });
 }

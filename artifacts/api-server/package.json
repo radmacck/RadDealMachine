@@ -13,6 +13,7 @@
     "exercise:research-lifecycle": "tsx src/services/isolated-exercise.ts research-lifecycle-exercise.ts",
     "exercise:property-source": "tsx src/services/isolated-exercise.ts property-source-exercise.ts",
     "exercise:property-contact-http": "tsx src/services/isolated-exercise.ts property-contact-http-exercise.ts",
+    "test:buyer-outreach": "tsx --test src/services/buyer-outreach.test.ts",
     "test:property-discovery-ranking": "tsx --test src/services/property-discovery-ranking.test.ts",
     "exercise:seller-contact": "tsx src/services/isolated-exercise.ts seller-contact-exercise.ts",
     "exercise:seller-contact-enrichment": "tsx src/services/isolated-exercise.ts seller-contact-enrichment-exercise.ts",

@@ -90,6 +90,12 @@ router.post("/buyers/:id/verification",roles("OWNER"),async(req,res)=>{
   const {id} = parse(schemas.VerifyBuyerParams,req.params);
   res.json(schemas.VerifyBuyerResponse.parse(await buyers.verifyBuyer(id,parse(schemas.VerifyBuyerBody,req.body),actor(res))));
 });
+router.post("/buyers/:id/contact-permission",roles("OWNER"),async(req,res)=>{
+  const {id} = parse(schemas.RecordBuyerContactPermissionParams,req.params);
+  res.json(schemas.RecordBuyerContactPermissionResponse.parse(await buyers.recordBuyerContactPermission(
+    id,parse(schemas.RecordBuyerContactPermissionBody,req.body),actor(res),
+  )));
+});
 router.post("/buyers/:id/qualification-portal",roles("OWNER"),async(req,res)=>{
   const {id} = parse(schemas.CreateBuyerQualificationPortalInviteParams,req.params);
   const result = await buyerQualificationPortal.createBuyerQualificationPortalInvite(

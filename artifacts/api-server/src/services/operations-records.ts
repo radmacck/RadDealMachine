@@ -3,14 +3,25 @@ import { isDeepStrictEqual } from "node:util";
 import { db, buyersTable, contractsTable, jobsTable } from "@workspace/db";
 import { GetBuyerResponse, GetDealOperationsResponse, ListWorkerJobsResponse } from "@workspace/api-zod";
 import { buyerQualification, verificationStatus, DomainError } from "@workspace/deal-domain";
+import { buyerOutreachReadiness, type BuyerContactPermission } from "./buyer-outreach";
 
 export type Tx = Parameters<Parameters<typeof db.transaction>[0]>[0];
 export type Store = typeof db | Tx;
 export function buyerRecord(row: typeof buyersTable.$inferSelect, now = new Date()) {
   const record = {...row.payload,id:row.id,version:row.version,createdAt:row.createdAt.toISOString(),updatedAt:row.updatedAt.toISOString()};
   const candidate = GetBuyerResponse.parse({...record,verificationStatus:"UNVERIFIED"});
+  const rawPermission = row.payload.contactPermission;
+  const contactPermission = rawPermission && typeof rawPermission === "object" &&
+    "status" in rawPermission && "channels" in rawPermission
+    ? rawPermission as BuyerContactPermission
+    : null;
+  const withPermission = {...candidate,contactPermission};
+  const qualificationTask = candidate.qualificationTask
+    ? {...candidate.qualificationTask,outreachReadiness:buyerOutreachReadiness(withPermission,now)}
+    : candidate.qualificationTask;
   return {...candidate,destinationKind:candidate.destinationKind??"BUYER",currentBuyingStatus:candidate.currentBuyingStatus??"UNKNOWN",
-    verificationStatus:verificationStatus(candidate,now),...buyerQualification(candidate,now)};
+    contactPermission:withPermission.contactPermission,qualificationTask,verificationStatus:verificationStatus(candidate,now),
+    ...buyerQualification(withPermission,now)};
 }
 export function contractRecord(row: typeof contractsTable.$inferSelect) {
   const documents = Array.isArray(row.payload.documentArtifacts)

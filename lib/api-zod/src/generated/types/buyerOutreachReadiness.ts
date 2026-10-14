@@ -16,6 +16,10 @@ export interface BuyerOutreachReadiness {
   contactRouteStatus: BuyerOutreachReadinessContactRouteStatus;
   providerStatus: BuyerOutreachReadinessProviderStatus;
   deliveryStatus: BuyerOutreachReadinessDeliveryStatus;
+  /** @maxLength 16 */
+  workflowState: string;
+  /** @maxLength 32 */
+  permissionStatus: string;
   availableChannels: BuyerOutreachReadinessAvailableChannelsItem[];
   missingCapabilities: string[];
   nextAction: string;

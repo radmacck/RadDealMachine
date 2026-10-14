@@ -149,6 +149,39 @@ async function liveContract(tx: Tx, leadId: string) {
   return { row, contract: contractRecord(row) };
 }
 
+async function assertPacketSnapshotCurrent(
+  tx: Store,
+  packet: Packet,
+  contractRow: typeof contractsTable.$inferSelect,
+  contract: DealContract,
+  now: Date,
+) {
+  const snapshot = packet.snapshot as unknown as DistributionPacketSnapshot;
+  const sourceAnalysisId = snapshot.evidence.sourceAnalysisSnapshotId;
+  if (packet.contractId !== contractRow.id || packet.attemptNumber !== (contract.attemptNumber ?? 1) ||
+    contract.purchasePrice !== snapshot.economics.acquisitionPrice ||
+    contract.assignmentTarget !== snapshot.economics.authorizedAssignmentFee ||
+    contract.closingAt !== snapshot.closeBy || contract.contingencies !== snapshot.contingencies) {
+    throw new DomainError("The authorized buyer package is stale against current contract terms. Reauthorize a new version before distribution.", 409);
+  }
+  const [offer] = await tx.select().from(offersTable)
+    .where(and(eq(offersTable.id, contract.offerId), eq(offersTable.leadId, packet.leadId)));
+  const [analysisRow] = await tx.select().from(analysesTable)
+    .where(and(eq(analysesTable.id, sourceAnalysisId), eq(analysesTable.leadId, packet.leadId)));
+  const detail = await leadDetail(packet.leadId, tx, now);
+  const original = analysisRow?.snapshot as OriginalSnapshot | undefined;
+  if (!offer || offer.status !== "COMMUNICATED" || offer.analysisSnapshotId !== sourceAnalysisId ||
+    detail.analysisSnapshotId !== sourceAnalysisId || !detail.analysis || detail.analysis.blockers.length ||
+    !original?.analysis) {
+    throw new DomainError("The authorized buyer package is stale against current evidence or offer authority. Reauthorize from a current snapshot.", 409);
+  }
+  const currentEconomics = lockDealEconomics(sourceAnalysisId, contract.offerId, detail.analysis, contract.purchasePrice);
+  if (currentEconomics.economicsSnapshotHash !== snapshot.economics.economicsSnapshotHash) {
+    throw new DomainError("The authorized buyer package economics hash no longer matches current underwriting.", 409);
+  }
+  return detail;
+}
+
 async function buildDistribution(tx: Store, packet: Packet | undefined) {
   if (!packet) return {
     packetId: null, version: 0, status: null, packet: null, authorizedBy: null,
@@ -285,7 +318,7 @@ export async function shareDistributionRecipients(
       !["ACTIVE", "FIRST_ACCEPTED"].includes(packet.status) || packet.expiresAt.getTime() <= now.getTime()) {
       throw new DomainError("This distribution is no longer open for new buyers.", 409);
     }
-    const detail = await leadDetail(leadId, tx, now);
+    const detail = await assertPacketSnapshotCurrent(tx, packet, contractRow, contract, now);
     const candidates = await allBuyerRecords(tx, now);
     const contractRows = (await tx.select().from(contractsTable)).map(contractRecord);
     for (const buyerId of parsed.buyerIds) {
@@ -344,7 +377,7 @@ async function loadPortalRecord(tx: Store, tokenHash: string, now: Date) {
   const [buyerRow] = await tx.select().from(buyersTable).where(eq(buyersTable.id, recipient.buyerId));
   if (!buyerRow) throw new DomainError("This buyer link is invalid or no longer active.", 404);
   const buyer = buyerRecord(buyerRow, now);
-  const detail = await leadDetail(packet.leadId, tx, now);
+  const detail = await assertPacketSnapshotCurrent(tx, packet, contractRow, contract, now);
   const contracts = (await tx.select().from(contractsTable)).map(contractRecord);
   const reservations = buyerReservations(contracts, buyer.id, contract.id);
   const match = matchBuyer(buyer, detail, contract, now, undefined, reservations.count, reservations.funds);

@@ -3,7 +3,7 @@ import { randomUUID } from "node:crypto";
 import { eq, and, sql } from "drizzle-orm";
 import { db,pool,buyersTable,auditTable,jobsTable } from "@workspace/db";
 import { logger } from "../lib/logger";
-import { createBuyer, updateBuyer, verifyBuyer } from "./buyer-store";
+import { createBuyer, recordBuyerContactPermission, updateBuyer, verifyBuyer } from "./buyer-store";
 import { getBuyerRecord } from "./operations-records";
 import { reviewBuyerPool } from "./buyer-pool";
 const actor = {id:`synthetic-buyer-exercise:${randomUUID()}`,role:"OWNER"};
@@ -16,6 +16,18 @@ try {
       counties:[],excludedCounties:[],excludedCities:[],excludedZipCodes:[],minPurchasePrice:0,minUnits:1,maxUnits:1,
       minBaths:1,rehabTolerance:"HEAVY",strategies:["FLIP"],fundingTypes:["CASH"],maxConcurrentDeals:2}},actor);
   id = buyer.id;
+  await assert.rejects(
+    createBuyer({name:"SYNTHETIC BUYER EXERCISE ONLY",email:"synthetic@example.com",phone:"",
+      source:"Synthetic duplicate test",status:"ACTIVE",criteria:buyer.criteria},actor),
+    (error) => (error as {status:number}).status === 409,
+    "Exact contact-route duplicates must be reviewed rather than inserted twice.",
+  );
+  await assert.rejects(
+    createBuyer({name:"DIFFERENT SYNTHETIC IDENTITY",email:"synthetic@example.com",phone:"",
+      source:"Synthetic conflicting identity test",status:"ACTIVE",criteria:buyer.criteria},actor),
+    (error) => (error as {status:number}).status === 409,
+    "A shared route with a conflicting identity must not be auto-merged.",
+  );
   assert.equal(buyer.verificationStatus,"UNVERIFIED");
   assert.equal((await getBuyerRecord(id)).name,buyer.name);
   const now = new Date();
@@ -49,6 +61,25 @@ try {
   assert.equal(renewed.approvalStatus,"APPROVED"); assert.equal(renewed.verificationHistory?.length,2);
   const updated = await updateBuyer(id,{...buyer,version:renewed.version,name:"SYNTHETIC REVISED IDENTITY"},actor);
   assert.equal(updated.verificationStatus,"UNVERIFIED");
+  const permissionInput = {version:updated.version,status:"GRANTED" as const,channels:["EMAIL" as const],
+    source:"Synthetic owner-reviewed consent fixture",evidenceUrl:"https://example.com/synthetic-consent",
+    capturedAt:now.toISOString(),validUntil:new Date(now.getTime()+30*86400000).toISOString()};
+  await assert.rejects(recordBuyerContactPermission(id,permissionInput,{...actor,role:"OPERATOR"},now),
+    e=>(e as {status:number}).status===403,"Only the owner may record buyer contact permission.");
+  const permission = await recordBuyerContactPermission(id,permissionInput,actor,now);
+  assert.equal(permission.status,"GRANTED");
+  assert.equal(permission.channels[0],"EMAIL");
+  const [reloaded] = await db.select().from(buyersTable).where(eq(buyersTable.id,id));
+  assert.equal((reloaded.payload.contactPermission as {status:string}).status,"GRANTED",
+    "Permission evidence must persist and reload with the buyer.");
+  await assert.rejects(recordBuyerContactPermission(id,permissionInput,actor,now),
+    e=>(e as {status:number}).status===409,"Permission writes must reject stale buyer versions.");
+  const optedOut = await recordBuyerContactPermission(id,{...permissionInput,version:reloaded.version,
+    status:"OPTED_OUT",channels:[],validUntil:null},actor,now);
+  assert.equal(optedOut.status,"OPTED_OUT");
+  assert.deepEqual(optedOut.channels,[]);
+  await assert.rejects(recordBuyerContactPermission(id,{...permissionInput,version:reloaded.version,
+    capturedAt:new Date(now.getTime()-31*86400000).toISOString()},actor,now));
   assert.ok((await db.select().from(jobsTable).where(eq(jobsTable.requestedBy,actor.id))).length>=3);
   logger.info({checks:"create/reload, owner-only verification, dated funding, stale evidence, version conflict, identity invalidation, queued matching"},"Buyer persistence exercise PASSED (synthetic data)");
 } finally {

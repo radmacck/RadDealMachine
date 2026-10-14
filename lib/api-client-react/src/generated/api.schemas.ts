@@ -1519,6 +1519,35 @@ export type PropertyDiscoveryListCounts = {
   DISQUALIFIED: number;
 };
 
+export type PropertyDiscoveryListContactCoverage = {
+  checkedAt: string;
+  /** @minimum 0 */
+  discoveryCount: number;
+  /** @minimum 0 */
+  propertiesWithDirectRouteCandidates: number;
+  /** @minimum 0 */
+  propertiesWithCurrentPermittedVerifiedSellerRoute: number;
+  /** @minimum 0 */
+  propertiesWithStaleRoute: number;
+  /** @minimum 0 */
+  propertiesWithIdentityConflict: number;
+  /** @minimum 0 */
+  propertiesWithPermissionBlocker: number;
+  /** @minimum 0 */
+  propertiesWithIdentityOrVerificationBlocker: number;
+  /** @minimum 0 */
+  postalOnlyProperties: number;
+  /** @minimum 0 */
+  propertiesWithoutDirectRoute: number;
+  /** @minimum 0 */
+  publicFeedPropertiesWithDirectRoute: number;
+  /** @minimum 0 */
+  publicFeedPropertiesWithCurrentPermittedVerifiedRoute: number;
+  /** @minimum 0 */
+  syntheticRouteCandidates: number;
+  nextAction: string;
+};
+
 export interface PropertyDiscoveryList {
   records: PropertyDiscovery[];
   /**
@@ -1535,6 +1564,7 @@ export interface PropertyDiscoveryList {
   unmatchedNextCursor: string | null;
   unmatchedHasMore: boolean;
   counts: PropertyDiscoveryListCounts;
+  contactCoverage: PropertyDiscoveryListContactCoverage;
   criteria: PropertyQualificationCriteria;
 }
 
@@ -2093,6 +2123,10 @@ export interface BuyerOutreachReadiness {
   contactRouteStatus: BuyerOutreachReadinessContactRouteStatus;
   providerStatus: BuyerOutreachReadinessProviderStatus;
   deliveryStatus: BuyerOutreachReadinessDeliveryStatus;
+  /** @maxLength 16 */
+  workflowState: string;
+  /** @maxLength 32 */
+  permissionStatus: string;
   availableChannels: BuyerOutreachReadinessAvailableChannelsItem[];
   missingCapabilities: string[];
   nextAction: string;
@@ -2745,6 +2779,72 @@ export interface BuyerVerificationInput {
      * @maximum 1
      */
   confidence: number;
+}
+
+export type BuyerContactPermissionInputStatus = typeof BuyerContactPermissionInputStatus[keyof typeof BuyerContactPermissionInputStatus];
+
+
+export const BuyerContactPermissionInputStatus = {
+  GRANTED: 'GRANTED',
+  OPTED_OUT: 'OPTED_OUT',
+} as const;
+
+export type BuyerContactPermissionInputChannelsItem = typeof BuyerContactPermissionInputChannelsItem[keyof typeof BuyerContactPermissionInputChannelsItem];
+
+
+export const BuyerContactPermissionInputChannelsItem = {
+  EMAIL: 'EMAIL',
+  SMS: 'SMS',
+  VOICE: 'VOICE',
+} as const;
+
+export interface BuyerContactPermissionInput {
+  /** @minimum 1 */
+  version: number;
+  status: BuyerContactPermissionInputStatus;
+  channels: BuyerContactPermissionInputChannelsItem[];
+  /**
+     * @minLength 3
+     * @maxLength 2000
+     */
+  source: string;
+  /**
+     * @minLength 8
+     * @maxLength 2000
+     */
+  evidenceUrl: string;
+  capturedAt: string;
+  /** @nullable */
+  validUntil: string | null;
+}
+
+export type BuyerContactPermissionStatus = typeof BuyerContactPermissionStatus[keyof typeof BuyerContactPermissionStatus];
+
+
+export const BuyerContactPermissionStatus = {
+  GRANTED: 'GRANTED',
+  OPTED_OUT: 'OPTED_OUT',
+} as const;
+
+export type BuyerContactPermissionChannelsItem = typeof BuyerContactPermissionChannelsItem[keyof typeof BuyerContactPermissionChannelsItem];
+
+
+export const BuyerContactPermissionChannelsItem = {
+  EMAIL: 'EMAIL',
+  SMS: 'SMS',
+  VOICE: 'VOICE',
+} as const;
+
+export interface BuyerContactPermission {
+  status: BuyerContactPermissionStatus;
+  channels: BuyerContactPermissionChannelsItem[];
+  source: string;
+  evidenceUrl: string;
+  capturedAt: string;
+  /** @nullable */
+  validUntil: string | null;
+  reviewedBy: string;
+  reviewedAt: string;
 }
 
 export type BuyerVerificationStatus = typeof BuyerVerificationStatus[keyof typeof BuyerVerificationStatus];

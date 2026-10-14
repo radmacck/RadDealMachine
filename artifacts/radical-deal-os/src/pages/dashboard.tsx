@@ -24,6 +24,7 @@ import {
   buyerIntakeHref,
 } from '@/lib/command-center-state';
 import { AcquisitionQueueCard } from '@/components/acquisition-queue-card';
+import { DealPackageReadiness } from '@/components/deal-package-readiness';
 import { OutcomeLearningPanel } from '@/components/outcome-learning-panel';
 import { ago, errInfo, fmtDate, isOverdue, money } from '@/lib/format';
 
@@ -128,6 +129,8 @@ export default function Dashboard() {
   const contractRows = contracts.filter((operation) => matchesSearch(
     leadAddressById.get(operation.leadId), operation.contract?.status, operation.contract?.purchasePrice, operation.nextAction,
   ));
+  const packageRows = contractRows.filter((operation) =>
+    ['UNDER_CONTRACT', 'CLOSING'].includes(operation.contract?.status ?? ''));
   const deadlineRows = deadlines.filter((operation) => matchesSearch(
     leadAddressById.get(operation.leadId), operation.contract?.closingAt, operation.contract?.closingAt ? fmtDate(operation.contract.closingAt) : '',
   ));
@@ -240,6 +243,30 @@ export default function Dashboard() {
                     ? `${readinessData.capabilities.deliveryProvider.deliveryStatus} — no delivery provider is connected. Copied links and invitations are not delivery evidence.`
                     : 'Unknown — delivery cannot be claimed while provider readiness is unavailable.'}</p>
               </div>
+            </div>
+            <div className="mt-3" data-testid="panel-package-readiness">
+              <div className="fd-section-head">
+                <div className="fd-section-title">Deal package readiness
+                  <small>{packageRows.length} active contract(s)</small>
+                </div>
+              </div>
+              {packageRows.length ? (
+                <div className="fd-readiness-grid">
+                  {packageRows.slice(0, 3).map((operation) => (
+                    <DealPackageReadiness
+                      key={operation.leadId}
+                      leadId={operation.leadId}
+                      address={leadAddressById.get(operation.leadId) ?? 'Deal'}
+                      contract={operation.contract!}
+                      matches={operation.matches}
+                      deliveryProviderStatus={readinessData?.capabilities.deliveryProvider.status ?? 'UNKNOWN'}
+                      deliveryStatus={readinessData?.capabilities.deliveryProvider.deliveryStatus ?? 'UNKNOWN'}
+                    />
+                  ))}
+                </div>
+              ) : (
+                <div className="fd-empty" role="status">No active executed acquisition contract is ready for buyer-package review. A draft or discovery is not a distributable deal.</div>
+              )}
             </div>
           </section>
 
@@ -644,6 +671,16 @@ export default function Dashboard() {
                   Raw {discoveryData.counts.DISCOVERED_PROPERTY} · Candidates {discoveryData.counts.RELEVANT_CANDIDATE} · Qualified {discoveryData.counts.QUALIFIED_LEAD} · CALL READY {discoveryData.counts.CALL_READY} · Passed {discoveryData.counts.DISQUALIFIED}.
                   Raw discoveries are never active leads by default.
                 </p>
+                <div className="mb-3 rounded border border-dashed p-3 text-xs" data-testid="seller-contact-coverage">
+                  <b>Seller contact coverage · checked {new Date(discoveryData.contactCoverage.checkedAt).toLocaleString()}</b>
+                  <p className="mt-1">
+                    {discoveryData.contactCoverage.discoveryCount} persisted properties · {discoveryData.contactCoverage.publicFeedPropertiesWithDirectRoute} with a direct route on source-feed evidence · {discoveryData.contactCoverage.publicFeedPropertiesWithCurrentPermittedVerifiedRoute} with a current permitted verified route from a feed · {discoveryData.contactCoverage.propertiesWithCurrentPermittedVerifiedSellerRoute} with a current permitted verified route overall.
+                  </p>
+                  <p className="mt-1">
+                    {discoveryData.contactCoverage.propertiesWithoutDirectRoute} have no direct route ({discoveryData.contactCoverage.postalOnlyProperties} postal-only) · {discoveryData.contactCoverage.propertiesWithStaleRoute} stale · {discoveryData.contactCoverage.propertiesWithIdentityConflict} identity-conflicted · {discoveryData.contactCoverage.propertiesWithPermissionBlocker} permission-blocked · {discoveryData.contactCoverage.propertiesWithIdentityOrVerificationBlocker} identity/verification incomplete · {discoveryData.contactCoverage.syntheticRouteCandidates} synthetic route candidate(s), excluded from live route counts.
+                  </p>
+                  <p className="mt-1"><b>Next:</b> {discoveryData.contactCoverage.nextAction} <Link className="underline" href="/sources">Open permitted-source research and manual contact capture.</Link></p>
+                </div>
                 {discoveryData.records.length === 0
                   ? <div className="fd-empty" data-testid="discovery-pool-empty">No persisted property discoveries are available in this page. No synthetic fixtures are substituted.</div>
                   : discoveryRows.length === 0
@@ -674,6 +711,12 @@ export default function Dashboard() {
                         : contactState === 'POSTAL_ONLY' ? 'Postal only — not a phone/email route; blocked from CALL NEXT.'
                           : contactState === 'DIRECT_ROUTE_NEEDS_REVIEW' ? 'A direct route exists, but no current permitted phone route is cleared for CALL NEXT.'
                             : 'No direct phone/email/web route; blocked from CALL NEXT.'}</p>
+                      {item.contactResearchCase && <div className="mt-2 rounded border-l-2 border-warn bg-muted/30 p-2 text-xs" data-testid={`dashboard-contact-case-${item.id}`}>
+                        <p><b>Contact research:</b> {item.contactResearchCase.status} · {item.contactResearchCase.sourceName} ({item.contactResearchCase.sourceType}) · observed {new Date(item.contactResearchCase.observedAt).toLocaleString()}</p>
+                        <p>Identity {item.contactResearchCase.identityMatch} · permission {item.contactResearchCase.permissionBasis} · confidence {Math.round(item.contactResearchCase.confidence * 100)}% · {item.contactResearchCase.auditHistory.length} saved audit event(s).</p>
+                        <p><b>Blockers:</b> {item.contactResearchCase.missingRequirements.join(' ') || 'No case-level gaps recorded; underwriting and lead gates still apply.'}</p>
+                        <p><b>Next:</b> {item.contactResearchCase.nextAction}</p>
+                      </div>}
                       {item.sourceObservations.length > 0 && <ul className="mt-2 space-y-1 border-t pt-2 text-xs text-muted-foreground">
                         {item.sourceObservations.slice(0, 3).map((observation) => <li key={observation.id}>
                           {observation.sourceName} · {observation.sourceId} · last observed {fmtDate(observation.lastObservedAt)} · {observation.classification ?? 'classification not supplied'} · {Math.round((observation.confidence ?? 0) * 100)}% source confidence

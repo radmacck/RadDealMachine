@@ -1,7 +1,7 @@
-import { eq } from "drizzle-orm";
+import { eq, sql } from "drizzle-orm";
 import type { z } from "zod";
 import { db, buyersTable } from "@workspace/db";
-import { CreateBuyerBody, UpdateBuyerBody, VerifyBuyerBody } from "@workspace/api-zod";
+import { CreateBuyerBody, RecordBuyerContactPermissionBody, UpdateBuyerBody, VerifyBuyerBody } from "@workspace/api-zod";
 import { assertOperationsRole, criteriaSignature, criteriaBlockers, validateCriteria, evidenceUrl, pastInstant, DAY, DomainError, type OfferActor } from "@workspace/deal-domain";
 import { buyerRecord, queueJob } from "./operations-records";
 import { audit } from "./deal-store";
@@ -17,6 +17,31 @@ export async function createBuyer(input: z.infer<typeof CreateBuyerBody>, actor:
   assertOperationsRole(actor,["OWNER","ANALYST"]);
   const payload = normalize(input);
   return db.transaction(async tx=>{
+    const routeKeys = [
+      payload.email ? `email:${payload.email.trim().toLowerCase()}` : "",
+      payload.phone ? `phone:${payload.phone.replace(/\D/g,"")}` : "",
+    ].filter(Boolean).sort();
+    for (const key of routeKeys) {
+      await tx.execute(sql`select pg_advisory_xact_lock(hashtextextended(current_schema() || ${`buyer-route:${key}`},0))`);
+    }
+    if (routeKeys.length) {
+      const existing = await tx.select().from(buyersTable);
+      const digits = payload.phone.replace(/\D/g,"");
+      const email = payload.email.trim().toLowerCase();
+      const name = payload.name.trim().toLowerCase().replace(/[^a-z0-9]+/g," ").trim();
+      const conflict = existing.find(row => {
+        const prior = buyerRecord(row);
+        const priorDigits = (prior.phone ?? "").replace(/\D/g,"");
+        return (!!email && (prior.email ?? "").trim().toLowerCase() === email) ||
+          (!!digits && priorDigits === digits && digits.length >= 7);
+      });
+      if (conflict) {
+        const prior = buyerRecord(conflict);
+        const priorName = prior.name.trim().toLowerCase().replace(/[^a-z0-9]+/g," ").trim();
+        const kind = priorName === name ? "A buyer with this contact route already exists" : "This contact route is attached to a different buyer identity";
+        throw new DomainError(`${kind} (record ${conflict.id}). Review the existing record; records are not automatically merged.`,409);
+      }
+    }
     const [row] = await tx.insert(buyersTable).values({payload}).returning();
     if (!row) throw new Error("Buyer insert failed.");
     await audit(tx,actor.id,"BUYER_CREATED",row.id,"Criteria recorded. Identity and funding remain unverified.");
@@ -85,5 +110,39 @@ export async function verifyBuyer(id: string, input: z.infer<typeof VerifyBuyerB
     await queueJob(tx,"REVIEW_BUYER_POOL",null,`buyer-demand:${id}:${saved.version}`,actor.id);
     await queueJob(tx,"EVALUATE_DECISION",null,`decision:buyer:${id}:${saved.version}`,actor.id,{trigger:"BUYER_VERIFICATION_REVIEWED",buyerId:id});
     return buyerRecord(saved,now);
+  });
+}
+
+export async function recordBuyerContactPermission(
+  id: string,
+  input: z.infer<typeof RecordBuyerContactPermissionBody>,
+  actor: OfferActor,
+  now = new Date(),
+) {
+  assertOperationsRole(actor, ["OWNER"]);
+  const parsed = RecordBuyerContactPermissionBody.parse(input);
+  evidenceUrl(parsed.evidenceUrl);
+  const capturedAt = pastInstant(parsed.capturedAt, now, "Contact permission evidence");
+  const validUntil = parsed.validUntil ? Date.parse(parsed.validUntil) : null;
+  if (parsed.status === "GRANTED" && (
+    !parsed.channels.length || capturedAt + 30 * DAY <= now.getTime() ||
+    !Number.isFinite(validUntil) || validUntil! <= now.getTime() ||
+    validUntil! > capturedAt + 30 * DAY
+  )) throw new DomainError("Granted contact permission requires at least one channel and current evidence expiring within 30 days.");
+  if (!parsed.source.trim()) throw new DomainError("Record where the contact permission or opt-out evidence came from.");
+  return db.transaction(async tx => {
+    const [row] = await tx.select().from(buyersTable).where(eq(buyersTable.id, id)).for("update");
+    if (!row) throw new DomainError("Buyer not found.", 404);
+    if (row.version !== parsed.version) throw new DomainError("Buyer changed. Reload before recording permission.", 409);
+    const permission = { ...parsed, reviewedBy: actor.id, reviewedAt: now.toISOString() };
+    const history = Array.isArray(row.payload.contactPermissionHistory) ? row.payload.contactPermissionHistory : [];
+    const [saved] = await tx.update(buyersTable).set({
+      payload: { ...row.payload, contactPermission: permission, contactPermissionHistory: [...history, permission] },
+      version: row.version + 1, updatedAt: now,
+    }).where(eq(buyersTable.id, id)).returning();
+    if (!saved) throw new Error("Buyer contact permission was not saved.");
+    await audit(tx, actor.id, "BUYER_CONTACT_PERMISSION_RECORDED", id,
+      `${parsed.status} permission evidence saved for ${parsed.channels.join(", ") || "all channels suppressed"}.`);
+    return permission;
   });
 }

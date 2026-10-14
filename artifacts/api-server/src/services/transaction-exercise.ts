@@ -436,6 +436,24 @@ try {
         version:distribution.version,buyerIds:[staleBuyer.id],
       },operator,now);
       assert.equal(staleAccessShare.links.length,1,"A buyer current at invite time may receive a capability.");
+       const [contractBeforeStalePacketCheck] = await db.select().from(contractsTable).where(eq(contractsTable.leadId,id));
+       assert.ok(contractBeforeStalePacketCheck);
+       const accessEventsBeforeStalePacketCheck = ((await getDealDistribution(id)).recipients as unknown as Array<{buyerId:string;events:unknown[]}>)
+         .find(recipient=>recipient.buyerId===staleBuyer.id)?.events.length ?? 0;
+       await db.update(contractsTable).set({
+         payload:{...contractBeforeStalePacketCheck.payload,
+           purchasePrice:Number(contractBeforeStalePacketCheck.payload.purchasePrice)+1},
+         version:contractBeforeStalePacketCheck.version+1,
+       }).where(eq(contractsTable.id,contractBeforeStalePacketCheck.id));
+       await assert.rejects(getBuyerPortalDeal(staleAccessShare.links[0]!.token,now),/package is stale against current contract terms/i,
+         "A changed executed price must stale the immutable buyer package and block existing links.");
+       await db.update(contractsTable).set({
+         payload:contractBeforeStalePacketCheck.payload,version:contractBeforeStalePacketCheck.version,
+       }).where(eq(contractsTable.id,contractBeforeStalePacketCheck.id));
+       const eventsAfterStalePacketCheck = ((await getDealDistribution(id)).recipients as unknown as Array<{buyerId:string;events:unknown[]}>)
+         .find(recipient=>recipient.buyerId===staleBuyer.id)?.events.length ?? 0;
+       assert.equal(eventsAfterStalePacketCheck,accessEventsBeforeStalePacketCheck,
+         "A stale-package rejection must not record a successful portal access.");
       distribution = await getDealDistribution(id);
       await assert.rejects(getBuyerPortalDeal(staleAccessShare.links[0]!.token,afterExpiry),/no longer current/i,
         "A buyer whose funding/qualification evidence expires after invitation cannot reopen the packet.");

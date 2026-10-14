@@ -607,6 +607,22 @@ paths:
           content:
             application/json:
               schema: { $ref: "#/components/schemas/Buyer" }
+  /buyers/{id}/contact-permission:
+    parameters:
+      - { name: id, in: path, required: true, schema: { type: string } }
+    post:
+      operationId: recordBuyerContactPermission
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/BuyerContactPermissionInput" }
+      responses:
+        "200":
+          description: Owner-reviewed buyer contact permission evidence
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/BuyerContactPermission" }
   /buyers/{id}/qualification-portal:
     parameters:
       - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
@@ -1804,7 +1820,7 @@ components:
         candidateRoute: { oneOf: [{ $ref: "#/components/schemas/PropertyContactRouteCandidateInput" }, { type: "null" }] }
     PropertyDiscoveryList:
       type: object
-      required: [records, nextCursor, hasMore, unmatchedSourceObservations, unmatchedNextCursor, unmatchedHasMore, counts, criteria]
+      required: [records, nextCursor, hasMore, unmatchedSourceObservations, unmatchedNextCursor, unmatchedHasMore, counts, contactCoverage, criteria]
       properties:
         records: { type: array, items: { $ref: "#/components/schemas/PropertyDiscovery" } }
         nextCursor: { type: ["string", "null"], maxLength: 512 }
@@ -1821,6 +1837,24 @@ components:
             QUALIFIED_LEAD: { type: integer, minimum: 0 }
             CALL_READY: { type: integer, minimum: 0 }
             DISQUALIFIED: { type: integer, minimum: 0 }
+        contactCoverage:
+          type: object
+          required: [checkedAt, discoveryCount, propertiesWithDirectRouteCandidates, propertiesWithCurrentPermittedVerifiedSellerRoute, propertiesWithStaleRoute, propertiesWithIdentityConflict, propertiesWithPermissionBlocker, propertiesWithIdentityOrVerificationBlocker, postalOnlyProperties, propertiesWithoutDirectRoute, publicFeedPropertiesWithDirectRoute, publicFeedPropertiesWithCurrentPermittedVerifiedRoute, syntheticRouteCandidates, nextAction]
+          properties:
+            checkedAt: { type: string, format: date-time }
+            discoveryCount: { type: integer, minimum: 0 }
+            propertiesWithDirectRouteCandidates: { type: integer, minimum: 0 }
+            propertiesWithCurrentPermittedVerifiedSellerRoute: { type: integer, minimum: 0 }
+            propertiesWithStaleRoute: { type: integer, minimum: 0 }
+            propertiesWithIdentityConflict: { type: integer, minimum: 0 }
+            propertiesWithPermissionBlocker: { type: integer, minimum: 0 }
+            propertiesWithIdentityOrVerificationBlocker: { type: integer, minimum: 0 }
+            postalOnlyProperties: { type: integer, minimum: 0 }
+            propertiesWithoutDirectRoute: { type: integer, minimum: 0 }
+            publicFeedPropertiesWithDirectRoute: { type: integer, minimum: 0 }
+            publicFeedPropertiesWithCurrentPermittedVerifiedRoute: { type: integer, minimum: 0 }
+            syntheticRouteCandidates: { type: integer, minimum: 0 }
+            nextAction: { type: string }
         criteria: { $ref: "#/components/schemas/PropertyQualificationCriteria" }
     PropertyRelevanceSignalInput:
       type: object
@@ -2135,12 +2169,14 @@ components:
         updatedAt: { type: string }
     BuyerOutreachReadiness:
       type: object
-      required: [status, contactRouteStatus, providerStatus, deliveryStatus, availableChannels, missingCapabilities, nextAction, checkedAt]
+      required: [status, contactRouteStatus, providerStatus, deliveryStatus, workflowState, permissionStatus, availableChannels, missingCapabilities, nextAction, checkedAt]
       properties:
         status: { type: string, enum: [NO_CONTACT_ROUTE, CONTACT_PERMISSION_REQUIRED, NO_CONNECTED_PROVIDER, READY] }
         contactRouteStatus: { type: string, enum: [NONE, PRESENT_UNVERIFIED] }
         providerStatus: { type: string, enum: [NOT_CONNECTED, CONNECTED] }
         deliveryStatus: { type: string, enum: [NOT_SENT] }
+        workflowState: { type: string, maxLength: 16 }
+        permissionStatus: { type: string, maxLength: 32 }
         availableChannels: { type: array, items: { type: string, enum: [EMAIL, SMS, VOICE] } }
         missingCapabilities: { type: array, items: { type: string } }
         nextAction: { type: string }
@@ -2388,6 +2424,30 @@ components:
         criteriaEvidenceUrl: { type: string, minLength: 8, maxLength: 2000 }
         verificationSource: { type: string, minLength: 3, maxLength: 2000 }
         confidence: { type: number, minimum: 0, maximum: 1 }
+    BuyerContactPermissionInput:
+      type: object
+      additionalProperties: false
+      required: [version, status, channels, source, evidenceUrl, capturedAt, validUntil]
+      properties:
+        version: { type: integer, minimum: 1 }
+        status: { type: string, enum: [GRANTED, OPTED_OUT] }
+        channels: { type: array, uniqueItems: true, items: { type: string, enum: [EMAIL, SMS, VOICE] } }
+        source: { type: string, minLength: 3, maxLength: 2000 }
+        evidenceUrl: { type: string, minLength: 8, maxLength: 2000 }
+        capturedAt: { type: string, format: date-time }
+        validUntil: { type: [string, "null"], format: date-time }
+    BuyerContactPermission:
+      type: object
+      required: [status, channels, source, evidenceUrl, capturedAt, validUntil, reviewedBy, reviewedAt]
+      properties:
+        status: { type: string, enum: [GRANTED, OPTED_OUT] }
+        channels: { type: array, items: { type: string, enum: [EMAIL, SMS, VOICE] } }
+        source: { type: string }
+        evidenceUrl: { type: string }
+        capturedAt: { type: string, format: date-time }
+        validUntil: { type: [string, "null"], format: date-time }
+        reviewedBy: { type: string }
+        reviewedAt: { type: string, format: date-time }
     Buyer:
       allOf:
         - { $ref: "#/components/schemas/BuyerInput" }

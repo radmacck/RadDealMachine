@@ -1,4 +1,44 @@
 export type BuyerOutreachChannel = "EMAIL" | "SMS" | "VOICE";
+export type BuyerOutreachState = "DRAFT" | "APPROVED" | "QUEUED" | "SENT" | "CONFIRMED" | "FAILED";
+export type BuyerContactPermission = {
+  status: "GRANTED" | "OPTED_OUT" | "UNKNOWN";
+  channels: BuyerOutreachChannel[];
+  evidenceUrl?: string;
+  source?: string;
+  capturedAt?: string;
+  validUntil?: string | null;
+};
+
+const outreachTransitions: Record<BuyerOutreachState, readonly BuyerOutreachState[]> = {
+  DRAFT: ["APPROVED"],
+  APPROVED: ["QUEUED"],
+  QUEUED: ["SENT", "FAILED"],
+  SENT: ["CONFIRMED", "FAILED"],
+  CONFIRMED: [],
+  FAILED: [],
+};
+
+export function assertBuyerOutreachTransition(from: BuyerOutreachState, to: BuyerOutreachState) {
+  if (!outreachTransitions[from].includes(to)) throw new Error(`Invalid buyer outreach transition: ${from} → ${to}.`);
+}
+
+export function buyerOutreachPermissionBlocker(
+  permission: BuyerContactPermission | null | undefined,
+  channel: BuyerOutreachChannel,
+  now = new Date(),
+) {
+  if (!permission || permission.status !== "GRANTED") return "Explicit current buyer contact permission is not recorded.";
+  if (!permission.channels.includes(channel)) return `Permission does not cover ${channel}.`;
+  if (!permission.evidenceUrl || !permission.source || !permission.capturedAt || !permission.validUntil) {
+    return "Permission needs evidence, source, capture time, and expiry.";
+  }
+  const captured = Date.parse(permission.capturedAt);
+  const expiry = Date.parse(permission.validUntil);
+  if (!Number.isFinite(captured) || captured > now.getTime() || !Number.isFinite(expiry) || expiry <= now.getTime()) {
+    return "Permission evidence is stale or has an invalid timestamp.";
+  }
+  return null;
+}
 
 export interface BuyerOutreachRequest {
   buyerId: string;
@@ -31,6 +71,8 @@ export type BuyerOutreachReadiness = {
   contactRouteStatus: "NONE" | "PRESENT_UNVERIFIED";
   providerStatus: "NOT_CONNECTED" | "CONNECTED";
   deliveryStatus: "NOT_SENT";
+  workflowState: BuyerOutreachState;
+  permissionStatus: string;
   availableChannels: BuyerOutreachChannel[];
   missingCapabilities: string[];
   nextAction: string;
@@ -49,7 +91,7 @@ export function registerBuyerOutreachProvider(provider: BuyerOutreachProvider) {
 }
 
 export function buyerOutreachReadiness(
-  buyer: { email?: string | null; phone?: string | null },
+  buyer: { email?: string | null; phone?: string | null; contactPermission?: BuyerContactPermission | null },
   now = new Date(),
 ): BuyerOutreachReadiness {
   const routes: Partial<Record<BuyerOutreachChannel, string>> = {};
@@ -61,6 +103,7 @@ export function buyerOutreachReadiness(
   const routeMethods = Object.keys(routes) as BuyerOutreachChannel[];
   const connected = [...providers.values()].filter(provider => provider.connected);
   const availableChannels = routeMethods.filter(channel =>
+    !buyerOutreachPermissionBlocker(buyer.contactPermission, channel, now) &&
     connected.some(provider => provider.channels.includes(channel)),
   );
   const contactRouteStatus = routeMethods.length ? "PRESENT_UNVERIFIED" : "NONE";
@@ -68,6 +111,8 @@ export function buyerOutreachReadiness(
   const missingCapabilities: string[] = [];
   if (!routeMethods.length) missingCapabilities.push("No direct buyer email or phone route is recorded.");
   else missingCapabilities.push("The contact route has no source/provenance and permission evidence reviewed for this exact channel.");
+  const permissionBlock = routeMethods.map(channel => buyerOutreachPermissionBlocker(buyer.contactPermission, channel, now)).find(Boolean);
+  if (permissionBlock) missingCapabilities.push(permissionBlock);
   if (!connected.length) missingCapabilities.push("No permitted email/SMS/voice outreach provider is connected; the system cannot send a verification request.");
   else if (!availableChannels.length) missingCapabilities.push("Connected providers do not support the buyer's recorded contact route.");
   missingCapabilities.push("Current buying, identity, criteria, and funding evidence still requires a real buyer response and owner review.");
@@ -85,6 +130,12 @@ export function buyerOutreachReadiness(
     contactRouteStatus,
     providerStatus,
     deliveryStatus: "NOT_SENT",
+    workflowState: "DRAFT",
+    permissionStatus: !buyer.contactPermission
+      ? "NOT_RECORDED"
+      : buyer.contactPermission.status === "OPTED_OUT"
+        ? "OPTED_OUT"
+        : permissionBlock ? "STALE_OR_INCOMPLETE" : "GRANTED",
     availableChannels,
     missingCapabilities,
     nextAction,

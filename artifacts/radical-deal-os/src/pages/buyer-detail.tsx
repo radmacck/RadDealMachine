@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { Copy } from 'lucide-react';
 import { Link, useParams } from 'wouter';
 import { ArrowLeft } from 'lucide-react';
-import { getGetBuyerQueryKey, useGetBuyer, useUpdateBuyer, useVerifyBuyer, useRequestBuyerQualification, useCreateBuyerQualificationPortalInvite, type Buyer } from '@workspace/api-client-react';
+import { getGetBuyerQueryKey, useGetBuyer, useUpdateBuyer, useVerifyBuyer, useRequestBuyerQualification, useCreateBuyerQualificationPortalInvite, useRecordBuyerContactPermission, type Buyer } from '@workspace/api-client-react';
 import { ErrorNotice, RowsSkeleton } from '@/components/state-views';
 import { BuyerForm } from '@/components/buyer-form';
 import { BuyerVerificationForm } from '@/components/buyer-verification-form';
@@ -26,7 +26,12 @@ export default function BuyerDetail() {
   const verify = useVerifyBuyer();
   const requestEvidence = useRequestBuyerQualification();
   const createProfileLink = useCreateBuyerQualificationPortalInvite();
+  const saveContactPermission = useRecordBuyerContactPermission();
   const [requestNote, setRequestNote] = useState('');
+  const [permissionSource, setPermissionSource] = useState('');
+  const [permissionEvidence, setPermissionEvidence] = useState('');
+  const [permissionChannel, setPermissionChannel] = useState<'EMAIL'|'SMS'|'VOICE'>('EMAIL');
+  const [permissionStatus, setPermissionStatus] = useState<'GRANTED'|'OPTED_OUT'>('GRANTED');
   const [qualificationLink, setQualificationLink] = useState('');
   const [qualificationLinkExpiresAt, setQualificationLinkExpiresAt] = useState('');
   const [formBuyer,setFormBuyer] = useState<Buyer|null>(null);
@@ -97,8 +102,8 @@ export default function BuyerDetail() {
           <p className="eyebrow mt-3 mb-1">Prepared outreach (draft)</p>
           <p className="whitespace-pre-wrap border border-dashed border-border p-2 text-sm" data-testid="text-prepared-message">{b.qualificationTask.preparedMessage}</p>
            {b.qualificationTask.outreachReadiness && <div className="mt-3 rounded border border-border bg-background/60 p-3 text-sm" data-testid="panel-outreach-readiness">
-             <p className="font-medium">Automated delivery: {b.qualificationTask.outreachReadiness.deliveryStatus.replace(/_/g, ' ')}</p>
-             <p className="mt-1 text-xs text-muted-foreground">Contact route: {b.qualificationTask.outreachReadiness.contactRouteStatus.replace(/_/g, ' ').toLowerCase()} / provider: {b.qualificationTask.outreachReadiness.providerStatus.replace(/_/g, ' ').toLowerCase()} / checked {fmtDate(b.qualificationTask.outreachReadiness.checkedAt)}</p>
+             <p className="font-medium">Outreach: {b.qualificationTask.outreachReadiness.workflowState} · delivery: {b.qualificationTask.outreachReadiness.deliveryStatus.replace(/_/g, ' ')}</p>
+             <p className="mt-1 text-xs text-muted-foreground">Contact route: {b.qualificationTask.outreachReadiness.contactRouteStatus.replace(/_/g, ' ').toLowerCase()} / permission: {b.qualificationTask.outreachReadiness.permissionStatus.replace(/_/g, ' ').toLowerCase()} / provider: {b.qualificationTask.outreachReadiness.providerStatus.replace(/_/g, ' ').toLowerCase()} / checked {fmtDate(b.qualificationTask.outreachReadiness.checkedAt)}</p>
              {!!b.qualificationTask.outreachReadiness.missingCapabilities.length && <ul className="mt-2 list-disc pl-4 text-xs" data-testid="list-outreach-blockers">{b.qualificationTask.outreachReadiness.missingCapabilities.map((item,i)=><li key={i}>{item}</li>)}</ul>}
              <p className="mt-2 text-xs" data-testid="text-outreach-next-action">{b.qualificationTask.outreachReadiness.nextAction}</p>
            </div>}
@@ -112,6 +117,26 @@ export default function BuyerDetail() {
             })}>Request additional evidence</Button>
             {requestEvidence.isError && <ErrorNotice error={requestEvidence.error} />}
           </div>}
+        </div>}
+        {isOwner && <div className="mt-4 grid gap-2 border-t border-border pt-3 sm:grid-cols-2" data-testid="panel-buyer-contact-permission">
+          <p className="text-sm font-medium sm:col-span-2">Record contact permission or opt-out. Evidence is required; saving this never sends a message.</p>
+          <Input aria-label="Permission evidence source" placeholder="Source / how permission was obtained" value={permissionSource} onChange={e=>setPermissionSource(e.target.value)} />
+          <Input aria-label="Permission evidence URL" placeholder="Evidence URL" value={permissionEvidence} onChange={e=>setPermissionEvidence(e.target.value)} />
+          <select className="h-9 border border-border bg-background px-2 text-sm" value={permissionStatus} onChange={e=>setPermissionStatus(e.target.value as 'GRANTED'|'OPTED_OUT')} aria-label="Permission status">
+            <option value="GRANTED">Granted for selected channel</option><option value="OPTED_OUT">Opted out (all channels)</option>
+          </select>
+          <select className="h-9 border border-border bg-background px-2 text-sm" value={permissionChannel} onChange={e=>setPermissionChannel(e.target.value as 'EMAIL'|'SMS'|'VOICE')} aria-label="Permission channel">
+            <option value="EMAIL">Email</option><option value="SMS">SMS</option><option value="VOICE">Voice</option>
+          </select>
+          <Button size="sm" variant="outline" className="sm:col-span-2" disabled={saveContactPermission.isPending || !permissionSource.trim() || !permissionEvidence.trim()}
+            onClick={()=>{
+              const capturedAt=new Date();
+              saveContactPermission.mutate({id,data:{version:b.version,status:permissionStatus,channels:permissionStatus==='GRANTED'?[permissionChannel]:[],
+                source:permissionSource.trim(),evidenceUrl:permissionEvidence.trim(),capturedAt:capturedAt.toISOString(),
+                validUntil:permissionStatus==='GRANTED'?new Date(capturedAt.getTime()+30*86400000).toISOString():null}},
+                {onSuccess:()=>{invalidate();toast({title:'Contact permission evidence saved',description:'No message was sent.'});setPermissionSource('');setPermissionEvidence('');}});
+            }}>{saveContactPermission.isPending?'Saving…':permissionStatus==='GRANTED'?'Save permission evidence':'Save opt-out'}</Button>
+          {saveContactPermission.isError && <div className="sm:col-span-2"><ErrorNotice error={saveContactPermission.error} /></div>}
         </div>}
       </section>
       {b.lastOutreachReplyAt && <section className="border border-border p-3 text-sm" data-testid="panel-latest-outreach-reply">

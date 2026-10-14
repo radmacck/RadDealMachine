@@ -150,6 +150,12 @@ try {
   }
   const liveDiscoveryRecords = liveDiscoveryPages.flatMap(page => page.records);
   const liveDiscoveryCount = Object.values(liveDiscoveryList.counts).reduce((sum, value) => sum + value, 0);
+  assert.equal(liveDiscoveryList.contactCoverage.discoveryCount, liveDiscoveryCount,
+    "Contact coverage must use the full persisted discovery pool, not just the current page.");
+  assert.equal(liveDiscoveryList.contactCoverage.publicFeedPropertiesWithDirectRoute, 0,
+    "The permitted public-source sample contains no direct phone, email, or web routes.");
+  assert.equal(liveDiscoveryList.contactCoverage.publicFeedPropertiesWithCurrentPermittedVerifiedRoute, 0,
+    "Public source coverage must not imply a current verified contact route where none exists.");
   assert.ok(liveDiscoveryPages.length > 1, "The live Philadelphia source exercise must traverse multiple persisted property pages.");
   assert.equal(liveDiscoveryRecords.length, liveDiscoveryCount, "Every persisted live discovery must be reachable through bounded pages.");
   assert.equal(new Set(liveDiscoveryRecords.map(record => record.id)).size, liveDiscoveryRecords.length,
@@ -809,6 +815,11 @@ try {
   assert.ok(transferCandidate, "The confirmed route remains in the case alongside prior source evidence.");
   assert.equal(transferCandidate.freshnessStatus, "CURRENT");
   assert.equal(transferCandidate.routeVerificationStatus, "CONFIRMED");
+  const coverageAfterSyntheticRoute = await listPropertyDiscoveries({ marketKey: "PHILADELPHIA_PA", limit: 1 });
+  assert.ok(coverageAfterSyntheticRoute.contactCoverage.syntheticRouteCandidates > 0,
+    "Synthetic contact routes must be counted separately from live coverage.");
+  assert.equal(coverageAfterSyntheticRoute.contactCoverage.publicFeedPropertiesWithDirectRoute, 0,
+    "A synthetic manually captured route cannot be reported as a public-feed route.");
   assert.ok(discovery.contactResearchCase?.missingRequirements.some(item => /stale/i.test(item)),
     "Stale candidates remain visible as blockers even when a separate current route is recorded.");
   assert.ok(discovery.contactResearchCase?.missingRequirements.some(item => /conflict/i.test(item)),

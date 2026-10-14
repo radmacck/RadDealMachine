@@ -6,6 +6,7 @@
  * OpenAPI spec version: 1.0.0
  */
 import type { PropertyDiscovery } from './propertyDiscovery';
+import type { PropertyDiscoveryListContactCoverage } from './propertyDiscoveryListContactCoverage';
 import type { PropertyDiscoveryListCounts } from './propertyDiscoveryListCounts';
 import type { PropertyQualificationCriteria } from './propertyQualificationCriteria';
 import type { UnmatchedPropertySourceObservation } from './unmatchedPropertySourceObservation';
@@ -26,5 +27,6 @@ export interface PropertyDiscoveryList {
   unmatchedNextCursor: string | null;
   unmatchedHasMore: boolean;
   counts: PropertyDiscoveryListCounts;
+  contactCoverage: PropertyDiscoveryListContactCoverage;
   criteria: PropertyQualificationCriteria;
 }

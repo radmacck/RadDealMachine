@@ -18,13 +18,17 @@ async function withServer<T>(serverApp: express.Express, callback: (baseUrl: str
   }
 }
 
-test("the actual command-center and transaction-readiness routes return 401 without a legitimate session", async () => {
+test("actual private command-center, transaction, contact-research, and buyer-permission routes require a session", async () => {
   await withServer(app,async baseUrl => {
     const requests: Array<{path:string;init?:RequestInit}> = [
       { path: "/api/deals/command-center" },
       { path: "/api/operations/transaction-readiness" },
       {
         path: `/api/property-discoveries/${"00000000-0000-4000-8000-000000000001"}/contact-research`,
+        init: { method: "POST", headers: { "content-type": "application/json" }, body: "{}" },
+      },
+      {
+        path: "/api/buyers/00000000-0000-4000-8000-000000000001/contact-permission",
         init: { method: "POST", headers: { "content-type": "application/json" }, body: "{}" },
       },
     ];
