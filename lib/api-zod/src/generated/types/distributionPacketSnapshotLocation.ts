@@ -11,4 +11,9 @@ export type DistributionPacketSnapshotLocation = {
   county: string;
   state: string;
   zip: string;
+  /**
+     * Present only when the owner elected address disclosure before this immutable packet was created.
+     * @nullable
+     */
+  streetAddress?: string | null;
 };

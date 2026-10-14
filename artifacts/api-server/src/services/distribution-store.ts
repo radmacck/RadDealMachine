@@ -1,9 +1,10 @@
 import { createHash, randomBytes, randomUUID } from "node:crypto";
 import { isDeepStrictEqual } from "node:util";
 import { and, desc, eq } from "drizzle-orm";
+import { PDFDocument, StandardFonts } from "pdf-lib";
 import {
   db, analysesTable, buyersTable, contractsTable, distributionPacketsTable,
-  distributionRecipientsTable, offersTable, matchesTable, leadsTable,
+  distributionRecipientsTable, offersTable, matchesTable, leadsTable, settingsTable,
 } from "@workspace/db";
 import {
   type Analysis, type DealContract, type Lead, type OfferActor,
@@ -35,7 +36,7 @@ function validateToken(token: string | undefined) {
   return hashToken(token);
 }
 
-function buildPacket(original: OriginalSnapshot, contract: DealContract, sourceAnalysisSnapshotId: string, now: Date): DistributionPacketSnapshot {
+function buildPacket(original: OriginalSnapshot, contract: DealContract, sourceAnalysisSnapshotId: string, now: Date, redactAddress: boolean): DistributionPacketSnapshot {
   const analysis = original.analysis;
   const acquisitionPrice = contract.purchasePrice;
   const economics = lockDealEconomics(sourceAnalysisSnapshotId,contract.offerId,analysis,acquisitionPrice);
@@ -74,7 +75,9 @@ function buildPacket(original: OriginalSnapshot, contract: DealContract, sourceA
       county: original.lead.county,
       state: original.lead.state,
       zip: original.lead.zip,
+      streetAddress: redactAddress ? null : original.lead.address,
     },
+    addressRedacted: redactAddress,
     property: {
       propertyType: original.lead.propertyType,
       sqft: original.lead.sqft,
@@ -111,6 +114,35 @@ function buildPacket(original: OriginalSnapshot, contract: DealContract, sourceA
   } as DistributionPacketSnapshot;
 }
 
+export async function getDistributionPreferences() {
+  const [row] = await db.select().from(settingsTable).where(eq(settingsTable.id, 2));
+  return {
+    redactAddress: row?.assumptions.redactAddress !== false,
+    updatedAt: row?.updatedAt.toISOString() ?? null,
+  };
+}
+
+export async function updateDistributionPreferences(
+  input: { redactAddress: boolean },
+  actor: OfferActor,
+) {
+  assertOperationsRole(actor, ["OWNER"]);
+  const now = new Date();
+  await db.transaction(async (tx) => {
+    await tx.insert(settingsTable).values({
+      id: 2,
+      assumptions: { redactAddress: input.redactAddress },
+      updatedAt: now,
+    }).onConflictDoUpdate({
+      target: settingsTable.id,
+      set: { assumptions: { redactAddress: input.redactAddress }, updatedAt: now },
+    });
+    await audit(tx, actor.id, "DISTRIBUTION_PREFERENCES_CHANGED", "workspace",
+      `Owner set buyer packet street-address redaction to ${input.redactAddress}. Existing authorized packets remain immutable; this applies only to future packets.`);
+  });
+  return getDistributionPreferences();
+}
+
 async function liveContract(tx: Tx, leadId: string) {
   const [row] = await tx.select().from(contractsTable).where(eq(contractsTable.leadId, leadId)).for("update");
   if (!row) throw new DomainError("Prepare and execute the acquisition contract first.", 409);
@@ -127,13 +159,22 @@ async function buildDistribution(tx: Store, packet: Packet | undefined) {
     tx.select().from(buyersTable),
   ]);
   const byId = new Map(buyers.map((buyer) => [buyer.id, String(buyer.payload.name ?? "Buyer")]));
+  const storedSnapshot = packet.snapshot as unknown as DistributionPacketSnapshot;
+  const safeSnapshot: DistributionPacketSnapshot = {
+    ...storedSnapshot,
+    addressRedacted: storedSnapshot.addressRedacted !== false,
+    location: {
+      ...storedSnapshot.location,
+      streetAddress: storedSnapshot.addressRedacted === false ? storedSnapshot.location.streetAddress ?? null : null,
+    },
+  };
   return {
     packetId: packet.id,
     version: packet.version,
     status: packet.status === "FIRST_ACCEPTED"
       ? "ACTIVE"
       : packetStatus(packet.status) ? packet.status : "REVOKED",
-    packet: packet.snapshot as unknown as DistributionPacketSnapshot,
+    packet: safeSnapshot,
     authorizedBy: packet.authorizedBy,
     authorizedAt: packet.authorizedAt.toISOString(),
     expiresAt: packet.expiresAt.toISOString(),
@@ -197,7 +238,9 @@ export async function authorizeDealDistribution(
       original.analysis.assumptions.assignmentTarget !== contract.assignmentTarget) {
       throw new DomainError("The executed assignment target does not match its immutable underwriting snapshot.", 409);
     }
-    const snapshot = buildPacket(original, contract, analysisRow.id, now);
+    const [preference] = await tx.select().from(settingsTable).where(eq(settingsTable.id, 2));
+    const redactAddress = preference?.assumptions.redactAddress !== false;
+    const snapshot = buildPacket(original, contract, analysisRow.id, now, redactAddress);
     const [created] = await tx.insert(distributionPacketsTable).values({
       leadId, contractId: contractRow.id, attemptNumber,
       snapshot: snapshot as unknown as Record<string, unknown>,
@@ -233,6 +276,10 @@ export async function shareDistributionRecipients(
     const [packet] = await tx.select().from(distributionPacketsTable).where(eq(distributionPacketsTable.id, packetId)).for("update");
     if (!packet) throw new DomainError("Distribution authorization not found.", 404);
     if (packet.version !== parsed.version) throw new DomainError("Distribution packet changed. Reload before sharing.", 409);
+    const packetSnapshot = packet.snapshot as unknown as DistributionPacketSnapshot;
+    if (!packetSnapshot.addressRedacted) {
+      throw new DomainError("Address-disclosing packets cannot be shared through bearer links because recipient identity is not verified. Redact the address and create a new authorized packet.", 409);
+    }
     if (contractRow.id !== packet.contractId || (contract.attemptNumber ?? 1) !== packet.attemptNumber ||
       !["UNDER_CONTRACT", "CLOSING"].includes(contract.status) || contract.committedBuyerId ||
       !["ACTIVE", "FIRST_ACCEPTED"].includes(packet.status) || packet.expiresAt.getTime() <= now.getTime()) {
@@ -301,6 +348,9 @@ async function loadPortalRecord(tx: Store, tokenHash: string, now: Date) {
   const contracts = (await tx.select().from(contractsTable)).map(contractRecord);
   const reservations = buyerReservations(contracts, buyer.id, contract.id);
   const match = matchBuyer(buyer, detail, contract, now, undefined, reservations.count, reservations.funds);
+  if (!match.eligible) {
+    throw new DomainError("This buyer's approval, funding/capacity evidence, or deal fit is no longer current. Ask the owner to re-verify before reopening this packet.", 403);
+  }
   const events = eventsOf(recipient);
   const alreadyAccepted = recipient.status === "ACCEPTED";
   const canAccept = match.eligible && !alreadyAccepted && ["ACTIVE", "FIRST_ACCEPTED"].includes(packet.status);
@@ -311,8 +361,13 @@ async function loadPortalRecord(tx: Store, tokenHash: string, now: Date) {
       : !["ACTIVE", "FIRST_ACCEPTED"].includes(packet.status)
         ? "This opportunity is no longer accepting responses."
         : null;
+  const storedSnapshot = packet.snapshot as unknown as DistributionPacketSnapshot;
   return {
-    packet: packet.snapshot as unknown as DistributionPacketSnapshot,
+    packet: {
+      ...storedSnapshot,
+      addressRedacted: true,
+      location: { ...storedSnapshot.location, streetAddress: null },
+    },
     recipientStatus: recipient.status,
     canAccept,
     unavailableReason,
@@ -347,6 +402,37 @@ export async function getBuyerPortalDeal(token: string | undefined, now = new Da
   });
   if (!response) throw new Error("Buyer portal access did not return a validated packet.");
   return response;
+}
+
+export async function downloadBuyerPacketPdf(token: string | undefined, now = new Date()) {
+  const { packet } = await getBuyerPortalDeal(token, now);
+  if (!packet.addressRedacted || packet.location.streetAddress) {
+    throw new DomainError("Buyer packet download is blocked unless the street address is redacted.", 403);
+  }
+  const pdf = await PDFDocument.create();
+  const page = pdf.addPage([612, 792]);
+  const font = await pdf.embedFont(StandardFonts.Helvetica);
+  const lines = [
+    "PRIVATE BUYER DEAL PACKET",
+    `${packet.location.city}, ${packet.location.state} ${packet.location.zip}`,
+    packet.property.propertyType.replace(/_/g, " "),
+    `Beds ${packet.property.beds} | Baths ${packet.property.baths} | ${packet.property.sqft} sq ft`,
+    `Buyer price: $${packet.economics.buyerPrice.toLocaleString("en-US")}`,
+    `ARV range: $${packet.underwriting.arv.low.toLocaleString("en-US")}–$${packet.underwriting.arv.high.toLocaleString("en-US")}`,
+    `Repair range: $${packet.underwriting.repairs.low.toLocaleString("en-US")}–$${packet.underwriting.repairs.high.toLocaleString("en-US")}`,
+    `Close by: ${packet.closeBy}`,
+    `Contingencies: ${packet.contingencies}`,
+    "Street address and seller identity are redacted.",
+    "Interest is non-binding. This packet is not an assignment contract or commitment.",
+    packet.disclosure,
+  ];
+  let y = 744;
+  for (const [index, line] of lines.entries()) {
+    const text = line.replace(/[\r\n]+/g, " ").slice(0, 160);
+    page.drawText(text, { x: 48, y, size: index === 0 ? 16 : 10, font, maxWidth: 516 });
+    y -= index === 0 ? 32 : 22;
+  }
+  return Buffer.from(await pdf.save());
 }
 
 export async function respondToBuyerPortalDeal(

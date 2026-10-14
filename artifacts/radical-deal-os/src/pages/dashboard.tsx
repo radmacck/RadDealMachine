@@ -215,10 +215,10 @@ export default function Dashboard() {
             </div>
             <div className="fd-readiness-grid">
               <div className="fd-readiness-item">
-                <b>Eligible buyer pool</b>
+                <b>Live buyer readiness</b>
                 <p>{buyerSummary?.approvedCurrentCount
-                  ? `${buyerSummary.approvedCurrentCount} buyer(s) meet current approval and evidence gates.`
-                  : 'No buyer is currently eligible for priority matching or distribution.'}</p>
+                  ? `${buyerSummary.approvedCurrentCount} real buyer(s) meet current approval and evidence gates.`
+                  : <>Zero real buyers are currently approved for matching or distribution. Next: <Link className="underline" href="/buyers">record a prospect’s buy box and dated funding evidence</Link>, then have the owner verify current intent and refresh matching.</>}</p>
               </div>
               <div className="fd-readiness-item">
                 <b>Excluded from matching</b>

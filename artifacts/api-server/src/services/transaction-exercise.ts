@@ -4,7 +4,7 @@ import { once } from "node:events";
 import { AddressInfo } from "node:net";
 import { randomUUID } from "node:crypto";
 import { PDFDocument } from "pdf-lib";
-import { db,pool,analysesTable,contractsTable,jobsTable,matchesTable,buyersTable,leadsTable,transactionDocumentBlobsTable,transactionReadinessExceptionsTable,dealDecisionWorkItemsTable,transactionDocumentTemplatesTable } from "@workspace/db";
+import { db,pool,analysesTable,contractsTable,jobsTable,matchesTable,buyersTable,leadsTable,distributionPacketsTable,transactionDocumentBlobsTable,transactionReadinessExceptionsTable,dealDecisionWorkItemsTable,transactionDocumentTemplatesTable } from "@workspace/db";
 import { and, eq } from "drizzle-orm";
 import { logger } from "../lib/logger";
 import * as seller from "./deal-store";
@@ -22,11 +22,13 @@ import { getBuyerRecord } from "./operations-records";
 import { requestBuyerQualification } from "./buyer-pool";
 import {
   authorizeDealDistribution, getBuyerPortalDeal, getDealDistribution,
+  getDistributionPreferences, updateDistributionPreferences, downloadBuyerPacketPdf,
   respondToBuyerPortalDeal, shareDistributionRecipients,
 } from "./distribution-store";
 import { getTransactionDocumentReadiness } from "./transaction-document-registry";
 import { propagateStaleTransactionDocuments } from "./transaction-store";
 import { createTransactionTemplateReviewRouter } from "../routes/operations";
+import { publicBuyerPortalRouter } from "../routes/distribution";
 import { evaluateAllTransactionReadiness, getTransactionReadinessReport } from "./transaction-readiness";
 const actor = {id:`synthetic-transaction:${randomUUID()}`,role:"OWNER"};
 const operator = {...actor,role:"OPERATOR"};
@@ -379,9 +381,21 @@ try {
     "A stale/mismatched economics authorization must not persist a buyer packet.");
   await db.update(leadsTable).set({analysisSnapshotId:approvedSnapshot}).where(eq(leadsTable.id,id));
   await db.delete(analysesTable).where(eq(analysesTable.id,mismatchSnapshotRow.id));
-    const distribution = await authorizeDealDistribution(id,{version:op.contract!.version,
+     await assert.rejects(updateDistributionPreferences({redactAddress:false},operator),/cannot perform this operation/i);
+     const savedPreference = await updateDistributionPreferences({redactAddress:false},actor);
+     assert.equal(savedPreference.redactAddress,false,"Owner's disclosure preference must persist.");
+     assert.equal((await getDistributionPreferences()).redactAddress,false,"Preference must reload from persistent storage.");
+     await updateDistributionPreferences({redactAddress:true},actor);
+     let distribution = await authorizeDealDistribution(id,{version:op.contract!.version,
       reason:"Synthetic owner authorization for isolated distribution exercise."},actor,now);
     assert.ok(distribution.packetId);
+     assert.equal(distribution.packet?.addressRedacted,true);
+     assert.equal(distribution.packet?.location.streetAddress,null);
+     await updateDistributionPreferences({redactAddress:false},actor);
+     const stillFrozen = await getDealDistribution(id);
+     assert.equal(stillFrozen.packet?.addressRedacted,true,
+       "Changing the workspace preference must not mutate an already-authorized packet.");
+     assert.equal(stillFrozen.packet?.location.streetAddress,null);
     assert.equal(op.contract?.purchasePrice,110000);
     assert.equal(op.contract?.assignmentTarget,15000);
     const expectedBuyerPrice=op.contract!.purchasePrice+op.contract!.assignmentTarget;
@@ -418,6 +432,31 @@ try {
      "A buyer whose current verification expired cannot receive a packet.");
      assert.equal((await getDealDistribution(id)).recipients.length,0,
        "Failed stale/unverified recipient checks must not persist distribution links.");
+      const staleAccessShare = await shareDistributionRecipients(distribution.packetId!,{
+        version:distribution.version,buyerIds:[staleBuyer.id],
+      },operator,now);
+      assert.equal(staleAccessShare.links.length,1,"A buyer current at invite time may receive a capability.");
+      distribution = await getDealDistribution(id);
+      await assert.rejects(getBuyerPortalDeal(staleAccessShare.links[0]!.token,afterExpiry),/no longer current/i,
+        "A buyer whose funding/qualification evidence expires after invitation cannot reopen the packet.");
+      await assert.rejects(downloadBuyerPacketPdf(staleAccessShare.links[0]!.token,afterExpiry),/no longer current/i,
+        "A stale buyer cannot download the packet after invitation.");
+      const staleReadRecipients = distribution.recipients as Array<{buyerId:string;events:Array<unknown>}>;
+      assert.equal(staleReadRecipients.find((item) => item.buyerId === staleBuyer.id)?.events.length,0,
+        "Rejected stale reads do not create portal access events.");
+      const recipientCountBeforeAddressDisclosure = distribution.recipients.length;
+      await db.update(distributionPacketsTable).set({snapshot:{
+        ...distribution.packet!, addressRedacted:false,
+        location:{...distribution.packet!.location,streetAddress:detail.lead.address},
+      }}).where(eq(distributionPacketsTable.id,distribution.packetId!));
+      await assert.rejects(shareDistributionRecipients(distribution.packetId!,{
+        version:distribution.version,buyerIds:[buyer.id],
+      },operator,now),/recipient identity is not verified/i,
+      "Address-disclosing packets must not be exposed through bearer-only buyer links.");
+      assert.equal((await getDealDistribution(id)).recipients.length,recipientCountBeforeAddressDisclosure,
+        "Blocked address-disclosing access must not create recipients.");
+      await db.update(distributionPacketsTable).set({snapshot:distribution.packet as unknown as Record<string,unknown>})
+        .where(eq(distributionPacketsTable.id,distribution.packetId!));
     const shared = await shareDistributionRecipients(distribution.packetId!,{version:distribution.version,buyerIds:[buyer.id,competitor.id]},operator,now);
     assert.equal(shared.links.length,2);
      let readinessRuns = await evaluateAllTransactionReadiness(now);
@@ -466,6 +505,27 @@ try {
      await evaluateAllTransactionReadiness(now);
     const portalToken = shared.links.find(link=>link.buyerId===buyer.id)!.token;
    const competitorPortalToken = shared.links.find(link=>link.buyerId===competitor.id)!.token;
+    const buyerPacketPdf = await downloadBuyerPacketPdf(portalToken,now);
+    assert.match(buyerPacketPdf.subarray(0,5).toString(),/^%PDF-/,"Capability-authorized buyer download must be a PDF.");
+    assert.equal(buyerPacketPdf.includes(Buffer.from(detail.lead.address)),false,"Downloaded packet must not include the street address.");
+    assert.equal(buyerPacketPdf.includes(Buffer.from(detail.lead.sellerName)),false,"Downloaded packet must not include seller identity.");
+    const buyerPortalApp = express();
+    buyerPortalApp.use("/api", publicBuyerPortalRouter);
+    const buyerPortalServer = buyerPortalApp.listen(0,"127.0.0.1");
+    await once(buyerPortalServer,"listening");
+    const buyerPortalUrl = `http://127.0.0.1:${(buyerPortalServer.address() as AddressInfo).port}/api/portal/deal/download`;
+    try {
+      const httpDownload = await fetch(buyerPortalUrl,{headers:{"X-Portal-Token":portalToken}});
+      assert.equal(httpDownload.status,200,"The actual HTTP download route must serve a valid buyer capability.");
+      assert.match(httpDownload.headers.get("content-type")??"",/application\/pdf/i);
+      assert.match(httpDownload.headers.get("content-disposition")??"",/attachment; filename="buyer-deal-packet\.pdf"/);
+      const httpPdf=Buffer.from(await httpDownload.arrayBuffer());
+      assert.match(httpPdf.subarray(0,5).toString(),/^%PDF-/);
+      assert.equal(httpPdf.includes(Buffer.from(detail.lead.address)),false);
+      assert.equal(httpPdf.includes(Buffer.from(detail.lead.sellerName)),false);
+    } finally {
+      await new Promise<void>((resolve,reject)=>buyerPortalServer.close((error)=>error?reject(error):resolve()));
+    }
     const portal = await getBuyerPortalDeal(portalToken,now);
    const competitorPortal = await getBuyerPortalDeal(competitorPortalToken,now);
     assert.equal(portal.packet.economics.buyerPrice,expectedBuyerPrice);
@@ -476,8 +536,8 @@ try {
     const repeatedPortalAccess = await getBuyerPortalDeal(portalToken,now);
     assert.equal(repeatedPortalAccess.recipientStatus,"INVITED","Opening a packet must not change recipient qualification or response state.");
     assert.equal(repeatedPortalAccess.canAccept,true);
-    assert.equal(repeatedPortalAccess.events.filter(event=>event.action==="PORTAL_ACCESSED").length,2,
-      "Each valid private-packet access is persisted as access evidence, not as buyer intent.");
+     assert.equal(repeatedPortalAccess.events.filter(event=>event.action==="PORTAL_ACCESSED").length,4,
+       "Two portal opens and both valid PDF downloads are persisted as access evidence, not buyer intent.");
     assert.ok(repeatedPortalAccess.events.filter(event=>event.action==="PORTAL_ACCESSED")
       .every(event=>event.note.includes("does not establish the reader's identity")));
     const afterViews = await getDealDistribution(id);
@@ -486,8 +546,8 @@ try {
     }>;
     assert.equal(viewedRecipients.find(recipient=>recipient.buyerId===buyer.id)?.status,"INVITED");
     assert.equal(viewedRecipients.find(recipient=>recipient.buyerId===buyer.id)?.events
-      .filter(event=>event.action==="PORTAL_ACCESSED").length,2,
-      "The operator distribution view receives persisted portal-access history.");
+       .filter(event=>event.action==="PORTAL_ACCESSED").length,4,
+       "The operator distribution view receives persisted portal and PDF access history.");
     assert.equal(afterViews.acceptedBuyerId,null,"Portal access alone cannot mark interest, acceptance, or commitment.");
     const accessCountBeforeRejectedReads = repeatedPortalAccess.events.filter(event=>event.action==="PORTAL_ACCESSED").length;
     await assert.rejects(getBuyerPortalDeal(portalToken,new Date(Date.parse(distribution.expiresAt!)+1000)),/no longer available/);
@@ -592,7 +652,8 @@ try {
    const closedAccessCount = closedRecipient?.events.filter(event=>event.action==="PORTAL_ACCESSED").length;
    await assert.rejects(getBuyerPortalDeal(thirdShare.links[0]!.token,now),/no longer available/);
    const afterClosedAccess = await getDealDistribution(id);
-   assert.equal(afterClosedAccess.recipients.find(r=>r.buyerId===lateVerified.id)?.events
+    const afterClosedRecipients = afterClosedAccess.recipients as Array<{buyerId:string;events:Array<{action:string}>}>;
+    assert.equal(afterClosedRecipients.find(r=>r.buyerId===lateVerified.id)?.events
      .filter(event=>event.action==="PORTAL_ACCESSED").length,closedAccessCount,
      "A committed/closed link rejection must not record another portal access.");
   let destination = await buyers.createBuyer({name:"SYNTHETIC GURU DESTINATION",email:"synthetic-guru@example.com",phone:"",

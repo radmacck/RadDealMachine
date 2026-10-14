@@ -689,6 +689,28 @@ paths:
           content:
             application/json:
               schema: { $ref: "#/components/schemas/DealDistribution" }
+  /distribution-preferences:
+    get:
+      operationId: getDistributionPreferences
+      responses:
+        "200":
+          description: Current owner-controlled packet address disclosure preference
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/DistributionPreferences" }
+    patch:
+      operationId: updateDistributionPreferences
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/DistributionPreferencesInput" }
+      responses:
+        "200":
+          description: Persisted owner-controlled packet address disclosure preference
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/DistributionPreferences" }
   /distribution/{id}/recipients:
     parameters:
       - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
@@ -732,6 +754,17 @@ paths:
           content:
             application/json:
               schema: { $ref: "#/components/schemas/BuyerPortalDeal" }
+  /portal/deal/download:
+    get:
+      operationId: downloadBuyerPacket
+      parameters:
+        - { name: X-Portal-Token, in: header, required: true, schema: { type: string, minLength: 40, maxLength: 50 } }
+      responses:
+        "200":
+          description: Current, redacted buyer packet PDF available only through a valid qualified buyer capability
+          content:
+            application/pdf:
+              schema: { type: string, format: binary }
   /portal/deal/response:
     post:
       operationId: respondToBuyerPortalDeal
@@ -2968,6 +3001,10 @@ components:
             county: { type: string }
             state: { type: string }
             zip: { type: string }
+            streetAddress:
+              type: ["string", "null"]
+              description: Present only when the owner elected address disclosure before this immutable packet was created.
+        addressRedacted: { type: boolean }
         property:
           type: object
           required: [propertyType, sqft, beds, baths, units]
@@ -3075,6 +3112,17 @@ components:
         acceptedBuyerId: { type: ["string", "null"] }
         acceptedAt: { type: ["string", "null"] }
         recipients: { type: array, items: { $ref: "#/components/schemas/DistributionRecipient" } }
+    DistributionPreferences:
+      type: object
+      required: [redactAddress, updatedAt]
+      properties:
+        redactAddress: { type: boolean }
+        updatedAt: { type: ["string", "null"], format: date-time }
+    DistributionPreferencesInput:
+      type: object
+      required: [redactAddress]
+      properties:
+        redactAddress: { type: boolean }
     DistributionShareResponse:
       type: object
       required: [distribution, links]

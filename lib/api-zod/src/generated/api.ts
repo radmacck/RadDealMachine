@@ -24029,8 +24029,10 @@ export const GetDealDistributionResponse = zod.object({
   "city": zod.string(),
   "county": zod.string(),
   "state": zod.string(),
-  "zip": zod.string()
+  "zip": zod.string(),
+  "streetAddress": zod.string().nullish().describe('Present only when the owner elected address disclosure before this immutable packet was created.')
 }),
+  "addressRedacted": zod.boolean().optional(),
   "property": zod.object({
   "propertyType": zod.string(),
   "sqft": zod.number(),
@@ -24162,8 +24164,10 @@ export const AuthorizeDealDistributionResponse = zod.object({
   "city": zod.string(),
   "county": zod.string(),
   "state": zod.string(),
-  "zip": zod.string()
+  "zip": zod.string(),
+  "streetAddress": zod.string().nullish().describe('Present only when the owner elected address disclosure before this immutable packet was created.')
 }),
+  "addressRedacted": zod.boolean().optional(),
   "property": zod.object({
   "propertyType": zod.string(),
   "sqft": zod.number(),
@@ -24259,6 +24263,22 @@ export const AuthorizeDealDistributionResponse = zod.object({
 })
 
 
+export const GetDistributionPreferencesResponse = zod.object({
+  "redactAddress": zod.boolean(),
+  "updatedAt": zod.string().datetime({"offset":true}).nullable()
+})
+
+
+export const UpdateDistributionPreferencesBody = zod.object({
+  "redactAddress": zod.boolean()
+})
+
+export const UpdateDistributionPreferencesResponse = zod.object({
+  "redactAddress": zod.boolean(),
+  "updatedAt": zod.string().datetime({"offset":true}).nullable()
+})
+
+
 export const ShareDistributionRecipientsParams = zod.object({
   "id": zod.coerce.string().uuid()
 })
@@ -24295,8 +24315,10 @@ export const ShareDistributionRecipientsResponse = zod.object({
   "city": zod.string(),
   "county": zod.string(),
   "state": zod.string(),
-  "zip": zod.string()
+  "zip": zod.string(),
+  "streetAddress": zod.string().nullish().describe('Present only when the owner elected address disclosure before this immutable packet was created.')
 }),
+  "addressRedacted": zod.boolean().optional(),
   "property": zod.object({
   "propertyType": zod.string(),
   "sqft": zod.number(),
@@ -24434,8 +24456,10 @@ export const ReleaseDistributionAcceptanceResponse = zod.object({
   "city": zod.string(),
   "county": zod.string(),
   "state": zod.string(),
-  "zip": zod.string()
+  "zip": zod.string(),
+  "streetAddress": zod.string().nullish().describe('Present only when the owner elected address disclosure before this immutable packet was created.')
 }),
+  "addressRedacted": zod.boolean().optional(),
   "property": zod.object({
   "propertyType": zod.string(),
   "sqft": zod.number(),
@@ -24558,8 +24582,10 @@ export const GetBuyerPortalDealResponse = zod.object({
   "city": zod.string(),
   "county": zod.string(),
   "state": zod.string(),
-  "zip": zod.string()
+  "zip": zod.string(),
+  "streetAddress": zod.string().nullish().describe('Present only when the owner elected address disclosure before this immutable packet was created.')
 }),
+  "addressRedacted": zod.boolean().optional(),
   "property": zod.object({
   "propertyType": zod.string(),
   "sqft": zod.number(),
@@ -24646,6 +24672,18 @@ export const GetBuyerPortalDealResponse = zod.object({
 })
 
 
+export const downloadBuyerPacketHeaderXPortalTokenMin = 40;
+export const downloadBuyerPacketHeaderXPortalTokenMax = 50;
+
+
+
+export const DownloadBuyerPacketHeader = zod.object({
+  "X-Portal-Token": zod.string().min(downloadBuyerPacketHeaderXPortalTokenMin).max(downloadBuyerPacketHeaderXPortalTokenMax)
+})
+
+export const DownloadBuyerPacketResponse = zod.unknown()
+
+
 export const respondToBuyerPortalDealHeaderXPortalTokenMin = 40;
 export const respondToBuyerPortalDealHeaderXPortalTokenMax = 50;
 
@@ -24686,8 +24724,10 @@ export const RespondToBuyerPortalDealResponse = zod.object({
   "city": zod.string(),
   "county": zod.string(),
   "state": zod.string(),
-  "zip": zod.string()
+  "zip": zod.string(),
+  "streetAddress": zod.string().nullish().describe('Present only when the owner elected address disclosure before this immutable packet was created.')
 }),
+  "addressRedacted": zod.boolean().optional(),
   "property": zod.object({
   "propertyType": zod.string(),
   "sqft": zod.number(),

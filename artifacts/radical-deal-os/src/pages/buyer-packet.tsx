@@ -49,6 +49,8 @@ export default function BuyerPacketPage() {
   const [pendingResponse, setPendingResponse] = useState<PendingBuyerResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
+  const [downloading, setDownloading] = useState(false);
+  const [downloadError, setDownloadError] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -195,6 +197,36 @@ export default function BuyerPacketPage() {
     }
   };
 
+  const downloadPacket = async () => {
+    if (!token || downloading) return;
+    setDownloading(true);
+    setDownloadError(null);
+    try {
+      const response = await fetch('/api/portal/deal/download', {
+        method: 'GET',
+        headers: { 'X-Portal-Token': token },
+        credentials: 'same-origin',
+        cache: 'no-store',
+      });
+      if (!response.ok) {
+        const body = await readJson(response);
+        throw new Error(typeof body.error === 'string' ? body.error : `Download failed (${response.status}).`);
+      }
+      const blob = await response.blob();
+      if (blob.type !== 'application/pdf') throw new Error('The server did not return a buyer packet PDF.');
+      const href = URL.createObjectURL(blob);
+      const anchor = document.createElement('a');
+      anchor.href = href;
+      anchor.download = 'buyer-deal-packet.pdf';
+      anchor.click();
+      URL.revokeObjectURL(href);
+    } catch (cause) {
+      setDownloadError(cause instanceof Error ? cause.message : 'The buyer packet could not be downloaded.');
+    } finally {
+      setDownloading(false);
+    }
+  };
+
   const packet = deal?.packet;
   return <main className="min-h-[100dvh] bg-background px-4 py-8 text-foreground sm:px-6">
     <div className="mx-auto max-w-3xl space-y-5">
@@ -207,13 +239,21 @@ export default function BuyerPacketPage() {
         <header className="ledger space-y-3 border-t-4 border-t-signal p-5 sm:p-7">
           <p className="eyebrow">Off-market opportunity · {packet.location.city}, {packet.location.state}</p>
           <h1 className="font-serif text-3xl sm:text-4xl">{packet.property.propertyType.replace(/_/g, ' ')}</h1>
-          <p className="text-sm text-muted-foreground">{packet.location.county} County · {packet.location.zip} · Street address shared after owner review</p>
+          <p className="text-sm text-muted-foreground">{packet.location.county} County · {packet.location.zip} · {packet.addressRedacted
+            ? 'Street address redacted by owner preference'
+            : `Street address disclosed by owner preference: ${packet.location.streetAddress ?? 'not present in this packet'}`}</p>
           <div className="grid gap-3 border-y border-border py-4 sm:grid-cols-3">
             <div><p className="eyebrow">Buyer price</p><p className="font-mono text-2xl">{money(packet.economics.buyerPrice)}</p></div>
             <div><p className="eyebrow">ARV range</p><p className="font-mono">{money(packet.underwriting.arv.low)} – {money(packet.underwriting.arv.high)}</p></div>
             <div><p className="eyebrow">Gross spread · expected</p><p className="font-mono">{money(packet.underwriting.grossProfitPotential.expected)}</p></div>
           </div>
           <p className="text-sm">{packet.disclosure}</p>
+          <div className="space-y-2">
+            <Button variant="outline" disabled={downloading} onClick={() => void downloadPacket()}>
+              {downloading ? 'Preparing redacted PDF…' : 'Download redacted packet PDF'}
+            </Button>
+            {downloadError && <p className="text-sm text-destructive" role="alert">{downloadError}</p>}
+          </div>
         </header>
         <section className="ledger space-y-4 p-5 sm:p-7">
           <div><h2 className="eyebrow mb-2">Property facts</h2>

@@ -11,3 +11,4 @@
 - [Public property-source evidence](property-source-evidence.md) — join by exact parcel identity; a no-match is not resolution, and material source changes keep history.
 - [Seller contact route reconciliation](contact-route-reconciliation.md) — a matching normalized route is not proof of matching recipient identity; retain conflicts until reviewed.
 - [Call evidence response shape](call-evidence-contract.md) — keep structured seller answers in call-linked evidence instead of duplicating the full input into widely nested API responses.
+- [Buyer address disclosure](buyer-address-disclosure.md) — bearer-only buyer links do not prove reader identity; keep street addresses redacted externally unless identity-verified access exists.

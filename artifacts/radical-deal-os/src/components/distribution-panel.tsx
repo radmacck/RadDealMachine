@@ -1,8 +1,10 @@
 import { useMemo, useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
+import { Link } from 'wouter';
 import {
   getGetDealDistributionQueryKey, useAuthorizeDealDistribution, useGetDealDistribution,
-  useRecordBuyerResponse, useShareDistributionRecipients,
+  getGetDistributionPreferencesQueryKey, useGetDistributionPreferences,
+  useUpdateDistributionPreferences, useRecordBuyerResponse, useShareDistributionRecipients,
   type BuyerMatch, type DealContract, type LeadDetail,
 } from '@workspace/api-client-react';
 import { ErrorNotice } from '@/components/state-views';
@@ -22,6 +24,8 @@ export function DistributionPanel({ detail, contract, matches, onChanged }: {
   const q = useGetDealDistribution(leadId, {
     query: { queryKey: getGetDealDistributionQueryKey(leadId), enabled: !!contract, refetchInterval: 10_000 },
   });
+  const preferences = useGetDistributionPreferences();
+  const savePreferences = useUpdateDistributionPreferences();
   const authorize = useAuthorizeDealDistribution();
   const share = useShareDistributionRecipients();
   const recordBuyer = useRecordBuyerResponse();
@@ -42,6 +46,7 @@ export function DistributionPanel({ detail, contract, matches, onChanged }: {
 
   const refresh = () => {
     void queryClient.invalidateQueries({ queryKey: getGetDealDistributionQueryKey(leadId) });
+    void queryClient.invalidateQueries({ queryKey: getGetDistributionPreferencesQueryKey() });
     onChanged();
   };
   const lifecycleOpen = contract.status === 'UNDER_CONTRACT' || contract.status === 'CLOSING';
@@ -65,6 +70,32 @@ export function DistributionPanel({ detail, contract, matches, onChanged }: {
     <div>
       <p className="eyebrow mb-1">Buyer distribution</p>
       <p className="text-sm text-muted-foreground">The owner authorizes one frozen buyer price from the executed contract. Operators can then create private links for currently qualified acquisition buyers. Referral contacts are excluded.</p>
+    </div>
+    <div className="border border-border p-3" data-testid="buyer-address-redaction-setting">
+      <label className="flex items-start gap-2 text-sm">
+        <input
+          type="checkbox"
+          className="mt-1"
+          checked={preferences.data?.redactAddress ?? true}
+          disabled={!isOwner || preferences.isLoading || savePreferences.isPending}
+          onChange={(event) => savePreferences.mutate({ data: { redactAddress: event.target.checked } }, {
+            onSuccess: () => {
+              void queryClient.invalidateQueries({ queryKey: getGetDistributionPreferencesQueryKey() });
+              toast({ title: 'Buyer packet preference saved', description: 'Existing packets remain unchanged; this setting applies to future packets.' });
+            },
+          })}
+        />
+        <span><b>Redact street address in new buyer packets</b><span className="block text-xs text-muted-foreground">
+          {distribution.packetId
+            ? `Current packet is ${distribution.packet?.addressRedacted ? 'redacted' : 'address-disclosing'}; it is immutable.`
+            : 'Default is redacted. Only an owner can change this before authorizing a packet.'}
+        </span></span>
+      </label>
+      {preferences.isError && <p className="mt-2 text-xs text-destructive">Could not load the saved preference. New packets remain redacted by default.</p>}
+      {savePreferences.error && <div className="mt-2"><ErrorNotice error={savePreferences.error} /></div>}
+      {preferences.data?.redactAddress === false && <p className="mt-2 text-xs text-warn" role="status">
+        Address disclosure is not shared through bearer links because the portal cannot verify the reader’s identity. Turn redaction back on and create a new packet before sharing.
+      </p>}
     </div>
     {!distribution.packetId ? (
       <div className="space-y-3">
@@ -90,7 +121,7 @@ export function DistributionPanel({ detail, contract, matches, onChanged }: {
           <div><p className="eyebrow">Link expiry</p><p className="text-sm">{fmtDate(distribution.expiresAt)}</p></div>
         </div>
         <div className="space-y-1 border-l-2 border-signal pl-3 text-sm">
-          <p><b>Packet is frozen.</b> Street address and seller contact details are excluded. Every recipient sees the same terms.</p>
+          <p><b>Packet is frozen.</b> {distribution.packet?.addressRedacted ? 'Street address is redacted.' : `Street address is disclosed: ${distribution.packet?.location.streetAddress ?? 'missing'}.`} Seller contact details are excluded. Every recipient sees the same terms.</p>
           <p className="text-xs text-muted-foreground">{distribution.packet?.mediaNotice}</p>
           <p className="text-xs text-muted-foreground">Authorized by {distribution.authorizedBy}; no notification has been sent.</p>
         </div>
@@ -111,7 +142,9 @@ export function DistributionPanel({ detail, contract, matches, onChanged }: {
           <div className="space-y-3">
             <p className="eyebrow">Share with qualified buyers</p>
             <p className="text-xs text-muted-foreground">A buyer’s acceptance is non-binding; this packet remains open until the first valid, owner-reviewed commitment.</p>
-            {qualified.length === 0 ? <p className="text-sm text-muted-foreground">No currently qualified acquisition buyers are available. Refresh matching after buyer evidence or criteria changes.</p> :
+            {qualified.length === 0 ? <p className="text-sm text-muted-foreground">
+              No current approved buyers match this deal. <Link href="/buyers" className="underline">Add or review a real buyer’s buy box and funding evidence</Link>, have an owner verify current proof, then refresh matching.
+            </p> :
               <div className="grid gap-2 sm:grid-cols-2">{qualified.map((match) => {
                 const recipient = distribution.recipients.find((r) => r.buyerId === match.buyerId);
                 return <label key={match.buyerId} className="flex items-start gap-2 border border-border p-2 text-sm">

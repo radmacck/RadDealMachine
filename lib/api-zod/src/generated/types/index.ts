@@ -192,6 +192,8 @@ export * from './distributionPacketSnapshotMediaItem';
 export * from './distributionPacketSnapshotProperty';
 export * from './distributionPacketSnapshotUnderwriting';
 export * from './distributionPacketSnapshotUnderwritingGrossProfitPotential';
+export * from './distributionPreferences';
+export * from './distributionPreferencesInput';
 export * from './distributionRecipient';
 export * from './distributionRecipientStatus';
 export * from './distributionShareInput';

@@ -16,6 +16,14 @@ publicBuyerPortalRouter.get("/portal/deal", async (req, res) => {
     await distribution.getBuyerPortalDeal(headers["X-Portal-Token"]),
   ));
 });
+publicBuyerPortalRouter.get("/portal/deal/download", async (req, res) => {
+  const headers = parse(schemas.GetBuyerPortalDealHeader, { "X-Portal-Token": req.get("X-Portal-Token") });
+  const pdf = await distribution.downloadBuyerPacketPdf(headers["X-Portal-Token"]);
+  res.setHeader("Content-Type", "application/pdf");
+  res.setHeader("Content-Disposition", 'attachment; filename="buyer-deal-packet.pdf"');
+  res.setHeader("Cache-Control", "no-store");
+  res.send(pdf);
+});
 publicBuyerPortalRouter.post("/portal/deal/response", async (req, res) => {
   const headers = parse(schemas.RespondToBuyerPortalDealHeader, { "X-Portal-Token": req.get("X-Portal-Token") });
   const body = parse(schemas.RespondToBuyerPortalDealBody, req.body);
@@ -29,6 +37,15 @@ internalDistributionRouter.use(authenticated, membership);
 internalDistributionRouter.get("/deals/:id/distribution", async (req, res) => {
   const { id } = parse(schemas.GetDealDistributionParams, req.params);
   res.json(schemas.GetDealDistributionResponse.parse(await distribution.getDealDistribution(id)));
+});
+internalDistributionRouter.get("/distribution-preferences", async (_req, res) => {
+  res.json(schemas.GetDistributionPreferencesResponse.parse(await distribution.getDistributionPreferences()));
+});
+internalDistributionRouter.patch("/distribution-preferences", roles("OWNER"), async (req, res) => {
+  const body = parse(schemas.UpdateDistributionPreferencesBody, req.body);
+  res.json(schemas.UpdateDistributionPreferencesResponse.parse(
+    await distribution.updateDistributionPreferences(body, actor(res)),
+  ));
 });
 internalDistributionRouter.post("/deals/:id/distribution/authorize", roles("OWNER"), async (req, res) => {
   const { id } = parse(schemas.AuthorizeDealDistributionParams, req.params);

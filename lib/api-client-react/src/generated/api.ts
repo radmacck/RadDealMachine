@@ -59,6 +59,8 @@ import type {
   DealOutcomeInput,
   DestinationActivityInput,
   DistributionAuthorizationInput,
+  DistributionPreferences,
+  DistributionPreferencesInput,
   DistributionShareInput,
   DistributionShareResponse,
   GetSourceResearch200,
@@ -4287,6 +4289,159 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
       return useMutation(getAuthorizeDealDistributionMutationOptions(options));
     }
 
+export const getGetDistributionPreferencesUrl = () => {
+
+
+
+
+  return `/api/distribution-preferences`
+}
+
+export const getDistributionPreferences = async ( options?: Parameters<typeof customFetch>[1]): Promise<DistributionPreferences> => {
+
+  return customFetch<DistributionPreferences>(getGetDistributionPreferencesUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetDistributionPreferencesQueryKey = () => {
+    return [
+    `/api/distribution-preferences`
+    ] as const;
+    }
+
+
+export const getGetDistributionPreferencesQueryOptions = <TData = Awaited<ReturnType<typeof getDistributionPreferences>>, TError = ErrorType<unknown>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getDistributionPreferences>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetDistributionPreferencesQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getDistributionPreferences>>> = ({ signal }) => getDistributionPreferences({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getDistributionPreferences>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetDistributionPreferencesQueryResult = NonNullable<Awaited<ReturnType<typeof getDistributionPreferences>>>
+export type GetDistributionPreferencesQueryError = ErrorType<unknown>
+
+
+
+export function useGetDistributionPreferences<TData = Awaited<ReturnType<typeof getDistributionPreferences>>, TError = ErrorType<unknown>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getDistributionPreferences>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetDistributionPreferencesQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getUpdateDistributionPreferencesUrl = () => {
+
+
+
+
+  return `/api/distribution-preferences`
+}
+
+export const updateDistributionPreferences = async (distributionPreferencesInput: DistributionPreferencesInput, options?: Parameters<typeof customFetch>[1]): Promise<DistributionPreferences> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return customFetch<DistributionPreferences>(getUpdateDistributionPreferencesUrl(),
+  {
+    ...options,
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(distributionPreferencesInput)
+  }
+);}
+
+
+
+
+
+export const getUpdateDistributionPreferencesMutationKey = () => ['updateDistributionPreferences'] as const;
+
+export const getUpdateDistributionPreferencesMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateDistributionPreferences>>, TError,UpdateDistributionPreferencesMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof updateDistributionPreferences>>, TError,UpdateDistributionPreferencesMutationVariables, TContext> => {
+
+const mutationKey = getUpdateDistributionPreferencesMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof updateDistributionPreferences>>, UpdateDistributionPreferencesMutationVariables> = (props) => {
+          const {data} = props ?? {};
+
+          return  updateDistributionPreferences(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type UpdateDistributionPreferencesMutationResult = NonNullable<Awaited<ReturnType<typeof updateDistributionPreferences>>>
+    export type UpdateDistributionPreferencesMutationBody = BodyType<DistributionPreferencesInput>
+    export type UpdateDistributionPreferencesMutationError = ErrorType<unknown>
+    export type UpdateDistributionPreferencesMutationVariables = {data: BodyType<DistributionPreferencesInput>}
+
+    export const useUpdateDistributionPreferences = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateDistributionPreferences>>, TError,UpdateDistributionPreferencesMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof updateDistributionPreferences>>,
+        TError,
+        UpdateDistributionPreferencesMutationVariables,
+        TContext
+      > => {
+      return useMutation(getUpdateDistributionPreferencesMutationOptions(options));
+    }
+
 export const getShareDistributionRecipientsUrl = (id: string,) => {
 
 
@@ -4512,6 +4667,77 @@ export function useGetBuyerPortalDeal<TData = Awaited<ReturnType<typeof getBuyer
  ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
 
   const queryOptions = getGetBuyerPortalDealQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getDownloadBuyerPacketUrl = () => {
+
+
+
+
+  return `/api/portal/deal/download`
+}
+
+export const downloadBuyerPacket = async ( options?: Parameters<typeof customFetch>[1]): Promise<Blob> => {
+
+  return customFetch<Blob>(getDownloadBuyerPacketUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getDownloadBuyerPacketQueryKey = () => {
+    return [
+    `/api/portal/deal/download`
+    ] as const;
+    }
+
+
+export const getDownloadBuyerPacketQueryOptions = <TData = Awaited<ReturnType<typeof downloadBuyerPacket>>, TError = ErrorType<unknown>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof downloadBuyerPacket>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getDownloadBuyerPacketQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof downloadBuyerPacket>>> = ({ signal }) => downloadBuyerPacket({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof downloadBuyerPacket>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type DownloadBuyerPacketQueryResult = NonNullable<Awaited<ReturnType<typeof downloadBuyerPacket>>>
+export type DownloadBuyerPacketQueryError = ErrorType<unknown>
+
+
+
+export function useDownloadBuyerPacket<TData = Awaited<ReturnType<typeof downloadBuyerPacket>>, TError = ErrorType<unknown>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof downloadBuyerPacket>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getDownloadBuyerPacketQueryOptions(options)
 
   const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
 

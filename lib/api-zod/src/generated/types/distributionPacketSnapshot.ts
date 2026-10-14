@@ -14,6 +14,7 @@ import type { DistributionPacketSnapshotUnderwriting } from './distributionPacke
 
 export interface DistributionPacketSnapshot {
   location: DistributionPacketSnapshotLocation;
+  addressRedacted?: boolean;
   property: DistributionPacketSnapshotProperty;
   economics: DistributionPacketSnapshotEconomics;
   underwriting: DistributionPacketSnapshotUnderwriting;

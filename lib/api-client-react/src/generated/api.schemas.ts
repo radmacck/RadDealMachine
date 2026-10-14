@@ -5105,6 +5105,11 @@ export type DistributionPacketSnapshotLocation = {
   county: string;
   state: string;
   zip: string;
+  /**
+     * Present only when the owner elected address disclosure before this immutable packet was created.
+     * @nullable
+     */
+  streetAddress?: string | null;
 };
 
 export type DistributionPacketSnapshotProperty = {
@@ -5218,6 +5223,7 @@ export type DistributionPacketSnapshotMediaItem = { [key: string]: unknown };
 
 export interface DistributionPacketSnapshot {
   location: DistributionPacketSnapshotLocation;
+  addressRedacted?: boolean;
   property: DistributionPacketSnapshotProperty;
   economics: DistributionPacketSnapshotEconomics;
   underwriting: DistributionPacketSnapshotUnderwriting;
@@ -5298,6 +5304,16 @@ export interface DealDistribution {
   /** @nullable */
   acceptedAt: string | null;
   recipients: DistributionRecipient[];
+}
+
+export interface DistributionPreferences {
+  redactAddress: boolean;
+  /** @nullable */
+  updatedAt: string | null;
+}
+
+export interface DistributionPreferencesInput {
+  redactAddress: boolean;
 }
 
 export type DistributionShareResponseLinksItem = {

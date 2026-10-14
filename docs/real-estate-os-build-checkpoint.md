@@ -1,7 +1,7 @@
 # Real-estate operating-system build checkpoint
 
-**Checkpoint date:** 2026-10-09
-**Current gate:** P10 command-center/readiness API behavior is improved and tested, but remains PARTIAL because the authenticated operator dashboard and seller portal were not reached in a signed-in browser session. P9 has persisted synthetic deadline/exception coverage but zero real transactions. P2 remains PARTIAL because no additional independent permitted property source is currently accessible; no live approved buyer or confirmed external packet delivery is claimed.
+**Checkpoint date:** 2026-10-14
+**Current gate:** Block 6 buyer-disposition code and isolated persisted/API acceptance are implemented and verified, including redacted PDF download and current-eligibility rechecks. Operational live proof remains PARTIAL: no legitimate owner session was available, so the live approved/current buyer count and owner preference screen were not verified. Blocks 7–10 have not started in this turn. No live buyer approval, distribution, delivery, or commitment is claimed. P10 command-center/readiness browser verification and P2 additional permitted-source coverage remain partial.
 **Checkpoint rule:** On each accepted build turn, resume at the first item below that is not objectively verified. Queued tasks are not background execution; no work is considered active after its Agent turn ends.
 
 ## Product and implementation rules
@@ -345,6 +345,57 @@ The public dataset/catalog and documented query endpoint were accessed without a
 **Remaining gap/next task:** complete a signed-in owner browser smoke test using a legitimate session, then verify the rendered discovery records and call-note refresh from that session. Do not bypass auth or represent the synthetic call fixtures as live.
 
 **Turn state:** stopped after implementation and checks; no background Agent task is running.
+
+## Block 6 buyer-disposition completion — 2026-10-14
+
+**Status: implementation, synthetic persisted exercise, and the actual capability-protected HTTP download path passed; live owner/buyer proof remains PARTIAL, not GREEN.**
+
+- Added `GET /api/portal/deal/download` to the existing buyer portal. It requires the existing capability token, reloads the persisted distribution and buyer, and rechecks current approval, dated funding/capacity evidence, and deal fit on every access. A buyer whose evidence becomes stale after invitation is denied both preview and download; rejected reads add no access event.
+- The PDF is generated only from the buyer portal's redacted snapshot. The route returns `application/pdf`, attachment disposition, and `Cache-Control: no-store`; neither street address nor seller identity is included. Bearer-only sharing remains blocked for an address-disclosing packet. Portal views and downloads remain access evidence only—not delivery, buyer intent, acceptance, or commitment.
+- Added the download control/error state to the existing buyer packet page. The dashboard buyer-readiness copy now distinguishes current real approved buyers from stale/unverified records and synthetic exclusions, and gives an exact next step when no current approved buyer exists. No matching, economics, offer authority, or commitment rules were relaxed.
+- API contract regeneration passed (`pnpm --filter @workspace/api-spec run codegen`; generated clients/schemas and `typecheck:libs` completed). API and web typechecks passed. API build passed (9.0 MB bundled output). Web build passed with `PORT=5173 BASE_PATH=/radical-deal-os/`; existing sourcemap-resolution notices and the 1.08 MB main-chunk warning remain.
+- `exercise:transactions` passed against its isolated persisted synthetic schema. It exercised valid HTTP `GET /api/portal/deal/download` (200, PDF content type and attachment header), street-address/seller-identity absence in the PDF, stale-after-invitation preview/download rejection, no event on rejected access, persisted access history for valid views/downloads, immutable economics snapshot, redaction/share blockers, buyer matching/funding/capacity, and commitment concurrency/authority invariants. Exercise outcome: **1 synthetic transaction, 0 real transactions**.
+- `exercise:buyers` passed: create/reload, owner-only verification, dated funding, stale evidence, version conflict, identity invalidation, queued matching. `test:auth` passed **7/7**, `test:transaction-readiness` **5/5**, and `test:command-center` **15/15** (including current-approved versus stale/unverified/synthetic counts and authenticated-route denial). These are tests/exercises, not evidence of a real approved buyer.
+- Both `artifacts/api-server: API Server` and `artifacts/radical-deal-os: web` were restarted successfully and report RUNNING. Local smoke checks: API download without token returned **400** with `{"error":"X-Portal-Token: Required"}`; web root returned **200**. The dev-domain curl from the shell could not connect, so local workflow ports were used. Browser screenshot showed the public sign-in page; no legitimate owner session or live buyer pool was available to verify authenticated UI/counts.
+- Provider state remains `NOT_CONNECTED` / `NOT_SENT`; no live package delivery, buyer response, or commitment occurred. No genuine owner/browser session was available, and this turn did not read or claim a live buyer count. The signed-in dashboard will show the persisted live count when an authorized owner session is available.
+
+**Next single task:** verify the persisted buyer count and owner-controlled redaction settings through a legitimate owner session. Until then, Block 6 remains operationally partial; do not claim a live buyer pool or GREEN status.
+
+**Turn state:** implementation, persisted/API tests, builds, workflow restart, and local endpoint smoke completed; no background task is running.
+
+## Ordered implementation backlog Blocks 6–10 — 2026-10-14
+
+**Backlog handling:** Kept as one ordered checkpoint sequence; no separate project tasks were created or claimed. Block 6 remains the first incomplete block.
+
+### Block 6 — Finish buyer disposition gaps
+
+**Status: PARTIAL for live operational proof.** Code/API acceptance now includes persisted owner-controlled redaction, current buyer requalification on each portal read, and a capability-protected redacted PDF download. The newer completion entry above records this turn's exact implementation and checks. Real buyer readiness is not claimed.
+
+- Security boundary: the existing buyer portal uses bearer links and does not verify the reader's identity. Address-disclosing snapshots therefore cannot be shared through those links; the API rejects sharing and the portal strips the street address as defense in depth. This preserves the existing no-address-leak assertion instead of weakening it.
+- Still open: actual owner-authenticated preference update and signed-in browser interaction were not verified; no live buyer pool/approved buyer evidence was obtained this turn. Bearer-only identity policy still blocks external address disclosure.
+- Persisted synthetic verification: `exercise:transactions` now also tests the valid PDF HTTP route, redaction, stale-after-invite access denial, and access-event persistence; preference role denial/save-reload, immutable packet after preference change, address-disclosing share rejection, and commitment rules remain covered. It reports **0 real transactions**. `exercise:buyers` covers buyer create/reload, owner-only verification, dated funding, stale evidence, version conflict, identity invalidation and matching.
+- Exact checks: `pnpm --filter @workspace/api-spec run codegen` PASS (includes library typecheck); `pnpm --filter @workspace/api-server run typecheck` PASS; `pnpm --filter @workspace/radical-deal-os run typecheck` PASS; `pnpm --filter @workspace/api-server run build` PASS (9.0 MB); `BASE_PATH=/radical-deal-os/ PORT=5173 pnpm --filter @workspace/radical-deal-os run build` PASS (existing sourcemap and >500 kB chunk warnings). `pnpm --filter @workspace/api-server run exercise:transactions` PASS; `pnpm --filter @workspace/api-server run exercise:buyers` PASS; `pnpm --filter @workspace/api-server run test:auth` **7/7**; `pnpm --filter @workspace/api-server run test:transaction-readiness` **5/5**; `pnpm --filter @workspace/api-server run test:command-center` **15/15**.
+- Runtime: API and web workflows restarted and running; unauthenticated `GET /api/distribution-preferences` returned **401**; web root returned **200**. Screenshot showed the public sign-in page. No legitimate signed-in owner session was available, so authenticated UI behavior remains unverified.
+
+### Block 7 — Seller contact route acquisition path
+
+**Status: NOT STARTED in this turn.** Existing direct-route evidence remains manually captured on an already-promoted lead; attaching a verified route before promotion is still unsupported. The permitted live source sample remains 594 unique discoveries and zero direct phone/email/web routes. Next: inventory current permitted sources and route coverage, then connect a provenance-backed owner review/capture handoff to the correct discovery without bypassing source restrictions.
+
+### Block 8 — Real buyer acquisition and re-verification
+
+**Status: NOT STARTED as a new milestone in this turn.** Existing intake and owner-verification services remain; buyer-pool exercises are synthetic and no provider is connected. Next: implement/verify the concise prospect-to-owner-review and reverification path, with consent/provenance and truthful `NOT_CONNECTED / NOT_SENT` outreach state; never infer approval from a prospect.
+
+### Block 9 — End-to-end deal package and distribution control
+
+**Status: NOT STARTED as a new milestone in this turn.** Existing immutable packet and commitment controls remain synthetic-tested, but this turn did not prove a real qualified deal, a real current approved buyer, or provider-confirmed delivery. No packet was claimed as sent. Next: close Block 6 access/download blockers, then exercise the current real-deal/current-buyer path and provider receipt gates.
+
+### Block 10 — Operator-ready daily command center and transaction control
+
+**Status: NOT STARTED as a new milestone in this turn.** Existing command-center/readiness surfaces remain; command-center/API/UI tests passed **15/15**, but no signed-in browser was available. No new source-refresh, follow-up, package, transaction, provider, or outcome widgets were added in this turn. Resume after Blocks 6–9, preserving persisted states and truthful worker/provider statuses.
+
+**Next active checkpoint:** finish Block 6 by implementing a secure, explicitly tested download/access decision and legitimate owner-session verification if available. Keep Blocks 7–10 in this order; do not mark the five-block sequence complete from backlog recording alone.
+
+**Turn state:** Block 6 implementation and isolated verification progressed; Blocks 6–10 are not all complete. API/web workflows are running. No live buyer approval, external delivery, or transaction is claimed.
 
 ## Seller contactability milestone verification — 2026-10-14
 
