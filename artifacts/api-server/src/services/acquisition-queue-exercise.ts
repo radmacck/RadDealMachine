@@ -250,6 +250,18 @@ try {
   assert.ok(call.lead.nextAction.includes("Reconcile conflicting"),
     "The explicit next action is to resolve the contradictory evidence.");
   assert.ok(call.calls[0]?.evidenceIds?.length);
+  const reloadedCallLead = await store.leadDetail(callableId, undefined, now);
+  assert.equal(reloadedCallLead.calls.length, 1,
+    "The recorded seller note reloads from persistence on its owning lead.");
+  assert.equal(reloadedCallLead.calls[0]?.id, call.calls[0]?.id);
+  assert.equal(reloadedCallLead.calls[0]?.notes, "SYNTHETIC seller conversation fixture; no real call occurred.");
+  assert.equal(reloadedCallLead.calls[0]?.analysisInvalidated, true,
+    "The reloaded call retains the evidence-driven stale-analysis marker.");
+  assert.ok(reloadedCallLead.intelligence.some(item =>
+    item.sourceRecordId === call.calls[0]?.id
+      && item.category === "seller_call_asking_price"
+      && item.statement.includes("$125,000")),
+  "Structured seller-reported answers reload as linked, source-classified evidence without being copied into economics.");
 
   const refreshed = await store.saveUnderwriting(callableId, {
     ...(call.underwriting as UnderwritingInput),

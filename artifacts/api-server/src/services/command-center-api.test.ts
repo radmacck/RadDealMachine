@@ -20,8 +20,16 @@ async function withServer<T>(serverApp: express.Express, callback: (baseUrl: str
 
 test("the actual command-center and transaction-readiness routes return 401 without a legitimate session", async () => {
   await withServer(app,async baseUrl => {
-    for (const path of ["/api/deals/command-center","/api/operations/transaction-readiness"]) {
-      const response = await fetch(`${baseUrl}${path}`);
+    const requests: Array<{path:string;init?:RequestInit}> = [
+      { path: "/api/deals/command-center" },
+      { path: "/api/operations/transaction-readiness" },
+      {
+        path: `/api/property-discoveries/${"00000000-0000-4000-8000-000000000001"}/contact-research`,
+        init: { method: "POST", headers: { "content-type": "application/json" }, body: "{}" },
+      },
+    ];
+    for (const {path,init} of requests) {
+      const response = await fetch(`${baseUrl}${path}`,init);
       assert.equal(response.status,401,path);
       const body = await response.json() as { error?: string };
       assert.match(body.error ?? "",/sign in|authenticated|session/i,path);

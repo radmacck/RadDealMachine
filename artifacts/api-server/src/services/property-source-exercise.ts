@@ -29,6 +29,7 @@ import { dealOperations } from "./matching-store";
 import { exerciseEvidence } from "./exercise-evidence";
 import { runWorkerOnce, submitWorkerJob } from "./workers";
 import { comparePropertyDiscoveriesByRank } from "./property-discovery-ranking";
+import { getSellerContactPaths } from "./seller-contact-store";
 import {
   allPropertySourceConnectors,
   listPropertySourceDescriptors,
@@ -542,21 +543,70 @@ try {
     permissionBasis: "UNKNOWN" as const,
     evidenceReference: null,
     note: "SYNTHETIC: assessed owner mailing record found; no direct route established.",
+    candidateRoute: {
+      channel: "PHONE" as const,
+      routeValue: "(215) 555-0160",
+      recipient: "SYNTHETIC recorded owner; not a real person",
+      recipientRole: "RECORDED_OWNER" as const,
+      sourceId: "synthetic-contact-route",
+      sourceName: "SYNTHETIC route fixture; not a real source",
+      sourceRecordId: "SYNTHETIC-ROUTE-CASE-1",
+      sourceUrl: "https://example.com/synthetic-route-case",
+      sourceType: "ANALYST" as const,
+      capturedAt: now.toISOString(),
+      confidence: 0.6,
+      permissionStatus: "NOT_REVIEWED" as const,
+      permissionBasis: "UNKNOWN" as const,
+      identityEvidenceStatus: "NONE" as const,
+      routeVerificationStatus: "UNREVIEWED" as const,
+    },
   };
   const contactCase = await savePropertyContactResearchCase(first.id, contactCaseInput, actor, now);
   assert.equal(contactCase.contactResearchCase?.synthetic, true);
   assert.equal(contactCase.contactResearchCase?.status, "OPEN");
   assert.ok(contactCase.contactResearchCase?.missingRequirements.some((x) => x.includes("does not establish seller identity")));
-  assert.ok(contactCase.contactResearchCase?.missingRequirements.some((x) => x.includes("direct phone route")));
+  assert.ok(contactCase.contactResearchCase?.missingRequirements.some((x) => x.includes("confirm the route")));
   assert.equal(contactCase.leadId, null, "A contact research case cannot promote a raw discovery.");
   assert.ok(contactCase.property.contactPaths.every(path => path.channel !== "PHONE" || path.routeVerificationStatus !== "CONFIRMED"),
     "Contact research notes must not create a confirmed route.");
-  const replayedContactCase = await savePropertyContactResearchCase(contactCase.id, {
+  assert.equal(contactCase.contactResearchCase?.candidateRoutes?.length, 1);
+  assert.equal(contactCase.contactResearchCase?.candidateRoutes?.[0]?.freshnessStatus, "CURRENT");
+  assert.equal(contactCase.contactResearchCase?.candidateRoutes?.[0]?.routeVerificationStatus, "UNREVIEWED");
+  const replayedRoute = await savePropertyContactResearchCase(contactCase.id, {
     ...contactCaseInput, version: contactCase.version,
   }, actor, now);
-  assert.equal(replayedContactCase.contactResearchCase?.version, contactCase.contactResearchCase?.version);
-  assert.equal(replayedContactCase.contactResearchCase?.auditHistory.length, contactCase.contactResearchCase?.auditHistory.length,
-    "Exact replay must not duplicate audit events.");
+  assert.equal(replayedRoute.contactResearchCase?.candidateRoutes?.length, 1,
+    "Replaying the same route source/record/time must not duplicate the candidate.");
+  assert.equal(replayedRoute.contactResearchCase?.auditHistory.length, contactCase.contactResearchCase?.auditHistory.length,
+    "Exact candidate-route replay must not duplicate audit events.");
+  await assert.rejects(() => savePropertyContactResearchCase(contactCase.id, {
+    ...contactCaseInput, version: contactCase.version,
+    candidateRoute: {
+      ...contactCaseInput.candidateRoute, permissionStatus: "PERMITTED" as const,
+      permissionBasis: "CONSENT" as const, permissionScope: "SYNTHETIC only",
+      permissionEvidenceUrl: "https://example.com/synthetic-consent",
+    },
+  }, { ...actor, role: "OPERATOR" }, now), /only an owner/i);
+  const staleRouteCase = await savePropertyContactResearchCase(contactCase.id, {
+    ...contactCaseInput, version: replayedRoute.version,
+    candidateRoute: {
+      ...contactCaseInput.candidateRoute, routeValue: "(215) 555-0199",
+      sourceRecordId: "SYNTHETIC-STALE-ROUTE",
+      capturedAt: new Date(now.getTime() - 31 * 24 * 60 * 60 * 1000).toISOString(),
+    },
+  }, actor, now);
+  assert.equal(staleRouteCase.contactResearchCase?.candidateRoutes?.find(path => path.sourceRecordId === "SYNTHETIC-STALE-ROUTE")?.freshnessStatus, "STALE");
+  assert.ok(staleRouteCase.contactResearchCase?.missingRequirements.some(item => /stale/i.test(item)));
+  const conflictRouteCase = await savePropertyContactResearchCase(contactCase.id, {
+    ...contactCaseInput, version: staleRouteCase.version,
+    candidateRoute: {
+      ...contactCaseInput.candidateRoute, recipient: "SYNTHETIC conflicting recipient; not a real person",
+      recipientRole: "UNKNOWN" as const, sourceRecordId: "SYNTHETIC-CONFLICTING-ROUTE",
+    },
+  }, actor, now);
+  assert.ok(conflictRouteCase.contactResearchCase?.candidateRoutes?.some(path => path.identityConflictStatus === "MULTIPLE_RECIPIENTS"),
+    "Conflicting recipient claims must remain visible and disqualify that route.");
+  assert.ok(conflictRouteCase.contactResearchCase?.missingRequirements.some(item => /conflict/i.test(item)));
   await assert.rejects(savePropertyContactResearchCase(contactCase.id, contactCaseInput, actor, now), /changed|reload/i);
   await assert.rejects(savePropertyContactResearchCase(contactCase.id, contactCaseInput, { ...actor, role: "VIEWER" }, now), /role|only/i);
   const matchedLeads = await db.select().from(leadsTable).where(sql`${leadsTable.payload}->>'address' = ${property.address}`);
@@ -721,6 +771,49 @@ try {
       `The persisted synthetic test must retain ${classification} as a distinct evidence classification.`);
   }
 
+  discovery = await savePropertyContactResearchCase(discovery.id, {
+    version: discovery.version,
+    status: "EVIDENCE_RECORDED",
+    confidence: 0.95,
+    sourceName: "SYNTHETIC owner-consent contact case; not a real source",
+    sourceType: "OTHER",
+    sourceUrl: null,
+    observedAt: now.toISOString(),
+    identityMatch: "SELLER_SELF_IDENTIFIED",
+    permissionBasis: "CONSENT",
+    evidenceReference: "SYNTHETIC-CONTACT-CASE-REF",
+    note: "SYNTHETIC exercise only; no real seller, property contact, or outreach.",
+    candidateRoute: {
+      channel: "PHONE",
+      routeValue: "(215) 555-0198",
+      recipient: "SYNTHETIC exercise seller",
+      recipientRole: "SELLER_SELF_IDENTIFIED",
+      sourceId: "synthetic-owner-consent",
+      sourceName: "SYNTHETIC owner consent fixture; not a real source",
+      sourceRecordId: "SYNTHETIC-ROUTE-TRANSFER-001",
+      sourceUrl: "https://example.com/synthetic-route-evidence",
+      sourceType: "ANALYST",
+      capturedAt: now.toISOString(),
+      confidence: 0.95,
+      permissionStatus: "PERMITTED",
+      permissionBasis: "CONSENT",
+      permissionScope: "SYNTHETIC exercise only",
+      permissionEvidenceUrl: "https://example.com/synthetic-consent",
+      identityEvidenceStatus: "SUPPORTING_RECORD",
+      identityEvidenceRef: "SYNTHETIC-IDENTITY-001",
+      routeVerificationStatus: "CONFIRMED",
+      verificationNote: "SYNTHETIC exercise only; no person or number was contacted.",
+    },
+  }, actor, now);
+  const transferCandidate = discovery.contactResearchCase?.candidateRoutes?.find(path => path.sourceRecordId === "SYNTHETIC-ROUTE-TRANSFER-001");
+  assert.ok(transferCandidate, "The confirmed route remains in the case alongside prior source evidence.");
+  assert.equal(transferCandidate.freshnessStatus, "CURRENT");
+  assert.equal(transferCandidate.routeVerificationStatus, "CONFIRMED");
+  assert.ok(discovery.contactResearchCase?.missingRequirements.some(item => /stale/i.test(item)),
+    "Stale candidates remain visible as blockers even when a separate current route is recorded.");
+  assert.ok(discovery.contactResearchCase?.missingRequirements.some(item => /conflict/i.test(item)),
+    "Conflicting candidates remain visible as blockers even when a separate current route is recorded.");
+
   const promoted = await promotePropertyDiscovery(discovery.id, {
     version: discovery.version,
     reviewReason: "SYNTHETIC exercise only: evidence threshold and independent source groups were deliberately supplied.",
@@ -728,6 +821,12 @@ try {
   assert.equal(promoted.discovery.status, "QUALIFIED_LEAD");
   assert.equal(promoted.discovery.leadId, promoted.leadId);
   assert.equal(promoted.discovery.canPromote, false);
+  assert.ok(promoted.discovery.property.contactPaths.some(path =>
+    path.sourceRecordId === "SYNTHETIC-ROUTE-TRANSFER-001" && path.routeVerificationStatus === "CONFIRMED"),
+  "Promotion transfers only the independently confirmed synthetic seller route.");
+  assert.ok(!promoted.discovery.property.contactPaths.some(path =>
+    ["SYNTHETIC-STALE-ROUTE", "SYNTHETIC-CONFLICTING-ROUTE"].includes(path.sourceRecordId)),
+  "Stale/conflicting candidate records are not attached as usable lead routes.");
   const sellerNextAction = "Verify seller identity and contact permission, then establish condition and underwriting inputs before any offer.";
   assert.ok(promoted.discovery.nextAction.startsWith(sellerNextAction));
   assert.match(promoted.discovery.nextAction, /Current buyer demand aligns with 1 profile/);
@@ -758,6 +857,15 @@ try {
   assert.equal(detail.lead.askingPrice, null);
   assert.equal(detail.lead.sellerName, "Seller not yet identified");
   assert.equal(detail.analysis, null);
+  assert.equal(detail.offers.length, 0);
+  const transferredContact = await getSellerContactPaths(promoted.leadId, now);
+  assert.equal(transferredContact.directRouteStatus, "PHONE_ROUTE_AVAILABLE",
+    "The persisted lead contact reader must see the permitted, verified, current route attached during promotion.");
+  assert.equal(transferredContact.selectedPhonePath?.routeValue, "(215) 555-0198");
+  assert.equal(transferredContact.selectedPhonePath?.signingAuthorityStatus, "NOT_ESTABLISHED",
+    "Contact-route verification must never establish signing authority.");
+  assert.equal(detail.lead.askingPrice, null, "Contact research must not create deal economics.");
+  assert.equal(detail.analysis, null, "Contact research must not create underwriting or offer authority.");
   assert.equal(detail.offers.length, 0);
   assert.ok(detail.intelligence.some((entry) => entry.source === "SYNTHETIC isolated qualification fixture"));
   assert.ok(!(await callQueue(now)).some((brief) => brief.lead.id === promoted.leadId));
@@ -827,7 +935,7 @@ try {
     address: lead.address, city: lead.city, state: lead.state, county: lead.county, zip: lead.zip,
     propertyType: lead.propertyType, sqft: lead.sqft ?? 1000, beds: lead.beds ?? 3, baths: lead.baths ?? 2,
     units: lead.units ?? 1, askingPrice: 50000, sellerName: "SYNTHETIC source-refresh exercise only",
-    sellerPhone: "000-000-0000", source: "SYNTHETIC isolated property-source exercise; no real seller contact",
+    sellerPhone: "(215) 555-0198", source: "SYNTHETIC isolated property-source exercise; no real seller contact",
   }, actor.id, now);
   detail = await leadDetail(promoted.leadId);
   const sellerAuthority = await addIntelligence(promoted.leadId, {

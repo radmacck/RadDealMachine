@@ -5634,6 +5634,7 @@ export const WorkerJobState = {
   QUEUED: 'QUEUED',
   RUNNING: 'RUNNING',
   SUCCEEDED: 'SUCCEEDED',
+  PARTIAL: 'PARTIAL',
   FAILED: 'FAILED',
 } as const;
 

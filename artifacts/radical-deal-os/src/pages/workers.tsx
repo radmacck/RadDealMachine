@@ -19,7 +19,9 @@ const KIND: Record<WorkerJobInputKind, string> = {
   DISCOVER_PROPERTIES:'Refresh Philadelphia property sources',
   ENRICH_PROPERTY:'Check public address geography',PREPARE_BRIEF:'Prepare AI hypotheses and seller questions',
 };
-const STATE_TONE: Record<WorkerJob['state'], string> = { QUEUED: 'tone-muted', RUNNING: 'tone-warn', SUCCEEDED: 'tone-go', FAILED: 'tone-stop' };
+const STATE_TONE: Record<WorkerJob['state'], string> = {
+  QUEUED: 'tone-muted', RUNNING: 'tone-warn', SUCCEEDED: 'tone-go', PARTIAL: 'tone-warn', FAILED: 'tone-stop',
+};
 const JOB_LABEL = (k: WorkerJob['kind']) => k === 'HUMAN_HANDOFF'
   ? 'Human handoff (prepared message)'
   : k === 'EVALUATE_DECISION' ? 'Refresh deal decision' : KIND[k];

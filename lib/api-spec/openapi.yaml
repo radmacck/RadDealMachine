@@ -3249,7 +3249,7 @@ components:
         termsReviewed: { type: boolean }
         recurringDiscovery: { type: boolean }
         recurringPropertyDiscovery: { type: boolean }
-        state: { type: string, enum: [QUEUED, RUNNING, SUCCEEDED, FAILED] }
+        state: { type: string, enum: [QUEUED, RUNNING, SUCCEEDED, PARTIAL, FAILED] }
         leadId: { type: [string, "null"] }
         requestedBy: { type: string }
         message: { type: string }

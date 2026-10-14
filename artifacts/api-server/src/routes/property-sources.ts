@@ -1,4 +1,4 @@
-import { Router, type IRouter } from "express";
+import { Router, type IRouter, type RequestHandler } from "express";
 import { z } from "zod";
 import { DomainError } from "@workspace/deal-domain";
 import * as contract from "@workspace/api-zod";
@@ -7,8 +7,12 @@ import * as sources from "../services/property-source-store";
 import * as discoveries from "../services/property-discovery-store";
 import { propagateStaleTransactionDocuments } from "../services/transaction-store";
 
+export function createPropertySourcesRouter(
+  auth: RequestHandler = authenticated,
+  member: RequestHandler = membership,
+) {
 const router: IRouter = Router();
-router.use(authenticated,membership);
+router.use(auth,member);
 const research = roles("OWNER","ANALYST");
 const review = roles("OWNER","OPERATOR","ANALYST");
 const actor = (res: {locals:Record<string,unknown>}) => ({id:String(res.locals.actor),role:String(res.locals.role)});
@@ -80,4 +84,7 @@ router.post("/leads/:id/source-research/comps",research,async(req,res)=>{
   await propagateStaleTransactionDocuments(id);
   res.json(result);
 });
-export default router;
+return router;
+}
+
+export default createPropertySourcesRouter();

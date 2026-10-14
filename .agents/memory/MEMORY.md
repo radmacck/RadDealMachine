@@ -9,3 +9,5 @@
 - [Durable execution identity](execution-identity.md) — semantic retry equality across JSONB; routine matching revisions must not replace unchanged outreach intent.
 - [App Storage resource limits](app-storage-resource-limits.md) — if managed storage setup is denied, do not silently substitute temporary files for persistent property media.
 - [Public property-source evidence](property-source-evidence.md) — join by exact parcel identity; a no-match is not resolution, and material source changes keep history.
+- [Seller contact route reconciliation](contact-route-reconciliation.md) — a matching normalized route is not proof of matching recipient identity; retain conflicts until reviewed.
+- [Call evidence response shape](call-evidence-contract.md) — keep structured seller answers in call-linked evidence instead of duplicating the full input into widely nested API responses.

@@ -346,6 +346,124 @@ The public dataset/catalog and documented query endpoint were accessed without a
 
 **Turn state:** stopped after implementation and checks; no background Agent task is running.
 
+## Seller contactability milestone verification — 2026-10-14
+
+**Status: service-level milestone verified; authenticated browser/owner-role HTTP verification remains unavailable. This does not make any real lead CALL READY.**
+
+- Preserved and completed the contact-research candidate-route path: validated phone/email/web formats and HTTPS provenance; owner-only permission and route confirmation; seller identity evidence/confidence; 30-day freshness; deduplication and exact replay; stale-version rejection; conflict visibility; route audit metadata without storing the route value in audit prose; and promotion filtering so only current, permitted, owner-confirmed seller routes transfer.
+- The persisted isolated `exercise:property-source` passed. It proved exact candidate replay adds no route/audit event, stale versions reject, operator permission approval rejects, conflicting recipients remain blocked, stale routes remain blocked, only the eligible synthetic route transfers, the lead contact reader reloads it as `PHONE_ROUTE_AVAILABLE`, postal-only lead readiness fails closed, and contact research creates no asking price, analysis, or offers. The fixture is explicitly synthetic.
+- Live permitted-source evidence in the same exercise: **594** persisted discoveries, **0** raw-discovery-to-lead promotions, **165** unmatched observations, and **0** PHONE/EMAIL/WEB routes from permitted feeds. No real direct seller route was found or invented.
+- Verification: API-spec codegen passed; API and web typechecks passed; API build passed; web build passed with existing sourcemap and chunk-size warnings; deal-domain tests **105/105** passed; auth tests **7/7** passed; command-center/API/UI tests **15/15** passed, including HTTP unauthenticated contact-research POST returning 401. The API/web workflows restarted and became ready. Runtime smoke: web `/` returned 200; unauthenticated contact-research returned 401.
+- Browser limitation: no legitimate signed-in owner session was available. No auth bypass was attempted; authenticated Sources UI and owner-authorized HTTP save were not browser-verified. The exercise validated owner/operator service policy and persisted reload in the isolated test schema.
+
+**Next ordered work:** the current request names Blocks 6–10 as five distinct connected work packages. Block 6 (source-refresh operations and reliability) is next; Blocks 7–10 are not implemented or verified in this entry. Do not infer completion from this checkpoint.
+
+**Turn state:** Block 6 is in progress, not complete. The current turn also ran existing isolated exercises related to Blocks 7–10 for baseline evidence; those runs do not constitute implementation or completion.
+
+## Block 6 — Source-refresh operations and reliability — 2026-10-14
+
+**Acceptance criteria:** persisted jobs distinguish queued/running/succeeded/partial/failed; source freshness, last success/error, bounded retry/backoff, idempotent pagination continuation and duplicate-safe upserts are visible and tested through the real API/job path.
+
+**Actual status: partial implementation; not GREEN.**
+
+- Added `PARTIAL` to the persisted worker-job API state and the Workers page. Property discovery with source-specific failures now completes as `PARTIAL`, not `SUCCEEDED`; no successful connector set still throws and becomes `FAILED`. The message retains per-source failure details.
+- Focused state-mapping test passed **1/1**. Persisted `exercise:property-source` passed the actual terms-reviewed `DISCOVER_PROPERTIES` job path and source refresh, reporting **594** persisted unique discoveries, **0** raw-discovery promotions, **165** unmatched observations, **24** pages, and no permitted direct PHONE/EMAIL/WEB routes. Existing pagination, source-level dedupe, and refresh behavior remained intact.
+- API-spec codegen, API/web typechecks and API/web builds passed. Domain tests passed **105/105**, auth **7/7**, command-center/API/UI **15/15**. Workflows restarted; API unauthenticated contact-research POST and command-center GET returned **401**; web root returned **200**. All three workflows reported running.
+- **Still unmet:** per-source durable last-success/last-error freshness history; bounded automatic retry/backoff for property refresh; resumable continuation from a partial traversal; and a persisted test that drives a partial source failure through `runWorkerOnce` and reloads the stored `PARTIAL` result. Current retry is an operator-queued retry, not automatic backoff. No real source refresh job was submitted through an authenticated owner browser session.
+
+## Block 7 — Human-minimal communications center — 2026-10-14
+
+**Acceptance criteria:** provider-neutral draft/approval/queue/delivery states and receipts, idempotency, contact permission/consent, opt-out, rate limits, role gates, audit trail, and a copy-ready manual fallback explicitly marked not sent.
+
+**Actual status: existing manual handoff baseline exercised; requested provider-backed communications work is not complete.**
+
+- Existing `exercise:handoffs` passed persisted handoff preparation, permission guard, actual-versus-recorded events, concurrent event recording, non-qualifying replies, audit rollback, retry, stale/terminal handling, recurring idempotency and lease recovery. Fixtures are synthetic; no message was sent.
+- No email/SMS provider is connected in this workspace. No provider receipt or sent/confirmed state was created, and no provider integration or new communications UI was added in this turn. Human approval, consent/opt-out and delivery receipts still need an end-to-end implementation and tests.
+
+## Block 8 — Deal package readiness and controlled distribution — 2026-10-14
+
+**Acceptance criteria:** immutable versioned packages tied to evidence/underwriting, configurable redaction, current approved buyer-specific access, explicit blockers, real delivery receipts/access logs/expiry/revocation, and concurrency-safe commitments.
+
+**Actual status: existing buyer and seller portals were exercised; controlled buyer-package distribution is not complete.**
+
+- `exercise:buyer-pool` passed the persisted one-time qualification link, owner gate, criteria carry-forward, replay/stale/replace/expiry, and no-auto-approval checks; it observed **112** source-derived prospects and **114** observations inside its isolated exercise and sent no communication.
+- `exercise:seller-offer-portal` passed seller authority-bound response, secrecy, challenge, expiry/rotation/revocation, exact communicated snapshot, replay/rate-limit and no-contract/signature checks. This is not evidence that buyer-specific deal package delivery exists.
+- Immutable buyer package snapshots, configurable address redaction, buyer access logs/expiration/revocation, confirmed package delivery, and commitment-race handling remain unimplemented/unverified here.
+
+## Block 9 — Transaction operating desk and deadline exception automation — 2026-10-14
+
+**Acceptance criteria:** versioned contract/party/term snapshots; provider-evidenced signatures and funds; dated title/inspection/EMD/buyer-fund milestones; deduplicated severity/deadline exceptions; stale-document/package blocking; authorized idempotent reminders; no invented legal or execution state.
+
+**Actual status: existing transaction lifecycle exercise passed; no new transaction-desk changes were made in this turn.**
+
+- `exercise:transactions` passed its isolated persisted lifecycle checks for protected documents, missing template/storage/signing-provider blockers, stale-document/economics behavior, parties/terms, EMD/funds mismatch, owner-only evidence, deadline schedules, idempotent reevaluation, evidence resolution and terminal cleanup. It reported **0** real transactions and **0** terminal open exceptions.
+- Signing provider remains `NOT_CONNECTED`; delivery provider remains unconfirmed/not sent. This does not prove provider signature, fund transfer, or live closing.
+- Any additional transaction desk UI/exception presentation or authorized reminder behavior beyond those existing exercised paths remains unverified.
+
+## Block 10 — Closed-loop outcome learning and operations dashboard — 2026-10-14
+
+**Acceptance criteria:** provenance-linked immutable outcome snapshots, observed and recorded times separated, real/synthetic distinction, prediction-versus-actual comparisons, evidence-backed versioned recommendations that cannot alter economics/authority, and a persisted operational dashboard over funnel, stale sources, contactability, buyer verification and exceptions.
+
+**Actual status: existing outcome-learning persistence was exercised; requested dashboard scope is not complete.**
+
+- `exercise:outcome-learning` passed in an isolated schema: four projected source events; replay inserted zero duplicates; occurred/recorded timestamps remained distinct; actual-vs-predicted ARV delta was **−$5,000** and repairs delta **$0**; stale snapshots rejected; synthetic rows excluded from real counts; no live rule change; one canonical reevaluation job.
+- No new dashboard or live outcome-learning capability was implemented in this turn. The complete operational dashboard metric set, versioned recommendations visible to operators, cross-deal isolation and UI tests remain acceptance gaps.
+
+**Historical turn boundary:** At that checkpoint Block 6 was the active incomplete package and Blocks 7–10 were baseline-only. The later ordered Blocks 1–5 section below supersedes its resume priority; the current first incomplete package is Block 4.
+
+## Ordered implementation backlog Blocks 1–5 — 2026-10-14
+
+### Block 1 — Real seller contactability
+
+**Status: COMPLETE for code/service/API acceptance; live CALL NEXT remains correctly blocked because no real permitted direct route exists.**
+
+- Added an isolated HTTP exercise using the actual property-source router, real route-role middleware, and real persistence/service handlers. Only the test harness’s outer authentication/membership middleware supplies a synthetic actor; production auth remains unchanged.
+- HTTP exercise passed: viewer POST denied **403**; owner permitted-and-confirmed route save **200**; operator attempt to approve permission denied **403**; exact HTTP replay did not duplicate the route or audit entry; a separate HTTP list request reloaded the persisted candidate route.
+- Persisted contact and source exercises passed provenance, route-format/permission/identity/freshness gates, postal-only/stale/conflict/unverified blocking, dedupe/replay/stale-version handling, safe lead transfer, and economics/offer-authority invariants. Synthetic contact evidence stayed separate from live source evidence.
+- Live permitted-source exercise observed **594** persisted unique discoveries, **0** raw-to-active-lead promotions, **165** unmatched observations and **24** property pages. It found **0** direct PHONE/EMAIL/WEB routes. No public feed is claimed to have seller contact routes; no fabricated lead, contact, motivation, call, or outreach was added.
+- Verification: domain **105/105**; auth **7/7**; command-center/API/UI **15/15**; property ranking **2/2**; API/web typechecks and builds passed. API restarted and reported listening; production unauthenticated contact-research POST returned **401**, web root **200**; all three configured workflows were running.
+- Browser verification as a signed-in owner remains unavailable. This does not weaken the route gates; a legitimate current contact route is still required before any real seller can be CALL NEXT.
+
+### Block 2 — Connected acquisition workbench
+
+**Status: COMPLETE for persisted service/API/UI acceptance; no real seller is CALL NEXT because current permitted feeds have no direct route.**
+
+**Acceptance criteria:** source-backed discovery remains separate from active leads; one command-center path exposes qualification/contact blockers, persisted underwriting readiness, verified-route-gated CALL NEXT ranking, call brief, notes saved and reloaded for the correct lead, seller-fact reconciliation/conflicts, stale-analysis/document propagation, and one truthful next action. Synthetic evidence must remain labeled and no missing contact/economics may be fabricated.
+
+**Evidence:** `exercise:property-source` passed with 594 live source-backed discoveries, 0 raw-discovery promotions and zero direct routes; `exercise:acquisition-queue` passed current-route CALL NEXT, brief, blocked postal/no-route/stale/conflicting cases, underwriting blockers, persisted note reload against the owning lead, linked indicated seller-answer evidence, conflict review, stale analysis/offer-authority invalidation, and refresh of underwriting questions. Seller answers remain evidence and are not copied into property facts or economics. `exercise:command-center` passed persisted next-action, worker, consent and authority gates. Synthetic exercises are explicitly marked; no call was made.
+
+**Checks:** domain suite **105/105**, auth **7/7**, command-center/API/UI **15/15**, property-discovery ranking **2/2**, API/web typechecks passed. These tests use isolated synthetic transactions except the property source observations explicitly labeled live.
+
+### Block 3 — Deterministic underwriting
+
+**Status: COMPLETE for deterministic calculation, persisted provenance, role/authority and stale-evidence acceptance; live deal assumptions still require real evidence.**
+
+**Acceptance criteria:** evidence-backed comps/ARV and repair ranges, explicit holding/transaction costs and assumptions, deterministic MAO/opening/authorized-max/assignment/buyer economics, explainable risk and Strong/Negotiable/Pass status; missing inputs stay gaps; LLM/playbook guidance cannot mutate economics or authority; stale inputs and non-economic invariance are tested.
+
+**Evidence:** `exercise:repair-estimate` passed source-bound inspected repairs vs separately labeled AI hypotheses, exact current-rate multiplication, no hypothesis propagation into MAO, immutable rate history and audit. `exercise:seller` passed persisted deterministic snapshot, provenance rejection, stale/concurrent-write rejection and analysis invalidation. `exercise:offers` passed MAO/authority/expiry guards, owner-only approval, concurrency conflict, exact communicated terms, and stale snapshot invalidation. `exercise:acquisition-queue` passed seller evidence conflict handling and stale underwriting/offer-authority invalidation. `exercise:seller-contact-enrichment` passed **12** synthetic requests and verified contact research preserves economics, authority, stage and next action; live registry remains unavailable. Deal-domain suite passed **105/105**, including deterministic formula/range, missing-input, freshness and hypothesis-exclusion cases.
+
+### Block 4 — Verified buyer intake and disposition
+
+**Status: PARTIAL; buyer evidence, explainable matching, frozen redacted packet, and truthful manual distribution are exercised, but live approved-buyer readiness and a configurable address-redaction choice remain unverified/unimplemented.**
+
+**Acceptance criteria:** extend the existing buyer store with provenance-backed buy boxes, funding/capacity, consent, role/audit, freshness/reverification, duplicate/replay safety and explainable match/exclusion reasons; packages bind to current immutable evidence/economics snapshots, redaction settings and truthful distribution state; no current approved buyers means a precise qualification next step.
+
+**Evidence:** `exercise:buyers` passed create/reload, owner-only verification, dated funding, stale evidence, version conflict, identity invalidation and queued matching. `exercise:buyer-pool` passed persisted one-time intake response, carry-forward, stale/replay/expiry, no automatic approval, and source/entity dedupe across **112** synthetic-schema prospects / **114** observations; it sent no outreach. Deal-domain tests passed explainable location/budget/rehab/funding/capacity exclusions and require current evidence. The persisted transaction/distribution exercise passed immutable economics hash, redacted packet, current-match checks, owner authorization, recipient capability/access records, stale snapshot rejection, buyer intent separate from commitment, and commitment-winner/concurrency controls. UI/manual link flow explicitly says no email/message was sent.
+
+**Still open:** packet address is always redacted, but there is no explicit owner-configurable redaction setting; no production provider receipt exists; the live workspace buyer pool and signed-in buyer-intake UI were not verified in an owner browser, so no live approved/current buyer is claimed. Resume these before marking Block 4 complete.
+
+### Block 5 — Transaction execution and deadline control
+
+**Status: COMPLETE for the provider-unavailable persisted synthetic path and fail-closed controls; no real signature, message delivery, funds transfer, or closing is claimed.**
+
+**Acceptance criteria:** current jurisdiction/version-compatible templates, review-only special clauses, immutable prepared-document snapshots, immediate stale/send/sign/download blocks after material changes, authorized communication states, provider-evidenced signature/funds/EMD/title/inspection/deadline/closing/outcome, deduplicated exceptions, and binding legal/financial approvals. Provider-unavailable manual actions must be labeled not sent/not signed/not completed.
+
+**Evidence:** isolated `exercise:transactions` passed the persisted lifecycle, protected document storage, stale-document/economics blocking, owner-only financial evidence, EMD/funds mismatch, deadline schedule and exception resolution; it reported **0 real transactions**. Readiness explicitly returned signing provider `NOT_CONNECTED` and delivery provider `NOT_CONNECTED / NOT_SENT`; no external send/sign is asserted. `test:transaction-readiness` passed **5/5**. `exercise:clause-review` passed synthetic idempotency, owner-only and jurisdiction mismatch checks, with missing approved template blocking auto-insertion. `exercise:seller-offer-portal` passed the owner-authority-bound seller-response lifecycle with no actual seller or communication. The persisted outcome-learning exercise passed synthetic provenance/time separation, replay, stale snapshot rejection, synthetic exclusion, and no-live-rule-change checks.
+
+**Checks:** API/web typechecks and builds passed; domain **105/105**, auth **7/7**, command-center/API/UI **15/15**. API restarted and production unauthenticated contact-research POST returned **401**; web root returned **200**. Workflows report running. All transaction and outcome records cited here are synthetic isolated-schema fixtures.
+
+**Backlog resume point:** Block 4 is the first incomplete package. Complete the owner-configurable address-redaction choice and verify the actual live approved/current buyer state (or the precise no-buyer next action) before treating the five-block backlog as fully complete. Do not imply a real buyer was approved or a packet delivered.
+
 ## Contact-research case and buyer-readiness handoff — 2026-10-13
 
 **Status: persisted discovery-contact workflow implemented and synthetic behavior exercised; direct-route capture on an unpromoted discovery and authenticated browser use remain incomplete.**

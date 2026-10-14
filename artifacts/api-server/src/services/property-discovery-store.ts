@@ -654,8 +654,10 @@ export async function savePropertyContactResearchCase(
       nextAction: action,
       auditHistory: [...(prior?.auditHistory ?? []), {
         at: now.toISOString(), actor: actor.id,
-        action: prior ? "CONTACT_RESEARCH_UPDATED" : "CONTACT_RESEARCH_OPENED",
-        reason: `${request.status}; source=${request.sourceName}; confidence=${request.confidence}; identity=${request.identityMatch}; permission=${request.permissionBasis}. No direct contact route, lead promotion, call, outreach, or economics change was created.`,
+        action: request.candidateRoute ? "CONTACT_ROUTE_RECORDED" : prior ? "CONTACT_RESEARCH_UPDATED" : "CONTACT_RESEARCH_OPENED",
+        reason: `${request.status}; source=${request.sourceName}; confidence=${request.confidence}; identity=${request.identityMatch}; permission=${request.permissionBasis}.${request.candidateRoute
+          ? ` Route evidence: channel=${request.candidateRoute.channel}; sourceId=${request.candidateRoute.sourceId}; sourceRecordId=${request.candidateRoute.sourceRecordId}; capturedAt=${request.candidateRoute.capturedAt}; permission=${request.candidateRoute.permissionStatus}/${request.candidateRoute.permissionBasis}; verification=${request.candidateRoute.routeVerificationStatus}; duplicate=${candidateRoutes.some(path => path.sourceId === request.candidateRoute!.sourceId && path.sourceRecordId === request.candidateRoute!.sourceRecordId && path.capturedAt === request.candidateRoute!.capturedAt)}.`
+          : ""} No direct contact route, lead promotion, call, outreach, or economics change was created.`,
       }].slice(-50),
       synthetic: Boolean(synthetic),
       candidateRoutes,

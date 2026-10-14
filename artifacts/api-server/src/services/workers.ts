@@ -16,6 +16,7 @@ import { runSellerContactEnrichmentOnce } from "./seller-contact-enrichment";
 import { evaluateAllLeadDecisions, evaluateLeadDecision } from "./intelligence-decision-store";
 import { decisionWorkExecutors, runDecisionWorkOnce } from "./decision-work-lifecycle";
 import { evaluateAllTransactionReadiness } from "./transaction-readiness";
+import { completedWorkerJobState } from "./worker-job-state";
 
 const PROPERTY_SOURCE_POLICY_VERSION = "phila-property-sources-v4";
 const BUYER_SOURCE_POLICY_VERSION = "phila-buyer-sources-v2";
@@ -150,7 +151,9 @@ export async function runWorkerOnce(now = new Date(), schedule = false, onlyJobI
     else if (row.kind==="ENRICH_PROPERTY"&&row.leadId) message = await enrichProperty(row.leadId,row.id,now);
     else if (row.kind==="PREPARE_BRIEF"&&row.leadId) message = await prepareSellerBrief(row.leadId,row.id,now);
     else throw new Error("No executor is registered for this worker kind.");
-    const [finished] = await db.update(jobsTable).set({state:"SUCCEEDED",message,updatedAt:new Date()}).where(and(eq(jobsTable.id,row.id),eq(jobsTable.state,"RUNNING"),eq(jobsTable.attempts,row.attempts))).returning();
+    const [finished] = await db.update(jobsTable).set({
+      state:completedWorkerJobState(row.kind, message),message,updatedAt:new Date(),
+    }).where(and(eq(jobsTable.id,row.id),eq(jobsTable.state,"RUNNING"),eq(jobsTable.attempts,row.attempts))).returning();
     return finished?jobRecord(finished):null;
   } catch (error) {
     const message = error instanceof Error?error.message:"Worker failed. No success was recorded.";
