@@ -16,6 +16,7 @@ export {
   normalizePhiladelphiaDemolitionRows,
   normalizePhiladelphiaPermitRows,
   normalizePhiladelphiaSheriffDeedRows,
+  validateBoundedPageSize,
   normalizeCorporateGrantee,
   refreshPhiladelphiaDemolitionEvidence,
   refreshPhiladelphiaEnforcementEvidence,

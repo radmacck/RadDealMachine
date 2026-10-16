@@ -6,9 +6,11 @@
  * OpenAPI spec version: 1.0.0
  */
 import type { PropertySource } from './propertySource';
+import type { PropertySourceOperation } from './propertySourceOperation';
 import type { UnconnectedPropertySourceCapability } from './unconnectedPropertySourceCapability';
 
 export interface PropertySourceCoverageResponse {
   registeredSources: PropertySource[];
   notConnectedProviders: UnconnectedPropertySourceCapability[];
+  operations: PropertySourceOperation[];
 }

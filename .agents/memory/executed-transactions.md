@@ -39,6 +39,12 @@ Actual external event time and software recording time are different. Late entry
 
 **How to apply:** Keep both times visible, retain original reviews and terms, and require demonstrable eligibility at the actual event. Missing historical proof is an explicit limitation, not a reason to backdate verification.
 
+Transaction readiness checklists must derive completion from current deal records, evidence and approvals, not editable checkboxes. Jurisdiction-specific disclosures remain under qualified review until approved evidence exists; a listed seller name or recorded ownership is not signer authority.
+
+**Why:** A visually complete checklist can be mistaken for legal or execution clearance even when parties, disclosures, title contacts, or signatures remain unverified.
+
+**How to apply:** Use evidence references for completed items, keep missing items actionable, and fail closed when terms, document versions, signature events, or deadlines are stale.
+
 Do not treat a stable deal workspace or transaction row ID alone as the identity of an external legal agreement across restarts.
 
 **Why:** Cancellation/restart must preserve the existing operating history while a new agreement has separately approved terms and evidence.

@@ -9,7 +9,6 @@ import type { PropertyContactPath } from './propertyContactPath';
 import type { PropertyContactResearchCaseAuditHistoryItem } from './propertyContactResearchCaseAuditHistoryItem';
 import type { PropertyContactResearchCaseIdentityMatch } from './propertyContactResearchCaseIdentityMatch';
 import type { PropertyContactResearchCasePermissionBasis } from './propertyContactResearchCasePermissionBasis';
-import type { PropertyContactResearchCaseSourceType } from './propertyContactResearchCaseSourceType';
 import type { PropertyContactResearchCaseStatus } from './propertyContactResearchCaseStatus';
 
 export interface PropertyContactResearchCase {
@@ -22,7 +21,8 @@ export interface PropertyContactResearchCase {
      */
   confidence: number;
   sourceName: string;
-  sourceType: PropertyContactResearchCaseSourceType;
+  /** PUBLIC_RECORD, PUBLIC_PAGE, OWNER_SUPPLIED, SELLER_PROVIDED, MANUAL_RESEARCH, INFERRED, or OTHER */
+  sourceType: string;
   /** @nullable */
   sourceUrl?: string | null;
   observedAt: string;

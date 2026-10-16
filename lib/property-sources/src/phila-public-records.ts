@@ -787,6 +787,12 @@ export async function refreshPhiladelphiaDemolitionEvidence(ids: string[], now =
 }
 
 const SHERIFF_DEED_PAGE_SIZE = 40;
+export function validateBoundedPageSize(size: number, maximum: number) {
+  if (!Number.isInteger(size) || !Number.isInteger(maximum) || size < 1 || maximum < 1 || size > maximum) {
+    throw new Error(`Page size must be an integer between 1 and ${maximum}.`);
+  }
+  return size;
+}
 const SHERIFF_DEED_MAX_RECORDS = 1_000;
 
 function buildSheriffDeedQuery(
@@ -796,7 +802,7 @@ function buildSheriffDeedQuery(
   limit = SHERIFF_DEED_PAGE_SIZE,
 ) {
   if (!Number.isFinite(now.getTime())) throw new Error("Invalid source capture time.");
-  if (limit < 1 || limit > SHERIFF_DEED_PAGE_SIZE) throw new Error("Sheriff deed page size must be between 1 and 40.");
+  validateBoundedPageSize(limit, SHERIFF_DEED_PAGE_SIZE);
   const start = new Date(now.getTime() - 180 * 86_400_000).toISOString().slice(0, 10);
   const endExclusive = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate() + 1))
     .toISOString().slice(0, 10);

@@ -36,6 +36,8 @@ import {
   type ListingDescriptionObservation,
 } from "./property-source-connectors";
 import { propertyDiscoveryRankingReasons } from "./property-discovery-ranking";
+import { evaluatePropertyContactabilityGate } from "./property-contactability-gate";
+export { evaluatePropertyContactabilityGate } from "./property-contactability-gate";
 
 type Tx = Parameters<Parameters<typeof db.transaction>[0]>[0];
 type Database = typeof db | Tx;
@@ -51,7 +53,7 @@ type DiscoveryPayload = {
   contactResearchCase?: {
     status: "OPEN" | "EVIDENCE_RECORDED" | "NO_DIRECT_ROUTE_FOUND" | "NEEDS_REVIEW" | "BLOCKED";
     version: number; confidence: number; sourceName: string;
-    sourceType: "PUBLIC_RECORD" | "PUBLIC_PAGE" | "OWNER_SUPPLIED" | "OTHER";
+    sourceType: "PUBLIC_RECORD" | "PUBLIC_PAGE" | "OWNER_SUPPLIED" | "SELLER_PROVIDED" | "MANUAL_RESEARCH" | "INFERRED" | "OTHER";
     sourceUrl: string | null; observedAt: string;
     identityMatch: "UNKNOWN" | "RECORDED_OWNER_ONLY" | "SELLER_SELF_IDENTIFIED" | "CONFLICTING" | "NOT_MATCHED";
     permissionBasis: "UNKNOWN" | "PUBLIC_SOURCE_TERMS" | "CONSENT" | "OTHER_DOCUMENTED" | "PROHIBITED";
@@ -78,25 +80,7 @@ function isDirectContactPath(path: PropertyContactPath) {
 }
 
 function contactRouteGaps(caseRecord: NonNullable<DiscoveryPayload["contactResearchCase"]>, now: Date) {
-  const routes = reconcileContactPaths(caseRecord.candidateRoutes ?? [], now);
-  const phones = routes.filter(path => path.channel === "PHONE");
-  const gaps: string[] = [];
-  if (!phones.length) gaps.push("No direct phone route candidate is recorded; postal addresses do not enable CALL NEXT.");
-  if (phones.some(path => path.freshnessStatus !== "CURRENT")) gaps.push("A phone route is stale; refresh it from a permitted source.");
-  if (phones.some(path => path.identityConflictStatus === "MULTIPLE_RECIPIENTS" || path.identityConflictStatus === "MULTIPLE_ROLES") ||
-    (phones.filter(path => path.permissionStatus === "PERMITTED" && path.routeVerificationStatus === "CONFIRMED").length > 1)) {
-    gaps.push("Phone routes or recipient identities conflict; resolve the conflict before use.");
-  }
-  if (phones.some(path => path.permissionStatus !== "PERMITTED" || path.permissionEvidenceStatus !== "SUPPORTS_ALLOWED"))
-    gaps.push("Document owner-reviewed permission evidence and permitted scope for the route.");
-  if (phones.some(path => path.routeVerificationStatus !== "CONFIRMED" || path.classification !== "VERIFIED"))
-    gaps.push("Owner must confirm the route with a written verification note.");
-  if (caseRecord.identityMatch !== "SELLER_SELF_IDENTIFIED" ||
-    phones.some(path => path.recipientRole !== "SELLER_SELF_IDENTIFIED" || path.recipientIdentityEvidenceStatus !== "SUPPORTING_RECORD"))
-    gaps.push("Match the route recipient to the seller with supporting identity evidence.");
-  if (phones.some(path => path.confidence < 0.85))
-    gaps.push("Route confidence must be at least 0.85 for owner confirmation.");
-  return [...new Set(gaps)];
+  return evaluatePropertyContactabilityGate(caseRecord, now);
 }
 
 function validateCandidateRoute(route: PropertyContactRouteCandidateInput, actor: OfferActor, identityMatch: string, now: Date) {
@@ -608,6 +592,10 @@ export async function savePropertyContactResearchCase(
 ) {
   requireReviewer(actor);
   const request = SavePropertyContactResearchCaseBody.parse(untrusted);
+  if (!["PUBLIC_RECORD", "PUBLIC_PAGE", "OWNER_SUPPLIED", "SELLER_PROVIDED", "MANUAL_RESEARCH", "INFERRED", "OTHER"].includes(request.sourceType)) {
+    throw new DomainError("Choose an explicit source type: public record/page, seller-provided, manual research, inferred, or other.", 400);
+  }
+  const sourceType = request.sourceType as NonNullable<DiscoveryPayload["contactResearchCase"]>["sourceType"];
   return db.transaction(async tx => {
     const [current] = await tx.select().from(propertyDiscoveriesTable)
       .where(eq(propertyDiscoveriesTable.id, discoveryId)).for("update");
@@ -640,7 +628,7 @@ export async function savePropertyContactResearchCase(
     const synthetic = /synthetic|fixture|exercise/i.test(request.sourceName) ||
       /synthetic|fixture|exercise/i.test(request.candidateRoute?.sourceName ?? "") ||
       sourceRows.some(row => /synthetic|fixture|exercise/i.test(row.sourceKey));
-    const missingRequirements = [
+    const missingRequirements = [...new Set([
       ...(request.identityMatch === "RECORDED_OWNER_ONLY" ? ["Recorded ownership does not establish seller identity or signing authority."] : []),
       ...(request.identityMatch === "CONFLICTING" ? ["Resolve the conflicting recipient identity before using any route."] : []),
       ...(request.permissionBasis === "UNKNOWN" ? ["Document the lawful basis and source terms before relying on contact data."] : []),
@@ -648,12 +636,12 @@ export async function savePropertyContactResearchCase(
       ...(request.evidenceReference ? [] : ["Add a precise record/page/document reference for review."]),
       ...contactRouteGaps({
         status: request.status, version: 1, confidence: request.confidence, sourceName: request.sourceName,
-        sourceType: request.sourceType, sourceUrl: request.sourceUrl ?? null, observedAt: observedAt.toISOString(),
+        sourceType, sourceUrl: request.sourceUrl ?? null, observedAt: observedAt.toISOString(),
         identityMatch: request.identityMatch, permissionBasis: request.permissionBasis,
         evidenceReference: request.evidenceReference ?? null, note: request.note, missingRequirements: [],
-        nextAction: "", auditHistory: [], synthetic: false, candidateRoutes,
+        nextAction: "", auditHistory: [], synthetic, candidateRoutes,
       }, now),
-    ];
+    ])];
     const action = request.permissionBasis === "PROHIBITED"
       ? "Stop use of this source and obtain evidence through a permitted route."
       : request.status === "NO_DIRECT_ROUTE_FOUND"
@@ -664,7 +652,7 @@ export async function savePropertyContactResearchCase(
       version: (prior?.version ?? 0) + 1,
       confidence: request.confidence,
       sourceName: request.sourceName,
-      sourceType: request.sourceType,
+      sourceType,
       sourceUrl: request.sourceUrl ?? null,
       observedAt: observedAt.toISOString(),
       identityMatch: request.identityMatch,
@@ -776,12 +764,14 @@ function contactCoverageSummary(
       )),
     ), now).filter(isDirectContactPath);
     const transferable = direct.filter(path => routeIsTransferable(path, now));
+    const ownershipAndRouteGateOpen = payload.contactResearchCase != null &&
+      evaluatePropertyContactabilityGate(payload.contactResearchCase, now).length === 0;
     if (direct.length) result.propertiesWithDirectRouteCandidates++;
     else {
       result.propertiesWithoutDirectRoute++;
       if (realPaths.some(path => path.channel === "POSTAL")) result.postalOnlyProperties++;
     }
-    if (transferable.length) result.propertiesWithCurrentPermittedVerifiedSellerRoute++;
+    if (transferable.length && ownershipAndRouteGateOpen) result.propertiesWithCurrentPermittedVerifiedSellerRoute++;
     if (direct.some(path => path.freshnessStatus === "STALE")) result.propertiesWithStaleRoute++;
     if (direct.some(path => path.identityConflictStatus === "MULTIPLE_RECIPIENTS" || path.identityConflictStatus === "MULTIPLE_ROLES")) {
       result.propertiesWithIdentityConflict++;
@@ -794,7 +784,9 @@ function contactCoverageSummary(
       result.propertiesWithIdentityOrVerificationBlocker++;
     }
     if (publicFeedPaths.length) result.publicFeedPropertiesWithDirectRoute++;
-    if (publicFeedPaths.some(path => routeIsTransferable(path, now))) result.publicFeedPropertiesWithCurrentPermittedVerifiedRoute++;
+    if (ownershipAndRouteGateOpen && publicFeedPaths.some(path => routeIsTransferable(path, now))) {
+      result.publicFeedPropertiesWithCurrentPermittedVerifiedRoute++;
+    }
   }
   result.nextAction = result.propertiesWithCurrentPermittedVerifiedSellerRoute
     ? "Review each route's provenance, permission, identity, freshness, and underwriting; a verified contact route alone does not clear CALL NEXT."

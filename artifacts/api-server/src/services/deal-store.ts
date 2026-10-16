@@ -14,11 +14,15 @@ import {
   repairMarketKey, DEFAULT_PROPERTY_QUALIFICATION_CRITERIA, evaluatePropertyRelevance,
   type PropertyQualificationCriteria, type PropertyRelevanceSignal,
   validateSellerConversationFields, type SellerConversationField, unresolvedSellerConversationQuestions,
+  ACQUISITION_STAGE_ENTRY_EVIDENCE, ACQUISITION_STAGE_EXIT_EVIDENCE,
+  deriveAcquisitionPipelineStage, deriveAcquisitionPipelineCounts,
+  type AcquisitionPipelineStage,
 } from "@workspace/deal-domain";
 import { CreateLeadResponse, GetLeadResponse, AddIntelligenceResponse, GetAssumptionsResponse } from "@workspace/api-zod";
 import { offersForLead, invalidateOffers, invalidateOffersForPolicyChange } from "./offer-records";
 import { getSellerContactPaths } from "./seller-contact-store";
 import { versionedStageTransition } from "./canonical-deal-state";
+import { evaluatePropertyContactabilityGate, type SellerContactabilityEvidence } from "./property-contactability-gate";
 
 type Tx = Parameters<Parameters<typeof db.transaction>[0]>[0];
 const jsonRecord = (value: object): Record<string, unknown> => ({ ...value });
@@ -372,6 +376,18 @@ export async function transitionLead(id: string, input: TransitionInput, actor: 
   return db.transaction(async tx => {
     const row = await lockedLead(tx,id,input.version);
     const detail = await leadDetail(id,tx,now);
+    if (input.to === "CALL_READY") {
+      const [linkedDiscovery] = await tx.select().from(propertyDiscoveriesTable)
+        .where(eq(propertyDiscoveriesTable.leadId, id)).for("update");
+      if (linkedDiscovery) {
+        const contactCase = linkedDiscovery.payload.contactResearchCase;
+        if (!contactCase || typeof contactCase !== "object") {
+          throw new DomainError("CALL_READY is blocked: source-backed ownership/identity review and a permitted seller route are required.", 409);
+        }
+        const blockers = evaluatePropertyContactabilityGate(contactCase as SellerContactabilityEvidence, now);
+        if (blockers.length) throw new DomainError(`CALL_READY is blocked: ${blockers.join(" ")}`, 409);
+      }
+    }
     validateTransition(toLead(row),detail.analysis,input,now);
     if (["ENRICHING","DEAD_DEAL"].includes(input.to)) await invalidateOffers(tx,id,actor,`Deal moved to ${input.to}; offer approval invalidated.`,now);
     const followUpAt = input.followUpAt === undefined ? row.followUpAt : followupDate(input.followUpAt,now);
@@ -816,15 +832,85 @@ export async function listAudit(limit = 100) {
   return (await db.select().from(auditTable).orderBy(desc(auditTable.createdAt)).limit(limit)).map(e => ({...e,createdAt:iso(e.createdAt)}));
 }
 export async function dashboard(now = new Date()) {
-  const [leads,queue,recentActivity] = await Promise.all([listLeads(),callQueue(now),listAudit(12)]);
+  const [leads,queue,recentActivity,leadRows,discoveryRows,callRows] = await Promise.all([
+    listLeads(),callQueue(now),listAudit(12),
+    db.select().from(leadsTable),db.select().from(propertyDiscoveriesTable),db.select().from(callsTable),
+  ]);
   const active = leads.filter(l => !["DEAD_DEAL","CLOSED"].includes(l.stage));
   const counts = new Map<string,number>();
   leads.forEach(l => counts.set(l.stage,(counts.get(l.stage) ?? 0)+1));
+  const callsByLead = new Map<string,typeof callRows>();
+  for (const call of callRows) callsByLead.set(call.leadId,[...(callsByLead.get(call.leadId) ?? []),call]);
+  const currentlyCallableIds = new Set(queue
+    .filter(brief => brief.lead.stage === "CALL_READY")
+    .map(brief => brief.lead.id));
+  const discoveryByLead = new Map(discoveryRows.filter(row => row.leadId).map(row => [row.leadId!,row]));
+  const pipelineStages: AcquisitionPipelineStage[] = [];
+  let excludedSyntheticCount = 0;
+  for (const row of leadRows) {
+    const sourceLabel = String(row.payload.source ?? "");
+    if (row.payload.synthetic === true || /synthetic|fixture|exercise/i.test(sourceLabel)) {
+      excludedSyntheticCount++;
+      continue;
+    }
+    const history = (callsByLead.get(row.id) ?? []).sort((a,b) => b.createdAt.getTime()-a.createdAt.getTime());
+    const latest = history[0]?.payload ?? {};
+    const outcome = ["CONNECTED","NO_ANSWER","VOICEMAIL","BUSY","NOT_INTERESTED"].includes(String(latest.outcome))
+      ? latest.outcome as "CONNECTED"|"NO_ANSWER"|"VOICEMAIL"|"BUSY"|"NOT_INTERESTED" : null;
+    const answers = latest.sellerAnswers && typeof latest.sellerAnswers === "object"
+      ? Object.entries(latest.sellerAnswers as Record<string,unknown>).filter(([,value]) => value !== null && value !== "" && value !== undefined)
+      : [];
+    const leadStage = row.stage;
+    const discovery = discoveryByLead.get(row.id);
+    const contactResearched = !!discovery?.payload.contactResearchCase ||
+      (Array.isArray(row.payload.contactPaths) && row.payload.contactPaths.length > 0);
+    const closed = leadStage === "CLOSED" ? "CLOSED" : ["DEAD_DEAL","PASS"].includes(leadStage) ? "LOST" : null;
+    const analysis = row.analysis && typeof row.analysis === "object" && !Array.isArray(row.analysis)
+      ? row.analysis as Record<string,unknown> : null;
+    const calculatedAt = typeof analysis?.calculatedAt === "string" ? Date.parse(analysis.calculatedAt) : Number.NaN;
+    const underwritingReady = !!row.analysisSnapshotId && !!analysis &&
+      Array.isArray(analysis.blockers) && analysis.blockers.length === 0 &&
+      Number.isFinite(calculatedAt) && calculatedAt <= now.getTime() &&
+      now.getTime() - calculatedAt < 7 * 86_400_000;
+    pipelineStages.push(deriveAcquisitionPipelineStage({
+      discovered:true,normalized:true,qualifiedForResearch:true,contactRouteResearched:contactResearched,
+      callReady:leadStage === "CALL_READY" && currentlyCallableIds.has(row.id),humanCallOutcome:outcome,
+      nurtureFollowUpValid:!!row.followUpAt && row.followUpAt.getTime() > now.getTime(),
+      sellerQualified:outcome === "CONNECTED" && answers.length >= 2,
+      underwritingReady,
+      offerReady:leadStage === "OFFER_READY" && underwritingReady,terminal:closed,
+    }));
+  }
+  for (const row of discoveryRows.filter(item => !item.leadId)) {
+    const payload = row.payload as Record<string,unknown>;
+    const property = payload.property && typeof payload.property === "object" ? payload.property as Record<string,unknown> : {};
+    if (payload.synthetic === true || /synthetic|fixture|exercise/i.test(String(property.provider ?? ""))) {
+      excludedSyntheticCount++;
+      continue;
+    }
+    const normalized = typeof property.address === "string" && typeof property.city === "string" &&
+      typeof property.state === "string" && typeof property.zip === "string";
+    const discoveryStatus = row.status;
+    pipelineStages.push(deriveAcquisitionPipelineStage({
+      discovered:true,normalized,
+      qualifiedForResearch:["RELEVANT_CANDIDATE","QUALIFIED_LEAD","CALL_READY"].includes(discoveryStatus),
+      contactRouteResearched:!!payload.contactResearchCase,
+      callReady:discoveryStatus === "CALL_READY",humanCallOutcome:null,nurtureFollowUpValid:false,sellerQualified:false,
+      underwritingReady:false,offerReady:false,
+      terminal:discoveryStatus === "DISQUALIFIED" ? "LOST" : null,
+    }));
+  }
+  const acquisitionStages = deriveAcquisitionPipelineCounts(pipelineStages).map(item => ({
+    ...item,definition:ACQUISITION_STAGE_ENTRY_EVIDENCE[item.stage],
+    exitEvidence:ACQUISITION_STAGE_EXIT_EVIDENCE[item.stage],
+  }));
   return {
     total:leads.length,callReady:queue.length,
     needsResearch:active.filter(l => ["DISCOVERED","ENRICHING","ANALYZED"].includes(l.stage)).length,
     overdue:active.filter(l => l.followUpAt && Date.parse(l.followUpAt) < now.getTime()).length,
     strong:counts.get("STRONG") ?? 0,negotiable:counts.get("NEGOTIABLE") ?? 0,pass:counts.get("PASS") ?? 0,
+    acquisitionStages,
+    excludedSyntheticCount,
     stages:[...counts].map(([stage,count]) => ({stage,count})),recentActivity,
   };
 }

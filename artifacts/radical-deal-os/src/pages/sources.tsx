@@ -292,6 +292,31 @@ export default function Sources() {
         {sourceCoverage.isLoading && <RowsSkeleton rows={1} />}
         {sourceCoverage.isError && <ErrorNotice error={sourceCoverage.error} onRetry={() => sourceCoverage.refetch()} />}
         {sourceCoverage.data?.registeredSources.length === 0 && <p>No property source adapters are registered.</p>}
+        {!!sourceCoverage.data?.operations.length && <div className="mb-4 space-y-2" data-testid="panel-source-operations">
+          <h2 className="font-semibold">Acquisition source operations</h2>
+          <p className="text-xs text-muted-foreground">Only persisted worker execution evidence counts as a refresh. Connector result counts are not qualified leads. No source is queried by opening this page.</p>
+          {sourceCoverage.data.operations.map((operation) => (
+            <article key={operation.id} className="rounded border p-3" data-testid={`source-operation-${operation.id}`}>
+              <div className="flex flex-wrap items-center gap-2">
+                <h3 className="font-medium">{operation.name}</h3>
+                <span className={`tag ${operation.enabled ? operation.state === 'SUCCEEDED' ? 'tone-go' : 'tone-warn' : 'tone-muted'}`}>{operation.state.replaceAll('_', ' ')}</span>
+                <span className="tag tone-muted">terms {operation.termsStatus.replaceAll('_', ' ').toLowerCase()}</span>
+                <span className="tag tone-muted">freshness {operation.freshness.toLowerCase()}</span>
+              </div>
+              <p className="mt-1 text-xs">
+                Last source-specific attempt: {operation.lastAttemptAt ? new Date(operation.lastAttemptAt).toLocaleString() : 'no execution evidence'} ·
+                {" "}last successful check: {operation.lastSuccessfulAt ? new Date(operation.lastSuccessfulAt).toLocaleString() : 'none recorded'} ·
+                {" "}result count: {operation.resultCount ?? 'not recorded'}.
+              </p>
+              <p className="text-xs text-muted-foreground">{operation.resultCountBasis}</p>
+              <p className="text-xs text-muted-foreground">Rate limits: {operation.rateLimit}</p>
+              <p className="text-xs text-muted-foreground">Next eligible refresh: {operation.nextEligibleAt ? new Date(operation.nextEligibleAt).toLocaleString() : 'not scheduled; manual review and queueing required'}.</p>
+              {operation.error && <p className="mt-1 text-xs text-destructive" role="alert">Latest source error: {operation.error}</p>}
+              <p className="mt-1 text-xs"><b>Next:</b> {operation.manualNextStep}</p>
+              <a className="text-xs underline" href={operation.termsUrl} target="_blank" rel="noopener noreferrer">Review source terms</a>
+            </article>
+          ))}
+        </div>}
         <h2 className="font-semibold">Connected source adapters</h2>
         <p className="mb-3 text-xs text-muted-foreground">These adapters are wired to real source operations; an individual run can still fail and its result is reported separately.</p>
         {sourceCoverage.data?.registeredSources.map((s) => (

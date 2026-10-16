@@ -1,0 +1,85 @@
+import assert from "node:assert/strict";
+import { db, jobsTable, leadsTable, propertyDiscoveriesTable } from "@workspace/db";
+import { GetPropertySourceCoverageResponse } from "@workspace/api-zod";
+import { getPropertySourceCoverage } from "./property-source-store";
+import { recordPropertyObservation } from "./property-discovery-store";
+import { PROPERTY_SOURCE_POLICY_VERSION } from "./property-source-connectors";
+
+const now = new Date("2026-10-16T12:00:00.000Z");
+const actor = "SYNTHETIC source coverage exercise";
+const getOpa = async (at: Date) => GetPropertySourceCoverageResponse.parse(await getPropertySourceCoverage(at))
+  .operations.find(source => source.id === "phila-opa")!;
+const base = {
+  kind: "DISCOVER_PROPERTIES", leadId: null, requestedBy: actor, attempts: 1,
+  payload: { termsReviewed: true, sourcePolicyVersion: PROPERTY_SOURCE_POLICY_VERSION, recurringPropertyDiscovery: true },
+};
+
+const never = await getOpa(now);
+assert.equal(never.enabled, true);
+assert.equal(never.state, "ENABLED_NOT_RUN");
+assert.equal(never.lastSuccessfulAt, null);
+assert.equal(never.resultCount, null, "No execution evidence is not a zero-result refresh.");
+assert.equal(never.freshness, "NEVER_RUN");
+assert.match(never.manualNextStep, /no source refresh is claimed/i);
+assert.ok((await GetPropertySourceCoverageResponse.parse(await getPropertySourceCoverage(now))).notConnectedProviders
+  .every(provider => provider.status === "NOT_CONNECTED"));
+
+const successAt = new Date(now.getTime() - 60 * 60_000);
+await db.insert(jobsTable).values({
+  ...base, state: "SUCCEEDED", idempotencyKey: `${actor}:success`,
+  message: "Registered discovery connector results: phila-opa: 4 property record(s), 2 unmatched observation(s). All registered source operations completed.",
+  createdAt: successAt, updatedAt: successAt,
+});
+const success = await getOpa(now);
+assert.equal(success.state, "SUCCEEDED");
+assert.equal(success.termsStatus, "REVIEWED_AT_QUEUE");
+assert.equal(success.resultCount, 6);
+assert.equal(success.lastSuccessfulAt, successAt.toISOString());
+assert.equal(success.freshness, "CURRENT");
+assert.ok(success.nextEligibleAt, "Recurring source opt-in shows only the next eligibility boundary, not a claimed queued run.");
+assert.match(success.resultCountBasis, /not qualified leads/i);
+
+const failureAt = new Date(now.getTime() + 60_000);
+await db.insert(jobsTable).values({
+  ...base, state: "PARTIAL", idempotencyKey: `${actor}:rate-limited`,
+  message: "Registered discovery connector results: phila-opa: 4 property record(s), 2 unmatched observation(s). Source-specific partial failures (1): phila-opa/DISCOVER: HTTP 429 rate limit exceeded.",
+  createdAt: failureAt, updatedAt: failureAt,
+});
+const limited = await getOpa(new Date(now.getTime() + 120_000));
+assert.equal(limited.state, "RATE_LIMITED");
+assert.match(limited.error ?? "", /429/);
+assert.equal(limited.lastSuccessfulAt, successAt.toISOString(), "A rate-limited attempt does not replace the last successful check.");
+assert.match(limited.manualNextStep, /wait.*retry window/i);
+const stale = await getOpa(new Date(now.getTime() + 8 * 60 * 60_000));
+assert.equal(stale.freshness, "STALE");
+assert.equal(stale.state, "RATE_LIMITED", "An error remains visible even when the last success is stale.");
+
+await db.insert(jobsTable).values({
+  ...base, payload: { ...base.payload, recurringPropertyDiscovery: false },
+  state: "SUCCEEDED", idempotencyKey: `${actor}:no-source-evidence`,
+  message: "Other connector completed. No source-specific result was recorded.",
+  createdAt: new Date(now.getTime() + 3 * 60_000), updatedAt: new Date(now.getTime() + 3 * 60_000),
+});
+const noEvidence = await getOpa(new Date(now.getTime() + 4 * 60_000));
+assert.equal(noEvidence.lastAttemptAt, failureAt.toISOString());
+assert.equal(noEvidence.resultCount, 6);
+assert.equal(noEvidence.nextEligibleAt, null, "A later explicit recurrence opt-out must not inherit an older schedule.");
+const property = {
+  id: "SYNTHETIC-COVERAGE-PARCEL", parcelId: "SYNTHETIC-COVERAGE-PARCEL", provider: "SYNTHETIC_SOURCE",
+  classification: "OBSERVED", address: "100 SYNTHETIC COVERAGE ST", city: "Philadelphia",
+  county: "Philadelphia", state: "PA", zip: "19103", propertyType: "SINGLE_FAMILY",
+  sqft: 1200, beds: 3, baths: 2, units: 1, recordedOwner: null, entityCandidate: false,
+  assessedValue: null, lastSalePrice: null, lastSaleAt: null, interiorCondition: null,
+  exteriorCondition: null, lat: null, lng: null, contactPaths: [],
+  sourceUrl: "https://example.invalid/synthetic-coverage", capturedAt: now.toISOString(),
+} as Parameters<typeof recordPropertyObservation>[0];
+const firstObservation = await recordPropertyObservation(property, "synthetic-coverage:parcel", actor, now);
+const duplicateObservation = await recordPropertyObservation(
+  { ...property, capturedAt: new Date(now.getTime() + 60_000).toISOString() },
+  "synthetic-coverage:parcel", actor, new Date(now.getTime() + 60_000),
+);
+assert.equal(firstObservation.id, duplicateObservation.id, "Duplicate source ingestion retains one discovery identity.");
+assert.equal(duplicateObservation.leadId, null, "Raw source observations remain distinct from active seller leads.");
+assert.equal((await db.select().from(propertyDiscoveriesTable)).length, 1);
+assert.equal((await db.select().from(leadsTable)).length, 0, "Coverage reporting never promotes raw observations to active leads.");
+console.log("PASS SYNTHETIC persisted source coverage: no false check/zero, terms version, exact connector counts, rate limits, stale data, schedule eligibility and raw/lead separation.");

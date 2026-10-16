@@ -1,5 +1,7 @@
 import { AlertOctagon, ShieldAlert } from 'lucide-react';
+import { useState } from 'react';
 import type { Analysis, Comp, Intelligence, Range } from '@workspace/api-client-react';
+import { analyzeDealScenarios } from '@workspace/deal-domain';
 import { fmtDate, money, pct } from '@/lib/format';
 
 const CLS_TONE: Record<string, string> = { STRONG: 'tone-go', NEGOTIABLE: 'tone-warn', PASS: 'tone-stop', INCOMPLETE: 'tone-muted' };
@@ -27,6 +29,7 @@ function Big({ label, value, note, tid }: { label: string; value: string; note?:
 }
 
 export function AnalysisPanel({ analysis, comps, intelligence = [], full = true }: { analysis: Analysis | null; comps?: Comp[]; intelligence?: Intelligence[]; full?: boolean }) {
+  const [uncertaintyPct, setUncertaintyPct] = useState(20);
   if (!analysis) {
     return (
       <div className="ledger p-4" data-testid="analysis-empty">
@@ -45,6 +48,7 @@ export function AnalysisPanel({ analysis, comps, intelligence = [], full = true 
         : classification === 'AI_HYPOTHESIS' ? 'INFERRED' : 'ESTIMATED';
   const eligibleComps = (comps ?? []).filter((comp) => a.compDecisions.find((decision) => decision.id === comp.id)?.included);
   const policy = a.assumptions;
+  const scenarios = analyzeDealScenarios(a,uncertaintyPct);
   const totalCarryingClosingCosts = policy.acquisitionCost + policy.holdingMonthly * policy.holdingMonths;
   const buyerCeilingBeforeAssignment = a.arv.low * policy.arvMultiplier -
     a.arv.low * policy.sellingCostPct - a.repairs.high * (1 + policy.contingencyPct) - totalCarryingClosingCosts;
@@ -111,6 +115,38 @@ export function AnalysisPanel({ analysis, comps, intelligence = [], full = true 
           <div><p className="eyebrow">Assignment target · not realized fee</p><p className="font-mono">{money(policy.assignmentTarget)}</p><p className="text-xs text-muted-foreground">ESTIMATED · source: configured workspace assumption · confidence: policy-derived, not empirical · not buyer demand or a commitment · as of {fmtDate(a.calculatedAt)}</p></div>
           <div><p className="eyebrow">Calculated MAO</p><p className="font-mono">{estimateBlocked || a.blockers.length ? 'BLOCKED' : money(a.mao)}</p><p className="text-xs text-muted-foreground">INFERRED · source: deterministic buyer-ceiling formula less assignment target · confidence: ARV {pct(a.arv.confidence)} / repairs {pct(a.repairs.confidence)} · as of {fmtDate(a.calculatedAt)}; blocked by any current underwriting blocker.</p></div>
           <div><p className="eyebrow">Offer authority</p><p className="font-mono">Not authorized by underwriting</p><p className="text-xs text-muted-foreground">Only explicit, terms-specific owner approval can authorize an offer.</p></div>
+        </div>
+      </section>}
+      {full && <section className="mt-4 border border-border p-3" data-testid="deal-scenario-analysis">
+        <div className="flex flex-wrap items-start justify-between gap-3">
+          <div>
+            <p className="font-semibold">Deal economics · low / base / high scenarios</p>
+            <p className="text-xs text-muted-foreground">Deterministic what-if math only. Nothing here changes underwriting, creates a snapshot, or authorizes an offer.</p>
+          </div>
+          <label className="text-xs">Cost and assignment sensitivity ±{uncertaintyPct}%
+            <input aria-label="Scenario sensitivity percent" className="ml-2 w-28 accent-primary" type="range" min="0" max="100" step="5" value={uncertaintyPct} onChange={event=>setUncertaintyPct(Number(event.target.value))} />
+          </label>
+        </div>
+        <div className="mt-2 grid gap-1 text-xs text-muted-foreground sm:grid-cols-2">
+          <p>ARV · SOURCED from eligible comp range: {money(a.arv.low)} / {money(a.arv.expected)} / {money(a.arv.high)}; {pct(a.arv.confidence)} confidence.</p>
+          <p>Repairs · ESTIMATED from reviewed range: {money(a.repairs.low)} / {money(a.repairs.expected)} / {money(a.repairs.high)}; {pct(a.repairs.confidence)} confidence. Per-line sources retain OBSERVED/REPORTED status.</p>
+          <p>Holding + closing · ESTIMATED configured base {money(policy.acquisitionCost + policy.holdingMonthly * policy.holdingMonths)}; scenario envelope is operator-selected, not observed.</p>
+          <p>Buyer margin reserve · INFERRED from configured multiplier {pct(1-policy.arvMultiplier)}. Assignment fee · ESTIMATED configured target {money(policy.assignmentTarget)} with the same sensitivity envelope. Seller/agent-reported inputs stay REPORTED, never verified by this calculation.</p>
+        </div>
+        <p className="mt-2 text-xs text-muted-foreground">LOW uses low ARV, high repairs, high costs and high assignment fee; HIGH reverses those inputs. The sensitivity control changes only the illustrative cost/assignment envelope.</p>
+        {!scenarios.calculationAvailable && <p className="mt-2 text-sm text-destructive">MAO scenarios are blocked; missing or incomplete inputs are not treated as zero-cost facts.</p>}
+        {scenarios.warnings.length > 0 && <ul className="mt-2 list-disc pl-5 text-xs text-muted-foreground">{scenarios.warnings.map((warning,index)=><li key={index}>{warning}</li>)}</ul>}
+        <div className="mt-3 overflow-x-auto">
+          <table className="w-full min-w-[680px] text-left text-xs">
+            <thead><tr className="border-b"><th className="p-2">Scenario</th><th className="p-2">ARV</th><th className="p-2">Repairs</th><th className="p-2">Buyer margin</th><th className="p-2">Holding + closing</th><th className="p-2">Assignment fee</th><th className="p-2">MAO</th></tr></thead>
+            <tbody>{scenarios.scenarios.map(item=><tr key={item.name} className="border-b border-border/60">
+              <th className="p-2">{item.name}</th><td className="p-2 font-mono">{scenarios.arvAvailable?money(item.arv):"MISSING"}</td><td className="p-2 font-mono">{scenarios.repairsAvailable?money(item.repairs):"MISSING"}</td><td className="p-2 font-mono">{money(item.buyerMarginReserve)}</td><td className="p-2 font-mono">{money(item.holdingAndClosingCosts)}</td><td className="p-2 font-mono">{money(item.assignmentFee)}</td><td className="p-2 font-mono font-semibold">{scenarios.calculationAvailable?money(item.mao):"BLOCKED"}</td>
+            </tr>)}</tbody>
+          </table>
+        </div>
+        <p className="mt-3 text-sm font-semibold">One-input-at-a-time MAO sensitivity</p>
+        <div className="mt-1 grid gap-1 text-xs sm:grid-cols-2">
+          {scenarios.sensitivities.map(item=><p key={item.input} className="border-t border-border/60 py-1"><b>{item.input}:</b> {scenarios.calculationAvailable?`${money(item.lowMao)} / ${money(item.baseMao)} / ${money(item.highMao)}`:"BLOCKED"} · {item.source}</p>)}
         </div>
       </section>}
       {a.repairEstimate.status !== 'NOT_USED' && (

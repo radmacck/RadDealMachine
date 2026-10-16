@@ -250,6 +250,9 @@ function DraftForm({ detail, lead, pending, error, onSubmit, onCancel }: {
   const { base, stale, rebase } = useBaseVersion(lead.version);
   const [v, setV] = useState({ amount: String(analysis.openingLow), earnest: '', days: '30', cont: 'Subject to inspection, title review, and owner-approved contract terms.', reason: 'Prepared from current underwriting; seller terms require explicit owner review.' });
   const [assign, setAssign] = useState(false);
+  const [counterParent, setCounterParent] = useState('');
+  const [sellerResponseEvidence, setSellerResponseEvidence] = useState('');
+  const [idempotencyKey] = useState(() => crypto.randomUUID());
   const [expiry, setExpiry] = useState(() => { const d = new Date(Date.now()+48*3600000); d.setMinutes(d.getMinutes()-d.getTimezoneOffset()); return d.toISOString().slice(0,16); });
   const [local, setLocal] = useState<string | null>(null);
   const set = (k: keyof typeof v) => (e: { target: { value: string } }) => setV((p) => ({ ...p, [k]: e.target.value }));
@@ -259,9 +262,11 @@ function DraftForm({ detail, lead, pending, error, onSubmit, onCancel }: {
     if (Number.isNaN(earnest) || earnest < 0 || earnest > amount) return setLocal('Earnest money must be 0 up to the amount.');
     if (!Number.isInteger(days) || days < 1 || days > 180) return setLocal('Closing days must be a whole number from 1 to 180.');
     if (v.cont.trim().length < 3 || v.reason.trim().length < 3) return setLocal('Contingencies and reason each need at least 3 characters.');
+    if (counterParent && sellerResponseEvidence.trim().length < 20) return setLocal('Record at least 20 characters of explicit seller-response evidence; do not infer a response from a note or an attempted message.');
     if (!future(expiry)) return setLocal('Draft expiry must be in the future.');
     setLocal(null);
-    onSubmit({ version: base, amount, earnestMoney: earnest, closingDays: days, contingencies: v.cont.trim(), assignmentIntent: assign, reason: v.reason.trim(), draftExpiresAt: iso(expiry) });
+    onSubmit({ version: base, amount, earnestMoney: earnest, closingDays: days, contingencies: v.cont.trim(), assignmentIntent: assign, reason: v.reason.trim(), draftExpiresAt: iso(expiry),
+      ...(counterParent ? {parentOfferId:counterParent,sellerResponseSource:'HUMAN_ENTERED' as const,sellerResponseEvidence:sellerResponseEvidence.trim(),idempotencyKey} : {}) });
   };
   return (
     <div className="ledger space-y-3 p-4" data-testid="form-offer-draft">
@@ -282,6 +287,17 @@ function DraftForm({ detail, lead, pending, error, onSubmit, onCancel }: {
         <div className="space-y-1.5"><Label>Closing days (1 to 180)</Label><Input type="number" value={v.days} onChange={set('days')} data-testid="input-draft-days" /></div>
       </div>
       <div className="space-y-1.5"><Label>Internal draft expiry</Label><Input type="datetime-local" value={expiry} onChange={e=>setExpiry(e.target.value)} data-testid="input-draft-expiry" /></div>
+      <div className="space-y-2 rounded border p-3">
+        <Label>Version lineage (optional)</Label>
+        <Select value={counterParent||'none'} onValueChange={value=>setCounterParent(value==='none'?'':value)}>
+          <SelectTrigger><SelectValue placeholder="New proposal" /></SelectTrigger><SelectContent>
+            <SelectItem value="none">New proposal</SelectItem>
+            {detail.offers.filter(o=>o.status==='COMMUNICATED').map(o=><SelectItem key={o.id} value={o.id}>Counter to {money(o.amount)} · {o.id.slice(0,8)}</SelectItem>)}
+          </SelectContent>
+        </Select>
+        {counterParent&&<><p className="text-xs text-muted-foreground">Explicit human-entered seller response evidence only. This records a reported counter, not acceptance. A new version still requires exact-term owner approval before communication.</p>
+          <Textarea rows={2} value={sellerResponseEvidence} onChange={e=>setSellerResponseEvidence(e.target.value)} placeholder="Who responded, what they proposed, and how/when the response was received." data-testid="input-counteroffer-response-evidence" /></>}
+      </div>
       <div className="space-y-1.5"><Label>Contingencies</Label><Textarea rows={2} value={v.cont} onChange={set('cont')} data-testid="input-draft-contingencies" /></div>
       <label className="flex items-center gap-3 text-sm"><Switch checked={assign} onCheckedChange={setAssign} data-testid="switch-draft-assignment" />We intend to assign this contract</label>
       <div className="space-y-1.5"><Label>Reason for these terms</Label><Textarea rows={2} value={v.reason} onChange={set('reason')} data-testid="input-draft-reason" /></div>

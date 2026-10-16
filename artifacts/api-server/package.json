@@ -4,6 +4,7 @@
   "private": true,
   "type": "module",
   "scripts": {
+    "exercise:alerts": "tsx src/services/isolated-exercise.ts operational-alert-exercise.ts",
     "exercise:handoffs": "tsx src/services/isolated-exercise.ts handoff-exercise.ts",
     "exercise:evidence-intake": "tsx src/services/isolated-exercise.ts evidence-intake-exercise.ts",
     "test:auth": "tsx --test src/services/access.test.ts",
@@ -16,7 +17,9 @@
     "exercise:research": "tsx src/services/isolated-exercise.ts research-exercise.ts",
     "exercise:research-lifecycle": "tsx src/services/isolated-exercise.ts research-lifecycle-exercise.ts",
     "exercise:property-source": "tsx src/services/isolated-exercise.ts property-source-exercise.ts",
+    "exercise:property-source-coverage": "tsx src/services/isolated-exercise.ts property-source-coverage-exercise.ts",
     "exercise:property-contact-http": "tsx src/services/isolated-exercise.ts property-contact-http-exercise.ts",
+    "exercise:acquisition-pipeline": "tsx src/services/isolated-exercise.ts acquisition-pipeline-exercise.ts",
     "test:buyer-outreach": "tsx --test src/services/buyer-outreach.test.ts",
     "test:property-discovery-ranking": "tsx --test src/services/property-discovery-ranking.test.ts",
     "exercise:seller-contact": "tsx src/services/isolated-exercise.ts seller-contact-exercise.ts",

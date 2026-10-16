@@ -2,7 +2,7 @@ import { eq, desc, and, gte } from "drizzle-orm";
 import { isDeepStrictEqual } from "node:util";
 import { db, buyersTable, contractsTable, jobsTable } from "@workspace/db";
 import { GetBuyerResponse, GetDealOperationsResponse, ListWorkerJobsResponse } from "@workspace/api-zod";
-import { buyerQualification, verificationStatus, DomainError } from "@workspace/deal-domain";
+import { buyerQualification, verificationStatus, buyerReservations, DomainError } from "@workspace/deal-domain";
 import { buyerOutreachReadiness, type BuyerContactPermission } from "./buyer-outreach";
 
 export type Tx = Parameters<Parameters<typeof db.transaction>[0]>[0];
@@ -57,6 +57,11 @@ export async function getBuyerContactResearchRecord(id: string, database: Store 
 }
 export async function allBuyerRecords(database: Store = db, now = new Date()) {
   return (await database.select().from(buyersTable).orderBy(desc(buyersTable.updatedAt))).map(row=>buyerRecord(row,now));
+}
+export async function buyerCapacityRecords(database: Store = db) {
+  const [buyerRows,contractRows]=await Promise.all([database.select({id:buyersTable.id}).from(buyersTable),database.select().from(contractsTable)]);
+  const contracts=contractRows.map(contractRecord);
+  return buyerRows.map(row=>({buyerId:row.id,...buyerReservations(contracts,row.id)}));
 }
 export async function getContractRecord(id: string, database: Store = db) {
   const [row] = await database.select().from(contractsTable).where(eq(contractsTable.leadId,id));

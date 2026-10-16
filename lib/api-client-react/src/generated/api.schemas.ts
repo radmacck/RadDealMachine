@@ -453,9 +453,68 @@ export interface PropertySource {
   limitations: string[];
 }
 
+export type PropertySourceOperationState = typeof PropertySourceOperationState[keyof typeof PropertySourceOperationState];
+
+
+export const PropertySourceOperationState = {
+  ENABLED_NOT_RUN: 'ENABLED_NOT_RUN',
+  SUCCEEDED: 'SUCCEEDED',
+  PARTIAL: 'PARTIAL',
+  FAILED: 'FAILED',
+  RATE_LIMITED: 'RATE_LIMITED',
+  STALE: 'STALE',
+  UNCONFIGURED: 'UNCONFIGURED',
+} as const;
+
+export type PropertySourceOperationTermsStatus = typeof PropertySourceOperationTermsStatus[keyof typeof PropertySourceOperationTermsStatus];
+
+
+export const PropertySourceOperationTermsStatus = {
+  REVIEW_REQUIRED: 'REVIEW_REQUIRED',
+  REVIEWED_AT_QUEUE: 'REVIEWED_AT_QUEUE',
+  OUTDATED: 'OUTDATED',
+} as const;
+
+export type PropertySourceOperationFreshness = typeof PropertySourceOperationFreshness[keyof typeof PropertySourceOperationFreshness];
+
+
+export const PropertySourceOperationFreshness = {
+  CURRENT: 'CURRENT',
+  STALE: 'STALE',
+  UNKNOWN: 'UNKNOWN',
+  NEVER_RUN: 'NEVER_RUN',
+} as const;
+
+export interface PropertySourceOperation {
+  id: string;
+  name: string;
+  enabled: boolean;
+  state: PropertySourceOperationState;
+  termsStatus: PropertySourceOperationTermsStatus;
+  termsUrl: string;
+  /** @nullable */
+  lastAttemptAt: string | null;
+  /** @nullable */
+  lastSuccessfulAt: string | null;
+  /**
+     * @minimum 0
+     * @nullable
+     */
+  resultCount: number | null;
+  resultCountBasis: string;
+  freshness: PropertySourceOperationFreshness;
+  /** @nullable */
+  error: string | null;
+  rateLimit: string;
+  /** @nullable */
+  nextEligibleAt: string | null;
+  manualNextStep: string;
+}
+
 export interface PropertySourceCoverageResponse {
   registeredSources: PropertySource[];
   notConnectedProviders: UnconnectedPropertySourceCapability[];
+  operations: PropertySourceOperation[];
 }
 
 export type PropertySignalKey = typeof PropertySignalKey[keyof typeof PropertySignalKey];
@@ -1187,16 +1246,6 @@ export const PropertyContactResearchCaseStatus = {
   BLOCKED: 'BLOCKED',
 } as const;
 
-export type PropertyContactResearchCaseSourceType = typeof PropertyContactResearchCaseSourceType[keyof typeof PropertyContactResearchCaseSourceType];
-
-
-export const PropertyContactResearchCaseSourceType = {
-  PUBLIC_RECORD: 'PUBLIC_RECORD',
-  PUBLIC_PAGE: 'PUBLIC_PAGE',
-  OWNER_SUPPLIED: 'OWNER_SUPPLIED',
-  OTHER: 'OTHER',
-} as const;
-
 export type PropertyContactResearchCaseIdentityMatch = typeof PropertyContactResearchCaseIdentityMatch[keyof typeof PropertyContactResearchCaseIdentityMatch];
 
 
@@ -1236,7 +1285,8 @@ export interface PropertyContactResearchCase {
      */
   confidence: number;
   sourceName: string;
-  sourceType: PropertyContactResearchCaseSourceType;
+  /** PUBLIC_RECORD, PUBLIC_PAGE, OWNER_SUPPLIED, SELLER_PROVIDED, MANUAL_RESEARCH, INFERRED, or OTHER */
+  sourceType: string;
   /** @nullable */
   sourceUrl?: string | null;
   observedAt: string;
@@ -1441,16 +1491,6 @@ export const PropertyContactResearchInputStatus = {
   BLOCKED: 'BLOCKED',
 } as const;
 
-export type PropertyContactResearchInputSourceType = typeof PropertyContactResearchInputSourceType[keyof typeof PropertyContactResearchInputSourceType];
-
-
-export const PropertyContactResearchInputSourceType = {
-  PUBLIC_RECORD: 'PUBLIC_RECORD',
-  PUBLIC_PAGE: 'PUBLIC_PAGE',
-  OWNER_SUPPLIED: 'OWNER_SUPPLIED',
-  OTHER: 'OTHER',
-} as const;
-
 export type PropertyContactResearchInputIdentityMatch = typeof PropertyContactResearchInputIdentityMatch[keyof typeof PropertyContactResearchInputIdentityMatch];
 
 
@@ -1487,7 +1527,8 @@ export interface PropertyContactResearchInput {
      * @maxLength 200
      */
   sourceName: string;
-  sourceType: PropertyContactResearchInputSourceType;
+  /** PUBLIC_RECORD, PUBLIC_PAGE, OWNER_SUPPLIED, SELLER_PROVIDED, MANUAL_RESEARCH, INFERRED, or OTHER */
+  sourceType: string;
   /** @nullable */
   sourceUrl?: string | null;
   observedAt: string;
@@ -3040,6 +3081,14 @@ export type Buyer = BuyerProfile & ({
   createdAt: string;
   updatedAt: string;
 });
+
+export interface BuyerCapacity {
+  buyerId: string;
+  /** @minimum 0 */
+  reservedFunds: number;
+  /** @minimum 0 */
+  reservedDeals: number;
+}
 
 export type BuyerMatchDestinationKind = typeof BuyerMatchDestinationKind[keyof typeof BuyerMatchDestinationKind];
 
@@ -5966,6 +6015,46 @@ export interface CommandAction {
   workGuidance?: DealWorkGuidance | null;
 }
 
+export type OperationalAlertStatus = typeof OperationalAlertStatus[keyof typeof OperationalAlertStatus];
+
+
+export const OperationalAlertStatus = {
+  ACTIVE: 'ACTIVE',
+  SNOOZED: 'SNOOZED',
+  DISMISSED: 'DISMISSED',
+  RESOLVED: 'RESOLVED',
+} as const;
+
+export interface OperationalAlert {
+  id: string;
+  alertKey: string;
+  sourceActionId: string;
+  sourceRecordId: string;
+  category: string;
+  priority: number;
+  title: string;
+  reason: string;
+  href: string;
+  status: OperationalAlertStatus;
+  /** @nullable */
+  snoozedUntil?: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export type OperationalAlertActionRequestDecision = typeof OperationalAlertActionRequestDecision[keyof typeof OperationalAlertActionRequestDecision];
+
+
+export const OperationalAlertActionRequestDecision = {
+  DISMISS: 'DISMISS',
+  SNOOZE: 'SNOOZE',
+} as const;
+
+export interface OperationalAlertActionRequest {
+  decision: OperationalAlertActionRequestDecision;
+  snoozedUntil?: string;
+}
+
 export interface CommandCenterOpportunity {
   lead: Lead;
   intelligence: Intelligence[];
@@ -6476,6 +6565,14 @@ export interface AcquisitionQueueEventResponse {
   nextAction: string;
 }
 
+export type OfferDraftInputSellerResponseSource = typeof OfferDraftInputSellerResponseSource[keyof typeof OfferDraftInputSellerResponseSource];
+
+
+export const OfferDraftInputSellerResponseSource = {
+  HUMAN_ENTERED: 'HUMAN_ENTERED',
+  SELLER_PORTAL: 'SELLER_PORTAL',
+} as const;
+
 export type OfferDraftInput = OfferTerms & {
   /** @minimum 1 */
   version: number;
@@ -6485,6 +6582,23 @@ export type OfferDraftInput = OfferTerms & {
      */
   reason: string;
   draftExpiresAt?: string;
+  parentOfferId?: string;
+  sellerResponseSource?: OfferDraftInputSellerResponseSource;
+  /**
+     * @minLength 8
+     * @maxLength 120
+     */
+  sellerResponseEventKey?: string;
+  /**
+     * @minLength 20
+     * @maxLength 3000
+     */
+  sellerResponseEvidence?: string;
+  /**
+     * @minLength 8
+     * @maxLength 120
+     */
+  idempotencyKey?: string;
 };
 
 export interface OfferApprovalInput {
@@ -6582,6 +6696,32 @@ export interface StageCount {
   count: number;
 }
 
+export type AcquisitionPipelineCountStage = typeof AcquisitionPipelineCountStage[keyof typeof AcquisitionPipelineCountStage];
+
+
+export const AcquisitionPipelineCountStage = {
+  DISCOVERED: 'DISCOVERED',
+  NORMALIZED: 'NORMALIZED',
+  QUALIFIED_FOR_RESEARCH: 'QUALIFIED_FOR_RESEARCH',
+  CONTACT_ROUTE_RESEARCHED: 'CONTACT_ROUTE_RESEARCHED',
+  CALL_READY: 'CALL_READY',
+  CONTACTED: 'CONTACTED',
+  SELLER_QUALIFIED: 'SELLER_QUALIFIED',
+  UNDERWRITING_READY: 'UNDERWRITING_READY',
+  OFFER_READY: 'OFFER_READY',
+  CLOSED: 'CLOSED',
+  LOST: 'LOST',
+  NURTURE: 'NURTURE',
+} as const;
+
+export interface AcquisitionPipelineCount {
+  stage: AcquisitionPipelineCountStage;
+  /** @minimum 0 */
+  count: number;
+  definition: string;
+  exitEvidence: string;
+}
+
 export interface AuditEvent {
   id: string;
   actor: string;
@@ -6600,6 +6740,9 @@ export interface Dashboard {
   negotiable: number;
   pass: number;
   stages: StageCount[];
+  acquisitionStages: AcquisitionPipelineCount[];
+  /** @minimum 0 */
+  excludedSyntheticCount: number;
   recentActivity: AuditEvent[];
 }
 

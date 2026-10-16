@@ -20,3 +20,9 @@ Explicit synthetic-fixture records must remain unqualified even if their fields 
 **Why:** Test/demo records can contain plausible criteria, identity, and funding values but are not real buyer demand.
 
 **How to apply:** Apply the synthetic-fixture marker consistently in qualification status, matching, pool views, and metrics; preserve buyer-reported criteria separately from owner-reviewed evidence.
+
+Buyer-pool coverage must count only current owner-approved buyers with fresh identity, buying-intent, criteria, and funding evidence. Deduct active contract funds and concurrent-deal reservations, and exclude synthetic fixtures from both coverage counts and the market/type grid.
+
+**Why:** Stated buy boxes and funding preferences are not live capacity; active commitments can consume available funds or deal slots, and test fixtures must not make a market look served.
+
+**How to apply:** Keep prospects and stale buyers visible as acquisition/reverification work, but never count them as eligible coverage. Use active transaction reservations when comparing a price band with buyer capacity.

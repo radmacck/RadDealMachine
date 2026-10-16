@@ -15,3 +15,4 @@
 - [Buyer address disclosure](buyer-address-disclosure.md) — bearer-only buyer links do not prove reader identity; keep street addresses redacted externally unless identity-verified access exists.
 - [Canonical deal versioning](canonical-deal-versioning.md) — the lead row is the aggregate state authority; subordinate module versions protect snapshots and transitions retain audit edges.
 - [OpenAPI document metadata size limit](openapi-document-metadata-limit.md) — rich transaction-document metadata can exceed TypeScript's generated command-center response size; keep it behind a focused boundary.
+- [Actionable alerts](operational-alerts.md) — deduplicate by canonical source action; keep snooze/dismiss durable and auditable, and never send external notifications implicitly.

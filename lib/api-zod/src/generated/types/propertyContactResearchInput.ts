@@ -7,7 +7,6 @@
  */
 import type { PropertyContactResearchInputIdentityMatch } from './propertyContactResearchInputIdentityMatch';
 import type { PropertyContactResearchInputPermissionBasis } from './propertyContactResearchInputPermissionBasis';
-import type { PropertyContactResearchInputSourceType } from './propertyContactResearchInputSourceType';
 import type { PropertyContactResearchInputStatus } from './propertyContactResearchInputStatus';
 import type { PropertyContactRouteCandidateInput } from './propertyContactRouteCandidateInput';
 
@@ -25,7 +24,8 @@ export interface PropertyContactResearchInput {
      * @maxLength 200
      */
   sourceName: string;
-  sourceType: PropertyContactResearchInputSourceType;
+  /** PUBLIC_RECORD, PUBLIC_PAGE, OWNER_SUPPLIED, SELLER_PROVIDED, MANUAL_RESEARCH, INFERRED, or OTHER */
+  sourceType: string;
   /** @nullable */
   sourceUrl?: string | null;
   observedAt: string;

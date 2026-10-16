@@ -476,6 +476,31 @@ paths:
           content:
             application/json:
               schema: { $ref: "#/components/schemas/CommandCenter" }
+  /alerts:
+    get:
+      operationId: listOperationalAlerts
+      responses:
+        "200":
+          description: Persisted actionable in-app alerts
+          content:
+            application/json:
+              schema: { type: array, items: { $ref: "#/components/schemas/OperationalAlert" } }
+  /alerts/{id}:
+    parameters:
+      - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
+    patch:
+      operationId: updateOperationalAlert
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/OperationalAlertActionRequest" }
+      responses:
+        "200":
+          description: Updated alert state
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/OperationalAlert" }
   /outcome-learning:
     get:
       operationId: getOutcomeLearning
@@ -526,6 +551,15 @@ paths:
           content:
             application/json:
               schema: { type: array, items: { $ref: "#/components/schemas/Buyer" } }
+  /buyers/capacity:
+    get:
+      operationId: getBuyerCapacity
+      responses:
+        "200":
+          description: Current active buyer commitments deducted from reviewed capacity
+          content:
+            application/json:
+              schema: { type: array, items: { $ref: "#/components/schemas/BuyerCapacity" } }
     post:
       operationId: createBuyer
       requestBody:
@@ -1567,10 +1601,30 @@ components:
         nextAction: { type: string }
     PropertySourceCoverageResponse:
       type: object
-      required: [registeredSources, notConnectedProviders]
+      required: [registeredSources, notConnectedProviders, operations]
       properties:
         registeredSources: { type: array, items: { $ref: "#/components/schemas/PropertySource" } }
         notConnectedProviders: { type: array, items: { $ref: "#/components/schemas/UnconnectedPropertySourceCapability" } }
+        operations: { type: array, items: { $ref: "#/components/schemas/PropertySourceOperation" } }
+    PropertySourceOperation:
+      type: object
+      required: [id, name, enabled, state, termsStatus, termsUrl, lastAttemptAt, lastSuccessfulAt, resultCount, resultCountBasis, freshness, error, rateLimit, nextEligibleAt, manualNextStep]
+      properties:
+        id: { type: string }
+        name: { type: string }
+        enabled: { type: boolean }
+        state: { type: string, enum: [ENABLED_NOT_RUN, SUCCEEDED, PARTIAL, FAILED, RATE_LIMITED, STALE, UNCONFIGURED] }
+        termsStatus: { type: string, enum: [REVIEW_REQUIRED, REVIEWED_AT_QUEUE, OUTDATED] }
+        termsUrl: { type: string }
+        lastAttemptAt: { type: ["string", "null"], format: date-time }
+        lastSuccessfulAt: { type: ["string", "null"], format: date-time }
+        resultCount: { type: ["integer", "null"], minimum: 0 }
+        resultCountBasis: { type: string }
+        freshness: { type: string, enum: [CURRENT, STALE, UNKNOWN, NEVER_RUN] }
+        error: { type: ["string", "null"] }
+        rateLimit: { type: string }
+        nextEligibleAt: { type: ["string", "null"], format: date-time }
+        manualNextStep: { type: string }
     PropertySource:
       type: object
       required: [id, name, coverage, termsUrl, capabilities, limitations]
@@ -1781,7 +1835,7 @@ components:
         version: { type: integer, minimum: 1 }
         confidence: { type: number, minimum: 0, maximum: 1 }
         sourceName: { type: string }
-        sourceType: { type: string, enum: [PUBLIC_RECORD, PUBLIC_PAGE, OWNER_SUPPLIED, OTHER] }
+        sourceType: { type: string, description: "PUBLIC_RECORD, PUBLIC_PAGE, OWNER_SUPPLIED, SELLER_PROVIDED, MANUAL_RESEARCH, INFERRED, or OTHER" }
         sourceUrl: { type: ["string", "null"], format: uri }
         observedAt: { type: string, format: date-time }
         identityMatch: { type: string, enum: [UNKNOWN, RECORDED_OWNER_ONLY, SELLER_SELF_IDENTIFIED, CONFLICTING, NOT_MATCHED] }
@@ -1833,7 +1887,7 @@ components:
         status: { type: string, enum: [OPEN, EVIDENCE_RECORDED, NO_DIRECT_ROUTE_FOUND, NEEDS_REVIEW, BLOCKED] }
         confidence: { type: number, minimum: 0, maximum: 1 }
         sourceName: { type: string, minLength: 2, maxLength: 200 }
-        sourceType: { type: string, enum: [PUBLIC_RECORD, PUBLIC_PAGE, OWNER_SUPPLIED, OTHER] }
+        sourceType: { type: string, description: "PUBLIC_RECORD, PUBLIC_PAGE, OWNER_SUPPLIED, SELLER_PROVIDED, MANUAL_RESEARCH, INFERRED, or OTHER" }
         sourceUrl: { type: ["string", "null"], format: uri }
         observedAt: { type: string, format: date-time }
         identityMatch: { type: string, enum: [UNKNOWN, RECORDED_OWNER_ONLY, SELLER_SELF_IDENTIFIED, CONFLICTING, NOT_MATCHED] }
@@ -2563,6 +2617,13 @@ components:
             lastOutreachReplyEvidenceUrl: { type: string }
             createdAt: { type: string }
             updatedAt: { type: string }
+    BuyerCapacity:
+      type: object
+      required: [buyerId, reservedFunds, reservedDeals]
+      properties:
+        buyerId: { type: string }
+        reservedFunds: { type: number, minimum: 0 }
+        reservedDeals: { type: integer, minimum: 0 }
     BuyerMatch:
       type: object
       required: [buyerId, leadId, buyerName, eligible, score, reasons, mismatches, status, buyerVersion, updatedAt]
@@ -3488,6 +3549,29 @@ components:
           oneOf:
             - { $ref: "#/components/schemas/DealWorkGuidance" }
             - { type: "null" }
+    OperationalAlert:
+      type: object
+      required: [id, alertKey, sourceActionId, sourceRecordId, category, priority, title, reason, href, status, createdAt, updatedAt]
+      properties:
+        id: { type: string, format: uuid }
+        alertKey: { type: string }
+        sourceActionId: { type: string }
+        sourceRecordId: { type: string }
+        category: { type: string }
+        priority: { type: integer }
+        title: { type: string }
+        reason: { type: string }
+        href: { type: string }
+        status: { type: string, enum: [ACTIVE, SNOOZED, DISMISSED, RESOLVED] }
+        snoozedUntil: { type: [string, "null"], format: date-time }
+        createdAt: { type: string, format: date-time }
+        updatedAt: { type: string, format: date-time }
+    OperationalAlertActionRequest:
+      type: object
+      required: [decision]
+      properties:
+        decision: { type: string, enum: [DISMISS, SNOOZE] }
+        snoozedUntil: { type: string, format: date-time }
     DealWorkGuidance:
       type: object
       required: [category, priority, title, href, cta, currentState, responsibleRole, dueAt, dueLabel, knownFacts, missingFacts, why, systemCanDo, humanMustDo, requiredEvidence, completionRecord]
@@ -4140,6 +4224,11 @@ components:
             version: { type: integer, minimum: 1 }
             reason: { type: string, minLength: 3, maxLength: 2000 }
             draftExpiresAt: { type: string, format: date-time }
+            parentOfferId: { type: string, format: uuid }
+            sellerResponseSource: { type: string, enum: [HUMAN_ENTERED, SELLER_PORTAL] }
+            sellerResponseEventKey: { type: string, minLength: 8, maxLength: 120 }
+            sellerResponseEvidence: { type: string, minLength: 20, maxLength: 3000 }
+            idempotencyKey: { type: string, minLength: 8, maxLength: 120 }
     OfferApprovalInput:
       type: object
       required: [version, maximumApprovedAcquisitionPrice, expiresAt, authorityEvidenceId, reason, nextAction, followUpAt]
@@ -4208,7 +4297,7 @@ components:
         reviewSnapshotHash: { type: string, minLength: 64, maxLength: 64, pattern: "^[a-f0-9]{64}$" }
     Dashboard:
       type: object
-      required: [total, callReady, needsResearch, overdue, strong, negotiable, pass, stages, recentActivity]
+      required: [total, callReady, needsResearch, overdue, strong, negotiable, pass, stages, acquisitionStages, excludedSyntheticCount, recentActivity]
       properties:
         total: { type: integer }
         callReady: { type: integer }
@@ -4218,7 +4307,17 @@ components:
         negotiable: { type: integer }
         pass: { type: integer }
         stages: { type: array, items: { $ref: "#/components/schemas/StageCount" } }
+        acquisitionStages: { type: array, items: { $ref: "#/components/schemas/AcquisitionPipelineCount" } }
+        excludedSyntheticCount: { type: integer, minimum: 0 }
         recentActivity: { type: array, items: { $ref: "#/components/schemas/AuditEvent" } }
+    AcquisitionPipelineCount:
+      type: object
+      required: [stage, count, definition, exitEvidence]
+      properties:
+        stage: { type: string, enum: [DISCOVERED, NORMALIZED, QUALIFIED_FOR_RESEARCH, CONTACT_ROUTE_RESEARCHED, CALL_READY, CONTACTED, SELLER_QUALIFIED, UNDERWRITING_READY, OFFER_READY, CLOSED, LOST, NURTURE] }
+        count: { type: integer, minimum: 0 }
+        definition: { type: string }
+        exitEvidence: { type: string }
     StageCount:
       type: object
       required: [stage, count]

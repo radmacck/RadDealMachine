@@ -7,8 +7,15 @@ import {
   refreshPhiladelphiaVacancyEvidence, searchProperties, normalizePhiladelphiaPermitRows,
   normalizePhiladelphiaDemolitionRows, PHILA_LI_PERMITS_SOURCE, PHILA_DEMOLITIONS_SOURCE,
   normalizePhiladelphiaSheriffDeedRows, PHILA_SHERIFF_DEEDS_SOURCE,
+  validateBoundedPageSize,
 } from "./index";
 const now = new Date("2026-10-04T12:00:00Z");
+test("source pagination rejects non-integer and over-limit pages before making a request", () => {
+  assert.equal(validateBoundedPageSize(40, 40), 40);
+  assert.throws(() => validateBoundedPageSize(41, 40), /between 1 and 40/);
+  assert.throws(() => validateBoundedPageSize(0, 40), /between 1 and 40/);
+  assert.throws(() => validateBoundedPageSize(1.5, 40), /between 1 and 40/);
+});
 const raw = {
   parcel_number:"123456789",location:"123 SYNTHETIC TEST ST",category_code_description:"SINGLE FAMILY",
   building_code_description:"ROW 2 STY MASONRY",total_livable_area:1000,number_of_bedrooms:3,number_of_bathrooms:2,

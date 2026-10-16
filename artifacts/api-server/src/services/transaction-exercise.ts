@@ -4,7 +4,7 @@ import { once } from "node:events";
 import { AddressInfo } from "node:net";
 import { createHash, randomUUID } from "node:crypto";
 import { PDFDocument } from "pdf-lib";
-import { db,pool,analysesTable,auditTable,contractsTable,jobsTable,matchesTable,buyersTable,leadsTable,transitionsTable,distributionPacketsTable,transactionDocumentBlobsTable,transactionReadinessExceptionsTable,dealDecisionWorkItemsTable,transactionDocumentTemplatesTable } from "@workspace/db";
+import { db,pool,analysesTable,auditTable,contractsTable,jobsTable,matchesTable,buyersTable,leadsTable,transitionsTable,distributionPacketsTable,transactionDocumentBlobsTable,transactionReadinessExceptionsTable,dealDecisionWorkItemsTable,transactionDocumentTemplatesTable,evidencePacketExportsTable } from "@workspace/db";
 import { and, eq } from "drizzle-orm";
 import { logger } from "../lib/logger";
 import * as seller from "./deal-store";
@@ -17,6 +17,7 @@ import { dealOperations,refreshMatches } from "./matching-store";
 import { submitWorkerJob,runWorkerOnce } from "./workers";
 import { commandCenter } from "./command-center";
 import { CLOSING_MILESTONES, closingBlockers } from "@workspace/deal-domain";
+import { buildTransactionReadinessChecklist } from "@workspace/deal-domain";
 import { recordTransactionException } from "./transaction-exceptions";
 import { reviewHandoffs, listHandoffs, recordHandoffEvent } from "./handoffs";
 import { getBuyerRecord } from "./operations-records";
@@ -28,6 +29,7 @@ import {
 } from "./distribution-store";
 import { getTransactionDocumentReadiness } from "./transaction-document-registry";
 import { propagateStaleTransactionDocuments } from "./transaction-store";
+import { exportDealEvidencePacket } from "./evidence-packet";
 import { createTransactionTemplateReviewRouter } from "../routes/operations";
 import { publicBuyerPortalRouter } from "../routes/distribution";
 import { evaluateAllTransactionReadiness, getTransactionReadinessReport } from "./transaction-readiness";
@@ -118,6 +120,10 @@ try {
   await assert.rejects(transactions.createContract(id,{version:detail.lead.version,offerId,closingAt:future(31)},operator,now),/approved closing/);
   let op = await transactions.createContract(id,{version:detail.lead.version,offerId,closingAt:future(20)},operator,now);
   assert.equal(op.contract?.status,"DRAFT"); assert.equal(op.contract?.purchasePrice,110000);
+  const partyChecklist=buildTransactionReadinessChecklist(detail,op.contract!,now);
+  assert.equal(partyChecklist.find(item=>item.key==="party_identity")?.status,"NEEDS_EVIDENCE");
+  assert.equal(partyChecklist.find(item=>item.key==="signatures")?.status,"NEEDS_EVIDENCE");
+  assert.equal(partyChecklist.find(item=>item.key==="disclosures")?.status,"REVIEW_REQUIRED");
   assert.match(op.nextAction,/Prepare the fillable terms-review PDF/);
   await assert.rejects(
     transactions.preparePurchaseReviewDocument(id,{version:op.contract!.version},{id:"synthetic-analyst",role:"ANALYST"},now),
@@ -267,7 +273,7 @@ try {
   assert.ok(currentLeadRow);
   await db.update(leadsTable).set({payload:{...currentLeadRow!.payload,sellerName:"Changed synthetic party"}}).where(eq(leadsTable.id,id));
   await assert.rejects(transactions.downloadPurchaseReviewDocument(id,reviewDocument.id,operator,now),
-    /Seller identity\/contact fields changed/,"a changed seller party must stale the prepared document");
+    /source offer is stale|Seller identity\/contact fields changed/,"a changed seller party must invalidate the exact offer/document snapshot");
   await db.update(leadsTable).set({payload:currentLeadRow!.payload}).where(eq(leadsTable.id,id));
   const versionAfterPdf = op.contract!.version;
   op = await transactions.preparePurchaseReviewDocument(id,{version:versionAfterPdf},operator,now);
@@ -1249,6 +1255,26 @@ try {
        /document is stale/);
   }
   await verifyPreExecutionRevisionInvalidation();
+   const [packetLead]=await db.select().from(leadsTable).where(eq(leadsTable.id,id));
+   await db.update(leadsTable).set({payload:{...packetLead!.payload,synthetic:true}}).where(eq(leadsTable.id,id));
+   const fullPacket=await exportDealEvidencePacket(id,actor,"OWNER_AUDIT",true);
+   assert.equal((fullPacket as any).deal.recordClass,"SYNTHETIC");
+   assert.equal((fullPacket as any).deal.version,(await seller.leadDetail(id)).lead.version);
+   assert.ok((fullPacket as any).sections.underwriting.snapshots.length>0);
+   assert.ok((fullPacket as any).sections.sellerNotes.calls.length>0);
+   assert.ok((fullPacket as any).sections.offers.length>0);
+   assert.ok((fullPacket as any).sections.contracts.length>0);
+   const firstPacketRow=(await db.select().from(evidencePacketExportsTable).where(eq(evidencePacketExportsTable.id,(fullPacket as any).export.id)))[0]!;
+   const frozenSnapshot=JSON.stringify(firstPacketRow.snapshot);
+   const redactedPacket=await exportDealEvidencePacket(id,{id:operator.id,role:"OPERATOR"},"TITLE_HANDOFF",true);
+   const redactedJson=JSON.stringify(redactedPacket);
+   assert.ok(!redactedJson.includes("SYNTHETIC COMPLETE DEAL"));
+   assert.ok(!redactedJson.includes("000-000-0000"));
+   await assert.rejects(exportDealEvidencePacket(id,{id:"viewer",role:"VIEWER"},"INTERNAL_REVIEW"),/Not authorized/);
+   const firstPacketAgain=(await db.select().from(evidencePacketExportsTable).where(eq(evidencePacketExportsTable.id,(fullPacket as any).export.id)))[0]!;
+   assert.equal(JSON.stringify(firstPacketAgain.snapshot),frozenSnapshot,"later exports cannot mutate prior packet versions");
+   assert.equal((redactedPacket as any).export.version,(fullPacket as any).export.version+1);
+   assert.match((fullPacket as any).export.contentHash,/^[a-f0-9]{64}$/);
   logger.info("Cancellation/restart PASSED: owner-only, fresh underwriting/approval/communication, distinct attempt, original cancellation/signatures/terms/buyer history retained; CLOSED cannot reopen.");
     logger.info({checks:"persisted document registry and missing-template/private-storage/signing blockers; review PDF bytes separated into protected blob table; party/economic changes stale artifacts; persisted DRAFT → PREPARED → REJECTED/VOID/EXPIRED/REPLACED paths; separately evidenced execution never marks a review worksheet SIGNED; immutable economics hash shared with redacted packet; deadline/evidence exception persistence and terminal work cleanup",readinessSummary},"Full lifecycle persistence exercise PASSED (isolated synthetic schema)");
 } finally { await pool.end(); }

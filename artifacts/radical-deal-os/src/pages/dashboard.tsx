@@ -6,7 +6,8 @@ import {
   WalletCards, Zap,
 } from 'lucide-react';
 import {
-  getGetCommandCenterQueryKey, getGetTransactionReadinessQueryKey, getListPropertyDiscoveriesQueryKey, useGetCommandCenter,
+  getGetCommandCenterQueryKey, getGetDashboardQueryKey, getGetTransactionReadinessQueryKey, getListPropertyDiscoveriesQueryKey, useGetCommandCenter,
+  getListOperationalAlertsQueryKey, useListOperationalAlerts, useUpdateOperationalAlert, useGetDashboard,
   useGetTransactionReadiness, useListPropertyDiscoveries, type CommandAction, type ListPropertyDiscoveriesParams, type PropertyDiscoveryStatus,
 } from '@workspace/api-client-react';
 import { rankPropertyAcquisitionQueue, type AcquisitionQueueViability } from '@workspace/deal-domain';
@@ -28,6 +29,7 @@ import { AcquisitionQueueCard } from '@/components/acquisition-queue-card';
 import { DealPackageReadiness } from '@/components/deal-package-readiness';
 import { OutcomeLearningPanel } from '@/components/outcome-learning-panel';
 import { ago, errInfo, fmtDate, isOverdue, money } from '@/lib/format';
+import { queryClient } from '@/lib/queryClient';
 
 const LABEL: Record<CommandAction['category'], string> = {
   RESEARCH: 'Research', CALL: 'Call', FOLLOW_UP: 'Follow up', OFFER_APPROVAL: 'Owner approval', NEGOTIATION: 'Negotiate',
@@ -62,7 +64,10 @@ const AUTOMATION_STATE_TONE: Record<string, string> = {
 
 export default function Dashboard() {
   const q = useGetCommandCenter({ query: { queryKey: getGetCommandCenterQueryKey(), refetchInterval: 15000 } });
+  const acquisitionPipeline = useGetDashboard({ query: { queryKey: getGetDashboardQueryKey(), refetchInterval: 30000 } });
   const transactionReadiness = useGetTransactionReadiness({ query: { queryKey: getGetTransactionReadinessQueryKey(), refetchInterval: 30000 } });
+  const alertQuery=useListOperationalAlerts({query:{queryKey:getListOperationalAlertsQueryKey(),refetchInterval:15000}});
+  const alertMutation=useUpdateOperationalAlert({mutation:{onSuccess:()=>queryClient.invalidateQueries({queryKey:getListOperationalAlertsQueryKey()})}});
   const [discoveryCursor, setDiscoveryCursor] = useState<string | undefined>();
   const [discoveryPageHistory, setDiscoveryPageHistory] = useState<Array<string | undefined>>([]);
   const [showAllActions, setShowAllActions] = useState(false);
@@ -405,6 +410,19 @@ export default function Dashboard() {
               </div>}
           </section>
 
+          <section className="fd-actions-section" aria-label="Operational alerts" data-testid="panel-operational-alerts">
+            <div className="fd-section-head"><div className="fd-section-title"><AlertTriangle size={16}/>Operational alerts<small>{alertQuery.data?.length ?? 0} active</small></div></div>
+            {alertQuery.isError&&<div className="fd-empty" role="alert">Alerts could not be loaded. Retry from the page controls; no external notifications were sent.</div>}
+            {!alertQuery.isError&&(!alertQuery.data?.length?<div className="fd-empty" role="status">No active in-app alerts.</div>:
+              <div className="grid gap-2">{alertQuery.data.map(alert=><article key={alert.id} className="fd-start-card">
+                <div className="fd-start-card-head"><div><span className="fd-action-tag tone-warn">{alert.category}</span><h3>{alert.title}</h3><p>{alert.reason}</p></div><b>Priority {alert.priority}</b></div>
+                <div className="flex gap-3"><Link className="fd-text-link" href={alert.href}>Open record <ArrowRight size={12}/></Link>
+                  <button className="fd-text-link" disabled={alertMutation.isPending} onClick={()=>alertMutation.mutate({id:alert.id,data:{decision:"SNOOZE",snoozedUntil:new Date(Date.now()+24*60*60_000).toISOString()}})}>Snooze 24h</button>
+                  <button className="fd-text-link" disabled={alertMutation.isPending} onClick={()=>alertMutation.mutate({id:alert.id,data:{decision:"DISMISS"}})}>Dismiss</button>
+                </div>
+              </article>)}</div>)}
+            <small>In-app only. No email, SMS, or other external notification is sent.</small>
+          </section>
           <section className="fd-actions-section" data-testid="panel-actions">
             <div className="fd-section-head">
               <div className="fd-section-title"><Compass size={16} />Your next action <small>{actions.length ? `1 of ${actions.length}` : 'no open human action'}</small></div>
@@ -705,6 +723,15 @@ export default function Dashboard() {
                   Raw {discoveryData.counts.DISCOVERED_PROPERTY} · Candidates {discoveryData.counts.RELEVANT_CANDIDATE} · Qualified {discoveryData.counts.QUALIFIED_LEAD} · CALL READY {discoveryData.counts.CALL_READY} · Passed {discoveryData.counts.DISQUALIFIED}.
                   Raw discoveries are never active leads by default.
                 </p>
+                {acquisitionPipeline.data && <div className="mb-3 rounded border p-3" data-testid="acquisition-pipeline-counts">
+                  <b className="text-xs">Acquisition pipeline · persisted records</b>
+                  <p className="mt-1 flex flex-wrap gap-x-3 gap-y-1 text-xs text-muted-foreground">
+                    {acquisitionPipeline.data.acquisitionStages.map(item => <span key={item.stage} title={`Entry: ${item.definition} Exit: ${item.exitEvidence}`}>
+                      {item.stage.replaceAll("_", " ")}: {item.count}
+                    </span>)}
+                  </p>
+                  <p className="mt-1 text-xs text-muted-foreground">One count per lead or unlinked property discovery. Contacted requires a persisted human call outcome; unverified progress is not counted. {acquisitionPipeline.data.excludedSyntheticCount} synthetic/fixture records excluded.</p>
+                </div>}
                 <div className="mb-3 rounded border border-dashed p-3 text-xs" data-testid="seller-contact-coverage">
                   <b>Seller contact coverage · checked {new Date(discoveryData.contactCoverage.checkedAt).toLocaleString()}</b>
                   <p className="mt-1">

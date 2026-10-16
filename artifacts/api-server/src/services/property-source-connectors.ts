@@ -93,6 +93,7 @@ export type PropertySourceConnector = {
 };
 
 export const propertySourceConnectors = new ConnectorRegistry<PropertySourceConnector>();
+export const PROPERTY_SOURCE_POLICY_VERSION = "phila-property-sources-v4";
 
 export function registerPropertySourceConnector(connector: PropertySourceConnector) {
   if (connector.maxRefreshBatchSize !== undefined &&

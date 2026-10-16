@@ -1,5 +1,5 @@
 import { and, desc, eq, sql } from "drizzle-orm";
-import { db, intelligenceTable, leadsTable } from "@workspace/db";
+import { db, intelligenceTable, jobsTable, leadsTable } from "@workspace/db";
 import { assertOperationsRole, DomainError, validateProvenance, type OfferActor, type IntelligenceInput, type Lead } from "@workspace/deal-domain";
 import { GetSourceResearchResponse, RefreshSourceResearchResponse, ImportPublicPropertyResponse, AddSourceCompsBody } from "@workspace/api-zod";
 import {
@@ -7,7 +7,7 @@ import {
   type PublicProperty,
 } from "@workspace/property-sources";
 import { audit, getAssumptions, leadDetail, lockedLead, saveUnderwriting } from "./deal-store";
-import { getPropertySourceConnector, listPropertySourceDescriptors } from "./property-source-connectors";
+import { allPropertySourceConnectors, getPropertySourceConnector, listPropertySourceDescriptors, PROPERTY_SOURCE_POLICY_VERSION } from "./property-source-connectors";
 import { NOT_CONNECTED_PROPERTY_SOURCE_CAPABILITIES } from "./property-source-availability";
 
 type Tx = Parameters<Parameters<typeof db.transaction>[0]>[0];
@@ -31,10 +31,76 @@ async function sourceRequest<T>(action: () => Promise<T>) {
   }
 }
 export function listPropertySources() { return listPropertySourceDescriptors(); }
-export function getPropertySourceCoverage() {
+export async function getPropertySourceCoverage(now = new Date()) {
+  const jobs = await db.select().from(jobsTable)
+    .where(eq(jobsTable.kind, "DISCOVER_PROPERTIES"))
+    .orderBy(desc(jobsTable.createdAt)).limit(100);
+  const latestPolicy = jobs.find(job => job.payload.termsReviewed === true);
+  const currentPolicyJobs = jobs.filter(job => job.payload.termsReviewed === true &&
+    job.payload.sourcePolicyVersion === PROPERTY_SOURCE_POLICY_VERSION);
+  const nextSixHourBoundary = new Date((Math.floor(now.getTime() / 21_600_000) + 1) * 21_600_000);
+  const operations = listPropertySourceDescriptors().map(source => {
+    const connector = allPropertySourceConnectors().find(item => item.sources.some(candidate => candidate.id === source.id));
+    const enabled = !!connector && [connector.searchProperties, connector.discoverProperties, connector.refreshEvidence,
+      connector.propertyById, connector.propertiesByIds, connector.nearbySales].some(Boolean);
+    const connectorId = connector?.id;
+    const attempt = connectorId ? currentPolicyJobs.find(job =>
+      job.message.includes(`${connectorId}:`) || job.message.includes(`${connectorId}/`)) : undefined;
+    const success = connectorId ? currentPolicyJobs.find(job =>
+      job.message.includes(`${connectorId}:`) && !job.message.includes(`${connectorId}/`) &&
+      ["SUCCEEDED", "PARTIAL"].includes(job.state)) : undefined;
+    const errorMatch = attempt?.message.match(new RegExp(`${connectorId}/(?:DISCOVER|REFRESH):\\s*([^.|]+)`));
+    const error = errorMatch?.[1]?.trim() || (attempt?.state === "FAILED" ? attempt.message : null);
+    const rateLimited = !!error && /429|rate.?limit|too many requests/i.test(error);
+    const summaryMatch = connectorId ? attempt?.message.match(new RegExp(`${connectorId}: (\\d+) property record\\(s\\), (\\d+) unmatched observation\\(s\\)`)) : null;
+    const resultCount = summaryMatch ? Number(summaryMatch[1]) + Number(summaryMatch[2]) : null;
+    const age = success ? now.getTime() - success.updatedAt.getTime() : null;
+    const recurring = latestPolicy?.payload.sourcePolicyVersion === PROPERTY_SOURCE_POLICY_VERSION &&
+      latestPolicy.payload.recurringPropertyDiscovery === true;
+    const freshness = age == null ? "NEVER_RUN" : age <= 6 * 60 * 60_000 ? "CURRENT" : "STALE";
+    let state: string = !enabled ? "UNCONFIGURED" : !attempt ? "ENABLED_NOT_RUN" :
+      rateLimited ? "RATE_LIMITED" : error ? "FAILED" :
+      attempt.state === "PARTIAL" ? "PARTIAL" : success ? (freshness === "STALE" ? "STALE" : "SUCCEEDED") :
+      "ENABLED_NOT_RUN";
+    if (latestPolicy && latestPolicy.payload.sourcePolicyVersion !== PROPERTY_SOURCE_POLICY_VERSION && !currentPolicyJobs.length) {
+      state = enabled ? "ENABLED_NOT_RUN" : "UNCONFIGURED";
+    }
+    const manualNextStep = !enabled
+      ? "No permitted adapter is registered. Review intended-use terms and access permissions, then register a compliant adapter; do not scrape or infer coverage."
+      : latestPolicy && latestPolicy.payload.sourcePolicyVersion !== PROPERTY_SOURCE_POLICY_VERSION
+        ? "Review the current source terms and queue a new property discovery job; prior consent does not extend to changed source coverage."
+        : rateLimited
+          ? "Wait for the provider's permitted retry window, review its current rate limits, then queue a new terms-reviewed job."
+          : error
+            ? "Open Worker activity, inspect the source-specific error, confirm terms and rate limits, then retry only the permitted source."
+            : !success
+              ? "Review the linked terms and queue a property discovery job. Until execution evidence appears here, no source refresh is claimed."
+              : "Review the persisted raw observations and their provenance; qualifying a discovery remains a separate human-reviewed step.";
+    return {
+      id: source.id, name: source.name, enabled,
+      state: state as "ENABLED_NOT_RUN" | "SUCCEEDED" | "PARTIAL" | "FAILED" | "RATE_LIMITED" | "STALE" | "UNCONFIGURED",
+      termsStatus: !latestPolicy ? "REVIEW_REQUIRED" :
+        latestPolicy.payload.sourcePolicyVersion === PROPERTY_SOURCE_POLICY_VERSION ? "REVIEWED_AT_QUEUE" : "OUTDATED",
+      termsUrl: source.termsUrl,
+      lastAttemptAt: attempt?.updatedAt.toISOString() ?? null,
+      lastSuccessfulAt: success?.updatedAt.toISOString() ?? null,
+      resultCount,
+      resultCountBasis: resultCount == null
+        ? "No source-specific result count is available; absence is not a zero-result check."
+        : "Connector batch count (matched property records plus unmatched observations); not qualified leads.",
+      freshness,
+      error: error ? error.slice(0, 300) : null,
+      rateLimit: connector?.maxRefreshBatchSize
+        ? `Adapter batch cap: ${connector.maxRefreshBatchSize}. Provider request quota is not encoded; follow linked source terms.`
+        : "Provider request quota is not encoded; follow linked source terms and adapter pagination limits.",
+      nextEligibleAt: recurring ? nextSixHourBoundary.toISOString() : null,
+      manualNextStep,
+    };
+  });
   return {
     registeredSources: listPropertySourceDescriptors(),
     notConnectedProviders: NOT_CONNECTED_PROPERTY_SOURCE_CAPABILITIES,
+    operations,
   };
 }
 export async function searchPublicProperties(zip?: string, lane = "properties", now = new Date()) {

@@ -4,17 +4,17 @@ import { eq } from "drizzle-orm";
 import { db,pool,buyersTable,auditTable } from "@workspace/db";
 import { discoverBuyer, qualificationTask, reviewBuyerPool } from "./buyer-pool";
 import { submitWorkerJob, runWorkerOnce } from "./workers";
-import { allBuyerRecords } from "./operations-records";
+import { allBuyerRecords, buyerCapacityRecords } from "./operations-records";
 import { getBuyerRecord } from "./operations-records";
 import { createBuyerQualificationPortalInvite, getBuyerQualificationPortal, respondToBuyerQualificationPortal } from "./buyer-qualification-portal";
 import { updateBuyer } from "./buyer-store";
 import app from "../app";
-import { matchBuyer, type DealContract, type LeadDetail } from "@workspace/deal-domain";
+import { buyerPoolCoverage, matchBuyer, type DealContract, type LeadDetail } from "@workspace/deal-domain";
 import { logger } from "../lib/logger";
 const actor = {id:`synthetic-pool:${randomUUID()}`,role:"OWNER"};
 const now = new Date();
 try {
-  const input = {name:"SYNTHETIC UNKNOWN PROSPECT",source:"Synthetic public-post observation, not actual buying intent",
+  const input = {name:"SYNTHETIC UNKNOWN PROSPECT",source:"Synthetic fixture: public-post observation, not actual buying intent",
     sourceUrl:"https://example.com/synthetic-observation",capturedAt:now.toISOString(),confidence:0.55};
   const concurrent = await Promise.all([discoverBuyer(input,actor,now),discoverBuyer(input,actor,now)]);
   assert.equal(concurrent[0].id,concurrent[1].id,"Atomic source identity must deduplicate simultaneous discovery");
@@ -103,6 +103,10 @@ try {
   assert.equal(selfReported.approvalStatus,"DISCOVERED","A profile self-report does not become an owner-reviewed qualification.");
   assert.equal(selfReported.currentBuyingStatus,"UNKNOWN","A buyer's self-claim of current buying cannot qualify the buyer.");
   assert.equal(selfReported.validUntil,null,"Self-reported criteria invalidate previous approval until the owner reviews evidence.");
+  const coverage = buyerPoolCoverage(await allBuyerRecords(db,now),now);
+  assert.equal(coverage.length,0,"A marked synthetic fixture must not create market/type/price coverage dimensions.");
+  const capacityRow=(await buyerCapacityRecords(db)).find(item=>item.buyerId===b.id);
+  assert.deepEqual(capacityRow,{buyerId:b.id,funds:0,count:0},"Persisted capacity uses active contract commitments only.");
   const syntheticContract: DealContract = {
     id:"synthetic-portal-contract",leadId:b.id,offerId:"synthetic-authorized-offer",version:1,status:"UNDER_CONTRACT",
     purchasePrice:100000,assignmentTarget:15000,earnestMoney:1000,assignmentAllowed:true,

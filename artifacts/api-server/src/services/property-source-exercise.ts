@@ -52,7 +52,7 @@ try {
   assert.equal(new Set(listedSources.map(source => source.id)).size,
     listedSources.length, "The public source catalog must deduplicate source descriptors and conform to the API contract.");
   assert.ok(listedSources.length >= 8, "The public catalog must enumerate OPA, L&I, vacancy, transfer, sheriff-deed, permit, and demolition sources.");
-  const sourceCoverage = GetPropertySourceCoverageResponse.parse(getPropertySourceCoverage());
+  const sourceCoverage = GetPropertySourceCoverageResponse.parse(await getPropertySourceCoverage());
   assert.deepEqual(sourceCoverage.registeredSources.map(source => source.id).sort(), listedSources.map(source => source.id).sort());
   assert.ok(sourceCoverage.notConnectedProviders.some(provider =>
     provider.id === "zillow-listings-fsbo" && provider.status === "NOT_CONNECTED" && /has not queried/i.test(provider.reason)));
@@ -936,7 +936,7 @@ try {
     version: detail.lead.version, to: "CALL_READY",
     reason: "SYNTHETIC fail-closed check for a postal-only owner record.",
     nextAction: "Find a permitted direct seller contact route.",
-  }, actor.id, now), /Seller phone is required/);
+  }, actor.id, now), /Recorded ownership does not establish that the owner is the seller or has signing authority/);
   assert.equal((await leadDetail(promoted.leadId)).lead.stage, "ENRICHING",
     "A failed CALL READY transition must leave the persisted acquisition stage unchanged.");
   assert.equal(detail.lead.propertyQualification?.score, promoted.discovery.score);

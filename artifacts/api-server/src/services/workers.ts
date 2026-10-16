@@ -10,6 +10,7 @@ import { listLeads, leadDetail } from "./deal-store";
 import { logger } from "../lib/logger";
 import { discoverPublicBuyers, reviewBuyerPool } from "./buyer-pool";
 import { discoverPublicProperties } from "./property-discovery-worker";
+import { PROPERTY_SOURCE_POLICY_VERSION } from "./property-source-connectors";
 import { refreshPropertyBuyerDemandAlignment } from "./property-discovery-store";
 import { reviewHandoffs } from "./handoffs";
 import { runSellerContactEnrichmentOnce } from "./seller-contact-enrichment";
@@ -19,7 +20,6 @@ import { evaluateAllTransactionReadiness } from "./transaction-readiness";
 import { completedWorkerJobState } from "./worker-job-state";
 import { workerFailureDisposition, workerLeaseExpired, workerRecoveryMessage } from "./worker-recovery";
 
-const PROPERTY_SOURCE_POLICY_VERSION = "phila-property-sources-v4";
 const BUYER_SOURCE_POLICY_VERSION = "phila-buyer-sources-v2";
 
 export async function listWorkerJobs() {

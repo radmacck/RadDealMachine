@@ -118,6 +118,12 @@ try {
   });
   assert.equal(operatorCannotApprove.status, 403,
     "The real route handler and service reject operator permission approval.");
+  const viewerRead = await fetch(
+    `${baseUrl}/property-discoveries?marketKey=PHILADELPHIA_PA&limit=50`,
+    { headers: { "x-test-role": "VIEWER" } },
+  );
+  assert.equal(viewerRead.status, 403,
+    "A viewer cannot read discovery records containing private contact-research evidence.");
   const reloadResponse = await fetch(
     `${baseUrl}/property-discoveries?marketKey=PHILADELPHIA_PA&limit=50`,
     { headers: { "x-test-role": "OWNER" } },

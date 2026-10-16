@@ -5,6 +5,7 @@
  * Radical Deal OS seller intake, underwriting, conversations and approved offers
  * OpenAPI spec version: 1.0.0
  */
+import type { OfferDraftInputSellerResponseSource } from './offerDraftInputSellerResponseSource';
 import type { OfferTerms } from './offerTerms';
 
 export type OfferDraftInput = OfferTerms & {
@@ -16,4 +17,21 @@ export type OfferDraftInput = OfferTerms & {
      */
   reason: string;
   draftExpiresAt?: string;
+  parentOfferId?: string;
+  sellerResponseSource?: OfferDraftInputSellerResponseSource;
+  /**
+     * @minLength 8
+     * @maxLength 120
+     */
+  sellerResponseEventKey?: string;
+  /**
+     * @minLength 20
+     * @maxLength 3000
+     */
+  sellerResponseEvidence?: string;
+  /**
+     * @minLength 8
+     * @maxLength 120
+     */
+  idempotencyKey?: string;
 };

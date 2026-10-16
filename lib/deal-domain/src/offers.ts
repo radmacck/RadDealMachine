@@ -28,7 +28,7 @@ const canonicalJson = (value: unknown): string => {
   }
   return JSON.stringify(value);
 };
-export type OfferReviewTerms = Pick<OfferDraftInput,"amount"|"earnestMoney"|"closingDays"|"contingencies"|"assignmentIntent"|"draftExpiresAt"|"reason">;
+export type OfferReviewTerms = Pick<OfferDraftInput,"amount"|"earnestMoney"|"closingDays"|"contingencies"|"assignmentIntent"|"draftExpiresAt"|"reason"|"parentOfferId"|"sellerResponseSource"|"sellerResponseEventKey"|"sellerResponseEvidence">;
 export function offerReviewSnapshotJson(terms: OfferReviewTerms, ctx: OfferContext): string {
   const a = ctx.analysis!;
   const assumptions = a.assumptions;
@@ -37,10 +37,13 @@ export function offerReviewSnapshotJson(terms: OfferReviewTerms, ctx: OfferConte
     .sort((x,y) => x.id.localeCompare(y.id));
   return canonicalJson({
     version:1, analysisSnapshotId:ctx.analysisSnapshotId, calculatedAt:a.calculatedAt,
-    subject:{address:ctx.lead.address,city:ctx.lead.city,state:ctx.lead.state,propertyType:ctx.lead.propertyType,sqft:ctx.lead.sqft,askingPrice:ctx.lead.askingPrice},
+     subject:{sellerName:ctx.lead.sellerName,address:ctx.lead.address,city:ctx.lead.city,state:ctx.lead.state,propertyType:ctx.lead.propertyType,sqft:ctx.lead.sqft,askingPrice:ctx.lead.askingPrice},
     purchasePrice:terms.amount,reason:terms.reason,terms:{earnestMoney:terms.earnestMoney,closingDays:terms.closingDays,contingencies:terms.contingencies},
     assignment:{intended:terms.assignmentIntent,strategy:terms.assignmentIntent?"Potential contractual assignment only after local-law and contract review":"No assignment intended",legalStatus:"NOT_ASSESSED"},
     draftExpiresAt:terms.draftExpiresAt,
+     negotiationLineage:terms.parentOfferId?{parentOfferId:terms.parentOfferId,responseSource:terms.sellerResponseSource,
+       ...(terms.sellerResponseEventKey?{responseEventKey:terms.sellerResponseEventKey}:{}),
+       responseEvidence:terms.sellerResponseEvidence}:null,
     underwriting:{engineVersion:a.engineVersion,classification:a.classification,arv:a.arv,repairs:a.repairs,mao:a.mao,openingLow:a.openingLow,openingHigh:a.openingHigh,formula:a.formula,compDecisions:a.compDecisions},
     costs:{sellingCostLow:a.arv.low*assumptions.sellingCostPct,sellingCostExpected:a.arv.expected*assumptions.sellingCostPct,
       repairsExpected:a.repairs.expected,repairContingency:a.repairs.high*assumptions.contingencyPct,
@@ -113,6 +116,14 @@ export function validateOfferDraft(input: OfferDraftInput, ctx: OfferContext): v
   if (input.earnestMoney > input.amount) throw new DomainError("Earnest money cannot exceed the proposed purchase amount.");
   if (input.amount > ctx.analysis!.mao) throw new DomainError("Proposed purchase price exceeds the current deterministic MAO.");
   if (input.draftExpiresAt) future(input.draftExpiresAt,ctx.now,"Draft expiry");
+  if (input.parentOfferId) {
+    if (!input.idempotencyKey||!input.sellerResponseSource||!input.sellerResponseEvidence?.trim())
+      throw new DomainError("Counteroffer versions require an idempotency key and explicit human/provider-backed seller-response evidence.");
+    if (input.sellerResponseSource==="SELLER_PORTAL"&&!input.sellerResponseEventKey)
+      throw new DomainError("Portal-backed counteroffers must reference the recorded seller response event.");
+    if (input.sellerResponseSource==="HUMAN_ENTERED"&&input.sellerResponseEventKey)
+      throw new DomainError("Human-entered responses cannot claim a provider portal event.");
+  }
 }
 export function validateOfferApproval(offer: StoredOffer, input: OfferApprovalInput, ctx: OfferContext): void {
   const parsed = AuthorizeOfferBody.safeParse(input);

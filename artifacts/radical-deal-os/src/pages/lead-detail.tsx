@@ -42,6 +42,7 @@ export default function LeadDetailPage() {
   const [tab, setTab] = useState(work === 'source' ? 'source' : work === 'record' ? 'record' : work === 'uw' ? 'uw' : work === 'stage' ? 'stage' : work === 'offers' ? 'offers' : work === 'call' ? 'calls' : work === 'transaction' ? 'tx' : work === 'contact' ? 'intel' : 'intel');
   const [leadEpoch, setLeadEpoch] = useState(0);
   const [uwEpoch, setUwEpoch] = useState(0);
+  const [evidencePurpose,setEvidencePurpose]=useState<"INTERNAL_REVIEW"|"TITLE_HANDOFF"|"LEGAL_REVIEW"|"BUYER_HANDOFF">("INTERNAL_REVIEW");
 
   const q = useGetLead(id, { query: { queryKey: getGetLeadQueryKey(id), enabled: !!id, staleTime: 5_000, refetchInterval: 15_000 } });
   const updateLead = useUpdateLead();
@@ -85,6 +86,17 @@ export default function LeadDetailPage() {
         </div>
         <div className="text-right text-sm">
           <StageBadge stage={lead.stage} />
+          <div className="mt-2 flex flex-wrap items-center gap-2">
+            <label className="sr-only" htmlFor="evidence-purpose">Recipient purpose</label>
+            <select id="evidence-purpose" className="border bg-background px-2 py-2 text-xs" value={evidencePurpose}
+              onChange={event=>setEvidencePurpose(event.target.value as typeof evidencePurpose)}>
+              <option value="INTERNAL_REVIEW">Internal review</option><option value="TITLE_HANDOFF">Title handoff</option>
+              <option value="LEGAL_REVIEW">Legal review</option><option value="BUYER_HANDOFF">Buyer handoff</option>
+            </select>
+            <a className="inline-flex border px-3 py-2 text-xs font-semibold" href={`/api/leads/${encodeURIComponent(id)}/evidence-packet?purpose=${evidencePurpose}`}>
+              Download redacted evidence packet
+            </a>
+          </div>
           <p className="mt-1 font-mono">Asking {money(lead.askingPrice)}</p>
           <p className={`text-xs ${isOverdue(lead.followUpAt) ? 'font-semibold text-destructive' : 'text-muted-foreground'}`}>Follow up: {lead.followUpAt ? `${fmtDate(lead.followUpAt)} (${ago(lead.followUpAt)})` : 'none set'}</p>
         </div>

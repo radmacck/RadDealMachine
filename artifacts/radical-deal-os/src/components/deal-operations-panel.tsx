@@ -20,6 +20,7 @@ import { useToast } from '@/hooks/use-toast';
 import { ago, fmtDate, fromLocalInput, isOverdue, money, num, toLocalInput } from '@/lib/format';
 import { DistributionPanel } from '@/components/distribution-panel';
 import { buildDealTimeline, TIMELINE_FILTERS, type DealTimelineEvent } from '@/lib/deal-timeline';
+import { buildTransactionReadinessChecklist } from '@workspace/deal-domain';
 
 const MILESTONES: { k: ClosingMilestoneInputKind; label: string }[] = [
   { k: 'TITLE_CLEARED', label: 'Title cleared' }, { k: 'INSPECTION_COMPLETED', label: 'Inspection completed' },
@@ -67,7 +68,7 @@ function CreateContract({ detail, onDone }: { detail: LeadDetail; onDone: () => 
   );
 }
 
-function PurchaseReviewDocuments({ contract, onDone }: { contract: DealContract; onDone: () => void }) {
+function PurchaseReviewDocuments({ contract, detail, onDone }: { contract: DealContract; detail: LeadDetail; onDone: () => void }) {
   const { canCall, isOwner } = useAccess();
   const prepare = usePreparePurchaseReviewDocument();
   const transition = useTransitionTransactionDocument();
@@ -95,6 +96,7 @@ function PurchaseReviewDocuments({ contract, onDone }: { contract: DealContract;
   );
   const earnestEvidence = contract.milestones.find((milestone) => milestone.kind === 'EARNEST_MONEY_CONFIRMED');
   const deadlineSchedule = contract.deadlineSchedule;
+  const checklist=buildTransactionReadinessChecklist(detail,contract,new Date());
   const createReviewCopy = () => prepare.mutate(
     { id: contract.leadId, data: { version: contract.version } },
     {
@@ -211,6 +213,16 @@ function PurchaseReviewDocuments({ contract, onDone }: { contract: DealContract;
       <p className="mt-2 text-[11px] text-muted-foreground">
         Special clauses remain review-only until a qualified reviewer approves the jurisdiction-compatible language. No legal approval, signature request, transfer, or closing is inferred.
       </p>
+      <div className="mt-3 border-t pt-3" data-testid="transaction-party-document-checklist">
+        <h4 className="text-sm font-semibold">Deal-specific transaction checklist · contract v{contract.version}</h4>
+        <p className="text-xs text-muted-foreground">Status is derived from persisted parties, approvals, document events, milestones, and deadline schedules. No manual completion toggles.</p>
+        <ul className="mt-2 grid gap-2 sm:grid-cols-2">{checklist.map(item=><li key={item.key} className="rounded border p-2 text-xs" data-testid={`transaction-check-${item.key}`}>
+          <div className="flex justify-between gap-2"><b>{item.label}</b><span>{item.status.replaceAll('_',' ')}</span></div>
+          {item.qualifiedReviewRequired&&<p className="font-semibold text-amber-700">Requires qualified jurisdiction-specific review unless verified.</p>}
+          {item.evidence.length>0&&<p>Evidence: {item.evidence.join(' · ')}</p>}
+          {item.status!=="COMPLETE"&&item.status!=="NOT_APPLICABLE"&&<p>Next: {item.nextAction}</p>}
+        </li>)}</ul>
+      </div>
     </div>
     <div className="flex items-start gap-3">
       <FileText className="mt-0.5 h-4 w-4 shrink-0 text-signal" />
@@ -1004,7 +1016,7 @@ export function DealOperationsPanel({ detail }: { detail: LeadDetail }) {
               <div><dt className="eyebrow">Assignment</dt><dd>{c.assignmentAllowed ? 'Allowed' : 'Not allowed'}</dd></div>
               <div className="sm:col-span-2 lg:col-span-4"><dt className="eyebrow">Contingencies</dt><dd className="whitespace-pre-wrap">{c.contingencies}</dd></div>
             </dl>
-            <PurchaseReviewDocuments contract={c} onDone={done} />
+            <PurchaseReviewDocuments contract={c} detail={detail} onDone={done} />
             {c.status === 'DRAFT' && <ExecuteContract key={c.version} contract={c} onDone={done} />}
             {c.executedDocumentUrl && <p className="text-sm"><EvidenceLink url={c.executedDocumentUrl} label="Executed document" /> / seller signed {fmtDate(c.sellerSignedAt)} / our side signed {fmtDate(c.acquisitionSignedAt)}{c.reviewNote ? ` / ${c.reviewNote}` : ''}</p>}
           </div>

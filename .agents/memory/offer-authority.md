@@ -50,3 +50,15 @@ An offer-readiness scorecard is informational and must not replace draft, legal-
 **Why:** Aggregated scores can conceal a single blocking defect, and a high score is not permission to commit funds or communicate terms.
 
 **How to apply:** Keep hard-stop criteria visible beside the score and leave existing exact-version approval and authorization checks unchanged.
+
+Deal-economics scenarios are read-only what-if calculations. They must never mutate the authoritative underwriting snapshot or offer approvals; only explicit reviewed underwriting inputs create a new versioned snapshot, which invalidates dependent approvals.
+
+**Why:** Scenario envelopes are exploratory assumptions, not new evidence or owner authorization. Persisting them as fact could silently change deal economics or keep stale approval alive.
+
+**How to apply:** Keep scenario inputs local/explicitly labeled, expose formulas and provenance, and route reviewed changes through the existing version-checked underwriting save path with its approval invalidation behavior.
+
+Negotiation versions must link to a communicated parent, the exact current underwriting snapshot, property/seller identity, conditions, expiry, and explicit seller-response evidence. A seller counter ends the parent's internal authority but does not rewrite or erase its communication.
+
+**Why:** A recorded seller counter is not acceptance, and competing revisions must not inherit stale approval or overwrite the terms already communicated.
+
+**How to apply:** Create a new immutable offer row with provenance and idempotency metadata. Permit only human-entered response evidence or a verified seller-portal counter event; require exact-version owner approval before any new communication.

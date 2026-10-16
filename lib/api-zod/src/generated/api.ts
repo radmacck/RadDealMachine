@@ -3246,6 +3246,12 @@ export const UpdateMemberResponse = zod.object({
 })
 
 
+export const getDashboardResponseAcquisitionStagesItemCountMin = 0;
+
+export const getDashboardResponseExcludedSyntheticCountMin = 0;
+
+
+
 export const GetDashboardResponse = zod.object({
   "total": zod.number().int(),
   "callReady": zod.number().int(),
@@ -3258,6 +3264,13 @@ export const GetDashboardResponse = zod.object({
   "stage": zod.string(),
   "count": zod.number().int()
 })),
+  "acquisitionStages": zod.array(zod.object({
+  "stage": zod.enum(['DISCOVERED', 'NORMALIZED', 'QUALIFIED_FOR_RESEARCH', 'CONTACT_ROUTE_RESEARCHED', 'CALL_READY', 'CONTACTED', 'SELLER_QUALIFIED', 'UNDERWRITING_READY', 'OFFER_READY', 'CLOSED', 'LOST', 'NURTURE']),
+  "count": zod.number().int().min(getDashboardResponseAcquisitionStagesItemCountMin),
+  "definition": zod.string(),
+  "exitEvidence": zod.string()
+})),
+  "excludedSyntheticCount": zod.number().int().min(getDashboardResponseExcludedSyntheticCountMin),
   "recentActivity": zod.array(zod.object({
   "id": zod.string(),
   "actor": zod.string(),
@@ -7093,6 +7106,15 @@ export const createOfferDraftBodyOneContingenciesMax = 5000;
 export const createOfferDraftBodyTwoReasonMin = 3;
 export const createOfferDraftBodyTwoReasonMax = 2000;
 
+export const createOfferDraftBodyTwoSellerResponseEventKeyMin = 8;
+export const createOfferDraftBodyTwoSellerResponseEventKeyMax = 120;
+
+export const createOfferDraftBodyTwoSellerResponseEvidenceMin = 20;
+export const createOfferDraftBodyTwoSellerResponseEvidenceMax = 3000;
+
+export const createOfferDraftBodyTwoIdempotencyKeyMin = 8;
+export const createOfferDraftBodyTwoIdempotencyKeyMax = 120;
+
 
 
 export const CreateOfferDraftBody = zod.object({
@@ -7104,7 +7126,12 @@ export const CreateOfferDraftBody = zod.object({
 }).and(zod.object({
   "version": zod.number().int().min(1),
   "reason": zod.string().min(createOfferDraftBodyTwoReasonMin).max(createOfferDraftBodyTwoReasonMax),
-  "draftExpiresAt": zod.string().datetime({"offset":true}).optional()
+  "draftExpiresAt": zod.string().datetime({"offset":true}).optional(),
+  "parentOfferId": zod.string().uuid().optional(),
+  "sellerResponseSource": zod.enum(['HUMAN_ENTERED', 'SELLER_PORTAL']).optional(),
+  "sellerResponseEventKey": zod.string().min(createOfferDraftBodyTwoSellerResponseEventKeyMin).max(createOfferDraftBodyTwoSellerResponseEventKeyMax).optional(),
+  "sellerResponseEvidence": zod.string().min(createOfferDraftBodyTwoSellerResponseEvidenceMin).max(createOfferDraftBodyTwoSellerResponseEvidenceMax).optional(),
+  "idempotencyKey": zod.string().min(createOfferDraftBodyTwoIdempotencyKeyMin).max(createOfferDraftBodyTwoIdempotencyKeyMax).optional()
 }))
 
 export const createOfferDraftResponseLeadOneAddressMin = 3;
@@ -16566,7 +16593,7 @@ export const GetCommandCenterResponse = zod.object({
   "version": zod.number().int().min(1),
   "confidence": zod.number().min(getCommandCenterResponsePropertyDiscoveriesRecordsItemContactResearchCaseConfidenceMin).max(getCommandCenterResponsePropertyDiscoveriesRecordsItemContactResearchCaseConfidenceMax),
   "sourceName": zod.string(),
-  "sourceType": zod.enum(['PUBLIC_RECORD', 'PUBLIC_PAGE', 'OWNER_SUPPLIED', 'OTHER']),
+  "sourceType": zod.string().describe('PUBLIC_RECORD, PUBLIC_PAGE, OWNER_SUPPLIED, SELLER_PROVIDED, MANUAL_RESEARCH, INFERRED, or OTHER'),
   "sourceUrl": zod.string().url().nullish(),
   "observedAt": zod.string().datetime({"offset":true}),
   "identityMatch": zod.enum(['UNKNOWN', 'RECORDED_OWNER_ONLY', 'SELLER_SELF_IDENTIFIED', 'CONFLICTING', 'NOT_MATCHED']),
@@ -16743,6 +16770,50 @@ export const GetCommandCenterResponse = zod.object({
   "href": zod.string().nullable()
 }))
 })
+})
+
+
+export const ListOperationalAlertsResponseItem = zod.object({
+  "id": zod.string().uuid(),
+  "alertKey": zod.string(),
+  "sourceActionId": zod.string(),
+  "sourceRecordId": zod.string(),
+  "category": zod.string(),
+  "priority": zod.number().int(),
+  "title": zod.string(),
+  "reason": zod.string(),
+  "href": zod.string(),
+  "status": zod.enum(['ACTIVE', 'SNOOZED', 'DISMISSED', 'RESOLVED']),
+  "snoozedUntil": zod.string().datetime({"offset":true}).nullish(),
+  "createdAt": zod.string().datetime({"offset":true}),
+  "updatedAt": zod.string().datetime({"offset":true})
+})
+export const ListOperationalAlertsResponse = zod.array(ListOperationalAlertsResponseItem)
+
+
+export const UpdateOperationalAlertParams = zod.object({
+  "id": zod.coerce.string().uuid()
+})
+
+export const UpdateOperationalAlertBody = zod.object({
+  "decision": zod.enum(['DISMISS', 'SNOOZE']),
+  "snoozedUntil": zod.string().datetime({"offset":true}).optional()
+})
+
+export const UpdateOperationalAlertResponse = zod.object({
+  "id": zod.string().uuid(),
+  "alertKey": zod.string(),
+  "sourceActionId": zod.string(),
+  "sourceRecordId": zod.string(),
+  "category": zod.string(),
+  "priority": zod.number().int(),
+  "title": zod.string(),
+  "reason": zod.string(),
+  "href": zod.string(),
+  "status": zod.enum(['ACTIVE', 'SNOOZED', 'DISMISSED', 'RESOLVED']),
+  "snoozedUntil": zod.string().datetime({"offset":true}).nullish(),
+  "createdAt": zod.string().datetime({"offset":true}),
+  "updatedAt": zod.string().datetime({"offset":true})
 })
 
 
@@ -17356,6 +17427,20 @@ export const ListBuyersResponseItem = zod.object({
   "updatedAt": zod.string()
 }))
 export const ListBuyersResponse = zod.array(ListBuyersResponseItem)
+
+
+export const getBuyerCapacityResponseReservedFundsMin = 0;
+
+export const getBuyerCapacityResponseReservedDealsMin = 0;
+
+
+
+export const GetBuyerCapacityResponseItem = zod.object({
+  "buyerId": zod.string(),
+  "reservedFunds": zod.number().min(getBuyerCapacityResponseReservedFundsMin),
+  "reservedDeals": zod.number().int().min(getBuyerCapacityResponseReservedDealsMin)
+})
+export const GetBuyerCapacityResponse = zod.array(GetBuyerCapacityResponseItem)
 
 
 export const createBuyerBodyNameMax = 200;
@@ -37429,6 +37514,10 @@ export const ListPropertySourcesResponseItem = zod.object({
 export const ListPropertySourcesResponse = zod.array(ListPropertySourcesResponseItem)
 
 
+export const getPropertySourceCoverageResponseOperationsItemResultCountMin = 0;
+
+
+
 export const GetPropertySourceCoverageResponse = zod.object({
   "registeredSources": zod.array(zod.object({
   "id": zod.string(),
@@ -37446,6 +37535,23 @@ export const GetPropertySourceCoverageResponse = zod.object({
   "status": zod.enum(['NOT_CONNECTED']),
   "reason": zod.string(),
   "nextAction": zod.string()
+})),
+  "operations": zod.array(zod.object({
+  "id": zod.string(),
+  "name": zod.string(),
+  "enabled": zod.boolean(),
+  "state": zod.enum(['ENABLED_NOT_RUN', 'SUCCEEDED', 'PARTIAL', 'FAILED', 'RATE_LIMITED', 'STALE', 'UNCONFIGURED']),
+  "termsStatus": zod.enum(['REVIEW_REQUIRED', 'REVIEWED_AT_QUEUE', 'OUTDATED']),
+  "termsUrl": zod.string(),
+  "lastAttemptAt": zod.string().datetime({"offset":true}).nullable(),
+  "lastSuccessfulAt": zod.string().datetime({"offset":true}).nullable(),
+  "resultCount": zod.number().int().min(getPropertySourceCoverageResponseOperationsItemResultCountMin).nullable(),
+  "resultCountBasis": zod.string(),
+  "freshness": zod.enum(['CURRENT', 'STALE', 'UNKNOWN', 'NEVER_RUN']),
+  "error": zod.string().nullable(),
+  "rateLimit": zod.string(),
+  "nextEligibleAt": zod.string().datetime({"offset":true}).nullable(),
+  "manualNextStep": zod.string()
 }))
 })
 
@@ -37942,7 +38048,7 @@ export const ListPropertyDiscoveriesResponse = zod.object({
   "version": zod.number().int().min(1),
   "confidence": zod.number().min(listPropertyDiscoveriesResponseRecordsItemContactResearchCaseConfidenceMin).max(listPropertyDiscoveriesResponseRecordsItemContactResearchCaseConfidenceMax),
   "sourceName": zod.string(),
-  "sourceType": zod.enum(['PUBLIC_RECORD', 'PUBLIC_PAGE', 'OWNER_SUPPLIED', 'OTHER']),
+  "sourceType": zod.string().describe('PUBLIC_RECORD, PUBLIC_PAGE, OWNER_SUPPLIED, SELLER_PROVIDED, MANUAL_RESEARCH, INFERRED, or OTHER'),
   "sourceUrl": zod.string().url().nullish(),
   "observedAt": zod.string().datetime({"offset":true}),
   "identityMatch": zod.enum(['UNKNOWN', 'RECORDED_OWNER_ONLY', 'SELLER_SELF_IDENTIFIED', 'CONFLICTING', 'NOT_MATCHED']),
@@ -38374,7 +38480,7 @@ export const RecordPublicPropertyDiscoveryResponse = zod.object({
   "version": zod.number().int().min(1),
   "confidence": zod.number().min(recordPublicPropertyDiscoveryResponseContactResearchCaseConfidenceMin).max(recordPublicPropertyDiscoveryResponseContactResearchCaseConfidenceMax),
   "sourceName": zod.string(),
-  "sourceType": zod.enum(['PUBLIC_RECORD', 'PUBLIC_PAGE', 'OWNER_SUPPLIED', 'OTHER']),
+  "sourceType": zod.string().describe('PUBLIC_RECORD, PUBLIC_PAGE, OWNER_SUPPLIED, SELLER_PROVIDED, MANUAL_RESEARCH, INFERRED, or OTHER'),
   "sourceUrl": zod.string().url().nullish(),
   "observedAt": zod.string().datetime({"offset":true}),
   "identityMatch": zod.enum(['UNKNOWN', 'RECORDED_OWNER_ONLY', 'SELLER_SELF_IDENTIFIED', 'CONFLICTING', 'NOT_MATCHED']),
@@ -38876,7 +38982,7 @@ export const AddPropertyRelevanceSignalResponse = zod.object({
   "version": zod.number().int().min(1),
   "confidence": zod.number().min(addPropertyRelevanceSignalResponseContactResearchCaseConfidenceMin).max(addPropertyRelevanceSignalResponseContactResearchCaseConfidenceMax),
   "sourceName": zod.string(),
-  "sourceType": zod.enum(['PUBLIC_RECORD', 'PUBLIC_PAGE', 'OWNER_SUPPLIED', 'OTHER']),
+  "sourceType": zod.string().describe('PUBLIC_RECORD, PUBLIC_PAGE, OWNER_SUPPLIED, SELLER_PROVIDED, MANUAL_RESEARCH, INFERRED, or OTHER'),
   "sourceUrl": zod.string().url().nullish(),
   "observedAt": zod.string().datetime({"offset":true}),
   "identityMatch": zod.enum(['UNKNOWN', 'RECORDED_OWNER_ONLY', 'SELLER_SELF_IDENTIFIED', 'CONFLICTING', 'NOT_MATCHED']),
@@ -39239,7 +39345,7 @@ export const PromotePropertyDiscoveryResponse = zod.object({
   "version": zod.number().int().min(1),
   "confidence": zod.number().min(promotePropertyDiscoveryResponseDiscoveryContactResearchCaseConfidenceMin).max(promotePropertyDiscoveryResponseDiscoveryContactResearchCaseConfidenceMax),
   "sourceName": zod.string(),
-  "sourceType": zod.enum(['PUBLIC_RECORD', 'PUBLIC_PAGE', 'OWNER_SUPPLIED', 'OTHER']),
+  "sourceType": zod.string().describe('PUBLIC_RECORD, PUBLIC_PAGE, OWNER_SUPPLIED, SELLER_PROVIDED, MANUAL_RESEARCH, INFERRED, or OTHER'),
   "sourceUrl": zod.string().url().nullish(),
   "observedAt": zod.string().datetime({"offset":true}),
   "identityMatch": zod.enum(['UNKNOWN', 'RECORDED_OWNER_ONLY', 'SELLER_SELF_IDENTIFIED', 'CONFLICTING', 'NOT_MATCHED']),
@@ -39603,7 +39709,7 @@ export const DisqualifyPropertyDiscoveryResponse = zod.object({
   "version": zod.number().int().min(1),
   "confidence": zod.number().min(disqualifyPropertyDiscoveryResponseContactResearchCaseConfidenceMin).max(disqualifyPropertyDiscoveryResponseContactResearchCaseConfidenceMax),
   "sourceName": zod.string(),
-  "sourceType": zod.enum(['PUBLIC_RECORD', 'PUBLIC_PAGE', 'OWNER_SUPPLIED', 'OTHER']),
+  "sourceType": zod.string().describe('PUBLIC_RECORD, PUBLIC_PAGE, OWNER_SUPPLIED, SELLER_PROVIDED, MANUAL_RESEARCH, INFERRED, or OTHER'),
   "sourceUrl": zod.string().url().nullish(),
   "observedAt": zod.string().datetime({"offset":true}),
   "identityMatch": zod.enum(['UNKNOWN', 'RECORDED_OWNER_ONLY', 'SELLER_SELF_IDENTIFIED', 'CONFLICTING', 'NOT_MATCHED']),
@@ -39739,7 +39845,7 @@ export const SavePropertyContactResearchCaseBody = zod.object({
   "status": zod.enum(['OPEN', 'EVIDENCE_RECORDED', 'NO_DIRECT_ROUTE_FOUND', 'NEEDS_REVIEW', 'BLOCKED']),
   "confidence": zod.number().min(savePropertyContactResearchCaseBodyConfidenceMin).max(savePropertyContactResearchCaseBodyConfidenceMax),
   "sourceName": zod.string().min(savePropertyContactResearchCaseBodySourceNameMin).max(savePropertyContactResearchCaseBodySourceNameMax),
-  "sourceType": zod.enum(['PUBLIC_RECORD', 'PUBLIC_PAGE', 'OWNER_SUPPLIED', 'OTHER']),
+  "sourceType": zod.string().describe('PUBLIC_RECORD, PUBLIC_PAGE, OWNER_SUPPLIED, SELLER_PROVIDED, MANUAL_RESEARCH, INFERRED, or OTHER'),
   "sourceUrl": zod.string().url().nullish(),
   "observedAt": zod.string().datetime({"offset":true}),
   "identityMatch": zod.enum(['UNKNOWN', 'RECORDED_OWNER_ONLY', 'SELLER_SELF_IDENTIFIED', 'CONFLICTING', 'NOT_MATCHED']),
@@ -40029,7 +40135,7 @@ export const SavePropertyContactResearchCaseResponse = zod.object({
   "version": zod.number().int().min(1),
   "confidence": zod.number().min(savePropertyContactResearchCaseResponseContactResearchCaseConfidenceMin).max(savePropertyContactResearchCaseResponseContactResearchCaseConfidenceMax),
   "sourceName": zod.string(),
-  "sourceType": zod.enum(['PUBLIC_RECORD', 'PUBLIC_PAGE', 'OWNER_SUPPLIED', 'OTHER']),
+  "sourceType": zod.string().describe('PUBLIC_RECORD, PUBLIC_PAGE, OWNER_SUPPLIED, SELLER_PROVIDED, MANUAL_RESEARCH, INFERRED, or OTHER'),
   "sourceUrl": zod.string().url().nullish(),
   "observedAt": zod.string().datetime({"offset":true}),
   "identityMatch": zod.enum(['UNKNOWN', 'RECORDED_OWNER_ONLY', 'SELLER_SELF_IDENTIFIED', 'CONFLICTING', 'NOT_MATCHED']),

@@ -6,7 +6,7 @@ import * as poolOperations from "../services/buyer-pool";
 import { authenticated, membership, roles, sensitiveWorkspaceData } from "../middlewares/access";
 import * as buyers from "../services/buyer-store";
 import * as buyerQualificationPortal from "../services/buyer-qualification-portal";
-import { allBuyerRecords, getBuyerRecord, getBuyerContactResearchRecord } from "../services/operations-records";
+import { allBuyerRecords, buyerCapacityRecords, getBuyerRecord, getBuyerContactResearchRecord } from "../services/operations-records";
 import { dealOperations, refreshMatches } from "../services/matching-store";
 import * as transactions from "../services/transaction-store";
 import * as outcomes from "../services/outcome-learning-store";
@@ -79,6 +79,7 @@ export function parse<T extends z.ZodType>(schema: T,value: unknown): z.infer<T>
   return parsed.data;
 }
 router.get("/buyers",async (_req,res)=>{res.json(schemas.ListBuyersResponse.parse(await allBuyerRecords()));});
+router.get("/buyers/capacity",async (_req,res)=>{res.json(schemas.GetBuyerCapacityResponse.parse(await buyerCapacityRecords()));});
 router.post("/buyers/discovered",roles("OWNER","ANALYST"),async(req,res)=>{
   res.status(201).json(schemas.DiscoverBuyerResponse.parse(await poolOperations.discoverBuyer(parse(schemas.DiscoverBuyerBody,req.body),actor(res))));
 });

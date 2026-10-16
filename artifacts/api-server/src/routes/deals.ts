@@ -13,6 +13,8 @@ import * as sellerContactEnrichment from "../services/seller-contact-enrichment"
 import * as acquisitionQueue from "../services/acquisition-queue-store";
 import * as sellerPlaybooks from "../services/seller-playbook-store";
 import { propagateStaleTransactionDocuments } from "../services/transaction-store";
+import { exportDealEvidencePacket } from "../services/evidence-packet";
+import { listOperationalAlerts, updateOperationalAlert } from "../services/operational-alerts";
 
 const router: IRouter = Router();
 // Trim strings before schema validation so required fields cannot be whitespace-only.
@@ -52,6 +54,16 @@ router.post("/leads/:id/evidence-intake",research,async(req,res)=>{
 router.get("/command-center",async (_req,res) => {
   send(res,contract.GetCommandCenterResponse,await commandCenter(String(res.locals.role)));
 });
+router.get("/alerts",roles("OWNER","OPERATOR","ANALYST"),async (_req,res) => {
+  const center=await commandCenter("OWNER");
+  res.json(await listOperationalAlerts(center.actions,new Date(),String(res.locals.role)));
+});
+router.patch("/alerts/:id",operate,async (req,res) => {
+  const parsed=z.object({decision:z.enum(["DISMISS","SNOOZE"]),snoozedUntil:z.string().datetime().optional()}).safeParse(clean(req.body));
+  if(!parsed.success)throw new DomainError("Invalid alert action.",400);
+  res.json(await updateOperationalAlert(parse(z.string().uuid(),req.params.id),parsed.data.decision,
+    {id:String(res.locals.actor),role:String(res.locals.role)},parsed.data.snoozedUntil?new Date(parsed.data.snoozedUntil):undefined));
+});
 router.get("/members",roles("OWNER"),async (_req,res) => {
   send(res,contract.ListMembersResponse,await access.listMembers());
 });
@@ -65,6 +77,14 @@ router.post("/leads",research,async (req,res) => {
   send(res,contract.CreateLeadResponse,await store.createLead(parse(contract.CreateLeadBody,req.body),String(res.locals.actor)),201);
 });
 router.get("/leads/:id",async (req,res) => send(res,contract.GetLeadResponse,await store.leadDetail(leadId(req))));
+router.get("/leads/:id/evidence-packet",roles("OWNER","ANALYST","OPERATOR"),async(req,res)=>{
+  const purpose=parse(z.enum(["INTERNAL_REVIEW","OWNER_AUDIT","TITLE_HANDOFF","LEGAL_REVIEW","BUYER_HANDOFF"]),req.query.purpose);
+  const includeSensitive=req.query.includeSensitive==="true";
+  const packet=await exportDealEvidencePacket(leadId(req),{id:String(res.locals.actor),role:String(res.locals.role)},purpose,includeSensitive);
+  res.setHeader("Content-Type","application/json");
+  res.setHeader("Content-Disposition",`attachment; filename="deal-evidence-${leadId(req)}-v${packet.export.version}.json"`);
+  res.json(packet);
+});
 router.get("/leads/:id/seller-playbook",async (req,res) => {
   send(res,contract.GetSellerPlaybookResponse,await sellerPlaybooks.getSellerPlaybook(leadId(req)));
 });

@@ -5,6 +5,7 @@
  * Radical Deal OS seller intake, underwriting, conversations and approved offers
  * OpenAPI spec version: 1.0.0
  */
+import type { AcquisitionPipelineCount } from './acquisitionPipelineCount';
 import type { AuditEvent } from './auditEvent';
 import type { StageCount } from './stageCount';
 
@@ -17,5 +18,8 @@ export interface Dashboard {
   negotiable: number;
   pass: number;
   stages: StageCount[];
+  acquisitionStages: AcquisitionPipelineCount[];
+  /** @minimum 0 */
+  excludedSyntheticCount: number;
   recentActivity: AuditEvent[];
 }

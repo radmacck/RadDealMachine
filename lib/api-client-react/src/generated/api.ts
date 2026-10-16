@@ -26,6 +26,7 @@ import type {
   Assumptions,
   AuditEvent,
   Buyer,
+  BuyerCapacity,
   BuyerContactPermission,
   BuyerContactPermissionInput,
   BuyerContactResearchResponse,
@@ -86,6 +87,8 @@ import type {
   OfferDraftInput,
   OfferReviewSnapshotResponse,
   OfferWithdrawalInput,
+  OperationalAlert,
+  OperationalAlertActionRequest,
   OutcomeActualsInput,
   OutcomeCalibrationRecommendation,
   OutcomeCalibrationReviewInput,
@@ -3045,6 +3048,160 @@ export function useGetCommandCenter<TData = Awaited<ReturnType<typeof getCommand
 
 
 
+export const getListOperationalAlertsUrl = () => {
+
+
+
+
+  return `/api/alerts`
+}
+
+export const listOperationalAlerts = async ( options?: Parameters<typeof customFetch>[1]): Promise<OperationalAlert[]> => {
+
+  return customFetch<OperationalAlert[]>(getListOperationalAlertsUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getListOperationalAlertsQueryKey = () => {
+    return [
+    `/api/alerts`
+    ] as const;
+    }
+
+
+export const getListOperationalAlertsQueryOptions = <TData = Awaited<ReturnType<typeof listOperationalAlerts>>, TError = ErrorType<unknown>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listOperationalAlerts>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getListOperationalAlertsQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listOperationalAlerts>>> = ({ signal }) => listOperationalAlerts({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listOperationalAlerts>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type ListOperationalAlertsQueryResult = NonNullable<Awaited<ReturnType<typeof listOperationalAlerts>>>
+export type ListOperationalAlertsQueryError = ErrorType<unknown>
+
+
+
+export function useListOperationalAlerts<TData = Awaited<ReturnType<typeof listOperationalAlerts>>, TError = ErrorType<unknown>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listOperationalAlerts>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getListOperationalAlertsQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getUpdateOperationalAlertUrl = (id: string,) => {
+
+
+
+
+  return `/api/alerts/${id}`
+}
+
+export const updateOperationalAlert = async (id: string,
+    operationalAlertActionRequest: OperationalAlertActionRequest, options?: Parameters<typeof customFetch>[1]): Promise<OperationalAlert> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return customFetch<OperationalAlert>(getUpdateOperationalAlertUrl(id),
+  {
+    ...options,
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(operationalAlertActionRequest)
+  }
+);}
+
+
+
+
+
+export const getUpdateOperationalAlertMutationKey = () => ['updateOperationalAlert'] as const;
+
+export const getUpdateOperationalAlertMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateOperationalAlert>>, TError,UpdateOperationalAlertMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof updateOperationalAlert>>, TError,UpdateOperationalAlertMutationVariables, TContext> => {
+
+const mutationKey = getUpdateOperationalAlertMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof updateOperationalAlert>>, UpdateOperationalAlertMutationVariables> = (props) => {
+          const {id,data} = props ?? {};
+
+          return  updateOperationalAlert(id,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type UpdateOperationalAlertMutationResult = NonNullable<Awaited<ReturnType<typeof updateOperationalAlert>>>
+    export type UpdateOperationalAlertMutationBody = BodyType<OperationalAlertActionRequest>
+    export type UpdateOperationalAlertMutationError = ErrorType<unknown>
+    export type UpdateOperationalAlertMutationVariables = {id: string;data: BodyType<OperationalAlertActionRequest>}
+
+    export const useUpdateOperationalAlert = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateOperationalAlert>>, TError,UpdateOperationalAlertMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof updateOperationalAlert>>,
+        TError,
+        UpdateOperationalAlertMutationVariables,
+        TContext
+      > => {
+      return useMutation(getUpdateOperationalAlertMutationOptions(options));
+    }
+
 export const getGetOutcomeLearningUrl = () => {
 
 
@@ -3353,12 +3510,83 @@ export function useListBuyers<TData = Awaited<ReturnType<typeof listBuyers>>, TE
 
 
 
+export const getGetBuyerCapacityUrl = () => {
+
+
+
+
+  return `/api/buyers/capacity`
+}
+
+export const getBuyerCapacity = async ( options?: Parameters<typeof customFetch>[1]): Promise<BuyerCapacity[]> => {
+
+  return customFetch<BuyerCapacity[]>(getGetBuyerCapacityUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetBuyerCapacityQueryKey = () => {
+    return [
+    `/api/buyers/capacity`
+    ] as const;
+    }
+
+
+export const getGetBuyerCapacityQueryOptions = <TData = Awaited<ReturnType<typeof getBuyerCapacity>>, TError = ErrorType<unknown>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getBuyerCapacity>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetBuyerCapacityQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getBuyerCapacity>>> = ({ signal }) => getBuyerCapacity({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getBuyerCapacity>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetBuyerCapacityQueryResult = NonNullable<Awaited<ReturnType<typeof getBuyerCapacity>>>
+export type GetBuyerCapacityQueryError = ErrorType<unknown>
+
+
+
+export function useGetBuyerCapacity<TData = Awaited<ReturnType<typeof getBuyerCapacity>>, TError = ErrorType<unknown>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getBuyerCapacity>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetBuyerCapacityQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
 export const getCreateBuyerUrl = () => {
 
 
 
 
-  return `/api/buyers`
+  return `/api/buyers/capacity`
 }
 
 export const createBuyer = async (buyerInput: BuyerInput, options?: Parameters<typeof customFetch>[1]): Promise<Buyer> => {

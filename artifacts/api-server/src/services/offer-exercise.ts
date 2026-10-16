@@ -7,7 +7,7 @@ import assert from "node:assert/strict";
 import { randomUUID } from "node:crypto";
 import { eq, and } from "drizzle-orm";
 import { db, pool, leadsTable, offersTable, analysesTable, auditTable } from "@workspace/db";
-import { buildOfferReadinessScorecard, type LeadInput, type UnderwritingInput, type OfferApprovalInput, type OfferReadinessInput, type OfferReadinessKey } from "@workspace/deal-domain";
+import { analyzeDealScenarios, buildOfferReadinessScorecard, type LeadInput, type UnderwritingInput, type OfferApprovalInput, type OfferReadinessInput, type OfferReadinessKey } from "@workspace/deal-domain";
 import { logger } from "../lib/logger";
 import * as store from "./deal-store";
 import { exerciseEvidence } from "./exercise-evidence";
@@ -50,6 +50,16 @@ async function exercise() {
     };
     detail = await store.saveUnderwriting(id,await exerciseEvidence(id,underwriting,actorId,now),actorId,now);
     assert.ok(detail.analysisSnapshotId);
+    const savedSnapshotId = detail.analysisSnapshotId;
+    const savedAnalysis = structuredClone(detail.analysis);
+    const savedAnalysisCount = (await db.select().from(analysesTable).where(eq(analysesTable.leadId,id))).length;
+    const scenarioResult = analyzeDealScenarios(detail.analysis!,20);
+    assert.equal(scenarioResult.scenarios.length,3);
+    assert.equal(scenarioResult.calculationAvailable,true);
+    assert.equal(detail.analysisSnapshotId,savedSnapshotId);
+    assert.deepEqual(detail.analysis,savedAnalysis,"Scenario calculations must not overwrite the authoritative analysis.");
+    assert.equal((await db.select().from(analysesTable).where(eq(analysesTable.leadId,id))).length,savedAnalysisCount,
+      "Scenario calculations must not create an underwriting snapshot.");
     const draftInput = {
       version:detail.lead.version,amount:110000,earnestMoney:1000,closingDays:30,
       contingencies:"Subject to diligence, title and executed contract.",assignmentIntent:true,reason:"Synthetic proposal exercise.",
@@ -158,7 +168,39 @@ async function exercise() {
     detail = await offers.communicateOffer(id,approved.id,communication,operator,now);
     assert.equal(detail.lead.stage,"OFFER_SENT");
     assert.equal(detail.offers.find(o => o.id === approved.id)!.communicatedAmount,approved.amount);
-    await assert.rejects(offers.communicateOffer(id,approved.id,{...communication,version:detail.lead.version},operator,now),/already been communicated/);
+    const counterInput={
+      ...draftInput,version:detail.lead.version,amount:109500,parentOfferId:approved.id,
+      sellerResponseSource:"HUMAN_ENTERED" as const,
+      sellerResponseEvidence:"Synthetic exercise: seller verbally proposed changed price during a connected call; operator recorded this response explicitly.",
+      idempotencyKey:randomUUID(),
+    };
+    const competingInput={...counterInput,amount:109400,idempotencyKey:randomUUID()};
+    const outcomes=await Promise.allSettled([
+      offers.createOfferDraft(id,counterInput,analyst,now),
+      offers.createOfferDraft(id,competingInput,analyst,now),
+    ]);
+    assert.equal(outcomes.filter(o=>o.status==="fulfilled").length,1,"Only one competing counteroffer may win a lead-version race.");
+    assert.equal(outcomes.filter(o=>o.status==="rejected").length,1);
+    const winningInput=outcomes[0].status==="fulfilled"?counterInput:competingInput;
+    const counterA=outcomes[0].status==="fulfilled"?outcomes[0].value:(outcomes[1] as PromiseFulfilledResult<Awaited<ReturnType<typeof offers.createOfferDraft>>>).value;
+    const counter=counterA.offers.find(o=>o.amount===winningInput.amount)!;
+    const retry=await offers.createOfferDraft(id,winningInput,analyst,now);
+    assert.equal(retry.offers.length,counterA.offers.length,"Same-key replay must be idempotent after concurrent submission.");
+    assert.equal(counter.status,"DRAFT","Seller response creates a draft only, never an accepted offer.");
+    assert.equal(counterA.offers.find(o=>o.id===approved.id)!.status,"REVOKED","A seller counteroffer ends prior internal authority without erasing communication.");
+    const counterReview=await offers.getOfferReview(id,counter.id);
+    const lineage=JSON.parse(counterReview.reviewSnapshotJson).negotiationLineage;
+    assert.equal(lineage.parentOfferId,approved.id);
+    assert.equal(lineage.responseSource,"HUMAN_ENTERED");
+    assert.deepEqual(counterA.analysis,savedAnalysis,"Negotiation versioning must not change deterministic underwriting.");
+    const counterAudit=(await db.select().from(auditTable).where(eq(auditTable.entityId,id)))
+      .find(row=>row.action==="OFFER_DRAFT_CREATED"&&row.detail.includes(counter.id));
+    assert.ok(counterAudit,"Counteroffer terms and provenance must be in the durable audit history.");
+    assert.match(counterAudit!.detail,/sellerResponseEvidence/);
+    await assert.rejects(offers.createOfferDraft(id,{...winningInput,amount:109600},analyst,now),/Idempotency key/);
+    await assert.rejects(offers.communicateOffer(id,counter.id,{...communication,version:counterA.lead.version,amount:109500},operator,now),/not currently authorized/);
+    detail=counterA;
+    await assert.rejects(offers.communicateOffer(id,approved.id,{...communication,version:detail.lead.version},operator,now),/counteroffer recorded/);
     await assert.rejects(offers.withdrawOffer(id,approved.id,{version:detail.lead.version,reason:"Analyst must not revoke approval.",nextAction:"Blocked.",followUpAt:future(1)},analyst,now),e => (e as {status:number}).status===403);
     detail = await store.recordCall(id,{version:detail.lead.version,outcome:"NO_ANSWER",notes:"Synthetic follow-up attempt.",nextAction:"Continue follow-up.",followUpAt:future(1)},actorId,now);
     assert.equal(detail.lead.stage,"OFFER_SENT","Routine follow-up must not regress offer stage.");
@@ -194,7 +236,7 @@ async function exercise() {
     assert.equal(detail.offers.find(o => o.id === finalId)!.status,"INVALIDATED");
     await assert.rejects(offers.communicateOffer(id,finalId,{...communication,amount:108000,version:detail.lead.version},operator,now),e => (e as {status:number}).status===409);
     assert.equal((await db.select().from(analysesTable).where(eq(analysesTable.leadId,id))).length,1);
-    assert.equal((await db.select().from(offersTable).where(eq(offersTable.leadId,id))).length,4);
+    assert.equal((await db.select().from(offersTable).where(eq(offersTable.leadId,id))).length,5);
     assert.deepEqual(await store.leadDetail(id),detail);
     logger.info({checks:"draft persistence, owner-only approval, MAO/authority/expiry guards, concurrency conflicts, approved call brief, exact-term human communication, supersession, revocation, followup preservation, evidence/snapshot invalidation"},"Seller offer persistence exercise PASSED (synthetic data; nothing externally communicated)");
   } finally {
