@@ -4,7 +4,7 @@ import type { Intelligence } from "./types";
 import { estimateRepairScope, repairsFromEstimate, validateRepairRateCards } from "./repair-estimation";
 import { estimateConditionRepairHypotheses } from "./repair-hypotheses";
 
-export const ENGINE_VERSION = "deterministic-underwriting/1.1";
+export const ENGINE_VERSION = "deterministic-underwriting/1.2";
 export const DEFAULT_ASSUMPTIONS: Assumptions = {
   arvMultiplier: 0.7,
   sellingCostPct: 0.06,
@@ -152,7 +152,9 @@ export function analyzeDeal(lead: Lead, input: UnderwritingInput, assumptions: A
     openingLow: money(mao * assumptions.openingLowPct),
     openingHigh: money(mao * assumptions.openingHighPct),
     maximumApprovedAcquisitionPrice: null,
-    spreadAtAsking: ppsf.length && lead.askingPrice != null && !estimateBlocked ? money(buyerCeiling(arv.low, repairs.high) - lead.askingPrice) : null,
+    spreadAtAsking: ppsf.length && lead.askingPrice != null && !estimateBlocked
+      ? money(buyerCeiling(arv.low, repairs.high) - assumptions.assignmentTarget - lead.askingPrice)
+      : null,
     assumptions: structuredClone(assumptions), risks, blockers, compDecisions,
     formula: "MAO = low ARV × ARV multiplier − low ARV × selling cost % − high repairs × (1 + contingency %) − acquisition cost − monthly holding × months − target assignment. ARV = subject sqft × verified renovated comp $/sqft (min/median/max). STRONG: asking ≤ MAO − strong margin; NEGOTIABLE: asking unknown or ≤ expected-case MAO; otherwise PASS. Ranges are scenario bounds, not statistical confidence intervals. Calculated ceiling is NOT offer authorization.",
   };

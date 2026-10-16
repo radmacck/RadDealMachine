@@ -11,6 +11,7 @@ import { useAccess } from '@/hooks/use-access';
 import { useInvalidateWork } from '@/hooks/use-invalidate';
 import { useToast } from '@/hooks/use-toast';
 import { ago, fmtDate } from '@/lib/format';
+import { canOfferWorkerRetry, requiresFreshSourceReview } from '@/lib/worker-retry';
 
 const KIND: Record<WorkerJobInputKind, string> = {
   REVIEW_HANDOFFS:'Review overdue human handoffs',
@@ -194,15 +195,13 @@ export default function Workers() {
       onSuccess: () => { invalidate(lead ?? undefined); if (!retry) setKey(newKey()); toast({ title: retry ? 'Retry queued' : 'Job queued', description: KIND[k] }); },
     });
   const retryJob = (job: WorkerJob) => {
-    if (['BUYER_DISCOVERY','DISCOVER_PROPERTIES'].includes(job.kind)) {
-      if (kind !== job.kind || !terms) {
-        setKind(job.kind as WorkerJobInputKind);
-        setTerms(false);
-        setRecurring(false);
-        setKey(newKey());
-        toast({ title: 'Review current source terms', description: 'Re-check the current connector terms before queuing this retry.' });
-        return;
-      }
+    if (requiresFreshSourceReview(job.kind)) {
+      setKind(job.kind as WorkerJobInputKind);
+      setTerms(false);
+      setRecurring(false);
+      setKey(newKey());
+      toast({ title: 'Review current source terms', description: 'Re-check the current connector terms before queuing this retry.' });
+      return;
     }
     queue(job.kind as WorkerJobInputKind, job.leadId, newKey(), true);
   };
@@ -254,7 +253,7 @@ export default function Workers() {
               <p className="font-mono text-[11px] text-muted-foreground">{j.attempts} attempt{j.attempts === 1 ? '' : 's'} / by {j.requestedBy} / {fmtDate(j.createdAt)} / updated {ago(j.updatedAt)}</p></div>
             {j.leadId && <Link href={`/deals/${j.leadId}?work=transaction`} className="text-sm underline" data-testid={`link-job-deal-${j.id}`}>Open deal</Link>}
             {j.kind === 'HUMAN_HANDOFF' && <span className="text-xs text-muted-foreground">Output only</span>}
-             {j.state === 'FAILED' && j.kind !== 'HUMAN_HANDOFF' && <Button size="sm" variant="outline" disabled={!can || submit.isPending} onClick={() => retryJob(j)} data-testid={`button-retry-job-${j.id}`}><RotateCw className="mr-1.5 h-3.5 w-3.5" />Queue retry</Button>}
+             {canOfferWorkerRetry(j.state, j.kind) && <Button size="sm" variant="outline" disabled={!can || submit.isPending} onClick={() => retryJob(j)} data-testid={`button-retry-job-${j.id}`}><RotateCw className="mr-1.5 h-3.5 w-3.5" />{j.state === 'PARTIAL' ? 'Review & retry' : 'Queue retry'}</Button>}
           </li>))}</ul>
       )}
     </div>

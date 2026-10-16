@@ -58,7 +58,11 @@ export async function enrichProperty(id: string, jobId: string, now = new Date()
   const url = new URL("https://geocoding.geo.census.gov/geocoder/geographies/onelineaddress");
   url.search = new URLSearchParams({address,benchmark:"Public_AR_Current",vintage:"Current_Current",format:"json"}).toString();
   const response = await fetch(url,{headers:{Accept:"application/json"},signal:AbortSignal.timeout(25000)});
-  if (!response.ok) throw new DomainError(`Public Census address lookup returned HTTP ${response.status}; no source success was recorded.`,409);
+  if (!response.ok) {
+    const retryable = response.status===408||response.status===425||response.status===429||response.status>=500;
+    throw new DomainError(`Public Census address lookup returned HTTP ${response.status}; no source success was recorded.`,
+      retryable?503:409);
+  }
   const schema = z.object({result:z.object({addressMatches:z.array(z.object({
     matchedAddress:z.string(),coordinates:z.object({x:z.number(),y:z.number()}),
     geographies:z.record(z.array(z.object({NAME:z.string().optional(),GEOID:z.string().optional()}).passthrough())).optional(),
@@ -109,8 +113,12 @@ export async function prepareSellerBrief(id: string, jobId: string, now = new Da
       response_format:{type:"json_schema",json_schema:{name:"prepared_seller_hypotheses",strict:true,schema:responseSchema}},
     },{timeout:90000,maxRetries:0}),{concurrency:1,retries:2,minTimeout:1000,maxTimeout:5000});
   } catch (error) {
-    const status = error && typeof error==="object" && "status" in error && typeof error.status==="number"?` (HTTP ${error.status})`:"";
-    throw new DomainError(`AI provider request failed or timed out${status}. No successful intelligence run was recorded; check provider availability/credits and retry.`,409);
+    const providerStatus = error && typeof error==="object" && "status" in error && typeof error.status==="number"
+      ? error.status : null;
+    const status = providerStatus===null?"":` (HTTP ${providerStatus})`;
+    const retryable = providerStatus===null||providerStatus===408||providerStatus===425||providerStatus===429||providerStatus>=500;
+    throw new DomainError(`AI provider request failed or timed out${status}. No successful intelligence run was recorded; check provider availability/credits and retry.`,
+      retryable?503:409);
   }
   const content = response?.choices[0]?.message.content;
   if (!content) throw new DomainError("AI provider returned no usable hypothesis content.",409);

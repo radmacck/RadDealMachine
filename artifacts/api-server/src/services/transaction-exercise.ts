@@ -4,7 +4,7 @@ import { once } from "node:events";
 import { AddressInfo } from "node:net";
 import { createHash, randomUUID } from "node:crypto";
 import { PDFDocument } from "pdf-lib";
-import { db,pool,analysesTable,auditTable,contractsTable,jobsTable,matchesTable,buyersTable,leadsTable,transitionsTable,distributionPacketsTable,transactionDocumentBlobsTable,transactionReadinessExceptionsTable,dealDecisionWorkItemsTable,transactionDocumentTemplatesTable,evidencePacketExportsTable } from "@workspace/db";
+import { db,pool,analysesTable,auditTable,contractsTable,jobsTable,matchesTable,buyersTable,leadsTable,transitionsTable,distributionPacketsTable,distributionRecipientsTable,transactionDocumentBlobsTable,transactionReadinessExceptionsTable,dealDecisionWorkItemsTable,transactionDocumentTemplatesTable,evidencePacketExportsTable } from "@workspace/db";
 import { and, eq } from "drizzle-orm";
 import { logger } from "../lib/logger";
 import * as seller from "./deal-store";
@@ -316,8 +316,14 @@ try {
     /latest executed agreement or amendment only/,
     "A schedule must cite the current executed agreement.",
   );
-  op = await transactions.recordTransactionDeadlineSchedule(id,initialDeadlineSchedule,actor,executionNow);
+   const contractVersionBeforeSchedule = op.contract!.version;
+   op = await transactions.recordTransactionDeadlineSchedule(id,initialDeadlineSchedule,actor,executionNow);
   assert.equal(op.contract?.deadlineScheduleVersion,1);
+   assert.equal(op.contract?.version,contractVersionBeforeSchedule+1,
+     "A saved deadline schedule is a contract revision and invalidates stale contract-version commands.");
+   await assert.rejects(transactions.recordTransactionDeadlineSchedule(id,{...initialDeadlineSchedule,
+     idempotencyKey:"synthetic-stale-contract-version",deadlineScheduleVersion:1},actor,executionNow),/Transaction changed/,
+     "A fresh schedule command cannot use the contract version from before the prior schedule revision.");
   const ownerCalendar=await commandCenter("OWNER",executionNow);
   const titleCalendarId=`CALENDAR:MILESTONE:${op.contract!.id}:1:TITLE_CLEARED`;
   assert.equal(ownerCalendar.actions.filter(action=>action.id===titleCalendarId).length,1,
@@ -331,8 +337,10 @@ try {
   assert.equal(analystCalendar.actions.some(action=>action.id.startsWith("CALENDAR:")),false,
     "Calendar reminders containing deal dates are not exposed to analyst-only roles.");
   const deadlineHistoryCount = op.contract?.deadlineScheduleHistory.length;
+   const contractVersionBeforeReplay = op.contract?.version;
   op = await transactions.recordTransactionDeadlineSchedule(id,initialDeadlineSchedule,actor,executionNow);
   assert.equal(op.contract?.deadlineScheduleHistory.length,deadlineHistoryCount,"Idempotent schedule replay must not append a second revision.");
+   assert.equal(op.contract?.version,contractVersionBeforeReplay,"An exact idempotent schedule replay must not create another contract revision.");
   assert.equal(op.contract?.milestones.length,0,"Recording due dates must not record milestone completion.");
   await evaluateAllTransactionReadiness(executionNow);
   deadlineReport = await getTransactionReadinessReport(executionNow);
@@ -419,11 +427,19 @@ try {
    assert.equal(op.contract?.purchasePrice,110000);
    await assert.rejects(buyers.verifyBuyer(buyer.id,{...verificationInput,version:buyer.version},actor,now),/newer actual outreach reply/);
    buyer = await buyers.verifyBuyer(buyer.id,{...verificationInput,version:buyer.version,buyingEvidenceAt:now.toISOString()},actor,now);
+     await buyers.recordBuyerContactPermission(buyer.id,{version:buyer.version,status:"GRANTED",channels:["EMAIL"],
+      source:"SYNTHETIC transaction fixture permission",evidenceUrl:"https://example.com/synthetic-buyer-permission",
+      capturedAt:now.toISOString(),validUntil:future(10)},actor,now);
+     buyer = await getBuyerRecord(buyer.id,db,now);
    op = await refreshMatches(id,now);
    assert.equal(op.matches.find(m=>m.buyerId===buyer.id)?.eligible,true);
   let competitor = await buyers.createBuyer({name:"SYNTHETIC SECOND QUALIFIED BUYER",email:"synthetic-second@example.com",phone:"",
     source:"Synthetic first-commitment ordering fixture",status:"ACTIVE",criteria:buyer.criteria},actor);
   competitor = await buyers.verifyBuyer(competitor.id,{...verificationInput,version:competitor.version},actor,now);
+    await buyers.recordBuyerContactPermission(competitor.id,{version:competitor.version,status:"GRANTED",channels:["EMAIL"],
+     source:"SYNTHETIC transaction fixture permission",evidenceUrl:"https://example.com/synthetic-second-buyer-permission",
+     capturedAt:now.toISOString(),validUntil:future(10)},actor,now);
+    competitor = await getBuyerRecord(competitor.id,db,now);
   op = await refreshMatches(id,now);
   assert.equal(op.matches.find(m=>m.buyerId===competitor.id)?.eligible,true);
   const lockedAnalysis=(await seller.leadDetail(id,undefined,now)).analysis;
@@ -468,7 +484,10 @@ try {
         buyerId:buyer.id,channel:"EMAIL",packetVersion:distribution.version+1,
         packetSnapshotHash:packetHash,exactMessage:exactBuyerMessage,
       }),/stale/,"A changed packet version invalidates message approval.");
-      assert.throws(()=>assertDistributionSubmissionReady(messageApproval,null,"EMAIL",undefined,now),
+       assert.throws(()=>assertDistributionSubmissionReady(messageApproval,{
+         buyerId:buyer.id,channel:"EMAIL",packetVersion:distribution.version,
+         packetSnapshotHash:packetHash,exactMessage:exactBuyerMessage,
+       },null,"EMAIL",undefined,now,true),
         /permission/,"No connected provider or permission means no outbound submission.");
       const acceptedEvent={eventId:"synthetic-provider-accept",providerId:"synthetic-provider",
         providerMessageId:"synthetic-message",state:"PROVIDER_ACCEPTED" as const,occurredAt:now.toISOString()};
@@ -515,6 +534,14 @@ try {
      const afterExpiry = new Date(olderEvidenceAt.getTime()+30*86400000+1000);
      const expiredBuyer = await getBuyerRecord(staleBuyer.id,db,afterExpiry);
      assert.equal(expiredBuyer.approvalStatus,"REVERIFICATION_REQUIRED");
+      await assert.rejects(shareDistributionRecipients(distribution.packetId!,{
+        version:distribution.version,buyerIds:[staleBuyer.id],
+      },operator,now),/contact permission/i,
+      "A verified buyer without current channel-specific permission cannot receive a capability link.");
+      await buyers.recordBuyerContactPermission(staleBuyer.id,{version:staleBuyer.version,status:"GRANTED",channels:["EMAIL"],
+        source:"SYNTHETIC stale-buyer permission fixture",evidenceUrl:"https://example.com/synthetic-stale-buyer-permission",
+        capturedAt:now.toISOString(),validUntil:future(10)},actor,now);
+      staleBuyer = await getBuyerRecord(staleBuyer.id,db,now);
      await assert.rejects(shareDistributionRecipients(distribution.packetId!,{
        version:distribution.version,buyerIds:[unverifiedBuyer.id],
      },operator,now),/no longer qualified/i,
@@ -529,6 +556,21 @@ try {
         version:distribution.version,buyerIds:[staleBuyer.id],
       },operator,now);
       assert.equal(staleAccessShare.links.length,1,"A buyer current at invite time may receive a capability.");
+       const [permissionBoundRecipient] = await db.select().from(distributionRecipientsTable).where(and(
+         eq(distributionRecipientsTable.packetId,distribution.packetId!),eq(distributionRecipientsTable.buyerId,staleBuyer.id)));
+       const permissionSnapshot = permissionBoundRecipient?.payload.contactPermissionSnapshot as {channels?:string[];checkedAt?:string}|undefined;
+       assert.deepEqual(permissionSnapshot?.channels,["EMAIL"],"The link records the exact channel consent used at creation.");
+       assert.equal(permissionSnapshot?.checkedAt,now.toISOString(),"Consent evidence is snapshotted at package-link creation.");
+       await buyers.recordBuyerContactPermission(staleBuyer.id,{version:staleBuyer.version,status:"OPTED_OUT",channels:[],
+         source:"SYNTHETIC post-invitation opt-out fixture",evidenceUrl:"https://example.com/synthetic-buyer-opt-out",
+         capturedAt:now.toISOString(),validUntil:null},actor,now);
+       await assert.rejects(getBuyerPortalDeal(staleAccessShare.links[0]!.token,now),/contact permission/i,
+         "A current opt-out blocks access through an already-issued bearer link.");
+       staleBuyer = await getBuyerRecord(staleBuyer.id,db,now);
+       await buyers.recordBuyerContactPermission(staleBuyer.id,{version:staleBuyer.version,status:"GRANTED",channels:["EMAIL"],
+         source:"SYNTHETIC renewed buyer permission fixture",evidenceUrl:"https://example.com/synthetic-renewed-buyer-permission",
+         capturedAt:now.toISOString(),validUntil:future(10)},actor,now);
+       staleBuyer = await getBuyerRecord(staleBuyer.id,db,now);
        const [contractBeforeStalePacketCheck] = await db.select().from(contractsTable).where(eq(contractsTable.leadId,id));
        assert.ok(contractBeforeStalePacketCheck);
        const accessEventsBeforeStalePacketCheck = ((await getDealDistribution(id)).recipients as unknown as Array<{buyerId:string;events:unknown[]}>)
@@ -699,6 +741,9 @@ try {
    const lateVerified = await buyers.verifyBuyer(lateQualified.id,{...verificationInput,version:lateQualified.version,
      identityEvidenceUrl:"https://example.com/synthetic-late-id",fundingEvidenceUrl:"https://example.com/synthetic-late-funds",
      buyingEvidenceUrl:"https://example.com/synthetic-late-buying",criteriaEvidenceUrl:"https://example.com/synthetic-late-criteria"},actor,now);
+    await buyers.recordBuyerContactPermission(lateVerified.id,{version:lateVerified.version,status:"GRANTED",channels:["EMAIL"],
+      source:"SYNTHETIC late-buyer permission fixture",evidenceUrl:"https://example.com/synthetic-late-permission",
+      capturedAt:now.toISOString(),validUntil:future(10)},actor,now);
    await refreshMatches(id,now);
    openDistribution = await getDealDistribution(id);
    const thirdShare = await shareDistributionRecipients(openDistribution.packetId!,{
@@ -1039,6 +1084,10 @@ try {
   op = await transactions.recordDealOutcome(id,{...outcome,version:op.contract!.version,occurredAt:future(2)},actor,new Date(now.getTime()+5*86400000));
   assert.equal(op.contract?.status,"CLOSED"); assert.equal(op.contract?.netProceeds,18000);
   assert.equal(op.contract?.closedAt,future(2)); assert.equal(op.contract?.outcomeRecordedAt,future(5));
+   await assert.rejects(transactions.recordClosingMilestone(id,{version:op.contract!.version,kind:"TITLE_CLEARED",
+     evidenceUrl:"https://example.com/synthetic-post-close-title",note:"SYNTHETIC post-close mutation attempt.",
+     effectiveAt:future(2)},actor,new Date(future(6))),/terminal and cannot be changed/i,
+     "A closed transaction cannot be rewritten by a later milestone command.");
   assert.equal((await seller.leadDetail(id)).lead.stage,"CLOSED");
    await evaluateAllTransactionReadiness(new Date(now.getTime()+5*86400000));
    readinessReport = await getTransactionReadinessReport(new Date(now.getTime()+5*86400000));
@@ -1084,12 +1133,13 @@ try {
   const deadline = await submitWorkerJob({kind:"REVIEW_DEADLINES",idempotencyKey:"synthetic-deadlines-once"},actor);
   assert.equal((await runWorkerOnce(now,false,deadline.id))?.state,"SUCCEEDED");
   const fail = await submitWorkerJob({kind:"MATCH_BUYERS",leadId:id,idempotencyKey:"synthetic-terminal-failure"},actor);
-   const retryingFailure = await runWorkerOnce(now,false,fail.id);
-   assert.equal(retryingFailure?.state,"QUEUED","first retryable worker failure must remain queued rather than dead-letter immediately");
-   assert.equal(retryingFailure?.attempts,1);
+    const terminalFailure = await runWorkerOnce(now,false,fail.id);
+    assert.equal(terminalFailure?.state,"FAILED","A deterministic terminal-deal conflict must not be retried.");
+    assert.equal(terminalFailure?.attempts,1);
    const [persistedFailure] = await db.select().from(jobsTable).where(eq(jobsTable.id,fail.id));
    const failureRecovery = persistedFailure?.payload.recovery as Record<string,unknown>;
-   assert.equal(typeof failureRecovery?.nextAttemptAt,"string");
+    assert.equal(failureRecovery?.nextAttemptAt,null);
+    assert.equal(failureRecovery?.nextAction,"OPERATOR_REVIEW_AND_QUEUE_NEW_IDEMPOTENCY_KEY");
    assert.equal((failureRecovery?.history as unknown[]).length,1);
   const restart = {version:op.contract!.version,kind:"RESTART_CANCELLED" as const,effectiveAt:now.toISOString(),
     evidenceUrl:"https://example.com/synthetic-restart",note:"SYNTHETIC reviewed attempt restart only."};

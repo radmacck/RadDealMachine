@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import { test } from "node:test";
 import type { Buyer } from "@workspace/api-client-react";
 import {
+  activeSellerLeadCount,
   buyerDistributionSummary,
   classifyApiViewState,
   isEmptyCommandCenter,
@@ -25,6 +26,13 @@ const emptyDesk = {
   jobs: [],
   propertyDiscoveries: { counts: { DISCOVERED: 0, RELEVANT_CANDIDATE: 0, QUALIFIED_LEAD: 0, CALL_READY: 0 } },
 };
+
+test("active seller-lead count excludes persisted terminal and nurture stages", () => {
+  assert.equal(activeSellerLeadCount([
+    "CALL_READY", "UNDER_CONTRACT", "CLOSED", "DEAD_DEAL", "LOST", "NURTURE",
+  ]), 2);
+  assert.equal(activeSellerLeadCount([]), 0);
+});
 
 test("command-center query state distinguishes loading, empty, authenticated data, and service error", () => {
   assert.equal(classifyApiViewState({ isLoading: true, isError: false, data: undefined, error: null }), "LOADING");

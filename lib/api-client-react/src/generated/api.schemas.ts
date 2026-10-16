@@ -2165,24 +2165,6 @@ export const BuyerQualificationTaskState = {
   COMPLETED: 'COMPLETED',
 } as const;
 
-export type BuyerOutreachReadinessStatus = typeof BuyerOutreachReadinessStatus[keyof typeof BuyerOutreachReadinessStatus];
-
-
-export const BuyerOutreachReadinessStatus = {
-  NO_CONTACT_ROUTE: 'NO_CONTACT_ROUTE',
-  CONTACT_PERMISSION_REQUIRED: 'CONTACT_PERMISSION_REQUIRED',
-  NO_CONNECTED_PROVIDER: 'NO_CONNECTED_PROVIDER',
-  READY: 'READY',
-} as const;
-
-export type BuyerOutreachReadinessContactRouteStatus = typeof BuyerOutreachReadinessContactRouteStatus[keyof typeof BuyerOutreachReadinessContactRouteStatus];
-
-
-export const BuyerOutreachReadinessContactRouteStatus = {
-  NONE: 'NONE',
-  PRESENT_UNVERIFIED: 'PRESENT_UNVERIFIED',
-} as const;
-
 export type BuyerOutreachReadinessProviderStatus = typeof BuyerOutreachReadinessProviderStatus[keyof typeof BuyerOutreachReadinessProviderStatus];
 
 
@@ -2208,8 +2190,10 @@ export const BuyerOutreachReadinessAvailableChannelsItem = {
 } as const;
 
 export interface BuyerOutreachReadiness {
-  status: BuyerOutreachReadinessStatus;
-  contactRouteStatus: BuyerOutreachReadinessContactRouteStatus;
+  /** NO_CONTACT_ROUTE, CONTACT_ROUTE_UNVERIFIED, CONTACT_PERMISSION_REQUIRED, NO_CONNECTED_PROVIDER, or READY. */
+  status: string;
+  /** NONE, PRESENT_UNVERIFIED, or VERIFIED. */
+  contactRouteStatus: string;
   providerStatus: BuyerOutreachReadinessProviderStatus;
   deliveryStatus: BuyerOutreachReadinessDeliveryStatus;
   /** @maxLength 16 */

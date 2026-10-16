@@ -19,6 +19,7 @@ import type { z } from "zod";
 import { lockedLead, leadDetail, move, audit } from "./deal-store";
 import { allBuyerRecords, buyerRecord, contractRecord, type Store, type Tx } from "./operations-records";
 import { lockDealEconomics } from "./locked-economics";
+import { buyerOutreachPermissionBlocker, type BuyerContactPermission, type BuyerOutreachChannel } from "./buyer-outreach";
 
 type Intent = z.infer<typeof RespondToBuyerPortalDealBody>;
 type Packet = typeof distributionPacketsTable.$inferSelect;
@@ -29,6 +30,15 @@ const packetStatus = (value: string) => ["ACTIVE", "FIRST_ACCEPTED", "CLOSED", "
 const recipientStatus = (value: string) => ["INVITED", "INTERESTED", "ACCEPTED", "DECLINED", "COMMITTED", "EXPIRED"].includes(value);
 const eventsOf = (row: Recipient): BuyerPortalEvent[] =>
   Array.isArray(row.payload.events) ? row.payload.events as BuyerPortalEvent[] : [];
+function currentDistributionPermission(buyer: { contactPermission?: BuyerContactPermission | null }, now: Date) {
+  const permission = buyer.contactPermission;
+  const channels = (["EMAIL", "SMS", "VOICE"] as const).filter(channel =>
+    !buyerOutreachPermissionBlocker(permission, channel, now));
+  if (!permission || !channels.length) {
+    throw new DomainError("A current, owner-reviewed buyer contact permission is required before creating or using a deal-package link.", 409);
+  }
+  return { channels: channels as BuyerOutreachChannel[], snapshot: permission };
+}
 const hashToken = (token: string) => createHash("sha256").update(token, "utf8").digest("hex");
 
 function validateToken(token: string | undefined) {
@@ -330,6 +340,7 @@ export async function shareDistributionRecipients(
       const reservations = buyerReservations(contractRows, candidate.id, contract.id);
       const match = matchBuyer(candidate, detail, contract, now, undefined, reservations.count, reservations.funds);
       if (!match.eligible) throw new DomainError(`${candidate.name} is no longer qualified for this deal: ${match.mismatches.join("; ")}`, 409);
+      const permission = currentDistributionPermission(candidate, now);
       const [existing] = await tx.select().from(distributionRecipientsTable)
         .where(and(eq(distributionRecipientsTable.packetId, packet.id), eq(distributionRecipientsTable.buyerId, buyerId))).for("update");
       if (existing && existing.status !== "INVITED") {
@@ -340,6 +351,11 @@ export async function shareDistributionRecipients(
       const nextPayload = {
         ...(existing?.payload ?? {}),
         events: Array.isArray(existing?.payload.events) ? existing.payload.events : [],
+        contactPermissionSnapshot: {
+          ...permission.snapshot,
+          channels: permission.channels,
+          checkedAt: now.toISOString(),
+        },
         linkHistory: [...linkHistory, { kind: existing ? "LINK_ROTATED" : "LINK_CREATED", actor: actor.id, recordedAt: now.toISOString() }],
       };
       if (existing) {
@@ -377,6 +393,7 @@ async function loadPortalRecord(tx: Store, tokenHash: string, now: Date) {
   const [buyerRow] = await tx.select().from(buyersTable).where(eq(buyersTable.id, recipient.buyerId));
   if (!buyerRow) throw new DomainError("This buyer link is invalid or no longer active.", 404);
   const buyer = buyerRecord(buyerRow, now);
+  currentDistributionPermission(buyer, now);
   const detail = await assertPacketSnapshotCurrent(tx, packet, contractRow, contract, now);
   const contracts = (await tx.select().from(contractsTable)).map(contractRecord);
   const reservations = buyerReservations(contracts, buyer.id, contract.id);

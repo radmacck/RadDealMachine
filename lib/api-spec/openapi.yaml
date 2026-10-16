@@ -2273,8 +2273,12 @@ components:
       type: object
       required: [status, contactRouteStatus, providerStatus, deliveryStatus, workflowState, permissionStatus, availableChannels, missingCapabilities, nextAction, checkedAt]
       properties:
-        status: { type: string, enum: [NO_CONTACT_ROUTE, CONTACT_PERMISSION_REQUIRED, NO_CONNECTED_PROVIDER, READY] }
-        contactRouteStatus: { type: string, enum: [NONE, PRESENT_UNVERIFIED] }
+        status:
+          type: string
+          description: NO_CONTACT_ROUTE, CONTACT_ROUTE_UNVERIFIED, CONTACT_PERMISSION_REQUIRED, NO_CONNECTED_PROVIDER, or READY.
+        contactRouteStatus:
+          type: string
+          description: NONE, PRESENT_UNVERIFIED, or VERIFIED.
         providerStatus: { type: string, enum: [NOT_CONNECTED, CONNECTED] }
         deliveryStatus: { type: string, enum: [NOT_SENT] }
         workflowState: { type: string, maxLength: 16 }

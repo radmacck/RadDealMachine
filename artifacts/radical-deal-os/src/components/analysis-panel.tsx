@@ -40,6 +40,7 @@ export function AnalysisPanel({ analysis, comps, intelligence = [], full = true 
   }
   const a = analysis;
   const estimateBlocked = a.repairEstimate.status === 'BLOCKED';
+  const underwritingBlocked = estimateBlocked || a.blockers.length > 0;
   const label = (id: string) => comps?.find((c) => c.id === id)?.address ?? id;
   const evidenceFor = (id?: string) => id ? intelligence.find((item) => item.id === id) : undefined;
   const evidenceClass = (classification?: string) =>
@@ -63,9 +64,9 @@ export function AnalysisPanel({ analysis, comps, intelligence = [], full = true 
         <p className="font-mono text-xs text-muted-foreground">engine {a.engineVersion} / {fmtDate(a.calculatedAt)}</p>
       </div>
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <Big tid="text-mao" label="MAO" value={estimateBlocked ? 'BLOCKED' : money(a.mao)} note={estimateBlocked ? 'No complete sourced repair estimate; the system withholds MAO.' : 'Maximum allowable offer'} />
-        <Big tid="text-opening" label="Opening range" value={`${money(a.openingLow)} to ${money(a.openingHigh)}`} note="Conversation guide only" />
-        <Big tid="text-spread" label="Spread at asking" value={money(a.spreadAtAsking)} note={a.spreadAtAsking == null ? 'No asking price recorded' : 'Margin if bought at asking'} />
+        <Big tid="text-mao" label="MAO" value={underwritingBlocked ? 'BLOCKED' : money(a.mao)} note={underwritingBlocked ? 'Current underwriting blockers prevent using this calculated ceiling.' : 'Maximum allowable offer; calculation is not authorization'} />
+        <Big tid="text-opening" label="Opening range" value={underwritingBlocked ? 'BLOCKED' : `${money(a.openingLow)} to ${money(a.openingHigh)}`} note={underwritingBlocked ? 'Resolve current underwriting blockers first.' : 'Conversation guide only'} />
+        <Big tid="text-spread" label="Spread at asking" value={underwritingBlocked ? 'BLOCKED' : money(a.spreadAtAsking)} note={underwritingBlocked ? 'Resolve current underwriting blockers first.' : a.spreadAtAsking == null ? 'No asking price recorded' : 'INFERRED · estimated buyer margin at asking, after assignment target and configured costs'} />
         <Big tid="text-approved" label="Research is not authorization" value={a.maximumApprovedAcquisitionPrice == null ? 'Not authorized' : money(a.maximumApprovedAcquisitionPrice)} note="Actual owner approval appears on a specific offer, never on this research snapshot" />
       </div>
       <div className="mt-4">

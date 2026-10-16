@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { workerFailureDisposition, workerLeaseExpired, workerRecoveryMessage, workerRetryDelayMs } from "./worker-recovery";
+import { workerFailureDisposition, workerFailureIsRetryable, workerLeaseExpired, workerRecoveryMessage, workerRetryDelayMs } from "./worker-recovery";
 
 test("worker failures back off with a bounded retry schedule and dead-letter on the final attempt", () => {
   const now = new Date("2026-10-14T12:00:00.000Z");
@@ -18,6 +18,19 @@ test("worker failures back off with a bounded retry schedule and dead-letter on 
   assert.match(workerRecoveryMessage(first,"operator-123"),/Accountable requestor: operator-123/);
   assert.match(final.message,/Dead-lettered/);
   assert.equal(workerRetryDelayMs(99),5*60_000);
+});
+
+test("permanent domain failures stop immediately while provider outages remain bounded-retryable", () => {
+  const now = new Date("2026-10-14T12:00:00.000Z");
+  assert.equal(workerFailureIsRetryable({status:409}),false);
+  assert.equal(workerFailureIsRetryable({status:422}),false);
+  assert.equal(workerFailureIsRetryable({status:429}),true);
+  assert.equal(workerFailureIsRetryable({status:503}),true);
+  assert.equal(workerFailureIsRetryable(new Error("socket timeout")),true);
+  const permanent = workerFailureDisposition(1,now,false);
+  assert.equal(permanent.state,"FAILED");
+  assert.equal(permanent.retryAt,null);
+  assert.equal(permanent.nextAction,"OPERATOR_REVIEW_AND_QUEUE_NEW_IDEMPOTENCY_KEY");
 });
 
 test("stale leases are recovered only for running jobs after the exact lease timeout", () => {

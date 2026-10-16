@@ -5,8 +5,8 @@ export function workerRetryDelayMs(attempt: number): number {
   return Math.min(5 * 60_000, 15_000 * 2 ** Math.max(0, attempt - 1));
 }
 
-export function workerFailureDisposition(attempts: number, now: Date) {
-  const deadLetter = attempts >= WORKER_MAX_ATTEMPTS;
+export function workerFailureDisposition(attempts: number, now: Date, retryable = true) {
+  const deadLetter = !retryable || attempts >= WORKER_MAX_ATTEMPTS;
   const retryAt = deadLetter ? null : new Date(now.getTime() + workerRetryDelayMs(attempts));
   return {
     state: deadLetter ? "FAILED" as const : "QUEUED" as const,
@@ -16,6 +16,13 @@ export function workerFailureDisposition(attempts: number, now: Date) {
       ? `Dead-lettered after ${attempts} failed attempts; operator review and a fresh idempotency key are required.`
       : `Attempt ${attempts} failed; retry safely scheduled for ${retryAt!.toISOString()}.`,
   };
+}
+
+export function workerFailureIsRetryable(error: unknown): boolean {
+  if (!error || typeof error !== "object" || !("status" in error) || typeof error.status !== "number")
+    return true;
+  const status = error.status;
+  return status === 408 || status === 425 || status === 429 || status >= 500;
 }
 
 export function workerRecoveryMessage(disposition: ReturnType<typeof workerFailureDisposition>, requester: string): string {

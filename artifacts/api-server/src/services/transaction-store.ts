@@ -671,9 +671,12 @@ export async function recordTransactionDeadlineSchedule(
   const parsed = RecordTransactionDeadlineScheduleBody.parse(input);
   const sourceEvidenceUrl = evidenceUrl(parsed.sourceEvidenceUrl);
   const normalizedInput = {...parsed,sourceEvidenceUrl};
-  const requestHash = transactionDeadlineRequestHash(normalizedInput);
+  const {version: _contractVersion, deadlineScheduleVersion: _scheduleVersion, ...semanticRequest} = normalizedInput;
+  const requestHash = transactionDeadlineRequestHash(semanticRequest);
   await db.transaction(async tx=>{
-    const {row,contract} = await lockedContract(tx,id,parsed.version);
+    const [row] = await tx.select().from(contractsTable).where(eq(contractsTable.leadId,id)).for("update");
+    if (!row) throw new DomainError("Prepare the contract first.",409);
+    const contract = contractRecord(row);
     const history = Array.isArray(contract.deadlineScheduleHistory) ? contract.deadlineScheduleHistory : [];
     const prior = history.find(item=>item.idempotencyKey===parsed.idempotencyKey);
     if (prior) {
@@ -681,6 +684,8 @@ export async function recordTransactionDeadlineSchedule(
         throw new DomainError("Deadline-schedule idempotency key already belongs to a different request.",409);
       return;
     }
+    if (row.version!==parsed.version) throw new DomainError("Transaction changed. Reload before saving.",409);
+    if (["CLOSED","CANCELLED"].includes(contract.status)) throw new DomainError("This transaction is terminal; its history is read-only.",409);
     if (contract.status!=="UNDER_CONTRACT"&&contract.status!=="CLOSING")
       throw new DomainError("Review deadline schedules only after the executed acquisition agreement is recorded.",409);
     if (!contract.executedDocumentUrl||!contract.sellerSignedAt||!contract.acquisitionSignedAt)
@@ -742,6 +747,7 @@ export async function recordTransactionDeadlineSchedule(
         deadlineSchedule:schedule,
         deadlineScheduleHistory:nextHistory,
       },
+      version:row.version+1,
       updatedAt:now,
     }).where(eq(contractsTable.id,row.id));
     await audit(tx,actor.id,"TRANSACTION_DEADLINE_SCHEDULE_REVIEWED",id,

@@ -9,6 +9,12 @@ Compare persisted execution commands by semantic content, not JSON serialization
 
 **How to apply:** Preserve actor, subject, capability and meaningful payload equality on retries; ignore object-key ordering, not differences in values or array semantics.
 
+Worker retries must be bounded and classify permanent domain conflicts separately from transient source/provider failures. Permanent failures should become visible operator-review items immediately; provider timeouts, rate limits, and server outages may use the bounded retry schedule.
+
+**Why:** Retrying terminal/stale work wastes attempts and leaves obsolete operations queued, while treating provider outages as permanent prevents safe recovery.
+
+**How to apply:** Give transient provider failures retryable status codes, let deterministic domain conflicts fail without retry, and keep exact operation identity for recovery after a side effect has already persisted.
+
 Do not define recurring informational outreach identity solely by a mutable subject row revision.
 
 **Why:** Automatic matching legitimately advances seller row revisions without changing the outreach intent. Treating every revision as a new handoff repeatedly replaces pending work and loses the outstanding reply context.

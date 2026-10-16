@@ -18,7 +18,7 @@ import { evaluateAllLeadDecisions, evaluateLeadDecision } from "./intelligence-d
 import { decisionWorkExecutors, runDecisionWorkOnce } from "./decision-work-lifecycle";
 import { evaluateAllTransactionReadiness } from "./transaction-readiness";
 import { completedWorkerJobState } from "./worker-job-state";
-import { workerFailureDisposition, workerLeaseExpired, workerRecoveryMessage } from "./worker-recovery";
+import { workerFailureDisposition, workerFailureIsRetryable, workerLeaseExpired, workerRecoveryMessage } from "./worker-recovery";
 
 const BUYER_SOURCE_POLICY_VERSION = "phila-buyer-sources-v2";
 
@@ -182,7 +182,7 @@ export async function runWorkerOnce(now = new Date(), schedule = false, onlyJobI
   } catch (error) {
     const message = error instanceof Error?error.message:"Worker failed. No success was recorded.";
     const failedAt = new Date();
-    const disposition = workerFailureDisposition(row.attempts,failedAt);
+    const disposition = workerFailureDisposition(row.attempts,failedAt,workerFailureIsRetryable(error));
     const priorRecovery = row.payload.recovery && typeof row.payload.recovery === "object"
       ? row.payload.recovery as Record<string,unknown> : {};
     const history = Array.isArray(priorRecovery.history) ? priorRecovery.history : [];

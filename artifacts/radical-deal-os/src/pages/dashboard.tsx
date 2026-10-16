@@ -16,6 +16,7 @@ import { useWorkspaceSearch } from '@/components/workspace-search';
 import { commandCenterCallDisplay } from '@/lib/command-center-display';
 import {
   buyerDistributionSummary,
+  activeSellerLeadCount,
   classifyApiViewState,
   isCurrentApprovedBuyer,
   isEmptyCommandCenter,
@@ -170,7 +171,7 @@ export default function Dashboard() {
   const primaryCall = callDisplay.primaryCall;
   const additionalCalls = callDisplay.additionalCalls;
   const nextCall = additionalCalls[0];
-  const activeOpportunityCount = d ? d.deals.filter((item) => !['CLOSED', 'DEAD_DEAL'].includes(item.lead.stage)).length : 0;
+  const activeOpportunityCount = d ? activeSellerLeadCount(d.deals.map((item) => item.lead.stage)) : 0;
   const closingThisMonth = deadlines.filter((operation) => {
     const date = new Date(operation.contract!.closingAt);
     return !Number.isNaN(date.getTime()) && date.getMonth() === now.getMonth() && date.getFullYear() === now.getFullYear();

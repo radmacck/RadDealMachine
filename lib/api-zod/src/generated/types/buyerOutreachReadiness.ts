@@ -6,14 +6,14 @@
  * OpenAPI spec version: 1.0.0
  */
 import type { BuyerOutreachReadinessAvailableChannelsItem } from './buyerOutreachReadinessAvailableChannelsItem';
-import type { BuyerOutreachReadinessContactRouteStatus } from './buyerOutreachReadinessContactRouteStatus';
 import type { BuyerOutreachReadinessDeliveryStatus } from './buyerOutreachReadinessDeliveryStatus';
 import type { BuyerOutreachReadinessProviderStatus } from './buyerOutreachReadinessProviderStatus';
-import type { BuyerOutreachReadinessStatus } from './buyerOutreachReadinessStatus';
 
 export interface BuyerOutreachReadiness {
-  status: BuyerOutreachReadinessStatus;
-  contactRouteStatus: BuyerOutreachReadinessContactRouteStatus;
+  /** NO_CONTACT_ROUTE, CONTACT_ROUTE_UNVERIFIED, CONTACT_PERMISSION_REQUIRED, NO_CONNECTED_PROVIDER, or READY. */
+  status: string;
+  /** NONE, PRESENT_UNVERIFIED, or VERIFIED. */
+  contactRouteStatus: string;
   providerStatus: BuyerOutreachReadinessProviderStatus;
   deliveryStatus: BuyerOutreachReadinessDeliveryStatus;
   /** @maxLength 16 */

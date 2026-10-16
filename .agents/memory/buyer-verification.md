@@ -26,3 +26,9 @@ Buyer-pool coverage must count only current owner-approved buyers with fresh ide
 **Why:** Stated buy boxes and funding preferences are not live capacity; active commitments can consume available funds or deal slots, and test fixtures must not make a market look served.
 
 **How to apply:** Keep prospects and stale buyers visible as acquisition/reverification work, but never count them as eligible coverage. Use active transaction reservations when comparing a price band with buyer capacity.
+
+Creating a buyer deal-package capability requires current, owner-reviewed permission for at least one channel. Recheck permission on every portal access or response so a later opt-out or expiry blocks an already-issued bearer link; preserve the permission snapshot used at link creation. An invitation or link access is not delivery evidence.
+
+**Why:** Deal fit and buyer identity do not imply consent to receive a private package, and consent can be withdrawn while a capability remains active.
+
+**How to apply:** Gate package-link creation and use separately from match eligibility, retain the exact permission evidence and channels checked, and keep delivery status unconfirmed until a provider supplies a real receipt.

@@ -36,6 +36,7 @@
     "test:transaction-readiness": "tsx --test src/services/transaction-readiness.test.ts",
     "test:provider-health": "tsx --test src/services/provider-health.test.ts",
     "test:workspace-setup": "tsx --test src/services/workspace-setup.test.ts",
+    "test:persistence-safety": "tsx --test src/services/persistence-safety.test.ts",
     "exercise:workspace-setup": "tsx src/services/isolated-exercise.ts workspace-setup-exercise.ts",
     "exercise:command-center": "tsx src/services/isolated-exercise.ts command-center-exercise.ts",
     "exercise:acquisition-queue": "tsx src/services/isolated-exercise.ts acquisition-queue-exercise.ts",

@@ -18,17 +18,25 @@ async function withServer<T>(serverApp: express.Express, callback: (baseUrl: str
   }
 }
 
-test("actual private command-center, transaction, contact-research, and buyer-permission routes require a session", async () => {
+test("consequential private routes reject missing and malformed sessions before handlers run", async () => {
   await withServer(app,async baseUrl => {
     const requests: Array<{path:string;init?:RequestInit}> = [
       { path: "/api/deals/command-center" },
       { path: "/api/leads/00000000-0000-4000-8000-000000000001" },
+      { path: "/api/leads/00000000-0000-4000-8000-000000000001/evidence-packet" },
+      { path: "/api/leads/00000000-0000-4000-8000-000000000001/contact-paths" },
       { path: "/api/deals/00000000-0000-4000-8000-000000000001/operations" },
       {
         path: "/api/leads/00000000-0000-4000-8000-000000000001/calls",
         init: { method: "POST", headers: { "content-type": "application/json" }, body: "{}" },
       },
+      {
+        path: "/api/leads/00000000-0000-4000-8000-000000000001/offers/00000000-0000-4000-8000-000000000002/authorize",
+        init: { method: "POST", headers: { "content-type": "application/json" }, body: "{}" },
+      },
       { path: "/api/operations/transaction-readiness" },
+      { path: "/api/buyers" },
+      { path: "/api/buyers/00000000-0000-4000-8000-000000000001/contact-research" },
       {
         path: `/api/property-discoveries/${"00000000-0000-4000-8000-000000000001"}/contact-research`,
         init: { method: "POST", headers: { "content-type": "application/json" }, body: "{}" },
@@ -37,12 +45,30 @@ test("actual private command-center, transaction, contact-research, and buyer-pe
         path: "/api/buyers/00000000-0000-4000-8000-000000000001/contact-permission",
         init: { method: "POST", headers: { "content-type": "application/json" }, body: "{}" },
       },
+      { path: "/api/deals/00000000-0000-4000-8000-000000000001/distribution" },
+      {
+        path: "/api/deals/00000000-0000-4000-8000-000000000001/distribution/authorize",
+        init: { method: "POST", headers: { "content-type": "application/json" }, body: "{}" },
+      },
+      {
+        path: "/api/deals/00000000-0000-4000-8000-000000000001/contract/documents/00000000-0000-4000-8000-000000000002/file",
+      },
+      {
+        path: "/api/deals/00000000-0000-4000-8000-000000000001/contract/milestones",
+        init: { method: "POST", headers: { "content-type": "application/json" }, body: "{}" },
+      },
+      { path: "/api/workspace-setup" },
+      { path: "/api/deals/audit" },
     ];
-    for (const {path,init} of requests) {
-      const response = await fetch(`${baseUrl}${path}`,init);
-      assert.equal(response.status,401,path);
-      const body = await response.json() as { error?: string };
-      assert.match(body.error ?? "",/sign in|authenticated|session/i,path);
+    for (const session of ["missing","malformed"] as const) {
+      for (const {path,init} of requests) {
+        const headers = new Headers(init?.headers);
+        if (session==="malformed") headers.set("Authorization","Bearer invalid.session.token");
+        const response = await fetch(`${baseUrl}${path}`,{...init,headers});
+        assert.equal(response.status,401,`${session} session ${path}`);
+        const body = await response.json() as { error?: string };
+        assert.match(body.error ?? "",/sign in|authenticated|session/i,`${session} session ${path}`);
+      }
     }
   });
 });

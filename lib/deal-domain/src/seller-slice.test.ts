@@ -39,9 +39,20 @@ test("ARV, repairs, MAO, opening ranges and spread have exact reproducible arith
   assert.equal(result.mao,130000);
   assert.equal(result.openingLow,104000);
   assert.equal(result.openingHigh,117000);
-  assert.equal(result.spreadAtAsking,45000);
+  assert.equal(result.spreadAtAsking,30000,
+    "buyer margin at asking must include the configured assignment target, not only the pre-assignment ceiling");
   assert.equal(result.classification,"STRONG");
   assert.equal(result.maximumApprovedAcquisitionPrice,null);
+});
+test("assignment economics reduce buyer spread and MAO dollar-for-dollar without authorizing an offer",() => {
+  const noAssignment = analyzeDeal(lead,input,{...DEFAULT_ASSUMPTIONS,assignmentTarget:0},now);
+  const standard = analyzeDeal(lead,input,DEFAULT_ASSUMPTIONS,now);
+  const higherAssignment = analyzeDeal(lead,input,{...DEFAULT_ASSUMPTIONS,assignmentTarget:25000},now);
+  assert.equal(noAssignment.spreadAtAsking! - standard.spreadAtAsking!,15000);
+  assert.equal(standard.spreadAtAsking! - higherAssignment.spreadAtAsking!,10000);
+  assert.equal(noAssignment.mao - standard.mao,15000);
+  assert.equal(standard.mao - higherAssignment.mao,10000);
+  assert.equal(standard.maximumApprovedAcquisitionPrice,null);
 });
 test("classification uses explicit conservative and expected-case thresholds",() => {
   assert.equal(analyzeDeal({...lead,askingPrice:140000},input,DEFAULT_ASSUMPTIONS,now).classification,"NEGOTIABLE");

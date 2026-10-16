@@ -17,7 +17,7 @@ export function buyerRecord(row: typeof buyersTable.$inferSelect, now = new Date
     : null;
   const withPermission = {...candidate,contactPermission};
   const qualificationTask = candidate.qualificationTask
-    ? {...candidate.qualificationTask,outreachReadiness:buyerOutreachReadiness(withPermission,now)}
+    ? {...candidate.qualificationTask,outreachReadiness:buyerOutreachReadiness({...withPermission,contactRouteVerified:false},now)}
     : candidate.qualificationTask;
   return {...candidate,destinationKind:candidate.destinationKind??"BUYER",currentBuyingStatus:candidate.currentBuyingStatus??"UNKNOWN",
     contactPermission:withPermission.contactPermission,qualificationTask,verificationStatus:verificationStatus(candidate,now),

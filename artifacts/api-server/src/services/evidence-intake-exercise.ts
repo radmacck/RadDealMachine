@@ -29,8 +29,8 @@ try {
   assert.ok(!(await callQueue(now)).some(b=>b.lead.address===actual.address));
   await assert.rejects(transitionLeadForActor(discovery.id,{version:discovery.version,to:"CALL_READY",reason:"Source alone",nextAction:"Call"},actor,now),DomainError);
 
-  // Separately labelled synthetic packet demonstrates the fully supplied
-  // input adapter. It is NOT claimed as a completed real-property exercise.
+   // Separately labelled synthetic packet exercises evidence intake and
+   // deterministic underwriting. Synthetic routes must never authorize CALL_READY.
   const lead = await createLead({address:"SYNTHETIC PACKET SUBJECT",city:"Synthetic City",state:"TX",county:"Synthetic County",zip:"75001",
     propertyType:"SINGLE_FAMILY",sqft:1000,beds:3,baths:2,units:1,sellerName:"SYNTHETIC SELLER",
     askingPrice:100000,source:"SYNTHETIC isolated packet exercise"},actor.id,now);
@@ -95,19 +95,23 @@ try {
   assert.equal(detail.lead.propertyQualification?.status,"QUALIFIED_LEAD",
     "Evidence intake must preserve the qualification rationale on the linked lead.");
   await assert.rejects(intakePropertyEvidence(lead.id,packet,actor,now),e=>(e as DomainError).status===409);
-  detail = await transitionLeadForActor(lead.id,{version:detail.lead.version,to:"CALL_READY",reason:"Synthetic reviewed packet complete",nextAction:"Synthetic call"},actor,now);
-  assert.ok((await callQueue(now)).some(b=>b.lead.id===lead.id));
-  assert.equal(detail.lead.propertyQualification?.status,"CALL_READY");
-  assert.equal(detail.lead.propertyQualification?.nextAction,detail.lead.nextAction);
+   await assert.rejects(transitionLeadForActor(lead.id,{version:detail.lead.version,to:"CALL_READY",
+     reason:"Synthetic packet is not real contactability evidence.",nextAction:"Obtain permitted owner-reviewed contactability evidence."},actor,now),
+     /CALL_READY is blocked: source-backed ownership\/identity review and a permitted seller route are required/);
+   detail = await leadDetail(lead.id);
+   assert.ok(!(await callQueue(now)).some(b=>b.lead.id===lead.id),
+     "Synthetic evidence must never enter the call-ready seller queue.");
+   assert.equal(detail.lead.propertyQualification?.status,"QUALIFIED_LEAD");
   const [readyDiscovery] = await db.select().from(propertyDiscoveriesTable).where(eq(propertyDiscoveriesTable.id,qualificationDiscovery.id));
-  assert.equal(readyDiscovery?.status,"CALL_READY");
+   assert.equal(readyDiscovery?.status,"QUALIFIED_LEAD");
   // Expired linked evidence is checked at read time, not only on save.
   const expired = new Date(now.getTime()+31*86400000);
   assert.equal((await leadDetail(lead.id,undefined,expired)).analysis?.classification,"INCOMPLETE");
   assert.ok(!(await callQueue(expired)).some(b=>b.lead.id===lead.id));
    await assert.rejects(recordCall(lead.id,{version:detail.lead.version,outcome:"NO_ANSWER",
      notes:"SYNTHETIC stale-route guard exercise.",nextAction:"Refresh contact route evidence.",
-     followUpAt:new Date(expired.getTime()+86400000).toISOString()},actor.id,expired),/CALL READY evidence is stale or incomplete/);
+      followUpAt:new Date(expired.getTime()+86400000).toISOString()},actor.id,expired),
+      /Calls can only be recorded for call-ready or active seller\/closing conversations/);
   assert.ok((await db.select().from(intelligenceTable).where(eq(intelligenceTable.leadId,lead.id))).length>=entries.length);
   // Force a failure AFTER lead/evidence writes, at snapshot persistence. This
   // verifies an actual PostgreSQL rollback, not just input rejection.

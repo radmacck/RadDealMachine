@@ -6,7 +6,7 @@
 import assert from "node:assert/strict";
 import { randomUUID } from "node:crypto";
 import { eq } from "drizzle-orm";
-import { db, pool, leadsTable, intelligenceTable } from "@workspace/db";
+import { db, pool, leadsTable, intelligenceTable, jobsTable } from "@workspace/db";
 import { logger } from "../lib/logger";
 import { createLead, leadDetail } from "./deal-store";
 import { submitWorkerJob, runWorkerOnce } from "./workers";
@@ -105,6 +105,46 @@ try {
       cases++;
     }
   }
+  const recoveryLead = await createLead({
+    address:"456 Synthetic Recovery Street",city:"Washington",state:"DC",county:"District of Columbia",
+    zip:"20500",propertyType:"OTHER",sqft:0,beds:0,baths:0,units:1,sellerName:"SYNTHETIC NON-SELLER",
+    source:"Synthetic partial-persistence recovery fixture. No real subject or seller.",
+    sellerDescription:"Synthetic lifecycle fixture; no facts are verified.",
+  },actor.id);
+  response = {
+    id:"synthetic-recovery-completion",object:"chat.completion",created:0,model:"synthetic-mocked-model",
+    choices:[{index:0,finish_reason:"stop",message:{role:"assistant",content:JSON.stringify({hypotheses:[{
+      statement:"The supplied property details may require confirmation.",
+      question:"Which property details should we confirm before proceeding?",
+      action:"Ask a human reviewer to verify the supplied property details.",
+      confidence:0.2,evidenceIds:[`subject:${recoveryLead.id}`],
+    }]})}}],
+  };
+  requests=0;
+  released=deferred();
+  released.resolve();
+  const recoveryJob=await submitWorkerJob({kind:"PREPARE_BRIEF",leadId:recoveryLead.id,
+    idempotencyKey:`synthetic-partial-persistence:${randomUUID()}`},actor);
+  const beforeRecoveryIntelligence=await db.select().from(intelligenceTable)
+    .where(eq(intelligenceTable.leadId,recoveryLead.id));
+  const completed=await runWorkerOnce(new Date(),false,recoveryJob.id);
+  assert.equal(completed?.state,"SUCCEEDED");
+  assert.equal(requests,1);
+  const interruptedAt=new Date(Date.now()-4*60_000);
+  await db.update(jobsTable).set({state:"RUNNING",updatedAt:interruptedAt}).where(eq(jobsTable.id,recoveryJob.id));
+  const leaseRecoveryAt=new Date(interruptedAt.getTime()+4*60_000+1);
+  assert.equal(await runWorkerOnce(leaseRecoveryAt,false,recoveryJob.id),null,
+    "An interrupted job must respect its persisted backoff before retry.");
+  const recovered=await runWorkerOnce(new Date(leaseRecoveryAt.getTime()+16_000),false,recoveryJob.id);
+  assert.equal(recovered?.state,"SUCCEEDED","A worker crash after the business write must recover without false failure.");
+  assert.equal(recovered?.attempts,2);
+  assert.equal(requests,1,"The persisted job marker prevents repeating the external model request after a post-write interruption.");
+  const recoveryHypotheses=await db.select().from(intelligenceTable).where(eq(intelligenceTable.leadId,recoveryLead.id));
+  assert.equal(recoveryHypotheses.length,beforeRecoveryIntelligence.length+1,
+    "Recovery after partial persistence must not duplicate the already committed business effect.");
+  assert.equal(recoveryHypotheses.filter(item=>item.payload.workerMarker===`ai:${recoveryJob.id}`).length,1,
+    "Exactly one append-only hypothesis event is retained for the completed work identity.");
+  cases++;
   logger.info({ cases, providers: "mocked; no real source verification or paid model requests" },
     "Research lifecycle persistence regression PASSED: active controls and terminal-race rejection");
 } finally {

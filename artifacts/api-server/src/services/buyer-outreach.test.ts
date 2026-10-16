@@ -4,6 +4,7 @@ import {
   assertBuyerOutreachTransition,
   buyerOutreachPermissionBlocker,
   buyerOutreachReadiness,
+  registerBuyerOutreachProvider,
   approveExactDistributionMessage,
   assertExactDistributionApprovalCurrent,
   assertDistributionSubmissionReady,
@@ -56,6 +57,74 @@ test("unconnected buyer outreach remains explicitly not sent and permission-bloc
   assert.ok(readiness.missingCapabilities.some(reason => reason.includes("provider")));
 });
 
+test("buyer outreach readiness distinguishes unavailable provider, missing permission, and ready exact channel", t => {
+  const now = new Date("2026-10-15T12:00:00Z");
+  const buyer = {
+    email: "buyer@example.invalid",
+    contactRouteVerified: true,
+    contactPermission: {
+      status: "GRANTED" as const,
+      channels: ["EMAIL" as const],
+      evidenceUrl: "https://example.invalid/synthetic-consent",
+      source: "synthetic fixture",
+      capturedAt: "2026-10-15T10:00:00Z",
+      validUntil: "2026-10-20T10:00:00Z",
+    },
+  };
+  const readyProvider = {
+    id: "synthetic-outreach-provider",
+    connected: true,
+    channels: ["EMAIL" as const],
+    async send() {
+      throw new Error("Fixture sender must never be invoked by readiness checks.");
+    },
+  };
+  const unregister = registerBuyerOutreachProvider(readyProvider);
+  t.after(unregister);
+
+  const ready = buyerOutreachReadiness(buyer, now);
+  assert.equal(ready.status, "READY");
+  assert.deepEqual(ready.availableChannels, ["EMAIL"]);
+  assert.equal(ready.deliveryStatus, "NOT_SENT");
+  assert.equal(ready.workflowState, "DRAFT");
+
+  const permissionBlocked = buyerOutreachReadiness({
+    ...buyer,
+    contactPermission: { ...buyer.contactPermission, status: "UNKNOWN" },
+  }, now);
+  assert.equal(permissionBlocked.status, "CONTACT_PERMISSION_REQUIRED");
+  assert.ok(!permissionBlocked.missingCapabilities.some(reason => /do not support/i.test(reason)));
+
+  const unsupported = buyerOutreachReadiness({
+    phone: "5550100",
+    contactRouteVerified: true,
+    contactPermission: { ...buyer.contactPermission, channels: ["SMS"] },
+  }, now);
+  assert.equal(unsupported.status, "NO_CONNECTED_PROVIDER");
+  assert.ok(unsupported.missingCapabilities.some(reason => /do not support/i.test(reason)));
+});
+
+test("source and consent do not substitute for independent recipient-route verification", t => {
+  const unregister = registerBuyerOutreachProvider({
+    id: "synthetic-route-check-provider",
+    connected: true,
+    channels: ["EMAIL"],
+    async send() { throw new Error("No fixture sends are permitted."); },
+  });
+  t.after(unregister);
+  const readiness = buyerOutreachReadiness({
+    email: "buyer@example.invalid",
+    contactPermission: {
+      status: "GRANTED", channels: ["EMAIL"], evidenceUrl: "https://example.invalid/consent",
+      source: "synthetic", capturedAt: "2026-10-15T10:00:00Z", validUntil: "2026-10-20T10:00:00Z",
+    },
+  }, new Date("2026-10-15T12:00:00Z"));
+  assert.equal(readiness.status, "CONTACT_ROUTE_UNVERIFIED");
+  assert.equal(readiness.contactRouteStatus, "PRESENT_UNVERIFIED");
+  assert.deepEqual(readiness.availableChannels, []);
+  assert.equal(readiness.deliveryStatus, "NOT_SENT");
+});
+
 test("distribution approval is bound to exact buyer, channel, packet version, snapshot and text", () => {
   const current = {
     buyerId: "buyer-1", channel: "EMAIL" as const, packetVersion: 4,
@@ -79,13 +148,24 @@ test("provider submission is blocked before exact approval, current channel perm
     evidenceUrl: "https://example.com/consent", source: "synthetic consent fixture",
     capturedAt: "2026-10-15T10:00:00Z", validUntil: "2026-10-20T10:00:00Z",
   };
-  assert.throws(() => assertDistributionSubmissionReady(null, permission, "EMAIL", undefined, now), /approval is required/);
+  const current = {
+    buyerId: "buyer-1", channel: "EMAIL" as const, packetVersion: 1,
+    packetSnapshotHash: "a".repeat(64), exactMessage: "Exact approved test text.",
+  };
+  assert.throws(() => assertDistributionSubmissionReady(null, current, permission, "EMAIL", undefined, now, true), /approval is required/);
   const approval = approveExactDistributionMessage({
-    buyerId: "buyer-1", channel: "EMAIL", packetVersion: 1, packetSnapshotHash: "a".repeat(64),
-    exactMessage: "Exact approved test text.", approvedBy: "owner-1", approvedAt: now.toISOString(),
+    ...current, approvedBy: "owner-1", approvedAt: now.toISOString(),
   });
-  assert.throws(() => assertDistributionSubmissionReady(approval, permission, "EMAIL", undefined, now), /remains unsent/);
-  assert.throws(() => assertDistributionSubmissionReady(approval, { ...permission, status: "OPTED_OUT" }, "EMAIL", undefined, now), /not recorded/);
+  assert.throws(() => assertDistributionSubmissionReady(approval, { ...current, exactMessage: "Changed after approval." },
+    permission, "EMAIL", undefined, now, true), /stale/);
+  assert.throws(() => assertDistributionSubmissionReady(approval, current, permission, "EMAIL", undefined, now), /route is not independently verified/);
+  assert.throws(() => assertDistributionSubmissionReady(approval, current, { ...permission, status: "OPTED_OUT" }, "EMAIL", undefined, now, true), /not recorded/);
+  let sends = 0;
+  const provider = {
+    id: "fixture", connected: true, channels: ["EMAIL" as const], async send() { sends++; throw new Error("Not invoked."); },
+  };
+  assert.doesNotThrow(() => assertDistributionSubmissionReady(approval, current, permission, "EMAIL", provider, now, true));
+  assert.equal(sends, 0, "The readiness guard validates eligibility only and never submits a message.");
 });
 
 test("provider acceptance, delivery, duplicate callbacks, and conflicts preserve delivery truth", () => {
@@ -98,7 +178,39 @@ test("provider acceptance, delivery, duplicate callbacks, and conflicts preserve
   const events = applyDistributionProviderEvent([], accepted);
   assert.deepEqual(applyDistributionProviderEvent(events, accepted), events);
   assert.throws(() => applyDistributionProviderEvent(events, { ...accepted, state: "FAILED" }), /different content/);
+  assert.throws(() => applyDistributionProviderEvent(events, {
+    ...delivered, eventId: "foreign-provider-delivery", providerId: "other-provider",
+  }), /already bound to a different provider/);
   const withDelivery = applyDistributionProviderEvent(events, delivered);
   assert.deepEqual(withDelivery.map(event => event.state), ["PROVIDER_ACCEPTED", "DELIVERED"]);
   assert.equal(withDelivery.length, 2, "Provider delivery receipts cannot create portal interest or commitment events.");
+  assert.throws(() => applyDistributionProviderEvent(withDelivery, {
+    ...accepted, eventId: "evt-late-failure", state: "FAILED",
+  }), /already terminal/);
+  assert.throws(() => applyDistributionProviderEvent(events, {
+    ...accepted, eventId: "evt-duplicate-acceptance",
+  }), /already has an acceptance event/);
+});
+
+test("failed provider attempt can be retried only as a distinct provider message; duplicate callbacks remain idempotent", () => {
+  const failed = {
+    eventId: "evt-failed", providerId: "test-provider", providerMessageId: "msg-attempt-1",
+    state: "FAILED" as const, occurredAt: "2026-10-15T12:00:00Z",
+  };
+  const acceptedRetry = {
+    eventId: "evt-retry-accepted", providerId: "test-provider", providerMessageId: "msg-attempt-2",
+    state: "PROVIDER_ACCEPTED" as const, occurredAt: "2026-10-15T12:05:00Z",
+  };
+  const deliveredRetry = {
+    ...acceptedRetry, eventId: "evt-retry-delivered", state: "DELIVERED" as const,
+    occurredAt: "2026-10-15T12:06:00Z",
+  };
+  const history = applyDistributionProviderEvent([], failed);
+  const withRetry = applyDistributionProviderEvent(history, acceptedRetry);
+  const withReceipt = applyDistributionProviderEvent(withRetry, deliveredRetry);
+  assert.deepEqual(withReceipt.map(event => event.state), ["FAILED", "PROVIDER_ACCEPTED", "DELIVERED"]);
+  assert.deepEqual(applyDistributionProviderEvent(withReceipt, deliveredRetry), withReceipt);
+  assert.throws(() => applyDistributionProviderEvent(withReceipt, {
+    ...deliveredRetry, eventId: "evt-retry-delivered", state: "FAILED",
+  }), /different content/);
 });

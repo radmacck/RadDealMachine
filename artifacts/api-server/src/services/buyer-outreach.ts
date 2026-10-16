@@ -113,12 +113,16 @@ export function assertExactDistributionApprovalCurrent(
 /** Provider submit is forbidden unless the exact approval, current channel permission, and provider are all present. */
 export function assertDistributionSubmissionReady(
   approval: ExactMessageApproval | null,
+  current: { buyerId: string; channel: "EMAIL" | "SMS"; packetVersion: number; packetSnapshotHash: string; exactMessage: string },
   permission: BuyerContactPermission | null | undefined,
   channel: "EMAIL" | "SMS",
   provider: BuyerOutreachProvider | undefined,
   now = new Date(),
+  contactRouteVerified = false,
 ) {
   if (!approval || approval.channel !== channel) throw new Error("Exact recipient message approval is required before provider submission.");
+  assertExactDistributionApprovalCurrent(approval, current);
+  if (!contactRouteVerified) throw new Error("The recipient route is not independently verified; message remains unsent.");
   const permissionBlock = buyerOutreachPermissionBlocker(permission, channel, now);
   if (permissionBlock) throw new Error(permissionBlock);
   if (!provider?.connected || !provider.channels.includes(channel)) throw new Error("No connected provider supports this channel; message remains unsent.");
@@ -136,9 +140,20 @@ export function applyDistributionProviderEvent(
     if (JSON.stringify(duplicate) !== JSON.stringify(incoming)) throw new Error("Provider event id was replayed with different content.");
     return events;
   }
-  const accepted = events.some(event => event.providerMessageId === incoming.providerMessageId &&
+  const messageHistory = events.filter(event => event.providerMessageId === incoming.providerMessageId);
+  if (messageHistory.some(event => event.providerId !== incoming.providerId)) {
+    throw new Error("Provider message id is already bound to a different provider.");
+  }
+  if (messageHistory.some(event => event.state === "DELIVERED" || event.state === "FAILED")) {
+    throw new Error("Provider message is already terminal; retry must use a distinct provider message id.");
+  }
+  const accepted = events.some(event => event.providerId === incoming.providerId &&
+    event.providerMessageId === incoming.providerMessageId &&
     event.state === "PROVIDER_ACCEPTED");
   if (incoming.state === "DELIVERED" && !accepted) throw new Error("Delivery requires a matching provider-accepted submission.");
+  if (incoming.state === "PROVIDER_ACCEPTED" && accepted) {
+    throw new Error("Provider message already has an acceptance event; callback replay must retain the same event id.");
+  }
   return [...events, incoming];
 }
 
@@ -155,8 +170,8 @@ export interface BuyerOutreachProvider {
 }
 
 export type BuyerOutreachReadiness = {
-  status: "NO_CONTACT_ROUTE" | "CONTACT_PERMISSION_REQUIRED" | "NO_CONNECTED_PROVIDER" | "READY";
-  contactRouteStatus: "NONE" | "PRESENT_UNVERIFIED";
+  status: "NO_CONTACT_ROUTE" | "CONTACT_ROUTE_UNVERIFIED" | "CONTACT_PERMISSION_REQUIRED" | "NO_CONNECTED_PROVIDER" | "READY";
+  contactRouteStatus: "NONE" | "PRESENT_UNVERIFIED" | "VERIFIED";
   providerStatus: "NOT_CONNECTED" | "CONNECTED";
   deliveryStatus: "NOT_SENT";
   workflowState: BuyerOutreachState;
@@ -179,7 +194,7 @@ export function registerBuyerOutreachProvider(provider: BuyerOutreachProvider) {
 }
 
 export function buyerOutreachReadiness(
-  buyer: { email?: string | null; phone?: string | null; contactPermission?: BuyerContactPermission | null },
+  buyer: { email?: string | null; phone?: string | null; contactPermission?: BuyerContactPermission | null; contactRouteVerified?: boolean },
   now = new Date(),
 ): BuyerOutreachReadiness {
   const routes: Partial<Record<BuyerOutreachChannel, string>> = {};
@@ -189,29 +204,41 @@ export function buyerOutreachReadiness(
     routes.VOICE = buyer.phone.trim();
   }
   const routeMethods = Object.keys(routes) as BuyerOutreachChannel[];
+  const contactRouteVerified = buyer.contactRouteVerified === true;
   const connected = [...providers.values()].filter(provider => provider.connected);
   const availableChannels = routeMethods.filter(channel =>
+    contactRouteVerified &&
     !buyerOutreachPermissionBlocker(buyer.contactPermission, channel, now) &&
     connected.some(provider => provider.channels.includes(channel)),
   );
-  const contactRouteStatus = routeMethods.length ? "PRESENT_UNVERIFIED" : "NONE";
+  const contactRouteStatus = !routeMethods.length ? "NONE" : contactRouteVerified ? "VERIFIED" : "PRESENT_UNVERIFIED";
   const providerStatus = connected.length ? "CONNECTED" : "NOT_CONNECTED";
+  const providerSupportsRoute = routeMethods.some(channel =>
+    connected.some(provider => provider.channels.includes(channel)),
+  );
   const missingCapabilities: string[] = [];
   if (!routeMethods.length) missingCapabilities.push("No direct buyer email or phone route is recorded.");
+  else if (!contactRouteVerified) missingCapabilities.push("The recipient route is present but not independently verified; source presence and consent do not prove control of the route.");
   else missingCapabilities.push("The contact route has no source/provenance and permission evidence reviewed for this exact channel.");
   const permissionBlock = routeMethods.map(channel => buyerOutreachPermissionBlocker(buyer.contactPermission, channel, now)).find(Boolean);
   if (permissionBlock) missingCapabilities.push(permissionBlock);
   if (!connected.length) missingCapabilities.push("No permitted email/SMS/voice outreach provider is connected; the system cannot send a verification request.");
-  else if (!availableChannels.length) missingCapabilities.push("Connected providers do not support the buyer's recorded contact route.");
+  else if (!providerSupportsRoute) missingCapabilities.push("Connected providers do not support the buyer's recorded contact route.");
   missingCapabilities.push("Current buying, identity, criteria, and funding evidence still requires a real buyer response and owner review.");
 
   const status = !routeMethods.length
     ? "NO_CONTACT_ROUTE"
-    : !connected.length || !availableChannels.length
-      ? "NO_CONNECTED_PROVIDER"
-      : "CONTACT_PERMISSION_REQUIRED";
+    : !contactRouteVerified
+      ? "CONTACT_ROUTE_UNVERIFIED"
+      : !connected.length || !providerSupportsRoute
+        ? "NO_CONNECTED_PROVIDER"
+        : !availableChannels.length
+          ? "CONTACT_PERMISSION_REQUIRED"
+          : "READY";
   const nextAction = !routeMethods.length
     ? "No direct route is on file. Obtain a legitimate contact route with provenance and permission evidence; public ownership or a directory entry is not buyer identity or contact permission."
+    : !contactRouteVerified
+      ? "Independently verify control of this exact recipient route and retain the evidence; source presence or consent alone does not prove route ownership. No request has been sent."
     : "No automated request has been sent. Review the exact route and permission evidence, then use a permitted human channel and record the actual contact or reply. A response is not approval.";
   return {
     status,

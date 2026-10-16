@@ -71,6 +71,7 @@ test("underwriting formula is deterministic and never grants offer authority", (
   assert.equal(result.mao, Math.max(0, Math.round((buyerCeiling - policy.assignmentTarget) * 100) / 100));
   assert.equal(result.mao, 147250);
   assert.equal(result.classification, "STRONG");
+  assert.equal(result.engineVersion, "deterministic-underwriting/1.2");
   assert.equal(result.maximumApprovedAcquisitionPrice, null);
   policy.assignmentTarget = 0;
   assert.equal(result.mao, 147250, "Saved analysis is an immutable calculation snapshot.");
@@ -94,6 +95,31 @@ test("stale and contradictory comps fail the configured evidence threshold", () 
     .some(reason => /differs >30%/i.test(reason)));
   assert.ok(contradictory.blockers.some(item => /material price\/sqft conflict/i.test(item)));
   assert.equal(contradictory.maximumApprovedAcquisitionPrice, null);
+});
+
+test("comparable filters include exact configured boundaries and reject values just beyond them", () => {
+  const boundaryNow = new Date("2026-10-14T00:00:00.000Z");
+  const onBoundary = analyzeDeal(lead, {
+    ...input,
+    comps: [
+      comp("age", 290000, "2026-04-17"),
+      {...comp("distance", 300000), distanceMiles: 1},
+      {...comp("size", 310000), sqft: 1200},
+    ],
+  }, DEFAULT_ASSUMPTIONS, boundaryNow);
+  assert.ok(onBoundary.compDecisions.every(item => item.included),
+    "max age, distance and size tolerance are inclusive boundaries");
+
+  const outside = analyzeDeal(lead, {
+    ...input,
+    comps: [
+      comp("age-outside", 290000, "2026-04-16"),
+      {...comp("distance-outside", 300000), distanceMiles: 1.0001},
+      {...comp("size-outside", 310000), sqft: 1201},
+    ],
+  }, DEFAULT_ASSUMPTIONS, boundaryNow);
+  assert.ok(outside.compDecisions.every(item => !item.included));
+  assert.ok(outside.blockers.some(item => /eligible, verified, renovated comps/i.test(item)));
 });
 
 test("non-positive conservative economics floor at zero and cannot be used as authority", () => {

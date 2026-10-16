@@ -1,7 +1,7 @@
 # Real-estate operating-system build checkpoint
 
-**Checkpoint date:** 2026-10-15
-**Current gate:** Block 27 is **PARTIAL**. Permitted source refresh and seller-contact research use persisted job/request intent and retry history; contact research now records an authorization snapshot, provider attempt/response history, idempotency, and explicit operation state. Email/text, package delivery, signature requests, and other provider sends remain unconfigured and are not sent. No live delivery provider is available. Block 20 readiness remains **NOT READY**; see `docs/real-estate-os-readiness-report.json`.
+**Checkpoint date:** 2026-10-16
+**Current gate:** Block 56 is **PARTIAL / NOT PRODUCTION-READY**. Persisted synthetic exercises prove selected downstream workflows, but the live-source-to-call path remains blocked by missing real, permitted seller contactability evidence. The latest readiness report JSON is stale (generated 2026-10-15) and must not be treated as current; the Block 57 run below records newer source-exercise evidence and its failure. Email/text, package delivery, signature requests, and other external sends remain unconfigured and are not sent. No legitimate signed-in owner UI session or real transaction was verified.
 **Checkpoint rule:** On each accepted build turn, resume at the first item below that is not objectively verified. Queued tasks are not background execution; no work is considered active after its Agent turn ends.
 
 ## Product and implementation rules
@@ -1529,3 +1529,261 @@ No API/schema migration was required; scenario results are calculated from the c
 **Highest-impact remaining blocker:** obtain owner-reviewed, permitted, current seller identity and a direct contact route for a real property. Do not infer a route from postal records or substitute synthetic evidence. The existing CALL_READY gate must remain closed until that evidence exists.
 
 **Next single task:** complete the existing call-ready contact-route work with a permitted, owner-reviewed evidence path, then repeat the source-to-call transition using a real authorized route; keep the downstream closing simulation explicitly synthetic until a real transaction exists.
+
+## Block 57 — Checkpoint Reconciliation and Real Implementation Inventory — 2026-10-16
+
+**Verdict: PARTIAL / NOT PRODUCTION-READY.** Reconciled the dated claims against the current services, test scripts, persisted exercise output, and build results. The project has substantial persisted workflow implementation, but the proof is mostly isolated synthetic persistence; neither the UI nor a real seller-to-closing transaction is verified.
+
+### Inventory across Blocks 1–56
+
+The historical block numbering is not a reliable completion ledger: early work is recorded under P0–P12 and several reused block labels, while Blocks 32–35 have no individual checkpoint sections. The groups below inventory what can be supported by current code and recorded checks; a missing section is not counted as proof.
+
+| Block range | Inventory state | Evidence and limits |
+| --- | --- | --- |
+| 1–30 | **Implemented foundation; mixed/partial verification** | Persisted decision-work, intelligence, property discovery, contact research, call queue, underwriting, buyer, distribution, transaction, outcomes, authorization and command-center services exist. Selected synthetic persisted exercises and tests are recorded under P0–P12 and later sections. The checkpoint does not map every early block one-to-one, so no per-block GREEN claim is supportable. |
+| 31 | **Implemented; synthetic-only extraction proof** | Seller conversation intelligence and structured capture are recorded; seller-entered statements remain distinct from verified facts. No real authenticated owner workflow was verified. |
+| 32–35 | **Partial; no individual checkpoint proof** | Offer preparation, package/disclosure, follow-up scheduling, and funnel reporting are represented by current domain/API capabilities and overlapping tests/exercises. The record lacks separate per-block acceptance evidence; provider delivery and real operational counts remain unverified. |
+| 36 | **Partial release review** | Recorded current-system review found no real seller route and did not establish a real end-to-end transaction. |
+| 37–45 | **Implemented in selected slices; persisted proof is synthetic** | Contact research, call packet, offer-readiness, buyer intake/distribution, contract assembly, deadlines, data-quality repair, and operator recovery have matching services and/or isolated exercises in the checkpoint. These prove selected rules and persistence, not live user adoption or real-world completion. |
+| 46 | **Release gate remains partial** | A prior release matrix exists, but its older report is superseded; no production-readiness claim follows from it. |
+| 47 | **Implemented visibility; refresh evidence is time-bounded** | Source coverage exercise is synthetic. Later permitted-feed runs persisted observations, but the most recent full source exercise failed because one feed returned HTTP 400 and the assertion requires a complete job. |
+| 48 | **Implemented fail-closed gate; real seller contactability missing** | Ownership/contactability evidence rules are present. Latest source scan found no direct phone/email/web routes; synthetic evidence cannot pass the real-evidence gate. |
+| 49–55 | **Implemented in code; selected persisted synthetic verification** | Acquisition stages, scenario analysis, buyer-pool coverage, offer/counteroffer versions, transaction checklist, actionable alerts, and evidence export are represented by services, schemas, tests, or transaction exercises. Current checkpoint records role, provenance, stale-version, and audit checks for selected paths. No external sends/signatures/funds or live verified buyer commitment are proved. |
+| 56 | **Partial; unified source-to-close simulation not achieved** | Transaction-readiness exercise passed for an isolated synthetic deal; the source exercise separately persisted live discoveries and stopped at synthetic contactability. These are not one continuous deal. |
+
+### Evidence reconciliation and highest-impact discrepancy
+
+The highest-impact discrepancy was the checkpoint front matter still identifying Block 27 as current, alongside an older readiness JSON that reports permitted-source success. Both are superseded. The current code/test evidence does not support that status:
+
+- `pnpm --filter @workspace/api-server run exercise:operational-readiness` — **timed out after 300 seconds** before writing a new readiness report. In captured output, auth, buyer-outreach, command-center, provider-health, transaction-readiness, worker-recovery, canonical-deal-state, deal-domain, and the synthetic workflow checks through cross-domain-next-action passed. `permitted-property-discovery` failed.
+- The failed source check did persist live Philadelphia observations, including OPA, L&I, permits, demolitions and sheriff deed records, with raw discoveries kept separate from leads. It returned `PARTIAL`, including an official vacancy API HTTP 400 (“Invalid query parameters”); the exercise then failed its assertion that the durable discovery job be complete. Therefore **source observations persisted = true; full source exercise = fail; seller contactability = unproven**.
+- `exercise:transaction-readiness` remains a passing isolated synthetic transaction exercise as recorded in Block 56. It does not repair or override the source-to-call failure.
+- `pnpm --filter @workspace/api-server run test:operational-readiness` — **4/4 passed**, including failed-source propagation and the rule that synthetic success cannot yield live readiness.
+- `pnpm run typecheck` — **passed** across shared libraries and workspace apps.
+- `PORT=20639 BASE_PATH=/ pnpm run build` — **passed**. Existing Vite sourcemap notices and the large web-bundle warning remain.
+- No workflow was restarted. The readiness report at `docs/real-estate-os-readiness-report.json` remains dated 2026-10-15 and is **stale**, not a current pass.
+
+### Remaining blockers
+
+- No verified real seller identity plus direct, permitted contact route; do not promote synthetic or postal-only evidence.
+- Philadelphia vacancy adapter/query failure and a source exercise coupled to an all-feeds-complete assertion; partial feed success must remain explicitly partial.
+- No configured provider for seller/buyer messaging, distribution delivery, e-signature, or private document storage; no external delivery/signature/funds/closing evidence.
+- No legitimate owner session was available; signed-in UI remains unverified.
+- Blocks 1–35 are not consistently mapped to unique checkpoint sections, so historical per-block completion claims cannot be reconstructed beyond the evidence cited here.
+
+**Next single task:** repair or explicitly retire the failing vacancy query using the provider’s current documented schema, then separate successful permitted-feed persistence assertions from the synthetic contactability/transaction path and rerun the readiness gate.
+
+## Block 58 — Production Data Persistence and Migration Safety — 2026-10-16
+
+**Verdict: PERSISTENCE VERIFIED FOR SELECTED SYNTHETIC WORKFLOWS; PRODUCTION MIGRATION SAFETY PARTIAL.** Isolated exercises now launch a fresh verifier process after each successful exercise. The verifier compares per-table row counts and content fingerprints across all cloned `re_*` tables, proving that persisted records survived process reload without mutation. No fixture was inserted into the real workspace schema.
+
+- The reload check runs only after a successful exercise, queries the isolated schema explicitly, and compares count plus a stable fingerprint of every row for every cloned table. The verification process is separate from the writer process and inherits the isolated search path.
+- Transaction-readiness exercise covered persisted calls/underwriting, buyers and verification, offers and seller responses, packages/recipients, contract/document/signature states, funds, deadlines, exceptions, and outcomes. Acquisition-queue exercise covered property evidence, contact routes, call notes, structured seller evidence, and underwriting invalidation. Buyer-pool, seller-offer-portal, and property-contact HTTP exercises covered their own persisted records and replay/authorization behavior.
+- Removed the `push-force` database script and added a regression test preventing force-push schema operations from being reintroduced as a normal database command. No schema push or migration was executed.
+- **Migration limitation:** `lib/db` has no versioned migration directory or migration runner; the available `push` command uses Drizzle schema push. The force variant is removed, but safe forward/backward production migrations and upgrade/backfill behavior are not proven. Existing data-quality checks prove dry-run immutability and deterministic count reconciliation, not an applied production migration.
+
+| Verification | Result | Exact evidence / limitation |
+| --- | --- | --- |
+| Transaction and closing persistence | PASS, isolated synthetic schema | `pnpm --filter @workspace/api-server run exercise:transaction-readiness` — full lifecycle exercise passed; **1 synthetic / 0 real** transactions; new process reported `persistenceReload: PASS`, **36 tables reconciled**, row counts and fingerprints stable. |
+| Property/contact/call and underwriting persistence | PASS, isolated synthetic schema | `pnpm --filter @workspace/api-server run exercise:acquisition-queue` — notes and evidence reload, replay/idempotency and stale-write checks passed; fresh process reconciled all 36 tables. |
+| Buyer and verification persistence | PASS, isolated schema | `pnpm --filter @workspace/api-server run exercise:buyer-pool` — verification/prospect and no-send assertions passed; fresh process reconciled all 36 tables. The exercise also queried permitted public records; no real workspace records were seeded and no outreach was sent. |
+| Offer/counter response persistence | PASS, isolated synthetic schema | `pnpm --filter @workspace/api-server run exercise:seller-offer-portal` — API response, authorization, replay, conflict and immutable-term checks passed; fresh process reconciled all 36 tables. |
+| Contact-research HTTP persistence | PASS, isolated synthetic schema | `pnpm --filter @workspace/api-server run exercise:property-contact-http` — role, owner-approval, replay and reload checks passed; fresh process reconciled all 36 tables. |
+| Backfill/data-quality safety | PASS, dry-run only | `pnpm --filter @workspace/api-server run test:data-quality` — 2/2 passed for deterministic dry-run, count reconciliation and conflict retention. `exercise:data-quality` reported **1 synthetic row, 1 issue, count reconciled, 0 changed rows**, then verified stable state across fresh process reload. No repair was applied. |
+| Schema-force safety | PASS | `pnpm --filter @workspace/api-server run test:persistence-safety` — 1/1 passed; no `push-force` command or `drizzle-kit push --force` script remains. |
+| Typecheck and full build | PASS | `pnpm run typecheck` and `PORT=20639 BASE_PATH=/ pnpm run build` passed. Existing web bundle-size warning remains. |
+| Real records, production restart, migration | NOT EXERCISED | No production DB, user data, actual process restart, migration or backfill was mutated. Fresh-process verification uses disposable isolated schemas only. |
+
+No workflow was restarted. No production or development schema migration was run. Existing workflow services remained up.
+
+**Next single task:** establish a versioned, reviewable, non-destructive database migration workflow with a disposable-schema upgrade test and before/after record-count reconciliation before applying future schema changes to production.
+
+## Block 59 — Authentication Session and Authorization Boundary Verification — 2026-10-16
+
+**Verdict: SERVER-SIDE AUTHORIZATION VERIFIED FOR TESTED BOUNDARIES; LIVE OWNER SESSION AND EXPIRED-ISSUER-SESSION PATH UNVERIFIED.** The current route structure applies authentication, workspace membership, and sensitive-data role middleware to internal deal, operations, property-source, distribution, and seller-offer routers. Public buyer/seller portal paths are separate capability-token endpoints; they are not treated as session-authenticated workspace APIs.
+
+- Expanded HTTP negative coverage to 18 consequential endpoints, including contact evidence, full deal/evidence export, buyer records and research, call writes, offer approval, distribution approval, contract document bytes, milestone writes, settings, and audit. Both absent sessions and malformed bearer tokens must receive 401 before route handlers run.
+- Existing access tests cover pending membership, owner-only role changes, prevention of second-owner takeover/demotion, revocation, and server-side role middleware. Existing offer/transaction exercises cover approval gates and a cross-record document ID paired with a different lead, which returns 404 instead of disclosing bytes.
+- Checked actual route mounts: internal routers apply server-side `authenticated`, `membership`, and `sensitiveWorkspaceData`; consequential writes add operation-specific role checks. Public portal routes rely on purpose-bound capability tokens and their own verification controls.
+- No auth weakening or session bypass was added. No owner browser session was available. A genuinely issuer-signed expired session could not be produced in this environment; malformed/invalid bearer sessions are covered, but expiry remains unverified end to end.
+
+| Verification | Result | Exact evidence / limitation |
+| --- | --- | --- |
+| Missing and malformed session HTTP denial | PASS | `pnpm --filter @workspace/api-server run test:command-center` — 17/17 passed. Actual API app rejected both missing and malformed sessions across 18 consequential routes (36 requests), all with 401 before handlers. |
+| Role escalation / membership | PASS, service-level isolated | `pnpm --filter @workspace/api-server run test:auth` — 8/8 passed, including first-owner serialization, owner-only grants, no second owner, owner non-demotion, revocation, and sensitive-role enforcement. No real membership was changed. |
+| Approval bypass and cross-record access | PASS, isolated synthetic | `pnpm --filter @workspace/api-server run exercise:offers` passed owner-only approval, authority/MAO/expiry, concurrency and stale-evidence checks. `exercise:transaction-readiness` passed cross-record private-document denial and approval/economics gates. No external message or signature was sent. |
+| Authenticated UI / real expired session | NOT VERIFIED | No legitimate owner session or issuer-signed expired session was available. |
+| Typecheck and full build | PASS | `pnpm run typecheck` and `PORT=20639 BASE_PATH=/ pnpm run build` passed; existing large web-bundle warning remains. |
+
+No workflow was restarted and no real data was mutated.
+
+**Next single task:** run the same route and role matrix with a legitimate owner session and a controlled expired Clerk session, then verify the protected UI and capability-link flows without sending external communications.
+
+## Block 60 — Operational Command Center Action Correctness — 2026-10-16
+
+**Verdict: FIXED THE MOST CONSEQUENT COUNT MISMATCH; SELECTED ACTION, STALENESS, AUTHORIZATION AND PERSISTENCE CHECKS PASS.**
+
+- The “Active seller leads” count previously excluded only `CLOSED` and legacy `DEAD_DEAL`, but the canonical acquisition pipeline also marks `LOST` and `NURTURE` terminal. Those terminal records were incorrectly counted as active. The dashboard now excludes all four terminal stages.
+- Action destinations remain links to the existing handler pages/routes; the API derives action guidance and role assignment from persisted decision, source, job, buyer, and transaction records. Blocked states carry reasons and missing evidence. Existing behavior does not mark a draft, attempted action, schedule reminder, buyer interest, or stale record as completed.
+- Discovery paging/filtering remains server-side: the dashboard still requests bounded pages with a cursor and the selected market/status filter. No redesign or pagination change was made.
+
+| Verification | Result | Exact evidence / limitation |
+| --- | --- | --- |
+| Metric count regression | PASS | `pnpm --filter @workspace/api-server run test:command-center` — 18/18 passed, including the new case excluding `CLOSED`, `DEAD_DEAL`, `LOST`, and `NURTURE` from active seller-lead count. |
+| Command-center actions/statuses | PASS, isolated persisted schema | `pnpm --filter @workspace/api-server run exercise:command-center` passed role-assigned next-action, provider-unavailable, human-gate, one-time/recurring source, current/overdue/failed job, and persisted status assertions. The fresh-process persistence verifier reconciled **36 tables** with stable counts and fingerprints. |
+| Stale records and call eligibility | PASS, isolated synthetic schema | `pnpm --filter @workspace/api-server run exercise:acquisition-queue` passed current direct-route readiness, postal/no-route/stale/conflict blockers, persisted call-note reload, idempotent replay and stale-write rejection. |
+| Typecheck and full build | PASS | `pnpm run typecheck` and `PORT=20639 BASE_PATH=/ pnpm run build` passed; existing large web-bundle warning remains. |
+| Authenticated visual review | NOT VERIFIED | No legitimate owner session was available; verification used tests, API/persistence exercises, and builds. |
+
+No workflow was restarted and no real records were modified.
+
+**Next single task:** verify the live signed-in dashboard against an owner session and persisted non-synthetic records, then reconcile its rendered action/count snapshot with the same API response.
+
+## Block 61 — Underwriting Formula and Snapshot Audit — 2026-10-16
+
+**Verdict: FIXED ASSIGNMENT-FEE OMISSION IN BUYER SPREAD; BLOCKED DISPLAY VALUES WHEN CURRENT UNDERWRITING HAS BLOCKERS.**
+
+- `spreadAtAsking` previously subtracted the asking price from the conservative buyer ceiling *before* the assignment target. The label described buyer margin, so this overstated the estimated buyer margin by exactly the configured assignment target. It now subtracts the target, matching MAO economics; regression tests verify both spread and MAO change dollar-for-dollar as assignment assumptions change.
+- The underwriting summary cards previously displayed MAO, opening range, and spread even if current underwriting blockers existed. The cards now say `BLOCKED` until all blockers are cleared, matching the detailed panel and the existing API-side offer eligibility/owner-approval gates. A numerical research calculation does not become authorized by being shown.
+- ARV remains median $/sqft from eligible source-verified renovated comps, with low/high bounds, age/distance/property/size/subject/duplicate filters and a versioned 30% outlier rule. Repair totals require current reviewed inspection evidence and a current matching source-backed market rate; missing, stale, duplicate, or conflicting inputs block calculation rather than silently assuming zero or selecting a convenient rate.
+- The detailed underwriting view labels evidence as OBSERVED, REPORTED, INFERRED, or ESTIMATED; identifies comp/repair/cost/assignment sources and capture dates; explains the buyer ceiling, assignment target, MAO formula, confidence limits, and that offer authority is separate. Model-generated repair hypotheses remain visibly hypothetical and do not feed repair totals or MAO.
+- Snapshot persistence retains inputs, policy assumptions, calculation output and timestamp in a new immutable analysis snapshot; refreshed underwriting invalidates dependent offer approvals. The changed calculation output is tagged `deterministic-underwriting/1.2` so snapshots identify the revised engine. No schema or approval-boundary changes were made.
+
+| Verification | Result | Exact evidence / limitation |
+| --- | --- | --- |
+| Domain formula and boundary tests | PASS | `pnpm --filter @workspace/deal-domain test` — **146/146 passed**, including assignment-fee sensitivity, exact comp age/distance/size boundaries and just-outside rejection, invalid numeric inputs, insufficient confidence, stale/conflicting comp rejection, missing repairs, immutable calculation snapshots, and AI-hypothesis non-propagation. |
+| Offer approval/snapshot exercise | PASS, isolated synthetic schema | `pnpm --filter @workspace/api-server run exercise:offers` — owner-only approval, MAO/authority/expiry constraints, concurrency, immutable history, evidence/snapshot invalidation and approval refresh passed; fresh-process persistence verifier reconciled 36 tables. No external message was sent. |
+| Repair-estimate persistence exercise | PASS, isolated synthetic schema | `pnpm --filter @workspace/api-server run exercise:repair-estimate` — reviewed inspection scope, source-linked current rate cards, model-hypothesis separation, immutable rate history and persisted snapshot provenance passed; fresh-process verifier reconciled 36 tables. |
+| Typecheck and full build | PASS | `pnpm run typecheck` and `PORT=20639 BASE_PATH=/ pnpm run build` passed. The existing large-web-bundle warning remains. |
+| Live owner UI / production records | NOT VERIFIED | No signed-in owner session or production-data query was part of this isolated synthetic verification. |
+
+No workflow was restarted and no real records were changed.
+
+**Next single task:** add an owner-facing, evidence-linked comparison of consecutive underwriting snapshots so reviewers can inspect changed comps, assumptions, repairs, costs and resulting MAO before reapproving.
+
+## Block 62 — Outreach Approval and Provider-State Truth Audit — 2026-10-16
+
+**Verdict: FIXED BUYER OUTREACH READINESS AND PROVIDER-RECEIPT CORRELATION; LIVE OUTBOUND DELIVERY REMAINS DISABLED BECAUSE NO PROVIDER IS CONFIGURED.**
+
+- Seller offer handling remains a persisted human workflow: draft → exact terms and owner authorization → human-recorded communication evidence → withdrawal/revocation. Recording “communicated” is an operator attestation, not a provider send; withdrawal does not imply the earlier message was recalled or automatically notify the seller.
+- Buyer packet link creation and qualification requests remain internal actions; no email/SMS/voice is sent. Provider readiness reports no outbound messaging connection and delivery `NOT_SENT`. There is no configured live outbound adapter; no live send or provider receipt was attempted or fabricated.
+- Buyer outreach readiness now distinguishes no route, unverified route, missing channel permission, missing provider support, and a ready channel. Crucially, route presence or contact consent alone does not prove recipient control. Persisted buyer records continue to mark routes unverified until an independent verification workflow exists, so production readiness cannot become `READY` from an email/phone string and consent record alone.
+- The submission guard now binds eligibility to the approval’s exact buyer, channel, packet version/hash and message text, then requires verified route, current channel-specific permission and a connected compatible provider. A safe fixture only checks readiness; its `send` method is asserted never to run.
+- Provider callback handling requires acceptance from the same provider ID and provider message ID before marking delivery; exact event-ID replays are idempotent, conflicting replays and cross-provider message-ID reuse are rejected, and terminal messages cannot be changed by later callbacks. A retry uses a distinct provider message ID. Delivery remains separate from buyer interest or commitment.
+- OpenAPI was updated for the explicit `CONTACT_ROUTE_UNVERIFIED` state and regenerated. To stay under TypeScript’s existing aggregate-response serialization limit, outreach status fields are documented strings in the generated wire schema; the service retains its explicit internal status union.
+
+| Verification | Result | Exact evidence / limitation |
+| --- | --- | --- |
+| Buyer outreach safety tests | PASS | `pnpm --filter @workspace/api-server run test:buyer-outreach` — **9/9 passed**: exact-version approval, route verification, channel permission, provider readiness, acceptance/delivery prerequisites, duplicate/conflicting callbacks, provider identity, terminal failure and retry with a distinct message ID. Fixture provider send method was not called. |
+| Persisted transaction/distribution exercise | PASS, isolated synthetic schema | `pnpm --filter @workspace/api-server run exercise:transactions` passed provider-unavailable/NOT_SENT, packet delivery unconfirmed, owner-only financial evidence, transaction cancellation/restart, idempotency and event audit assertions; persistence reload reconciled 36 tables. No real buyer messages were sent. |
+| Seller offer/portal exercises | PASS, isolated synthetic schema | `exercise:offers` verified exact owner approval, human-attested communication, withdrawal/revocation and preserved history. `exercise:seller-offer-portal` verified owner-only issue, revocation/rotation, response idempotency and stale/conflicting replay rejection. Neither sends external messages. |
+| Buyer/provider readiness | PASS, isolated synthetic schema | `exercise:buyer-pool` and `exercise:command-center` passed; no workspace prospect or outbound provider was used, and delivery remains unconfirmed/NOT_SENT. |
+| OpenAPI codegen, typecheck and build | PASS | `pnpm --filter @workspace/api-spec run codegen`; `pnpm run typecheck`; `PORT=20639 BASE_PATH=/ pnpm run build`. The known large web-bundle warning remains. |
+| Live provider, signed-in UI, real delivery receipt | NOT VERIFIED / NOT AVAILABLE | No outbound messaging integration is configured, and no owner browser session or provider receipt was available. The UI must not claim the real send/delivery lifecycle is live. |
+
+No external outreach was sent and no real records were changed. No workflow was restarted.
+
+**Next single task:** implement and owner-test an independently evidenced buyer contact-route verification workflow; only after that, evaluate a permitted outbound provider integration and persisted delivery lifecycle.
+
+## Block 63 — Buyer Eligibility and Commitment Integrity Audit — 2026-10-16
+
+**Verdict: FIXED PACKAGE-LINK PERMISSION BYPASS; COMMITMENT AND SNAPSHOT CHECKS REMAIN FAIL-CLOSED.**
+
+- Concrete defect: an owner/operator could mint a buyer deal-package bearer link for a buyer who had no current contact permission or had opted out. Deal-fit eligibility intentionally remains distinct from outreach permission, but the packet-sharing boundary was not enforcing permission.
+- Package-link creation now requires a current owner-reviewed permission for at least one specific channel, with source, evidence URL, capture/expiry times, and reviewed status. The permission snapshot and allowed channels are saved with the recipient record for audit. Portal access and response recheck current permission; expiry or opt-out blocks already-issued links.
+- Matching continues to separate verified real buyers, unverified/stale prospects, destination contacts, and explicitly labeled synthetic fixtures. Buyer identity, funding proof, buying/criteria review, confidence threshold, source freshness, buy-box fit, available funds after active reservations, concurrent deal slots, repairs/ARV, and closing capacity remain eligibility gates. A match does not authorize outreach.
+- Address-redacted bearer packets remain the only permitted shareable packet; an address-disclosing packet is blocked because bearer-token access does not verify the reader’s identity. The packet hash and underlying economics are rechecked against current contract terms before access.
+- Commitment remains an owner-only, serialized transition requiring current eligibility, prior actual interest, exact whole-dollar terms above the frozen acquisition-plus-assignment floor, and reviewed signed-document evidence. Competing commitments lock the canonical deal and exactly one eligible buyer can win. The committed buyer/economics snapshot remains tied to the immutable transaction context.
+- Package invitation/access is not provider delivery. No outbound provider is configured; recipients remain `INVITED` and delivery unconfirmed. No real message, delivery, or buyer commitment was fabricated.
+
+| Verification | Result | Exact evidence / limitation |
+| --- | --- | --- |
+| Domain buyer eligibility | PASS | `pnpm --filter @workspace/deal-domain run test` — **146/146 passed**, covering stale evidence, identity invalidation/conflicting records, synthetic-fixture exclusion, missing funding and capacity, buy-box boundaries, and commitment eligibility. |
+| Buyer and pool persistence exercises | PASS, isolated synthetic schema | `pnpm --filter @workspace/api-server run exercise:buyers` verified owner-only review, dated funds, stale evidence, version conflicts and identity invalidation. `exercise:buyer-pool` verified qualification lifecycle, expiry and no automatic approval. Both persistence reload checks reconciled 36 tables. |
+| Package permission, access and transaction lifecycle | PASS, isolated synthetic schema | `pnpm --filter @workspace/api-server run exercise:transactions` passed: unverified/stale/no-permission recipient rejection; current permission link creation; opt-out blocking an existing link; stale package/economics denial; redacted-address enforcement; duplicate portal event idempotency; interest/acceptance not becoming commitment; competing owner-reviewed commitments yielding exactly one winner; closed packet and competing-link expiry; immutable economics snapshot checks. Persistence reload reconciled 36 tables. |
+| Typecheck and full build | PASS | `pnpm run typecheck`; `PORT=20639 BASE_PATH=/ pnpm run build`. Existing large-web-bundle warning remains. |
+| Live provider delivery / signed-in owner UI | NOT AVAILABLE / NOT VERIFIED | Outbound messaging is unconfigured; no real receipt was available. Preview screenshot showed the public sign-in screen, not the authenticated buyer/owner workflow. |
+
+All buyer and transaction exercises used isolated synthetic records. No real buyer records were modified or contacted.
+
+**Next single task:** verify the buyer contact-permission and route-verification flow against a signed-in owner session through the actual HTTP endpoints; keep package delivery marked unconfirmed until a permitted provider is connected and returns a real receipt.
+
+## Block 64 — Contract, Signature, Funds, and Deadline State Integrity — 2026-10-16
+
+**Verdict: FIXED CONTRACT-VERSION STALENESS ON OWNER-REVIEWED DEADLINE-SCHEDULE REVISIONS; SIGNATURE, FUNDS, AND CLOSING STATES REMAIN EVIDENCE-GATED.**
+
+- Concrete defect: saving a reviewed transaction deadline schedule advanced its dedicated schedule version and history, but did not advance the parent contract version. Other contract commands could therefore still be presented with the pre-schedule contract revision, weakening stale-command detection.
+- A new schedule now increments both the schedule version and the contract row version. New writes require the current contract version. The semantic idempotency hash excludes only those two concurrency tokens, so an exact retry after a successful save reuses the existing history entry without creating another contract revision; a changed request with the same key is still rejected.
+- Signature state remains fail-closed: document lifecycle cannot advance to signing without a connected provider and envelope, cannot advance to signed without verified evidence for all required signers, and cannot advance to executed without execution evidence. Manual execution recording remains an owner attestation to an external executed document, not a signing-provider receipt.
+- EMD, buyer-funds, and closing outcome paths continue to require owner authority and structured reviewed evidence; closing readiness does not accept generic legacy links as proof. Deadline schedule reviews remain distinct from milestone completion or contract amendments. Closed transaction attempts to append milestones are rejected by the terminal lead guard.
+- No signing provider is configured (`NOT_CONNECTED`). No real envelope, signature, funds transfer, or closing was attempted or claimed. Jurisdiction-specific templates remain blocked unless qualified review and approval evidence exist; legal clauses require qualified jurisdiction-specific review.
+
+| Verification | Result | Exact evidence / limitation |
+| --- | --- | --- |
+| Persisted contract/deadline lifecycle | PASS, isolated synthetic schema | `pnpm --filter @workspace/api-server run exercise:transactions` — passed. Includes schedule revision increments contract version; stale contract-version write rejected; exact idempotent replay creates no extra revision; changed schedule/amendment invalidates prior schedule; duplicate and terminal event protections; owner-only financial evidence; immutable close outcome. Persistence reload reconciled 36 tables. |
+| Deadline and provider-state unit tests | PASS | `pnpm --filter @workspace/api-server run test:transaction-readiness` — **5/5 passed**. `pnpm --filter @workspace/api-server exec tsx --test src/services/transaction-signing-provider.test.ts` — **1/1 passed**, confirming unavailable provider cannot create an envelope or verify signature evidence. |
+| Legal-clause review lifecycle | PASS, isolated synthetic schema | `pnpm --filter @workspace/api-server run exercise:clause-review` — passed: owner-only qualified review, missing approved template blocked, no auto-insertion, jurisdiction mismatch rejected, synthetic evidence explicitly labeled, lead unchanged. Persistence reload reconciled 36 tables. |
+| Deal-domain regression suite | PASS | `pnpm --filter @workspace/deal-domain run test` — **146/146 passed**, including document state transitions, owner/role gates, stale snapshots, and evidence boundaries. |
+| Typecheck and full workspace build | PASS | `PORT=20639 BASE_PATH=/ pnpm run build` — includes `pnpm run typecheck`, then all artifact builds. Existing large-web-bundle warning remains; build succeeded. |
+| Live signature-provider callback / authenticated owner UI | NOT AVAILABLE / NOT VERIFIED | No signing provider is connected and no signed-in owner session was available. Safe tests exercised disconnected-provider and evidence gates; no real callback was fabricated. |
+
+All transaction and clause exercises used isolated synthetic data. No actual contract was signed, funds were moved, or closing was recorded.
+
+**Next single task:** verify the authenticated contract-readiness and deadline-review flow with a signed-in owner; keep signing disabled until a permitted provider is connected and returns verifiable signature evidence.
+
+## Block 65 — Resilience and Recovery Drill — 2026-10-16
+
+**Verdict: FIXED RETRIES OF DETERMINISTIC TERMINAL WORK; PARTIAL SOURCE RESULTS NOW HAVE A SAFE, TERMS-REVIEWED RECOVERY ACTION.**
+
+- Highest-impact defect: every worker exception was treated as transient. Deterministic `409` failures such as a deal becoming terminal or research evidence going stale were queued for repeated attempts, even though repeating could not succeed and the operation needed review or a fresh request.
+- Worker failures now distinguish deterministic domain errors from transient provider/source failures. `408`, `425`, `429`, `5xx`, and errors without an HTTP status retain bounded exponential retry; other HTTP/domain statuses fail immediately with an operator-review next action. Provider timeouts/outages in the Census and AI research paths now retain retryable status rather than being mislabeled as permanent conflicts.
+- Worker recovery remains bounded to three attempts per job, with exact idempotency, lease recovery and durable dead-letter history. The persisted interruption exercise simulates a crash after a prepared hypothesis was committed but before the job’s final state was durable; recovery honors backoff and recognizes the existing job marker, without repeating the mocked model request or duplicating the persisted record.
+- Partial property-discovery jobs now show a “Review & retry” action. All public-source retries clear the previous UI terms acknowledgement and require the operator to review current connector terms again before a new idempotency key is queued. Non-source partial jobs and human handoffs do not get a blind retry action.
+- Failure fixtures are synthetic and isolated. No provider send or message was made. Seller-contact provider registration remains unavailable; timeout and recovery behavior was exercised with safe adapters, not a live provider.
+
+| Verification | Result | Exact evidence / limitation |
+| --- | --- | --- |
+| Worker retry policy | PASS | `pnpm --filter @workspace/api-server run test:worker-recovery` — **3/3 passed**: bounded backoff, terminal-vs-transient classification, and exact lease timeout boundary. |
+| Persisted worker recovery | PASS, isolated synthetic schema | `pnpm --filter @workspace/api-server run exercise:worker-recovery` — passed duplicate-key replay, one winner under concurrent claims, three-attempt exhaustion/dead-letter, next action, and interrupted-lease recovery; 36-table reload/fingerprint check passed. |
+| Provider/research interruption and partial persistence | PASS, isolated synthetic schema | `pnpm --filter @workspace/api-server run exercise:research-lifecycle` — **7 cases passed**. Terminal/stale races fail without stale writes; simulated post-effect worker interruption retries after backoff, reuses persisted idempotency marker, and does not repeat the mocked model call or append a duplicate hypothesis; 36-table reload/fingerprint check passed. |
+| Source staleness and partial coverage | PASS, isolated synthetic schema | `pnpm --filter @workspace/api-server run exercise:property-source-coverage` — stale evidence, rate-limit/partial coverage, source terms version, and source/lead separation passed; 36-table reload/fingerprint check passed. |
+| Provider timeout and retry exhaustion | PASS, isolated synthetic schema | `pnpm --filter @workspace/api-server run exercise:seller-contact-enrichment` — **15** synthetic request lifecycles passed, including UNKNOWN timeout state, retry/recovery, stale responses, role gates, and three-attempt exhaustion. Provider registry remains unavailable; no outreach occurred. |
+| Duplicate provider callbacks | PASS | `pnpm --filter @workspace/api-server run test:buyer-outreach` — **9/9 passed**, including duplicate/conflicting callback protection and distinct-message retry semantics. |
+| Safe recovery UI rules | PASS | `pnpm --filter @workspace/api-server exec tsx --test ../../artifacts/radical-deal-os/src/lib/worker-retry.test.ts` — **2/2 passed**: partial property jobs have an explicit review/retry path; public-source retries always require fresh terms review; other partial work is not blindly retried. |
+| Typecheck and full build | PASS | `PORT=20639 BASE_PATH=/ pnpm run build` — full workspace typecheck and all artifact builds passed. Existing web chunk-size warning remains. API and web workflows restarted; API listened and Vite became ready. |
+| Broad property-source exercise | INCOMPLETE / NEEDS FIXTURE UPDATE | `pnpm --filter @workspace/api-server run exercise:property-source` fetched public-source records in its isolated schema, then failed at a later synthetic `CALL_READY` assertion because its phone-route fixture lacks current owner-reviewed verification evidence. It made public reads only; no workspace records were written. This broad exercise was not treated as controlled outage evidence. |
+
+**Unresolved risks:** the interruption test simulates the persisted side effect followed by a lost worker completion, rather than forcibly terminating PostgreSQL mid-commit. Provider timeout cases use safe fixture adapters and do not verify a live provider’s abort behavior. The broad property-source exercise needs its stale contact-route fixture updated before it can serve as a whole-suite pass.
+
+All successful failure/recovery exercises used isolated synthetic schemas and verified persistence reloads. No real outbound communication or deal action was performed.
+
+**Next single task:** repair the property-source exercise’s contact-route fixture to use current, owner-reviewed route evidence, then run that exercise using controlled source fixtures so outage behavior is reproducible without live-source reads.
+
+## Block 66 — Deadline-Focused Release Gate and Next Critical Fix — 2026-10-16
+
+**VERDICT: CORE WORKFLOWS PASS SYNTHETIC PERSISTENCE GATES; NOT CLEARED FOR REAL SELLER OPERATIONS BECAUSE NO LIVE, PERMITTED SELLER ROUTE OR SIGNED-IN OWNER SESSION WAS VERIFIED.**
+
+- Highest-impact release-gate issue: the evidence-intake exercise expected a synthetic seller contact route to advance to `CALL_READY`, contradicting the actual contactability gate. The test now verifies that synthetic evidence remains `QUALIFIED_LEAD`, is omitted from the call queue, and cannot authorize a call. No production gate was weakened. The repaired check passed.
+- The transaction exercise also expected a terminal-deal conflict to enter automatic retry. It now asserts immediate `FAILED` status, one attempt, no retry timer, and the safe operator-review/new-key action. The persisted lifecycle check passed.
+- **Earliest remaining operator blocker:** a real property needs current, permitted, source-backed seller identity and contact-route evidence, independently reviewed and confirmed by an owner, before it can enter `CALL_READY`. Official property records can return the parcel but do not provide a direct phone/email contact route; the broad property-source exercise also contains a stale synthetic route fixture. No real seller was called.
+- Property intake and provenance, call notes, deterministic underwriting, owner offer approval, buyer eligibility/matching, permission-bound package links, contract/deadline/evidence handling, and closing/outcome exceptions passed their isolated synthetic exercises. These prove service behavior and persistence under labeled fixtures, not real source reliability or completed production transactions.
+- Buyer observations from the live public feed remained unverified and ineligible for matching until owner review. No verified real buyer, external package delivery receipt, signing-provider evidence, bank/escrow funds event, or real closing outcome was available. No external communication or deal action was claimed.
+
+| Verification | Result | Exact evidence / limitation |
+| --- | --- | --- |
+| API service tests | PASS | `pnpm --filter @workspace/api-server exec tsx --test src/services/*.test.ts` — **59/59 passed**. Includes auth/permissions, provider delivery state, document transitions, source partial state, deadline boundaries and worker retry classification. |
+| Deal-domain tests | PASS | `pnpm --filter @workspace/deal-domain run test` — **146/146 passed**, including contactability and eligibility gates, underwriting boundaries, offers and transaction document states. |
+| Property intake, provenance, and atomic persistence | PASS, isolated schema | `pnpm --filter @workspace/api-server run exercise:evidence-intake` — passed source-backed discovery separation, role/provenance checks, deterministic `STRONG` analysis, stale/replay handling, fail-closed synthetic `CALL_READY`, and a PostgreSQL trigger fault proving rollback across evidence/snapshot persistence; 36-table reload/fingerprint check passed. Source record lookup was a public read; the complete packet remained synthetic. |
+| Contactability, route HTTP and seller call notes | PASS, isolated schemas | `exercise:seller`, `exercise:seller-contact`, and `exercise:property-contact-http` passed persistence reloads, role/permission checks, route evidence states, call-ready blockers, and call/follow-up state. Routes and subjects were synthetic; no call was made. |
+| Underwriting and offers | PASS, isolated schemas | `exercise:repair-estimate` and `exercise:offers` passed deterministic estimate and owner-only offer approval/economics gates; no offer was externally communicated. |
+| Buyer eligibility and package authorization | PASS, isolated schemas | `exercise:buyers`, `exercise:buyer-pool`, and `exercise:transactions` passed stale/identity/funding/capacity and serialized commitment gates, permission-bound packet links, and economics integrity. Buyer-pool exercise read public OPA/transfer feeds into its isolated schema; discovered entities remained unverified and no package was delivered. |
+| Contract, signatures, funds, deadlines, exceptions, outcomes | PASS, isolated schema | `pnpm --filter @workspace/api-server run exercise:transactions` — passed exact document/schedule versions, signature and funds blockers, deadline/event checks, financial evidence roles, exception history and terminal outcome reconciliation; persistence reload verified. Signing/funds providers remain unconfigured; no actual signature, funds transfer or closing occurred. |
+| Recovery and source coverage | PASS, isolated schemas | `exercise:worker-recovery`, `exercise:research-lifecycle`, `exercise:property-source-coverage`, and `exercise:seller-contact-enrichment` passed bounded retries, concurrent claims, stale leases/evidence, mocked provider timeout, post-effect interruption/idempotency, partial coverage and exhaustion. Providers were mocked or unavailable; no live provider delivery was tested. |
+| API persistence/exercises | PASS except noted broad source run | Successful exercises use cloned isolated schemas, redirect foreign keys, and report **36-table reload/fingerprint stability**. `exercise:acquisition-pipeline`, `exercise:buyer-pool`, `exercise:offers`, `exercise:repair-estimate`, `exercise:seller-offer-portal`, `exercise:seller-contact`, `exercise:transactions`, and contact HTTP checks passed. |
+| Broad property-source exercise | FAIL / not release evidence | `pnpm --filter @workspace/api-server run exercise:property-source` fetched public-source records in the isolated schema, then stopped at a synthetic `CALL_READY` assertion because its route fixture lacks current owner-reviewed identity/permission evidence. It made public reads only; no workspace records were changed. Use controlled source fixtures for the next run. |
+| Typecheck and build | PASS | `PORT=20639 BASE_PATH=/ pnpm run build` — workspace typecheck and all artifact builds passed. The existing web bundle-size warning remains. |
+| Owner-session UI / real provider validation | NOT VERIFIED | Preview of `/workers` displayed the sign-in page. No signed-in owner browser session, real seller route verification, real buyer delivery receipt, signing callback, or funds provider was available. |
+
+**Remaining release risks:** the broad source exercise needs conversion to controlled fixtures; live provider timeouts/receipt persistence and signed-in owner UI behavior remain unverified; synthetic success must not be presented as real seller/buyer/transaction validation.
+
+**Next single task:** repair the broad property-source exercise to use deterministic source fixtures and a deliberately blocked synthetic contactability case, then rerun it without live-source reads.

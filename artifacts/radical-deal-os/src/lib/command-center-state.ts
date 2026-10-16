@@ -141,6 +141,12 @@ export function isEmptyCommandCenter(data: {
     && Object.values(data.propertyDiscoveries.counts).every((count) => count === 0);
 }
 
+const TERMINAL_SELLER_STAGES = new Set(["CLOSED", "DEAD_DEAL", "LOST", "NURTURE"]);
+
+export function activeSellerLeadCount(stages: readonly string[]) {
+  return stages.filter((stage) => !TERMINAL_SELLER_STAGES.has(stage)).length;
+}
+
 export function isSyntheticExerciseBuyer(buyer: Buyer) {
   const sourceEvidence = [
     buyer.name,

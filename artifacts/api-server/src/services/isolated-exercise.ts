@@ -42,6 +42,24 @@ try {
   });
   if (run.error) throw run.error;
   if (run.status!==0) process.exitCode=run.status??1;
+  if (run.status===0) {
+    const expected: Record<string,{count:string;fingerprint:string}> = {};
+    for (const {tablename} of tables.rows) {
+      const result = await pool.query<{count:string;fingerprint:string}>(`
+        SELECT count(*)::text AS count,
+          md5(coalesce(string_agg(to_jsonb(row_data)::text, E'\\n' ORDER BY to_jsonb(row_data)::text),'')) AS fingerprint
+        FROM "${schema}"."${tablename}" AS row_data
+      `);
+      expected[tablename] = result.rows[0]!;
+    }
+    const reload = spawnSync("pnpm",["exec","tsx","src/services/persistence-reload-verify.ts"],{
+      cwd:process.cwd(),
+      env:{...process.env,PGOPTIONS:`-c search_path=${schema}`,PERSISTENCE_EXPECTED:JSON.stringify(expected)},
+      stdio:"inherit",
+    });
+    if (reload.error) throw reload.error;
+    if (reload.status!==0) process.exitCode=reload.status??1;
+  }
 } finally {
   if (created) await pool.query(`DROP SCHEMA "${schema}" CASCADE`);
   await pool.end();

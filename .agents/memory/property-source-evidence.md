@@ -15,6 +15,8 @@ Some ArcGIS endpoints can return HTTP-success JSON with an `error` object and no
 
 **How to apply:** Inspect the provider's structured error payload before validating the normal response shape. Persist a bounded, sanitized source failure and leave refresh status partial or failed; never turn missing features into an empty success.
 
+An exercise may persist useful observations from several feeds and still fail because one feed failed or the overall job requires complete coverage. **Why:** partial observations are not proof that the refresh completed, and an all-feeds assertion can fail even when ingestion itself behaved correctly. **How to apply:** Report per-feed observations separately from the overall exercise/job result; keep partial failures visible and do not call the source check a pass unless its stated completion criteria passed.
+
 An exact-parcel sheriff-deed row is OBSERVED transfer activity only; it does not establish a current seller, foreclosure case, motivation, condition, or permission to contact. **Why:** recorded transfer data describes a past instrument, not present disposition or signing authority. **How to apply:** retain each dated deed observation and source identity, but give it no motivation weight without separate corroborating evidence.
 
 **Why:** Public records can be stale, incomplete, or changed without establishing a property's present condition, occupancy, title, or seller motivation. A public page also does not by itself establish permission for automated collection. A strict event-time cutoff can also hide persisted source updates, so paged views must state their refresh behavior instead of implying an immutable snapshot.
