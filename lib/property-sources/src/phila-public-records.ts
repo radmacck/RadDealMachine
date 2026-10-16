@@ -367,7 +367,20 @@ async function arcgisFeatures(ids: string[]) {
       redirect: "error",
     });
     if (!response.ok) throw new Error(`Official Philadelphia vacancy API returned HTTP ${response.status}.`);
-    const body = z.object({ features: z.array(z.unknown()).max(1000) }).parse(await boundedJson(response));
+    const raw = await boundedJson(response);
+    if (raw && typeof raw === "object" && "error" in raw) {
+      const error = (raw as { error?: { code?: unknown; message?: unknown; details?: unknown } }).error;
+      const code = error?.code == null ? "unknown code" : String(error.code);
+      const message = typeof error?.message === "string" ? error.message : "no provider message";
+      const details = Array.isArray(error?.details) ? ` ${error.details.filter((item): item is string => typeof item === "string").join("; ")}` : "";
+      throw new Error(`Official Philadelphia vacancy API rejected the query (${code}): ${message}${details}`.slice(0, 500));
+    }
+    const parsed = z.object({ features: z.array(z.unknown()).max(1000) }).safeParse(raw);
+    if (!parsed.success) {
+      throw new Error(`Official Philadelphia vacancy API returned an unexpected response: ${parsed.error.issues
+        .map(issue => `${issue.path.join(".") || "response"} ${issue.message}`).join("; ")}`.slice(0, 500));
+    }
+    const body = parsed.data;
     return body.features.map(value => arcgisRow.parse(value).attributes);
   });
   arcgisQueue = work.then(() => undefined, () => undefined);

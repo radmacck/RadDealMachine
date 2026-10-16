@@ -934,9 +934,9 @@ try {
     "A source-backed discovery with only postal contact data must not acquire a direct seller phone route.");
   await assert.rejects(() => transitionLead(promoted.leadId, {
     version: detail.lead.version, to: "CALL_READY",
-    reason: "SYNTHETIC fail-closed check for a postal-only owner record.",
+    reason: "SYNTHETIC fail-closed check: fixture contact evidence cannot qualify a seller for CALL_READY.",
     nextAction: "Find a permitted direct seller contact route.",
-  }, actor.id, now), /Recorded ownership does not establish that the owner is the seller or has signing authority/);
+  }, actor.id, now), /Replace synthetic or fixture evidence with real, permitted, source-backed evidence/);
   assert.equal((await leadDetail(promoted.leadId)).lead.stage, "ENRICHING",
     "A failed CALL READY transition must leave the persisted acquisition stage unchanged.");
   assert.equal(detail.lead.propertyQualification?.score, promoted.discovery.score);

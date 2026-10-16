@@ -1505,3 +1505,27 @@ No API/schema migration was required; scenario results are calculated from the c
 | Authenticated UI | NOT VERIFIED | The preview redirected to sign-in; no legitimate owner session was available to test the download through the signed-in UI. |
 
 **Next single task:** bind handoff purpose to an explicitly selected, permission-checked recipient and validate export scope against that recipient's role before delivery.
+
+## Block 56 — Full Business Simulation, Readiness Verdict, and Next Blocker — 2026-10-16
+
+**Readiness verdict: PARTIAL / NOT PRODUCTION-READY.** The persisted synthetic transaction exercise proves downstream workflows, but a single synthetic property-discovery record cannot safely pass seller contactability: its contact evidence is explicitly synthetic, and live permitted property feeds supplied no direct seller phone/email/web route. No gate was weakened to manufacture a full pass.
+
+- Improved the Philadelphia ArcGIS vacancy adapter to report provider error JSON and malformed responses distinctly instead of surfacing only a generic missing-`features` schema error. The property-source exercise then advanced through live discovery/persistence to the contactability barrier.
+- Corrected stale exercise expectations that still looked for the older phone-required / ownership error text. The current fail-closed reason correctly states synthetic/fixture evidence cannot qualify a seller.
+- Ran separate persisted simulations for the rest of the flow. The transaction exercise verified synthetic offers, buyer eligibility/matching and distribution controls, contract review/execution evidence, funds/deadlines, recorded closing outcome, and exception/recovery behavior. These are isolated fixtures, not a real transaction and not a continuation of the live-discovered property.
+
+| Verification | Result | Exact evidence / limitation |
+| --- | --- | --- |
+| Permitted property discovery | PASS, live source observations in isolated PostgreSQL | `exercise:property-source` persisted 601 unique property discoveries, 158 unmatched source observations, and exact-parcel records from OPA, L&I, vacancy indicators, permits, demolition, and sheriff-deed feeds. Raw discoveries did not create active leads. |
+| Unified property-to-closing simulation | BLOCKED at contactability | The source exercise stops at attempted `CALL_READY`: `CALL_READY is blocked: Replace synthetic or fixture evidence with real, permitted, source-backed evidence...`. This is the correct hard-gate result. Live source contact scan returned 0 phone/email/web routes; only public-record postal information was available. |
+| Source exercise final assertion | FAIL / stale downstream scenario | `pnpm --filter @workspace/api-server run exercise:property-source` reaches the expected synthetic contactability block at `property-source-exercise.ts:1063`, then cannot run its later same-lead underwriting/offer refresh scenario. Do not change the synthetic gate to make this test green; split the source-only assertions from an appropriately evidenced transaction fixture before reusing that scenario. |
+| Seller contact HTTP / role / persistence | PASS, isolated synthetic | `exercise:property-contact-http` verified role checks, owner approval, replay behavior, and persisted reload; it does not provide a real contact route. |
+| Acquisition stages and buyer records | PASS, synthetic exercises | `exercise:acquisition-pipeline`, `exercise:buyers`, and `exercise:buyer-pool` passed. Buyer-pool scan persisted 113 observed public-entity prospects; none is a verified real buyer, and no outreach was sent. |
+| Offer portal and full transaction lifecycle | PASS, isolated synthetic PostgreSQL | `exercise:seller-offer-portal` and `exercise:transaction-readiness` passed. They verify exact terms/approvals, buyer eligibility and distribution controls, contract/document authority, signature and funds evidence gates, deadlines, closing/outcome reconciliation, and recovery. No real seller/buyer was contacted and no real closing occurred. |
+| Unit/API/auth checks | PASS | `@workspace/property-sources test`: 23 passed; `@workspace/deal-domain test`: 144 passed; `test:auth`: 8 passed; `test:command-center`: 17 passed. |
+| Typecheck and full build | PASS with existing bundle warning | `pnpm run typecheck` and `PORT=20639 BASE_PATH=/ pnpm run build` passed after the adapter diagnostic change. API workflow restarted and is serving. |
+| Real provider and owner UI | PARTIAL / UNVERIFIED | Permitted public property feeds were exercised. No direct-contact or messaging provider is configured. No verified real buyer pool exists in the exercise. Signed-in UI remains unverified because no legitimate owner session was available. |
+
+**Highest-impact remaining blocker:** obtain owner-reviewed, permitted, current seller identity and a direct contact route for a real property. Do not infer a route from postal records or substitute synthetic evidence. The existing CALL_READY gate must remain closed until that evidence exists.
+
+**Next single task:** complete the existing call-ready contact-route work with a permitted, owner-reviewed evidence path, then repeat the source-to-call transition using a real authorized route; keep the downstream closing simulation explicitly synthetic until a real transaction exists.
