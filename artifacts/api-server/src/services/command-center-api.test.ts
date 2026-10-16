@@ -22,6 +22,12 @@ test("actual private command-center, transaction, contact-research, and buyer-pe
   await withServer(app,async baseUrl => {
     const requests: Array<{path:string;init?:RequestInit}> = [
       { path: "/api/deals/command-center" },
+      { path: "/api/leads/00000000-0000-4000-8000-000000000001" },
+      { path: "/api/deals/00000000-0000-4000-8000-000000000001/operations" },
+      {
+        path: "/api/leads/00000000-0000-4000-8000-000000000001/calls",
+        init: { method: "POST", headers: { "content-type": "application/json" }, body: "{}" },
+      },
       { path: "/api/operations/transaction-readiness" },
       {
         path: `/api/property-discoveries/${"00000000-0000-4000-8000-000000000001"}/contact-research`,

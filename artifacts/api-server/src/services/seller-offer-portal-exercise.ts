@@ -12,6 +12,7 @@ import { logger } from "../lib/logger";
 import app from "../app";
 import * as store from "./deal-store";
 import * as offers from "./offer-store";
+import { authorizeReviewedOffer } from "./offer-exercise-helpers";
 import * as portals from "./seller-offer-portals";
 import { exerciseEvidence } from "./exercise-evidence";
 
@@ -76,7 +77,7 @@ async function createCommunicatedOffer(label: string) {
     reason: "Synthetic owner approval fixture.", nextAction: "Record synthetic communication.",
     followUpAt: future(1),
   };
-  detail = await offers.authorizeOffer(lead.id, offerId, approval, owner, now);
+  detail = await authorizeReviewedOffer(lead.id, offerId, approval, owner, now);
   detail = await offers.communicateOffer(lead.id, offerId, {
     version: detail.lead.version, amount: 110000, channel: "PHONE",
     evidence: "Synthetic human communication fixture; nothing was sent externally.",

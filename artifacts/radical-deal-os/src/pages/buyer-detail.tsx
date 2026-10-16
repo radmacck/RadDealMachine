@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { Copy } from 'lucide-react';
 import { Link, useParams } from 'wouter';
 import { ArrowLeft } from 'lucide-react';
-import { getGetBuyerQueryKey, useGetBuyer, useUpdateBuyer, useVerifyBuyer, useRequestBuyerQualification, useCreateBuyerQualificationPortalInvite, useRecordBuyerContactPermission, type Buyer } from '@workspace/api-client-react';
+import { getGetBuyerQueryKey, getGetBuyerContactResearchQueryKey, useGetBuyerContactResearch, useGetBuyer, useUpdateBuyer, useVerifyBuyer, useRequestBuyerQualification, useCreateBuyerQualificationPortalInvite, useRecordBuyerContactPermission, type Buyer } from '@workspace/api-client-react';
 import { ErrorNotice, RowsSkeleton } from '@/components/state-views';
 import { BuyerForm } from '@/components/buyer-form';
 import { BuyerVerificationForm } from '@/components/buyer-verification-form';
@@ -15,6 +15,7 @@ import { useInvalidateWork } from '@/hooks/use-invalidate';
 import { useToast } from '@/hooks/use-toast';
 import { fmtDate, money } from '@/lib/format';
 
+const localDateTime = (value = new Date()) => new Date(value.getTime() - value.getTimezoneOffset() * 60_000).toISOString().slice(0, 16);
 export default function BuyerDetail() {
   const { id = '' } = useParams<{ id: string }>();
   const { canResearch, isOwner } = useAccess();
@@ -22,6 +23,9 @@ export default function BuyerDetail() {
   const invalidate = useInvalidateWork();
   const [epoch, setEpoch] = useState(0);
   const q = useGetBuyer(id, { query: { queryKey: getGetBuyerQueryKey(id), enabled: !!id, staleTime: 5_000, refetchInterval: 20_000 } });
+  const contactResearch = useGetBuyerContactResearch(id,{query:{queryKey:getGetBuyerContactResearchQueryKey(id),enabled:!!id,refetchInterval:20_000}});
+  const contactData=contactResearch.data;
+  const permissionHistory=contactData?.contactPermissionHistory??[];
   const update = useUpdateBuyer();
   const verify = useVerifyBuyer();
   const requestEvidence = useRequestBuyerQualification();
@@ -30,6 +34,7 @@ export default function BuyerDetail() {
   const [requestNote, setRequestNote] = useState('');
   const [permissionSource, setPermissionSource] = useState('');
   const [permissionEvidence, setPermissionEvidence] = useState('');
+  const [permissionCapturedAt, setPermissionCapturedAt] = useState(localDateTime());
   const [permissionChannel, setPermissionChannel] = useState<'EMAIL'|'SMS'|'VOICE'>('EMAIL');
   const [permissionStatus, setPermissionStatus] = useState<'GRANTED'|'OPTED_OUT'>('GRANTED');
   const [qualificationLink, setQualificationLink] = useState('');
@@ -42,6 +47,19 @@ export default function BuyerDetail() {
   const b = q.data;
   const editing = formBuyer?.id===b.id ? formBuyer : b;
   const reloadForms = () => {setFormBuyer(b);setEpoch(e=>e+1);};
+  const syntheticFixture=/^synthetic fixture:/i.test(b.source.trim());
+  const permission=contactData?.contactPermission;
+  const permissionFresh=!!permission&&permission.status==='GRANTED'&&permission.channels.length>0&&!!permission.validUntil&&
+    Date.parse(permission.capturedAt)<=Date.now()&&Date.parse(permission.capturedAt)+30*86400000>Date.now()&&Date.parse(permission.validUntil)>Date.now();
+  const buyerCurrent=b.destinationKind!=='DEAL_FINDER'&&b.destinationKind!=='GURU';
+  const evidenceChecklist=[
+    {label:'Identity',ready:b.verificationStatus==='VERIFIED'&&!!b.identityEvidenceUrl,detail:b.identityEvidenceUrl?'Independent identity evidence recorded.':'No reviewed identity evidence.',next:'Owner: review identity evidence and record the source, review date, and expiry.'},
+    {label:'Current buy box',ready:b.approvalStatus==='APPROVED'&&!!b.criteriaEvidenceUrl,detail:`${b.criteria?.states.join(', ')||'No market'} · ${b.criteria?.propertyTypes.join(', ')||'no property types'} · ${b.criteria?money(b.criteria.minPurchasePrice)+'–'+money(b.criteria.maxPurchasePrice):'no price band'} · ${b.criteria?.rehabTolerance||'no condition tolerance'} · ${b.criteria?.closingDays??'no'} closing days.`,next:'Owner: compare target markets, property types, price band, condition, and timeline to current dated criteria evidence.'},
+    {label:'Current buying intent',ready:b.currentBuyingStatus==='BUYING'&&b.approvalStatus==='APPROVED'&&!!b.buyingEvidenceUrl&&!!b.buyingEvidenceAt,detail:`${b.currentBuyingStatus??'UNKNOWN'} · evidence ${b.buyingEvidenceAt?fmtDate(b.buyingEvidenceAt):'missing'}.`,next:'Owner: confirm current buying status from dated evidence; account for any newer reply.'},
+    {label:'Proof of funds/capacity',ready:!buyerCurrent||!!b.fundingEvidenceUrl&&!!b.availableFunds&&b.availableFunds>0&&!!b.verifiedFundingTypes?.length,detail:buyerCurrent?`${b.availableFunds?money(b.availableFunds):'No verified capacity'} · methods evidenced: ${b.verifiedFundingTypes?.join(', ')||'none'} · buyer-stated methods: ${(b.criteria?.fundingTypes??[]).join(', ')||'none'}.`:'Not applicable to this destination.',next:'Owner: review current proof and record the amount and methods it actually supports; preferences alone are not capacity.'},
+    {label:'Contact permission · separate from qualification',ready:permissionFresh,detail:permission?`${permission.status} · ${permission.channels.join(', ')||'no channels'} · valid until ${permission.validUntil?fmtDate(permission.validUntil):'not set'}.`:'No permission evidence recorded.',next:'Owner: record current channel-specific permission or opt-out before outreach.'},
+    {label:'Evidence expiration',ready:b.verificationStatus==='VERIFIED'&&!!b.validUntil&&Date.parse(b.validUntil)>Date.now(),detail:b.validUntil?`Verification expires ${fmtDate(b.validUntil)}.`:'No current expiry recorded.',next:'Reverify identity, criteria, current intent, and capacity before the evidence expires.'},
+  ];
 
   return (
     <div className="space-y-6">
@@ -49,7 +67,7 @@ export default function BuyerDetail() {
       <header className="rise flex flex-wrap items-end justify-between gap-3 border-b border-border pb-4">
         <div><p className="eyebrow mb-2">Buyer / version {b.version}</p><h1 className="text-3xl font-semibold md:text-4xl" data-testid="text-buyer-name">{b.name}</h1>
           <p className="text-sm text-muted-foreground">{[b.email, b.phone].filter(Boolean).join(' / ') || 'no contact on file'} / source: {b.source}</p></div>
-        <div className="flex gap-1.5"><ApprovalTag buyer={b} /><VerificationTag buyer={b} /><span className="tag tone-ink">{b.status}</span></div>
+         <div className="flex gap-1.5">{syntheticFixture&&<span className="tag tone-stop" data-testid="tag-synthetic-buyer">SYNTHETIC FIXTURE · excluded</span>}<ApprovalTag buyer={b} /><VerificationTag buyer={b} /><span className="tag tone-ink">{b.status}</span></div>
       </header>
 
       <section className="ledger p-4" data-testid="panel-qualification-task">
@@ -58,6 +76,14 @@ export default function BuyerDetail() {
         {(b.destinationKind ?? 'BUYER') !== 'BUYER' && <p className="mt-1 text-xs text-muted-foreground" data-testid="text-destination-fee-boundary">Any fee shown on this profile is a quote/reference only, not a received payment. Record evidenced terms and actual receipt, dispute, or waiver in the deal&apos;s destination activity history.</p>}
         {(b.qualificationBlockers ?? []).length > 0 && <ul className="mt-2 list-disc pl-4 text-sm" data-testid="list-blockers">{b.qualificationBlockers!.map((x, i) => <li key={i}>{x}</li>)}</ul>}
         {(b.qualificationBlockers ?? []).length === 0 && b.approvalStatus !== 'APPROVED' && <p className="mt-2 text-sm text-muted-foreground">No blockers listed; record verification to approve.</p>}
+         <div className="mt-4 border-t border-border pt-3" data-testid="panel-buyer-verification-checklist">
+           <p className="eyebrow mb-2">Reported profile vs. independent verification</p>
+           <p className="mb-2 text-xs text-muted-foreground">The buy box is buyer-reported until an owner reviews dated criteria evidence. Contact permission is an independent outreach gate; it does not establish buyer identity or qualification.</p>
+           <div className="grid gap-2 sm:grid-cols-2">{evidenceChecklist.map(step=><article key={step.label} className="border border-border p-2 text-xs">
+             <p className="font-semibold">{step.label} · {step.ready?'CURRENT':'MISSING / REVIEW'}</p><p>{step.detail}</p>{!step.ready&&<p className="mt-1"><b>Next step:</b> {step.next}</p>}
+           </article>)}</div>
+           {b.criteriaEvidenceUrl&&<p className="mt-2 text-sm"><EvidenceLink url={b.criteriaEvidenceUrl} label="Owner-reviewed criteria evidence" /></p>}
+         </div>
         {isOwner && <div className="mt-3 border-t border-border pt-3" data-testid="panel-buyer-profile-link">
           <p className="text-sm font-medium">Get current criteria from the buyer</p>
           <p className="mt-1 text-xs text-muted-foreground">Create a one-time link, then share it yourself through a permitted channel. Creating or copying it does not send a message. A response is self-reported and pauses matching approval until you review dated evidence.</p>
@@ -122,6 +148,7 @@ export default function BuyerDetail() {
           <p className="text-sm font-medium sm:col-span-2">Record contact permission or opt-out. Evidence is required; saving this never sends a message.</p>
           <Input aria-label="Permission evidence source" placeholder="Source / how permission was obtained" value={permissionSource} onChange={e=>setPermissionSource(e.target.value)} />
           <Input aria-label="Permission evidence URL" placeholder="Evidence URL" value={permissionEvidence} onChange={e=>setPermissionEvidence(e.target.value)} />
+          <label className="grid gap-1 text-xs">When was permission observed?<Input type="datetime-local" value={permissionCapturedAt} onChange={e=>setPermissionCapturedAt(e.target.value)} /></label>
           <select className="h-9 border border-border bg-background px-2 text-sm" value={permissionStatus} onChange={e=>setPermissionStatus(e.target.value as 'GRANTED'|'OPTED_OUT')} aria-label="Permission status">
             <option value="GRANTED">Granted for selected channel</option><option value="OPTED_OUT">Opted out (all channels)</option>
           </select>
@@ -130,11 +157,15 @@ export default function BuyerDetail() {
           </select>
           <Button size="sm" variant="outline" className="sm:col-span-2" disabled={saveContactPermission.isPending || !permissionSource.trim() || !permissionEvidence.trim()}
             onClick={()=>{
-              const capturedAt=new Date();
+              const capturedAt=new Date(permissionCapturedAt);
+              if (!Number.isFinite(capturedAt.getTime()) || capturedAt.getTime() > Date.now()) {
+                toast({title:'Invalid observation time',description:'Use a valid observed timestamp that is not in the future.',variant:'destructive'});
+                return;
+              }
               saveContactPermission.mutate({id,data:{version:b.version,status:permissionStatus,channels:permissionStatus==='GRANTED'?[permissionChannel]:[],
                 source:permissionSource.trim(),evidenceUrl:permissionEvidence.trim(),capturedAt:capturedAt.toISOString(),
                 validUntil:permissionStatus==='GRANTED'?new Date(capturedAt.getTime()+30*86400000).toISOString():null}},
-                {onSuccess:()=>{invalidate();toast({title:'Contact permission evidence saved',description:'No message was sent.'});setPermissionSource('');setPermissionEvidence('');}});
+                {onSuccess:()=>{invalidate();void contactResearch.refetch();toast({title:'Contact permission evidence saved',description:'No message was sent.'});setPermissionSource('');setPermissionEvidence('');}});
             }}>{saveContactPermission.isPending?'Saving…':permissionStatus==='GRANTED'?'Save permission evidence':'Save opt-out'}</Button>
           {saveContactPermission.isError && <div className="sm:col-span-2"><ErrorNotice error={saveContactPermission.error} /></div>}
         </div>}
@@ -143,6 +174,21 @@ export default function BuyerDetail() {
         Latest actual outreach reply: {fmtDate(b.lastOutreachReplyAt)}. A reply is not buyer approval; current buying evidence must account for this date.
         {b.lastOutreachReplyEvidenceUrl && <a className="ml-2 underline" href={b.lastOutreachReplyEvidenceUrl} target="_blank" rel="noopener noreferrer">Review reply evidence</a>}
       </section>}
+      <section className="ledger space-y-3 p-4" data-testid="panel-buyer-contact-research">
+        <p className="eyebrow">Contact research status</p>
+        <p className="text-sm">Profile routes are not property facts. Source: {b.source || 'not recorded'}; observed {contactResearch.data?.contactObservedAt ? fmtDate(contactResearch.data.contactObservedAt) : 'not recorded'}; confidence {contactResearch.data?.contactConfidence == null ? 'not recorded' : `${Math.round(contactResearch.data.contactConfidence*100)}%`}.</p>
+        {contactResearch.data?.contactSourceUrl && <a className="text-sm underline" href={contactResearch.data.contactSourceUrl} target="_blank" rel="noopener noreferrer">Review contact source evidence</a>}
+        {contactResearch.data?.contactPermission && <p className="text-sm" data-testid="buyer-contact-permission-current">
+          Permission: {contactResearch.data.contactPermission.status} ({contactResearch.data.contactPermission.channels.join(', ') || 'all channels'}) · observed {fmtDate(contactResearch.data.contactPermission.capturedAt)} · valid until {contactResearch.data.contactPermission.validUntil ? fmtDate(contactResearch.data.contactPermission.validUntil) : 'not applicable'}
+        </p>}
+        {permissionHistory.length>0&&<details className="text-xs"><summary>Permission history ({permissionHistory.length})</summary>
+          {permissionHistory.map((entry,index)=><p key={`${entry.reviewedAt}-${index}`}>{entry.status} · {entry.channels.join(', ')||'all channels'} · {fmtDate(entry.capturedAt)} · {entry.source}</p>)}</details>}
+        <p className="text-sm">Identity: {b.verificationStatus.replaceAll('_',' ').toLowerCase()} · route does not establish recipient identity or consent.</p>
+        <p className="text-xs text-muted-foreground">Consent is separate from route provenance and buyer identity. The owner-only evidence form below stores channel, source, observed time, review time, and expiry; it never sends a message.</p>
+        <p className="border-l-2 border-signal pl-3 text-sm" data-testid="buyer-contact-next-action">
+          {contactResearch.data?.nextAction ?? 'Loading current contact research…'}
+        </p>
+      </section>
       {b.qualificationPortalSelfReport && <section className="ledger border-l-4 border-l-signal p-4" data-testid="panel-buyer-self-report">
         <p className="eyebrow mb-2">Buyer self-report · INDICATED · not verified</p>
         <p className="text-sm">Received {fmtDate(b.qualificationPortalSelfReport.receivedAt)} through invitation {b.qualificationPortalSelfReport.invitationId}. The link does not prove who responded or grant contact permission.</p>
@@ -201,7 +247,7 @@ export default function BuyerDetail() {
       <div className="grid gap-6 lg:grid-cols-2">
         <section className="ledger p-4" data-testid="panel-buyer-criteria">
           <p className="eyebrow mb-3">Contact, destination and buy box</p>
-          <BuyerForm key={`${b.id}:${epoch}`} buyer={editing} disabled={!canResearch} submitLabel="Save buyer" pending={update.isPending} error={update.error} onCancel={reloadForms}
+          <BuyerForm key={`${b.id}:${epoch}`} buyer={editing?{...editing,...(contactResearch.data??{})}:editing} disabled={!canResearch} submitLabel="Save buyer" pending={update.isPending} error={update.error} onCancel={reloadForms}
             onSubmit={(data) => update.mutate({ id, data: { ...data, version: editing.version } }, { onSuccess: (saved) => { setFormBuyer(saved);invalidate(); setEpoch((e) => e + 1); toast({ title: 'Buyer saved', description: 'Matching queued against open deals.' }); } })} />
         </section>
         <section className="ledger h-fit p-4" data-testid="panel-buyer-verification">

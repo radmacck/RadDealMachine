@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { matchBuyer, verificationStatus, evidenceUrl, type Buyer, type DealContract } from "./buyers";
+import { matchBuyer, rankBuyerMatches, verificationStatus, evidenceUrl, type Buyer, type DealContract } from "./buyers";
 import type { LeadDetail } from "./types";
 import { analyzeDeal, DEFAULT_ASSUMPTIONS } from "./underwriting";
 import { qualificationMaintenanceKind } from "./buyer-qualification";
@@ -62,6 +62,39 @@ test("matching explains current qualified fit, not just a magic score",()=>{
   const m = matchBuyer(buyer,detail,contract,now);
   assert.equal(m.eligible,true); assert.equal(m.score,100);
   assert.equal(m.mismatches.length,0); assert.ok(m.reasons.length>10);
+});
+test("match records distinguish verified buyers, synthetic fixtures and contact permission without turning fit into consent",()=>{
+  const record = {...buyer,source:"Owner-reviewed buyer profile"} as Buyer & {contactPermission?: {status:string;channels:string[];evidenceUrl:string;source:string;capturedAt:string;validUntil:string}};
+  const noPermission = matchBuyer(record,detail,contract,now);
+  assert.ok(noPermission.reasons.includes("Buyer standing: verified buyer."));
+  assert.ok(noPermission.reasons.includes("Contact permission: not_reviewed; matching does not authorize outreach."));
+  const permittedBuyer = Object.assign({},record,{contactPermission:{status:"GRANTED",channels:["EMAIL"],evidenceUrl:"https://example.com/consent",source:"Owner review",capturedAt:now.toISOString(),validUntil:"2026-10-20T12:00:00Z"}});
+  const permitted = matchBuyer(permittedBuyer,detail,contract,now);
+  assert.ok(permitted.reasons.some(reason=>reason.startsWith("Contact permission: permitted")));
+  assert.equal(permitted.eligible,true,"fit remains distinct from the permission gate for outreach");
+  const staleBuyer = Object.assign({},record,{contactPermission:{status:"GRANTED",channels:["EMAIL"],evidenceUrl:"https://example.com/consent",source:"Owner review",capturedAt:now.toISOString(),validUntil:"2026-10-04T11:59:59Z"}});
+  const stale = matchBuyer(staleBuyer,detail,contract,now);
+  assert.ok(stale.reasons.some(reason=>reason.startsWith("Contact permission: stale")));
+  const fixture = matchBuyer({...buyer,source:"SYNTHETIC FIXTURE: demo record"},detail,contract,now);
+  assert.ok(fixture.reasons.includes("Buyer standing: synthetic fixture."));
+  assert.equal(fixture.eligible,false,"explicit fixtures must not count as real acquisition demand");
+  assert.ok(fixture.mismatches.includes("Synthetic fixture cannot count as live buyer demand."));
+  assert.ok(matchBuyer({...record,validUntil:"2026-10-03T12:00:00Z"},detail,contract,now).reasons.includes("Buyer standing: stale."));
+});
+test("a synthetic fixture can never display as an approved real buyer, even with current-looking proof fields",()=>{
+  const fixture={...buyer,source:"SYNTHETIC FIXTURE: complete qualification example"};
+  const qualification=buyerQualification(fixture,now);
+  assert.notEqual(qualification.approvalStatus,"APPROVED");
+  assert.ok(qualification.qualificationBlockers.some(reason=>/Synthetic fixture is not a real buyer/.test(reason)));
+  assert.equal(matchBuyer(fixture,detail,contract,now).eligible,false);
+});
+test("buyer ranking is deterministic: eligible, then checklist fit, then stable buyer ID",()=>{
+  const rows = [
+    {buyerId:"z",eligible:true,score:80},{buyerId:"b",eligible:false,score:100},
+    {buyerId:"c",eligible:true,score:90},{buyerId:"a",eligible:true,score:90},
+  ];
+  assert.deepEqual(rankBuyerMatches(rows).map(row=>row.buyerId),["a","c","z","b"]);
+  assert.deepEqual(rankBuyerMatches(rows).map(row=>row.buyerId),rankBuyerMatches(rows).map(row=>row.buyerId));
 });
 test("newer actual reply blocks otherwise-qualified matching until dated owner review",()=>{
   const withReply = {...buyer,lastOutreachReplyAt:"2026-10-05T12:00:01Z",lastOutreachReplyEvidenceUrl:"https://example.com/synthetic-new-reply"};

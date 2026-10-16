@@ -20,6 +20,37 @@ export interface OfferContext {
   now: Date;
 }
 export interface OfferActor { id: string; role: string }
+const canonicalJson = (value: unknown): string => {
+  if (Array.isArray(value)) return `[${value.map(canonicalJson).join(",")}]`;
+  if (value && typeof value === "object") {
+    return `{${Object.entries(value as Record<string,unknown>).sort(([a],[b])=>a.localeCompare(b))
+      .map(([key,item])=>`${JSON.stringify(key)}:${canonicalJson(item)}`).join(",")}}`;
+  }
+  return JSON.stringify(value);
+};
+export type OfferReviewTerms = Pick<OfferDraftInput,"amount"|"earnestMoney"|"closingDays"|"contingencies"|"assignmentIntent"|"draftExpiresAt"|"reason">;
+export function offerReviewSnapshotJson(terms: OfferReviewTerms, ctx: OfferContext): string {
+  const a = ctx.analysis!;
+  const assumptions = a.assumptions;
+  const evidence = ctx.intelligence.filter(i => i.classification === "VERIFIED_FACTS")
+    .map(i => ({id:i.id,category:i.category,statement:i.statement,sourceType:i.sourceType,source:i.source,capturedAt:i.capturedAt,verificationNote:i.verificationNote}))
+    .sort((x,y) => x.id.localeCompare(y.id));
+  return canonicalJson({
+    version:1, analysisSnapshotId:ctx.analysisSnapshotId, calculatedAt:a.calculatedAt,
+    subject:{address:ctx.lead.address,city:ctx.lead.city,state:ctx.lead.state,propertyType:ctx.lead.propertyType,sqft:ctx.lead.sqft,askingPrice:ctx.lead.askingPrice},
+    purchasePrice:terms.amount,reason:terms.reason,terms:{earnestMoney:terms.earnestMoney,closingDays:terms.closingDays,contingencies:terms.contingencies},
+    assignment:{intended:terms.assignmentIntent,strategy:terms.assignmentIntent?"Potential contractual assignment only after local-law and contract review":"No assignment intended",legalStatus:"NOT_ASSESSED"},
+    draftExpiresAt:terms.draftExpiresAt,
+    underwriting:{engineVersion:a.engineVersion,classification:a.classification,arv:a.arv,repairs:a.repairs,mao:a.mao,openingLow:a.openingLow,openingHigh:a.openingHigh,formula:a.formula,compDecisions:a.compDecisions},
+    costs:{sellingCostLow:a.arv.low*assumptions.sellingCostPct,sellingCostExpected:a.arv.expected*assumptions.sellingCostPct,
+      repairsExpected:a.repairs.expected,repairContingency:a.repairs.high*assumptions.contingencyPct,
+      acquisitionCost:assumptions.acquisitionCost,holdingCost:assumptions.holdingMonthly*assumptions.holdingMonths,
+      assignmentTarget:terms.assignmentIntent?assumptions.assignmentTarget:0},
+    assumptions,risks:a.risks,verifiedEvidence:evidence,
+    compEvidenceIds:a.compDecisions.filter(c=>c.included).map(c=>c.id).sort(),
+    sellerReports:ctx.intelligence.filter(i=>i.classification==="INDICATED"&&i.category.startsWith("seller_call_")).map(i=>({id:i.id,category:i.category,statement:i.statement,sourceRecordId:i.sourceRecordId})).sort((x,y)=>x.id.localeCompare(y.id)),
+  });
+}
 export function assertOfferPermission(action: "DRAFT"|"AUTHORIZE"|"COMMUNICATE"|"WITHDRAW", role: string, offer?: StoredOffer): void {
   const allowed = action === "DRAFT" ? ["OWNER","ANALYST"]
     : action === "COMMUNICATE" ? ["OWNER","OPERATOR"]
@@ -58,6 +89,10 @@ export function evaluateOffer(offer: StoredOffer, ctx: OfferContext): Offer {
   if (["DRAFT","AUTHORIZED","COMMUNICATED"].includes(offer.status)) {
     blockers.push(...offerResearchBlockers(ctx));
     if (offer.analysisSnapshotId !== ctx.analysisSnapshotId) blockers.push("Offer is bound to a different underwriting snapshot.");
+    if (offer.reviewSnapshotJson && offerReviewSnapshotJson(offer,ctx) !== offer.reviewSnapshotJson) blockers.push("Verified evidence, economics, assumptions, or exact terms changed after this review packet was prepared.");
+    if (offer.status === "DRAFT" && offer.draftExpiresAt && Date.parse(offer.draftExpiresAt) <= ctx.now.getTime()) {
+      blockers.push("Internal proposal draft expired; prepare a new version.");
+    }
     if (offer.status !== "DRAFT" && (!offer.authorityEvidenceId || !authorityEvidence(ctx,offer.authorityEvidenceId))) {
       blockers.push("Current verified public-record seller authority evidence is missing or over 30 days old.");
     }
@@ -76,6 +111,8 @@ export function validateOfferDraft(input: OfferDraftInput, ctx: OfferContext): v
   if (blockers.length) throw new DomainError(blockers.join("; "));
   if (!cents(input.amount) || !cents(input.earnestMoney)) throw new DomainError("Offer amounts must use whole cents.");
   if (input.earnestMoney > input.amount) throw new DomainError("Earnest money cannot exceed the proposed purchase amount.");
+  if (input.amount > ctx.analysis!.mao) throw new DomainError("Proposed purchase price exceeds the current deterministic MAO.");
+  if (input.draftExpiresAt) future(input.draftExpiresAt,ctx.now,"Draft expiry");
 }
 export function validateOfferApproval(offer: StoredOffer, input: OfferApprovalInput, ctx: OfferContext): void {
   const parsed = AuthorizeOfferBody.safeParse(input);
@@ -86,9 +123,11 @@ export function validateOfferApproval(offer: StoredOffer, input: OfferApprovalIn
   if (input.maximumApprovedAcquisitionPrice > ctx.analysis!.mao) throw new DomainError("Approved acquisition ceiling cannot exceed the conservative calculated MAO.");
   if (offer.amount > input.maximumApprovedAcquisitionPrice) throw new DomainError("Draft amount exceeds the owner's approved acquisition ceiling.");
   if (!authorityEvidence(ctx,input.authorityEvidenceId)) throw new DomainError("Select current VERIFIED FACTS public-record ownership or seller-authority evidence with a verification note. Title and signatory clearance are still separate diligence.");
+  if (offer.reviewSnapshotHash && input.reviewSnapshotHash !== offer.reviewSnapshotHash) throw new DomainError("Approval must confirm the exact current review packet version.",409);
   const expiry = future(input.expiresAt,ctx.now,"Approval expiry");
   if (expiry > Date.parse(ctx.analysis!.calculatedAt)+ANALYSIS_LIFETIME_MS) throw new DomainError("Approval cannot outlive the underwriting's seven-day freshness window.");
   if (future(input.followUpAt,ctx.now,"Follow-up") > expiry) throw new DomainError("Schedule the next action before the approval expires.");
+  if (offer.draftExpiresAt && expiry > Date.parse(offer.draftExpiresAt)) throw new DomainError("Approval expiry cannot outlive the proposal draft expiry.");
 }
 export function validateOfferCommunication(offer: StoredOffer, input: OfferCommunicationInput, ctx: OfferContext): void {
   const parsed = CommunicateOfferBody.safeParse(input);

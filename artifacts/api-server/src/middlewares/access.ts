@@ -22,3 +22,9 @@ export function roles(...allowed: string[]): RequestHandler {
     next();
   };
 }
+
+/**
+ * Private deal data contains contact details, exact addresses, financial evidence,
+ * and transaction records. VIEWER remains read-only but cannot fetch these payloads.
+ */
+export const sensitiveWorkspaceData: RequestHandler = roles("OWNER","ANALYST","OPERATOR");

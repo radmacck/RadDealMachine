@@ -6,12 +6,12 @@ import assert from "node:assert/strict";
 import { randomUUID } from "node:crypto";
 import { count, eq, sql } from "drizzle-orm";
 import {
-  db, pool, jobsTable, leadsTable, intelligenceTable, analysesTable, offersTable, contractsTable, propertySourceObservationsTable,
+  db, pool, jobsTable, leadsTable, intelligenceTable, analysesTable, offersTable, contractsTable, propertyDiscoveriesTable, propertySourceObservationsTable,
   unmatchedPropertySourceObservationsTable,
 } from "@workspace/db";
 import { GetPropertySourceCoverageResponse, ListPropertySourcesResponse } from "@workspace/api-zod";
 import { DomainError } from "@workspace/deal-domain";
-import type { PropertySourceRefresh } from "@workspace/property-sources";
+import type { PropertySourceRefresh, PublicProperty } from "@workspace/property-sources";
 import { logger } from "../lib/logger";
 import { commandCenter } from "./command-center";
 import {
@@ -24,11 +24,13 @@ import { addSourceComps, getPropertySourceCoverage, getSourceResearch, importPub
 import { addIntelligence, callQueue, createLead, leadDetail, updateLead, saveUnderwriting, transitionLead, recordCall } from "./deal-store";
 import { createBuyer, verifyBuyer } from "./buyer-store";
 import * as offers from "./offer-store";
+import { authorizeReviewedOffer } from "./offer-exercise-helpers";
 import * as transactions from "./transaction-store";
 import { dealOperations } from "./matching-store";
 import { exerciseEvidence } from "./exercise-evidence";
 import { runWorkerOnce, submitWorkerJob } from "./workers";
 import { comparePropertyDiscoveriesByRank } from "./property-discovery-ranking";
+import { rankPropertyAcquisitionQueue } from "@workspace/deal-domain";
 import { getSellerContactPaths } from "./seller-contact-store";
 import {
   allPropertySourceConnectors,
@@ -115,7 +117,11 @@ try {
     termsReviewed: true, recurringPropertyDiscovery: true,
   }, actor);
   const discoveryRun = await runWorkerOnce(now, false, discoveryJob.id);
-  assert.equal(discoveryRun?.state, "SUCCEEDED", "The durable seller discovery job must complete from the official source.");
+  assert.equal(
+    discoveryRun?.state,
+    "SUCCEEDED",
+    `The durable seller discovery job must complete from the official source; observed ${discoveryRun?.state ?? "missing"}: ${discoveryRun?.message ?? "no persisted run message"}`,
+  );
   assert.match(discoveryRun?.message ?? "", /Registered discovery connector results:.*phila-opa/);
   assert.match(discoveryRun?.message ?? "", /no active lead was created/i);
   const sheriffTraversalMatch = discoveryRun?.message?.match(
@@ -203,6 +209,16 @@ try {
     "The durable worker must persist demand snapshots that agree with the current buyer-evidence versions.");
   assert.ok(liveDiscoveryRecords.every(record => record.priorityScore >= record.score),
     "Demand ranking may add a separate priority bonus but cannot reduce seller relevance.");
+  const queueOrder = rankPropertyAcquisitionQueue(liveDiscoveryRecords, now);
+  const repeatedQueueOrder = rankPropertyAcquisitionQueue(liveDiscoveryRecords, now);
+  assert.deepEqual(queueOrder.map(item => item.id), repeatedQueueOrder.map(item => item.id),
+    "The persisted discovery queue must rank deterministically across identical API reads.");
+  assert.ok(queueOrder.every(item => item.status === liveDiscoveryRecords.find(record => record.id === item.id)?.status),
+    "Queue ranking cannot promote raw observations or change human-reviewed qualification.");
+  assert.ok(queueOrder.some(item => item.acquisitionPriority.tasks.some(task => /direct seller contact route/.test(task))),
+    "Missing seller contact data must create explicit acquisition work.");
+  assert.equal((await db.select().from(leadsTable)).length, 0,
+    "Prioritization of persisted public-source discoveries must not create qualified leads.");
   assert.ok(liveDiscoveryRecords.every(record => Array.isArray(record.property.contactPaths)),
     "The API response must preserve contact-path evidence, including an explicit empty list when OPA has no mailing route.");
   const liveContactPaths = liveDiscoveryRecords.flatMap(record => record.property.contactPaths);
@@ -288,7 +304,9 @@ try {
   const liveObservationRowsBeforeSynthetic = observedSources.length + liveUnmatched.length;
   const paginationTemplate = liveDiscoveryRecords[0]?.property;
   assert.ok(paginationTemplate, "The synthetic pagination exercise needs a property-shaped template from the real persisted response.");
-  const syntheticPaginationRecords: Array<{ id: string; version: number; property: typeof paginationTemplate }> = [];
+  const syntheticPaginationRecords: Array<{
+    id: string; version: number; property: typeof paginationTemplate; sourceKey: string; capturedAt: Date;
+  }> = [];
   for (let index = 0; index < 110; index += 1) {
     const capturedAt = new Date(now.getTime() - (110 - index) * 1000);
     const syntheticProperty = {
@@ -302,13 +320,14 @@ try {
       contactPaths: [],
       capturedAt: capturedAt.toISOString(),
     };
+    const sourceKey = `synthetic-pagination:${index}`;
     const saved = await recordPropertyObservation(
       syntheticProperty,
-      `synthetic-pagination:${index}`,
+      sourceKey,
       "synthetic-property-pagination-exercise",
       capturedAt,
     );
-    syntheticPaginationRecords.push({ id: saved.id, version: saved.version, property: syntheticProperty });
+    syntheticPaginationRecords.push({ id: saved.id, version: saved.version, property: syntheticProperty, sourceKey, capturedAt });
     assert.equal(saved.leadId, null, "A synthetic raw source record must not create a lead.");
     assert.notEqual(saved.status, "CALL_READY", "A raw source record must never become call ready automatically.");
   }
@@ -398,6 +417,72 @@ try {
   assert.equal(duplicateSynthetic.id, strongSynthetic.id, "A second source for the same synthetic parcel must deduplicate to one property discovery.");
   assert.equal(duplicateSynthetic.leadId, null);
 
+  const [sourceObservationBeforeReplay] = await db.select().from(propertySourceObservationsTable)
+    .where(eq(propertySourceObservationsTable.sourceKey, strongSynthetic.sourceKey));
+  const [discoveryBeforeReplay] = await db.select().from(propertyDiscoveriesTable)
+    .where(eq(propertyDiscoveriesTable.id, strongSynthetic.id));
+  const exactReplay = await recordPropertyObservation(
+    strongSynthetic.property as Parameters<typeof recordPropertyObservation>[0],
+    strongSynthetic.sourceKey,
+    "synthetic-property-pagination-exercise",
+    strongSynthetic.capturedAt,
+  );
+  const [sourceObservationAfterReplay] = await db.select().from(propertySourceObservationsTable)
+    .where(eq(propertySourceObservationsTable.sourceKey, strongSynthetic.sourceKey));
+  assert.equal(exactReplay.version, discoveryBeforeReplay?.version, "An exact same-capture replay must not bump the persisted discovery version.");
+  assert.equal(sourceObservationAfterReplay?.seenCount, sourceObservationBeforeReplay?.seenCount,
+    "An exact same-capture replay must not inflate observation counts.");
+
+  await assert.rejects(
+    recordPropertyObservation(
+      { ...strongSynthetic.property, id: `${strongSynthetic.property.id}-CONFLICT`, parcelId: "CONFLICTING-PARCEL-ID" } as Parameters<typeof recordPropertyObservation>[0],
+      strongSynthetic.sourceKey,
+      "synthetic-property-pagination-exercise",
+      strongSynthetic.capturedAt,
+    ),
+    /conflicting property identity/,
+    "A reused source-record key cannot silently move to a different property.",
+  );
+  const [sourceObservationAfterConflict] = await db.select().from(propertySourceObservationsTable)
+    .where(eq(propertySourceObservationsTable.sourceKey, strongSynthetic.sourceKey));
+  assert.equal(sourceObservationAfterConflict?.sourceId, strongSynthetic.property.id,
+    "Rejecting an identity conflict must preserve the original source observation.");
+  await assert.rejects(
+    recordPropertyObservation(
+      { ...strongSynthetic.property, id: "" } as Parameters<typeof recordPropertyObservation>[0],
+      "synthetic-pagination:missing-identifier",
+      "synthetic-property-pagination-exercise",
+      now,
+    ),
+    /source record identifier/,
+    "A property without a stable source record identifier must not enter discovery.",
+  );
+
+  const lineageSourceKey = `synthetic-lineage:${randomUUID()}`;
+  const lineageProperty = {
+    ...strongSynthetic.property,
+    id: `SYNTHETIC-LINEAGE-${randomUUID()}`,
+    parcelId: `SYNTHETIC-LINEAGE-PARCEL-${randomUUID()}`,
+    sourceUrl: "https://example.invalid/synthetic-lineage-v1",
+    contactPaths: [],
+  } as PublicProperty;
+  const lineageFirst = await recordPropertyObservation(lineageProperty, lineageSourceKey,
+    "synthetic-property-lineage-exercise", now);
+  const lineageUpdate = await recordPropertyObservation({
+    ...lineageProperty,
+    sqft: (lineageProperty.sqft ?? 0) + 25,
+    sourceUrl: "https://example.invalid/synthetic-lineage-v2",
+  }, lineageSourceKey, "synthetic-property-lineage-exercise", new Date(now.getTime() + 60_000));
+  const [lineageObservation] = await db.select().from(propertySourceObservationsTable)
+    .where(eq(propertySourceObservationsTable.sourceKey, lineageSourceKey));
+  const lineagePayload = lineageObservation?.payload as Record<string, unknown> | undefined;
+  const versions = Array.isArray(lineagePayload?.recordHistory) ? lineagePayload.recordHistory as Array<Record<string, unknown>> : [];
+  assert.equal(lineageUpdate.id, lineageFirst.id, "A material update under the same exact parcel remains on its discovery.");
+  assert.equal(versions.length, 1, "A material source-record revision retains its earlier normalized version.");
+  assert.equal(versions[0]?.sourceUrl, "https://example.invalid/synthetic-lineage-v1");
+  assert.equal(versions[0]?.observedAt, now.toISOString());
+  assert.equal(lineageUpdate.leadId, null, "A source-record update remains raw discovery, not an active lead.");
+
   const syntheticAndLivePages = [];
   let page = await listPropertyDiscoveries({ marketKey: "PHILADELPHIA_PA", limit: livePageSize });
   syntheticAndLivePages.push(page);
@@ -444,8 +529,8 @@ try {
   const sourceObservationRowsAfterSyntheticFixture =
     (await db.select().from(propertySourceObservationsTable)).length +
     (await db.select().from(unmatchedPropertySourceObservationsTable)).length;
-  assert.equal(sourceObservationRowsAfterSyntheticFixture - liveObservationRowsBeforeSynthetic, 111,
-    "The isolated pagination fixture adds 110 synthetic properties plus one retained second-source observation.");
+  assert.equal(sourceObservationRowsAfterSyntheticFixture - liveObservationRowsBeforeSynthetic, 112,
+    "The isolated fixture adds 110 pagination properties, one retained second-source observation, and one source-lineage revision fixture.");
   const propertyPaginationSummary = {
     liveFirstPageRecords: liveDiscoveryList.records.length,
     livePersistedPropertyRecords: liveDiscoveryRecords.length,
@@ -623,7 +708,7 @@ try {
   assert.equal(repeated.sourceObservationCount, first.sourceObservationCount, "The same source connectors update in place rather than duplicating their observations.");
   const [repeatRow] = await db.select().from(propertySourceObservationsTable)
     .where(eq(propertySourceObservationsTable.sourceKey, `phila-opa:${property.id}`));
-  assert.equal(repeatRow?.seenCount, 3, "The worker capture and two manual imports update one deduplicated source observation.");
+  assert.equal(repeatRow?.seenCount, 1, "Same-capture worker/manual retries are idempotent and do not inflate observation counts.");
   const savedOpaPayload = repeatRow?.payload as { contactPaths?: unknown[] } | undefined;
   assert.ok(Array.isArray(savedOpaPayload?.contactPaths), "The official OPA source observation persists contact-path evidence.");
   for (const path of savedOpaPayload.contactPaths) {
@@ -994,7 +1079,7 @@ try {
     reason: "Synthetic source-refresh invalidation test.",
   }, actor, now);
   const sourceTestOfferId = detail.offers[0]!.id;
-  detail = await offers.authorizeOffer(promoted.leadId, sourceTestOfferId, {
+  detail = await authorizeReviewedOffer(promoted.leadId, sourceTestOfferId, {
     version: detail.lead.version, maximumApprovedAcquisitionPrice: 50000,
     authorityEvidenceId: sellerAuthority.id, expiresAt: future(48),
     reason: "Synthetic owner review.", nextAction: "Synthetic exact terms.",

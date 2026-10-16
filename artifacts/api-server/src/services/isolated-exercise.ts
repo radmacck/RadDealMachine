@@ -7,7 +7,7 @@
 import { randomUUID } from "node:crypto";
 import { spawnSync } from "node:child_process";
 import { pool } from "@workspace/db";
-const allowed = new Set(["handoff-exercise.ts","evidence-intake-exercise.ts","seller-exercise.ts","repair-estimate-exercise.ts","offer-exercise.ts","seller-offer-portal-exercise.ts","buyer-exercise.ts","buyer-pool-exercise.ts","transaction-exercise.ts","research-exercise.ts","research-lifecycle-exercise.ts","property-source-exercise.ts","property-contact-http-exercise.ts","command-center-exercise.ts","seller-contact-exercise.ts","seller-contact-enrichment-exercise.ts","acquisition-queue-exercise.ts","intelligence-loop-exercise.ts","decision-work-lifecycle-exercise.ts","outcome-learning-exercise.ts","seller-playbook-exercise.ts","clause-review-exercise.ts"]);
+const allowed = new Set(["handoff-exercise.ts","evidence-intake-exercise.ts","seller-exercise.ts","repair-estimate-exercise.ts","offer-exercise.ts","seller-offer-portal-exercise.ts","buyer-exercise.ts","buyer-pool-exercise.ts","transaction-exercise.ts","research-exercise.ts","research-lifecycle-exercise.ts","property-source-exercise.ts","property-contact-http-exercise.ts","command-center-exercise.ts","seller-contact-exercise.ts","seller-contact-enrichment-exercise.ts","acquisition-queue-exercise.ts","intelligence-loop-exercise.ts","decision-work-lifecycle-exercise.ts","outcome-learning-exercise.ts","seller-playbook-exercise.ts","clause-review-exercise.ts","worker-recovery-exercise.ts","workspace-setup-exercise.ts","data-quality-exercise.ts"]);
 const file = process.argv[2];
 if (!file || !allowed.has(file)) throw new Error("Choose a registered service exercise.");
 const schema = `exercise_${randomUUID().replaceAll("-","")}`;

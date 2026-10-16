@@ -1,7 +1,8 @@
 import { eq, and, inArray } from "drizzle-orm";
+import { createHash } from "node:crypto";
 import { db, offersTable, leadsTable, type OfferRow } from "@workspace/db";
 import {
-  DomainError, assertOfferPermission, validateOfferDraft, validateOfferApproval,
+  DomainError, assertOfferPermission, validateOfferDraft, validateOfferApproval, offerReviewSnapshotJson,
   validateOfferCommunication, validateOfferWithdrawal,
   type OfferActor, type OfferContext, type OfferDraftInput, type OfferApprovalInput,
   type OfferCommunicationInput, type OfferWithdrawalInput, type LeadDetail,
@@ -32,19 +33,26 @@ export async function createOfferDraft(id: string,input: OfferDraftInput,actor: 
   return db.transaction(async tx => {
     const lead = await lockedLead(tx,id,input.version);
     const detail = await leadDetail(id,tx,now);
-    validateOfferDraft(input,await context(tx,detail,now));
-    const {version:_,...terms} = input;
+    const draftExpiresAt=input.draftExpiresAt??new Date(now.getTime()+48*3_600_000).toISOString();
+    const prepared={...input,draftExpiresAt};
+    const offerContext=await context(tx,detail,now);
+    validateOfferDraft(prepared,offerContext);
+    const {version:_,...terms} = prepared;
+    const reviewSnapshotJson=offerReviewSnapshotJson(prepared,offerContext);
+    const reviewSnapshotHash=createHash("sha256").update(reviewSnapshotJson).digest("hex");
     const [offer] = await tx.insert(offersTable).values({
       leadId:id,analysisSnapshotId:detail.analysisSnapshotId!,createdBy:actor.id,createdAt:now,updatedAt:now,
       payload:{
-        ...terms,maximumApprovedAcquisitionPrice:null,authorityEvidenceId:null,
+         ...terms,reviewSnapshotJson,reviewSnapshotHash,maximumApprovedAcquisitionPrice:null,authorityEvidenceId:null,
         approvedBy:null,approvedAt:null,approvalReason:null,expiresAt:null,
         communicatedBy:null,communicatedAt:null,communicatedAmount:null,channel:null,evidence:null,withdrawalReason:null,
       },
     }).returning();
     if (!offer) throw new Error("Offer draft insert failed");
     await tx.update(leadsTable).set({version:lead.version+1,updatedAt:now}).where(eq(leadsTable.id,id));
-    await audit(tx,actor.id,"OFFER_DRAFT_CREATED",id,`Draft ${offer.id}, $${input.amount}, analysis ${detail.analysisSnapshotId}. Immutable terms; not approved, not communicated, not a contract. Reason: ${input.reason}`);
+    await audit(tx,actor.id,"OFFER_DRAFT_CREATED",id,JSON.stringify({offerId:offer.id,actor:actor.id,at:now.toISOString(),leadVersion:lead.version+1,
+      terms:{amount:prepared.amount,earnestMoney:prepared.earnestMoney,closingDays:prepared.closingDays,contingencies:prepared.contingencies,assignmentIntent:prepared.assignmentIntent,draftExpiresAt},
+      analysisSnapshotId:detail.analysisSnapshotId,reviewSnapshotHash,reason:prepared.reason,status:"DRAFT_NOT_AN_OFFER_NOT_SENT"}));
     return leadDetail(id,tx,now);
   });
 }
@@ -71,9 +79,21 @@ export async function authorizeOffer(id: string,offerId: string,input: OfferAppr
       stage:lead.stage,nextAction:lead.nextAction,followUpAt:followupDate(input.followUpAt,now),
       version:lead.version+1,updatedAt:now,
     }).where(eq(leadsTable.id,id));
-    await audit(tx,actor.id,"OFFER_AUTHORIZED",id,`Offer ${offerId}; exact approved amount $${offer.payload.amount}; ceiling $${input.maximumApprovedAcquisitionPrice}; expires ${input.expiresAt}; analysis ${offer.analysisSnapshotId}; public-record authority ${input.authorityEvidenceId}. Not title clearance, communication or contract.`);
+     await audit(tx,actor.id,"OFFER_AUTHORIZED",id,JSON.stringify({offerId,actor:actor.id,approvedAt:now.toISOString(),leadVersion:lead.version+1,
+       exactTerms:{amount:offer.payload.amount,earnestMoney:offer.payload.earnestMoney,closingDays:offer.payload.closingDays,contingencies:offer.payload.contingencies,assignmentIntent:offer.payload.assignmentIntent},
+       reviewSnapshotHash:offer.payload.reviewSnapshotHash,maximumApprovedAcquisitionPrice:input.maximumApprovedAcquisitionPrice,
+       expiresAt:input.expiresAt,analysisSnapshotId:offer.analysisSnapshotId,authorityEvidenceId:input.authorityEvidenceId,
+       status:"AUTHORIZED_NOT_SENT_NOT_A_CONTRACT"}));
     return leadDetail(id,tx,now);
   });
+}
+export async function getOfferReview(id:string,offerId:string) {
+  const row=await db.select().from(offersTable).where(and(eq(offersTable.id,offerId),eq(offersTable.leadId,id))).then(rows=>rows[0]);
+  if(!row) throw new DomainError("Offer not found for this lead.",404);
+  const payload=row.payload as Record<string,unknown>;
+  if(typeof payload.reviewSnapshotJson!=="string"||typeof payload.reviewSnapshotHash!=="string"||typeof payload.draftExpiresAt!=="string")
+    throw new DomainError("This historical offer has no prepared review packet; create a new draft.",409);
+  return {offerId,draftExpiresAt:payload.draftExpiresAt,reviewSnapshotJson:payload.reviewSnapshotJson,reviewSnapshotHash:payload.reviewSnapshotHash};
 }
 export async function communicateOffer(id: string,offerId: string,input: OfferCommunicationInput,actor: OfferActor,now = new Date()) {
   assertOfferPermission("COMMUNICATE",actor.role);

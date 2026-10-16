@@ -9,6 +9,7 @@ import {
   getGetCommandCenterQueryKey, getGetTransactionReadinessQueryKey, getListPropertyDiscoveriesQueryKey, useGetCommandCenter,
   useGetTransactionReadiness, useListPropertyDiscoveries, type CommandAction, type ListPropertyDiscoveriesParams, type PropertyDiscoveryStatus,
 } from '@workspace/api-client-react';
+import { rankPropertyAcquisitionQueue, type AcquisitionQueueViability } from '@workspace/deal-domain';
 import { StageBadge } from '@/components/stage-badge';
 import { useWorkspaceSearch } from '@/components/workspace-search';
 import { commandCenterCallDisplay } from '@/lib/command-center-display';
@@ -67,7 +68,7 @@ export default function Dashboard() {
   const [showAllActions, setShowAllActions] = useState(false);
   const [showAllTransactionExceptions, setShowAllTransactionExceptions] = useState(false);
   const [discoveryStatusFilter, setDiscoveryStatusFilter] = useState<PropertyDiscoveryStatus | "ALL">("ALL");
-  const [discoverySort, setDiscoverySort] = useState<"RELEVANCE" | "FRESHEST" | "ADDRESS">("RELEVANCE");
+  const [discoverySort, setDiscoverySort] = useState<"ACQUISITION" | "RELEVANCE" | "FRESHEST" | "ADDRESS">("ACQUISITION");
   const [discoverySearch, setDiscoverySearch] = useState("");
   const { open: searchOpen, query: searchQuery, setQuery: setSearchQuery } = useWorkspaceSearch();
   const discoveryParams: ListPropertyDiscoveriesParams = {
@@ -92,9 +93,21 @@ export default function Dashboard() {
   const query = searchQuery.trim().toLowerCase();
   const matchesSearch = (...values: (string | number | null | undefined)[]) =>
     !query || values.some((value) => String(value ?? '').toLowerCase().includes(query));
-  const discoveryRows = filterAndSortDiscoveryPreview(
-    discoveryData?.records ?? [], discoveryStatusFilter, discoverySearch, discoverySort,
-  );
+  const discoveryFiltered = filterAndSortDiscoveryPreview(discoveryData?.records ?? [], discoveryStatusFilter, discoverySearch, "RELEVANCE");
+  const viability = (item: (typeof discoveryFiltered)[number]): AcquisitionQueueViability => {
+    const analysis = item.leadId ? d?.opportunities.find(opportunity => opportunity.lead.id === item.leadId)?.analysis : undefined;
+    if (!analysis || !Number.isFinite(Date.parse(analysis.calculatedAt)) || now.getTime() - Date.parse(analysis.calculatedAt) >= 7 * 86_400_000)
+      return "UNKNOWN";
+    if (analysis.blockers.length) return "BLOCKED";
+    if (analysis.classification === "STRONG" || analysis.classification === "NEGOTIABLE") return analysis.classification;
+    return "WEAK";
+  };
+  const acquisitionQueueRows = rankPropertyAcquisitionQueue(discoveryFiltered, now, viability);
+  const discoveryRows = discoverySort === "ACQUISITION" ? acquisitionQueueRows
+    : rankPropertyAcquisitionQueue(
+      filterAndSortDiscoveryPreview(discoveryData?.records ?? [], discoveryStatusFilter, discoverySearch, discoverySort),
+      now, viability,
+    );
   const changeDiscoveryStatus = (value: PropertyDiscoveryStatus | "ALL") => {
     setDiscoveryStatusFilter(value);
     setDiscoveryCursor(undefined);
@@ -243,6 +256,26 @@ export default function Dashboard() {
                     ? `${readinessData.capabilities.deliveryProvider.deliveryStatus} — no delivery provider is connected. Copied links and invitations are not delivery evidence.`
                     : 'Unknown — delivery cannot be claimed while provider readiness is unavailable.'}</p>
               </div>
+            </div>
+            <div className="mt-3" data-testid="panel-provider-health">
+              <div className="fd-section-head">
+                <div className="fd-section-title">Provider connections &amp; health
+                  <small>Status comes from saved readiness checks; credentials are never displayed.</small>
+                </div>
+              </div>
+              {!readinessData ? <p className="text-sm text-muted-foreground">Health status is unavailable until the authenticated readiness check responds.</p> : (
+                <div className="fd-readiness-grid">
+                  {readinessData.capabilities.providers.map((provider) => (
+                    <div className="fd-readiness-item" key={provider.id} data-testid={`provider-health-${provider.id}`}>
+                      <b>{provider.name} · {provider.status}</b>
+                      <p>{provider.reason}</p>
+                      <p className="text-xs text-muted-foreground">{provider.checkKind} check · {provider.checkedAt}
+                        {provider.lastSuccessAt ? ` · last success ${provider.lastSuccessAt}` : ' · no persisted successful check'}</p>
+                      <p><b>Next:</b> {provider.nextAction}</p>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
             <div className="mt-3" data-testid="panel-package-readiness">
               <div className="fd-section-head">
@@ -643,12 +676,13 @@ export default function Dashboard() {
               <label className="text-xs">Sort
                 <select aria-label="Sort property discoveries" className="ml-2 rounded border bg-background px-2 py-1 text-sm"
                   value={discoverySort} onChange={(event) => setDiscoverySort(event.target.value as typeof discoverySort)}>
+                  <option value="ACQUISITION">Acquisition queue</option>
                   <option value="RELEVANCE">Highest relevance</option>
                   <option value="FRESHEST">Most recently observed</option>
                   <option value="ADDRESS">Address A–Z</option>
                 </select>
               </label>
-              <span className="text-xs text-muted-foreground">{discoveryRows.length} shown on page {discoveryPageHistory.length + 1} · {discoveryData?.counts.DISCOVERED_PROPERTY ?? 0} raw · {discoveryData?.counts.RELEVANT_CANDIDATE ?? 0} candidates · {discoveryData?.counts.QUALIFIED_LEAD ?? 0} qualified.</span>
+              <span className="text-xs text-muted-foreground">{discoveryRows.length} shown on page {discoveryPageHistory.length + 1} · {discoveryData?.counts.DISCOVERED_PROPERTY ?? 0} raw · {discoveryData?.counts.RELEVANT_CANDIDATE ?? 0} candidates · {discoveryData?.counts.QUALIFIED_LEAD ?? 0} qualified. Queue order applies within this page; pages still follow persisted relevance order.</span>
               <Link className="fd-text-link ml-auto" href="/workers?kind=DISCOVER_PROPERTIES" data-testid="link-queue-property-refresh">
                 Review &amp; queue source refresh <ArrowRight size={12} style={{ verticalAlign: 'middle', marginLeft: 3 }} />
               </Link>
@@ -701,6 +735,7 @@ export default function Dashboard() {
                         </span>
                         <span className="text-xs text-muted-foreground">{item.score}/100 · {Math.round(item.confidence * 100)}% confidence</span>
                       </div>
+                      {discoverySort === 'ACQUISITION' && <p className="mt-1 text-xs" data-testid={`acquisition-priority-${item.id}`}><b>Queue priority #{item.acquisitionPriority.rank}:</b> {item.acquisitionPriority.explanation}</p>}
                       <p className="mt-1 text-xs"><b>Why:</b> {item.rankingReasons.slice(0, 3).join(' · ') || item.reason}</p>
                       <p className="mt-1 text-xs"><b>Blocker:</b> {item.promotionBlockers[0] ?? item.missingInformation[0] ?? 'No qualification blocker recorded; call readiness is still checked separately.'}</p>
                       <p className="mt-1 text-xs"><b>Next:</b> {contactState === 'NO_DIRECT_ROUTE' || contactState === 'POSTAL_ONLY'
@@ -711,6 +746,9 @@ export default function Dashboard() {
                         : contactState === 'POSTAL_ONLY' ? 'Postal only — not a phone/email route; blocked from CALL NEXT.'
                           : contactState === 'DIRECT_ROUTE_NEEDS_REVIEW' ? 'A direct route exists, but no current permitted phone route is cleared for CALL NEXT.'
                             : 'No direct phone/email/web route; blocked from CALL NEXT.'}</p>
+                      {discoverySort === 'ACQUISITION' && item.acquisitionPriority.tasks.length > 0 && <div className="mt-2 rounded border border-dashed p-2 text-xs" data-testid={`acquisition-tasks-${item.id}`}>
+                        <b>Open acquisition tasks:</b><ul className="mt-1 list-disc pl-5">{item.acquisitionPriority.tasks.slice(0, 5).map((task, index) => <li key={`${item.id}-${index}`}>{task}</li>)}</ul>
+                      </div>}
                       {item.contactResearchCase && <div className="mt-2 rounded border-l-2 border-warn bg-muted/30 p-2 text-xs" data-testid={`dashboard-contact-case-${item.id}`}>
                         <p><b>Contact research:</b> {item.contactResearchCase.status} · {item.contactResearchCase.sourceName} ({item.contactResearchCase.sourceType}) · observed {new Date(item.contactResearchCase.observedAt).toLocaleString()}</p>
                         <p>Identity {item.contactResearchCase.identityMatch} · permission {item.contactResearchCase.permissionBasis} · confidence {Math.round(item.contactResearchCase.confidence * 100)}% · {item.contactResearchCase.auditHistory.length} saved audit event(s).</p>

@@ -12,6 +12,11 @@ import type { CallSellerAnswers } from './callSellerAnswers';
 export interface CallInput {
   /** @minimum 1 */
   version: number;
+  /**
+     * @minLength 8
+     * @maxLength 200
+     */
+  idempotencyKey?: string;
   outcome: CallInputOutcome;
   /**
      * @minLength 1
@@ -34,4 +39,9 @@ export interface CallInput {
   operatorConfidence?: number;
   clarificationStatus?: CallInputClarificationStatus;
   sellerAnswers?: CallSellerAnswers;
+  /**
+     * Structured note extraction JSON, linked by exact note offsets and labeled with confidence and attribution.
+     * @maxLength 24000
+     */
+  structuredFieldsJson?: string;
 }

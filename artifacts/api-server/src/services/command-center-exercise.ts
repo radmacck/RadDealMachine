@@ -24,6 +24,11 @@ assert.equal(emptyReadiness.capabilities.deliveryProvider.deliveryStatus,"NOT_SE
 assert.match(emptyReadiness.capabilities.deliveryProvider.nextAction,/No direct route.*provenance and permission evidence/i);
 assert.equal(emptyReadiness.capabilities.privateDocumentStorage.status,"PRIVATE_FILE_STORE_UNAVAILABLE");
 assert.match(emptyReadiness.capabilities.privateDocumentStorage.nextAction,/private object storage/i);
+assert.equal(emptyReadiness.capabilities.providers.find(item=>item.id==="seller-contact-research")?.status,"UNCONFIGURED");
+assert.equal(emptyReadiness.capabilities.providers.find(item=>item.id==="outbound-messaging")?.status,"UNCONFIGURED");
+assert.equal(emptyReadiness.capabilities.providers.find(item=>item.id==="electronic-signature")?.status,"UNCONFIGURED");
+assert.equal(emptyReadiness.capabilities.providers.find(item=>item.id==="private-document-storage")?.status,"DEGRADED");
+assert.ok(emptyReadiness.capabilities.providers.every(item=>item.checkedAt && !/api[_-]?key|secret|token/i.test(item.reason)));
 assert.equal(emptyReadiness.capabilities.jurisdictionTemplates.status,"NOT_EVALUATED");
 assert.match(emptyReadiness.capabilities.jurisdictionTemplates.nextAction,/jurisdiction/i);
 const [lead] = await db.insert(leadsTable).values({
@@ -106,7 +111,10 @@ assert.equal(dealActions[0]?.workGuidance?.responsibleRole,"ANALYST");
 assert.equal(dealActions[0]?.workGuidance?.currentState,
   analystView.deals.find((item) => item.lead.id === lead.id)?.decision.currentState);
 assert.ok(dealActions[0]?.workGuidance?.missingFacts.length);
-assert.equal(analystView.deals.find((item) => item.lead.id === lead.id)?.workGuidance?.humanMustDo,dealActions[0]?.title);
+assert.match(analystView.deals.find((item) => item.lead.id === lead.id)?.workGuidance?.humanMustDo ?? "",
+  /system may prepare|operator must/i);
+assert.notDeepEqual(dealActions[0]?.workGuidance?.requiredEvidence,analystView.deals.find((item) => item.lead.id === lead.id)?.decision.evidenceRefs,
+  "required evidence must name missing prerequisites, not echo already-known evidence references");
 assert.ok(analystView.actions.every((action) => action.workGuidance),
   "Every action presented in the command center must include persisted next-step guidance.");
 assert.equal(analystView.automation.lanes.find((lane) => lane.key === "property-discovery")?.state,"AWAITING_AUTHORIZATION",
@@ -192,7 +200,9 @@ assert.equal(failedAutomationView.automation.status,"ACTION_REQUIRED");
 assert.equal(failedAutomationView.automation.lanes.find((lane) => lane.key === "deadlines")?.state,"ACTION_REQUIRED");
 
 const operatorView = await commandCenter("OPERATOR",now);
-assert.equal(operatorView.actions.filter((action) => action.leadId === lead.id).length,0,
-  "research work is not assigned to an operator");
+assert.equal(operatorView.actions.filter((action) => action.leadId === lead.id && action.id.startsWith("DECISION:")).length,0,
+  "analyst research decisions are not assigned to an operator");
+assert.equal(operatorView.actions.filter((action) => action.leadId === lead.id && action.id.startsWith("CALENDAR:SELLER_FOLLOW_UP:")).length,1,
+  "an explicitly persisted seller follow-up remains visible in the operator's calendar queue");
 
 logger.info({checks:"isolated persisted zero-data workspace; provider-unavailable and jurisdiction-template readiness reasons; role-assigned next actions; source-consent, one-time-only and recurring status; current, overdue and failed worker states; last-run data and human authority gates"},"Command-center persistence exercise PASSED");

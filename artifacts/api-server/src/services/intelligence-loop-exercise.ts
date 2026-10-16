@@ -169,6 +169,9 @@ const cAfterCall = makeDetail(cId, {
     sourceType: "SELLER",
     classification: "INDICATED",
     statement: `${syntheticPrefix} seller reports roof leak; independently unverified.`,
+    source: "Synthetic seller interview",
+    sourceRecordId: "synthetic:roof-interview",
+    capturedAt: now.toISOString(),
     createdAt: new Date(now.getTime() + 1_000).toISOString(),
     confidence: 0.8,
   }],
@@ -192,6 +195,9 @@ const d = await evaluate(inputFor(dId, makeDetail(dId, {
     sourceType: "SELLER",
     classification: "INDICATED",
     statement: `${syntheticPrefix} seller stated a different asking price.`,
+    source: "Synthetic seller interview",
+    sourceRecordId: "synthetic:price-interview",
+    capturedAt: now.toISOString(),
     createdAt: new Date(now.getTime() + 1_000).toISOString(),
     confidence: 0.8,
   }],
@@ -203,7 +209,10 @@ assert.ok(d.result.recommendedAction?.requiresHumanAuthorization === false,
 const eId = await seedLead();
 const e = await evaluate(inputFor(eId, makeDetail(eId, {
   intelligence: [
-    { id: randomUUID(), category: "occupancy", sourceType: "SELLER", classification: "INDICATED", statement: `${syntheticPrefix} conflicting seller statement.`, createdAt: now.toISOString(), reconciliation: { state: "CONFLICT_REVIEW" } },
+    { id: randomUUID(), category: "occupancy", sourceType: "SELLER", classification: "INDICATED",
+      statement: `${syntheticPrefix} conflicting seller statement.`, source: "Synthetic seller interview",
+      sourceRecordId: "synthetic:conflict-interview", confidence: 0.8, capturedAt: now.toISOString(),
+      createdAt: now.toISOString(), reconciliation: { state: "CONFLICT_REVIEW" } },
   ],
 }), makeAcquisition(eId, { blockerCode: "EVIDENCE_CONFLICT", directRouteStatus: "CALL_READY" })),
 "E-conflicting-evidence", "RECONCILE_EVIDENCE");
@@ -224,10 +233,53 @@ assert.ok(h.result.outcomeRecord?.includes("CLOSED"));
 assert.ok(h.items.some(item => item.status === "COMPLETED"), "terminal outcome is preserved as completed persisted work");
 assert.ok(h.items.every(item => !["READY", "IN_PROGRESS"].includes(item.status)), "terminal deal has no stale actionable work");
 
+const iId = await seedLead();
+const expiredAt = new Date(now.getTime() - 30 * 86_400_000).toISOString();
+const i = await evaluate(inputFor(iId, makeDetail(iId, {
+  intelligence: [{
+    id: randomUUID(), category: "occupancy", sourceType: "SELLER", classification: "INDICATED",
+    statement: `${syntheticPrefix} seller claim is expired.`,
+    source: "Synthetic seller interview", sourceRecordId: "synthetic:old-interview", confidence: 0.8,
+    capturedAt: expiredAt, createdAt: expiredAt,
+  }],
+}), callable(iId)), "I-expired-seller-evidence", "REFRESH_SOURCE_EVIDENCE");
+assert.ok(i.result.staleEvidence.some(item => item.freshness === "STALE"), "expired seller evidence is visible in the persisted decision");
+assert.ok(i.items.some(item => item.gapKey.includes("stale-evidence")), "re-verification is persisted as actionable work");
+
+const jId = await seedLead();
+const j = await evaluate(inputFor(jId, makeDetail(jId, {
+  intelligence: [
+    { id: randomUUID(), category: "occupancy", sourceType: "PUBLIC_RECORD", classification: "OBSERVED",
+      statement: `${syntheticPrefix} public record reports occupied.`, source: "Synthetic public record",
+      sourceRecordId: "synthetic:public-record", confidence: 0.9, capturedAt: now.toISOString(), createdAt: now.toISOString() },
+    { id: randomUUID(), category: "occupancy", sourceType: "SELLER", classification: "INDICATED",
+      statement: `${syntheticPrefix} seller reports vacant.`, source: "Synthetic seller interview",
+      sourceRecordId: "synthetic:seller-interview", confidence: 0.8, capturedAt: now.toISOString(), createdAt: now.toISOString() },
+  ],
+}), callable(jId)), "J-conflicting-seller-and-public", "RECONCILE_EVIDENCE");
+assert.equal(j.result.conflicts.length, 2, "both contradictory source records remain in the persisted decision");
+assert.ok(j.items.some(item => item.gapKey.endsWith(":evidence-conflict")), "reviewer reconciliation is persisted as actionable work");
+
+const kId = await seedLead();
+const kPriorAt = new Date(now.getTime() - 31 * 86_400_000).toISOString();
+const k = await evaluate(inputFor(kId, makeDetail(kId, {
+  intelligence: [
+    { id: randomUUID(), category: "occupancy", sourceType: "SELLER", classification: "INDICATED",
+      statement: `${syntheticPrefix} seller says vacant.`, source: "Synthetic prior interview",
+      sourceRecordId: "synthetic:prior-interview", confidence: 0.8, capturedAt: kPriorAt, createdAt: kPriorAt },
+    { id: randomUUID(), category: "occupancy", sourceType: "SELLER", classification: "INDICATED",
+      statement: `${syntheticPrefix} seller says vacant.`, source: "Synthetic current interview",
+      sourceRecordId: "synthetic:current-interview", confidence: 0.9, capturedAt: now.toISOString(), createdAt: now.toISOString() },
+  ],
+}), callable(kId)), "K-reverified-seller-evidence", "CALL_NEXT");
+assert.equal(k.result.staleEvidence.length, 0, "newer same-valued seller evidence clears the stale block");
+assert.ok(k.result.known.some(item => item.summary.includes("historical evidence retained")),
+  "re-verification retains the prior record as historical evidence");
+
 const rows = await db.select().from(dealDecisionEvaluationsTable);
 const work = await db.select().from(dealDecisionWorkItemsTable);
-assert.equal(rows.length, 9, "A-H persist eight scenarios, with C retaining both before/after snapshots");
-assert.ok(work.length >= 9, "each decision scenario persists idempotent action/outcome work");
+assert.equal(rows.length, 12, "A-K persist eleven scenarios, with C retaining both before/after snapshots");
+assert.ok(work.length >= 12, "each decision scenario persists idempotent action/outcome work");
 const workerLeadId = await seedLead();
 const workerKey = `synthetic:decision-worker:${workerLeadId}`;
 await queueJob(db, "EVALUATE_DECISION", workerLeadId, workerKey, "synthetic:worker-test", {
@@ -258,6 +310,9 @@ console.log(JSON.stringify({
     F: f.result.recommendedAction?.code,
     G: "TRANSACTION_NEXT",
     H: h.result.outcomeRecord,
+    I: i.result.recommendedAction?.code,
+    J: j.result.recommendedAction?.code,
+    K: k.result.recommendedAction?.code,
   },
   scenarioEvaluations: rows.length,
   workerEvaluations: workerEvaluations.length,

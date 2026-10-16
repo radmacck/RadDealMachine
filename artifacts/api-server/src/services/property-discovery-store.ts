@@ -466,7 +466,7 @@ async function toDiscoveryResponse(
       : typeof observation.recordIdentity === "string" ? [observation.recordIdentity] : [];
     const classification = ["VERIFIED", "OBSERVED", "INDICATED", "AI_HYPOTHESIS"].includes(String(observation.classification))
       ? observation.classification as EvidenceClassification : null;
-    const history = Array.isArray(observation.history) ? observation.history.flatMap(item => {
+    const priorEvidenceHistory = Array.isArray(observation.history) ? observation.history.flatMap(item => {
       if (!item || typeof item !== "object" || Array.isArray(item)) return [];
       const prior = sourcePayload(item);
       if (typeof prior.observedAt !== "string" || !Number.isFinite(Date.parse(prior.observedAt))) return [];
@@ -485,6 +485,23 @@ async function toDiscoveryResponse(
         evidenceRef: typeof prior.evidenceRef === "string" ? prior.evidenceRef : null,
       }];
     }).slice(-20) : [];
+    const recordHistory = Array.isArray(observation.recordHistory) ? observation.recordHistory.flatMap(item => {
+      if (!item || typeof item !== "object" || Array.isArray(item)) return [];
+      const prior = sourcePayload(item);
+      if (typeof prior.observedAt !== "string" || !Number.isFinite(Date.parse(prior.observedAt)) ||
+        typeof prior.sourceId !== "string" || typeof prior.sourceUrl !== "string") return [];
+      return [{
+        observedAt: prior.observedAt,
+        state: "PROPERTY_RECORD_VERSION:property-record-v1",
+        recordCount: 1,
+        recordIdentities: [prior.sourceId],
+        latestSourceEventAt: null,
+        classification: "OBSERVED" as const,
+        confidence: null,
+        evidenceRef: prior.sourceUrl,
+      }];
+    }) : [];
+    const history = [...priorEvidenceHistory, ...recordHistory].slice(-20);
     return {
       id: sourceRow.id,
       sourceKey: sourceRow.sourceKey,
@@ -1135,6 +1152,27 @@ async function persistObservation(
     .where(eq(propertyDiscoveriesTable.identityKey, identityKey)).for("update");
   const [observationForSource] = await database.select().from(propertySourceObservationsTable)
     .where(eq(propertySourceObservationsTable.sourceKey, sourceKey));
+  const priorSourcePayload = observationForSource ? sourcePayload(observationForSource.payload) : null;
+  const priorPropertySnapshot = priorSourcePayload
+    ? priorSourcePayload.propertySnapshot && typeof priorSourcePayload.propertySnapshot === "object" &&
+      !Array.isArray(priorSourcePayload.propertySnapshot)
+      ? priorSourcePayload.propertySnapshot as Record<string, unknown>
+      : Object.fromEntries(Object.entries(priorSourcePayload)
+        .filter(([key]) => key !== "normalizationVersion" && key !== "recordHistory"))
+    : null;
+  if (observationForSource && priorSourcePayload) {
+    const priorParcelId = typeof priorPropertySnapshot?.parcelId === "string" ? priorPropertySnapshot.parcelId.trim() : "";
+    const nextParcelId = typeof property.parcelId === "string" ? property.parcelId.trim() : "";
+    if (observationForSource.sourceId !== property.id ||
+      priorPropertySnapshot?.provider !== property.provider ||
+      priorParcelId !== nextParcelId ||
+      propertyIdentity(priorPropertySnapshot as PropertyRecord) !== identityKey) {
+      throw new DomainError(
+        "This source record key now points to a conflicting property identity. The prior observation was preserved; review the source identity before resolving it.",
+        409,
+      );
+    }
+  }
   let existing = canonicalExisting;
   if (!existing && observationForSource) {
     [existing] = await database.select().from(propertyDiscoveriesTable)
@@ -1162,6 +1200,11 @@ async function persistObservation(
   const existingObservation = observationForSource ? [observationForSource] : [];
   if (existingObservation[0] && existingObservation[0].discoveryId !== existing?.id) {
     throw new DomainError("This source record is already attached to a different property identity; resolve the source identity before retrying.", 409);
+  }
+  if (existing && observationForSource && priorSourcePayload &&
+    observationForSource.lastObservedAt.getTime() === now.getTime() &&
+    isDeepStrictEqual(priorPropertySnapshot, property)) {
+    return existing;
   }
   if (existing) {
     discoveryId = existing.id;
@@ -1214,10 +1257,28 @@ async function persistObservation(
   }
   const priorObservation = existingObservation[0];
   if (priorObservation) {
+    const oldRecord = priorSourcePayload ?? {};
+    const oldSnapshot = priorPropertySnapshot ?? oldRecord;
+    const priorRecordHistory = Array.isArray(oldRecord.recordHistory) ? oldRecord.recordHistory : [];
+    const recordChanged = !isDeepStrictEqual(oldSnapshot, property);
+    const recordHistory = recordChanged
+      ? [...priorRecordHistory, {
+        observedAt: priorObservation.lastObservedAt.toISOString(),
+        sourceId: priorObservation.sourceId,
+        sourceUrl: priorObservation.sourceUrl,
+        propertySnapshot: oldSnapshot,
+      }].slice(-20)
+      : priorRecordHistory.slice(-20);
     await database.update(propertySourceObservationsTable).set({
       lastObservedAt: now,
       seenCount: priorObservation.seenCount + 1,
-      payload: jsonRecord(property),
+      sourceId: property.id,
+      sourceUrl: property.sourceUrl,
+      payload: jsonRecord({
+        ...property,
+        normalizationVersion: "property-record-v1",
+        recordHistory,
+      }),
     }).where(eq(propertySourceObservationsTable.id, priorObservation.id));
   } else {
     await database.insert(propertySourceObservationsTable).values({
@@ -1228,7 +1289,11 @@ async function persistObservation(
       firstObservedAt: now,
       lastObservedAt: now,
       seenCount: 1,
-      payload: jsonRecord(property),
+      payload: jsonRecord({
+        ...property,
+        normalizationVersion: "property-record-v1",
+        recordHistory: [],
+      }),
     });
   }
   const [saved] = await database.select().from(propertyDiscoveriesTable)
@@ -1243,7 +1308,16 @@ export async function recordPropertyObservation(
   actor: string,
   now = new Date(),
 ) {
-  if (!sourceKey.trim()) throw new DomainError("A stable source identity is required.");
+  if (!sourceKey.trim() || !property.id.trim() || !property.provider.trim()) {
+    throw new DomainError("A stable source key, source record identifier, and provider are required.", 400);
+  }
+  let sourceUrl: URL;
+  try { sourceUrl = new URL(property.sourceUrl); } catch {
+    throw new DomainError("A valid source record URL is required.", 400);
+  }
+  if (!["http:", "https:"].includes(sourceUrl.protocol)) {
+    throw new DomainError("A source record URL must use HTTP(S).", 400);
+  }
   const saved = await db.transaction(async (tx) => {
     const row = await persistObservation(property, sourceKey, now, tx);
     await audit(tx, actor, "PROPERTY_DISCOVERED", row.id, `${property.provider} source observation saved; active lead not created.`);

@@ -4,6 +4,7 @@ import { DomainError, type LeadDetail } from "./types";
 import type { OfferActor } from "./offers";
 import { buyerQualification } from "./buyer-qualification";
 import { extendedCriteriaChecks } from "./buyer-criteria";
+import { classifyEvidenceFreshness } from "./evidence-integrity";
 
 export type Buyer = z.infer<typeof ListBuyersResponse>[number];
 export type DealContract = NonNullable<z.infer<typeof GetDealOperationsResponse>["contract"]>;
@@ -26,8 +27,13 @@ export function pastInstant(value: string, now: Date, label: string) {
 export function verificationStatus(buyer: Pick<Buyer,"verifiedBy"|"verifiedAt"|"evidenceAt"|"validUntil">, now: Date): Buyer["verificationStatus"] {
   if (!buyer.verifiedBy || !buyer.verifiedAt || !buyer.evidenceAt || !buyer.validUntil) return "UNVERIFIED";
   const at = Date.parse(buyer.evidenceAt), until = Date.parse(buyer.validUntil), reviewed = Date.parse(buyer.verifiedAt);
+  const freshness = classifyEvidenceFreshness({
+    source:(buyer as Buyer).verificationSource ?? null,
+    evidenceRef:(buyer as Buyer).identityEvidenceUrl ?? null,
+    observedAt:buyer.evidenceAt,validUntil:buyer.validUntil,
+  },now,30*DAY);
   if (!Number.isFinite(at) || !Number.isFinite(until) || !Number.isFinite(reviewed) || reviewed<at || reviewed>now.getTime() ||
-    at > now.getTime() || until <= now.getTime() || until>at+30*DAY || at+30*DAY <= now.getTime()) return "STALE";
+    at > now.getTime() || until <= now.getTime() || until>at+30*DAY || at+30*DAY <= now.getTime() || freshness !== "CURRENT") return "STALE";
   return "VERIFIED";
 }
 /** Deterministic criteria fit. Score is checklist coverage, NOT probability or confidence. */
@@ -36,10 +42,24 @@ export function matchBuyer(buyer: Buyer, detail: LeadDetail, contract: DealContr
   const c = buyer.criteria;
   const price = priceOverride ?? (contract ? contract.purchasePrice+contract.assignmentTarget : null);
   const reasons: string[] = [], mismatches: string[] = [];
+  const permission = (buyer as Buyer & {contactPermission?: {status?: string;channels?: string[];evidenceUrl?: string;source?: string;capturedAt?: string;validUntil?: string|null}}).contactPermission;
+  const permissionFresh = !!permission && permission.status==="GRANTED" && !!permission.evidenceUrl && !!permission.source &&
+    !!permission.capturedAt && !!permission.validUntil && Date.parse(permission.capturedAt)<=now.getTime() &&
+    Date.parse(permission.validUntil)>now.getTime() && permission.channels?.length;
+  const contactPermissionStatus = permission?.status==="OPTED_OUT" ? "OPTED_OUT" :
+    !permission || permission.status!=="GRANTED" ? "NOT_REVIEWED" : permissionFresh ? "PERMITTED" : "STALE";
+  const syntheticFixture = /^synthetic fixture:/i.test(buyer.source.trim());
+  const standing = syntheticFixture ? "SYNTHETIC_FIXTURE" :
+    (buyer.destinationKind??"BUYER")!=="BUYER" ? "DESTINATION" :
+      buyerQualification(buyer,now).approvalStatus==="APPROVED" ? "VERIFIED_BUYER" :
+        buyerQualification(buyer,now).approvalStatus==="REVERIFICATION_REQUIRED" ? "STALE" : "PROSPECT";
+  reasons.push(`Buyer standing: ${standing.replaceAll("_"," ").toLowerCase()}.`);
+  reasons.push(`Contact permission: ${contactPermissionStatus.toLowerCase()}; matching does not authorize outreach.`);
   let passed = 0, count = 0;
   const check = (ok: boolean, yes: string, no: string) => { count++; if (ok) { passed++; reasons.push(yes); } else mismatches.push(no); };
   const qualified = buyerQualification(buyer,now);
   check(qualified.approvalStatus==="APPROVED","Approved, currently buying destination with reviewed criteria.",qualified.qualificationBlockers.join("; "));
+  check(!syntheticFixture,"Live buyer record; synthetic fixtures do not count as demand.","Synthetic fixture cannot count as live buyer demand.");
   if (!c) return {buyerId:buyer.id,leadId:lead.id,buyerName:buyer.name,destinationKind:buyer.destinationKind??"BUYER",
     eligible:false,score:0,reasons,mismatches,status:"MATCHED",buyerVersion:buyer.version,agreedPrice:null,evidence:null,updatedAt:now.toISOString()};
   check(buyer.status==="ACTIVE","Buyer is accepting opportunities.","Buyer is paused.");
@@ -67,6 +87,9 @@ export function matchBuyer(buyer: Buyer, detail: LeadDetail, contract: DealContr
   return {buyerId:buyer.id,leadId:lead.id,buyerName:buyer.name,destinationKind:buyer.destinationKind??"BUYER",eligible:!mismatches.length,
     score:Math.round(100*passed/count),reasons,mismatches,status:"MATCHED",buyerVersion:buyer.version,
     agreedPrice:null,evidence:null,updatedAt:now.toISOString()};
+}
+export function rankBuyerMatches<T extends Pick<BuyerMatch,"eligible"|"score"|"buyerId">>(matches:T[]):T[] {
+  return [...matches].sort((a,b)=>Number(b.eligible)-Number(a.eligible)||b.score-a.score||a.buyerId.localeCompare(b.buyerId));
 }
 export function buyerReservations(contracts:DealContract[],buyerId:string,excludedContractId?:string) {
   const active = contracts.filter(c=>c.id!==excludedContractId&&c.committedBuyerId===buyerId&&!["CLOSED","CANCELLED"].includes(c.status));

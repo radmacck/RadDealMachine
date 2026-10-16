@@ -1,6 +1,7 @@
 import type { Buyer } from "./buyers";
 import { DAY, verificationStatus } from "./buyers";
 import { DomainError } from "./types";
+import { assessEvidenceConfidence } from "./evidence-integrity";
 
 export function criteriaBlockers(c: Buyer["criteria"]): string[] {
   if (!c) return ["Structured buying criteria have not been qualified."];
@@ -30,6 +31,8 @@ export function criteriaSignature(c: Buyer["criteria"]): string {
 }
 export function buyerQualification(b: Buyer, now: Date) {
   const blockers = criteriaBlockers(b.criteria);
+  if (/^synthetic fixture:/i.test(b.source.trim()))
+    blockers.push("Synthetic fixture is not a real buyer and cannot be qualified or counted as live demand.");
   const replyAt = Date.parse(b.lastOutreachReplyAt??"");
   if (Number.isFinite(replyAt)&&replyAt>Date.parse(b.buyingEvidenceAt??"1970-01-01"))
     blockers.push("A newer actual outreach reply requires owner review of current buying/criteria evidence before matching or closing.");
@@ -44,7 +47,7 @@ export function buyerQualification(b: Buyer, now: Date) {
   if ((b.destinationKind??"BUYER")==="BUYER" && !b.verifiedFundingTypes?.length) blockers.push("An acquisition buyer requires documented, owner-reviewed funding methods; preferences are not verification.");
   if (b.currentBuyingStatus!=="BUYING") blockers.push("Current buying/accepting status has not been verified as active.");
   if (!b.buyingVerifiedAt || !b.buyingEvidenceUrl || !b.buyingEvidenceAt || !b.criteriaEvidenceUrl || !b.verificationSource) blockers.push("Current buying and criteria require dated evidence, source and reviewer.");
-  if (b.confidence==null || b.confidence<0.65) blockers.push("Reviewer confidence is below the 0.65 qualification threshold; it is not a probability guarantee.");
+  if (assessEvidenceConfidence(b.confidence,0.65)!=="ACCEPTED") blockers.push("Reviewer confidence is below the 0.65 qualification threshold; it is not a probability guarantee.");
   const at = Date.parse(b.buyingEvidenceAt??""), reviewed = Date.parse(b.buyingVerifiedAt??"");
   const stale = status==="STALE" || (b.buyingVerifiedAt!=null &&
     (!Number.isFinite(at)||!Number.isFinite(reviewed)||at>now.getTime()||reviewed>now.getTime()||at+30*DAY<=now.getTime()));

@@ -19,7 +19,9 @@ import {
 import { lockedLead, leadDetail, move, audit } from "./deal-store";
 import { contractRecord, buyerRecord, queueJob, type Tx } from "./operations-records";
 import { dealOperations, refreshMatches } from "./matching-store";
-import { buildPurchaseReviewPdf, purchaseReviewSnapshotHash, type PurchaseReviewSnapshot } from "./transaction-documents";
+import {
+  assembleContractDataPackage, buildPurchaseReviewPdf, purchaseReviewSnapshotHash, type PurchaseReviewSnapshot,
+} from "./transaction-documents";
 import { lockDealEconomics } from "./locked-economics";
 import { ensureTransactionDocumentRegistry, propertyDocumentJurisdiction } from "./transaction-document-registry";
 import { transactionDocumentBinaryStore } from "./transaction-document-storage";
@@ -199,6 +201,15 @@ export async function preparePurchaseReviewDocument(
     if (previous.some(item=>item.kind==="PURCHASE_TERMS_REVIEW"&&item.snapshotHash===snapshotHash&&
       item.status==="PREPARED_FOR_REVIEW"&&typeof item.contentHash==="string")) return;
 
+    const purchaseTemplate = registry.find(item=>item.templateKey==="PURCHASE_AGREEMENT");
+    const assemblyVersion = previous.filter(item=>item.kind==="PURCHASE_TERMS_REVIEW").length+1;
+    const dataAssembly = assembleContractDataPackage(snapshot,{
+      version:assemblyVersion,jurisdiction:templateJurisdiction,
+      purchaseTemplateStatus:purchaseTemplate?.status??"MISSING_APPROVED_TEMPLATE",
+      signingProviderConnected:false,
+      priorPartyIdentityVerified:false,
+      priorSigningAuthorityVerified:false,
+    });
     const documentId = randomUUID();
     const documentState = evaluateTransactionDocumentTransition("DRAFT","PREPARED_FOR_REVIEW",{
       actorRole:actor.role==="OWNER"?"OWNER":"OPERATOR",
@@ -206,7 +217,7 @@ export async function preparePurchaseReviewDocument(
       templateStatus:"REVIEW_COPY_AVAILABLE",
     });
     if (!documentState.allowed) throw new DomainError(documentState.reason,409);
-    const bytes = await buildPurchaseReviewPdf(snapshot,snapshotHash);
+    const bytes = await buildPurchaseReviewPdf(snapshot,snapshotHash,dataAssembly);
     const fileName = `purchase-terms-review-${contract.attemptNumber??1}-${documentId.slice(0,8)}.pdf`;
     const contentHash = createHash("sha256").update(bytes).digest("hex");
     const at = now.toISOString();
@@ -233,6 +244,7 @@ export async function preparePurchaseReviewDocument(
       snapshotHash,economicsSnapshotHash:lockedEconomics.economicsSnapshotHash,sourceAnalysisSnapshotId:analysisRow.id,
       templateKey:registeredTemplate.templateKey,templateVersion:registeredTemplate.version,templateStatus:"REVIEW_COPY_ONLY",
       templateJurisdiction,
+      assemblyVersion,dataAssembly,
       partySnapshotHash:partyHash,storageMode:transactionDocumentBinaryStore.mode,
       contentHash,fileName,contentType:"application/pdf",sizeBytes:bytes.byteLength,
       generatedAt:at,generatedBy:actor.id,

@@ -1,4 +1,5 @@
 import { eq, desc, sql } from "drizzle-orm";
+import { createHash } from "node:crypto";
 import { queueJob } from "./operations-records";
 import {
   db, leadsTable, intelligenceTable, analysesTable, callsTable, transitionsTable,
@@ -12,10 +13,12 @@ import {
   evidenceReviewedAnalysis, buildDealWorkGuidance,
   repairMarketKey, DEFAULT_PROPERTY_QUALIFICATION_CRITERIA, evaluatePropertyRelevance,
   type PropertyQualificationCriteria, type PropertyRelevanceSignal,
+  validateSellerConversationFields, type SellerConversationField, unresolvedSellerConversationQuestions,
 } from "@workspace/deal-domain";
 import { CreateLeadResponse, GetLeadResponse, AddIntelligenceResponse, GetAssumptionsResponse } from "@workspace/api-zod";
 import { offersForLead, invalidateOffers, invalidateOffersForPolicyChange } from "./offer-records";
 import { getSellerContactPaths } from "./seller-contact-store";
+import { versionedStageTransition } from "./canonical-deal-state";
 
 type Tx = Parameters<Parameters<typeof db.transaction>[0]>[0];
 const jsonRecord = (value: object): Record<string, unknown> => ({ ...value });
@@ -40,11 +43,24 @@ export function toLead(row: LeadRow): Lead {
 export async function audit(tx: Tx, actor: string, action: string, entityId: string, detail: string) {
   await tx.insert(auditTable).values({ actor, action, entityId, detail });
 }
-export async function lockedLead(tx: Tx, id: string, version?: number) {
+function stableJson(value: unknown): string {
+  if (Array.isArray(value)) return `[${value.map(stableJson).join(",")}]`;
+  if (value && typeof value === "object") {
+    const entries = Object.entries(value as Record<string, unknown>)
+      .filter(([, item]) => item !== undefined)
+      .sort(([a], [b]) => a.localeCompare(b));
+    return `{${entries.map(([key,item]) => `${JSON.stringify(key)}:${stableJson(item)}`).join(",")}}`;
+  }
+  return JSON.stringify(value) ?? "null";
+}
+function callSubmissionHash(input: CallInput) {
+  return createHash("sha256").update(stableJson(input)).digest("hex");
+}
+export async function lockedLead(tx: Tx, id: string, version?: number, allowTerminal = false) {
   const [row] = await tx.select().from(leadsTable).where(eq(leadsTable.id,id)).for("update");
   if (!row) throw new DomainError("Property lead not found.", 404);
   if (version != null && row.version !== version) throw new DomainError("This lead changed in another session. Reload before saving.", 409);
-  if (row.stage === "DEAD_DEAL" || row.stage === "CLOSED") throw new DomainError("This lead is terminal and cannot be changed.", 409);
+  if (!allowTerminal && (row.stage === "DEAD_DEAL" || row.stage === "CLOSED")) throw new DomainError("This lead is terminal and cannot be changed.", 409);
   return row;
 }
 export async function move(tx: Tx, row: LeadRow, to: Stage, reason: string, nextAction: string, actor: string, now: Date) {
@@ -56,7 +72,17 @@ export async function move(tx: Tx, row: LeadRow, to: Stage, reason: string, next
     return;
   }
   await tx.insert(transitionsTable).values({ leadId: row.id, from: row.stage, to, reason, nextAction, actor, createdAt: now });
-  await audit(tx, actor, "DEAL_TRANSITION", row.id, `${row.stage} → ${to}: ${reason}. Next: ${nextAction}`);
+  await audit(tx, actor, "DEAL_TRANSITION", row.id, JSON.stringify(versionedStageTransition({
+    leadId: row.id,
+    priorVersion: row.version,
+    priorStage: row.stage,
+    nextStage: to,
+    actor,
+    occurredAt: now,
+    reason,
+    nextAction,
+    analysisSnapshotId: row.analysisSnapshotId,
+  })));
   await queueJob(tx,"EVALUATE_DECISION",row.id,
     `decision:${row.id}:transition:${row.version+1}:${row.stage}:${to}`,
     actor,{trigger:"DEAL_TRANSITION",from:row.stage,to});
@@ -119,7 +145,13 @@ export async function leadDetail(id: string, database: typeof db | Tx = db, now 
   const detail = {
     lead, intelligence, analysis, analysisSnapshotId:row.analysisSnapshotId, underwriting:row.underwriting as UnderwritingInput|null, offers,
     transitions:transitions.map(e => ({...e, createdAt:iso(e.createdAt)})),
-    calls:calls.map(e => ({...e.payload as CallInput,id:e.id,actor:e.actor,createdAt:iso(e.createdAt)})),
+    calls:calls.map(e => ({
+      ...e.payload as CallInput,
+      id:e.id,
+      actor:e.actor,
+      createdAt:iso(e.createdAt),
+      occurredAt:(e.payload as CallInput).occurredAt ?? iso(e.createdAt),
+    })),
     allowedTransitions:allowedTransitions(lead,analysis,now),
   };
   return GetLeadResponse.parse({...detail,workGuidance:buildDealWorkGuidance(detail,now)});
@@ -602,6 +634,7 @@ async function persistCallRelevance(
 }
 
 export async function recordCall(id: string, input: CallInput, actor: string, now = new Date()): Promise<LeadDetail> {
+  let structuredFields: SellerConversationField[] = [];
   if (input.occurredAt) {
     const occurred = Date.parse(input.occurredAt);
     if (!Number.isFinite(occurred) || occurred > now.getTime()) {
@@ -609,7 +642,23 @@ export async function recordCall(id: string, input: CallInput, actor: string, no
     }
   }
   return db.transaction(async tx => {
-    const row = await lockedLead(tx,id,input.version);
+    const row = await lockedLead(tx,id,undefined,true);
+    if (input.idempotencyKey) {
+      const priorCalls = await tx.select().from(callsTable).where(eq(callsTable.leadId,id));
+      const prior = priorCalls.find(call => call.payload.idempotencyKey === input.idempotencyKey);
+      if (prior) {
+        if (prior.actor !== actor || prior.payload.submissionHash !== callSubmissionHash(input)) {
+          throw new DomainError("Call submission key was already used for different content or by another operator.",409);
+        }
+        return leadDetail(id,tx,now);
+      }
+    }
+    if (input.structuredFieldsJson) {
+      try { structuredFields = validateSellerConversationFields(input.notes, input.structuredFieldsJson); }
+      catch (error) { throw new DomainError(error instanceof Error ? error.message : "Invalid structured seller fields.", 400); }
+    }
+    if (row.version !== input.version) throw new DomainError("This lead changed in another session. Reload before saving.",409);
+    if (row.stage === "DEAD_DEAL" || row.stage === "CLOSED") throw new DomainError("This lead is terminal and cannot be changed.",409);
     const executed = ["UNDER_CONTRACT","BUYER_MATCHED","BUYER_INTERESTED","BUYER_COMMITTED","CLOSING"].includes(row.stage);
     if (!["CALL_READY","CONTACTED","CONVERSATION","OFFER_READY","OFFER_SENT","NEGOTIATING","CONTRACT_PENDING"].includes(row.stage)&&!executed) throw new DomainError("Calls can only be recorded for call-ready or active seller/closing conversations.");
     const before = await leadDetail(id,tx,now);
@@ -633,7 +682,9 @@ export async function recordCall(id: string, input: CallInput, actor: string, no
     if (input.outcome !== "NOT_INTERESTED" && !followUpAt) throw new DomainError("Set a future follow-up so the seller conversation does not become a dead end.");
     const stage: Stage = input.outcome === "NOT_INTERESTED" ? "DEAD_DEAL" : input.outcome === "CONNECTED" ? "CONVERSATION" : "CONTACTED";
     const [savedCall] = await tx.insert(callsTable)
-      .values({leadId:id,payload:jsonRecord(input),actor,createdAt:now})
+      .values({leadId:id,payload:jsonRecord(input.idempotencyKey
+        ? {...input,submissionHash:callSubmissionHash(input)}
+        : input),actor,createdAt:now})
       .returning({id:callsTable.id});
     if (!savedCall) throw new Error("Call result persistence failed.");
     const evidenceEvents = sellerCallEvidence(input,savedCall.id,now,before.intelligence);
@@ -697,6 +748,7 @@ export async function recordCall(id: string, input: CallInput, actor: string, no
     }
     const persistedCall = {
       ...input,
+      ...(input.idempotencyKey ? { submissionHash: callSubmissionHash(input) } : {}),
       evidenceSource: sellerContacted ? "OPERATOR_ENTERED_SELLER_CONVERSATION" as const : "OPERATOR_CALL_ATTEMPT" as const,
       evidenceClassification: sellerContacted ? "INDICATED" as const : "OBSERVED" as const,
       ...(sellerContacted ? { sellerAnswersCapturedAt: iso(now) } : {}),
@@ -709,6 +761,11 @@ export async function recordCall(id: string, input: CallInput, actor: string, no
       await audit(tx, actor, "CALL_RESULT_EVIDENCE_CAPTURED", id,
         `Call ${savedCall.id}; ${evidenceIds.length} append-only call evidence event(s) persisted with source record linkage at ${iso(now)}. ${materialEvidence ? "Material evidence invalidated pre-execution analysis/authority, but did not rewrite economics." : "No economic input was changed."}`);
     }
+    if (structuredFields.length) await audit(tx, actor, "SELLER_CONVERSATION_FIELDS_CAPTURED", id,
+      JSON.stringify({ callId: savedCall.id, fieldKeys: structuredFields.map(field => field.field),
+        editedFields: structuredFields.filter(field => field.edited).map(field => field.field),
+        attributions: structuredFields.map(field => field.attribution),
+        noteAnchorsValidated: true, underwritingChanged: false }));
     // A connected first call must preserve CONTACTED before CONVERSATION.
     if (row.stage === "CALL_READY" && stage === "CONVERSATION") {
       await move(tx,row,"CONTACTED","Seller answered the call","Continue the seller conversation.",actor,now);
@@ -744,7 +801,14 @@ export async function callQueue(now = new Date()) {
     const contactBlocked = detail.analysis.blockers.some(blocker => blocker.toLowerCase().includes("seller contact"));
     if (contactBlocked) return null;
     if (detail.lead.stage === "CALL_READY" && detail.analysis.blockers.length > 0) return null;
-    return buildCallBrief(detail.lead,detail.intelligence,detail.analysis,approved,now);
+    const brief = buildCallBrief(detail.lead,detail.intelligence,detail.analysis,approved,now);
+    const savedCallRows = await db.select().from(callsTable).where(eq(callsTable.leadId, row.id)).orderBy(desc(callsTable.createdAt));
+    const capture = (savedCallRows[0]?.payload as Record<string, unknown> | undefined)?.structuredFieldsJson;
+    let unresolved: string[] = [];
+    if (typeof capture === "string") {
+      try { unresolved = unresolvedSellerConversationQuestions(JSON.parse(capture) as SellerConversationField[]); } catch { /* corrupt legacy capture remains visible in call history */ }
+    }
+    return { ...brief, questions: [...new Set([...brief.questions, ...unresolved])].slice(0, 12) };
   }));
   return prioritizeCallQueue(briefs.filter((b): b is NonNullable<typeof b> => b != null),now);
 }

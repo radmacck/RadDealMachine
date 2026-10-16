@@ -17,6 +17,7 @@ import { evaluateAllLeadDecisions, evaluateLeadDecision } from "./intelligence-d
 import { decisionWorkExecutors, runDecisionWorkOnce } from "./decision-work-lifecycle";
 import { evaluateAllTransactionReadiness } from "./transaction-readiness";
 import { completedWorkerJobState } from "./worker-job-state";
+import { workerFailureDisposition, workerLeaseExpired, workerRecoveryMessage } from "./worker-recovery";
 
 const PROPERTY_SOURCE_POLICY_VERSION = "phila-property-sources-v4";
 const BUYER_SOURCE_POLICY_VERSION = "phila-buyer-sources-v2";
@@ -101,12 +102,35 @@ export async function runWorkerOnce(now = new Date(), schedule = false, onlyJobI
       seeded++;
     }
   }
-  await db.update(jobsTable).set({state:"QUEUED",message:"Worker lease expired; work requeued.",updatedAt:now})
-    .where(and(eq(jobsTable.state,"RUNNING"),lt(jobsTable.updatedAt,new Date(now.getTime()-3*60000)),lt(jobsTable.attempts,3)));
-  await db.update(jobsTable).set({state:"FAILED",message:"Worker lease expired after three attempts. Review and submit a fresh retry.",updatedAt:now})
-    .where(and(eq(jobsTable.state,"RUNNING"),lt(jobsTable.updatedAt,new Date(now.getTime()-3*60000))));
+  const staleJobs = await db.select().from(jobsTable).where(and(
+    eq(jobsTable.state,"RUNNING"),lt(jobsTable.updatedAt,new Date(now.getTime()-3*60000)),
+  ));
+  for (const stale of staleJobs) {
+    if (!workerLeaseExpired(stale.state,stale.updatedAt,now)) continue;
+    const disposition = workerFailureDisposition(stale.attempts,now);
+    const priorRecovery = stale.payload.recovery && typeof stale.payload.recovery === "object"
+      ? stale.payload.recovery as Record<string,unknown> : {};
+    const history = Array.isArray(priorRecovery.history) ? priorRecovery.history : [];
+    const recovery = {
+      ...priorRecovery,
+      history:[...history,{attempt:stale.attempts,at:now.toISOString(),reason:"Worker lease expired."}],
+      nextAttemptAt:disposition.retryAt?.toISOString() ?? null,
+      deadLetteredAt:disposition.state==="FAILED" ? now.toISOString() : null,
+      ownerActorId:stale.requestedBy,
+      ownerKind:stale.requestedBy.startsWith("system:") ? "SYSTEM_REQUEST_UNASSIGNED_TO_HUMAN" : "REQUESTER",
+      nextAction:disposition.nextAction,
+    };
+    await db.update(jobsTable).set({
+      state:disposition.state,message:workerRecoveryMessage(disposition,stale.requestedBy),
+      payload:{...stale.payload,recovery},updatedAt:now,
+    }).where(and(eq(jobsTable.id,stale.id),eq(jobsTable.state,"RUNNING"),
+      eq(jobsTable.attempts,stale.attempts),eq(jobsTable.updatedAt,stale.updatedAt)));
+  }
   const row = await db.transaction(async tx=>{
-    const [job] = await tx.select().from(jobsTable).where(onlyJobId?and(eq(jobsTable.state,"QUEUED"),eq(jobsTable.id,onlyJobId)):eq(jobsTable.state,"QUEUED")).orderBy(jobsTable.createdAt).limit(1).for("update",{skipLocked:true});
+    const due = sql`COALESCE(NULLIF(${jobsTable.payload}->'recovery'->>'nextAttemptAt','')::timestamptz,'-infinity'::timestamptz) <= ${now.toISOString()}::timestamptz`;
+    const [job] = await tx.select().from(jobsTable).where(onlyJobId
+      ? and(eq(jobsTable.state,"QUEUED"),eq(jobsTable.id,onlyJobId),due)
+      : and(eq(jobsTable.state,"QUEUED"),due)).orderBy(jobsTable.createdAt).limit(1).for("update",{skipLocked:true});
     if (!job) return null;
     const [claimed] = await tx.update(jobsTable).set({state:"RUNNING",attempts:job.attempts+1,message:"Executing persisted work.",updatedAt:now}).where(eq(jobsTable.id,job.id)).returning();
     return claimed??null;
@@ -157,8 +181,25 @@ export async function runWorkerOnce(now = new Date(), schedule = false, onlyJobI
     return finished?jobRecord(finished):null;
   } catch (error) {
     const message = error instanceof Error?error.message:"Worker failed. No success was recorded.";
-    const [failed] = await db.update(jobsTable).set({state:"FAILED",message,updatedAt:new Date()}).where(and(eq(jobsTable.id,row.id),eq(jobsTable.state,"RUNNING"),eq(jobsTable.attempts,row.attempts))).returning();
-    logger.warn({jobId:row.id,kind:row.kind},"Worker failed; inspect the persisted failure and retry safely.");
+    const failedAt = new Date();
+    const disposition = workerFailureDisposition(row.attempts,failedAt);
+    const priorRecovery = row.payload.recovery && typeof row.payload.recovery === "object"
+      ? row.payload.recovery as Record<string,unknown> : {};
+    const history = Array.isArray(priorRecovery.history) ? priorRecovery.history : [];
+    const recovery = {
+      ...priorRecovery,
+      history:[...history,{attempt:row.attempts,at:failedAt.toISOString(),reason:message}],
+      nextAttemptAt:disposition.retryAt?.toISOString() ?? null,
+      deadLetteredAt:disposition.state==="FAILED" ? failedAt.toISOString() : null,
+      ownerActorId:row.requestedBy,
+      ownerKind:row.requestedBy.startsWith("system:") ? "SYSTEM_REQUEST_UNASSIGNED_TO_HUMAN" : "REQUESTER",
+      nextAction:disposition.nextAction,
+    };
+    const [failed] = await db.update(jobsTable).set({
+      state:disposition.state,message:`${workerRecoveryMessage(disposition,row.requestedBy)} ${message}`,
+      payload:{...row.payload,recovery},updatedAt:failedAt,
+    }).where(and(eq(jobsTable.id,row.id),eq(jobsTable.state,"RUNNING"),eq(jobsTable.attempts,row.attempts))).returning();
+    logger.warn({jobId:row.id,kind:row.kind,state:disposition.state,attempt:row.attempts},"Worker attempt failed; persisted retry/dead-letter state.");
     return failed?jobRecord(failed):null;
   } finally { clearInterval(heartbeat); }
 }

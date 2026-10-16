@@ -10,6 +10,12 @@ export interface OfferApprovalInput {
   /** @minimum 1 */
   version: number;
   /**
+     * @minLength 64
+     * @maxLength 64
+     * @pattern ^[a-f0-9]{64}$
+     */
+  reviewSnapshotHash?: string;
+  /**
      * @maximum 1000000000
      * @exclusiveMinimum 0
      */

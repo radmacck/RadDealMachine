@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { eq } from "drizzle-orm";
-import { db, intelligenceTable, leadsTable } from "@workspace/db";
+import { db, auditTable, intelligenceTable, leadsTable } from "@workspace/db";
 import { createLead } from "./deal-store";
 import { getSellerContactPaths, recordSellerContactObservation } from "./seller-contact-store";
 
@@ -34,6 +34,7 @@ const base = {
   sourceName: "Synthetic permitted-directory fixture (not a real source)",
   sourceRecordId: "SYNTHETIC-REC-001",
   sourceUrl: "https://example.invalid/synthetic-contact/1",
+  capturedAt: now.toISOString(),
   permissionStatus: "NOT_REVIEWED" as const,
   routeVerificationStatus: "UNREVIEWED" as const,
 };
@@ -42,6 +43,12 @@ assert.equal(status.directRouteStatus, "NEEDS_REVIEW");
 assert.equal(status.selectedPhonePath, null);
 let row = (await db.select().from(leadsTable).where(eq(leadsTable.id, lead.id)))[0]!;
 assert.equal(row.payload.sellerPhone, "", "An unreviewed route is not copied into the call route.");
+const firstObservationAuditCount=(await db.select().from(auditTable).where(eq(auditTable.entityId,lead.id))).length;
+status = await recordSellerContactObservation(lead.id,{...base,version:status.leadVersion},owner,nextTime());
+assert.equal((await db.select().from(intelligenceTable).where(eq(intelligenceTable.leadId,lead.id))).length,1,
+  "Exact source/route/observed-time replay is deduplicated without deleting provenance.");
+assert.equal((await db.select().from(auditTable).where(eq(auditTable.entityId,lead.id))).length,firstObservationAuditCount,
+  "Exact replay does not create duplicate audit events.");
 
 status = await recordSellerContactObservation(lead.id, {
   ...base,

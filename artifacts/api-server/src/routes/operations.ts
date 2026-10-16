@@ -3,10 +3,10 @@ import { z } from "zod";
 import * as schemas from "@workspace/api-zod";
 import { DomainError, WORKER_CAPABILITIES, type OfferActor } from "@workspace/deal-domain";
 import * as poolOperations from "../services/buyer-pool";
-import { authenticated, membership, roles } from "../middlewares/access";
+import { authenticated, membership, roles, sensitiveWorkspaceData } from "../middlewares/access";
 import * as buyers from "../services/buyer-store";
 import * as buyerQualificationPortal from "../services/buyer-qualification-portal";
-import { allBuyerRecords, getBuyerRecord } from "../services/operations-records";
+import { allBuyerRecords, getBuyerRecord, getBuyerContactResearchRecord } from "../services/operations-records";
 import { dealOperations, refreshMatches } from "../services/matching-store";
 import * as transactions from "../services/transaction-store";
 import * as outcomes from "../services/outcome-learning-store";
@@ -16,9 +16,11 @@ import { recordTransactionException } from "../services/transaction-exceptions";
 import { createClauseReviewRequest, listClauseReviewRequests } from "../services/transaction-clause-requests";
 import * as workers from "../services/workers";
 import { listHandoffs, recordHandoffEvent } from "../services/handoffs";
+import { getWorkspaceSetupStatus, saveWorkspaceSetup } from "../services/workspace-setup";
 
 const router: IRouter = Router();
 router.use(authenticated,membership);
+router.use(sensitiveWorkspaceData);
 router.get("/transaction-documents/readiness",roles("OWNER","OPERATOR"),async(req,res)=>{
   const {leadId} = parse(z.object({leadId:z.string().uuid().optional()}),req.query);
   res.json(schemas.GetTransactionDocumentReadinessResponse.parse(await getTransactionDocumentReadiness(actor(res),leadId)));
@@ -46,7 +48,13 @@ router.post("/deals/:id/contract/clause-review-requests",roles("OWNER"),async(re
 router.get("/transaction-readiness",roles("OWNER","OPERATOR","ANALYST"),async(_req,res)=>{
   res.json(schemas.GetTransactionReadinessResponse.parse(await getTransactionReadinessReport()));
 });
-router.get("/outcome-learning",async(_req,res)=>{
+router.get("/workspace-setup",async(_req,res)=>{
+  res.json(await getWorkspaceSetupStatus());
+});
+router.put("/workspace-setup",roles("OWNER"),async(req,res)=>{
+  res.json(await saveWorkspaceSetup(req.body,String(res.locals.actor),String(res.locals.role)));
+});
+router.get("/outcome-learning",roles("OWNER","ANALYST"),async(_req,res)=>{
   res.json(schemas.GetOutcomeLearningResponse.parse(await outcomes.getOutcomeLearningReport(new Date(),String(res.locals.role)==="OWNER")));
 });
 router.post("/leads/:id/outcomes/actuals",roles("OWNER"),async(req,res)=>{
@@ -81,6 +89,10 @@ router.post("/buyers",roles("OWNER","ANALYST"),async(req,res)=>{
 router.get("/buyers/:id",async(req,res)=>{
   const {id} = parse(schemas.GetBuyerParams,req.params);
   res.json(schemas.GetBuyerResponse.parse(await getBuyerRecord(id)));
+});
+router.get("/buyers/:id/contact-research",roles("OWNER","ANALYST","OPERATOR"),async(req,res)=>{
+  const {id}=parse(z.object({id:z.string().uuid()}),req.params);
+  res.json(schemas.GetBuyerContactResearchResponse.parse(await getBuyerContactResearchRecord(id)));
 });
 router.patch("/buyers/:id",roles("OWNER","ANALYST"),async(req,res)=>{
   const {id} = parse(schemas.UpdateBuyerParams,req.params);
@@ -180,7 +192,7 @@ router.post("/deals/:id/contract/outcome",roles("OWNER"),async(req,res)=>{
   const {id} = parse(schemas.RecordDealOutcomeParams,req.params);
   res.json(schemas.RecordDealOutcomeResponse.parse(await transactions.recordDealOutcome(id,parse(schemas.RecordDealOutcomeBody,req.body),actor(res))));
 });
-router.get("/workers",async(_req,res)=>{res.json(schemas.ListWorkerJobsResponse.parse(await workers.listWorkerJobs()));});
+router.get("/workers",roles("OWNER","ANALYST"),async(_req,res)=>{res.json(schemas.ListWorkerJobsResponse.parse(await workers.listWorkerJobs()));});
 router.get("/handoffs",async(_req,res)=>res.json(schemas.ListHandoffsResponse.parse(await listHandoffs())));
 router.post("/handoffs/:id/events",roles("OWNER","ANALYST","OPERATOR"),async(req,res)=>{
   const {id} = parse(schemas.RecordHandoffEventParams,req.params);

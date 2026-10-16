@@ -24,6 +24,17 @@ export interface BuyerInput {
      * @maxLength 2000
      */
   source: string;
+  /**
+     * @maxLength 2000
+     * @pattern ^https://
+     */
+  contactSourceUrl?: string;
+  contactObservedAt?: string;
+  /**
+     * @minimum 0
+     * @maximum 1
+     */
+  contactConfidence?: number;
   criteria: BuyerCriteria | null;
   status: BuyerInputStatus;
   destinationKind?: BuyerInputDestinationKind;

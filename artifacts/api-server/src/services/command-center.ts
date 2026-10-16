@@ -14,6 +14,7 @@ import { and, count, desc, eq, ne } from "drizzle-orm";
 import { listPropertyDiscoveries } from "./property-discovery-store";
 import { acquisitionQueue } from "./acquisition-queue-store";
 import { persistIntelligenceDecision } from "./intelligence-decision-store";
+import { classifyMilestoneDeadline, transactionTermsHash } from "./transaction-deadlines";
 
 const SCHEDULER_ACTOR = "system:scheduler";
 const FIVE_MINUTES = 5 * 60_000;
@@ -471,6 +472,33 @@ export async function commandCenter(role: string, now = new Date()) {
     if (code === "QUALIFY_DISCOVERY" || code === "REVIEW_CANDIDATE") return "DISCOVERY_REVIEW";
     return "RESEARCH";
   };
+  const requiredEvidenceFor = (code: string): string[] => {
+    switch (code) {
+      case "CALL_NEXT": return ["Operator-placed call outcome and timestamp.", "Call notes and a future follow-up when the conversation remains open."];
+      case "AUTHORIZE_OFFER": return ["Current deterministic underwriting snapshot.", "Exact proposed terms and owner-approved authority evidence."];
+      case "TRANSACTION_NEXT": return ["Current executed-document, funds, title, and milestone evidence required for the named transaction step."];
+      case "BUYER_DEMAND": return ["Current approved buyer evidence, funding/capacity proof, and exact deal-match explanation."];
+      case "RESEARCH_CONTACT": return ["Permitted route source, observed time, identity match, permission basis, and freshness."];
+      case "REFRESH_CONTACT": return ["Current direct-route evidence and recipient/permission review."];
+      case "REFRESH_SOURCE_EVIDENCE": return ["Fresh source observations and recalculated deterministic underwriting."];
+      case "GATHER_REPAIR_EVIDENCE": return ["Current condition observations and supported repair inputs."];
+      case "RECALCULATE_UNDERWRITING": return ["Current source-backed comps, condition inputs, and explicit assumptions."];
+      case "REVIEW_SELLER_RESPONSE": return ["Seller response evidence and any unresolved fact/conflict review."];
+      case "RECONCILE_EVIDENCE": return ["Source-linked evidence and an attributed reviewer resolution; preserve conflicting history."];
+      default: return ["Review the linked persisted record and satisfy its displayed blockers before changing state."];
+    }
+  };
+  const humanActionForDecision = (code: string, title: string, required: boolean) => {
+    if (code === "QUALIFY_DISCOVERY" || code === "REVIEW_CANDIDATE") {
+      return "A human reviewer must inspect source provenance and explicitly promote or pass; opening this link does not create a lead.";
+    }
+    if (code === "RECONCILE_EVIDENCE") return "A reviewer must resolve the conflict with dated evidence while retaining the conflicting history.";
+    if (!required) return "No consequential action is implied. The system may prepare or organize evidence; verify the saved result before relying on it.";
+    if (code === "CALL_NEXT") return "An operator must place the call and explicitly record the actual outcome; the link does not call the seller.";
+    if (code === "AUTHORIZE_OFFER") return "An authorized owner must approve the exact current offer version before communication.";
+    if (code === "TRANSACTION_NEXT") return "An authorized owner must review the current terms and evidence; signatures, commitment and funds are not inferred.";
+    return `Human review or authorization is required before: ${title}.`;
+  };
   const ctaForDecision = (category: CommandAction["category"]) => ({
     CALL: "Open seller call",
     FOLLOW_UP: "Open follow-up",
@@ -509,10 +537,8 @@ export async function commandCenter(role: string, now = new Date()) {
           : ["No material evidence gap is reported by the current decision snapshot."],
       why: next.reason,
       systemCanDo: "The decision is derived from persisted evidence, current contact and underwriting gates, and deterministic rules. It does not call, message, authorize an offer, sign, or move funds.",
-      humanMustDo: next.requiresHumanAuthorization
-        ? `Human authorization is required. ${next.title}`
-        : next.title,
-      requiredEvidence: next.evidenceRefs,
+       humanMustDo: humanActionForDecision(next.code,next.title,next.requiresHumanAuthorization),
+       requiredEvidence: requiredEvidenceFor(next.code),
       completionRecord: decision.outcomeRecord
         ?? "A subsequent evidence or action event will produce a new decision snapshot; superseded work is completed or expired with an audit record.",
     };
@@ -531,7 +557,64 @@ export async function commandCenter(role: string, now = new Date()) {
       workGuidance: guidance,
     }];
   });
-  const commandActions = [...preservedActions, ...decisionActions]
+  // Calendar entries are projections of already-persisted dates. They never
+  // manufacture a date, contact anyone, or make a stale contract date actionable.
+  const calendarActions: CommandAction[] = [];
+  if (role === "OWNER" || role === "OPERATOR") {
+    for (const detail of deals) {
+      const lead = detail.lead;
+      const followUpAt = lead.followUpAt;
+      if (!["CLOSED", "CANCELLED"].includes(lead.stage)
+        && followUpAt && Number.isFinite(Date.parse(followUpAt))) {
+        const overdue = Date.parse(followUpAt) < now.getTime();
+        calendarActions.push({
+          id: `CALENDAR:SELLER_FOLLOW_UP:${lead.id}:${followUpAt}`,
+          category: "FOLLOW_UP", priority: overdue ? 110 : 82,
+          title: overdue ? "Seller follow-up overdue" : "Seller follow-up due",
+          reason: `Recorded follow-up at ${followUpAt}; source is the persisted seller record. No outreach is sent.`,
+          leadId: lead.id, href: `/leads/${lead.id}`, cta: "Review seller follow-up", dueAt: followUpAt,
+        });
+      }
+      const contract = operationByLead.get(lead.id)?.contract;
+      const schedule = contract?.deadlineSchedule;
+      if (!contract || !schedule || ["CLOSED", "CANCELLED"].includes(contract.status)) continue;
+      if (schedule.termsHash !== transactionTermsHash(contract)) {
+        calendarActions.push({
+          id: `CALENDAR:STALE_SCHEDULE:${contract.id}:${schedule.version}`,
+          category: "DEADLINE", priority: 120, title: "Transaction deadline schedule needs review",
+          reason: "The saved schedule no longer matches current recorded terms. Prior due dates are not presented as current.",
+          leadId: lead.id, href: `/transactions`, cta: "Review current terms", dueAt: null,
+        });
+        continue;
+      }
+      if (contract.closingAt && Number.isFinite(Date.parse(contract.closingAt))) {
+        const closingDelta = Date.parse(contract.closingAt) - now.getTime();
+        const overdue = closingDelta < 0;
+        const approaching = !overdue && closingDelta <= 7 * 86_400_000;
+        calendarActions.push({
+          id: `CALENDAR:CLOSING:${contract.id}:${schedule.version}:${contract.closingAt}`,
+          category: "CLOSING", priority: overdue ? 118 : approaching ? 90 : 58,
+          title: overdue ? "Contract closing date overdue" : approaching ? "Contract closing date approaching" : "Contract closing date",
+          reason: `Recorded closing term ${contract.closingAt}; source is the current terms-matched deadline schedule. No closing is inferred.`,
+          leadId: lead.id, href: "/transactions", cta: "Review closing status", dueAt: contract.closingAt,
+        });
+      }
+      for (const item of schedule.items) {
+        if (item.disposition !== "DUE_DATE" || !item.dueDate) continue;
+        if (contract.milestones.some(milestone => milestone.kind === item.kind)) continue;
+        const state = classifyMilestoneDeadline(item, now);
+        if (state === "INVALID" || state === "NOT_DATED" || state === "NOT_APPLICABLE") continue;
+        calendarActions.push({
+          id: `CALENDAR:MILESTONE:${contract.id}:${schedule.version}:${item.kind}`,
+          category: "DEADLINE", priority: state === "OVERDUE" ? 115 : state === "UPCOMING" ? 88 : 58,
+          title: `${item.kind.replaceAll("_", " ")}${state === "OVERDUE" ? " overdue" : " due"}`,
+          reason: `Operator-reviewed calendar date ${item.dueDate} (${item.timeZone}); ${item.basisNote} Source: ${schedule.sourceEvidenceUrl}. No milestone is marked complete by this reminder.`,
+          leadId: lead.id, href: "/transactions", cta: "Review transaction milestone", dueAt: item.dueDate,
+        });
+      }
+    }
+  }
+  const commandActions = [...preservedActions, ...decisionActions, ...calendarActions]
     .sort((a,b)=>b.priority-a.priority||a.id.localeCompare(b.id));
   const displayDeals = commandDeals.map(deal => {
     const decision = decisionByLead.get(deal.lead.id);

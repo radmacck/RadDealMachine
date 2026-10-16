@@ -49,7 +49,7 @@ export function BuyerVerificationForm({ buyer, disabled, pending, error, onSubmi
 
   return (
     <div className="space-y-3" data-testid="form-buyer-verification">
-      <p className="text-xs text-muted-foreground">This records a person's review of evidence you obtained. It is not a bank or API check, and the system does not contact the buyer or any institution.</p>
+      <p className="text-xs text-muted-foreground">This records an owner’s human review of independent evidence—not the buyer’s self-report. It is not a bank or API check, and the system does not contact the buyer or any institution. Evidence expires within 30 days; reverify before matching.</p>
       <div className="grid gap-3 sm:grid-cols-2">
         <Field label="Identity evidence link"><Input value={idUrl} disabled={disabled} onChange={(e) => setIdUrl(e.target.value)} data-testid="input-verify-identity" /></Field>
         <Field label="Current buying status"><select className={SELECT} value={bStatus} disabled={disabled} onChange={(e) => setBStatus(e.target.value as BuyerVerificationInputCurrentBuyingStatus)} data-testid="select-verify-buying"><option value="">Select</option><option value="BUYING">Buying</option><option value="PAUSED">Paused</option><option value="NOT_BUYING">Not buying</option></select></Field>
@@ -58,8 +58,8 @@ export function BuyerVerificationForm({ buyer, disabled, pending, error, onSubmi
         <Field label="Criteria evidence link"><Input value={cUrl} disabled={disabled} onChange={(e) => setCUrl(e.target.value)} data-testid="input-verify-criteria-url" /></Field>
         <Field label="Verification source"><Input value={vSrc} disabled={disabled} onChange={(e) => setVSrc(e.target.value)} data-testid="input-verify-source" /></Field>
         <Field label="Confidence 0 to 1" hint="Approval needs 0.65 or more"><Input inputMode="decimal" value={conf} disabled={disabled} onChange={(e) => setConf(e.target.value)} data-testid="input-verify-confidence" /></Field>
-        <Field label={(buyer.destinationKind ?? 'BUYER') === 'BUYER' ? 'Funding evidence link' : 'Funding evidence link (optional)'}><Input value={fundUrl} disabled={disabled} onChange={(e) => setFundUrl(e.target.value)} data-testid="input-verify-funding" /></Field>
-        <Field label={(buyer.destinationKind ?? 'BUYER') === 'BUYER' ? 'Available funds' : 'Available funds (optional)'}><Input inputMode="decimal" value={funds} disabled={disabled} onChange={(e) => setFunds(e.target.value)} data-testid="input-verify-funds" /></Field>
+        <Field label={(buyer.destinationKind ?? 'BUYER') === 'BUYER' ? 'Proof of funds/capacity · evidence URL' : 'Funding evidence link (optional)'}><Input value={fundUrl} disabled={disabled} onChange={(e) => setFundUrl(e.target.value)} data-testid="input-verify-funding" /></Field>
+        <Field label={(buyer.destinationKind ?? 'BUYER') === 'BUYER' ? 'Available capacity shown by proof' : 'Available funds (optional)'}><Input inputMode="decimal" value={funds} disabled={disabled} onChange={(e) => setFunds(e.target.value)} data-testid="input-verify-funds" /></Field>
         <div />
         <Field label="Evidence captured"><Input type="datetime-local" value={at} disabled={disabled} onChange={(e) => setAt(e.target.value)} data-testid="input-verify-at" /></Field>
         <Field label="Valid until" hint="No more than 30 days after capture"><Input type="datetime-local" value={until} disabled={disabled} onChange={(e) => setUntil(e.target.value)} data-testid="input-verify-until" /></Field>

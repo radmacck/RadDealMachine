@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { AlertTriangle, PhoneCall } from 'lucide-react';
 import { Link } from 'wouter';
 import {
-  getGetAcquisitionQueueQueryKey, useGetAcquisitionQueue, useRecordAcquisitionQueueSelection,
+  getGetAcquisitionQueueQueryKey, getGetLeadQueryKey, useGetAcquisitionQueue, useGetLead, useRecordAcquisitionQueueSelection,
   useStartCallSession, useRecordCall,
 } from '@workspace/api-client-react';
 import { PageHeader } from '@/components/page-header';
@@ -15,7 +15,8 @@ import { CommunicateForm, useOfferCommunicate } from '@/components/offers-panel'
 import { useAccess } from '@/hooks/use-access';
 import { useInvalidateWork } from '@/hooks/use-invalidate';
 import { useToast } from '@/hooks/use-toast';
-import { ago, isOverdue, money } from '@/lib/format';
+import { ago, errInfo, isOverdue, money } from '@/lib/format';
+import { sellerAnswersFromEvidence } from '@/lib/seller-answer-reuse';
 
 export default function Calls() {
   const { canCall, isOwner } = useAccess();
@@ -30,8 +31,35 @@ export default function Calls() {
   const startSession = useStartCallSession();
   const queue = q.data?.items ?? [];
   const current = queue.find((item) => item.lead.id === sel) ?? queue[0];
+  const leadDetail = useGetLead(current?.lead.id ?? '', { query: {
+    queryKey: getGetLeadQueryKey(current?.lead.id ?? ''), enabled: !!current?.lead.id, staleTime: 5_000,
+  } });
   const sessionKey = current ? `${current.lead.id}:${current.lead.version}` : null;
   const sessionReady = !!sessionKey && startedSession === sessionKey;
+  const selectionStatus = selection.error ? errInfo(selection.error).status : undefined;
+  const sessionStatus = startSession.error ? errInfo(startSession.error).status : undefined;
+  const retrySelection = () => {
+    if (!current) return;
+    if (selectionStatus === 409) {
+      selection.reset();
+      void q.refetch();
+      return;
+    }
+    if (selectionStatus === 401 || selectionStatus === 403) return;
+    selection.mutate({ id: current.lead.id, data: { version: current.lead.version } });
+  };
+  const retryCallSession = () => {
+    if (!current) return;
+    if (sessionStatus === 409) {
+      startSession.reset();
+      void Promise.all([q.refetch(), leadDetail.refetch()]);
+      return;
+    }
+    if (sessionStatus === 401 || sessionStatus === 403) return;
+    startSession.mutate({ id: current.lead.id, data: { version: current.lead.version } }, {
+      onSuccess: () => setStartedSession(sessionKey),
+    });
+  };
 
   useEffect(() => {
     if (current && (current.lead.id !== sel || !sel)) setSel(current.lead.id);
@@ -49,7 +77,9 @@ export default function Calls() {
       <PageHeader eyebrow="Seller acquisition · ranked work" title="Call next" />
       {q.isLoading && <RowsSkeleton />}
       {q.isError && <ErrorNotice error={q.error} onRetry={() => q.refetch()} />}
-      {selection.error && <ErrorNotice error={selection.error} />}
+      {selection.error && <ErrorNotice error={selection.error}
+        retryLabel={selectionStatus === 409 ? 'Refresh the latest queue' : 'Retry queue selection safely'}
+        onRetry={selectionStatus === 401 || selectionStatus === 403 ? undefined : retrySelection} />}
       {q.data && queue.length === 0 && (
         <EmptyState title="No qualified seller opportunity is ready for this queue" body="Raw discoveries stay outside the active lead queue. Review relevant candidates or complete qualification, current contact evidence, and underwriting before CALL NEXT."
           action={<Link href="/leads" className="text-sm underline" data-testid="link-empty-leads">Go to leads</Link>} />
@@ -76,7 +106,7 @@ export default function Calls() {
             <AcquisitionQueueCard item={current} />
             {current.callBrief && (
               <>
-                <CallBriefCard brief={current.callBrief} />
+                <CallBriefCard brief={current.callBrief} contactReadiness={current.contactReadiness} priorCalls={leadDetail.data?.calls ?? []} />
                 <SellerPlaybookPanel leadId={current.lead.id} />
               </>
             )}
@@ -102,8 +132,12 @@ export default function Calls() {
                 ) : <p className="mb-3 rounded-sm border border-signal/40 bg-signal/5 p-2 text-xs" role="status">
                   Readiness was rechecked and this work session is audited. No call was placed by the system.
                 </p>}
-                {startSession.error != null && <ErrorNotice error={startSession.error} />}
-                <CallLogForm key={current.lead.id} lead={current.lead} disabled={!canCall || !sessionReady} pending={rec.isPending} error={rec.error}
+                {startSession.error != null && <ErrorNotice error={startSession.error}
+                  retryLabel={sessionStatus === 409 ? 'Refresh current evidence' : 'Retry readiness check safely'}
+                  onRetry={sessionStatus === 401 || sessionStatus === 403 ? undefined : retryCallSession} />}
+                <CallLogForm key={current.lead.id} lead={current.lead}
+                  priorAnswers={sellerAnswersFromEvidence(leadDetail.data?.intelligence ?? [])}
+                  disabled={!canCall || !sessionReady} pending={rec.isPending} error={rec.error}
                   onSubmit={(data, done) => rec.mutate({ id: current.lead.id, data }, { onSuccess: () => { invalidate(current.lead.id); done(); toast({ title: 'Call result saved', description: `${current.lead.address}: operator-entered evidence and follow-up recorded.` }); } })} />
                 {!sessionReady && <p className="mt-2 text-xs text-muted-foreground">Start call work first; this rechecks direct phone evidence and underwriting. Telephony is not connected.</p>}
               </>

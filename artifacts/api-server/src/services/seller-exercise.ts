@@ -85,7 +85,8 @@ async function exercise() {
     assert.ok(brief!.questions.includes("What timeline works?"));
     assert.match(brief!.boundaries,/No price is authorized/);
     const followUpAt = new Date(now.getTime()+86_400_000).toISOString();
-    const call = {version:detail.lead.version,outcome:"CONNECTED" as const,notes:"Synthetic seller answered.",nextAction:"Prepare for authorization workflow; do not release an offer.",followUpAt};
+    const call = {version:detail.lead.version,outcome:"CONNECTED" as const,notes:"Synthetic seller answered.",nextAction:"Prepare for authorization workflow; do not release an offer.",followUpAt,
+      sellerAnswers:{occupancy:"Synthetic seller reports vacant."}};
     detail = await store.recordCall(id,call,actor,now);
     assert.equal(detail.lead.stage,"CONVERSATION");
     assert.equal(detail.calls.length,1);
@@ -107,10 +108,16 @@ async function exercise() {
     detail = await store.leadDetail(id);
     assert.equal(detail.analysis,null);
     assert.equal(detail.lead.stage,"ENRICHING");
+    assert.ok(detail.intelligence.some(item => item.sourceRecordId === detail.calls[0]?.id
+      && item.category === "seller_call_occupancy"
+      && item.statement.includes("Synthetic seller reports vacant.")),
+      "later lead edits do not rewrite the original call-linked seller evidence");
     assert.equal((await db.select().from(analysesTable).where(eq(analysesTable.leadId,id))).length,1);
     assert.ok((await db.select().from(intelligenceTable).where(eq(intelligenceTable.leadId,id))).some(e => e.payload.classification === "AI_HYPOTHESIS"));
     const audits = await db.select().from(auditTable).where(eq(auditTable.entityId,id));
     assert.ok(audits.length>=10);
+    assert.ok(audits.some(event => event.action === "LEAD_UPDATED"),
+      "the property edit remains a separate audit event while prior call evidence is retained");
     logger.info({checks:"persist/reload, provenance rejection, deterministic snapshot, stale/concurrent write rejection, call readiness, brief, followup, immutable evidence, analysis invalidation"},"Seller vertical persistence exercise PASSED (synthetic data)");
   } finally {
     if (id) {

@@ -1,0 +1,352 @@
+{
+  "gate": "REAL_ESTATE_OS_OPERATIONAL_READINESS",
+  "generatedAt": "2026-10-15T17:02:49.981Z",
+  "syntheticWorkflowStatus": "PASS",
+  "permittedSourceStatus": "PASS",
+  "operationalStatus": "NOT_READY",
+  "securityScan": {
+    "scannedAt": "2026-10-15T16:54:17Z",
+    "dependencyAudit": {
+      "critical": 0,
+      "high": 1,
+      "moderate": 1,
+      "low": 0,
+      "info": 0,
+      "remainingFindings": [
+        "GHSA-vfj7-8cjw-p6xm: braces@3.0.3 (no fixed version reported by scanner)",
+        "GHSA-rj75-hqrm-r3gf: postcss-selector-parser@6.0.10 (fix 7.1.6 requires major upgrade)"
+      ],
+      "remediated": [
+        "proxy-addr updated from 2.0.7 to 2.0.8; critical finding cleared"
+      ]
+    },
+    "sastFindings": 0,
+    "houndDogFindings": 0
+  },
+  "failedCheckIds": [],
+  "unverifiedLiveCheckIds": [
+    "provider-snapshot:phila-property-sources",
+    "provider-snapshot:seller-contact-research",
+    "provider-snapshot:outbound-messaging",
+    "provider-snapshot:electronic-signature",
+    "provider-snapshot:closing-coordination",
+    "provider-snapshot:private-document-storage",
+    "live-owner-and-external-evidence"
+  ],
+  "earliestBlocker": "Philadelphia public-record adapters: persisted health is DEGRADED; check kind ADAPTER_REGISTRATION. This is a configuration/history snapshot, not a live network probe.",
+  "checks": [
+    {
+      "id": "auth",
+      "category": "TEST",
+      "status": "PASS",
+      "detail": "auth completed successfully."
+    },
+    {
+      "id": "buyer-outreach",
+      "category": "TEST",
+      "status": "PASS",
+      "detail": "buyer-outreach completed successfully."
+    },
+    {
+      "id": "command-center",
+      "category": "TEST",
+      "status": "PASS",
+      "detail": "command-center completed successfully."
+    },
+    {
+      "id": "provider-health",
+      "category": "TEST",
+      "status": "PASS",
+      "detail": "provider-health completed successfully."
+    },
+    {
+      "id": "transaction-readiness",
+      "category": "TEST",
+      "status": "PASS",
+      "detail": "transaction-readiness completed successfully."
+    },
+    {
+      "id": "worker-recovery",
+      "category": "TEST",
+      "status": "PASS",
+      "detail": "worker-recovery completed successfully."
+    },
+    {
+      "id": "canonical-deal-state",
+      "category": "TEST",
+      "status": "PASS",
+      "detail": "canonical-deal-state completed successfully."
+    },
+    {
+      "id": "deal-domain",
+      "category": "TEST",
+      "status": "PASS",
+      "detail": "deal-domain completed successfully."
+    },
+    {
+      "id": "permitted-property-discovery",
+      "category": "PERMITTED_SOURCE_CHECK",
+      "status": "PASS",
+      "detail": "permitted-property-discovery completed successfully."
+    },
+    {
+      "id": "seller-contactability",
+      "category": "PERSISTED_SYNTHETIC_EXERCISE",
+      "status": "PASS",
+      "detail": "seller-contactability completed successfully."
+    },
+    {
+      "id": "qualification-underwriting-call-notes",
+      "category": "PERSISTED_SYNTHETIC_EXERCISE",
+      "status": "PASS",
+      "detail": "qualification-underwriting-call-notes completed successfully."
+    },
+    {
+      "id": "deterministic-underwriting",
+      "category": "PERSISTED_SYNTHETIC_EXERCISE",
+      "status": "PASS",
+      "detail": "deterministic-underwriting completed successfully."
+    },
+    {
+      "id": "offer-authorization-gates",
+      "category": "PERSISTED_SYNTHETIC_EXERCISE",
+      "status": "PASS",
+      "detail": "offer-authorization-gates completed successfully."
+    },
+    {
+      "id": "verified-buyer-matching",
+      "category": "PERSISTED_SYNTHETIC_EXERCISE",
+      "status": "PASS",
+      "detail": "verified-buyer-matching completed successfully."
+    },
+    {
+      "id": "package-distribution-contract-closing",
+      "category": "PERSISTED_SYNTHETIC_EXERCISE",
+      "status": "PASS",
+      "detail": "package-distribution-contract-closing completed successfully."
+    },
+    {
+      "id": "exception-recovery",
+      "category": "PERSISTED_SYNTHETIC_EXERCISE",
+      "status": "PASS",
+      "detail": "exception-recovery completed successfully."
+    },
+    {
+      "id": "closing-outcome-reconciliation",
+      "category": "PERSISTED_SYNTHETIC_EXERCISE",
+      "status": "PASS",
+      "detail": "closing-outcome-reconciliation completed successfully."
+    },
+    {
+      "id": "cross-domain-next-action",
+      "category": "PERSISTED_SYNTHETIC_EXERCISE",
+      "status": "PASS",
+      "detail": "cross-domain-next-action completed successfully."
+    },
+    {
+      "id": "api-typecheck",
+      "category": "TYPECHECK",
+      "status": "PASS",
+      "detail": "api-typecheck completed successfully."
+    },
+    {
+      "id": "web-typecheck",
+      "category": "TYPECHECK",
+      "status": "PASS",
+      "detail": "web-typecheck completed successfully."
+    },
+    {
+      "id": "api-build",
+      "category": "BUILD",
+      "status": "PASS",
+      "detail": "api-build completed successfully."
+    },
+    {
+      "id": "web-build",
+      "category": "BUILD",
+      "status": "PASS",
+      "detail": "web-build completed successfully."
+    },
+    {
+      "id": "provider-snapshot:phila-property-sources",
+      "category": "LIVE_SYSTEM",
+      "status": "UNVERIFIED",
+      "detail": "Philadelphia public-record adapters: persisted health is DEGRADED; check kind ADAPTER_REGISTRATION. This is a configuration/history snapshot, not a live network probe."
+    },
+    {
+      "id": "provider-snapshot:seller-contact-research",
+      "category": "LIVE_SYSTEM",
+      "status": "UNVERIFIED",
+      "detail": "Seller contact research: persisted health is UNCONFIGURED; check kind CONFIGURATION_CHECK. This is a configuration/history snapshot, not a live network probe."
+    },
+    {
+      "id": "provider-snapshot:outbound-messaging",
+      "category": "LIVE_SYSTEM",
+      "status": "UNVERIFIED",
+      "detail": "Email/SMS delivery: persisted health is UNCONFIGURED; check kind CONFIGURATION_CHECK. This is a configuration/history snapshot, not a live network probe."
+    },
+    {
+      "id": "provider-snapshot:electronic-signature",
+      "category": "LIVE_SYSTEM",
+      "status": "UNVERIFIED",
+      "detail": "Document/signature provider: persisted health is UNCONFIGURED; check kind CONFIGURATION_CHECK. This is a configuration/history snapshot, not a live network probe."
+    },
+    {
+      "id": "provider-snapshot:closing-coordination",
+      "category": "LIVE_SYSTEM",
+      "status": "UNVERIFIED",
+      "detail": "Closing/title coordination: persisted health is UNCONFIGURED; check kind CONFIGURATION_CHECK. This is a configuration/history snapshot, not a live network probe."
+    },
+    {
+      "id": "provider-snapshot:private-document-storage",
+      "category": "LIVE_SYSTEM",
+      "status": "UNVERIFIED",
+      "detail": "Private document storage: persisted health is UNCONFIGURED; check kind CONFIGURATION_CHECK. This is a configuration/history snapshot, not a live network probe."
+    },
+    {
+      "id": "live-owner-and-external-evidence",
+      "category": "LIVE_SYSTEM",
+      "status": "UNVERIFIED",
+      "detail": "No legitimate signed-in owner session or provider-confirmed live source, outreach, signature, funds, or closing evidence was supplied to this gate."
+    }
+  ],
+  "readinessMatrix": [
+    {
+      "area": "Permitted property discovery, provenance, and deduplication",
+      "syntheticStatus": "PASS",
+      "syntheticScope": "Public Philadelphia feeds queried in an isolated persisted exercise; no raw discovery becomes an active lead.",
+      "liveStatus": "UNVERIFIED",
+      "evidenceCheckIds": [
+        "permitted-property-discovery",
+        "provider-snapshot:phila-property-sources"
+      ]
+    },
+    {
+      "area": "Seller contactability and contact permissions",
+      "syntheticStatus": "PASS",
+      "syntheticScope": "Persisted synthetic contact-research permission, provenance, and contact-route checks.",
+      "liveStatus": "UNVERIFIED",
+      "evidenceCheckIds": [
+        "seller-contactability",
+        "provider-snapshot:seller-contact-research"
+      ]
+    },
+    {
+      "area": "Underwriting formulas and offer gates",
+      "syntheticStatus": "PASS",
+      "syntheticScope": "Deterministic persisted underwriting and offer authorization exercises; no synthetic score grants approval.",
+      "liveStatus": "UNVERIFIED",
+      "evidenceCheckIds": [
+        "deterministic-underwriting",
+        "offer-authorization-gates"
+      ]
+    },
+    {
+      "area": "Call briefs and persisted call notes",
+      "syntheticStatus": "PASS",
+      "syntheticScope": "Persisted isolated acquisition-queue and call-note exercise.",
+      "liveStatus": "UNVERIFIED",
+      "evidenceCheckIds": [
+        "qualification-underwriting-call-notes",
+        "live-owner-and-external-evidence"
+      ]
+    },
+    {
+      "area": "Buyer verification and matching",
+      "syntheticStatus": "PASS",
+      "syntheticScope": "Persisted synthetic buyer evidence and match constraints; matches are not buyer approval or commitment.",
+      "liveStatus": "UNVERIFIED",
+      "evidenceCheckIds": [
+        "verified-buyer-matching",
+        "live-owner-and-external-evidence"
+      ]
+    },
+    {
+      "area": "Approved seller/buyer outreach",
+      "syntheticStatus": "PASS",
+      "syntheticScope": "Authorization and idempotency tests only; synthetic operations do not send messages.",
+      "liveStatus": "UNVERIFIED",
+      "evidenceCheckIds": [
+        "buyer-outreach",
+        "provider-snapshot:outbound-messaging",
+        "live-owner-and-external-evidence"
+      ]
+    },
+    {
+      "area": "Address-redacted package distribution",
+      "syntheticStatus": "PASS",
+      "syntheticScope": "Persisted isolated transaction exercise verifies disclosure controls; no package was delivered externally.",
+      "liveStatus": "UNVERIFIED",
+      "evidenceCheckIds": [
+        "package-distribution-contract-closing",
+        "provider-snapshot:private-document-storage",
+        "provider-snapshot:outbound-messaging"
+      ]
+    },
+    {
+      "area": "Contract, signature, funds, and deadline tracking",
+      "syntheticStatus": "PASS",
+      "syntheticScope": "Persisted transaction/deadline state and signature/funds evidence constraints; no signature or funds transfer occurred.",
+      "liveStatus": "UNVERIFIED",
+      "evidenceCheckIds": [
+        "transaction-readiness",
+        "package-distribution-contract-closing",
+        "provider-snapshot:electronic-signature",
+        "provider-snapshot:closing-coordination"
+      ]
+    },
+    {
+      "area": "Closing outcomes and reconciliation",
+      "syntheticStatus": "PASS",
+      "syntheticScope": "Persisted synthetic outcome reconciliation; not a real closing.",
+      "liveStatus": "UNVERIFIED",
+      "evidenceCheckIds": [
+        "closing-outcome-reconciliation",
+        "provider-snapshot:closing-coordination"
+      ]
+    },
+    {
+      "area": "Exception recovery",
+      "syntheticStatus": "PASS",
+      "syntheticScope": "Failure/retry/dead-letter/replay behavior exercised with isolated synthetic jobs.",
+      "liveStatus": "UNVERIFIED",
+      "evidenceCheckIds": [
+        "exception-recovery",
+        "provider-snapshot:phila-property-sources",
+        "provider-snapshot:seller-contact-research",
+        "provider-snapshot:outbound-messaging",
+        "provider-snapshot:electronic-signature",
+        "provider-snapshot:closing-coordination",
+        "provider-snapshot:private-document-storage"
+      ]
+    },
+    {
+      "area": "Security",
+      "syntheticStatus": "PASS",
+      "syntheticScope": "Authentication/provider-boundary tests pass. Security scan is FAIL: 1 high and 1 moderate dependency finding remain; SAST and HoundDog each report 0 findings. See securityScan.",
+      "scannerStatus": "FAIL",
+      "liveStatus": "UNVERIFIED",
+      "evidenceCheckIds": [
+        "auth",
+        "provider-health",
+        "live-owner-and-external-evidence"
+      ]
+    },
+    {
+      "area": "Command center next action",
+      "syntheticStatus": "PASS",
+      "syntheticScope": "Persisted synthetic next-action selection; no authenticated owner UI session was available.",
+      "liveStatus": "UNVERIFIED",
+      "evidenceCheckIds": [
+        "cross-domain-next-action",
+        "command-center",
+        "live-owner-and-external-evidence"
+      ]
+    }
+  ],
+  "limitations": [
+    "Persisted exercises use isolated synthetic fixtures and do not establish a real deal, approved buyer, contact route, call, delivery, signature, transfer, or closing.",
+    "Provider status is read from configuration and persisted job history; this gate does not send external requests or expose credentials.",
+    "A signed-in owner browser session is not available to this gate."
+  ]
+}

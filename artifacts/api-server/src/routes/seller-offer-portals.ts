@@ -1,6 +1,6 @@
 import { Router, type IRouter } from "express";
 import * as schemas from "@workspace/api-zod";
-import { authenticated, membership, roles } from "../middlewares/access";
+import { authenticated, membership, roles, sensitiveWorkspaceData } from "../middlewares/access";
 import { actor, parse } from "./operations";
 import * as portals from "../services/seller-offer-portals";
 
@@ -30,6 +30,7 @@ publicSellerOfferPortalRouter.post("/portal/seller-offer/response", async (req, 
 
 export const internalSellerOfferPortalRouter: IRouter = Router();
 internalSellerOfferPortalRouter.use(authenticated, membership);
+internalSellerOfferPortalRouter.use(sensitiveWorkspaceData);
 internalSellerOfferPortalRouter.get("/leads/:id/offers/:offerId/seller-portal", async (req, res) => {
   const { id, offerId } = parse(schemas.GetSellerOfferPortalControlParams, req.params);
   res.json(schemas.GetSellerOfferPortalControlResponse.parse(

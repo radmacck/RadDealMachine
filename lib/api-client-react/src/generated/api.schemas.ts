@@ -1874,6 +1874,51 @@ export interface SellerContactEnrichmentProviderResult {
   observationsAdded: number;
 }
 
+export type ExternalOperationAttemptState = typeof ExternalOperationAttemptState[keyof typeof ExternalOperationAttemptState];
+
+
+export const ExternalOperationAttemptState = {
+  SUBMITTED: 'SUBMITTED',
+  CONFIRMED: 'CONFIRMED',
+  FAILED: 'FAILED',
+  UNKNOWN: 'UNKNOWN',
+  RATE_LIMITED: 'RATE_LIMITED',
+} as const;
+
+export interface ExternalOperationAttempt {
+  /** @minimum 1 */
+  attempt: number;
+  providerId: string;
+  state: ExternalOperationAttemptState;
+  at: string;
+  /** @nullable */
+  responseCode?: string | null;
+}
+
+export type ExternalOperationState = typeof ExternalOperationState[keyof typeof ExternalOperationState];
+
+
+export const ExternalOperationState = {
+  NOT_CONFIGURED: 'NOT_CONFIGURED',
+  AWAITING_APPROVAL: 'AWAITING_APPROVAL',
+  QUEUED: 'QUEUED',
+  SUBMITTED: 'SUBMITTED',
+  DELIVERED: 'DELIVERED',
+  CONFIRMED: 'CONFIRMED',
+  FAILED: 'FAILED',
+  UNKNOWN: 'UNKNOWN',
+} as const;
+
+export interface ExternalAuthorizationSnapshot {
+  actorId: string;
+  role: string;
+  /** @minimum 1 */
+  leadVersion: number;
+  channels: string[];
+  providerIds: string[];
+  capturedAt: string;
+}
+
 export type SellerContactEnrichmentRequestChannelsItem = typeof SellerContactEnrichmentRequestChannelsItem[keyof typeof SellerContactEnrichmentRequestChannelsItem];
 
 
@@ -1908,6 +1953,7 @@ export interface SellerContactEnrichmentRequest {
   idempotencyKey: string;
   channels: SellerContactEnrichmentRequestChannelsItem[];
   status: SellerContactEnrichmentRequestStatus;
+  operationState: ExternalOperationState;
   /** @minimum 1 */
   requestedLeadVersion: number;
   providerIds: string[];
@@ -1923,6 +1969,8 @@ export interface SellerContactEnrichmentRequest {
   reason: string;
   /** @nullable */
   lastFailureCode: string | null;
+  authorizationSnapshot: ExternalAuthorizationSnapshot;
+  attemptHistory: ExternalOperationAttempt[];
   createdAt: string;
   updatedAt: string;
 }
@@ -2567,6 +2615,17 @@ export interface BuyerInput {
      * @maxLength 2000
      */
   source: string;
+  /**
+     * @maxLength 2000
+     * @pattern ^https://
+     */
+  contactSourceUrl?: string;
+  contactObservedAt?: string;
+  /**
+     * @minimum 0
+     * @maximum 1
+     */
+  contactConfidence?: number;
   criteria: BuyerCriteria | null;
   status: BuyerInputStatus;
   destinationKind?: BuyerInputDestinationKind;
@@ -2847,6 +2906,54 @@ export interface BuyerContactPermission {
   reviewedAt: string;
 }
 
+export type BuyerProfileStatus = typeof BuyerProfileStatus[keyof typeof BuyerProfileStatus];
+
+
+export const BuyerProfileStatus = {
+  ACTIVE: 'ACTIVE',
+  PAUSED: 'PAUSED',
+} as const;
+
+export type BuyerProfileDestinationKind = typeof BuyerProfileDestinationKind[keyof typeof BuyerProfileDestinationKind];
+
+
+export const BuyerProfileDestinationKind = {
+  BUYER: 'BUYER',
+  DEAL_FINDER: 'DEAL_FINDER',
+  GURU: 'GURU',
+} as const;
+
+export interface BuyerProfile {
+  name: string;
+  email: string;
+  phone: string;
+  source: string;
+  criteria: BuyerCriteria | null;
+  status: BuyerProfileStatus;
+  destinationKind?: BuyerProfileDestinationKind;
+  /** @nullable */
+  qualifiedDealFee?: number | null;
+  feeTermsSource?: string;
+}
+
+export interface BuyerContactResearchResponse {
+  buyerId: string;
+  version: number;
+  /** @nullable */
+  contactSourceUrl: string | null;
+  /** @nullable */
+  contactObservedAt: string | null;
+  /**
+     * @minimum 0
+     * @maximum 1
+     * @nullable
+     */
+  contactConfidence: number | null;
+  contactPermission: BuyerContactPermission | null;
+  contactPermissionHistory: BuyerContactPermission[];
+  nextAction: string;
+}
+
 export type BuyerVerificationStatus = typeof BuyerVerificationStatus[keyof typeof BuyerVerificationStatus];
 
 
@@ -2887,7 +2994,7 @@ export const BuyerCurrentBuyingStatus = {
   NOT_BUYING: 'NOT_BUYING',
 } as const;
 
-export type Buyer = BuyerInput & ({
+export type Buyer = BuyerProfile & ({
   id: string;
   version: number;
   verificationStatus: BuyerVerificationStatus;
@@ -4468,6 +4575,7 @@ export const CallEvidenceClassification = {
 export interface Call {
   id: string;
   createdAt: string;
+  occurredAt: string;
   actor: string;
   version: number;
   outcome: CallOutcome;
@@ -5147,11 +5255,58 @@ export type TransactionReadinessResponseCapabilitiesJurisdictionTemplates = {
   jurisdictions: TransactionReadinessResponseCapabilitiesJurisdictionTemplatesJurisdictionsItem[];
 };
 
+export type ProviderHealthEntryCategory = typeof ProviderHealthEntryCategory[keyof typeof ProviderHealthEntryCategory];
+
+
+export const ProviderHealthEntryCategory = {
+  PROPERTY_SOURCE: 'PROPERTY_SOURCE',
+  CONTACT_RESEARCH: 'CONTACT_RESEARCH',
+  MESSAGING: 'MESSAGING',
+  DOCUMENT_SIGNATURE: 'DOCUMENT_SIGNATURE',
+  CLOSING_COORDINATION: 'CLOSING_COORDINATION',
+  FILE_STORAGE: 'FILE_STORAGE',
+} as const;
+
+export type ProviderHealthEntryStatus = typeof ProviderHealthEntryStatus[keyof typeof ProviderHealthEntryStatus];
+
+
+export const ProviderHealthEntryStatus = {
+  CONNECTED: 'CONNECTED',
+  DISCONNECTED: 'DISCONNECTED',
+  DEGRADED: 'DEGRADED',
+  RATE_LIMITED: 'RATE_LIMITED',
+  UNCONFIGURED: 'UNCONFIGURED',
+} as const;
+
+export type ProviderHealthEntryCheckKind = typeof ProviderHealthEntryCheckKind[keyof typeof ProviderHealthEntryCheckKind];
+
+
+export const ProviderHealthEntryCheckKind = {
+  PERSISTED_JOB: 'PERSISTED_JOB',
+  ADAPTER_REGISTRATION: 'ADAPTER_REGISTRATION',
+  READINESS_CHECK: 'READINESS_CHECK',
+  CONFIGURATION_CHECK: 'CONFIGURATION_CHECK',
+} as const;
+
+export interface ProviderHealthEntry {
+  id: string;
+  name: string;
+  category: ProviderHealthEntryCategory;
+  status: ProviderHealthEntryStatus;
+  checkedAt: string;
+  /** @nullable */
+  lastSuccessAt?: string | null;
+  checkKind: ProviderHealthEntryCheckKind;
+  reason: string;
+  nextAction: string;
+}
+
 export type TransactionReadinessResponseCapabilities = {
   signingProvider: TransactionReadinessResponseCapabilitiesSigningProvider;
   deliveryProvider: TransactionReadinessResponseCapabilitiesDeliveryProvider;
   privateDocumentStorage: TransactionReadinessResponseCapabilitiesPrivateDocumentStorage;
   jurisdictionTemplates: TransactionReadinessResponseCapabilitiesJurisdictionTemplates;
+  providers: ProviderHealthEntry[];
 };
 
 export interface TransactionReadinessResponse {
@@ -6244,6 +6399,11 @@ export const CallInputClarificationStatus = {
 export interface CallInput {
   /** @minimum 1 */
   version: number;
+  /**
+     * @minLength 8
+     * @maxLength 200
+     */
+  idempotencyKey?: string;
   outcome: CallInputOutcome;
   /**
      * @minLength 1
@@ -6266,6 +6426,11 @@ export interface CallInput {
   operatorConfidence?: number;
   clarificationStatus?: CallInputClarificationStatus;
   sellerAnswers?: CallSellerAnswers;
+  /**
+     * Structured note extraction JSON, linked by exact note offsets and labeled with confidence and attribution.
+     * @maxLength 24000
+     */
+  structuredFieldsJson?: string;
 }
 
 export interface AcquisitionQueue {
@@ -6319,11 +6484,18 @@ export type OfferDraftInput = OfferTerms & {
      * @maxLength 2000
      */
   reason: string;
+  draftExpiresAt?: string;
 };
 
 export interface OfferApprovalInput {
   /** @minimum 1 */
   version: number;
+  /**
+     * @minLength 64
+     * @maxLength 64
+     * @pattern ^[a-f0-9]{64}$
+     */
+  reviewSnapshotHash?: string;
   /**
      * @maximum 1000000000
      * @exclusiveMinimum 0
@@ -6390,6 +6562,19 @@ export interface OfferWithdrawalInput {
      */
   nextAction: string;
   followUpAt: string;
+}
+
+export interface OfferReviewSnapshotResponse {
+  offerId: string;
+  draftExpiresAt: string;
+  /** @maxLength 50000 */
+  reviewSnapshotJson: string;
+  /**
+     * @minLength 64
+     * @maxLength 64
+     * @pattern ^[a-f0-9]{64}$
+     */
+  reviewSnapshotHash: string;
 }
 
 export interface StageCount {

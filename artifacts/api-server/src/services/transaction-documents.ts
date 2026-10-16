@@ -17,6 +17,17 @@ export type PurchaseReviewSnapshot = {
   assignmentAllowed: boolean;
 };
 
+export type ContractDataAssembly = {
+  version: number;
+  snapshotHash: string;
+  sourceLinks: Array<{ field: string; sourceId: string; href: string; status: "AUTHORIZED" | "RECORDED_UNVERIFIED" | "UNDERWRITING_SNAPSHOT" }>;
+  jurisdiction: { checklistScope: string; determination: "PROPERTY_LOCATION_ONLY_NOT_LEGAL_ADVICE"; purchaseTemplateStatus: string };
+  signatureRouting: { status: "BLOCKED"; blockers: string[] };
+  disclosures: Array<{ item: string; included: boolean; sourceId: string; value: string }>;
+  missingRequiredData: string[];
+  clauseNotice: string;
+};
+
 function canonical(value: unknown): string {
   if (Array.isArray(value)) return `[${value.map(canonical).join(",")}]`;
   if (value && typeof value === "object") {
@@ -30,11 +41,56 @@ export function purchaseReviewSnapshotHash(snapshot: PurchaseReviewSnapshot): st
   return createHash("sha256").update(canonical(snapshot)).digest("hex");
 }
 
+export function assembleContractDataPackage(
+  snapshot: PurchaseReviewSnapshot,
+  input: {
+    version: number; jurisdiction: string; purchaseTemplateStatus: string;
+    signingProviderConnected: boolean; priorPartyIdentityVerified?: boolean; priorSigningAuthorityVerified?: boolean;
+  },
+): ContractDataAssembly {
+  const missingRequiredData = [
+    ...(!input.priorPartyIdentityVerified ? ["Seller legal identity evidence"] : []),
+    ...(!input.priorSigningAuthorityVerified ? ["Seller signing-authority evidence"] : []),
+    "Acquisition entity legal name and authority evidence",
+    "Parcel legal description / parcel identifier",
+    "Title or escrow company and earnest-money holder",
+    ...(input.purchaseTemplateStatus !== "APPROVED_LEGAL" ? ["Current jurisdiction-approved purchase agreement template"] : []),
+  ];
+  const blockers = [...missingRequiredData];
+  if (!input.signingProviderConnected) blockers.push("No connected signature-routing provider.");
+  const value = {
+    version: input.version,
+    sourceLinks: [
+      { field: "Property address", sourceId: snapshot.leadId, href: `/api/deals/${snapshot.leadId}/operations`, status: "RECORDED_UNVERIFIED" as const },
+      { field: "Seller name on file", sourceId: snapshot.leadId, href: `/api/deals/${snapshot.leadId}/operations`, status: "RECORDED_UNVERIFIED" as const },
+      { field: "Authorized purchase terms", sourceId: snapshot.offerId, href: `/api/deals/${snapshot.leadId}/operations`, status: "AUTHORIZED" as const },
+      { field: "Underwriting/economics", sourceId: snapshot.analysisSnapshotId, href: `/api/deals/${snapshot.leadId}/operations`, status: "UNDERWRITING_SNAPSHOT" as const },
+    ],
+    jurisdiction: {
+      checklistScope: input.jurisdiction,
+      determination: "PROPERTY_LOCATION_ONLY_NOT_LEGAL_ADVICE" as const,
+      purchaseTemplateStatus: input.purchaseTemplateStatus,
+    },
+    signatureRouting: { status: "BLOCKED" as const, blockers },
+    disclosures: [
+      { item: "Purchase price", included: true, sourceId: snapshot.offerId, value: `$${snapshot.purchasePrice}` },
+      { item: "Earnest money", included: true, sourceId: snapshot.offerId, value: `$${snapshot.earnestMoney}` },
+      { item: "Target closing date", included: !!snapshot.closingAt, sourceId: snapshot.offerId, value: snapshot.closingAt },
+      { item: "Contingencies", included: !!snapshot.contingencies, sourceId: snapshot.offerId, value: snapshot.contingencies || "No contingencies recorded in authorized offer." },
+      { item: "Assignment status", included: true, sourceId: snapshot.offerId, value: snapshot.assignmentAllowed ? "Assignment allowed by authorized terms" : "Assignment not allowed by authorized terms" },
+    ],
+    missingRequiredData,
+    clauseNotice: "Special clauses are not generated or inserted. Owner-proposed text remains unreviewed until a qualified jurisdictional legal review and separate human approval are recorded.",
+  };
+  const snapshotHash = createHash("sha256").update(canonical({ terms: snapshot, package: value })).digest("hex");
+  return { ...value, snapshotHash };
+}
+
 function money(value: number): string {
   return new Intl.NumberFormat("en-US", { style: "currency", currency: "USD", maximumFractionDigits: 0 }).format(value);
 }
 
-export async function buildPurchaseReviewPdf(snapshot: PurchaseReviewSnapshot, snapshotHash: string): Promise<Uint8Array> {
+export async function buildPurchaseReviewPdf(snapshot: PurchaseReviewSnapshot, snapshotHash: string, assembly?: ContractDataAssembly): Promise<Uint8Array> {
   const pdf = await PDFDocument.create();
   pdf.setTitle("Purchase terms review copy");
   pdf.setSubject("Terms copied from the current communicated seller offer and transaction record");
@@ -109,6 +165,37 @@ export async function buildPurchaseReviewPdf(snapshot: PurchaseReviewSnapshot, s
   });
   page.drawText(`Terms snapshot SHA-256: ${snapshotHash}`, { x: 44, y: 33, size: 6.5, font: regular, color: muted });
   page.drawText(`Underwriting economics SHA-256: ${snapshot.economicsSnapshotHash}`, { x: 44, y: 22, size: 6.5, font: regular, color: muted });
+
+  if (assembly) {
+    const checklistPage = pdf.addPage([612, 792]);
+    checklistPage.drawText("CONTRACT DATA ASSEMBLY", { x: 44, y: 744, size: 18, font: bold, color: ink });
+    checklistPage.drawText("Review package only - not a legal form, legal approval, or signature request", { x: 44, y: 724, size: 9, font: bold, color: accent });
+    checklistPage.drawText(`Assembly v${assembly.version} · ${assembly.jurisdiction.checklistScope} · template: ${assembly.jurisdiction.purchaseTemplateStatus}`, {
+      x: 44, y: 704, size: 8, font: regular, color: muted,
+    });
+    let cursor = 675;
+    checklistPage.drawText("Field provenance", { x: 44, y: cursor, size: 11, font: bold, color: ink }); cursor -= 18;
+    for (const source of assembly.sourceLinks) {
+      checklistPage.drawText(`${source.field}: ${source.status} · ${source.href} · ${source.sourceId}`, { x: 48, y: cursor, size: 7.5, font: regular, color: muted, maxWidth: 516 });
+      cursor -= 14;
+    }
+    cursor -= 8;
+    checklistPage.drawText("Required disclosures from approved terms", { x: 44, y: cursor, size: 11, font: bold, color: ink }); cursor -= 18;
+    for (const item of assembly.disclosures) {
+      checklistPage.drawText(`${item.included ? "[x]" : "[ ]"} ${item.item}: ${item.value}`, { x: 48, y: cursor, size: 7.5, font: regular, color: ink, maxWidth: 516 });
+      cursor -= 14;
+    }
+    cursor -= 8;
+    checklistPage.drawText("Missing verified/legal data", { x: 44, y: cursor, size: 11, font: bold, color: ink }); cursor -= 18;
+    for (const item of assembly.missingRequiredData) {
+      checklistPage.drawText(`• ${item}`, { x: 48, y: cursor, size: 7.5, font: regular, color: muted, maxWidth: 516 });
+      cursor -= 14;
+    }
+    cursor -= 8;
+    checklistPage.drawText("Signature routing: BLOCKED", { x: 44, y: cursor, size: 10, font: bold, color: accent }); cursor -= 16;
+    checklistPage.drawText(assembly.clauseNotice, { x: 44, y: cursor, size: 7.5, font: regular, color: ink, maxWidth: 516 });
+    checklistPage.drawText(`Assembly SHA-256: ${assembly.snapshotHash}`, { x: 44, y: 30, size: 6.5, font: regular, color: muted });
+  }
 
   form.updateFieldAppearances(regular);
   return pdf.save();

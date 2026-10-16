@@ -5,6 +5,9 @@
  * Radical Deal OS seller intake, underwriting, conversations and approved offers
  * OpenAPI spec version: 1.0.0
  */
+import type { ExternalAuthorizationSnapshot } from './externalAuthorizationSnapshot';
+import type { ExternalOperationAttempt } from './externalOperationAttempt';
+import type { ExternalOperationState } from './externalOperationState';
 import type { SellerContactEnrichmentProviderResult } from './sellerContactEnrichmentProviderResult';
 import type { SellerContactEnrichmentRequestChannelsItem } from './sellerContactEnrichmentRequestChannelsItem';
 import type { SellerContactEnrichmentRequestStatus } from './sellerContactEnrichmentRequestStatus';
@@ -15,6 +18,7 @@ export interface SellerContactEnrichmentRequest {
   idempotencyKey: string;
   channels: SellerContactEnrichmentRequestChannelsItem[];
   status: SellerContactEnrichmentRequestStatus;
+  operationState: ExternalOperationState;
   /** @minimum 1 */
   requestedLeadVersion: number;
   providerIds: string[];
@@ -30,6 +34,8 @@ export interface SellerContactEnrichmentRequest {
   reason: string;
   /** @nullable */
   lastFailureCode: string | null;
+  authorizationSnapshot: ExternalAuthorizationSnapshot;
+  attemptHistory: ExternalOperationAttempt[];
   createdAt: string;
   updatedAt: string;
 }

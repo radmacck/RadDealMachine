@@ -1,13 +1,13 @@
 import assert from "node:assert/strict";
 import { randomUUID } from "node:crypto";
 import { eq } from "drizzle-orm";
-import { db, auditTable, intelligenceTable, leadsTable, pool } from "@workspace/db";
+import { db, auditTable, callsTable, intelligenceTable, leadsTable, pool } from "@workspace/db";
 import { logger } from "../lib/logger";
 import * as store from "./deal-store";
 import { exerciseEvidence } from "./exercise-evidence";
 import { acquisitionQueue, recordQueueSelection, startCallSession } from "./acquisition-queue-store";
 import { recordSellerContactObservation } from "./seller-contact-store";
-import { buildCallBrief, type UnderwritingInput } from "@workspace/deal-domain";
+import { buildCallBrief, editSellerConversationField, extractSellerConversationFields, type UnderwritingInput } from "@workspace/deal-domain";
 
 const actor = `SYNTHETIC acquisition queue exercise ${randomUUID()}`;
 const now = new Date("2026-10-08T15:00:00.000Z");
@@ -184,14 +184,34 @@ try {
   assert.equal(callableItem?.blockerCode, null);
   assert.equal(callableItem?.contactReadiness.directRouteStatus, "PHONE_ROUTE_AVAILABLE");
   assert.equal(callableItem?.contactReadiness.selectedPhonePath?.signingAuthorityStatus, "NOT_ESTABLISHED");
+  assert.ok(callableItem?.contactReadiness.selectedPhonePath?.sourceUrl,
+    "Call packet contact evidence retains a source link.");
+  assert.ok(callableItem?.contactReadiness.selectedPhonePath?.capturedAt,
+    "Call packet contact evidence retains its observed timestamp.");
+  const packetVerified=callableItem?.callBrief?.intelligence.find(item=>item.classification==="VERIFIED_FACTS");
+  assert.ok(packetVerified?.source && packetVerified.sourceUrl,
+    "Verified property facts in the call packet retain their source and source URL.");
+  assert.ok(callableItem?.callBrief?.intelligence.every(item=>
+    item.sourceType!=="MODEL"||item.classification==="AI_HYPOTHESIS"),
+    "Any model-derived note remains explicitly labeled as an AI hypothesis, never a verified fact.");
   assert.ok(callableItem?.callBrief?.questions.length && callableItem.callBrief.questions.length >= 3 && callableItem.callBrief.questions.length <= 5);
   assert.ok(callableItem?.rankingReason.includes("INDICATED"));
   assert.ok(callableItem?.rankingReason.includes("AI hypotheses score zero"));
 
   const selection = await recordQueueSelection(callableId, callable.lead.version, actor, "OWNER", now);
   assert.equal(selection.event, "QUEUE_SELECTED");
+  assert.throws(
+    () => startCallSession(callableId, callable.lead.version, actor, "VIEWER", now),
+    /Only an owner or operator/,
+    "Viewer role cannot start call work.",
+  );
   const session = await startCallSession(callableId, callable.lead.version, actor, "OWNER", now);
   assert.equal(session.event, "CALL_SESSION_STARTED");
+  const sessionReplay = await startCallSession(callableId, callable.lead.version, actor, "OWNER", new Date(now.getTime()+1000));
+  assert.deepEqual(sessionReplay,session,"An uncertain client retry returns the persisted call-session event.");
+  const sessionAudit=await db.select().from(auditTable).where(eq(auditTable.action,"CALL_SESSION_STARTED"));
+  assert.equal(sessionAudit.filter(event=>event.entityId===callableId&&event.actor===actor).length,1,
+    "Retrying call readiness does not duplicate the audit event.");
   const analysisBeforeCall = structuredClone(callable.analysis);
   await db.insert(intelligenceTable).values({
     leadId: callableId,
@@ -208,12 +228,16 @@ try {
     createdBy: actor,
     createdAt: now,
   });
-  const call = await store.recordCall(callableId, {
+  const callInput: import("@workspace/api-zod").CallInput = {
     version: callable.lead.version,
-    outcome: "CONNECTED",
-    notes: "SYNTHETIC seller conversation fixture; no real call occurred.",
+    idempotencyKey: `synthetic-call:${callableId}`,
+    occurredAt: now.toISOString(),
+    outcome: "CONNECTED" as const,
+    notes: "SYNTHETIC seller conversation fixture; seller said to call back next week; no real call occurred.",
     nextAction: "SYNTHETIC follow-up only; ask about timeline.",
     followUpAt: future(1),
+    structuredFieldsJson: JSON.stringify(extractSellerConversationFields("SYNTHETIC seller conversation fixture; seller said to call back next week; no real call occurred.")
+      .map(field => editSellerConversationField(field, `${field.value} (operator edit)`))),
     sellerAnswers: {
       motivationStatement: "SYNTHETIC: selling because of relocation; not a real statement.",
       conditionDescription: "SYNTHETIC seller states roof leaks; not inspected and not a real statement.",
@@ -222,7 +246,11 @@ try {
       askingPrice: 125000,
       nextStepOutcome: "SYNTHETIC: provide documents for review.",
     },
-  }, actor, now);
+  };
+  await assert.rejects(store.recordCall(callableId, {
+    ...callInput, followUpAt: now.toISOString(),
+  }, actor, now), /valid future date/);
+  const call = await store.recordCall(callableId, callInput, actor, now);
   assert.equal(call.analysis, null, "Material seller statements invalidate the live analysis pointer rather than silently changing its economics.");
   assert.equal(call.analysisSnapshotId, null);
   assert.equal(call.calls[0]?.analysisInvalidated, true);
@@ -231,6 +259,37 @@ try {
   assert.equal(call.calls[0]?.evidenceSource, "OPERATOR_ENTERED_SELLER_CONVERSATION");
   assert.equal(call.calls[0]?.evidenceClassification, "INDICATED");
   assert.equal(call.calls[0]?.sellerAnswersCapturedAt, now.toISOString());
+  assert.deepEqual(call.underwriting, callable.underwriting, "Structured extraction cannot rewrite deterministic underwriting inputs.");
+  assert.equal(call.lead.followUpAt,future(1),"Connected-call outcome persists its explicit follow-up deadline.");
+  assert.ok(call.intelligence.some(item=>item.sourceRecordId===call.calls[0]?.id&&item.classification==="INDICATED"),
+    "Seller-entered outcome evidence links back to its call record and remains indicated.");
+  const recordedAudit=await db.select().from(auditTable).where(eq(auditTable.entityId,callableId));
+  assert.ok(recordedAudit.some(item=>item.action==="CALL_RECORDED"&&item.detail.includes("follow-up")),
+    "Outcome-to-follow-up handoff is auditable.");
+  const persistedCaptureRow = (await db.select().from(callsTable).where(eq(callsTable.leadId, callableId)))[0];
+  const savedCapture = JSON.parse(String((persistedCaptureRow?.payload as Record<string, unknown> | undefined)?.structuredFieldsJson));
+  assert.ok(savedCapture.some((field: {field: string; attribution: string; sourceQuote: string; sourceStart: number; sourceEnd: number}) =>
+    field.field === "FOLLOW_UP" && field.attribution === "SELLER_REPORTED" &&
+    callInput.notes.slice(field.sourceStart, field.sourceEnd) === field.sourceQuote));
+  const captureAudit = await db.select().from(auditTable).where(eq(auditTable.entityId, callableId));
+  assert.ok(captureAudit.some(entry => entry.action === "SELLER_CONVERSATION_FIELDS_CAPTURED" &&
+    entry.detail.includes('"underwritingChanged":false')));
+  const editedCaptureAudit = captureAudit.find(entry => entry.action === "SELLER_CONVERSATION_FIELDS_CAPTURED");
+  assert.ok(editedCaptureAudit);
+  const editAuditPayload = JSON.parse(editedCaptureAudit.detail) as { fieldKeys: string[]; editedFields: string[] };
+  assert.ok(editAuditPayload.editedFields.length > 0 && editAuditPayload.editedFields.every(field => editAuditPayload.fieldKeys.includes(field)));
+  const reloadedAfterCall = await store.leadDetail(callableId, db, now);
+  assert.equal(reloadedAfterCall.calls.length, 1, "Persisted call appears after reloading its lead.");
+  assert.equal(reloadedAfterCall.calls[0]?.notes, callInput.notes, "Persisted human-entered notes reload byte-for-byte.");
+  assert.equal(reloadedAfterCall.calls[0]?.occurredAt, now.toISOString(), "The operator-entered actual call timestamp is retained.");
+  const replay = await store.recordCall(callableId, callInput, actor, now);
+  assert.equal(replay.calls.length, 1, "An exact network replay with the same key does not create a duplicate call.");
+  await assert.rejects(store.recordCall(callableId, {
+    ...callInput, notes: "SYNTHETIC altered replay with same idempotency key.",
+  }, actor, now), /already used for different content/);
+  await assert.rejects(store.recordCall(callableId, {
+    ...callInput, idempotencyKey: `synthetic-stale:${callableId}`,
+  }, actor, now), /changed in another session/);
   const callEvidence = call.intelligence.filter(item => item.sourceRecordId === call.calls[0]?.id);
   assert.equal(callEvidence.length, call.calls[0]?.evidenceIds?.length ?? 0);
   assert.ok(callEvidence.some(item => item.category === "seller_call_asking_price" && item.statement.includes("$125,000")));
@@ -254,7 +313,7 @@ try {
   assert.equal(reloadedCallLead.calls.length, 1,
     "The recorded seller note reloads from persistence on its owning lead.");
   assert.equal(reloadedCallLead.calls[0]?.id, call.calls[0]?.id);
-  assert.equal(reloadedCallLead.calls[0]?.notes, "SYNTHETIC seller conversation fixture; no real call occurred.");
+  assert.equal(reloadedCallLead.calls[0]?.notes, callInput.notes);
   assert.equal(reloadedCallLead.calls[0]?.analysisInvalidated, true,
     "The reloaded call retains the evidence-driven stale-analysis marker.");
   assert.ok(reloadedCallLead.intelligence.some(item =>
@@ -357,6 +416,9 @@ await addPhoneEvidence(missingUnderwritingId, "000-000-0000", "SYNTHETIC owner",
       "stale-route and conflicting-recipient blockers",
       "missing-underwriting blocker",
       "queue-selection, contact-route, call-start and call-result audit events",
+      "viewer call-session denial and future-only follow-up validation",
+      "explicit call time, notes and provenance reload from persisted lead history",
+      "same-key exact replay deduplicated; changed-content replay and stale-version writes rejected",
       "material seller-call evidence persisted as INDICATED, reconciled against prior evidence, and invalidated stale analysis/offer authority",
       "non-material call note preserved the current analysis snapshot",
       "seller-reported condition produced a linked AI repair hypothesis and conflict-focused call question",

@@ -3,19 +3,30 @@ import { randomUUID } from "node:crypto";
 import { eq, and, sql } from "drizzle-orm";
 import { db,pool,buyersTable,auditTable,jobsTable } from "@workspace/db";
 import { logger } from "../lib/logger";
+import { GetBuyerContactResearchResponse } from "@workspace/api-zod";
 import { createBuyer, recordBuyerContactPermission, updateBuyer, verifyBuyer } from "./buyer-store";
-import { getBuyerRecord } from "./operations-records";
+import { getBuyerContactResearchRecord, getBuyerRecord } from "./operations-records";
 import { reviewBuyerPool } from "./buyer-pool";
 const actor = {id:`synthetic-buyer-exercise:${randomUUID()}`,role:"OWNER"};
 let id: string|undefined;
+let otherId: string|undefined;
 try {
+  const contactObservedAt=new Date().toISOString();
   const buyer = await createBuyer({name:"SYNTHETIC BUYER EXERCISE ONLY",email:"synthetic@example.com",phone:"",
-    source:"Synthetic database exercise, not real proof",status:"ACTIVE",
+    source:"Synthetic database exercise, not real proof",contactSourceUrl:"https://example.com/synthetic-buyer-contact",
+    contactObservedAt,contactConfidence:0.82,status:"ACTIVE",
     criteria:{states:["TX"],cities:["Synthetic City"],zipCodes:[],propertyTypes:["SINGLE_FAMILY"],
       maxPurchasePrice:200000,maxRepairs:50000,minBeds:2,minSqft:500,maxSqft:2000,closingDays:3,
       counties:[],excludedCounties:[],excludedCities:[],excludedZipCodes:[],minPurchasePrice:0,minUnits:1,maxUnits:1,
       minBaths:1,rehabTolerance:"HEAVY",strategies:["FLIP"],fundingTypes:["CASH"],maxConcurrentDeals:2}},actor);
   id = buyer.id;
+  assert.equal((await getBuyerContactResearchRecord(id)).contactObservedAt,contactObservedAt);
+  assert.equal((await getBuyerContactResearchRecord(id)).contactConfidence,0.82);
+  const other=await createBuyer({name:"SYNTHETIC SECOND BUYER",email:"other-synthetic@example.com",phone:"",
+    source:"Synthetic duplicate-update test",status:"ACTIVE",criteria:buyer.criteria},actor);
+  otherId=other.id;
+  await assert.rejects(updateBuyer(other.id,{...other,email:buyer.email},actor),e=>(e as {status:number}).status===409,
+    "Editing a buyer cannot attach another buyer's contact route to a conflicting identity.");
   await assert.rejects(
     createBuyer({name:"SYNTHETIC BUYER EXERCISE ONLY",email:"synthetic@example.com",phone:"",
       source:"Synthetic duplicate test",status:"ACTIVE",criteria:buyer.criteria},actor),
@@ -37,8 +48,13 @@ try {
     currentBuyingStatus:"BUYING" as const,buyingEvidenceAt:now.toISOString(),buyingEvidenceUrl:"https://example.com/synthetic-buying",
     criteriaEvidenceUrl:"https://example.com/synthetic-criteria",verificationSource:"Synthetic reviewed response",confidence:0.9};
   await assert.rejects(verifyBuyer(id,verification,{...actor,role:"OPERATOR"},now),e=>(e as {status:number}).status===403);
-  Object.assign(verification,{verifiedFundingTypes:["CASH"]});
-  const verified = await verifyBuyer(id,verification,actor,now);
+  const verificationWithFundingMethods={...verification,verifiedFundingTypes:["CASH" as const]};
+  await assert.rejects(verifyBuyer(id,{...verificationWithFundingMethods,fundingEvidenceUrl:undefined},actor,now),/funding evidence/i,
+    "A buyer-reported funding preference or an available-funds number without a source cannot pass capacity verification.");
+  const {verifiedFundingTypes:_,...withoutVerifiedMethod}=verificationWithFundingMethods;
+  await assert.rejects(verifyBuyer(id,withoutVerifiedMethod,actor,now),/funding methods/i,
+    "The declared buy-box funding method cannot substitute for an evidence-reviewed funding method.");
+  const verified = await verifyBuyer(id,verificationWithFundingMethods,actor,now);
   assert.equal(verified.verificationStatus,"VERIFIED");
   assert.equal(verified.approvalStatus,"APPROVED");
   assert.equal(verified.verificationHistory?.length,1);
@@ -54,10 +70,11 @@ try {
   await reviewBuyerPool(new Date(now.getTime()+11*86400000));
   assert.equal((await getBuyerRecord(id)).version,stale.version,"Repeated review must not duplicate waiting tasks");
   const changed = await updateBuyer(id,{...buyer,version:stale.version,criteria:{...buyer.criteria!,maxPurchasePrice:210000}},actor);
-  assert.equal(changed.approvalStatus,"QUALIFICATION_REQUIRED");
+  assert.equal(changed.approvalStatus,"REVERIFICATION_REQUIRED",
+    "criteria edits cannot requalify a buyer whose buying evidence has also expired");
   assert.equal(changed.currentBuyingStatus,"UNKNOWN");
   assert.equal(changed.verificationHistory?.length,1,"Prior evidence must remain readable after criteria changes");
-  const renewed = await verifyBuyer(id,{...verification,version:changed.version},actor,now);
+  const renewed = await verifyBuyer(id,{...verificationWithFundingMethods,version:changed.version},actor,now);
   assert.equal(renewed.approvalStatus,"APPROVED"); assert.equal(renewed.verificationHistory?.length,2);
   const updated = await updateBuyer(id,{...buyer,version:renewed.version,name:"SYNTHETIC REVISED IDENTITY"},actor);
   assert.equal(updated.verificationStatus,"UNVERIFIED");
@@ -72,6 +89,11 @@ try {
   const [reloaded] = await db.select().from(buyersTable).where(eq(buyersTable.id,id));
   assert.equal((reloaded.payload.contactPermission as {status:string}).status,"GRANTED",
     "Permission evidence must persist and reload with the buyer.");
+  assert.equal((reloaded.payload.contactPermissionHistory as unknown[]).length,1,
+    "Permission provenance history persists separately from profile routes.");
+  const research=GetBuyerContactResearchResponse.parse(await getBuyerContactResearchRecord(id));
+  assert.equal(research.contactPermissionHistory[0]?.source,permissionInput.source);
+  assert.match(research.nextAction,/identity conflicts|permission/i);
   await assert.rejects(recordBuyerContactPermission(id,permissionInput,actor,now),
     e=>(e as {status:number}).status===409,"Permission writes must reject stale buyer versions.");
   const optedOut = await recordBuyerContactPermission(id,{...permissionInput,version:reloaded.version,
@@ -84,6 +106,7 @@ try {
   logger.info({checks:"create/reload, owner-only verification, dated funding, stale evidence, version conflict, identity invalidation, queued matching"},"Buyer persistence exercise PASSED (synthetic data)");
 } finally {
   if (id) await db.delete(buyersTable).where(eq(buyersTable.id,id));
+  if (otherId) await db.delete(buyersTable).where(eq(buyersTable.id,otherId));
   await db.delete(jobsTable).where(eq(jobsTable.requestedBy,actor.id));
   await db.delete(auditTable).where(eq(auditTable.actor,actor.id));
   await pool.end();

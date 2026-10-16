@@ -2,7 +2,7 @@ import { Router, type IRouter, type RequestHandler } from "express";
 import { z } from "zod";
 import { DomainError } from "@workspace/deal-domain";
 import * as contract from "@workspace/api-zod";
-import { authenticated, membership, roles } from "../middlewares/access";
+import { authenticated, membership, roles, sensitiveWorkspaceData } from "../middlewares/access";
 import * as sources from "../services/property-source-store";
 import * as discoveries from "../services/property-discovery-store";
 import { propagateStaleTransactionDocuments } from "../services/transaction-store";
@@ -13,6 +13,7 @@ export function createPropertySourcesRouter(
 ) {
 const router: IRouter = Router();
 router.use(auth,member);
+router.use(sensitiveWorkspaceData);
 const research = roles("OWNER","ANALYST");
 const review = roles("OWNER","OPERATOR","ANALYST");
 const actor = (res: {locals:Record<string,unknown>}) => ({id:String(res.locals.actor),role:String(res.locals.role)});

@@ -15,6 +15,7 @@ import { useToast } from '@/hooks/use-toast';
 
 const ROLE_OPTIONS = ['RECORDED_OWNER', 'SELLER_SELF_IDENTIFIED', 'AUTHORIZED_AGENT_CLAIM', 'DIRECTORY_CONTACT', 'UNKNOWN'] as const;
 const SOURCE_TYPES = ['PUBLIC_RECORD', 'PUBLIC_PAGE', 'PERMITTED_LISTING', 'SELLER', 'ANALYST'] as const;
+const localDateTime = (value = new Date()) => new Date(value.getTime() - value.getTimezoneOffset() * 60_000).toISOString().slice(0, 16);
 const empty = {
   channel: 'PHONE' as 'PHONE' | 'EMAIL' | 'WEB' | 'OTHER',
   routeValue: '',
@@ -31,6 +32,7 @@ const empty = {
   contactPermissionEvidenceUrl: '',
   routeVerificationStatus: 'UNREVIEWED' as 'UNREVIEWED' | 'CONFIRMED' | 'REJECTED',
   verificationNote: '',
+  capturedAt: localDateTime(),
 };
 
 function Status({ data }: { data: SellerContactReadiness }) {
@@ -154,6 +156,11 @@ export function SellerContactPanel({ leadId, canResearch, onSaved }: {
       setLocalError('Confidence must be from 0 to 1.');
       return;
     }
+    const observedAt = new Date(form.capturedAt);
+    if (!Number.isFinite(observedAt.getTime()) || observedAt.getTime() > Date.now()) {
+      setLocalError('Observed time must be a valid date and cannot be in the future.');
+      return;
+    }
     if (['PUBLIC_RECORD', 'PUBLIC_PAGE', 'PERMITTED_LISTING'].includes(form.sourceType) && !form.sourceUrl.startsWith('https://')) {
       setLocalError('Public-source observations require the HTTPS page or record URL.');
       return;
@@ -186,6 +193,7 @@ export function SellerContactPanel({ leadId, canResearch, onSaved }: {
       permissionStatus: form.permissionStatus,
       ...(form.contactPermissionEvidenceUrl.trim() ? { contactPermissionEvidenceUrl: form.contactPermissionEvidenceUrl.trim() } : {}),
       routeVerificationStatus: form.routeVerificationStatus,
+      capturedAt: observedAt.toISOString(),
       ...(form.verificationNote.trim() ? { verificationNote: form.verificationNote.trim() } : {}),
     };
     setLocalError(null);
@@ -296,6 +304,8 @@ export function SellerContactPanel({ leadId, canResearch, onSaved }: {
             <Input value={form.sourceName} onChange={e => set('sourceName')(e.target.value)} disabled={!canResearch || mutation.isPending} data-testid="input-contact-source-name" /></div>
           <div className="space-y-1.5"><Label>Source record identity</Label>
             <Input value={form.sourceRecordId} onChange={e => set('sourceRecordId')(e.target.value)} disabled={!canResearch || mutation.isPending} data-testid="input-contact-source-record" /></div>
+           <div className="space-y-1.5"><Label>When was this route observed?</Label>
+             <Input type="datetime-local" value={form.capturedAt} onChange={e => set('capturedAt')(e.target.value)} disabled={!canResearch || mutation.isPending} data-testid="input-contact-observed-at" /></div>
           <div className="space-y-1.5"><Label>Source URL (HTTPS for public sources)</Label>
             <Input type="url" value={form.sourceUrl} onChange={e => set('sourceUrl')(e.target.value)} disabled={!canResearch || mutation.isPending} data-testid="input-contact-source-url" /></div>
           <div className="space-y-1.5"><Label>Contact-use permission</Label><Select value={form.permissionStatus} onValueChange={v => set('permissionStatus')(v as typeof form.permissionStatus)} disabled={!canResearch || mutation.isPending}>

@@ -12,6 +12,7 @@ const s = (n?: number | null) => (n == null ? '' : String(n));
 const REHAB = ['NONE', 'LIGHT', 'MODERATE', 'HEAVY', 'ANY'] as const;
 const STRATS = ['FLIP', 'RENTAL', 'BRRRR', 'WHOLESALE', 'DEVELOPMENT', 'OTHER'] as const;
 const FUNDS = ['CASH', 'HARD_MONEY', 'PRIVATE_LENDING', 'CONVENTIONAL', 'OTHER'] as const;
+const localDateTime = (value = new Date()) => new Date(value.getTime() - value.getTimezoneOffset() * 60_000).toISOString().slice(0,16);
 
 function Toggles<T extends string>({ items, value, onChange, disabled, tid }: { items: readonly T[]; value: T[]; onChange: (v: T[]) => void; disabled?: boolean; tid: string }) {
   return <div className="flex flex-wrap gap-2">{items.map((t) => {
@@ -22,7 +23,7 @@ function Toggles<T extends string>({ items, value, onChange, disabled, tid }: { 
 }
 
 export function BuyerForm({ buyer, disabled, pending, error, submitLabel, onSubmit, onCancel, criteriaOnly = false }: {
-  buyer?: Partial<Buyer>; disabled?: boolean; pending: boolean; error: unknown; submitLabel: string;
+  buyer?: Partial<Buyer> & { contactSourceUrl?:string|null; contactObservedAt?:string|null; contactConfidence?:number|null }; disabled?: boolean; pending: boolean; error: unknown; submitLabel: string;
   criteriaOnly?: boolean;
   onSubmit: (d: BuyerInput) => void; onCancel?: () => void;
 }) {
@@ -31,6 +32,9 @@ export function BuyerForm({ buyer, disabled, pending, error, submitLabel, onSubm
   const [email, setEmail] = useState(buyer?.email ?? '');
   const [phone, setPhone] = useState(buyer?.phone ?? '');
   const [source, setSource] = useState(buyer?.source ?? '');
+  const [contactSourceUrl,setContactSourceUrl]=useState(buyer?.contactSourceUrl??'');
+  const [contactObservedAt,setContactObservedAt]=useState(buyer?.contactObservedAt?localDateTime(new Date(buyer.contactObservedAt)):localDateTime());
+  const [contactConfidence,setContactConfidence]=useState(buyer?.contactConfidence==null?'':String(buyer.contactConfidence));
   const [status, setStatus] = useState<BuyerInputStatus>(buyer?.status ?? 'ACTIVE');
   const [dest, setDest] = useState<BuyerInputDestinationKind>(buyer?.destinationKind ?? 'BUYER');
   const [fee, setFee] = useState(s(buyer?.qualifiedDealFee));
@@ -58,7 +62,16 @@ export function BuyerForm({ buyer, disabled, pending, error, submitLabel, onSubm
     if (!criteriaOnly && (!name.trim() || !source.trim())) return setLocal('Name and source are required.');
     const feeN = fee.trim() === '' ? null : Number(fee);
     if (feeN != null && (!Number.isFinite(feeN) || feeN < 0)) return setLocal('Quoted fee must be zero or more.');
-    const base = { name: name.trim(), email: email.trim(), phone: phone.trim(), source: source.trim(), status, destinationKind: dest, qualifiedDealFee: feeN, feeTermsSource: feeSrc.trim() };
+    const confidence=contactConfidence.trim()===''?undefined:Number(contactConfidence);
+    const observed=new Date(contactObservedAt);
+    if(confidence!=null&&(!Number.isFinite(confidence)||confidence<0||confidence>1))return setLocal('Contact confidence must be from 0 to 1.');
+    if((email.trim()||phone.trim())&&contactObservedAt&&!Number.isFinite(observed.getTime()))return setLocal('Contact observation time must be valid.');
+    if(Number.isFinite(observed.getTime())&&observed.getTime()>Date.now())return setLocal('Contact observation time cannot be in the future.');
+    if(contactSourceUrl.trim()&&!/^https:\/\//i.test(contactSourceUrl.trim()))return setLocal('Contact evidence URL must use HTTPS.');
+    const base = { name: name.trim(), email: email.trim(), phone: phone.trim(), source: source.trim(), status, destinationKind: dest, qualifiedDealFee: feeN, feeTermsSource: feeSrc.trim(),
+      ...(contactSourceUrl.trim()?{contactSourceUrl:contactSourceUrl.trim()}:{}),
+      ...(email.trim()||phone.trim()?{contactObservedAt:observed.toISOString()}:{}),
+      ...(confidence!=null?{contactConfidence:confidence}:{}) };
     if (noCrit) { setLocal(null); return onSubmit({ ...base, criteria: null }); }
     const st = csv(f.states).map((x) => x.toUpperCase());
     if (st.length === 0 || st.some((x) => x.length !== 2)) return setLocal('Enter at least one two-letter state.');
@@ -93,18 +106,24 @@ export function BuyerForm({ buyer, disabled, pending, error, submitLabel, onSubm
         <Field label="Source" hint="Where this record came from."><Input value={source} disabled={disabled} onChange={(e) => setSource(e.target.value)} data-testid="input-buyer-source" /></Field>
         <Field label="Email"><Input type="email" value={email} disabled={disabled} onChange={(e) => setEmail(e.target.value)} data-testid="input-buyer-email" /></Field>
         <Field label="Phone"><Input value={phone} disabled={disabled} onChange={(e) => setPhone(e.target.value)} data-testid="input-buyer-phone" /></Field>
+        <Field label="Contact source record URL" hint="HTTPS source for the profile route; this does not prove identity or permission."><Input type="url" value={contactSourceUrl} disabled={disabled} onChange={e=>setContactSourceUrl(e.target.value)} data-testid="input-buyer-contact-source-url" /></Field>
+        <Field label="Route observed at"><Input type="datetime-local" value={contactObservedAt} disabled={disabled} onChange={e=>setContactObservedAt(e.target.value)} data-testid="input-buyer-contact-observed-at" /></Field>
+        <Field label="Route confidence (0–1)"><Input type="number" min="0" max="1" step="0.05" value={contactConfidence} disabled={disabled} onChange={e=>setContactConfidence(e.target.value)} data-testid="input-buyer-contact-confidence" /></Field>
         <Field label="Status"><select className={SELECT} value={status} disabled={disabled} onChange={(e) => setStatus(e.target.value as BuyerInputStatus)} data-testid="select-buyer-status"><option value="ACTIVE">Active</option><option value="PAUSED">Paused</option></select></Field>
         <Field label="Destination" hint="Only an actual buyer can commit to a deal."><select className={SELECT} value={dest} disabled={disabled} onChange={(e) => setDest(e.target.value as BuyerInputDestinationKind)} data-testid="select-buyer-destination"><option value="BUYER">Buyer</option><option value="DEAL_FINDER">Deal finder</option><option value="GURU">Guru</option></select></Field>
         <Field label="Quoted qualified-deal fee" hint="Profile quote only; actual receipts are recorded on each deal. Blank if none quoted"><Input inputMode="decimal" value={fee} disabled={disabled} onChange={(e) => setFee(e.target.value)} data-testid="input-buyer-fee" /></Field>
         <Field label="Fee terms source" hint="Source for the quote, not proof of payment"><Input value={feeSrc} disabled={disabled} onChange={(e) => setFeeSrc(e.target.value)} data-testid="input-buyer-fee-source" /></Field>
       </div>}
       <div>
-        <p className="eyebrow mb-2">Buy box</p>
+        <div className="mb-3 border-l-4 border-l-signal bg-muted/40 p-3" data-testid="panel-buyer-reported-buybox">
+          <p className="eyebrow">Buy box · buyer-reported · INDICATED</p>
+          <p className="mt-1 text-xs text-muted-foreground">Markets, property types, price range, condition tolerance, closing timeline, and capacity here describe stated preferences only. They are not independent proof. Owner review needs current criteria evidence; edits invalidate buying/criteria approval and queue a new matching run.</p>
+        </div>
         {criteriaOnly
           ? <p className="mb-3 text-sm text-muted-foreground">Confirm or correct the profile already on file. This response is self-reported and will not approve you for deal matching.</p>
           : <label className="mb-3 flex items-center gap-2 text-sm"><input type="checkbox" className="h-4 w-4" checked={noCrit} disabled={disabled} onChange={(e) => setNoCrit(e.target.checked)} data-testid="check-no-criteria" />Criteria not collected yet. Nothing is assumed and the buyer cannot be approved.</label>}
         <div className="grid gap-3 sm:grid-cols-3">
-          <Field label="States" hint="Two letters, comma separated">{inp('states', 'states')}</Field>
+          <Field label="Target states" hint="Two letters, comma separated">{inp('states', 'states')}</Field>
           <Field label="Counties">{inp('counties', 'counties')}</Field>
           <Field label="Cities" hint="Blank means any">{inp('cities', 'cities')}</Field>
           <Field label="ZIP codes">{inp('zips', 'zips')}</Field>
@@ -119,14 +138,14 @@ export function BuyerForm({ buyer, disabled, pending, error, submitLabel, onSubm
         </div>
         <div className="mt-3 grid gap-3 sm:grid-cols-3">
           <Field label="Rehab tolerance"><select className={SELECT} value={rehab} disabled={disabled || noCrit} onChange={(e) => setRehab(e.target.value)} data-testid="select-buyer-rehab"><option value="">Select</option>{REHAB.map((r) => <option key={r} value={r}>{r}</option>)}</select></Field>
-          <Field label="Min purchase price">{inp('minPrice', 'min-price')}</Field>
-          <Field label="Max purchase price">{inp('maxPrice', 'max-price')}</Field>
+          <Field label="Price band · minimum">{inp('minPrice', 'min-price')}</Field>
+          <Field label="Price band · maximum">{inp('maxPrice', 'max-price')}</Field>
           <Field label="Min ARV" hint="Blank clears">{inp('minArv', 'min-arv')}</Field>
           <Field label="Max ARV" hint="Blank clears">{inp('maxArv', 'max-arv')}</Field>
           <Field label="Max repairs">{inp('maxRepairs', 'max-repairs')}</Field>
           <Field label="Min units">{inp('minUnits', 'min-units')}</Field>
           <Field label="Max units">{inp('maxUnits', 'max-units')}</Field>
-          <Field label="Closing days">{inp('closing', 'closing')}</Field>
+          <Field label="Target closing days">{inp('closing', 'closing')}</Field>
           <Field label="Min beds">{inp('minBeds', 'min-beds')}</Field>
           <Field label="Max beds" hint="Blank clears">{inp('maxBeds', 'max-beds')}</Field>
           <Field label="Max concurrent deals">{inp('conc', 'concurrent')}</Field>

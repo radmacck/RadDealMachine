@@ -1,7 +1,7 @@
 import { eq, and, desc } from "drizzle-orm";
 import { db, buyersTable, contractsTable, matchesTable, jobsTable } from "@workspace/db";
 import { GetDealOperationsResponse } from "@workspace/api-zod";
-import { buyerReservations, matchBuyer, type BuyerMatch, type DealContract, type LeadDetail, DomainError } from "@workspace/deal-domain";
+import { buyerReservations, matchBuyer, rankBuyerMatches, type BuyerMatch, type DealContract, type LeadDetail, DomainError } from "@workspace/deal-domain";
 import { allBuyerRecords, buyerRecord, getContractRecord, contractRecord, jobRecord, type Store } from "./operations-records";
 import { leadDetail, lockedLead, move, audit } from "./deal-store";
 import { leadsTable } from "@workspace/db";
@@ -10,7 +10,7 @@ async function evaluatedMatches(detail: LeadDetail, contract: DealContract|null,
   const buyers = await allBuyerRecords(database,now);
   const recorded = await database.select().from(matchesTable).where(eq(matchesTable.leadId,detail.lead.id));
   const contracts = (await database.select().from(contractsTable)).map(contractRecord);
-  return buyers.map(b=>{
+  return rankBuyerMatches(buyers.map(b=>{
     const existing = recorded.find(m=>m.buyerId===b.id);
     const previousStatus = existing?.payload.status as BuyerMatch["status"]|undefined;
     const status = b.destinationKind==="BUYER"?previousStatus:undefined;
@@ -26,7 +26,7 @@ async function evaluatedMatches(detail: LeadDetail, contract: DealContract|null,
       status:status??"MATCHED",agreedPrice:status==="COMMITTED"?existing?.payload.agreedPrice as number|null??null:null,
       evidence:status?existing?.payload.evidence as string|null??null:null,
       ...(legacyDestinationResponse?{legacyDestinationResponse}:{})};
-  }).sort((a,b)=>Number(b.eligible)-Number(a.eligible)||b.score-a.score||a.buyerId.localeCompare(b.buyerId));
+  }));
 }
 export async function dealOperations(id: string, now = new Date()) {
   return db.transaction(async tx=>{
@@ -65,7 +65,7 @@ export async function refreshMatches(id: string, now = new Date()) {
       if (qualified.length && row.stage==="UNDER_CONTRACT") await move(tx,row,"BUYER_MATCHED","Current criteria, funding and verification passed automatic matching",`Review ${qualified.length} qualified buyers for this exact deal.`, "system:matching",now);
       else row.nextAction = qualified.length?`Review ${qualified.length} qualified buyers for this exact deal.`:
         destinations.length?`Review ${destinations.length} approved deal-finder/guru destinations; record actual interest and qualify a separate acquisition buyer before commitment.`:
-        "No current qualified buyer. Resolve the displayed mismatches or qualify an appropriate buyer.";
+        "No current qualified acquisition buyer. Qualify a buyer with matching geography, price, condition and closing capacity, or reverify stale buyer evidence. A destination is not an acquisition buyer.";
       await tx.update(leadsTable).set({stage:row.stage,nextAction:row.nextAction,version:row.version+1,updatedAt:now}).where(eq(leadsTable.id,id));
     }
     await audit(tx,"system:matching","BUYERS_MATCHED",id,`${qualified.length} qualified of ${results.length} reviewed; every exclusion retains its reasons.`);

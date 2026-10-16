@@ -132,6 +132,8 @@ const productionRequest = await requestSellerContactEnrichment(
 RequestSellerContactEnrichmentResponse.parse(productionRequest);
 assert.equal(productionRequest.registry.state, "UNAVAILABLE");
 assert.equal(productionRequest.requests[0]?.status, "UNAVAILABLE");
+assert.equal(productionRequest.requests[0]?.operationState, "NOT_CONFIGURED");
+assert.equal(productionRequest.requests[0]?.attemptHistory.length, 0);
 assert.match(productionRequest.requests[0]?.reason ?? "", /No permitted seller-contact enrichment provider is configured/);
 const sameRequest = await requestSellerContactEnrichment(
   productionLead,
@@ -319,6 +321,8 @@ let retryStatus = await status(retryLead, retryRegistry, new Date(retryCreatedAt
 assert.equal(retryStatus.requests[0]?.status, "RETRY_WAIT");
 assert.equal(retryStatus.requests[0]?.attempts, 1);
 assert.equal(retryStatus.requests[0]?.lastFailureCode, "RATE_LIMITED");
+assert.equal(retryStatus.requests[0]?.attemptHistory[0]?.state, "SUBMITTED");
+assert.equal(retryStatus.requests[0]?.attemptHistory[1]?.state, "RATE_LIMITED");
 assert.equal(
   retryStatus.requests[0]?.nextAttemptAt,
   new Date(retryCreatedAt.getTime() + 31_000).toISOString(),
@@ -328,12 +332,65 @@ await runSellerContactEnrichmentOnce(new Date(retryCreatedAt.getTime() + 31_000)
 retryStatus = await status(retryLead, retryRegistry, new Date(retryCreatedAt.getTime() + 31_001));
 assert.equal(retryStatus.requests[0]?.status, "SUCCEEDED");
 assert.equal(retryStatus.requests[0]?.attempts, 2);
+await runSellerContactEnrichmentOnce(new Date(retryCreatedAt.getTime() + 60_000), retryRegistry);
+assert.equal((await status(retryLead, retryRegistry)).requests[0]?.attempts, 2,
+  "A duplicate worker callback cannot dispatch a terminal request again.");
 const retryAfter = await db.select().from(leadsTable).where(eq(leadsTable.id, retryLead));
 assert.equal(retryAfter[0]?.stage, "UNDER_CONTRACT");
 assert.deepEqual(retryAfter[0]?.analysis, { synthetic: true, economicsVersion: 7, locked: true });
 assert.deepEqual(retryAfter[0]?.underwriting, { synthetic: true, arv: 200000, repairs: 30000, wholesaleFee: 10000 });
 assert.equal(retryAfter[0]?.nextAction, "Synthetic authorized transaction action must remain unchanged.");
 assert.equal((await getSellerContactPaths(retryLead, nowAt())).directRouteStatus, "NEEDS_REVIEW");
+
+// A timeout is persisted as UNKNOWN, then safely retried with the same idempotency
+// key; no result is ever reported as delivered or confirmed while the call is in doubt.
+const timeoutLead = await leadFixture("timeout recovery");
+let timeoutCalls = 0;
+const timeoutRegistry = createContactEnrichmentRegistry([adapter(
+  "synthetic-timeout", "AVAILABLE_AND_EXERCISED",
+  async () => {
+    timeoutCalls++;
+    if (timeoutCalls === 1) throw new Error("PROVIDER_TIMEOUT");
+    return { outcome: "NO_RESULT", observations: [] };
+  },
+)]);
+const timeoutCreatedAt = nowAt();
+await request(timeoutLead, "timeout-recovery-request", timeoutRegistry, timeoutCreatedAt);
+await runSellerContactEnrichmentOnce(new Date(timeoutCreatedAt.getTime() + 1_000), timeoutRegistry);
+let timeoutStatus = await status(timeoutLead, timeoutRegistry, new Date(timeoutCreatedAt.getTime() + 1_001));
+assert.equal(timeoutStatus.requests[0]?.status, "RETRY_WAIT");
+assert.equal(timeoutStatus.requests[0]?.operationState, "UNKNOWN");
+assert.equal(timeoutStatus.requests[0]?.attemptHistory.at(-1)?.state, "UNKNOWN");
+await runSellerContactEnrichmentOnce(new Date(timeoutCreatedAt.getTime() + 31_000), timeoutRegistry);
+timeoutStatus = await status(timeoutLead, timeoutRegistry, new Date(timeoutCreatedAt.getTime() + 31_001));
+assert.equal(timeoutStatus.requests[0]?.status, "NO_RESULT");
+assert.equal(timeoutStatus.requests[0]?.operationState, "CONFIRMED");
+assert.equal(timeoutStatus.requests[0]?.attempts, 2);
+assert.equal(timeoutCalls, 2);
+
+// Provider authorization/configuration errors fail closed and are never retried.
+const authFailureLead = await leadFixture("provider auth failure");
+const authFailureRegistry = createContactEnrichmentRegistry([adapter(
+  "synthetic-auth-failure", "AVAILABLE_AND_EXERCISED",
+  async () => { throw new ContactProviderError("AUTH_REQUIRED", false); },
+)]);
+await request(authFailureLead, "auth-failure-request", authFailureRegistry, nowAt());
+await runSellerContactEnrichmentOnce(nowAt(), authFailureRegistry);
+const authFailureStatus = await status(authFailureLead, authFailureRegistry);
+assert.equal(authFailureStatus.requests[0]?.status, "FAILED");
+assert.equal(authFailureStatus.requests[0]?.attempts, 1);
+
+const revokedTermsLead = await leadFixture("revoked provider terms");
+const revokedTermsRegistry = createContactEnrichmentRegistry([adapter(
+  "synthetic-revoked-terms", "AVAILABLE_AND_EXERCISED",
+  async () => { throw new ContactProviderError("TERMS_CHANGED", false); },
+)]);
+await request(revokedTermsLead, "revoked-terms-request", revokedTermsRegistry, nowAt());
+await runSellerContactEnrichmentOnce(nowAt(), revokedTermsRegistry);
+const revokedTermsStatus = await status(revokedTermsLead, revokedTermsRegistry);
+assert.equal(revokedTermsStatus.requests[0]?.status, "FAILED");
+assert.equal(revokedTermsStatus.requests[0]?.attempts, 1,
+  "A revoked/changed provider permission is terminal and is not retried.");
 
 // Exhausted transient failures become a terminal FAILED request with no retry timer.
 const failedLead = await leadFixture("retry exhausted");

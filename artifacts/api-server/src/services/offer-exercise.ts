@@ -7,11 +7,12 @@ import assert from "node:assert/strict";
 import { randomUUID } from "node:crypto";
 import { eq, and } from "drizzle-orm";
 import { db, pool, leadsTable, offersTable, analysesTable, auditTable } from "@workspace/db";
-import { type LeadInput, type UnderwritingInput, type OfferApprovalInput } from "@workspace/deal-domain";
+import { buildOfferReadinessScorecard, type LeadInput, type UnderwritingInput, type OfferApprovalInput, type OfferReadinessInput, type OfferReadinessKey } from "@workspace/deal-domain";
 import { logger } from "../lib/logger";
 import * as store from "./deal-store";
 import { exerciseEvidence } from "./exercise-evidence";
 import * as offers from "./offer-store";
+import { authorizeReviewedOffer } from "./offer-exercise-helpers";
 import { recordSellerContactObservation } from "./seller-contact-store";
 
 async function exercise() {
@@ -58,9 +59,16 @@ async function exercise() {
     detail = await store.recordCall(id,{version:detail.lead.version,outcome:"CONNECTED",notes:"Synthetic seller conversation logged.",nextAction:"Review synthetic offer.",followUpAt:future(1)},actorId,now);
     await assert.rejects(store.transitionLead(id,{version:detail.lead.version,to:"OFFER_READY",reason:"Attempt stage bypass.",nextAction:"Must remain blocked."},actorId,now),/not available/);
     await assert.rejects(offers.createOfferDraft(id,{...draftInput,version:detail.lead.version},operator,now),e => (e as {status:number}).status===403);
+    const analysisBeforeDraft=structuredClone(detail.analysis);
     detail = await offers.createOfferDraft(id,{...draftInput,version:detail.lead.version},analyst,now);
     const firstId = detail.offers[0]!.id;
-    assert.equal(detail.offers[0]!.effectiveStatus,"DRAFT");
+    assert.equal(detail.offers[0]!.effectiveStatus,"DRAFT",JSON.stringify(detail.offers[0]!.blockers));
+    assert.deepEqual(detail.analysis,analysisBeforeDraft,"Draft preparation must not alter deterministic underwriting.");
+    const firstReview=await offers.getOfferReview(id,firstId);
+    const reviewJson=JSON.parse(firstReview.reviewSnapshotJson) as {purchasePrice:number;assignment:{legalStatus:string};analysisSnapshotId:string};
+    assert.equal(reviewJson.purchasePrice,draftInput.amount);
+    assert.equal(reviewJson.assignment.legalStatus,"NOT_ASSESSED");
+    assert.equal(reviewJson.analysisSnapshotId,detail.analysisSnapshotId);
     await assert.rejects(offers.communicateOffer(id,firstId,{
       version:detail.lead.version,amount:110000,channel:"PHONE",evidence:"Must not succeed before approval.",
       nextAction:"Blocked before approval.",followUpAt:future(1),
@@ -69,16 +77,18 @@ async function exercise() {
       version:detail.lead.version,maximumApprovedAcquisitionPrice:120000,expiresAt:future(48),
       authorityEvidenceId:evidence.id,reason:"Synthetic terms and economics reviewed.",nextAction:"Communicate exact approved proposal.",followUpAt:future(1),
     };
+    await assert.rejects(offers.authorizeOffer(id,firstId,{...approval,version:detail.lead.version-1,reviewSnapshotHash:firstReview.reviewSnapshotHash},owner,now),/changed in another session/);
+    await assert.rejects(offers.authorizeOffer(id,firstId,approval,owner,now),/exact current review packet/);
     await assert.rejects(offers.authorizeOffer(id,firstId,approval,analyst,now),e => (e as {status:number}).status===403);
-    await assert.rejects(offers.authorizeOffer(id,firstId,{...approval,maximumApprovedAcquisitionPrice:detail.analysis!.mao+1},owner,now),/MAO/);
-    await assert.rejects(offers.authorizeOffer(id,firstId,{...approval,authorityEvidenceId:randomUUID()},owner,now),/authority/i);
+    await assert.rejects(authorizeReviewedOffer(id,firstId,{...approval,maximumApprovedAcquisitionPrice:detail.analysis!.mao+1},owner,now),/MAO/);
+    await assert.rejects(authorizeReviewedOffer(id,firstId,{...approval,authorityEvidenceId:randomUUID()},owner,now),/authority/i);
     // Two approvals with the same optimistic version: exactly one may win.
     detail = await offers.createOfferDraft(id,{...draftInput,version:detail.lead.version,amount:111000},analyst,now);
     const secondId = detail.offers.find(o => o.id !== firstId)!.id;
     approval = {...approval,version:detail.lead.version};
     const results = await Promise.allSettled([
-      offers.authorizeOffer(id,firstId,approval,owner,now),
-      offers.authorizeOffer(id,secondId,approval,owner,now),
+      authorizeReviewedOffer(id,firstId,approval,owner,now),
+      authorizeReviewedOffer(id,secondId,approval,owner,now),
     ]);
     assert.equal(results.filter(r => r.status === "fulfilled").length,1);
     assert.equal(results.filter(r => r.status === "rejected").length,1);
@@ -86,6 +96,8 @@ async function exercise() {
     assert.equal(detail.lead.stage,"OFFER_READY");
     assert.equal(detail.offers.filter(o => o.effectiveStatus === "AUTHORIZED").length,1);
     const approved = detail.offers.find(o => o.effectiveStatus === "AUTHORIZED")!;
+    const approvalAudits=await db.select().from(auditTable).where(and(eq(auditTable.entityId,id),eq(auditTable.action,"OFFER_AUTHORIZED")));
+    assert.ok(approvalAudits.some(a=>{const x=JSON.parse(a.detail);return x.actor===owner.id&&x.reviewSnapshotHash&&x.exactTerms?.amount===approved.amount&&x.approvedAt;}),"Approval audit must preserve actor, timestamp, hash, exact terms, and approved amount.");
     const contactResearchSnapshot = {
       analysis:structuredClone(detail.analysis),
       analysisSnapshotId:detail.analysisSnapshotId,
@@ -110,6 +122,27 @@ async function exercise() {
     assert.equal(detail.lead.nextAction,contactResearchSnapshot.nextAction);
     assert.deepEqual(detail.offers.find(o => o.id === approved.id),contactResearchSnapshot.authorizedOffer,
       "Contact research must not change or revoke an already owner-authorized offer.");
+    const persistedReady=(state:"READY"|"REVIEW"|"BLOCKED",evidence:string[],missingEvidence:string[]=[])=>({
+      state,evidence,missingEvidence,remedy:state==="READY"?"Recheck before use.":"Add or review the named evidence before relying on this criterion.",
+    });
+    const persistedAuthority=detail.intelligence.some(i=>i.classification==="VERIFIED_FACTS"&&i.sourceType==="PUBLIC_RECORD"&&["ownership","owner_authority","seller_authority"].includes(i.category.toLowerCase())&&!!i.verificationNote);
+    const readinessInput:OfferReadinessInput={
+      hardStopKeys:["PROPERTY_IDENTITY","SELLER_AUTHORITY","CONTACTABILITY","COMPS_ARV","REPAIR_ASSUMPTIONS","DETERMINISTIC_MAO","LEGAL_STRATEGY","CURRENT_APPROVAL"],
+      PROPERTY_IDENTITY:persistedReady(detail.lead.address&&detail.lead.city&&detail.lead.state&&detail.lead.zip?"READY":"BLOCKED",[detail.lead.address]),
+      SELLER_AUTHORITY:persistedReady(persistedAuthority?"READY":"BLOCKED",persistedAuthority?["verified public-record authority evidence"]:[],persistedAuthority?[]:["current verified authority record"]),
+      CONTACTABILITY:persistedReady("BLOCKED",[],["route permission remains NOT_REVIEWED"]),
+      COMPS_ARV:persistedReady(detail.analysis&&detail.analysis.compDecisions.some(c=>c.included)?"READY":"BLOCKED",[`${detail.analysis?.compDecisions.filter(c=>c.included).length??0} included comps`]),
+      REPAIR_ASSUMPTIONS:persistedReady(detail.analysis?.repairEstimate.blockers.length===0&&!!detail.analysis.repairEstimate.total?"READY":"BLOCKED",["persisted repair estimate"]),
+      TRANSACTION_COSTS:persistedReady(detail.analysis?"READY":"BLOCKED",["persisted cost assumptions"]),
+      DETERMINISTIC_MAO:persistedReady(detail.analysis&&detail.analysis.mao>0&&!!detail.analysisSnapshotId?"READY":"BLOCKED",[detail.analysis?`MAO ${detail.analysis.mao}`:"No analysis"]),
+      LEGAL_STRATEGY:persistedReady("REVIEW",[],["deal-specific qualified legal review"]),
+      CURRENT_APPROVAL:persistedReady(approved.effectiveStatus==="AUTHORIZED"&&!approved.blockers.length?"READY":"BLOCKED",[approved.effectiveStatus]),
+    };
+    const readiness=buildOfferReadinessScorecard(readinessInput);
+    assert.equal(readiness.authorizesOffer,false);
+    assert.ok(readiness.hardStops.some(c=>c.key==="CONTACTABILITY"),"Persisted unreviewed contact permission remains a hard stop.");
+    assert.ok(readiness.hardStops.some(c=>c.key==="LEGAL_STRATEGY"),"Unreviewed legal strategy remains a hard stop despite owner approval.");
+    assert.equal(readiness.score,buildOfferReadinessScorecard(readinessInput).score,"Persisted score calculation is repeatable.");
     assert.equal(detail.analysis!.maximumApprovedAcquisitionPrice,null);
     const expired = await store.leadDetail(id,db,new Date(now.getTime()+49*3_600_000));
     assert.equal(expired.offers.find(o => o.id === approved.id)!.effectiveStatus,"EXPIRED");
@@ -136,7 +169,7 @@ async function exercise() {
     // Owner approval supersedes rather than edits an earlier communicated proposal.
     detail = await offers.createOfferDraft(id,{...draftInput,version:detail.lead.version,amount:109000},analyst,now);
     const revised = detail.offers.find(o => o.amount === 109000)!;
-    detail = await offers.authorizeOffer(id,revised.id,{...approval,version:detail.lead.version},owner,now);
+    detail = await authorizeReviewedOffer(id,revised.id,{...approval,version:detail.lead.version},owner,now);
     const earlier = detail.offers.find(o => o.id === approved.id)!;
     assert.equal(earlier.status,"REVOKED");
     assert.equal(earlier.communicatedAmount,approved.amount);
@@ -151,7 +184,7 @@ async function exercise() {
     // New property inputs invalidate every live draft/approval but preserve history.
     detail = await offers.createOfferDraft(id,{...draftInput,version:detail.lead.version,amount:108000},analyst,now);
     const finalId = detail.offers.find(o => o.amount === 108000)!.id;
-    detail = await offers.authorizeOffer(id,finalId,{...approval,version:detail.lead.version},owner,now);
+    detail = await authorizeReviewedOffer(id,finalId,{...approval,version:detail.lead.version},owner,now);
     const rowVersion = detail.lead.version;
     await store.updateLead(id,{...payload,version:rowVersion,askingPrice:101000},actorId,now);
     detail = await store.leadDetail(id);

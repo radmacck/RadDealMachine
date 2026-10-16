@@ -1,4 +1,5 @@
-import { db } from "@workspace/db";
+import { and, eq } from "drizzle-orm";
+import { db, auditTable } from "@workspace/db";
 import {
   GetAcquisitionQueueResponse,
   RecordAcquisitionQueueSelectionResponse,
@@ -242,13 +243,27 @@ async function recordQueueEvent(
       throw new DomainError(`${item.blocker ?? "This acquisition is not ready for a call."} Next action: ${item.nextAction}`, 409);
     }
     const contactBlocked = item.blockerCode?.startsWith("CONTACT_") ?? false;
+    const action = event === "QUEUE_SELECTED" ? "ACQUISITION_QUEUE_SELECTED" : "CALL_SESSION_STARTED";
+    const detailText = `Lead version ${row.version}; ${item.decision}; evidence score ${item.evidenceScore}/100. ${item.blocker ?? "Current direct route and underwriting gates passed."} Next: ${item.nextAction}. No call, message, or economics change was made.`;
+    const [priorEvent] = await tx.select().from(auditTable).where(and(
+      eq(auditTable.actor, actor), eq(auditTable.action, action), eq(auditTable.entityId, id),
+      eq(auditTable.detail, detailText),
+    )).orderBy(auditTable.createdAt).limit(1);
+    if (priorEvent) return RecordAcquisitionQueueSelectionResponse.parse({
+      leadId:id,event,decision:item.decision,recordedAt:priorEvent.createdAt.toISOString(),
+      blocker:item.blocker,nextAction:item.nextAction,
+    });
     await audit(
       tx,
       actor,
-      event === "QUEUE_SELECTED" ? "ACQUISITION_QUEUE_SELECTED" : "CALL_SESSION_STARTED",
+      action,
       id,
-      `Lead version ${row.version}; ${item.decision}; evidence score ${item.evidenceScore}/100. ${item.blocker ?? "Current direct route and underwriting gates passed."} Next: ${item.nextAction}. No call, message, or economics change was made.`,
+      detailText,
     );
+    const [persistedEvent] = await tx.select().from(auditTable).where(and(
+      eq(auditTable.actor, actor), eq(auditTable.action, action), eq(auditTable.entityId, id),
+      eq(auditTable.detail, detailText),
+    )).orderBy(auditTable.createdAt).limit(1);
     if (event === "QUEUE_SELECTED" && contactBlocked) {
       await audit(tx, actor, "ACQUISITION_CONTACT_BLOCKED", id,
         `${item.contactReadiness.directRouteStatus}: ${item.blocker}. Next: ${item.nextAction}`);
@@ -257,7 +272,7 @@ async function recordQueueEvent(
       leadId: id,
       event,
       decision: item.decision,
-      recordedAt: now.toISOString(),
+      recordedAt: persistedEvent?.createdAt.toISOString() ?? now.toISOString(),
       blocker: item.blocker,
       nextAction: item.nextAction,
     });

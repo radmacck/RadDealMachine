@@ -74,6 +74,8 @@ try {
   };
   const denied = await request("VIEWER", baseCase);
   assert.equal(denied.status, 403, "The actual route rejects viewer-role contact research.");
+  assert.equal((await denied.text()).includes("(215) 555-0147"), false,
+    "A denied response never echoes a submitted private contact route.");
   const ownerInput = {
     ...baseCase,
     candidateRoute: {

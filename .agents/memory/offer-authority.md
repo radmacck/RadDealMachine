@@ -27,6 +27,12 @@ Revoking or superseding internal authority does not undo a proposal already comm
 
 **How to apply:** Preserve the prior terms, approval and actual communication evidence. Any seller notification or withdrawal must be a separate real event. Public-record ownership evidence is not title clearance or proof that every required signatory has consented.
 
+An internal draft's review deadline controls how long that draft can be approved; after explicit approval, the separate approval expiry controls continuing authority. Material evidence or economics changes still invalidate the approved version.
+
+**Why:** Treating the draft deadline as continuing authority expiry can invalidate a still-current owner approval prematurely, while ignoring the approval expiry could leave authority open indefinitely.
+
+**How to apply:** Enforce draft expiry only before approval. After approval, evaluate the approved snapshot and its own expiry; preserve the exact approved version and audit trail.
+
 A seller response closes that offer's response link; do not reopen the same communicated snapshot with a new token. Any further seller response cycle requires a newly reviewed, authorized and communicated offer.
 
 **Why:** Reissuing the same terms after a recorded response can create contradictory seller intents against stale authority and weaken event idempotency.
@@ -38,3 +44,9 @@ A one-time code sent through an owner-confirmed contact route proves control of 
 **Why:** The portal needs a practical contact-verification step without silently converting possession of a phone or in-person code into legal identity or signing authority.
 
 **How to apply:** Keep contact control, ownership/authority evidence, and actual signature evidence as separate checks. A portal acceptance remains seller intent, not an executed agreement.
+
+An offer-readiness scorecard is informational and must not replace draft, legal-review, owner-approval, or communication gates. Missing or stale evidence must name both the gap and an actionable remedy; score changes never alter deterministic underwriting or grant authority.
+
+**Why:** Aggregated scores can conceal a single blocking defect, and a high score is not permission to commit funds or communicate terms.
+
+**How to apply:** Keep hard-stop criteria visible beside the score and leave existing exact-version approval and authorization checks unchanged.

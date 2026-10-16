@@ -123,7 +123,10 @@ export function DistributionPanel({ detail, contract, matches, onChanged }: {
         <div className="space-y-1 border-l-2 border-signal pl-3 text-sm">
           <p><b>Packet is frozen.</b> {distribution.packet?.addressRedacted ? 'Street address is redacted.' : `Street address is disclosed: ${distribution.packet?.location.streetAddress ?? 'missing'}.`} Seller contact details are excluded. Every recipient sees the same terms.</p>
           <p className="text-xs text-muted-foreground">{distribution.packet?.mediaNotice}</p>
-          <p className="text-xs text-muted-foreground">Authorized by {distribution.authorizedBy}; no notification has been sent.</p>
+          <p className="text-xs text-muted-foreground">Authorized by {distribution.authorizedBy}; no notification has been sent. Email and SMS providers are not connected. The app has no provider-accepted or delivered message for this packet; portal access is not delivery.</p>
+        </div>
+        <div className="border border-warn p-3 text-xs" role="status" data-testid="distribution-delivery-gate">
+          <b>Delivery gate:</b> drafts, exact-message approvals, provider acceptance, and delivery receipts are separate states. Current state is <b>NOT SENT</b>. Do not treat a copied link or portal access as a sent/delivered message, buyer interest, or commitment.
         </div>
         {distribution.acceptedBuyerId && (
           <div className="border border-warn p-3" data-testid="panel-first-acceptance">

@@ -116,6 +116,12 @@ export function analyzeDeal(lead: Lead, input: UnderwritingInput, assumptions: A
   if (Math.min(arv.confidence, repairs.confidence) < assumptions.minConfidence) blockers.push("ARV or repair confidence is below the configured threshold");
   if (arv.expected && (arv.high - arv.low) / arv.expected > 0.25) risks.push("Wide comp dispersion: ARV spread exceeds 25%");
   if (compDecisions.some(c => !c.included)) risks.push("One or more comps were rejected; review comp decisions");
+  if (compDecisions.some(c => c.reasons.some(reason => reason.includes("differs >30% from eligible median")))) {
+    blockers.push("Comparable sales contain a material price/sqft conflict; resolve the outlier before offer readiness");
+  }
+  if (arv.expected && (arv.high - arv.low) / arv.expected > 0.25) {
+    blockers.push("ARV dispersion exceeds the 25% risk limit; review the comp set before offer readiness");
+  }
   if (preliminaryRepairEstimate.hypotheses.length) {
     risks.push("Current source remarks produced AI HYPOTHESIS condition signals. Preliminary rate scenarios are not verified scope and never feed repairs, MAO or authorization.");
   }

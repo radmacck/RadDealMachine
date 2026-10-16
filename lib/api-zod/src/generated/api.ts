@@ -576,6 +576,8 @@ export const getSellerContactEnrichmentResponseRequestsItemResultCountMin = 0;
 
 
 
+
+
 export const GetSellerContactEnrichmentResponse = zod.object({
   "leadId": zod.string().uuid(),
   "registry": zod.object({
@@ -598,6 +600,7 @@ export const GetSellerContactEnrichmentResponse = zod.object({
   "idempotencyKey": zod.string(),
   "channels": zod.array(zod.enum(['PHONE', 'EMAIL', 'WEB', 'OTHER'])),
   "status": zod.enum(['QUEUED', 'RUNNING', 'SUCCEEDED', 'NO_RESULT', 'STALE_RESULT', 'RETRY_WAIT', 'UNAVAILABLE', 'BLOCKED_BY_POLICY', 'BLOCKED_BY_TERMS', 'BLOCKED_BY_PROVIDER_READINESS', 'FAILED', 'CANCELLED']),
+  "operationState": zod.enum(['NOT_CONFIGURED', 'AWAITING_APPROVAL', 'QUEUED', 'SUBMITTED', 'DELIVERED', 'CONFIRMED', 'FAILED', 'UNKNOWN']),
   "requestedLeadVersion": zod.number().int().min(1),
   "providerIds": zod.array(zod.string()),
   "providerResults": zod.array(zod.object({
@@ -612,6 +615,21 @@ export const GetSellerContactEnrichmentResponse = zod.object({
   "resultCount": zod.number().int().min(getSellerContactEnrichmentResponseRequestsItemResultCountMin),
   "reason": zod.string(),
   "lastFailureCode": zod.string().nullable(),
+  "authorizationSnapshot": zod.object({
+  "actorId": zod.string(),
+  "role": zod.string(),
+  "leadVersion": zod.number().int().min(1),
+  "channels": zod.array(zod.string()),
+  "providerIds": zod.array(zod.string()),
+  "capturedAt": zod.string().datetime({"offset":true})
+}),
+  "attemptHistory": zod.array(zod.object({
+  "attempt": zod.number().int().min(1),
+  "providerId": zod.string(),
+  "state": zod.enum(['SUBMITTED', 'CONFIRMED', 'FAILED', 'UNKNOWN', 'RATE_LIMITED']),
+  "at": zod.string().datetime({"offset":true}),
+  "responseCode": zod.string().nullish()
+})),
   "createdAt": zod.string().datetime({"offset":true}),
   "updatedAt": zod.string().datetime({"offset":true})
 })),
@@ -644,6 +662,8 @@ export const requestSellerContactEnrichmentResponseRequestsItemResultCountMin = 
 
 
 
+
+
 export const RequestSellerContactEnrichmentResponse = zod.object({
   "leadId": zod.string().uuid(),
   "registry": zod.object({
@@ -666,6 +686,7 @@ export const RequestSellerContactEnrichmentResponse = zod.object({
   "idempotencyKey": zod.string(),
   "channels": zod.array(zod.enum(['PHONE', 'EMAIL', 'WEB', 'OTHER'])),
   "status": zod.enum(['QUEUED', 'RUNNING', 'SUCCEEDED', 'NO_RESULT', 'STALE_RESULT', 'RETRY_WAIT', 'UNAVAILABLE', 'BLOCKED_BY_POLICY', 'BLOCKED_BY_TERMS', 'BLOCKED_BY_PROVIDER_READINESS', 'FAILED', 'CANCELLED']),
+  "operationState": zod.enum(['NOT_CONFIGURED', 'AWAITING_APPROVAL', 'QUEUED', 'SUBMITTED', 'DELIVERED', 'CONFIRMED', 'FAILED', 'UNKNOWN']),
   "requestedLeadVersion": zod.number().int().min(1),
   "providerIds": zod.array(zod.string()),
   "providerResults": zod.array(zod.object({
@@ -680,6 +701,21 @@ export const RequestSellerContactEnrichmentResponse = zod.object({
   "resultCount": zod.number().int().min(requestSellerContactEnrichmentResponseRequestsItemResultCountMin),
   "reason": zod.string(),
   "lastFailureCode": zod.string().nullable(),
+  "authorizationSnapshot": zod.object({
+  "actorId": zod.string(),
+  "role": zod.string(),
+  "leadVersion": zod.number().int().min(1),
+  "channels": zod.array(zod.string()),
+  "providerIds": zod.array(zod.string()),
+  "capturedAt": zod.string().datetime({"offset":true})
+}),
+  "attemptHistory": zod.array(zod.object({
+  "attempt": zod.number().int().min(1),
+  "providerId": zod.string(),
+  "state": zod.enum(['SUBMITTED', 'CONFIRMED', 'FAILED', 'UNKNOWN', 'RATE_LIMITED']),
+  "at": zod.string().datetime({"offset":true}),
+  "responseCode": zod.string().nullish()
+})),
   "createdAt": zod.string().datetime({"offset":true}),
   "updatedAt": zod.string().datetime({"offset":true})
 })),
@@ -714,14 +750,6 @@ export const RecordTransactionExceptionBody = zod.object({
   "buyerConsentEvidenceUrl": zod.string().min(recordTransactionExceptionBodyBuyerConsentEvidenceUrlMin).max(recordTransactionExceptionBodyBuyerConsentEvidenceUrlMax).optional()
 })
 
-
-export const recordTransactionExceptionResponseContractOneCommitmentSnapshotOneBuyerOneNameMax = 200;
-
-export const recordTransactionExceptionResponseContractOneCommitmentSnapshotOneBuyerOneEmailMax = 200;
-
-export const recordTransactionExceptionResponseContractOneCommitmentSnapshotOneBuyerOnePhoneMax = 50;
-
-export const recordTransactionExceptionResponseContractOneCommitmentSnapshotOneBuyerOneSourceMax = 2000;
 
 export const recordTransactionExceptionResponseContractOneCommitmentSnapshotOneBuyerOneCriteriaOneStatesItemMin = 2;
 export const recordTransactionExceptionResponseContractOneCommitmentSnapshotOneBuyerOneCriteriaOneStatesItemMax = 2;
@@ -787,11 +815,6 @@ export const recordTransactionExceptionResponseContractOneCommitmentSnapshotOneB
 
 export const recordTransactionExceptionResponseContractOneCommitmentSnapshotOneBuyerOneCriteriaOneMinCapRateMin = 0;
 export const recordTransactionExceptionResponseContractOneCommitmentSnapshotOneBuyerOneCriteriaOneMinCapRateMax = 1;
-
-export const recordTransactionExceptionResponseContractOneCommitmentSnapshotOneBuyerOneQualifiedDealFeeMin = 0;
-export const recordTransactionExceptionResponseContractOneCommitmentSnapshotOneBuyerOneQualifiedDealFeeMax = 1000000000;
-
-export const recordTransactionExceptionResponseContractOneCommitmentSnapshotOneBuyerOneFeeTermsSourceMax = 2000;
 
 export const recordTransactionExceptionResponseContractOneCommitmentSnapshotOneBuyerTwoDiscoveryEvidenceConfidenceMin = 0;
 export const recordTransactionExceptionResponseContractOneCommitmentSnapshotOneBuyerTwoDiscoveryEvidenceConfidenceMax = 1;
@@ -1311,10 +1334,10 @@ export const RecordTransactionExceptionResponse = zod.object({
   "commitmentSnapshot": zod.union([zod.object({
   "recordedAt": zod.string().optional(),
   "buyer": zod.object({
-  "name": zod.string().min(1).max(recordTransactionExceptionResponseContractOneCommitmentSnapshotOneBuyerOneNameMax),
-  "email": zod.string().max(recordTransactionExceptionResponseContractOneCommitmentSnapshotOneBuyerOneEmailMax),
-  "phone": zod.string().max(recordTransactionExceptionResponseContractOneCommitmentSnapshotOneBuyerOnePhoneMax),
-  "source": zod.string().min(1).max(recordTransactionExceptionResponseContractOneCommitmentSnapshotOneBuyerOneSourceMax),
+  "name": zod.string(),
+  "email": zod.string(),
+  "phone": zod.string(),
+  "source": zod.string(),
   "criteria": zod.union([zod.object({
   "states": zod.array(zod.string().min(recordTransactionExceptionResponseContractOneCommitmentSnapshotOneBuyerOneCriteriaOneStatesItemMin).max(recordTransactionExceptionResponseContractOneCommitmentSnapshotOneBuyerOneCriteriaOneStatesItemMax)).min(1),
   "cities": zod.array(zod.string().min(1)),
@@ -1347,8 +1370,8 @@ export const RecordTransactionExceptionResponse = zod.object({
 }),zod.null()]),
   "status": zod.enum(['ACTIVE', 'PAUSED']),
   "destinationKind": zod.enum(['BUYER', 'DEAL_FINDER', 'GURU']).optional(),
-  "qualifiedDealFee": zod.number().min(recordTransactionExceptionResponseContractOneCommitmentSnapshotOneBuyerOneQualifiedDealFeeMin).max(recordTransactionExceptionResponseContractOneCommitmentSnapshotOneBuyerOneQualifiedDealFeeMax).nullish(),
-  "feeTermsSource": zod.string().max(recordTransactionExceptionResponseContractOneCommitmentSnapshotOneBuyerOneFeeTermsSourceMax).optional()
+  "qualifiedDealFee": zod.number().nullish(),
+  "feeTermsSource": zod.string().optional()
 }).and(zod.object({
   "id": zod.string(),
   "version": zod.number().int(),
@@ -1922,6 +1945,7 @@ export const RecordTransactionExceptionResponse = zod.object({
   "calls": zod.array(zod.object({
   "id": zod.string(),
   "createdAt": zod.string(),
+  "occurredAt": zod.string().datetime({"offset":true}),
   "actor": zod.string(),
   "version": zod.number().int(),
   "outcome": zod.enum(['NO_ANSWER', 'VOICEMAIL', 'CONNECTED', 'NOT_INTERESTED']),
@@ -3144,6 +3168,7 @@ export const IntakePropertyEvidenceResponse = zod.object({
   "calls": zod.array(zod.object({
   "id": zod.string(),
   "createdAt": zod.string(),
+  "occurredAt": zod.string().datetime({"offset":true}),
   "actor": zod.string(),
   "version": zod.number().int(),
   "outcome": zod.enum(['NO_ANSWER', 'VOICEMAIL', 'CONNECTED', 'NOT_INTERESTED']),
@@ -4222,6 +4247,7 @@ export const GetLeadResponse = zod.object({
   "calls": zod.array(zod.object({
   "id": zod.string(),
   "createdAt": zod.string(),
+  "occurredAt": zod.string().datetime({"offset":true}),
   "actor": zod.string(),
   "version": zod.number().int(),
   "outcome": zod.enum(['NO_ANSWER', 'VOICEMAIL', 'CONNECTED', 'NOT_INTERESTED']),
@@ -5464,6 +5490,7 @@ export const SaveUnderwritingResponse = zod.object({
   "calls": zod.array(zod.object({
   "id": zod.string(),
   "createdAt": zod.string(),
+  "occurredAt": zod.string().datetime({"offset":true}),
   "actor": zod.string(),
   "version": zod.number().int(),
   "outcome": zod.enum(['NO_ANSWER', 'VOICEMAIL', 'CONNECTED', 'NOT_INTERESTED']),
@@ -6206,6 +6233,7 @@ export const TransitionLeadResponse = zod.object({
   "calls": zod.array(zod.object({
   "id": zod.string(),
   "createdAt": zod.string(),
+  "occurredAt": zod.string().datetime({"offset":true}),
   "actor": zod.string(),
   "version": zod.number().int(),
   "outcome": zod.enum(['NO_ANSWER', 'VOICEMAIL', 'CONNECTED', 'NOT_INTERESTED']),
@@ -6246,6 +6274,9 @@ export const RecordCallParams = zod.object({
 })
 
 
+export const recordCallBodyIdempotencyKeyMin = 8;
+export const recordCallBodyIdempotencyKeyMax = 200;
+
 export const recordCallBodyNotesMax = 10000;
 
 export const recordCallBodyNextActionMin = 3;
@@ -6285,10 +6316,13 @@ export const recordCallBodySellerAnswersNextStepOutcomeMax = 2000;
 
 export const recordCallBodySellerAnswersOtherMaterialStatementsMax = 3000;
 
+export const recordCallBodyStructuredFieldsJsonMax = 24000;
+
 
 
 export const RecordCallBody = zod.object({
   "version": zod.number().int().min(1),
+  "idempotencyKey": zod.string().min(recordCallBodyIdempotencyKeyMin).max(recordCallBodyIdempotencyKeyMax).optional(),
   "outcome": zod.enum(['NO_ANSWER', 'VOICEMAIL', 'CONNECTED', 'NOT_INTERESTED']),
   "notes": zod.string().min(1).max(recordCallBodyNotesMax),
   "nextAction": zod.string().min(recordCallBodyNextActionMin).max(recordCallBodyNextActionMax),
@@ -6314,7 +6348,8 @@ export const RecordCallBody = zod.object({
   "willingnessToAcceptTerms": zod.string().max(recordCallBodySellerAnswersWillingnessToAcceptTermsMax).optional(),
   "nextStepOutcome": zod.string().max(recordCallBodySellerAnswersNextStepOutcomeMax).optional(),
   "otherMaterialStatements": zod.string().max(recordCallBodySellerAnswersOtherMaterialStatementsMax).optional()
-}).optional()
+}).optional(),
+  "structuredFieldsJson": zod.string().max(recordCallBodyStructuredFieldsJsonMax).optional().describe('Structured note extraction JSON, linked by exact note offsets and labeled with confidence and attribution.')
 })
 
 export const recordCallResponseLeadOneAddressMin = 3;
@@ -7003,6 +7038,7 @@ export const RecordCallResponse = zod.object({
   "calls": zod.array(zod.object({
   "id": zod.string(),
   "createdAt": zod.string(),
+  "occurredAt": zod.string().datetime({"offset":true}),
   "actor": zod.string(),
   "version": zod.number().int(),
   "outcome": zod.enum(['NO_ANSWER', 'VOICEMAIL', 'CONNECTED', 'NOT_INTERESTED']),
@@ -7067,7 +7103,8 @@ export const CreateOfferDraftBody = zod.object({
   "assignmentIntent": zod.boolean()
 }).and(zod.object({
   "version": zod.number().int().min(1),
-  "reason": zod.string().min(createOfferDraftBodyTwoReasonMin).max(createOfferDraftBodyTwoReasonMax)
+  "reason": zod.string().min(createOfferDraftBodyTwoReasonMin).max(createOfferDraftBodyTwoReasonMax),
+  "draftExpiresAt": zod.string().datetime({"offset":true}).optional()
 }))
 
 export const createOfferDraftResponseLeadOneAddressMin = 3;
@@ -7756,6 +7793,7 @@ export const CreateOfferDraftResponse = zod.object({
   "calls": zod.array(zod.object({
   "id": zod.string(),
   "createdAt": zod.string(),
+  "occurredAt": zod.string().datetime({"offset":true}),
   "actor": zod.string(),
   "version": zod.number().int(),
   "outcome": zod.enum(['NO_ANSWER', 'VOICEMAIL', 'CONNECTED', 'NOT_INTERESTED']),
@@ -7797,6 +7835,11 @@ export const AuthorizeOfferParams = zod.object({
 })
 
 
+export const authorizeOfferBodyReviewSnapshotHashMin = 64;
+export const authorizeOfferBodyReviewSnapshotHashMax = 64;
+
+
+export const authorizeOfferBodyReviewSnapshotHashRegExp = new RegExp('^[a-f0-9]{64}$');
 export const authorizeOfferBodyMaximumApprovedAcquisitionPriceExclusiveMin = 0;
 export const authorizeOfferBodyMaximumApprovedAcquisitionPriceMax = 1000000000;
 
@@ -7810,6 +7853,7 @@ export const authorizeOfferBodyNextActionMax = 1000;
 
 export const AuthorizeOfferBody = zod.object({
   "version": zod.number().int().min(1),
+  "reviewSnapshotHash": zod.string().min(authorizeOfferBodyReviewSnapshotHashMin).max(authorizeOfferBodyReviewSnapshotHashMax).regex(authorizeOfferBodyReviewSnapshotHashRegExp).optional(),
   "maximumApprovedAcquisitionPrice": zod.number().gt(authorizeOfferBodyMaximumApprovedAcquisitionPriceExclusiveMin).max(authorizeOfferBodyMaximumApprovedAcquisitionPriceMax),
   "expiresAt": zod.string().datetime({"offset":true}),
   "authorityEvidenceId": zod.string().uuid(),
@@ -8504,6 +8548,7 @@ export const AuthorizeOfferResponse = zod.object({
   "calls": zod.array(zod.object({
   "id": zod.string(),
   "createdAt": zod.string(),
+  "occurredAt": zod.string().datetime({"offset":true}),
   "actor": zod.string(),
   "version": zod.number().int(),
   "outcome": zod.enum(['NO_ANSWER', 'VOICEMAIL', 'CONNECTED', 'NOT_INTERESTED']),
@@ -8536,6 +8581,28 @@ export const AuthorizeOfferResponse = zod.object({
   "requiredEvidence": zod.array(zod.string()),
   "completionRecord": zod.string()
 }),zod.null()])
+})
+
+
+export const GetOfferReviewParams = zod.object({
+  "id": zod.coerce.string().uuid(),
+  "offerId": zod.coerce.string().uuid()
+})
+
+export const getOfferReviewResponseReviewSnapshotJsonMax = 50000;
+
+export const getOfferReviewResponseReviewSnapshotHashMin = 64;
+export const getOfferReviewResponseReviewSnapshotHashMax = 64;
+
+
+export const getOfferReviewResponseReviewSnapshotHashRegExp = new RegExp('^[a-f0-9]{64}$');
+
+
+export const GetOfferReviewResponse = zod.object({
+  "offerId": zod.string().uuid(),
+  "draftExpiresAt": zod.string().datetime({"offset":true}),
+  "reviewSnapshotJson": zod.string().max(getOfferReviewResponseReviewSnapshotJsonMax),
+  "reviewSnapshotHash": zod.string().min(getOfferReviewResponseReviewSnapshotHashMin).max(getOfferReviewResponseReviewSnapshotHashMax).regex(getOfferReviewResponseReviewSnapshotHashRegExp)
 })
 
 
@@ -9251,6 +9318,7 @@ export const CommunicateOfferResponse = zod.object({
   "calls": zod.array(zod.object({
   "id": zod.string(),
   "createdAt": zod.string(),
+  "occurredAt": zod.string().datetime({"offset":true}),
   "actor": zod.string(),
   "version": zod.number().int(),
   "outcome": zod.enum(['NO_ANSWER', 'VOICEMAIL', 'CONNECTED', 'NOT_INTERESTED']),
@@ -9993,6 +10061,7 @@ export const WithdrawOfferResponse = zod.object({
   "calls": zod.array(zod.object({
   "id": zod.string(),
   "createdAt": zod.string(),
+  "occurredAt": zod.string().datetime({"offset":true}),
   "actor": zod.string(),
   "version": zod.number().int(),
   "outcome": zod.enum(['NO_ANSWER', 'VOICEMAIL', 'CONNECTED', 'NOT_INTERESTED']),
@@ -12851,14 +12920,6 @@ export const getCommandCenterResponseDecisionsItemRecommendedActionOnePriorityMi
 export const getCommandCenterResponseDecisionsItemRecommendedActionOnePriorityMax = 1000;
 
 
-export const getCommandCenterResponseOperationsItemContractOneCommitmentSnapshotOneBuyerOneNameMax = 200;
-
-export const getCommandCenterResponseOperationsItemContractOneCommitmentSnapshotOneBuyerOneEmailMax = 200;
-
-export const getCommandCenterResponseOperationsItemContractOneCommitmentSnapshotOneBuyerOnePhoneMax = 50;
-
-export const getCommandCenterResponseOperationsItemContractOneCommitmentSnapshotOneBuyerOneSourceMax = 2000;
-
 export const getCommandCenterResponseOperationsItemContractOneCommitmentSnapshotOneBuyerOneCriteriaOneStatesItemMin = 2;
 export const getCommandCenterResponseOperationsItemContractOneCommitmentSnapshotOneBuyerOneCriteriaOneStatesItemMax = 2;
 
@@ -12923,11 +12984,6 @@ export const getCommandCenterResponseOperationsItemContractOneCommitmentSnapshot
 
 export const getCommandCenterResponseOperationsItemContractOneCommitmentSnapshotOneBuyerOneCriteriaOneMinCapRateMin = 0;
 export const getCommandCenterResponseOperationsItemContractOneCommitmentSnapshotOneBuyerOneCriteriaOneMinCapRateMax = 1;
-
-export const getCommandCenterResponseOperationsItemContractOneCommitmentSnapshotOneBuyerOneQualifiedDealFeeMin = 0;
-export const getCommandCenterResponseOperationsItemContractOneCommitmentSnapshotOneBuyerOneQualifiedDealFeeMax = 1000000000;
-
-export const getCommandCenterResponseOperationsItemContractOneCommitmentSnapshotOneBuyerOneFeeTermsSourceMax = 2000;
 
 export const getCommandCenterResponseOperationsItemContractOneCommitmentSnapshotOneBuyerTwoDiscoveryEvidenceConfidenceMin = 0;
 export const getCommandCenterResponseOperationsItemContractOneCommitmentSnapshotOneBuyerTwoDiscoveryEvidenceConfidenceMax = 1;
@@ -13402,14 +13458,6 @@ export const getCommandCenterResponseOperationsItemContractOneDocumentsItemConte
 
 
 export const getCommandCenterResponseOperationsItemContractOneDocumentsItemPartySnapshotHashRegExp = new RegExp('^[a-f0-9]{64}$');
-export const getCommandCenterResponseBuyersItemOneNameMax = 200;
-
-export const getCommandCenterResponseBuyersItemOneEmailMax = 200;
-
-export const getCommandCenterResponseBuyersItemOnePhoneMax = 50;
-
-export const getCommandCenterResponseBuyersItemOneSourceMax = 2000;
-
 export const getCommandCenterResponseBuyersItemOneCriteriaOneStatesItemMin = 2;
 export const getCommandCenterResponseBuyersItemOneCriteriaOneStatesItemMax = 2;
 
@@ -13474,11 +13522,6 @@ export const getCommandCenterResponseBuyersItemOneCriteriaOneMinSpreadMax = 1000
 
 export const getCommandCenterResponseBuyersItemOneCriteriaOneMinCapRateMin = 0;
 export const getCommandCenterResponseBuyersItemOneCriteriaOneMinCapRateMax = 1;
-
-export const getCommandCenterResponseBuyersItemOneQualifiedDealFeeMin = 0;
-export const getCommandCenterResponseBuyersItemOneQualifiedDealFeeMax = 1000000000;
-
-export const getCommandCenterResponseBuyersItemOneFeeTermsSourceMax = 2000;
 
 export const getCommandCenterResponseBuyersItemTwoDiscoveryEvidenceConfidenceMin = 0;
 export const getCommandCenterResponseBuyersItemTwoDiscoveryEvidenceConfidenceMax = 1;
@@ -15331,10 +15374,10 @@ export const GetCommandCenterResponse = zod.object({
   "commitmentSnapshot": zod.union([zod.object({
   "recordedAt": zod.string().optional(),
   "buyer": zod.object({
-  "name": zod.string().min(1).max(getCommandCenterResponseOperationsItemContractOneCommitmentSnapshotOneBuyerOneNameMax),
-  "email": zod.string().max(getCommandCenterResponseOperationsItemContractOneCommitmentSnapshotOneBuyerOneEmailMax),
-  "phone": zod.string().max(getCommandCenterResponseOperationsItemContractOneCommitmentSnapshotOneBuyerOnePhoneMax),
-  "source": zod.string().min(1).max(getCommandCenterResponseOperationsItemContractOneCommitmentSnapshotOneBuyerOneSourceMax),
+  "name": zod.string(),
+  "email": zod.string(),
+  "phone": zod.string(),
+  "source": zod.string(),
   "criteria": zod.union([zod.object({
   "states": zod.array(zod.string().min(getCommandCenterResponseOperationsItemContractOneCommitmentSnapshotOneBuyerOneCriteriaOneStatesItemMin).max(getCommandCenterResponseOperationsItemContractOneCommitmentSnapshotOneBuyerOneCriteriaOneStatesItemMax)).min(1),
   "cities": zod.array(zod.string().min(1)),
@@ -15367,8 +15410,8 @@ export const GetCommandCenterResponse = zod.object({
 }),zod.null()]),
   "status": zod.enum(['ACTIVE', 'PAUSED']),
   "destinationKind": zod.enum(['BUYER', 'DEAL_FINDER', 'GURU']).optional(),
-  "qualifiedDealFee": zod.number().min(getCommandCenterResponseOperationsItemContractOneCommitmentSnapshotOneBuyerOneQualifiedDealFeeMin).max(getCommandCenterResponseOperationsItemContractOneCommitmentSnapshotOneBuyerOneQualifiedDealFeeMax).nullish(),
-  "feeTermsSource": zod.string().max(getCommandCenterResponseOperationsItemContractOneCommitmentSnapshotOneBuyerOneFeeTermsSourceMax).optional()
+  "qualifiedDealFee": zod.number().nullish(),
+  "feeTermsSource": zod.string().optional()
 }).and(zod.object({
   "id": zod.string(),
   "version": zod.number().int(),
@@ -15942,6 +15985,7 @@ export const GetCommandCenterResponse = zod.object({
   "calls": zod.array(zod.object({
   "id": zod.string(),
   "createdAt": zod.string(),
+  "occurredAt": zod.string().datetime({"offset":true}),
   "actor": zod.string(),
   "version": zod.number().int(),
   "outcome": zod.enum(['NO_ANSWER', 'VOICEMAIL', 'CONNECTED', 'NOT_INTERESTED']),
@@ -16119,10 +16163,10 @@ export const GetCommandCenterResponse = zod.object({
   "nextAction": zod.string()
 })),
   "buyers": zod.array(zod.object({
-  "name": zod.string().min(1).max(getCommandCenterResponseBuyersItemOneNameMax),
-  "email": zod.string().max(getCommandCenterResponseBuyersItemOneEmailMax),
-  "phone": zod.string().max(getCommandCenterResponseBuyersItemOnePhoneMax),
-  "source": zod.string().min(1).max(getCommandCenterResponseBuyersItemOneSourceMax),
+  "name": zod.string(),
+  "email": zod.string(),
+  "phone": zod.string(),
+  "source": zod.string(),
   "criteria": zod.union([zod.object({
   "states": zod.array(zod.string().min(getCommandCenterResponseBuyersItemOneCriteriaOneStatesItemMin).max(getCommandCenterResponseBuyersItemOneCriteriaOneStatesItemMax)).min(1),
   "cities": zod.array(zod.string().min(1)),
@@ -16155,8 +16199,8 @@ export const GetCommandCenterResponse = zod.object({
 }),zod.null()]),
   "status": zod.enum(['ACTIVE', 'PAUSED']),
   "destinationKind": zod.enum(['BUYER', 'DEAL_FINDER', 'GURU']).optional(),
-  "qualifiedDealFee": zod.number().min(getCommandCenterResponseBuyersItemOneQualifiedDealFeeMin).max(getCommandCenterResponseBuyersItemOneQualifiedDealFeeMax).nullish(),
-  "feeTermsSource": zod.string().max(getCommandCenterResponseBuyersItemOneFeeTermsSourceMax).optional()
+  "qualifiedDealFee": zod.number().nullish(),
+  "feeTermsSource": zod.string().optional()
 }).and(zod.object({
   "id": zod.string(),
   "version": zod.number().int(),
@@ -16884,14 +16928,6 @@ export const ReviewOutcomeCalibrationResponse = zod.object({
 })
 
 
-export const listBuyersResponseOneNameMax = 200;
-
-export const listBuyersResponseOneEmailMax = 200;
-
-export const listBuyersResponseOnePhoneMax = 50;
-
-export const listBuyersResponseOneSourceMax = 2000;
-
 export const listBuyersResponseOneCriteriaOneStatesItemMin = 2;
 export const listBuyersResponseOneCriteriaOneStatesItemMax = 2;
 
@@ -16956,11 +16992,6 @@ export const listBuyersResponseOneCriteriaOneMinSpreadMax = 1000000000;
 
 export const listBuyersResponseOneCriteriaOneMinCapRateMin = 0;
 export const listBuyersResponseOneCriteriaOneMinCapRateMax = 1;
-
-export const listBuyersResponseOneQualifiedDealFeeMin = 0;
-export const listBuyersResponseOneQualifiedDealFeeMax = 1000000000;
-
-export const listBuyersResponseOneFeeTermsSourceMax = 2000;
 
 export const listBuyersResponseTwoDiscoveryEvidenceConfidenceMin = 0;
 export const listBuyersResponseTwoDiscoveryEvidenceConfidenceMax = 1;
@@ -17117,10 +17148,10 @@ export const listBuyersResponseTwoQualificationPortalSelfReportCriteriaMinCapRat
 
 
 export const ListBuyersResponseItem = zod.object({
-  "name": zod.string().min(1).max(listBuyersResponseOneNameMax),
-  "email": zod.string().max(listBuyersResponseOneEmailMax),
-  "phone": zod.string().max(listBuyersResponseOnePhoneMax),
-  "source": zod.string().min(1).max(listBuyersResponseOneSourceMax),
+  "name": zod.string(),
+  "email": zod.string(),
+  "phone": zod.string(),
+  "source": zod.string(),
   "criteria": zod.union([zod.object({
   "states": zod.array(zod.string().min(listBuyersResponseOneCriteriaOneStatesItemMin).max(listBuyersResponseOneCriteriaOneStatesItemMax)).min(1),
   "cities": zod.array(zod.string().min(1)),
@@ -17153,8 +17184,8 @@ export const ListBuyersResponseItem = zod.object({
 }),zod.null()]),
   "status": zod.enum(['ACTIVE', 'PAUSED']),
   "destinationKind": zod.enum(['BUYER', 'DEAL_FINDER', 'GURU']).optional(),
-  "qualifiedDealFee": zod.number().min(listBuyersResponseOneQualifiedDealFeeMin).max(listBuyersResponseOneQualifiedDealFeeMax).nullish(),
-  "feeTermsSource": zod.string().max(listBuyersResponseOneFeeTermsSourceMax).optional()
+  "qualifiedDealFee": zod.number().nullish(),
+  "feeTermsSource": zod.string().optional()
 }).and(zod.object({
   "id": zod.string(),
   "version": zod.number().int(),
@@ -17335,6 +17366,13 @@ export const createBuyerBodyPhoneMax = 50;
 
 export const createBuyerBodySourceMax = 2000;
 
+export const createBuyerBodyContactSourceUrlMax = 2000;
+
+
+export const createBuyerBodyContactSourceUrlRegExp = new RegExp('^https:/');
+export const createBuyerBodyContactConfidenceMin = 0;
+export const createBuyerBodyContactConfidenceMax = 1;
+
 export const createBuyerBodyCriteriaOneStatesItemMin = 2;
 export const createBuyerBodyCriteriaOneStatesItemMax = 2;
 
@@ -17412,6 +17450,9 @@ export const CreateBuyerBody = zod.object({
   "email": zod.string().max(createBuyerBodyEmailMax),
   "phone": zod.string().max(createBuyerBodyPhoneMax),
   "source": zod.string().min(1).max(createBuyerBodySourceMax),
+  "contactSourceUrl": zod.string().url().max(createBuyerBodyContactSourceUrlMax).regex(createBuyerBodyContactSourceUrlRegExp).optional(),
+  "contactObservedAt": zod.string().datetime({"offset":true}).optional(),
+  "contactConfidence": zod.number().min(createBuyerBodyContactConfidenceMin).max(createBuyerBodyContactConfidenceMax).optional(),
   "criteria": zod.union([zod.object({
   "states": zod.array(zod.string().min(createBuyerBodyCriteriaOneStatesItemMin).max(createBuyerBodyCriteriaOneStatesItemMax)).min(1),
   "cities": zod.array(zod.string().min(1)),
@@ -17447,14 +17488,6 @@ export const CreateBuyerBody = zod.object({
   "qualifiedDealFee": zod.number().min(createBuyerBodyQualifiedDealFeeMin).max(createBuyerBodyQualifiedDealFeeMax).nullish(),
   "feeTermsSource": zod.string().max(createBuyerBodyFeeTermsSourceMax).optional()
 })
-
-export const createBuyerResponseOneNameMax = 200;
-
-export const createBuyerResponseOneEmailMax = 200;
-
-export const createBuyerResponseOnePhoneMax = 50;
-
-export const createBuyerResponseOneSourceMax = 2000;
 
 export const createBuyerResponseOneCriteriaOneStatesItemMin = 2;
 export const createBuyerResponseOneCriteriaOneStatesItemMax = 2;
@@ -17520,11 +17553,6 @@ export const createBuyerResponseOneCriteriaOneMinSpreadMax = 1000000000;
 
 export const createBuyerResponseOneCriteriaOneMinCapRateMin = 0;
 export const createBuyerResponseOneCriteriaOneMinCapRateMax = 1;
-
-export const createBuyerResponseOneQualifiedDealFeeMin = 0;
-export const createBuyerResponseOneQualifiedDealFeeMax = 1000000000;
-
-export const createBuyerResponseOneFeeTermsSourceMax = 2000;
 
 export const createBuyerResponseTwoDiscoveryEvidenceConfidenceMin = 0;
 export const createBuyerResponseTwoDiscoveryEvidenceConfidenceMax = 1;
@@ -17681,10 +17709,10 @@ export const createBuyerResponseTwoQualificationPortalSelfReportCriteriaMinCapRa
 
 
 export const CreateBuyerResponse = zod.object({
-  "name": zod.string().min(1).max(createBuyerResponseOneNameMax),
-  "email": zod.string().max(createBuyerResponseOneEmailMax),
-  "phone": zod.string().max(createBuyerResponseOnePhoneMax),
-  "source": zod.string().min(1).max(createBuyerResponseOneSourceMax),
+  "name": zod.string(),
+  "email": zod.string(),
+  "phone": zod.string(),
+  "source": zod.string(),
   "criteria": zod.union([zod.object({
   "states": zod.array(zod.string().min(createBuyerResponseOneCriteriaOneStatesItemMin).max(createBuyerResponseOneCriteriaOneStatesItemMax)).min(1),
   "cities": zod.array(zod.string().min(1)),
@@ -17717,8 +17745,8 @@ export const CreateBuyerResponse = zod.object({
 }),zod.null()]),
   "status": zod.enum(['ACTIVE', 'PAUSED']),
   "destinationKind": zod.enum(['BUYER', 'DEAL_FINDER', 'GURU']).optional(),
-  "qualifiedDealFee": zod.number().min(createBuyerResponseOneQualifiedDealFeeMin).max(createBuyerResponseOneQualifiedDealFeeMax).nullish(),
-  "feeTermsSource": zod.string().max(createBuyerResponseOneFeeTermsSourceMax).optional()
+  "qualifiedDealFee": zod.number().nullish(),
+  "feeTermsSource": zod.string().optional()
 }).and(zod.object({
   "id": zod.string(),
   "version": zod.number().int(),
@@ -18391,14 +18419,6 @@ export const GetBuyerParams = zod.object({
   "id": zod.coerce.string()
 })
 
-export const getBuyerResponseOneNameMax = 200;
-
-export const getBuyerResponseOneEmailMax = 200;
-
-export const getBuyerResponseOnePhoneMax = 50;
-
-export const getBuyerResponseOneSourceMax = 2000;
-
 export const getBuyerResponseOneCriteriaOneStatesItemMin = 2;
 export const getBuyerResponseOneCriteriaOneStatesItemMax = 2;
 
@@ -18463,11 +18483,6 @@ export const getBuyerResponseOneCriteriaOneMinSpreadMax = 1000000000;
 
 export const getBuyerResponseOneCriteriaOneMinCapRateMin = 0;
 export const getBuyerResponseOneCriteriaOneMinCapRateMax = 1;
-
-export const getBuyerResponseOneQualifiedDealFeeMin = 0;
-export const getBuyerResponseOneQualifiedDealFeeMax = 1000000000;
-
-export const getBuyerResponseOneFeeTermsSourceMax = 2000;
 
 export const getBuyerResponseTwoDiscoveryEvidenceConfidenceMin = 0;
 export const getBuyerResponseTwoDiscoveryEvidenceConfidenceMax = 1;
@@ -18624,10 +18639,10 @@ export const getBuyerResponseTwoQualificationPortalSelfReportCriteriaMinCapRateM
 
 
 export const GetBuyerResponse = zod.object({
-  "name": zod.string().min(1).max(getBuyerResponseOneNameMax),
-  "email": zod.string().max(getBuyerResponseOneEmailMax),
-  "phone": zod.string().max(getBuyerResponseOnePhoneMax),
-  "source": zod.string().min(1).max(getBuyerResponseOneSourceMax),
+  "name": zod.string(),
+  "email": zod.string(),
+  "phone": zod.string(),
+  "source": zod.string(),
   "criteria": zod.union([zod.object({
   "states": zod.array(zod.string().min(getBuyerResponseOneCriteriaOneStatesItemMin).max(getBuyerResponseOneCriteriaOneStatesItemMax)).min(1),
   "cities": zod.array(zod.string().min(1)),
@@ -18660,8 +18675,8 @@ export const GetBuyerResponse = zod.object({
 }),zod.null()]),
   "status": zod.enum(['ACTIVE', 'PAUSED']),
   "destinationKind": zod.enum(['BUYER', 'DEAL_FINDER', 'GURU']).optional(),
-  "qualifiedDealFee": zod.number().min(getBuyerResponseOneQualifiedDealFeeMin).max(getBuyerResponseOneQualifiedDealFeeMax).nullish(),
-  "feeTermsSource": zod.string().max(getBuyerResponseOneFeeTermsSourceMax).optional()
+  "qualifiedDealFee": zod.number().nullish(),
+  "feeTermsSource": zod.string().optional()
 }).and(zod.object({
   "id": zod.string(),
   "version": zod.number().int(),
@@ -18845,6 +18860,13 @@ export const updateBuyerBodyOnePhoneMax = 50;
 
 export const updateBuyerBodyOneSourceMax = 2000;
 
+export const updateBuyerBodyOneContactSourceUrlMax = 2000;
+
+
+export const updateBuyerBodyOneContactSourceUrlRegExp = new RegExp('^https:/');
+export const updateBuyerBodyOneContactConfidenceMin = 0;
+export const updateBuyerBodyOneContactConfidenceMax = 1;
+
 export const updateBuyerBodyOneCriteriaOneStatesItemMin = 2;
 export const updateBuyerBodyOneCriteriaOneStatesItemMax = 2;
 
@@ -18923,6 +18945,9 @@ export const UpdateBuyerBody = zod.object({
   "email": zod.string().max(updateBuyerBodyOneEmailMax),
   "phone": zod.string().max(updateBuyerBodyOnePhoneMax),
   "source": zod.string().min(1).max(updateBuyerBodyOneSourceMax),
+  "contactSourceUrl": zod.string().url().max(updateBuyerBodyOneContactSourceUrlMax).regex(updateBuyerBodyOneContactSourceUrlRegExp).optional(),
+  "contactObservedAt": zod.string().datetime({"offset":true}).optional(),
+  "contactConfidence": zod.number().min(updateBuyerBodyOneContactConfidenceMin).max(updateBuyerBodyOneContactConfidenceMax).optional(),
   "criteria": zod.union([zod.object({
   "states": zod.array(zod.string().min(updateBuyerBodyOneCriteriaOneStatesItemMin).max(updateBuyerBodyOneCriteriaOneStatesItemMax)).min(1),
   "cities": zod.array(zod.string().min(1)),
@@ -18960,14 +18985,6 @@ export const UpdateBuyerBody = zod.object({
 }).and(zod.object({
   "version": zod.number().int().min(1)
 }))
-
-export const updateBuyerResponseOneNameMax = 200;
-
-export const updateBuyerResponseOneEmailMax = 200;
-
-export const updateBuyerResponseOnePhoneMax = 50;
-
-export const updateBuyerResponseOneSourceMax = 2000;
 
 export const updateBuyerResponseOneCriteriaOneStatesItemMin = 2;
 export const updateBuyerResponseOneCriteriaOneStatesItemMax = 2;
@@ -19033,11 +19050,6 @@ export const updateBuyerResponseOneCriteriaOneMinSpreadMax = 1000000000;
 
 export const updateBuyerResponseOneCriteriaOneMinCapRateMin = 0;
 export const updateBuyerResponseOneCriteriaOneMinCapRateMax = 1;
-
-export const updateBuyerResponseOneQualifiedDealFeeMin = 0;
-export const updateBuyerResponseOneQualifiedDealFeeMax = 1000000000;
-
-export const updateBuyerResponseOneFeeTermsSourceMax = 2000;
 
 export const updateBuyerResponseTwoDiscoveryEvidenceConfidenceMin = 0;
 export const updateBuyerResponseTwoDiscoveryEvidenceConfidenceMax = 1;
@@ -19194,10 +19206,10 @@ export const updateBuyerResponseTwoQualificationPortalSelfReportCriteriaMinCapRa
 
 
 export const UpdateBuyerResponse = zod.object({
-  "name": zod.string().min(1).max(updateBuyerResponseOneNameMax),
-  "email": zod.string().max(updateBuyerResponseOneEmailMax),
-  "phone": zod.string().max(updateBuyerResponseOnePhoneMax),
-  "source": zod.string().min(1).max(updateBuyerResponseOneSourceMax),
+  "name": zod.string(),
+  "email": zod.string(),
+  "phone": zod.string(),
+  "source": zod.string(),
   "criteria": zod.union([zod.object({
   "states": zod.array(zod.string().min(updateBuyerResponseOneCriteriaOneStatesItemMin).max(updateBuyerResponseOneCriteriaOneStatesItemMax)).min(1),
   "cities": zod.array(zod.string().min(1)),
@@ -19230,8 +19242,8 @@ export const UpdateBuyerResponse = zod.object({
 }),zod.null()]),
   "status": zod.enum(['ACTIVE', 'PAUSED']),
   "destinationKind": zod.enum(['BUYER', 'DEAL_FINDER', 'GURU']).optional(),
-  "qualifiedDealFee": zod.number().min(updateBuyerResponseOneQualifiedDealFeeMin).max(updateBuyerResponseOneQualifiedDealFeeMax).nullish(),
-  "feeTermsSource": zod.string().max(updateBuyerResponseOneFeeTermsSourceMax).optional()
+  "qualifiedDealFee": zod.number().nullish(),
+  "feeTermsSource": zod.string().optional()
 }).and(zod.object({
   "id": zod.string(),
   "version": zod.number().int(),
@@ -19452,14 +19464,6 @@ export const VerifyBuyerBody = zod.object({
   "confidence": zod.number().min(verifyBuyerBodyConfidenceMin).max(verifyBuyerBodyConfidenceMax)
 })
 
-export const verifyBuyerResponseOneNameMax = 200;
-
-export const verifyBuyerResponseOneEmailMax = 200;
-
-export const verifyBuyerResponseOnePhoneMax = 50;
-
-export const verifyBuyerResponseOneSourceMax = 2000;
-
 export const verifyBuyerResponseOneCriteriaOneStatesItemMin = 2;
 export const verifyBuyerResponseOneCriteriaOneStatesItemMax = 2;
 
@@ -19524,11 +19528,6 @@ export const verifyBuyerResponseOneCriteriaOneMinSpreadMax = 1000000000;
 
 export const verifyBuyerResponseOneCriteriaOneMinCapRateMin = 0;
 export const verifyBuyerResponseOneCriteriaOneMinCapRateMax = 1;
-
-export const verifyBuyerResponseOneQualifiedDealFeeMin = 0;
-export const verifyBuyerResponseOneQualifiedDealFeeMax = 1000000000;
-
-export const verifyBuyerResponseOneFeeTermsSourceMax = 2000;
 
 export const verifyBuyerResponseTwoDiscoveryEvidenceConfidenceMin = 0;
 export const verifyBuyerResponseTwoDiscoveryEvidenceConfidenceMax = 1;
@@ -19685,10 +19684,10 @@ export const verifyBuyerResponseTwoQualificationPortalSelfReportCriteriaMinCapRa
 
 
 export const VerifyBuyerResponse = zod.object({
-  "name": zod.string().min(1).max(verifyBuyerResponseOneNameMax),
-  "email": zod.string().max(verifyBuyerResponseOneEmailMax),
-  "phone": zod.string().max(verifyBuyerResponseOnePhoneMax),
-  "source": zod.string().min(1).max(verifyBuyerResponseOneSourceMax),
+  "name": zod.string(),
+  "email": zod.string(),
+  "phone": zod.string(),
+  "source": zod.string(),
   "criteria": zod.union([zod.object({
   "states": zod.array(zod.string().min(verifyBuyerResponseOneCriteriaOneStatesItemMin).max(verifyBuyerResponseOneCriteriaOneStatesItemMax)).min(1),
   "cities": zod.array(zod.string().min(1)),
@@ -19721,8 +19720,8 @@ export const VerifyBuyerResponse = zod.object({
 }),zod.null()]),
   "status": zod.enum(['ACTIVE', 'PAUSED']),
   "destinationKind": zod.enum(['BUYER', 'DEAL_FINDER', 'GURU']).optional(),
-  "qualifiedDealFee": zod.number().min(verifyBuyerResponseOneQualifiedDealFeeMin).max(verifyBuyerResponseOneQualifiedDealFeeMax).nullish(),
-  "feeTermsSource": zod.string().max(verifyBuyerResponseOneFeeTermsSourceMax).optional()
+  "qualifiedDealFee": zod.number().nullish(),
+  "feeTermsSource": zod.string().optional()
 }).and(zod.object({
   "id": zod.string(),
   "version": zod.number().int(),
@@ -19894,6 +19893,45 @@ export const VerifyBuyerResponse = zod.object({
 }))
 
 
+export const GetBuyerContactResearchParams = zod.object({
+  "id": zod.coerce.string()
+})
+
+export const getBuyerContactResearchResponseContactConfidenceMin = 0;
+export const getBuyerContactResearchResponseContactConfidenceMax = 1;
+
+
+
+export const GetBuyerContactResearchResponse = zod.object({
+  "buyerId": zod.string().uuid(),
+  "version": zod.number().int(),
+  "contactSourceUrl": zod.string().nullable(),
+  "contactObservedAt": zod.string().datetime({"offset":true}).nullable(),
+  "contactConfidence": zod.number().min(getBuyerContactResearchResponseContactConfidenceMin).max(getBuyerContactResearchResponseContactConfidenceMax).nullable(),
+  "contactPermission": zod.union([zod.object({
+  "status": zod.enum(['GRANTED', 'OPTED_OUT']),
+  "channels": zod.array(zod.enum(['EMAIL', 'SMS', 'VOICE'])),
+  "source": zod.string(),
+  "evidenceUrl": zod.string(),
+  "capturedAt": zod.string().datetime({"offset":true}),
+  "validUntil": zod.string().datetime({"offset":true}).nullable(),
+  "reviewedBy": zod.string(),
+  "reviewedAt": zod.string().datetime({"offset":true})
+}),zod.null()]),
+  "contactPermissionHistory": zod.array(zod.object({
+  "status": zod.enum(['GRANTED', 'OPTED_OUT']),
+  "channels": zod.array(zod.enum(['EMAIL', 'SMS', 'VOICE'])),
+  "source": zod.string(),
+  "evidenceUrl": zod.string(),
+  "capturedAt": zod.string().datetime({"offset":true}),
+  "validUntil": zod.string().datetime({"offset":true}).nullable(),
+  "reviewedBy": zod.string(),
+  "reviewedAt": zod.string().datetime({"offset":true})
+})),
+  "nextAction": zod.string()
+})
+
+
 export const RecordBuyerContactPermissionParams = zod.object({
   "id": zod.coerce.string()
 })
@@ -19957,14 +19995,6 @@ export const GetDealOperationsParams = zod.object({
   "id": zod.coerce.string()
 })
 
-
-export const getDealOperationsResponseContractOneCommitmentSnapshotOneBuyerOneNameMax = 200;
-
-export const getDealOperationsResponseContractOneCommitmentSnapshotOneBuyerOneEmailMax = 200;
-
-export const getDealOperationsResponseContractOneCommitmentSnapshotOneBuyerOnePhoneMax = 50;
-
-export const getDealOperationsResponseContractOneCommitmentSnapshotOneBuyerOneSourceMax = 2000;
 
 export const getDealOperationsResponseContractOneCommitmentSnapshotOneBuyerOneCriteriaOneStatesItemMin = 2;
 export const getDealOperationsResponseContractOneCommitmentSnapshotOneBuyerOneCriteriaOneStatesItemMax = 2;
@@ -20030,11 +20060,6 @@ export const getDealOperationsResponseContractOneCommitmentSnapshotOneBuyerOneCr
 
 export const getDealOperationsResponseContractOneCommitmentSnapshotOneBuyerOneCriteriaOneMinCapRateMin = 0;
 export const getDealOperationsResponseContractOneCommitmentSnapshotOneBuyerOneCriteriaOneMinCapRateMax = 1;
-
-export const getDealOperationsResponseContractOneCommitmentSnapshotOneBuyerOneQualifiedDealFeeMin = 0;
-export const getDealOperationsResponseContractOneCommitmentSnapshotOneBuyerOneQualifiedDealFeeMax = 1000000000;
-
-export const getDealOperationsResponseContractOneCommitmentSnapshotOneBuyerOneFeeTermsSourceMax = 2000;
 
 export const getDealOperationsResponseContractOneCommitmentSnapshotOneBuyerTwoDiscoveryEvidenceConfidenceMin = 0;
 export const getDealOperationsResponseContractOneCommitmentSnapshotOneBuyerTwoDiscoveryEvidenceConfidenceMax = 1;
@@ -20554,10 +20579,10 @@ export const GetDealOperationsResponse = zod.object({
   "commitmentSnapshot": zod.union([zod.object({
   "recordedAt": zod.string().optional(),
   "buyer": zod.object({
-  "name": zod.string().min(1).max(getDealOperationsResponseContractOneCommitmentSnapshotOneBuyerOneNameMax),
-  "email": zod.string().max(getDealOperationsResponseContractOneCommitmentSnapshotOneBuyerOneEmailMax),
-  "phone": zod.string().max(getDealOperationsResponseContractOneCommitmentSnapshotOneBuyerOnePhoneMax),
-  "source": zod.string().min(1).max(getDealOperationsResponseContractOneCommitmentSnapshotOneBuyerOneSourceMax),
+  "name": zod.string(),
+  "email": zod.string(),
+  "phone": zod.string(),
+  "source": zod.string(),
   "criteria": zod.union([zod.object({
   "states": zod.array(zod.string().min(getDealOperationsResponseContractOneCommitmentSnapshotOneBuyerOneCriteriaOneStatesItemMin).max(getDealOperationsResponseContractOneCommitmentSnapshotOneBuyerOneCriteriaOneStatesItemMax)).min(1),
   "cities": zod.array(zod.string().min(1)),
@@ -20590,8 +20615,8 @@ export const GetDealOperationsResponse = zod.object({
 }),zod.null()]),
   "status": zod.enum(['ACTIVE', 'PAUSED']),
   "destinationKind": zod.enum(['BUYER', 'DEAL_FINDER', 'GURU']).optional(),
-  "qualifiedDealFee": zod.number().min(getDealOperationsResponseContractOneCommitmentSnapshotOneBuyerOneQualifiedDealFeeMin).max(getDealOperationsResponseContractOneCommitmentSnapshotOneBuyerOneQualifiedDealFeeMax).nullish(),
-  "feeTermsSource": zod.string().max(getDealOperationsResponseContractOneCommitmentSnapshotOneBuyerOneFeeTermsSourceMax).optional()
+  "qualifiedDealFee": zod.number().nullish(),
+  "feeTermsSource": zod.string().optional()
 }).and(zod.object({
   "id": zod.string(),
   "version": zod.number().int(),
@@ -21165,6 +21190,7 @@ export const GetDealOperationsResponse = zod.object({
   "calls": zod.array(zod.object({
   "id": zod.string(),
   "createdAt": zod.string(),
+  "occurredAt": zod.string().datetime({"offset":true}),
   "actor": zod.string(),
   "version": zod.number().int(),
   "outcome": zod.enum(['NO_ANSWER', 'VOICEMAIL', 'CONNECTED', 'NOT_INTERESTED']),
@@ -21348,14 +21374,6 @@ export const RefreshMatchesParams = zod.object({
 })
 
 
-export const refreshMatchesResponseContractOneCommitmentSnapshotOneBuyerOneNameMax = 200;
-
-export const refreshMatchesResponseContractOneCommitmentSnapshotOneBuyerOneEmailMax = 200;
-
-export const refreshMatchesResponseContractOneCommitmentSnapshotOneBuyerOnePhoneMax = 50;
-
-export const refreshMatchesResponseContractOneCommitmentSnapshotOneBuyerOneSourceMax = 2000;
-
 export const refreshMatchesResponseContractOneCommitmentSnapshotOneBuyerOneCriteriaOneStatesItemMin = 2;
 export const refreshMatchesResponseContractOneCommitmentSnapshotOneBuyerOneCriteriaOneStatesItemMax = 2;
 
@@ -21420,11 +21438,6 @@ export const refreshMatchesResponseContractOneCommitmentSnapshotOneBuyerOneCrite
 
 export const refreshMatchesResponseContractOneCommitmentSnapshotOneBuyerOneCriteriaOneMinCapRateMin = 0;
 export const refreshMatchesResponseContractOneCommitmentSnapshotOneBuyerOneCriteriaOneMinCapRateMax = 1;
-
-export const refreshMatchesResponseContractOneCommitmentSnapshotOneBuyerOneQualifiedDealFeeMin = 0;
-export const refreshMatchesResponseContractOneCommitmentSnapshotOneBuyerOneQualifiedDealFeeMax = 1000000000;
-
-export const refreshMatchesResponseContractOneCommitmentSnapshotOneBuyerOneFeeTermsSourceMax = 2000;
 
 export const refreshMatchesResponseContractOneCommitmentSnapshotOneBuyerTwoDiscoveryEvidenceConfidenceMin = 0;
 export const refreshMatchesResponseContractOneCommitmentSnapshotOneBuyerTwoDiscoveryEvidenceConfidenceMax = 1;
@@ -21944,10 +21957,10 @@ export const RefreshMatchesResponse = zod.object({
   "commitmentSnapshot": zod.union([zod.object({
   "recordedAt": zod.string().optional(),
   "buyer": zod.object({
-  "name": zod.string().min(1).max(refreshMatchesResponseContractOneCommitmentSnapshotOneBuyerOneNameMax),
-  "email": zod.string().max(refreshMatchesResponseContractOneCommitmentSnapshotOneBuyerOneEmailMax),
-  "phone": zod.string().max(refreshMatchesResponseContractOneCommitmentSnapshotOneBuyerOnePhoneMax),
-  "source": zod.string().min(1).max(refreshMatchesResponseContractOneCommitmentSnapshotOneBuyerOneSourceMax),
+  "name": zod.string(),
+  "email": zod.string(),
+  "phone": zod.string(),
+  "source": zod.string(),
   "criteria": zod.union([zod.object({
   "states": zod.array(zod.string().min(refreshMatchesResponseContractOneCommitmentSnapshotOneBuyerOneCriteriaOneStatesItemMin).max(refreshMatchesResponseContractOneCommitmentSnapshotOneBuyerOneCriteriaOneStatesItemMax)).min(1),
   "cities": zod.array(zod.string().min(1)),
@@ -21980,8 +21993,8 @@ export const RefreshMatchesResponse = zod.object({
 }),zod.null()]),
   "status": zod.enum(['ACTIVE', 'PAUSED']),
   "destinationKind": zod.enum(['BUYER', 'DEAL_FINDER', 'GURU']).optional(),
-  "qualifiedDealFee": zod.number().min(refreshMatchesResponseContractOneCommitmentSnapshotOneBuyerOneQualifiedDealFeeMin).max(refreshMatchesResponseContractOneCommitmentSnapshotOneBuyerOneQualifiedDealFeeMax).nullish(),
-  "feeTermsSource": zod.string().max(refreshMatchesResponseContractOneCommitmentSnapshotOneBuyerOneFeeTermsSourceMax).optional()
+  "qualifiedDealFee": zod.number().nullish(),
+  "feeTermsSource": zod.string().optional()
 }).and(zod.object({
   "id": zod.string(),
   "version": zod.number().int(),
@@ -22555,6 +22568,7 @@ export const RefreshMatchesResponse = zod.object({
   "calls": zod.array(zod.object({
   "id": zod.string(),
   "createdAt": zod.string(),
+  "occurredAt": zod.string().datetime({"offset":true}),
   "actor": zod.string(),
   "version": zod.number().int(),
   "outcome": zod.enum(['NO_ANSWER', 'VOICEMAIL', 'CONNECTED', 'NOT_INTERESTED']),
@@ -22760,14 +22774,6 @@ export const RecordBuyerResponseBody = zod.object({
 })
 
 
-export const recordBuyerResponseResponseContractOneCommitmentSnapshotOneBuyerOneNameMax = 200;
-
-export const recordBuyerResponseResponseContractOneCommitmentSnapshotOneBuyerOneEmailMax = 200;
-
-export const recordBuyerResponseResponseContractOneCommitmentSnapshotOneBuyerOnePhoneMax = 50;
-
-export const recordBuyerResponseResponseContractOneCommitmentSnapshotOneBuyerOneSourceMax = 2000;
-
 export const recordBuyerResponseResponseContractOneCommitmentSnapshotOneBuyerOneCriteriaOneStatesItemMin = 2;
 export const recordBuyerResponseResponseContractOneCommitmentSnapshotOneBuyerOneCriteriaOneStatesItemMax = 2;
 
@@ -22832,11 +22838,6 @@ export const recordBuyerResponseResponseContractOneCommitmentSnapshotOneBuyerOne
 
 export const recordBuyerResponseResponseContractOneCommitmentSnapshotOneBuyerOneCriteriaOneMinCapRateMin = 0;
 export const recordBuyerResponseResponseContractOneCommitmentSnapshotOneBuyerOneCriteriaOneMinCapRateMax = 1;
-
-export const recordBuyerResponseResponseContractOneCommitmentSnapshotOneBuyerOneQualifiedDealFeeMin = 0;
-export const recordBuyerResponseResponseContractOneCommitmentSnapshotOneBuyerOneQualifiedDealFeeMax = 1000000000;
-
-export const recordBuyerResponseResponseContractOneCommitmentSnapshotOneBuyerOneFeeTermsSourceMax = 2000;
 
 export const recordBuyerResponseResponseContractOneCommitmentSnapshotOneBuyerTwoDiscoveryEvidenceConfidenceMin = 0;
 export const recordBuyerResponseResponseContractOneCommitmentSnapshotOneBuyerTwoDiscoveryEvidenceConfidenceMax = 1;
@@ -23356,10 +23357,10 @@ export const RecordBuyerResponseResponse = zod.object({
   "commitmentSnapshot": zod.union([zod.object({
   "recordedAt": zod.string().optional(),
   "buyer": zod.object({
-  "name": zod.string().min(1).max(recordBuyerResponseResponseContractOneCommitmentSnapshotOneBuyerOneNameMax),
-  "email": zod.string().max(recordBuyerResponseResponseContractOneCommitmentSnapshotOneBuyerOneEmailMax),
-  "phone": zod.string().max(recordBuyerResponseResponseContractOneCommitmentSnapshotOneBuyerOnePhoneMax),
-  "source": zod.string().min(1).max(recordBuyerResponseResponseContractOneCommitmentSnapshotOneBuyerOneSourceMax),
+  "name": zod.string(),
+  "email": zod.string(),
+  "phone": zod.string(),
+  "source": zod.string(),
   "criteria": zod.union([zod.object({
   "states": zod.array(zod.string().min(recordBuyerResponseResponseContractOneCommitmentSnapshotOneBuyerOneCriteriaOneStatesItemMin).max(recordBuyerResponseResponseContractOneCommitmentSnapshotOneBuyerOneCriteriaOneStatesItemMax)).min(1),
   "cities": zod.array(zod.string().min(1)),
@@ -23392,8 +23393,8 @@ export const RecordBuyerResponseResponse = zod.object({
 }),zod.null()]),
   "status": zod.enum(['ACTIVE', 'PAUSED']),
   "destinationKind": zod.enum(['BUYER', 'DEAL_FINDER', 'GURU']).optional(),
-  "qualifiedDealFee": zod.number().min(recordBuyerResponseResponseContractOneCommitmentSnapshotOneBuyerOneQualifiedDealFeeMin).max(recordBuyerResponseResponseContractOneCommitmentSnapshotOneBuyerOneQualifiedDealFeeMax).nullish(),
-  "feeTermsSource": zod.string().max(recordBuyerResponseResponseContractOneCommitmentSnapshotOneBuyerOneFeeTermsSourceMax).optional()
+  "qualifiedDealFee": zod.number().nullish(),
+  "feeTermsSource": zod.string().optional()
 }).and(zod.object({
   "id": zod.string(),
   "version": zod.number().int(),
@@ -23967,6 +23968,7 @@ export const RecordBuyerResponseResponse = zod.object({
   "calls": zod.array(zod.object({
   "id": zod.string(),
   "createdAt": zod.string(),
+  "occurredAt": zod.string().datetime({"offset":true}),
   "actor": zod.string(),
   "version": zod.number().int(),
   "outcome": zod.enum(['NO_ANSWER', 'VOICEMAIL', 'CONNECTED', 'NOT_INTERESTED']),
@@ -25429,14 +25431,6 @@ export const RecordDestinationActivityBody = zod.object({
 })
 
 
-export const recordDestinationActivityResponseContractOneCommitmentSnapshotOneBuyerOneNameMax = 200;
-
-export const recordDestinationActivityResponseContractOneCommitmentSnapshotOneBuyerOneEmailMax = 200;
-
-export const recordDestinationActivityResponseContractOneCommitmentSnapshotOneBuyerOnePhoneMax = 50;
-
-export const recordDestinationActivityResponseContractOneCommitmentSnapshotOneBuyerOneSourceMax = 2000;
-
 export const recordDestinationActivityResponseContractOneCommitmentSnapshotOneBuyerOneCriteriaOneStatesItemMin = 2;
 export const recordDestinationActivityResponseContractOneCommitmentSnapshotOneBuyerOneCriteriaOneStatesItemMax = 2;
 
@@ -25501,11 +25495,6 @@ export const recordDestinationActivityResponseContractOneCommitmentSnapshotOneBu
 
 export const recordDestinationActivityResponseContractOneCommitmentSnapshotOneBuyerOneCriteriaOneMinCapRateMin = 0;
 export const recordDestinationActivityResponseContractOneCommitmentSnapshotOneBuyerOneCriteriaOneMinCapRateMax = 1;
-
-export const recordDestinationActivityResponseContractOneCommitmentSnapshotOneBuyerOneQualifiedDealFeeMin = 0;
-export const recordDestinationActivityResponseContractOneCommitmentSnapshotOneBuyerOneQualifiedDealFeeMax = 1000000000;
-
-export const recordDestinationActivityResponseContractOneCommitmentSnapshotOneBuyerOneFeeTermsSourceMax = 2000;
 
 export const recordDestinationActivityResponseContractOneCommitmentSnapshotOneBuyerTwoDiscoveryEvidenceConfidenceMin = 0;
 export const recordDestinationActivityResponseContractOneCommitmentSnapshotOneBuyerTwoDiscoveryEvidenceConfidenceMax = 1;
@@ -26025,10 +26014,10 @@ export const RecordDestinationActivityResponse = zod.object({
   "commitmentSnapshot": zod.union([zod.object({
   "recordedAt": zod.string().optional(),
   "buyer": zod.object({
-  "name": zod.string().min(1).max(recordDestinationActivityResponseContractOneCommitmentSnapshotOneBuyerOneNameMax),
-  "email": zod.string().max(recordDestinationActivityResponseContractOneCommitmentSnapshotOneBuyerOneEmailMax),
-  "phone": zod.string().max(recordDestinationActivityResponseContractOneCommitmentSnapshotOneBuyerOnePhoneMax),
-  "source": zod.string().min(1).max(recordDestinationActivityResponseContractOneCommitmentSnapshotOneBuyerOneSourceMax),
+  "name": zod.string(),
+  "email": zod.string(),
+  "phone": zod.string(),
+  "source": zod.string(),
   "criteria": zod.union([zod.object({
   "states": zod.array(zod.string().min(recordDestinationActivityResponseContractOneCommitmentSnapshotOneBuyerOneCriteriaOneStatesItemMin).max(recordDestinationActivityResponseContractOneCommitmentSnapshotOneBuyerOneCriteriaOneStatesItemMax)).min(1),
   "cities": zod.array(zod.string().min(1)),
@@ -26061,8 +26050,8 @@ export const RecordDestinationActivityResponse = zod.object({
 }),zod.null()]),
   "status": zod.enum(['ACTIVE', 'PAUSED']),
   "destinationKind": zod.enum(['BUYER', 'DEAL_FINDER', 'GURU']).optional(),
-  "qualifiedDealFee": zod.number().min(recordDestinationActivityResponseContractOneCommitmentSnapshotOneBuyerOneQualifiedDealFeeMin).max(recordDestinationActivityResponseContractOneCommitmentSnapshotOneBuyerOneQualifiedDealFeeMax).nullish(),
-  "feeTermsSource": zod.string().max(recordDestinationActivityResponseContractOneCommitmentSnapshotOneBuyerOneFeeTermsSourceMax).optional()
+  "qualifiedDealFee": zod.number().nullish(),
+  "feeTermsSource": zod.string().optional()
 }).and(zod.object({
   "id": zod.string(),
   "version": zod.number().int(),
@@ -26636,6 +26625,7 @@ export const RecordDestinationActivityResponse = zod.object({
   "calls": zod.array(zod.object({
   "id": zod.string(),
   "createdAt": zod.string(),
+  "occurredAt": zod.string().datetime({"offset":true}),
   "actor": zod.string(),
   "version": zod.number().int(),
   "outcome": zod.enum(['NO_ANSWER', 'VOICEMAIL', 'CONNECTED', 'NOT_INTERESTED']),
@@ -26828,14 +26818,6 @@ export const CreateContractBody = zod.object({
 })
 
 
-export const createContractResponseContractOneCommitmentSnapshotOneBuyerOneNameMax = 200;
-
-export const createContractResponseContractOneCommitmentSnapshotOneBuyerOneEmailMax = 200;
-
-export const createContractResponseContractOneCommitmentSnapshotOneBuyerOnePhoneMax = 50;
-
-export const createContractResponseContractOneCommitmentSnapshotOneBuyerOneSourceMax = 2000;
-
 export const createContractResponseContractOneCommitmentSnapshotOneBuyerOneCriteriaOneStatesItemMin = 2;
 export const createContractResponseContractOneCommitmentSnapshotOneBuyerOneCriteriaOneStatesItemMax = 2;
 
@@ -26900,11 +26882,6 @@ export const createContractResponseContractOneCommitmentSnapshotOneBuyerOneCrite
 
 export const createContractResponseContractOneCommitmentSnapshotOneBuyerOneCriteriaOneMinCapRateMin = 0;
 export const createContractResponseContractOneCommitmentSnapshotOneBuyerOneCriteriaOneMinCapRateMax = 1;
-
-export const createContractResponseContractOneCommitmentSnapshotOneBuyerOneQualifiedDealFeeMin = 0;
-export const createContractResponseContractOneCommitmentSnapshotOneBuyerOneQualifiedDealFeeMax = 1000000000;
-
-export const createContractResponseContractOneCommitmentSnapshotOneBuyerOneFeeTermsSourceMax = 2000;
 
 export const createContractResponseContractOneCommitmentSnapshotOneBuyerTwoDiscoveryEvidenceConfidenceMin = 0;
 export const createContractResponseContractOneCommitmentSnapshotOneBuyerTwoDiscoveryEvidenceConfidenceMax = 1;
@@ -27424,10 +27401,10 @@ export const CreateContractResponse = zod.object({
   "commitmentSnapshot": zod.union([zod.object({
   "recordedAt": zod.string().optional(),
   "buyer": zod.object({
-  "name": zod.string().min(1).max(createContractResponseContractOneCommitmentSnapshotOneBuyerOneNameMax),
-  "email": zod.string().max(createContractResponseContractOneCommitmentSnapshotOneBuyerOneEmailMax),
-  "phone": zod.string().max(createContractResponseContractOneCommitmentSnapshotOneBuyerOnePhoneMax),
-  "source": zod.string().min(1).max(createContractResponseContractOneCommitmentSnapshotOneBuyerOneSourceMax),
+  "name": zod.string(),
+  "email": zod.string(),
+  "phone": zod.string(),
+  "source": zod.string(),
   "criteria": zod.union([zod.object({
   "states": zod.array(zod.string().min(createContractResponseContractOneCommitmentSnapshotOneBuyerOneCriteriaOneStatesItemMin).max(createContractResponseContractOneCommitmentSnapshotOneBuyerOneCriteriaOneStatesItemMax)).min(1),
   "cities": zod.array(zod.string().min(1)),
@@ -27460,8 +27437,8 @@ export const CreateContractResponse = zod.object({
 }),zod.null()]),
   "status": zod.enum(['ACTIVE', 'PAUSED']),
   "destinationKind": zod.enum(['BUYER', 'DEAL_FINDER', 'GURU']).optional(),
-  "qualifiedDealFee": zod.number().min(createContractResponseContractOneCommitmentSnapshotOneBuyerOneQualifiedDealFeeMin).max(createContractResponseContractOneCommitmentSnapshotOneBuyerOneQualifiedDealFeeMax).nullish(),
-  "feeTermsSource": zod.string().max(createContractResponseContractOneCommitmentSnapshotOneBuyerOneFeeTermsSourceMax).optional()
+  "qualifiedDealFee": zod.number().nullish(),
+  "feeTermsSource": zod.string().optional()
 }).and(zod.object({
   "id": zod.string(),
   "version": zod.number().int(),
@@ -28035,6 +28012,7 @@ export const CreateContractResponse = zod.object({
   "calls": zod.array(zod.object({
   "id": zod.string(),
   "createdAt": zod.string(),
+  "occurredAt": zod.string().datetime({"offset":true}),
   "actor": zod.string(),
   "version": zod.number().int(),
   "outcome": zod.enum(['NO_ANSWER', 'VOICEMAIL', 'CONNECTED', 'NOT_INTERESTED']),
@@ -28225,14 +28203,6 @@ export const PreparePurchaseReviewDocumentBody = zod.object({
 })
 
 
-export const preparePurchaseReviewDocumentResponseContractOneCommitmentSnapshotOneBuyerOneNameMax = 200;
-
-export const preparePurchaseReviewDocumentResponseContractOneCommitmentSnapshotOneBuyerOneEmailMax = 200;
-
-export const preparePurchaseReviewDocumentResponseContractOneCommitmentSnapshotOneBuyerOnePhoneMax = 50;
-
-export const preparePurchaseReviewDocumentResponseContractOneCommitmentSnapshotOneBuyerOneSourceMax = 2000;
-
 export const preparePurchaseReviewDocumentResponseContractOneCommitmentSnapshotOneBuyerOneCriteriaOneStatesItemMin = 2;
 export const preparePurchaseReviewDocumentResponseContractOneCommitmentSnapshotOneBuyerOneCriteriaOneStatesItemMax = 2;
 
@@ -28297,11 +28267,6 @@ export const preparePurchaseReviewDocumentResponseContractOneCommitmentSnapshotO
 
 export const preparePurchaseReviewDocumentResponseContractOneCommitmentSnapshotOneBuyerOneCriteriaOneMinCapRateMin = 0;
 export const preparePurchaseReviewDocumentResponseContractOneCommitmentSnapshotOneBuyerOneCriteriaOneMinCapRateMax = 1;
-
-export const preparePurchaseReviewDocumentResponseContractOneCommitmentSnapshotOneBuyerOneQualifiedDealFeeMin = 0;
-export const preparePurchaseReviewDocumentResponseContractOneCommitmentSnapshotOneBuyerOneQualifiedDealFeeMax = 1000000000;
-
-export const preparePurchaseReviewDocumentResponseContractOneCommitmentSnapshotOneBuyerOneFeeTermsSourceMax = 2000;
 
 export const preparePurchaseReviewDocumentResponseContractOneCommitmentSnapshotOneBuyerTwoDiscoveryEvidenceConfidenceMin = 0;
 export const preparePurchaseReviewDocumentResponseContractOneCommitmentSnapshotOneBuyerTwoDiscoveryEvidenceConfidenceMax = 1;
@@ -28821,10 +28786,10 @@ export const PreparePurchaseReviewDocumentResponse = zod.object({
   "commitmentSnapshot": zod.union([zod.object({
   "recordedAt": zod.string().optional(),
   "buyer": zod.object({
-  "name": zod.string().min(1).max(preparePurchaseReviewDocumentResponseContractOneCommitmentSnapshotOneBuyerOneNameMax),
-  "email": zod.string().max(preparePurchaseReviewDocumentResponseContractOneCommitmentSnapshotOneBuyerOneEmailMax),
-  "phone": zod.string().max(preparePurchaseReviewDocumentResponseContractOneCommitmentSnapshotOneBuyerOnePhoneMax),
-  "source": zod.string().min(1).max(preparePurchaseReviewDocumentResponseContractOneCommitmentSnapshotOneBuyerOneSourceMax),
+  "name": zod.string(),
+  "email": zod.string(),
+  "phone": zod.string(),
+  "source": zod.string(),
   "criteria": zod.union([zod.object({
   "states": zod.array(zod.string().min(preparePurchaseReviewDocumentResponseContractOneCommitmentSnapshotOneBuyerOneCriteriaOneStatesItemMin).max(preparePurchaseReviewDocumentResponseContractOneCommitmentSnapshotOneBuyerOneCriteriaOneStatesItemMax)).min(1),
   "cities": zod.array(zod.string().min(1)),
@@ -28857,8 +28822,8 @@ export const PreparePurchaseReviewDocumentResponse = zod.object({
 }),zod.null()]),
   "status": zod.enum(['ACTIVE', 'PAUSED']),
   "destinationKind": zod.enum(['BUYER', 'DEAL_FINDER', 'GURU']).optional(),
-  "qualifiedDealFee": zod.number().min(preparePurchaseReviewDocumentResponseContractOneCommitmentSnapshotOneBuyerOneQualifiedDealFeeMin).max(preparePurchaseReviewDocumentResponseContractOneCommitmentSnapshotOneBuyerOneQualifiedDealFeeMax).nullish(),
-  "feeTermsSource": zod.string().max(preparePurchaseReviewDocumentResponseContractOneCommitmentSnapshotOneBuyerOneFeeTermsSourceMax).optional()
+  "qualifiedDealFee": zod.number().nullish(),
+  "feeTermsSource": zod.string().optional()
 }).and(zod.object({
   "id": zod.string(),
   "version": zod.number().int(),
@@ -29432,6 +29397,7 @@ export const PreparePurchaseReviewDocumentResponse = zod.object({
   "calls": zod.array(zod.object({
   "id": zod.string(),
   "createdAt": zod.string(),
+  "occurredAt": zod.string().datetime({"offset":true}),
   "actor": zod.string(),
   "version": zod.number().int(),
   "outcome": zod.enum(['NO_ANSWER', 'VOICEMAIL', 'CONNECTED', 'NOT_INTERESTED']),
@@ -29628,14 +29594,6 @@ export const TransitionTransactionDocumentBody = zod.object({
 })
 
 
-export const transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneBuyerOneNameMax = 200;
-
-export const transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneBuyerOneEmailMax = 200;
-
-export const transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneBuyerOnePhoneMax = 50;
-
-export const transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneBuyerOneSourceMax = 2000;
-
 export const transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneBuyerOneCriteriaOneStatesItemMin = 2;
 export const transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneBuyerOneCriteriaOneStatesItemMax = 2;
 
@@ -29700,11 +29658,6 @@ export const transitionTransactionDocumentResponseContractOneCommitmentSnapshotO
 
 export const transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneBuyerOneCriteriaOneMinCapRateMin = 0;
 export const transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneBuyerOneCriteriaOneMinCapRateMax = 1;
-
-export const transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneBuyerOneQualifiedDealFeeMin = 0;
-export const transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneBuyerOneQualifiedDealFeeMax = 1000000000;
-
-export const transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneBuyerOneFeeTermsSourceMax = 2000;
 
 export const transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneBuyerTwoDiscoveryEvidenceConfidenceMin = 0;
 export const transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneBuyerTwoDiscoveryEvidenceConfidenceMax = 1;
@@ -30224,10 +30177,10 @@ export const TransitionTransactionDocumentResponse = zod.object({
   "commitmentSnapshot": zod.union([zod.object({
   "recordedAt": zod.string().optional(),
   "buyer": zod.object({
-  "name": zod.string().min(1).max(transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneBuyerOneNameMax),
-  "email": zod.string().max(transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneBuyerOneEmailMax),
-  "phone": zod.string().max(transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneBuyerOnePhoneMax),
-  "source": zod.string().min(1).max(transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneBuyerOneSourceMax),
+  "name": zod.string(),
+  "email": zod.string(),
+  "phone": zod.string(),
+  "source": zod.string(),
   "criteria": zod.union([zod.object({
   "states": zod.array(zod.string().min(transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneBuyerOneCriteriaOneStatesItemMin).max(transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneBuyerOneCriteriaOneStatesItemMax)).min(1),
   "cities": zod.array(zod.string().min(1)),
@@ -30260,8 +30213,8 @@ export const TransitionTransactionDocumentResponse = zod.object({
 }),zod.null()]),
   "status": zod.enum(['ACTIVE', 'PAUSED']),
   "destinationKind": zod.enum(['BUYER', 'DEAL_FINDER', 'GURU']).optional(),
-  "qualifiedDealFee": zod.number().min(transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneBuyerOneQualifiedDealFeeMin).max(transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneBuyerOneQualifiedDealFeeMax).nullish(),
-  "feeTermsSource": zod.string().max(transitionTransactionDocumentResponseContractOneCommitmentSnapshotOneBuyerOneFeeTermsSourceMax).optional()
+  "qualifiedDealFee": zod.number().nullish(),
+  "feeTermsSource": zod.string().optional()
 }).and(zod.object({
   "id": zod.string(),
   "version": zod.number().int(),
@@ -30835,6 +30788,7 @@ export const TransitionTransactionDocumentResponse = zod.object({
   "calls": zod.array(zod.object({
   "id": zod.string(),
   "createdAt": zod.string(),
+  "occurredAt": zod.string().datetime({"offset":true}),
   "actor": zod.string(),
   "version": zod.number().int(),
   "outcome": zod.enum(['NO_ANSWER', 'VOICEMAIL', 'CONNECTED', 'NOT_INTERESTED']),
@@ -31200,7 +31154,18 @@ export const GetTransactionReadinessResponse = zod.object({
   "nextAction": zod.string()
 }))
 }))
-})
+}),
+  "providers": zod.array(zod.object({
+  "id": zod.string(),
+  "name": zod.string(),
+  "category": zod.enum(['PROPERTY_SOURCE', 'CONTACT_RESEARCH', 'MESSAGING', 'DOCUMENT_SIGNATURE', 'CLOSING_COORDINATION', 'FILE_STORAGE']),
+  "status": zod.enum(['CONNECTED', 'DISCONNECTED', 'DEGRADED', 'RATE_LIMITED', 'UNCONFIGURED']),
+  "checkedAt": zod.string().datetime({"offset":true}),
+  "lastSuccessAt": zod.string().datetime({"offset":true}).nullish(),
+  "checkKind": zod.enum(['PERSISTED_JOB', 'ADAPTER_REGISTRATION', 'READINESS_CHECK', 'CONFIGURATION_CHECK']),
+  "reason": zod.string(),
+  "nextAction": zod.string()
+}))
 })
 })
 
@@ -31226,14 +31191,6 @@ export const ExecuteContractBody = zod.object({
   "reviewNote": zod.string().min(executeContractBodyReviewNoteMin).max(executeContractBodyReviewNoteMax)
 })
 
-
-export const executeContractResponseContractOneCommitmentSnapshotOneBuyerOneNameMax = 200;
-
-export const executeContractResponseContractOneCommitmentSnapshotOneBuyerOneEmailMax = 200;
-
-export const executeContractResponseContractOneCommitmentSnapshotOneBuyerOnePhoneMax = 50;
-
-export const executeContractResponseContractOneCommitmentSnapshotOneBuyerOneSourceMax = 2000;
 
 export const executeContractResponseContractOneCommitmentSnapshotOneBuyerOneCriteriaOneStatesItemMin = 2;
 export const executeContractResponseContractOneCommitmentSnapshotOneBuyerOneCriteriaOneStatesItemMax = 2;
@@ -31299,11 +31256,6 @@ export const executeContractResponseContractOneCommitmentSnapshotOneBuyerOneCrit
 
 export const executeContractResponseContractOneCommitmentSnapshotOneBuyerOneCriteriaOneMinCapRateMin = 0;
 export const executeContractResponseContractOneCommitmentSnapshotOneBuyerOneCriteriaOneMinCapRateMax = 1;
-
-export const executeContractResponseContractOneCommitmentSnapshotOneBuyerOneQualifiedDealFeeMin = 0;
-export const executeContractResponseContractOneCommitmentSnapshotOneBuyerOneQualifiedDealFeeMax = 1000000000;
-
-export const executeContractResponseContractOneCommitmentSnapshotOneBuyerOneFeeTermsSourceMax = 2000;
 
 export const executeContractResponseContractOneCommitmentSnapshotOneBuyerTwoDiscoveryEvidenceConfidenceMin = 0;
 export const executeContractResponseContractOneCommitmentSnapshotOneBuyerTwoDiscoveryEvidenceConfidenceMax = 1;
@@ -31823,10 +31775,10 @@ export const ExecuteContractResponse = zod.object({
   "commitmentSnapshot": zod.union([zod.object({
   "recordedAt": zod.string().optional(),
   "buyer": zod.object({
-  "name": zod.string().min(1).max(executeContractResponseContractOneCommitmentSnapshotOneBuyerOneNameMax),
-  "email": zod.string().max(executeContractResponseContractOneCommitmentSnapshotOneBuyerOneEmailMax),
-  "phone": zod.string().max(executeContractResponseContractOneCommitmentSnapshotOneBuyerOnePhoneMax),
-  "source": zod.string().min(1).max(executeContractResponseContractOneCommitmentSnapshotOneBuyerOneSourceMax),
+  "name": zod.string(),
+  "email": zod.string(),
+  "phone": zod.string(),
+  "source": zod.string(),
   "criteria": zod.union([zod.object({
   "states": zod.array(zod.string().min(executeContractResponseContractOneCommitmentSnapshotOneBuyerOneCriteriaOneStatesItemMin).max(executeContractResponseContractOneCommitmentSnapshotOneBuyerOneCriteriaOneStatesItemMax)).min(1),
   "cities": zod.array(zod.string().min(1)),
@@ -31859,8 +31811,8 @@ export const ExecuteContractResponse = zod.object({
 }),zod.null()]),
   "status": zod.enum(['ACTIVE', 'PAUSED']),
   "destinationKind": zod.enum(['BUYER', 'DEAL_FINDER', 'GURU']).optional(),
-  "qualifiedDealFee": zod.number().min(executeContractResponseContractOneCommitmentSnapshotOneBuyerOneQualifiedDealFeeMin).max(executeContractResponseContractOneCommitmentSnapshotOneBuyerOneQualifiedDealFeeMax).nullish(),
-  "feeTermsSource": zod.string().max(executeContractResponseContractOneCommitmentSnapshotOneBuyerOneFeeTermsSourceMax).optional()
+  "qualifiedDealFee": zod.number().nullish(),
+  "feeTermsSource": zod.string().optional()
 }).and(zod.object({
   "id": zod.string(),
   "version": zod.number().int(),
@@ -32434,6 +32386,7 @@ export const ExecuteContractResponse = zod.object({
   "calls": zod.array(zod.object({
   "id": zod.string(),
   "createdAt": zod.string(),
+  "occurredAt": zod.string().datetime({"offset":true}),
   "actor": zod.string(),
   "version": zod.number().int(),
   "outcome": zod.enum(['NO_ANSWER', 'VOICEMAIL', 'CONNECTED', 'NOT_INTERESTED']),
@@ -32648,14 +32601,6 @@ export const RecordClosingMilestoneBody = zod.object({
 })
 
 
-export const recordClosingMilestoneResponseContractOneCommitmentSnapshotOneBuyerOneNameMax = 200;
-
-export const recordClosingMilestoneResponseContractOneCommitmentSnapshotOneBuyerOneEmailMax = 200;
-
-export const recordClosingMilestoneResponseContractOneCommitmentSnapshotOneBuyerOnePhoneMax = 50;
-
-export const recordClosingMilestoneResponseContractOneCommitmentSnapshotOneBuyerOneSourceMax = 2000;
-
 export const recordClosingMilestoneResponseContractOneCommitmentSnapshotOneBuyerOneCriteriaOneStatesItemMin = 2;
 export const recordClosingMilestoneResponseContractOneCommitmentSnapshotOneBuyerOneCriteriaOneStatesItemMax = 2;
 
@@ -32720,11 +32665,6 @@ export const recordClosingMilestoneResponseContractOneCommitmentSnapshotOneBuyer
 
 export const recordClosingMilestoneResponseContractOneCommitmentSnapshotOneBuyerOneCriteriaOneMinCapRateMin = 0;
 export const recordClosingMilestoneResponseContractOneCommitmentSnapshotOneBuyerOneCriteriaOneMinCapRateMax = 1;
-
-export const recordClosingMilestoneResponseContractOneCommitmentSnapshotOneBuyerOneQualifiedDealFeeMin = 0;
-export const recordClosingMilestoneResponseContractOneCommitmentSnapshotOneBuyerOneQualifiedDealFeeMax = 1000000000;
-
-export const recordClosingMilestoneResponseContractOneCommitmentSnapshotOneBuyerOneFeeTermsSourceMax = 2000;
 
 export const recordClosingMilestoneResponseContractOneCommitmentSnapshotOneBuyerTwoDiscoveryEvidenceConfidenceMin = 0;
 export const recordClosingMilestoneResponseContractOneCommitmentSnapshotOneBuyerTwoDiscoveryEvidenceConfidenceMax = 1;
@@ -33244,10 +33184,10 @@ export const RecordClosingMilestoneResponse = zod.object({
   "commitmentSnapshot": zod.union([zod.object({
   "recordedAt": zod.string().optional(),
   "buyer": zod.object({
-  "name": zod.string().min(1).max(recordClosingMilestoneResponseContractOneCommitmentSnapshotOneBuyerOneNameMax),
-  "email": zod.string().max(recordClosingMilestoneResponseContractOneCommitmentSnapshotOneBuyerOneEmailMax),
-  "phone": zod.string().max(recordClosingMilestoneResponseContractOneCommitmentSnapshotOneBuyerOnePhoneMax),
-  "source": zod.string().min(1).max(recordClosingMilestoneResponseContractOneCommitmentSnapshotOneBuyerOneSourceMax),
+  "name": zod.string(),
+  "email": zod.string(),
+  "phone": zod.string(),
+  "source": zod.string(),
   "criteria": zod.union([zod.object({
   "states": zod.array(zod.string().min(recordClosingMilestoneResponseContractOneCommitmentSnapshotOneBuyerOneCriteriaOneStatesItemMin).max(recordClosingMilestoneResponseContractOneCommitmentSnapshotOneBuyerOneCriteriaOneStatesItemMax)).min(1),
   "cities": zod.array(zod.string().min(1)),
@@ -33280,8 +33220,8 @@ export const RecordClosingMilestoneResponse = zod.object({
 }),zod.null()]),
   "status": zod.enum(['ACTIVE', 'PAUSED']),
   "destinationKind": zod.enum(['BUYER', 'DEAL_FINDER', 'GURU']).optional(),
-  "qualifiedDealFee": zod.number().min(recordClosingMilestoneResponseContractOneCommitmentSnapshotOneBuyerOneQualifiedDealFeeMin).max(recordClosingMilestoneResponseContractOneCommitmentSnapshotOneBuyerOneQualifiedDealFeeMax).nullish(),
-  "feeTermsSource": zod.string().max(recordClosingMilestoneResponseContractOneCommitmentSnapshotOneBuyerOneFeeTermsSourceMax).optional()
+  "qualifiedDealFee": zod.number().nullish(),
+  "feeTermsSource": zod.string().optional()
 }).and(zod.object({
   "id": zod.string(),
   "version": zod.number().int(),
@@ -33855,6 +33795,7 @@ export const RecordClosingMilestoneResponse = zod.object({
   "calls": zod.array(zod.object({
   "id": zod.string(),
   "createdAt": zod.string(),
+  "occurredAt": zod.string().datetime({"offset":true}),
   "actor": zod.string(),
   "version": zod.number().int(),
   "outcome": zod.enum(['NO_ANSWER', 'VOICEMAIL', 'CONNECTED', 'NOT_INTERESTED']),
@@ -34073,14 +34014,6 @@ export const RecordTransactionDeadlineScheduleBody = zod.object({
 })
 
 
-export const recordTransactionDeadlineScheduleResponseContractOneCommitmentSnapshotOneBuyerOneNameMax = 200;
-
-export const recordTransactionDeadlineScheduleResponseContractOneCommitmentSnapshotOneBuyerOneEmailMax = 200;
-
-export const recordTransactionDeadlineScheduleResponseContractOneCommitmentSnapshotOneBuyerOnePhoneMax = 50;
-
-export const recordTransactionDeadlineScheduleResponseContractOneCommitmentSnapshotOneBuyerOneSourceMax = 2000;
-
 export const recordTransactionDeadlineScheduleResponseContractOneCommitmentSnapshotOneBuyerOneCriteriaOneStatesItemMin = 2;
 export const recordTransactionDeadlineScheduleResponseContractOneCommitmentSnapshotOneBuyerOneCriteriaOneStatesItemMax = 2;
 
@@ -34145,11 +34078,6 @@ export const recordTransactionDeadlineScheduleResponseContractOneCommitmentSnaps
 
 export const recordTransactionDeadlineScheduleResponseContractOneCommitmentSnapshotOneBuyerOneCriteriaOneMinCapRateMin = 0;
 export const recordTransactionDeadlineScheduleResponseContractOneCommitmentSnapshotOneBuyerOneCriteriaOneMinCapRateMax = 1;
-
-export const recordTransactionDeadlineScheduleResponseContractOneCommitmentSnapshotOneBuyerOneQualifiedDealFeeMin = 0;
-export const recordTransactionDeadlineScheduleResponseContractOneCommitmentSnapshotOneBuyerOneQualifiedDealFeeMax = 1000000000;
-
-export const recordTransactionDeadlineScheduleResponseContractOneCommitmentSnapshotOneBuyerOneFeeTermsSourceMax = 2000;
 
 export const recordTransactionDeadlineScheduleResponseContractOneCommitmentSnapshotOneBuyerTwoDiscoveryEvidenceConfidenceMin = 0;
 export const recordTransactionDeadlineScheduleResponseContractOneCommitmentSnapshotOneBuyerTwoDiscoveryEvidenceConfidenceMax = 1;
@@ -34669,10 +34597,10 @@ export const RecordTransactionDeadlineScheduleResponse = zod.object({
   "commitmentSnapshot": zod.union([zod.object({
   "recordedAt": zod.string().optional(),
   "buyer": zod.object({
-  "name": zod.string().min(1).max(recordTransactionDeadlineScheduleResponseContractOneCommitmentSnapshotOneBuyerOneNameMax),
-  "email": zod.string().max(recordTransactionDeadlineScheduleResponseContractOneCommitmentSnapshotOneBuyerOneEmailMax),
-  "phone": zod.string().max(recordTransactionDeadlineScheduleResponseContractOneCommitmentSnapshotOneBuyerOnePhoneMax),
-  "source": zod.string().min(1).max(recordTransactionDeadlineScheduleResponseContractOneCommitmentSnapshotOneBuyerOneSourceMax),
+  "name": zod.string(),
+  "email": zod.string(),
+  "phone": zod.string(),
+  "source": zod.string(),
   "criteria": zod.union([zod.object({
   "states": zod.array(zod.string().min(recordTransactionDeadlineScheduleResponseContractOneCommitmentSnapshotOneBuyerOneCriteriaOneStatesItemMin).max(recordTransactionDeadlineScheduleResponseContractOneCommitmentSnapshotOneBuyerOneCriteriaOneStatesItemMax)).min(1),
   "cities": zod.array(zod.string().min(1)),
@@ -34705,8 +34633,8 @@ export const RecordTransactionDeadlineScheduleResponse = zod.object({
 }),zod.null()]),
   "status": zod.enum(['ACTIVE', 'PAUSED']),
   "destinationKind": zod.enum(['BUYER', 'DEAL_FINDER', 'GURU']).optional(),
-  "qualifiedDealFee": zod.number().min(recordTransactionDeadlineScheduleResponseContractOneCommitmentSnapshotOneBuyerOneQualifiedDealFeeMin).max(recordTransactionDeadlineScheduleResponseContractOneCommitmentSnapshotOneBuyerOneQualifiedDealFeeMax).nullish(),
-  "feeTermsSource": zod.string().max(recordTransactionDeadlineScheduleResponseContractOneCommitmentSnapshotOneBuyerOneFeeTermsSourceMax).optional()
+  "qualifiedDealFee": zod.number().nullish(),
+  "feeTermsSource": zod.string().optional()
 }).and(zod.object({
   "id": zod.string(),
   "version": zod.number().int(),
@@ -35280,6 +35208,7 @@ export const RecordTransactionDeadlineScheduleResponse = zod.object({
   "calls": zod.array(zod.object({
   "id": zod.string(),
   "createdAt": zod.string(),
+  "occurredAt": zod.string().datetime({"offset":true}),
   "actor": zod.string(),
   "version": zod.number().int(),
   "outcome": zod.enum(['NO_ANSWER', 'VOICEMAIL', 'CONNECTED', 'NOT_INTERESTED']),
@@ -35492,14 +35421,6 @@ export const RecordDealOutcomeBody = zod.object({
 })
 
 
-export const recordDealOutcomeResponseContractOneCommitmentSnapshotOneBuyerOneNameMax = 200;
-
-export const recordDealOutcomeResponseContractOneCommitmentSnapshotOneBuyerOneEmailMax = 200;
-
-export const recordDealOutcomeResponseContractOneCommitmentSnapshotOneBuyerOnePhoneMax = 50;
-
-export const recordDealOutcomeResponseContractOneCommitmentSnapshotOneBuyerOneSourceMax = 2000;
-
 export const recordDealOutcomeResponseContractOneCommitmentSnapshotOneBuyerOneCriteriaOneStatesItemMin = 2;
 export const recordDealOutcomeResponseContractOneCommitmentSnapshotOneBuyerOneCriteriaOneStatesItemMax = 2;
 
@@ -35564,11 +35485,6 @@ export const recordDealOutcomeResponseContractOneCommitmentSnapshotOneBuyerOneCr
 
 export const recordDealOutcomeResponseContractOneCommitmentSnapshotOneBuyerOneCriteriaOneMinCapRateMin = 0;
 export const recordDealOutcomeResponseContractOneCommitmentSnapshotOneBuyerOneCriteriaOneMinCapRateMax = 1;
-
-export const recordDealOutcomeResponseContractOneCommitmentSnapshotOneBuyerOneQualifiedDealFeeMin = 0;
-export const recordDealOutcomeResponseContractOneCommitmentSnapshotOneBuyerOneQualifiedDealFeeMax = 1000000000;
-
-export const recordDealOutcomeResponseContractOneCommitmentSnapshotOneBuyerOneFeeTermsSourceMax = 2000;
 
 export const recordDealOutcomeResponseContractOneCommitmentSnapshotOneBuyerTwoDiscoveryEvidenceConfidenceMin = 0;
 export const recordDealOutcomeResponseContractOneCommitmentSnapshotOneBuyerTwoDiscoveryEvidenceConfidenceMax = 1;
@@ -36088,10 +36004,10 @@ export const RecordDealOutcomeResponse = zod.object({
   "commitmentSnapshot": zod.union([zod.object({
   "recordedAt": zod.string().optional(),
   "buyer": zod.object({
-  "name": zod.string().min(1).max(recordDealOutcomeResponseContractOneCommitmentSnapshotOneBuyerOneNameMax),
-  "email": zod.string().max(recordDealOutcomeResponseContractOneCommitmentSnapshotOneBuyerOneEmailMax),
-  "phone": zod.string().max(recordDealOutcomeResponseContractOneCommitmentSnapshotOneBuyerOnePhoneMax),
-  "source": zod.string().min(1).max(recordDealOutcomeResponseContractOneCommitmentSnapshotOneBuyerOneSourceMax),
+  "name": zod.string(),
+  "email": zod.string(),
+  "phone": zod.string(),
+  "source": zod.string(),
   "criteria": zod.union([zod.object({
   "states": zod.array(zod.string().min(recordDealOutcomeResponseContractOneCommitmentSnapshotOneBuyerOneCriteriaOneStatesItemMin).max(recordDealOutcomeResponseContractOneCommitmentSnapshotOneBuyerOneCriteriaOneStatesItemMax)).min(1),
   "cities": zod.array(zod.string().min(1)),
@@ -36124,8 +36040,8 @@ export const RecordDealOutcomeResponse = zod.object({
 }),zod.null()]),
   "status": zod.enum(['ACTIVE', 'PAUSED']),
   "destinationKind": zod.enum(['BUYER', 'DEAL_FINDER', 'GURU']).optional(),
-  "qualifiedDealFee": zod.number().min(recordDealOutcomeResponseContractOneCommitmentSnapshotOneBuyerOneQualifiedDealFeeMin).max(recordDealOutcomeResponseContractOneCommitmentSnapshotOneBuyerOneQualifiedDealFeeMax).nullish(),
-  "feeTermsSource": zod.string().max(recordDealOutcomeResponseContractOneCommitmentSnapshotOneBuyerOneFeeTermsSourceMax).optional()
+  "qualifiedDealFee": zod.number().nullish(),
+  "feeTermsSource": zod.string().optional()
 }).and(zod.object({
   "id": zod.string(),
   "version": zod.number().int(),
@@ -36699,6 +36615,7 @@ export const RecordDealOutcomeResponse = zod.object({
   "calls": zod.array(zod.object({
   "id": zod.string(),
   "createdAt": zod.string(),
+  "occurredAt": zod.string().datetime({"offset":true}),
   "actor": zod.string(),
   "version": zod.number().int(),
   "outcome": zod.enum(['NO_ANSWER', 'VOICEMAIL', 'CONNECTED', 'NOT_INTERESTED']),
@@ -36892,14 +36809,6 @@ export const RequestBuyerQualificationBody = zod.object({
   "note": zod.string().min(requestBuyerQualificationBodyNoteMin).max(requestBuyerQualificationBodyNoteMax)
 })
 
-export const requestBuyerQualificationResponseOneNameMax = 200;
-
-export const requestBuyerQualificationResponseOneEmailMax = 200;
-
-export const requestBuyerQualificationResponseOnePhoneMax = 50;
-
-export const requestBuyerQualificationResponseOneSourceMax = 2000;
-
 export const requestBuyerQualificationResponseOneCriteriaOneStatesItemMin = 2;
 export const requestBuyerQualificationResponseOneCriteriaOneStatesItemMax = 2;
 
@@ -36964,11 +36873,6 @@ export const requestBuyerQualificationResponseOneCriteriaOneMinSpreadMax = 10000
 
 export const requestBuyerQualificationResponseOneCriteriaOneMinCapRateMin = 0;
 export const requestBuyerQualificationResponseOneCriteriaOneMinCapRateMax = 1;
-
-export const requestBuyerQualificationResponseOneQualifiedDealFeeMin = 0;
-export const requestBuyerQualificationResponseOneQualifiedDealFeeMax = 1000000000;
-
-export const requestBuyerQualificationResponseOneFeeTermsSourceMax = 2000;
 
 export const requestBuyerQualificationResponseTwoDiscoveryEvidenceConfidenceMin = 0;
 export const requestBuyerQualificationResponseTwoDiscoveryEvidenceConfidenceMax = 1;
@@ -37125,10 +37029,10 @@ export const requestBuyerQualificationResponseTwoQualificationPortalSelfReportCr
 
 
 export const RequestBuyerQualificationResponse = zod.object({
-  "name": zod.string().min(1).max(requestBuyerQualificationResponseOneNameMax),
-  "email": zod.string().max(requestBuyerQualificationResponseOneEmailMax),
-  "phone": zod.string().max(requestBuyerQualificationResponseOnePhoneMax),
-  "source": zod.string().min(1).max(requestBuyerQualificationResponseOneSourceMax),
+  "name": zod.string(),
+  "email": zod.string(),
+  "phone": zod.string(),
+  "source": zod.string(),
   "criteria": zod.union([zod.object({
   "states": zod.array(zod.string().min(requestBuyerQualificationResponseOneCriteriaOneStatesItemMin).max(requestBuyerQualificationResponseOneCriteriaOneStatesItemMax)).min(1),
   "cities": zod.array(zod.string().min(1)),
@@ -37161,8 +37065,8 @@ export const RequestBuyerQualificationResponse = zod.object({
 }),zod.null()]),
   "status": zod.enum(['ACTIVE', 'PAUSED']),
   "destinationKind": zod.enum(['BUYER', 'DEAL_FINDER', 'GURU']).optional(),
-  "qualifiedDealFee": zod.number().min(requestBuyerQualificationResponseOneQualifiedDealFeeMin).max(requestBuyerQualificationResponseOneQualifiedDealFeeMax).nullish(),
-  "feeTermsSource": zod.string().max(requestBuyerQualificationResponseOneFeeTermsSourceMax).optional()
+  "qualifiedDealFee": zod.number().nullish(),
+  "feeTermsSource": zod.string().optional()
 }).and(zod.object({
   "id": zod.string(),
   "version": zod.number().int(),
@@ -41447,6 +41351,7 @@ export const AddSourceCompsResponse = zod.object({
   "calls": zod.array(zod.object({
   "id": zod.string(),
   "createdAt": zod.string(),
+  "occurredAt": zod.string().datetime({"offset":true}),
   "actor": zod.string(),
   "version": zod.number().int(),
   "outcome": zod.enum(['NO_ANSWER', 'VOICEMAIL', 'CONNECTED', 'NOT_INTERESTED']),
@@ -41508,14 +41413,6 @@ export const DiscoverBuyerBody = zod.object({
   "confidence": zod.number().min(discoverBuyerBodyConfidenceMin).max(discoverBuyerBodyConfidenceMax),
   "destinationKind": zod.enum(['BUYER', 'DEAL_FINDER', 'GURU']).optional()
 })
-
-export const discoverBuyerResponseOneNameMax = 200;
-
-export const discoverBuyerResponseOneEmailMax = 200;
-
-export const discoverBuyerResponseOnePhoneMax = 50;
-
-export const discoverBuyerResponseOneSourceMax = 2000;
 
 export const discoverBuyerResponseOneCriteriaOneStatesItemMin = 2;
 export const discoverBuyerResponseOneCriteriaOneStatesItemMax = 2;
@@ -41581,11 +41478,6 @@ export const discoverBuyerResponseOneCriteriaOneMinSpreadMax = 1000000000;
 
 export const discoverBuyerResponseOneCriteriaOneMinCapRateMin = 0;
 export const discoverBuyerResponseOneCriteriaOneMinCapRateMax = 1;
-
-export const discoverBuyerResponseOneQualifiedDealFeeMin = 0;
-export const discoverBuyerResponseOneQualifiedDealFeeMax = 1000000000;
-
-export const discoverBuyerResponseOneFeeTermsSourceMax = 2000;
 
 export const discoverBuyerResponseTwoDiscoveryEvidenceConfidenceMin = 0;
 export const discoverBuyerResponseTwoDiscoveryEvidenceConfidenceMax = 1;
@@ -41742,10 +41634,10 @@ export const discoverBuyerResponseTwoQualificationPortalSelfReportCriteriaMinCap
 
 
 export const DiscoverBuyerResponse = zod.object({
-  "name": zod.string().min(1).max(discoverBuyerResponseOneNameMax),
-  "email": zod.string().max(discoverBuyerResponseOneEmailMax),
-  "phone": zod.string().max(discoverBuyerResponseOnePhoneMax),
-  "source": zod.string().min(1).max(discoverBuyerResponseOneSourceMax),
+  "name": zod.string(),
+  "email": zod.string(),
+  "phone": zod.string(),
+  "source": zod.string(),
   "criteria": zod.union([zod.object({
   "states": zod.array(zod.string().min(discoverBuyerResponseOneCriteriaOneStatesItemMin).max(discoverBuyerResponseOneCriteriaOneStatesItemMax)).min(1),
   "cities": zod.array(zod.string().min(1)),
@@ -41778,8 +41670,8 @@ export const DiscoverBuyerResponse = zod.object({
 }),zod.null()]),
   "status": zod.enum(['ACTIVE', 'PAUSED']),
   "destinationKind": zod.enum(['BUYER', 'DEAL_FINDER', 'GURU']).optional(),
-  "qualifiedDealFee": zod.number().min(discoverBuyerResponseOneQualifiedDealFeeMin).max(discoverBuyerResponseOneQualifiedDealFeeMax).nullish(),
-  "feeTermsSource": zod.string().max(discoverBuyerResponseOneFeeTermsSourceMax).optional()
+  "qualifiedDealFee": zod.number().nullish(),
+  "feeTermsSource": zod.string().optional()
 }).and(zod.object({
   "id": zod.string(),
   "version": zod.number().int(),

@@ -19,6 +19,7 @@ import { EvidenceIntake } from '@/components/evidence-intake';
 import { OffersPanel } from '@/components/offers-panel';
 import { DealOperationsPanel } from '@/components/deal-operations-panel';
 import { CallLogForm } from '@/components/call-log-form';
+import { sellerAnswersFromEvidence } from '@/lib/seller-answer-reuse';
 import { SellerContactPanel } from '@/components/seller-contact-panel';
 import { TransitionPanel } from '@/components/transition-panel';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
@@ -186,7 +187,7 @@ export default function LeadDetailPage() {
                 Review best available contact route
               </Link>}
       </div>
-      <AnalysisPanel analysis={d.analysis} comps={d.underwriting?.comps} />
+      <AnalysisPanel analysis={d.analysis} comps={d.underwriting?.comps} intelligence={d.intelligence} />
 
       <Tabs value={tab} onValueChange={setTab}>
         <TabsList className="flex h-auto flex-wrap justify-start" data-testid="tabs-lead">
@@ -241,7 +242,8 @@ export default function LeadDetailPage() {
             <p className="eyebrow mb-2">Seller / closing follow-up</p>
             <p className="mb-3 text-sm text-muted-foreground">Record coordination and the next follow-up. This does not alter executed terms or authorize a new price. A phone response cannot cancel a signed agreement.</p>
             {lead.sellerPhone && <a className="mb-3 inline-block font-semibold underline" href={`tel:${lead.sellerPhone.replace(/[^+\d]/g,'')}`}>Call {lead.sellerName}: {lead.sellerPhone}</a>}
-            <CallLogForm lead={lead} disabled={!canCall} pending={recordCall.isPending} error={recordCall.error}
+            <CallLogForm lead={lead} priorAnswers={sellerAnswersFromEvidence(d.intelligence)}
+              disabled={!canCall} pending={recordCall.isPending} error={recordCall.error}
               onSubmit={(data, done) => recordCall.mutate({id, data}, {onSuccess:() => {invalidate(id); done(); toast({title:'Follow-up recorded'});}})} />
           </section>}
           {d.calls.length === 0 ? <p className="ledger p-4 text-sm text-muted-foreground" data-testid="empty-calls">No calls logged for this seller. Calls are logged from the Call next screen.</p> : (

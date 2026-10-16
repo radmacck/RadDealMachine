@@ -15,6 +15,7 @@ import { audit } from "./deal-store";
 import { recordSellerContactObservation } from "./seller-contact-store";
 
 type ProviderOutcome = { status: string; reason: string; observationsAdded: number };
+type ProviderAttempt = { attempt: number; providerId: string; state: "SUBMITTED"|"CONFIRMED"|"FAILED"|"UNKNOWN"|"RATE_LIMITED"; at: string; responseCode?: string|null };
 type IngestResult = {
   added: boolean;
   stale: boolean;
@@ -35,12 +36,20 @@ const fingerprint = (value: unknown) =>
 
 function responseRecord(row: SellerContactEnrichmentRequestRow) {
   const outcomes = asProviderOutcomes(row.providerOutcomes);
+  const operation = outcomes.__externalOperation as {authorizationSnapshot?: unknown;attemptHistory?: ProviderAttempt[]}|undefined;
+  const operationState = row.status === "UNAVAILABLE" && row.providerIds.length === 0 ? "NOT_CONFIGURED"
+    : row.status === "BLOCKED_BY_PROVIDER_READINESS" ? "AWAITING_APPROVAL"
+      : row.status === "QUEUED" ? "QUEUED"
+        : row.status === "RUNNING" ? "SUBMITTED"
+          : row.status === "RETRY_WAIT" ? "UNKNOWN"
+            : ["SUCCEEDED", "NO_RESULT", "STALE_RESULT"].includes(row.status) ? "CONFIRMED" : "FAILED";
   return {
     id: row.id,
     leadId: row.leadId,
     idempotencyKey: row.idempotencyKey,
     channels: row.channels,
     status: row.status,
+    operationState,
     requestedLeadVersion: row.requestedLeadVersion,
     providerIds: row.providerIds,
     providerResults: row.providerIds.map(providerId => ({
@@ -49,6 +58,11 @@ function responseRecord(row: SellerContactEnrichmentRequestRow) {
       reason: outcomes[providerId]?.reason ?? "Waiting for a permitted provider to run.",
       observationsAdded: outcomes[providerId]?.observationsAdded ?? 0,
     })),
+    authorizationSnapshot: operation?.authorizationSnapshot ?? {
+      actorId: row.requestedBy, role: "UNKNOWN", leadVersion: row.requestedLeadVersion,
+      channels: row.channels, providerIds: row.providerIds, capturedAt: iso(row.createdAt),
+    },
+    attemptHistory: operation?.attemptHistory ?? [],
     attempts: row.attempts,
     maxAttempts: row.maxAttempts,
     nextAttemptAt: row.nextAttemptAt ? iso(row.nextAttemptAt) : null,
@@ -138,6 +152,13 @@ export async function requestSellerContactEnrichment(
       providerId,
       { status: "QUEUED", reason: "Waiting for a permitted source lookup.", observationsAdded: 0 },
     ]));
+    (providerOutcomes as Record<string, unknown>).__externalOperation = {
+      authorizationSnapshot: {
+        actorId: actor.id, role: actor.role, leadVersion: lead.version, channels,
+        providerIds, capturedAt: now.toISOString(),
+      },
+      attemptHistory: [],
+    };
     const status = disposition?.status ?? "QUEUED";
     const reason = disposition?.reason ?? "Queued for permitted source lookups. No calls, messages, or emails are sent.";
     const [created] = await tx.insert(sellerContactEnrichmentRequestsTable).values({
@@ -184,7 +205,7 @@ async function callProvider(
   const timeout = new Promise<never>((_resolve, reject) => {
     timer = setTimeout(() => {
       controller.abort();
-      reject(new ContactProviderError("TEMPORARY_FAILURE", true));
+      reject(new Error("PROVIDER_TIMEOUT"));
     }, 45_000);
     timer.unref?.();
   });
@@ -318,6 +339,17 @@ export async function runSellerContactEnrichmentOnce(
   const registry = providers.status();
   const providerById = new Map(providers.providers.map(provider => [provider.capability.providerId, provider]));
   const providerOutcomes = asProviderOutcomes(row.providerOutcomes);
+  const operationAudit = (providerOutcomes.__externalOperation ?? {
+    authorizationSnapshot: {
+      actorId: row.requestedBy, role: "UNKNOWN", leadVersion: row.requestedLeadVersion,
+      channels: row.channels, providerIds: row.providerIds, capturedAt: iso(row.createdAt),
+    },
+    attemptHistory: [],
+  }) as unknown as {
+    authorizationSnapshot: unknown;
+    attemptHistory: ProviderAttempt[];
+  };
+  providerOutcomes.__externalOperation = operationAudit as unknown as ProviderOutcome;
   const missingProviders = row.providerIds.filter(id => !providerById.has(id));
   if (missingProviders.length) {
     return updateRequest(row, {
@@ -380,6 +412,11 @@ export async function runSellerContactEnrichmentOnce(
       };
       break;
     }
+    operationAudit.attemptHistory.push({
+      attempt: row.attempts, providerId, state: "SUBMITTED", at: now.toISOString(),
+    });
+    await updateRequest(row, { providerOutcomes }, "EXTERNAL_PROVIDER_SUBMITTED",
+      `Provider ${providerId} submitted under durable request ${row.id}, attempt ${row.attempts}.`, now);
     try {
       const providerChannels = (row.channels as ContactEnrichmentChannel[])
         .filter(channel => provider.capability.channels.includes(channel));
@@ -397,6 +434,7 @@ export async function runSellerContactEnrichmentOnce(
           reason: "Provider policy or terms blocked this lookup; no contact data was collected.",
           observationsAdded: 0,
         };
+        operationAudit.attemptHistory.push({attempt:row.attempts,providerId,state:"CONFIRMED",at:now.toISOString(),responseCode:result.outcome});
         blocked = true;
         continue;
       }
@@ -406,6 +444,7 @@ export async function runSellerContactEnrichmentOnce(
           reason: "Provider returned no contact observations.",
           observationsAdded: 0,
         };
+        operationAudit.attemptHistory.push({attempt:row.attempts,providerId,state:"CONFIRMED",at:now.toISOString(),responseCode:result.outcome});
         continue;
       }
       if (!result.observations.length) throw new ContactProviderError("INVALID_RESPONSE", false);
@@ -459,8 +498,12 @@ export async function runSellerContactEnrichmentOnce(
         observationsAdded: providerAdded,
       };
       if (providerStale) break;
+      operationAudit.attemptHistory.push({attempt:row.attempts,providerId,state:"CONFIRMED",at:now.toISOString(),responseCode:providerOutcomes[providerId]?.status});
     } catch (error) {
-      const safeError = error instanceof ContactProviderError
+      const timedOut = error instanceof Error && error.message === "PROVIDER_TIMEOUT";
+      const safeError = timedOut
+        ? new ContactProviderError("TEMPORARY_FAILURE", true)
+        : error instanceof ContactProviderError
         ? error
         : new ContactProviderError("TEMPORARY_FAILURE", false);
       providerOutcomes[providerId] = {
@@ -470,11 +513,20 @@ export async function runSellerContactEnrichmentOnce(
           : "Provider result failed validation or execution; details withheld and no route was added.",
         observationsAdded: 0,
       };
+      operationAudit.attemptHistory.push({
+        attempt:row.attempts,providerId,state:timedOut?"UNKNOWN":safeError.code==="RATE_LIMITED"?"RATE_LIMITED":safeError.retryable?"UNKNOWN":"FAILED",
+        at:now.toISOString(),responseCode:safeError.code,
+      });
       if (safeError.retryable) retryableError = safeError;
     }
+    await updateRequest(row, { providerOutcomes }, "EXTERNAL_PROVIDER_RESPONSE",
+      `Provider ${providerId} response is retained without raw contact data.`, now);
   }
 
-  const retryNeeded = Object.values(providerOutcomes).some(result => result.status === "RETRY_WAIT");
+  const externalOutcomes = Object.entries(providerOutcomes)
+    .filter(([providerId]) => providerId !== "__externalOperation")
+    .map(([, outcome]) => outcome);
+  const retryNeeded = externalOutcomes.some(result => result.status === "RETRY_WAIT");
   if (retryNeeded && row.attempts < row.maxAttempts) {
     const retryAt = new Date(now.getTime() + retryDelayMs(row.attempts, retryableError?.retryAfterMs));
     return updateRequest(row, {
@@ -490,24 +542,27 @@ export async function runSellerContactEnrichmentOnce(
     `Retry scheduled at ${iso(retryAt)} after attempt ${row.attempts}.`, now);
   }
   if (retryNeeded) {
-    for (const [providerId, outcome] of Object.entries(providerOutcomes)) {
+    for (const [providerId, outcome] of Object.entries(providerOutcomes).filter(([id]) => id !== "__externalOperation")) {
       if (outcome.status === "RETRY_WAIT") providerOutcomes[providerId] = {
         ...outcome, status: "FAILED", reason: "Retry limit reached; no unconfirmed route was accepted.",
       };
     }
   }
-  const allNoResult = processed > 0 && added === 0 && Object.values(providerOutcomes)
+  const terminalOutcomes = Object.entries(providerOutcomes)
+    .filter(([providerId]) => providerId !== "__externalOperation")
+    .map(([, outcome]) => outcome);
+  const allNoResult = processed > 0 && added === 0 && terminalOutcomes
     .filter(result => result.status !== "BLOCKED_BY_POLICY" && result.status !== "BLOCKED_BY_TERMS")
     .every(result => result.status === "NO_RESULT");
   const allStale = stale || (staleEvidenceCount > 0 && staleEvidenceCount === added) ||
-    Object.values(providerOutcomes).some(result => result.status === "STALE_RESULT");
-  const allBlocked = !added && blocked && Object.values(providerOutcomes).every(result =>
+    terminalOutcomes.some(result => result.status === "STALE_RESULT");
+  const allBlocked = !added && blocked && terminalOutcomes.every(result =>
     ["BLOCKED_BY_POLICY", "BLOCKED_BY_TERMS", "BLOCKED_BY_PROVIDER_READINESS"].includes(result.status));
-  const allFailed = Object.values(providerOutcomes).some(result => result.status === "FAILED");
+  const allFailed = terminalOutcomes.some(result => result.status === "FAILED");
   const status = allStale ? "STALE_RESULT"
-    : allBlocked ? (Object.values(providerOutcomes).some(result => result.status === "BLOCKED_BY_PROVIDER_READINESS")
+    : allBlocked ? (terminalOutcomes.some(result => result.status === "BLOCKED_BY_PROVIDER_READINESS")
       ? "BLOCKED_BY_PROVIDER_READINESS"
-      : Object.values(providerOutcomes).some(result => result.status === "BLOCKED_BY_TERMS")
+      : terminalOutcomes.some(result => result.status === "BLOCKED_BY_TERMS")
         ? "BLOCKED_BY_TERMS" : "BLOCKED_BY_POLICY")
       : allNoResult ? "NO_RESULT"
         : allFailed && !added ? "FAILED"

@@ -16,6 +16,7 @@ import { audit, leadDetail } from "./deal-store";
 import { contractRecord } from "./operations-records";
 import { getTransactionDocumentReadiness, propertyDocumentJurisdiction } from "./transaction-document-registry";
 import { buyerOutreachReadiness } from "./buyer-outreach";
+import { providerHealth } from "./provider-health";
 import { evaluateLeadDecision } from "./intelligence-decision-store";
 import { lockDealEconomics } from "./locked-economics";
 import { calendarDateInZone, classifyMilestoneDeadline, scheduleCoversAllMilestones, transactionTermsHash } from "./transaction-deadlines";
@@ -905,6 +906,11 @@ export async function getTransactionReadinessReport(now = new Date()) {
   const openExceptions = exceptions.filter(item => item.status === "OPEN");
   const delivery = buyerOutreachReadiness({}, now);
   const readiness = await getTransactionDocumentReadiness(SYSTEM_ACTOR);
+  const providers = await providerHealth(now, {
+    signingProvider: readiness.signingProvider,
+    deliveryProvider: delivery,
+    storage: readiness.storage,
+  });
   const leadByJurisdiction = new Map<string,string>();
   for (const row of leads) {
     const jurisdiction = propertyDocumentJurisdiction(row.payload);
@@ -983,6 +989,7 @@ export async function getTransactionReadinessReport(now = new Date()) {
         nextAction: "Configure managed private object storage and verify authenticated access before treating legal-document storage as ready.",
       },
       jurisdictionTemplates,
+      providers,
     },
   });
 }

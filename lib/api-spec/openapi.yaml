@@ -315,6 +315,18 @@ paths:
           content:
             application/json:
               schema: { $ref: "#/components/schemas/LeadDetail" }
+  /leads/{id}/offers/{offerId}/review:
+    parameters:
+      - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
+      - { name: offerId, in: path, required: true, schema: { type: string, format: uuid } }
+    get:
+      operationId: getOfferReview
+      responses:
+        "200":
+          description: Immutable internal review packet for exact offer terms; never an offer sent to a seller
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/OfferReviewSnapshotResponse" }
   /leads/{id}/offers/{offerId}/communicate:
     parameters:
       - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
@@ -607,6 +619,17 @@ paths:
           content:
             application/json:
               schema: { $ref: "#/components/schemas/Buyer" }
+  /buyers/{id}/contact-research:
+    parameters:
+      - { name: id, in: path, required: true, schema: { type: string } }
+    get:
+      operationId: getBuyerContactResearch
+      responses:
+        "200":
+          description: Private, source-backed contact research and permission history
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/BuyerContactResearchResponse" }
   /buyers/{id}/contact-permission:
     parameters:
       - { name: id, in: path, required: true, schema: { type: string } }
@@ -2038,15 +2061,38 @@ components:
         status: { type: string, enum: [QUEUED, RUNNING, SUCCEEDED, NO_RESULT, STALE_RESULT, RETRY_WAIT, UNAVAILABLE, BLOCKED_BY_POLICY, BLOCKED_BY_TERMS, BLOCKED_BY_PROVIDER_READINESS, FAILED, CANCELLED] }
         reason: { type: string }
         observationsAdded: { type: integer, minimum: 0 }
+    ExternalOperationAttempt:
+      type: object
+      required: [attempt, providerId, state, at]
+      properties:
+        attempt: { type: integer, minimum: 1 }
+        providerId: { type: string }
+        state: { type: string, enum: [SUBMITTED, CONFIRMED, FAILED, UNKNOWN, RATE_LIMITED] }
+        at: { type: string, format: date-time }
+        responseCode: { type: ["string", "null"] }
+    ExternalOperationState:
+      type: string
+      enum: [NOT_CONFIGURED, AWAITING_APPROVAL, QUEUED, SUBMITTED, DELIVERED, CONFIRMED, FAILED, UNKNOWN]
+    ExternalAuthorizationSnapshot:
+      type: object
+      required: [actorId, role, leadVersion, channels, providerIds, capturedAt]
+      properties:
+        actorId: { type: string }
+        role: { type: string }
+        leadVersion: { type: integer, minimum: 1 }
+        channels: { type: array, items: { type: string } }
+        providerIds: { type: array, items: { type: string } }
+        capturedAt: { type: string, format: date-time }
     SellerContactEnrichmentRequest:
       type: object
-      required: [id, leadId, idempotencyKey, channels, status, requestedLeadVersion, providerIds, providerResults, attempts, maxAttempts, nextAttemptAt, resultCount, reason, lastFailureCode, createdAt, updatedAt]
+      required: [id, leadId, idempotencyKey, channels, status, operationState, requestedLeadVersion, providerIds, providerResults, attempts, maxAttempts, nextAttemptAt, resultCount, reason, lastFailureCode, authorizationSnapshot, attemptHistory, createdAt, updatedAt]
       properties:
         id: { type: string, format: uuid }
         leadId: { type: string, format: uuid }
         idempotencyKey: { type: string }
         channels: { type: array, items: { type: string, enum: [PHONE, EMAIL, WEB, OTHER] } }
         status: { type: string, enum: [QUEUED, RUNNING, SUCCEEDED, NO_RESULT, STALE_RESULT, RETRY_WAIT, UNAVAILABLE, BLOCKED_BY_POLICY, BLOCKED_BY_TERMS, BLOCKED_BY_PROVIDER_READINESS, FAILED, CANCELLED] }
+        operationState: { $ref: "#/components/schemas/ExternalOperationState" }
         requestedLeadVersion: { type: integer, minimum: 1 }
         providerIds: { type: array, items: { type: string } }
         providerResults: { type: array, items: { $ref: "#/components/schemas/SellerContactEnrichmentProviderResult" } }
@@ -2056,6 +2102,8 @@ components:
         resultCount: { type: integer, minimum: 0 }
         reason: { type: string }
         lastFailureCode: { type: ["string", "null"] }
+        authorizationSnapshot: { $ref: "#/components/schemas/ExternalAuthorizationSnapshot" }
+        attemptHistory: { type: array, items: { $ref: "#/components/schemas/ExternalOperationAttempt" } }
         createdAt: { type: string, format: date-time }
         updatedAt: { type: string, format: date-time }
     SellerContactEnrichmentStatus:
@@ -2338,6 +2386,9 @@ components:
         email: { type: string, maxLength: 200 }
         phone: { type: string, maxLength: 50 }
         source: { type: string, minLength: 1, maxLength: 2000 }
+        contactSourceUrl: { type: string, format: uri, pattern: "^https://", maxLength: 2000 }
+        contactObservedAt: { type: string, format: date-time }
+        contactConfidence: { type: number, minimum: 0, maximum: 1 }
         criteria: { oneOf: [{ $ref: "#/components/schemas/BuyerCriteria" }, { type: "null" }] }
         status: { type: string, enum: [ACTIVE, PAUSED] }
         destinationKind: { type: string, enum: [BUYER, DEAL_FINDER, GURU] }
@@ -2448,9 +2499,37 @@ components:
         validUntil: { type: [string, "null"], format: date-time }
         reviewedBy: { type: string }
         reviewedAt: { type: string, format: date-time }
+    BuyerProfile:
+      type: object
+      required: [name, email, phone, source, criteria, status]
+      properties:
+        name: { type: string }
+        email: { type: string }
+        phone: { type: string }
+        source: { type: string }
+        criteria: { oneOf: [{ $ref: "#/components/schemas/BuyerCriteria" }, { type: "null" }] }
+        status: { type: string, enum: [ACTIVE, PAUSED] }
+        destinationKind: { type: string, enum: [BUYER, DEAL_FINDER, GURU] }
+        qualifiedDealFee: { type: ["number", "null"] }
+        feeTermsSource: { type: string }
+    BuyerContactResearchResponse:
+      type: object
+      required: [buyerId, version, contactSourceUrl, contactObservedAt, contactConfidence, contactPermission, contactPermissionHistory, nextAction]
+      properties:
+        buyerId: { type: string, format: uuid }
+        version: { type: integer }
+        contactSourceUrl: { type: ["string", "null"] }
+        contactObservedAt: { type: ["string", "null"], format: date-time }
+        contactConfidence: { type: ["number", "null"], minimum: 0, maximum: 1 }
+        contactPermission:
+          oneOf:
+            - { $ref: "#/components/schemas/BuyerContactPermission" }
+            - { type: "null" }
+        contactPermissionHistory: { type: array, items: { $ref: "#/components/schemas/BuyerContactPermission" } }
+        nextAction: { type: string }
     Buyer:
       allOf:
-        - { $ref: "#/components/schemas/BuyerInput" }
+        - { $ref: "#/components/schemas/BuyerProfile" }
         - type: object
           required: [id, version, verificationStatus, createdAt, updatedAt]
           properties:
@@ -2980,7 +3059,7 @@ components:
         exceptions: { type: array, items: { $ref: "#/components/schemas/TransactionReadinessException" } }
         capabilities:
           type: object
-          required: [signingProvider, deliveryProvider, privateDocumentStorage, jurisdictionTemplates]
+          required: [signingProvider, deliveryProvider, privateDocumentStorage, jurisdictionTemplates, providers]
           properties:
             signingProvider:
               type: object
@@ -3031,6 +3110,22 @@ components:
                             ready: { type: boolean }
                             reason: { type: string }
                             nextAction: { type: string }
+            providers:
+              type: array
+              items: { $ref: "#/components/schemas/ProviderHealthEntry" }
+    ProviderHealthEntry:
+      type: object
+      required: [id, name, category, status, checkedAt, checkKind, reason, nextAction]
+      properties:
+        id: { type: string }
+        name: { type: string }
+        category: { type: string, enum: [PROPERTY_SOURCE, CONTACT_RESEARCH, MESSAGING, DOCUMENT_SIGNATURE, CLOSING_COORDINATION, FILE_STORAGE] }
+        status: { type: string, enum: [CONNECTED, DISCONNECTED, DEGRADED, RATE_LIMITED, UNCONFIGURED] }
+        checkedAt: { type: string, format: date-time }
+        lastSuccessAt: { type: ["string", "null"], format: date-time }
+        checkKind: { type: string, enum: [PERSISTED_JOB, ADAPTER_REGISTRATION, READINESS_CHECK, CONFIGURATION_CHECK] }
+        reason: { type: string }
+        nextAction: { type: string }
     DistributionAuthorizationInput:
       type: object
       required: [version, reason]
@@ -3918,6 +4013,7 @@ components:
       required: [version, outcome, notes, nextAction, followUpAt]
       properties:
         version: { type: integer, minimum: 1 }
+        idempotencyKey: { type: string, minLength: 8, maxLength: 200 }
         outcome: { type: string, enum: [NO_ANSWER, VOICEMAIL, CONNECTED, NOT_INTERESTED] }
         notes: { type: string, minLength: 1, maxLength: 10000 }
         nextAction: { type: string, minLength: 3, maxLength: 1000 }
@@ -3926,12 +4022,14 @@ components:
         operatorConfidence: { type: number, minimum: 0, maximum: 1 }
         clarificationStatus: { type: string, enum: [UNREVIEWED, FOLLOW_UP_REQUIRED, SELLER_CLARIFIED] }
         sellerAnswers: { $ref: "#/components/schemas/CallSellerAnswers" }
+        structuredFieldsJson: { type: string, maxLength: 24000, description: "Structured note extraction JSON, linked by exact note offsets and labeled with confidence and attribution." }
     Call:
       type: object
-      required: [id, createdAt, actor, version, outcome, notes, nextAction, followUpAt]
+      required: [id, createdAt, occurredAt, actor, version, outcome, notes, nextAction, followUpAt]
       properties:
         id: { type: string }
         createdAt: { type: string }
+        occurredAt: { type: string, format: date-time }
         actor: { type: string }
         version: { type: integer }
         outcome: { type: string, enum: [NO_ANSWER, VOICEMAIL, CONNECTED, NOT_INTERESTED] }
@@ -4041,11 +4139,13 @@ components:
           properties:
             version: { type: integer, minimum: 1 }
             reason: { type: string, minLength: 3, maxLength: 2000 }
+            draftExpiresAt: { type: string, format: date-time }
     OfferApprovalInput:
       type: object
       required: [version, maximumApprovedAcquisitionPrice, expiresAt, authorityEvidenceId, reason, nextAction, followUpAt]
       properties:
         version: { type: integer, minimum: 1 }
+        reviewSnapshotHash: { type: string, minLength: 64, maxLength: 64, pattern: "^[a-f0-9]{64}$" }
         maximumApprovedAcquisitionPrice: { type: number, exclusiveMinimum: 0, maximum: 1000000000 }
         expiresAt: { type: string, format: date-time }
         authorityEvidenceId: { type: string, format: uuid }
@@ -4098,6 +4198,14 @@ components:
             channel: { type: ["string", "null"] }
             evidence: { type: ["string", "null"] }
             withdrawalReason: { type: ["string", "null"] }
+    OfferReviewSnapshotResponse:
+      type: object
+      required: [offerId, draftExpiresAt, reviewSnapshotJson, reviewSnapshotHash]
+      properties:
+        offerId: { type: string, format: uuid }
+        draftExpiresAt: { type: string, format: date-time }
+        reviewSnapshotJson: { type: string, maxLength: 50000 }
+        reviewSnapshotHash: { type: string, minLength: 64, maxLength: 64, pattern: "^[a-f0-9]{64}$" }
     Dashboard:
       type: object
       required: [total, callReady, needsResearch, overdue, strong, negotiable, pass, stages, recentActivity]

@@ -83,11 +83,45 @@ test("B: only a queue item that passes the current readiness gate can recommend 
   assert.equal(result.humanAuthorizationRequired, true);
 });
 
+test("imminent and overdue contract deadlines outrank routine transaction work and stay human-gated", () => {
+  for (const closingAt of [
+    new Date(now.getTime() + 24 * 60 * 60_000).toISOString(),
+    new Date(now.getTime() - 60 * 60_000).toISOString(),
+  ]) {
+    const result = evaluateIntelligenceLoop({
+      subjectType: "LEAD", subjectId: "11111111-1111-4111-8111-111111111111",
+      leadId: "11111111-1111-4111-8111-111111111111", discoveryId: null,
+      detail: makeDetail(), acquisition: null,
+      operations: ops({ contract: { id: "contract-1", status: "UNDER_CONTRACT", committedBuyerId: "buyer-1", closingAt } }),
+      now,
+    });
+    assert.equal(result.recommendedAction?.code, "TRANSACTION_NEXT");
+    assert.equal(result.recommendedAction?.priority, 130);
+    assert.equal(result.recommendedAction?.requiresHumanAuthorization, true);
+    assert.match(result.recommendedAction?.reason ?? "", /overdue|within 72 hours/i);
+  }
+});
+
+test("distant closing deadlines do not displace the recorded buyer transaction step", () => {
+  const result = evaluateIntelligenceLoop({
+    subjectType: "LEAD", subjectId: "11111111-1111-4111-8111-111111111111",
+    leadId: "11111111-1111-4111-8111-111111111111", discoveryId: null,
+    detail: makeDetail(), acquisition: null,
+    operations: ops({ contract: { id: "contract-1", status: "UNDER_CONTRACT", committedBuyerId: "buyer-1",
+      closingAt: new Date(now.getTime() + 10 * 24 * 60 * 60_000).toISOString() } }),
+    now,
+  });
+  assert.equal(result.recommendedAction?.priority, 112);
+  assert.doesNotMatch(result.recommendedAction?.title ?? "", /deadline/i);
+});
+
 test("C and D: seller condition and price statements trigger separate deterministic next actions", () => {
   const detail = (category: string, id: string) => makeDetail({
     intelligence: [{
       id, sourceType: "SELLER", category, classification: "INDICATED",
-      statement: "Synthetic seller statement.", createdAt: now.toISOString(),
+      statement: "Synthetic seller statement.", source: "Synthetic seller interview",
+      sourceRecordId: `interview:${id}`, confidence: 0.8, capturedAt: now.toISOString(),
+      createdAt: now.toISOString(),
     }],
   });
   const base = {
@@ -178,4 +212,98 @@ test("identical evidence snapshot produces stable action code, order and evidenc
   const first = evaluateIntelligenceLoop(input);
   const second = evaluateIntelligenceLoop(input);
   assert.deepEqual(first, second);
+});
+
+test("expired seller claim blocks routine work and preserves source-backed next-step evidence", () => {
+  const oldAt = new Date(now.getTime() - 30 * 86_400_000).toISOString();
+  const result = evaluateIntelligenceLoop({
+    subjectType: "LEAD", subjectId: "11111111-1111-4111-8111-111111111111",
+    leadId: "11111111-1111-4111-8111-111111111111", discoveryId: "discovery-1",
+    detail: makeDetail({ intelligence: [{
+      id: "seller-claim-old", sourceType: "SELLER", category: "occupancy",
+      classification: "INDICATED", statement: "Synthetic seller says vacant.",
+      source: "Synthetic interview", sourceRecordId: "interview:old", confidence: 0.8,
+      capturedAt: oldAt, createdAt: oldAt,
+    }] }),
+    acquisition: makeQueue({ decision: "CALL_NEXT", blockerCode: null, blocker: null }),
+    operations: null, now,
+  });
+  assert.equal(result.recommendedAction?.code, "REFRESH_SOURCE_EVIDENCE");
+  assert.equal(result.recommendedAction?.eligible, true);
+  assert.match(result.recommendedAction?.reason ?? "", /Re-verify expired evidence/);
+  assert.ok(result.staleEvidence.some(item => item.ref === "intelligence:seller-claim-old"));
+  assert.ok(result.recommendedAction?.evidenceRefs.includes("intelligence:seller-claim-old"));
+  assert.match(result.known.find(item => item.ref === "intelligence:seller-claim-old")?.summary ?? "", /Seller-reported.*source Synthetic interview.*80%/);
+});
+
+test("contradictory source records remain visible and require reviewer reconciliation before dependent actions", () => {
+  const evidence = (id: string, source: string, value: string) => ({
+    id, sourceType: source === "Owner interview" ? "SELLER" : "PUBLIC_RECORD",
+    category: "occupancy", classification: "OBSERVED", statement: value,
+    source, sourceRecordId: `record:${id}`, confidence: 0.9,
+    capturedAt: now.toISOString(), createdAt: now.toISOString(),
+  });
+  const result = evaluateIntelligenceLoop({
+    subjectType: "LEAD", subjectId: "11111111-1111-4111-8111-111111111111",
+    leadId: "11111111-1111-4111-8111-111111111111", discoveryId: "discovery-1",
+    detail: makeDetail({ intelligence: [
+      evidence("occupancy-public", "Municipal record", "Occupied"),
+      evidence("occupancy-seller", "Owner interview", "Vacant"),
+    ] }),
+    acquisition: makeQueue({ decision: "CALL_NEXT", blockerCode: null, blocker: null }),
+    operations: null, now,
+  });
+  assert.equal(result.recommendedAction?.code, "RECONCILE_EVIDENCE");
+  assert.equal(result.conflicts.length, 2);
+  assert.deepEqual(result.conflicts.map(item => item.ref), ["intelligence:occupancy-public", "intelligence:occupancy-seller"]);
+  assert.ok(result.known.some(item => item.summary.includes("Occupied")));
+  assert.ok(result.known.some(item => item.summary.includes("Vacant")));
+  assert.match(result.recommendedAction?.reason ?? "", /preserved/);
+  assert.equal(result.recommendedAction?.requiresHumanAuthorization, true);
+});
+
+test("current dated seller evidence removes the stale-evidence block but keeps its provenance", () => {
+  const result = evaluateIntelligenceLoop({
+    subjectType: "LEAD", subjectId: "11111111-1111-4111-8111-111111111111",
+    leadId: "11111111-1111-4111-8111-111111111111", discoveryId: "discovery-1",
+    detail: makeDetail({ intelligence: [{
+      id: "seller-claim-current", sourceType: "SELLER", category: "asking_price",
+      classification: "INDICATED", statement: "Synthetic seller says $150,000.",
+      source: "Synthetic interview", sourceRecordId: "interview:current", confidence: 0.75,
+      capturedAt: now.toISOString(), createdAt: now.toISOString(),
+    }] }),
+    acquisition: null, operations: null, now,
+  });
+  assert.equal(result.staleEvidence.length, 0);
+  assert.ok(result.known.some(item => item.ref === "intelligence:seller-claim-current" && item.freshness === "CURRENT"));
+  assert.notEqual(result.recommendedAction?.code, "REFRESH_SOURCE_EVIDENCE");
+});
+
+test("same-valued re-verification clears the stale block while retaining the old source in history", () => {
+  const oldAt = new Date(now.getTime() - 31 * 86_400_000).toISOString();
+  const result = evaluateIntelligenceLoop({
+    subjectType: "LEAD", subjectId: "11111111-1111-4111-8111-111111111111",
+    leadId: "11111111-1111-4111-8111-111111111111", discoveryId: "discovery-1",
+    detail: makeDetail({ intelligence: [
+      {
+        id: "seller-claim-prior", sourceType: "SELLER", category: "occupancy",
+        classification: "INDICATED", statement: "Seller says vacant.",
+        source: "Synthetic interview", sourceRecordId: "interview:prior", confidence: 0.8,
+        capturedAt: oldAt, createdAt: oldAt,
+      },
+      {
+        id: "seller-claim-reverified", sourceType: "SELLER", category: "occupancy",
+        classification: "INDICATED", statement: "Seller says vacant.",
+        source: "Synthetic follow-up interview", sourceRecordId: "interview:reverified", confidence: 0.9,
+        capturedAt: now.toISOString(), createdAt: now.toISOString(),
+      },
+    ] }),
+    acquisition: makeQueue({ decision: "CALL_NEXT", blockerCode: null, blocker: null }),
+    operations: null, now,
+  });
+  assert.equal(result.staleEvidence.length, 0);
+  assert.ok(result.known.some(item => item.ref === "intelligence:seller-claim-prior"
+    && item.summary.includes("historical evidence retained")));
+  assert.ok(result.known.some(item => item.ref === "intelligence:seller-claim-reverified"));
+  assert.notEqual(result.recommendedAction?.code, "REFRESH_SOURCE_EVIDENCE");
 });

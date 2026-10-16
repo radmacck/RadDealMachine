@@ -28,6 +28,7 @@ import type {
   Buyer,
   BuyerContactPermission,
   BuyerContactPermissionInput,
+  BuyerContactResearchResponse,
   BuyerInput,
   BuyerIntakeDecision,
   BuyerIntakeDecisionInput,
@@ -83,6 +84,7 @@ import type {
   OfferApprovalInput,
   OfferCommunicationInput,
   OfferDraftInput,
+  OfferReviewSnapshotResponse,
   OfferWithdrawalInput,
   OutcomeActualsInput,
   OutcomeCalibrationRecommendation,
@@ -2033,6 +2035,82 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
       return useMutation(getAuthorizeOfferMutationOptions(options));
     }
 
+export const getGetOfferReviewUrl = (id: string,
+    offerId: string,) => {
+
+
+
+
+  return `/api/leads/${id}/offers/${offerId}/review`
+}
+
+export const getOfferReview = async (id: string,
+    offerId: string, options?: Parameters<typeof customFetch>[1]): Promise<OfferReviewSnapshotResponse> => {
+
+  return customFetch<OfferReviewSnapshotResponse>(getGetOfferReviewUrl(id,offerId),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetOfferReviewQueryKey = (id: string,
+    offerId: string,) => {
+    return [
+    `/api/leads/${id}/offers/${offerId}/review`
+    ] as const;
+    }
+
+
+export const getGetOfferReviewQueryOptions = <TData = Awaited<ReturnType<typeof getOfferReview>>, TError = ErrorType<unknown>>(id: string,
+    offerId: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getOfferReview>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetOfferReviewQueryKey(id,offerId);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getOfferReview>>> = ({ signal }) => getOfferReview(id,offerId, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: id !== null && id !== undefined && offerId !== null && offerId !== undefined, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getOfferReview>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetOfferReviewQueryResult = NonNullable<Awaited<ReturnType<typeof getOfferReview>>>
+export type GetOfferReviewQueryError = ErrorType<unknown>
+
+
+
+export function useGetOfferReview<TData = Awaited<ReturnType<typeof getOfferReview>>, TError = ErrorType<unknown>>(
+ id: string,
+    offerId: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getOfferReview>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetOfferReviewQueryOptions(id,offerId,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
 export const getCommunicateOfferUrl = (id: string,
     offerId: string,) => {
 
@@ -3829,6 +3907,77 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
       > => {
       return useMutation(getVerifyBuyerMutationOptions(options));
     }
+
+export const getGetBuyerContactResearchUrl = (id: string,) => {
+
+
+
+
+  return `/api/buyers/${id}/contact-research`
+}
+
+export const getBuyerContactResearch = async (id: string, options?: Parameters<typeof customFetch>[1]): Promise<BuyerContactResearchResponse> => {
+
+  return customFetch<BuyerContactResearchResponse>(getGetBuyerContactResearchUrl(id),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetBuyerContactResearchQueryKey = (id: string,) => {
+    return [
+    `/api/buyers/${id}/contact-research`
+    ] as const;
+    }
+
+
+export const getGetBuyerContactResearchQueryOptions = <TData = Awaited<ReturnType<typeof getBuyerContactResearch>>, TError = ErrorType<unknown>>(id: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getBuyerContactResearch>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetBuyerContactResearchQueryKey(id);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getBuyerContactResearch>>> = ({ signal }) => getBuyerContactResearch(id, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: id !== null && id !== undefined, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getBuyerContactResearch>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetBuyerContactResearchQueryResult = NonNullable<Awaited<ReturnType<typeof getBuyerContactResearch>>>
+export type GetBuyerContactResearchQueryError = ErrorType<unknown>
+
+
+
+export function useGetBuyerContactResearch<TData = Awaited<ReturnType<typeof getBuyerContactResearch>>, TError = ErrorType<unknown>>(
+ id: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getBuyerContactResearch>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetBuyerContactResearchQueryOptions(id,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
 
 export const getRecordBuyerContactPermissionUrl = (id: string,) => {
 

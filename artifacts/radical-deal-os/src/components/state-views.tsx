@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { errInfo } from '@/lib/format';
 
-export function ErrorNotice({ error, onRetry, title }: { error: unknown; onRetry?: () => void; title?: string }) {
+export function ErrorNotice({ error, onRetry, retryLabel, title }: { error: unknown; onRetry?: () => void; retryLabel?: string; title?: string }) {
   const { status, message, details } = errInfo(error);
   const head =
     title ??
@@ -29,7 +29,7 @@ export function ErrorNotice({ error, onRetry, title }: { error: unknown; onRetry
         )}
         {status === 409 && <p className="mt-1 text-xs">Your draft is kept. Review the latest record, then save again.</p>}
         {onRetry && (
-          <Button size="sm" variant="outline" className="mt-2" onClick={onRetry} data-testid="button-retry">Retry</Button>
+          <Button size="sm" variant="outline" className="mt-2" onClick={onRetry} data-testid="button-retry">{retryLabel ?? 'Retry'}</Button>
         )}
       </AlertDescription>
     </Alert>

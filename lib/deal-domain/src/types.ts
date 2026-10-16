@@ -28,7 +28,11 @@ export type AcquisitionQueueItem = AcquisitionQueue["items"][number];
 export type QueueSelectionInput = z.infer<typeof RecordAcquisitionQueueSelectionBody>;
 export type CallStartInput = z.infer<typeof StartCallSessionBody>;
 export type Offer = LeadDetail["offers"][number];
-export type StoredOffer = Omit<Offer,"effectiveStatus"|"blockers">;
+export type StoredOffer = Omit<Offer,"effectiveStatus"|"blockers"> & {
+  draftExpiresAt?: string;
+  reviewSnapshotJson?: string;
+  reviewSnapshotHash?: string;
+};
 export type OfferDraftInput = z.infer<typeof CreateOfferDraftBody>;
 export type OfferApprovalInput = z.infer<typeof AuthorizeOfferBody>;
 export type OfferCommunicationInput = z.infer<typeof CommunicateOfferBody>;

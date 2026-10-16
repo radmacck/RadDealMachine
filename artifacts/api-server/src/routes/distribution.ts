@@ -1,6 +1,6 @@
 import { Router, type IRouter } from "express";
 import * as schemas from "@workspace/api-zod";
-import { authenticated, membership, roles } from "../middlewares/access";
+import { authenticated, membership, roles, sensitiveWorkspaceData } from "../middlewares/access";
 import { actor, parse } from "./operations";
 import * as distribution from "../services/distribution-store";
 
@@ -34,6 +34,7 @@ publicBuyerPortalRouter.post("/portal/deal/response", async (req, res) => {
 
 export const internalDistributionRouter: IRouter = Router();
 internalDistributionRouter.use(authenticated, membership);
+internalDistributionRouter.use(sensitiveWorkspaceData);
 internalDistributionRouter.get("/deals/:id/distribution", async (req, res) => {
   const { id } = parse(schemas.GetDealDistributionParams, req.params);
   res.json(schemas.GetDealDistributionResponse.parse(await distribution.getDealDistribution(id)));

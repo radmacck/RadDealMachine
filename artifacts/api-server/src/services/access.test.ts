@@ -4,7 +4,7 @@ import { eq, sql } from "drizzle-orm";
 import type { Request, Response } from "express";
 import { db, pool, membersTable, auditTable } from "@workspace/db";
 import { getAccess, claimWorkspace, updateMember } from "./access";
-import { roles } from "../middlewares/access";
+import { roles, sensitiveWorkspaceData } from "../middlewares/access";
 
 type Tx = Parameters<Parameters<typeof db.transaction>[0]>[0];
 
@@ -95,5 +95,22 @@ test("owner-only role middleware rejects pending, viewer, analyst and operator",
     roles("OWNER")({} as Request,res,() => { continued=true; });
     assert.equal(continued,role==="OWNER");
     assert.equal(status,role==="OWNER"?undefined:403);
+  }
+});
+
+test("sensitive contact, property, finance and transaction routes deny viewer before any payload handler runs", () => {
+  for (const role of ["PENDING","VIEWER","ANALYST","OPERATOR","OWNER"]) {
+    let status: number|undefined;
+    let responseBody: unknown;
+    const res = {
+      locals:{role},status(n:number) { status=n; return this; },
+      json(value:unknown) { responseBody=value; return this; },
+    } as unknown as Response;
+    let continued = false;
+    sensitiveWorkspaceData({} as Request,res,() => { continued=true; });
+    const allowed = ["OWNER","ANALYST","OPERATOR"].includes(role);
+    assert.equal(continued,allowed,`${role} must not reach a sensitive response handler unless explicitly allowed.`);
+    assert.equal(status,allowed?undefined:403);
+    assert.deepEqual(responseBody,allowed?undefined:{error:"Your role is not permitted to perform this action."});
   }
 });

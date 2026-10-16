@@ -111,6 +111,11 @@ test("approval expiry and follow-up cannot silently outlive underwriting or appr
   assert.throws(() => validateOfferApproval(draft,{...approval,followUpAt:"2026-10-07T12:00:00Z"},ctx),/before/);
 });
 test("expired and superseded-snapshot approvals are never effective permissions",() => {
+  const approvedAfterDraftExpiry=evaluateOffer({...approved,draftExpiresAt:"2026-10-05T12:00:00Z"},{
+    ...ctx,now:new Date("2026-10-05T18:00:00Z"),
+  });
+  assert.equal(approvedAfterDraftExpiry.effectiveStatus,"AUTHORIZED",
+    "Once approved, the approval expiry—not the expired draft deadline—governs authority.");
   const expired = evaluateOffer(approved,{...ctx,now:new Date("2026-10-07T12:00:00Z")});
   assert.equal(expired.effectiveStatus,"EXPIRED");
   assert.match(expired.blockers.join(),/expired/);

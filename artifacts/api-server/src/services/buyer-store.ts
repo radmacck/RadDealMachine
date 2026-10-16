@@ -9,6 +9,10 @@ import { audit } from "./deal-store";
 function normalize(input: z.infer<typeof CreateBuyerBody>) {
   const parsed = CreateBuyerBody.parse(input);
   if (parsed.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(parsed.email)) throw new DomainError("Enter a valid buyer email.");
+  if (parsed.contactSourceUrl && !/^https:\/\//i.test(parsed.contactSourceUrl)) throw new DomainError("Buyer contact evidence URL must use HTTPS.");
+  if (parsed.contactObservedAt && (!Number.isFinite(Date.parse(parsed.contactObservedAt)) || Date.parse(parsed.contactObservedAt) > Date.now())) {
+    throw new DomainError("Buyer contact observation time must be valid and cannot be in the future.");
+  }
   validateCriteria(parsed.criteria);
   return {...parsed,name:parsed.name.trim(),source:parsed.source.trim(),destinationKind:parsed.destinationKind??"BUYER",criteria:parsed.criteria?{...parsed.criteria,
     states:parsed.criteria.states.map(s=>s.trim().toUpperCase()),cities:parsed.criteria.cities.map(s=>s.trim())}:null};
@@ -58,13 +62,31 @@ export async function updateBuyer(id: string, input: z.infer<typeof UpdateBuyerB
     const [row] = await tx.select().from(buyersTable).where(eq(buyersTable.id,id)).for("update");
     if (!row) throw new DomainError("Buyer not found.",404);
     if (row.version!==parsed.version) throw new DomainError("Buyer changed. Reload before saving.",409);
+    const routeKeys=[
+      payload.email?`email:${payload.email.trim().toLowerCase()}`:"",
+      payload.phone?`phone:${payload.phone.replace(/\D/g,"")}`:"",
+    ].filter(Boolean).sort();
+    for(const key of routeKeys) await tx.execute(sql`select pg_advisory_xact_lock(hashtextextended(current_schema() || ${`buyer-route:${key}`},0))`);
+    const others=await tx.select().from(buyersTable);
+    const email=payload.email.trim().toLowerCase(),digits=payload.phone.replace(/\D/g,"");
+    const conflict=others.find(other=>{
+      if(other.id===id)return false;
+      const prior=buyerRecord(other), priorDigits=(prior.phone??"").replace(/\D/g,"");
+      return (!!email&&(prior.email??"").trim().toLowerCase()===email)||
+        (!!digits&&digits.length>=7&&priorDigits===digits);
+    });
+    if(conflict) throw new DomainError(`This contact route is attached to another buyer record (${conflict.id}). Review identity evidence; records are not automatically merged.`,409);
     const identityChanged = ["name","phone","email"].some(key=>row.payload[key]!==payload[key as "name"|"phone"|"email"]);
     const criteriaChanged = criteriaSignature(buyerRecord(row).criteria)!==criteriaSignature(payload.criteria) || (row.payload.destinationKind??"BUYER")!==payload.destinationKind;
     const verification = identityChanged?{verifiedBy:null,verifiedAt:null,evidenceAt:null,validUntil:null,
       identityEvidenceUrl:null,fundingEvidenceUrl:null,verificationNote:null,availableFunds:null}:{};
     const currentBuying = identityChanged||criteriaChanged ? {currentBuyingStatus:"UNKNOWN",buyingVerifiedAt:null,
       buyingEvidenceAt:null,buyingEvidenceUrl:null,criteriaEvidenceUrl:null,verificationSource:null,confidence:null}: {};
-    const [saved] = await tx.update(buyersTable).set({payload:{...row.payload,...payload,...verification,...currentBuying},version:row.version+1,updatedAt:new Date()}).where(eq(buyersTable.id,id)).returning();
+    const savedPayload={...row.payload,...payload,...verification,...currentBuying};
+    if(identityChanged&&(!payload.contactSourceUrl||!payload.contactObservedAt)){
+      delete savedPayload.contactSourceUrl;delete savedPayload.contactObservedAt;delete savedPayload.contactConfidence;
+    }
+    const [saved] = await tx.update(buyersTable).set({payload:savedPayload,version:row.version+1,updatedAt:new Date()}).where(eq(buyersTable.id,id)).returning();
     if (!saved) throw new Error("Buyer update failed.");
     await audit(tx,actor.id,"BUYER_UPDATED",id,identityChanged?"Identity changed; verification invalidated. Matching queued.":"Criteria/status revised; matching queued.");
     await queueJob(tx,"MATCH_BUYERS",null,`buyer:${id}:${saved.version}`,actor.id);

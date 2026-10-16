@@ -5,6 +5,7 @@
  * Radical Deal OS seller intake, underwriting, conversations and approved offers
  * OpenAPI spec version: 1.0.0
  */
+import type { ProviderHealthEntry } from './providerHealthEntry';
 import type { TransactionReadinessResponseCapabilitiesDeliveryProvider } from './transactionReadinessResponseCapabilitiesDeliveryProvider';
 import type { TransactionReadinessResponseCapabilitiesJurisdictionTemplates } from './transactionReadinessResponseCapabilitiesJurisdictionTemplates';
 import type { TransactionReadinessResponseCapabilitiesPrivateDocumentStorage } from './transactionReadinessResponseCapabilitiesPrivateDocumentStorage';
@@ -15,4 +16,5 @@ export type TransactionReadinessResponseCapabilities = {
   deliveryProvider: TransactionReadinessResponseCapabilitiesDeliveryProvider;
   privateDocumentStorage: TransactionReadinessResponseCapabilitiesPrivateDocumentStorage;
   jurisdictionTemplates: TransactionReadinessResponseCapabilitiesJurisdictionTemplates;
+  providers: ProviderHealthEntry[];
 };

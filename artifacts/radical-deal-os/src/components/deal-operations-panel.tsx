@@ -19,6 +19,7 @@ import { useInvalidateWork } from '@/hooks/use-invalidate';
 import { useToast } from '@/hooks/use-toast';
 import { ago, fmtDate, fromLocalInput, isOverdue, money, num, toLocalInput } from '@/lib/format';
 import { DistributionPanel } from '@/components/distribution-panel';
+import { buildDealTimeline, TIMELINE_FILTERS, type DealTimelineEvent } from '@/lib/deal-timeline';
 
 const MILESTONES: { k: ClosingMilestoneInputKind; label: string }[] = [
   { k: 'TITLE_CLEARED', label: 'Title cleared' }, { k: 'INSPECTION_COMPLETED', label: 'Inspection completed' },
@@ -816,6 +817,7 @@ function DestinationActivityHistory({ events }: { events: DestinationActivityEve
 }
 
 export function DealOperationsPanel({ detail }: { detail: LeadDetail }) {
+  const [timelineFilter, setTimelineFilter] = useState("ALL");
   const id = detail.lead.id;
   const invalidate = useInvalidateWork();
   const { canResearch, canCall, isOwner } = useAccess();
@@ -834,66 +836,118 @@ export function DealOperationsPanel({ detail }: { detail: LeadDetail }) {
   const excluded = ops.matches.filter((m) => !m.eligible);
   const destinations = ops.matches.filter((m) => (m.destinationKind ?? 'BUYER') !== 'BUYER');
   const destinationActivity = c?.destinationActivityHistory ?? [];
-  const timeline: { at: string; title: string; detail: string; evidence: string; href?: string }[] = [
-    ...detail.transitions.map((event) => ({
-      at: event.createdAt, title: `${event.from} → ${event.to}`,
-      detail: `${event.reason} Next: ${event.nextAction}`,
-      evidence: `Stage transition recorded by ${event.actor}.`,
+  const timelineEvents: DealTimelineEvent[] = [
+    { id: `lead:${detail.lead.id}`, at: detail.lead.createdAt, category: 'ACQUISITION',
+      title: 'Acquisition lead created', detail: 'Persisted property lead record.',
+      evidence: `Lead record ${detail.lead.id}`, href: `/leads/${id}?work=intel` },
+    ...(detail.lead.propertyQualification?.signals ?? []).map(signal => ({
+      id: `qualification:${signal.id}`, at: signal.capturedAt, category: 'ACQUISITION' as const,
+      title: `Property qualification · ${signal.key.replaceAll('_', ' ')}`,
+      detail: `${signal.classification.replaceAll('_', ' ')} source-backed qualification signal.`,
+      evidence: signal.evidenceRef ? `Evidence reference ${signal.evidenceRef}` : 'Evidence reference: not recorded',
+      href: `/leads/${id}?work=intel`,
     })),
+    ...detail.transitions.map((event) => ({
+      id: `transition:${event.id}`, at: event.createdAt, category: 'ACQUISITION' as const,
+      title: `${event.from} → ${event.to}`, detail: 'Deal stage transition recorded.',
+      evidence: `Transition record ${event.id}`, href: `/leads/${id}?work=stage`,
+    })),
+    ...detail.intelligence.map(event => ({
+      id: `intelligence:${event.id}`, at: event.capturedAt, recordedAt: event.createdAt,
+      category: 'ACQUISITION' as const, title: `Evidence added · ${event.category}`,
+      detail: `${event.classification.replaceAll('_', ' ')} · ${event.sourceType.replaceAll('_', ' ')}`,
+      evidence: event.sourceRecordId ? `Source record ${event.sourceRecordId}` : 'Evidence reference: not recorded',
+      href: `/leads/${id}?work=intel`,
+    })),
+    ...(detail.analysisSnapshotId && detail.analysis ? [{
+      id: `analysis:${detail.analysisSnapshotId}`, at: detail.analysis.calculatedAt,
+      category: 'UNDERWRITING' as const, title: 'Underwriting snapshot calculated',
+      detail: `Classification ${detail.analysis.classification}.`,
+      evidence: `Analysis snapshot ${detail.analysisSnapshotId}`, href: `/leads/${id}?work=uw`,
+    }] : []),
+    ...detail.offers.flatMap(offer => [
+      { id: `offer:${offer.id}:created`, at: offer.createdAt, category: 'SELLER' as const,
+        title: 'Offer draft created', detail: 'Offer terms are private; review in the offers workspace.',
+        evidence: `Offer record ${offer.id}`, href: `/leads/${id}?work=offers` },
+      ...(offer.approvedAt ? [{ id: `offer:${offer.id}:approved`, at: offer.approvedAt, category: 'SELLER' as const,
+        title: 'Offer terms approved', detail: 'Approval is recorded for this offer version.',
+        evidence: offer.authorityEvidenceId ? `Approval evidence ${offer.authorityEvidenceId}` : 'Evidence reference: not recorded',
+        href: `/leads/${id}?work=offers` }] : []),
+      ...(offer.communicatedAt ? [{ id: `offer:${offer.id}:communicated`, at: offer.communicatedAt, category: 'SELLER' as const,
+        title: 'Offer communication recorded', detail: 'A communication record exists; message contents are withheld.',
+        evidence: 'Communication record; delivery is not inferred', href: `/leads/${id}?work=offers` }] : []),
+    ]),
     ...detail.calls.map((event) => ({
-      at: event.createdAt, title: `Seller call: ${event.outcome.replaceAll('_', ' ')}`,
-      detail: event.notes || event.nextAction,
+      id: `call:${event.id}`, at: event.occurredAt, recordedAt: event.createdAt,
+      category: 'SELLER' as const, title: `Seller call: ${event.outcome.replaceAll('_', ' ')}`,
+      detail: 'Call note content is withheld from the shared timeline.',
       evidence: event.evidenceClassification === 'OBSERVED'
-        ? 'Operator-recorded call observation; not an external recording.'
-        : 'Seller-reported/indicated content; not independently verified.',
+        ? 'Operator call record; not an external recording.' : 'Seller-reported content; not independently verified.',
+      href: `/leads/${id}?work=call`,
     })),
     ...ops.matches.map((match) => ({
-      at: match.updatedAt, title: `Buyer state: ${match.status.replaceAll('_', ' ')} · ${match.buyerName}`,
-      detail: match.eligible ? 'Currently eligible match; this is not a commitment.'
-        : match.reasons.concat(match.mismatches).join('; ') || 'Not eligible under current criteria.',
+      id: `match:${match.buyerId}:${match.updatedAt}`, at: match.updatedAt, category: 'BUYER' as const,
+      title: `Buyer match updated · ${match.status.replaceAll('_', ' ')}`,
+      detail: match.eligible ? 'Currently eligible match; not a commitment.' : 'Not eligible under current reviewed criteria.',
       evidence: match.status === 'COMMITTED'
-        ? 'Response record exists; binding terms/signatures and settlement remain separate evidence.'
-        : 'Matching/interest state only; no buyer approval or commitment is inferred.',
+        ? 'Persisted response record; signatures and settlement remain separate evidence.'
+        : 'Match record; no buyer identity or private contact details shown.',
+      href: `/deals/${id}?work=transaction`,
     })),
-    ...(c?.history ?? []).map((event) => ({
-      at: event.recordedAt, title: `Transaction: ${event.kind.replaceAll('_', ' ')}`,
-      detail: event.note, evidence: `Operator/audit history; effective ${event.effectiveAt}. ${event.evidenceUrl}`,
+    ...(c?.createdAt ? [{ id: `contract:${c.id}:created`, at: c.createdAt, category: 'TRANSACTION' as const,
+      title: 'Contract record created', detail: `Persisted transaction state: ${c.status.replaceAll('_', ' ')}.`,
+      evidence: `Contract ${c.id}`, href: `/deals/${id}?work=transaction` }] : []),
+    ...(c?.history ?? []).map((event, index) => ({
+      id: `contract:${c?.id ?? id}:history:${index}:${event.recordedAt}`, at: event.effectiveAt, recordedAt: event.recordedAt,
+      category: 'TRANSACTION' as const, title: `Transaction: ${event.kind.replaceAll('_', ' ')}`,
+      detail: 'Audited transaction change recorded; free-text notes and URLs are withheld.',
+      evidence: event.evidenceUrl ? 'Evidence reference recorded' : 'Evidence reference: not recorded',
+      href: `/deals/${id}?work=transaction`,
     })),
     ...destinationActivity.map((event) => ({
-      at: event.recordedAt, title: `Distribution record: ${event.kind.replaceAll('_', ' ')} · ${event.destinationName}`,
-      detail: event.note,
-      evidence: `Recorded ${event.recordedAt}; provider delivery is not inferred from this event. ${event.evidenceUrl}`,
+      id: `destination:${event.eventKey}`, at: event.occurredAt, recordedAt: event.recordedAt,
+      category: 'DISTRIBUTION' as const, title: `Distribution: ${event.kind.replaceAll('_', ' ')}`,
+      detail: 'Persisted activity record; recipient details and notes are withheld.',
+      evidence: event.evidenceUrl ? 'Evidence reference recorded; provider delivery is not inferred.' : 'Evidence reference: not recorded',
+      href: `/deals/${id}?work=transaction`,
     })),
     ...(c?.deadlineSchedule ? [{
-      at: c.deadlineSchedule.recordedAt,
-      title: `Owner-reviewed deadline schedule v${c.deadlineSchedule.version}`,
-      detail: c.deadlineSchedule.items.map((item) => `${item.kind.replaceAll('_', ' ')}: ${item.disposition.replaceAll('_', ' ')}${item.dueDate ? ` ${item.dueDate} (${item.timeZone})` : ''}`).join('; '),
-      evidence: `Terms hash ${c.deadlineSchedule.termsHash}; source ${c.deadlineSchedule.sourceEvidenceUrl}. A schedule is not completion evidence.`,
+      id: `deadline-schedule:${c.id}:${c.deadlineSchedule.version}`, at: c.deadlineSchedule.recordedAt,
+      category: 'TRANSACTION' as const, title: `Deadline schedule v${c.deadlineSchedule.version} recorded`,
+      detail: `${c.deadlineSchedule.items.length} reviewed milestone deadlines.`,
+      evidence: 'Terms and source references are available in transaction review; a schedule is not completion evidence.',
+      href: `/deals/${id}?work=transaction`,
     }] : []),
     ...(c?.documents ?? []).map((event) => ({
-      at: event.generatedAt, title: `Document: ${event.status.replaceAll('_', ' ')}`,
-      detail: `${event.fileName} · version ${event.sourceContractVersion}`,
+      id: `document:${event.id}`, at: event.generatedAt, category: 'TRANSACTION' as const,
+      title: `Document: ${event.status.replaceAll('_', ' ')}`,
+      detail: `Version ${event.sourceContractVersion}; filename withheld.`,
       evidence: 'Prepared document record; does not establish sending, signature, or legal approval.',
+      href: `/deals/${id}?work=transaction`,
     })),
-    ...(c?.milestones ?? []).map((event) => ({
-      at: event.recordedAt, title: `Closing milestone: ${event.kind.replaceAll('_', ' ')}`,
-      detail: event.note,
-      evidence: `Operator-recorded evidence reference; occurred ${event.effectiveAt ?? 'time not recorded'}. ${event.evidenceUrl}`,
+    ...(c?.milestones ?? []).map((event, index) => ({
+      id: `milestone:${c?.id ?? id}:${event.kind}:${event.recordedAt}:${index}`, at: event.effectiveAt ?? event.recordedAt, recordedAt: event.recordedAt,
+      category: 'TRANSACTION' as const, title: `Milestone: ${event.kind.replaceAll('_', ' ')}`,
+      detail: 'Operator-recorded milestone; note content is withheld.',
+      evidence: event.evidenceUrl ? 'Milestone evidence reference recorded' : 'Evidence reference: not recorded',
+      href: `/deals/${id}?work=transaction`,
     })),
     ...(c?.outcomeRecordedAt ? [{
-      at: c.outcomeRecordedAt, title: c.status === 'CLOSED' ? 'Closing outcome recorded' : `Outcome recorded: ${c.status}`,
-      detail: `${c.outcomeNote ?? 'No outcome note recorded.'}${c.assignmentFeeReceived != null ? ` Assignment fee recorded: ${money(c.assignmentFeeReceived)}.` : ''}${c.closingCosts != null ? ` Closing costs recorded: ${money(c.closingCosts)}.` : ''}${c.netProceeds != null ? ` Net proceeds recorded: ${money(c.netProceeds)}.` : ''}`,
-      evidence: `Operator-entered outcome claim; settlement reference ${c.outcomeEvidenceUrl ?? 'missing'}. Not provider-verified.`,
+      id: `outcome:${c.id}:${c.outcomeRecordedAt}`, at: c.outcomeRecordedAt, category: 'CLOSING' as const,
+      title: c.status === 'CLOSED' ? 'Closing outcome recorded' : `Outcome recorded: ${c.status}`,
+      detail: 'Operator-entered outcome claim; financial notes and values are withheld.',
+      evidence: c.outcomeEvidenceUrl ? 'Settlement evidence reference recorded; not provider-verified.' : 'Evidence reference: not recorded',
+      href: `/deals/${id}?work=transaction`,
     }] : []),
-  ].filter((event) => Number.isFinite(Date.parse(event.at)))
-    .sort((a, b) => Date.parse(b.at) - Date.parse(a.at));
+  ];
+  const timeline = buildDealTimeline(timelineEvents, timelineFilter);
 
   return (
     <div className="space-y-4" data-testid="panel-deal-operations">
       <div className="ledger border-l-4 border-l-signal p-3 text-sm" data-testid="text-ops-next"><b>Next action:</b> {ops.nextAction || 'none recorded'}</div>
       <Block title="Deal timeline & next action" tid="panel-deal-timeline">
         <p className="text-xs text-muted-foreground">
-          Chronological persisted records across stage changes, seller calls, buyer matching, distribution, documents, funds, deadlines and closing. Operator-entered references are not provider verification; unresolved hypotheses remain hypotheses and unsupported evidence stays a blocker.
+          Chronological view of persisted acquisition, evidence, underwriting, seller, buyer, distribution and transaction records. Notes, private identities, raw URLs and financial amounts are withheld. Operator records are not provider verification, and a button click alone is not an event.
         </p>
         <div className="grid gap-2 border-y border-border py-2 text-xs sm:grid-cols-2 lg:grid-cols-4" data-testid="deal-lifecycle-coverage">
           <p><b>Acquisition:</b> {detail.lead.stage} · {detail.transitions.length} persisted stage changes</p>
@@ -912,12 +966,20 @@ export function DealOperationsPanel({ detail }: { detail: LeadDetail }) {
             {detail.workGuidance.missingFacts.length > 0 && <p className="mt-1 text-xs text-destructive">Blockers: {detail.workGuidance.missingFacts.join('; ')}</p>}
           </div>
         )}
-        {timeline.length === 0 ? <p className="text-sm text-muted-foreground">No persisted lifecycle events are available for this deal yet. Current next action: {ops.nextAction || 'review acquisition evidence'}.</p> : (
+        <label className="flex max-w-sm items-center gap-2 text-xs" htmlFor="deal-timeline-filter">
+          Filter timeline
+          <select id="deal-timeline-filter" className={SELECT} value={timelineFilter}
+            onChange={event => setTimelineFilter(event.target.value)} data-testid="select-deal-timeline-filter">
+            {TIMELINE_FILTERS.map(option => <option key={option.value} value={option.value}>{option.label}</option>)}
+          </select>
+        </label>
+        {timeline.length === 0 ? <p className="text-sm text-muted-foreground">{timelineFilter === 'ALL' ? 'No persisted lifecycle events are available for this deal yet.' : 'No persisted events match this filter.'} Current next action: {ops.nextAction || 'review acquisition evidence'}.</p> : (
           <ol className="max-h-96 space-y-2 overflow-auto border-l border-border pl-3" data-testid="list-deal-timeline">
-            {timeline.map((event, index) => <li key={`${event.at}-${event.title}-${index}`} className="border-b border-border pb-2 text-xs">
+            {timeline.map((event) => <li key={event.id} className="border-b border-border pb-2 text-xs" data-timeline-category={event.category}>
               <p className="font-semibold">{event.title} <span className="font-normal text-muted-foreground">· {fmtDate(event.at)}</span></p>
               <p className="whitespace-pre-wrap">{event.detail}</p>
               <p className="text-muted-foreground">{event.evidence}</p>
+              {event.href && <Link href={event.href} className="mt-1 inline-block underline" data-testid={`timeline-evidence-${event.id}`}>Open source record</Link>}
             </li>)}
           </ol>
         )}
@@ -953,16 +1015,24 @@ export function DealOperationsPanel({ detail }: { detail: LeadDetail }) {
 
       <Block title="Buyers for this deal" tid="panel-matches">
         <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
-          <p className="max-w-xl text-sm text-muted-foreground">Matching compares buyer criteria with this property. A match is not a commitment, and only a human-verified buyer can commit.</p>
+          <p className="max-w-xl text-sm text-muted-foreground">Fit checks compare current reviewed buy-box evidence with this property. Scores are checklist coverage, not approval, probability, outreach permission, interest, or commitment.</p>
           <Button size="sm" variant="outline" disabled={!(canResearch || canCall || isOwner) || refresh.isPending} onClick={() => refresh.mutate({ id }, { onSuccess: () => { invalidate(id); toast({ title: 'Matching refreshed' }); } })} data-testid="button-refresh-matches"><RefreshCw className={`mr-1.5 h-3.5 w-3.5 ${refresh.isPending ? 'animate-spin' : ''}`} />Refresh matches</Button>
         </div>
         {refresh.error != null && <div className="mb-3"><ErrorNotice error={refresh.error} /></div>}
         {ops.matches.length === 0 && <p className="text-sm text-muted-foreground" data-testid="empty-matches">No buyers evaluated yet. <Link href="/buyers" className="underline">Add a buyer</Link> or refresh matching.</p>}
+        {ops.matches.length > 0 && !ops.matches.some((m) => m.eligible && (m.destinationKind ?? 'BUYER') === 'BUYER') && (
+          <div className="mb-3 border-l-2 border-warn bg-warn/5 p-3 text-sm" role="status" data-testid="no-qualified-acquisition-buyer">
+            <p className="font-semibold">No current qualified acquisition buyer for this deal.</p>
+            <p className="mt-1">Review excluded buyer reasons, qualify a buyer whose current buy box fits the location, property, price, condition and closing window, or reverify stale evidence. A referral destination is not a buyer.</p>
+            <Link href="/buyers?tab=prospects" className="mt-2 inline-block underline">Review prospects and reverify buyers</Link>
+          </div>
+        )}
         <ul className="space-y-2">{eligible.map((m) => (
           <li key={m.buyerId} className="border border-border p-3" data-testid={`match-${m.buyerId}`}>
             <div className="flex flex-wrap items-center justify-between gap-2">
               <Link href={`/buyers/${m.buyerId}`} className="font-semibold hover:text-signal">{m.buyerName}</Link>
-              <span className="flex items-center gap-2"><span className="font-mono text-xs">score {m.score}</span><span className={`tag ${m.status === 'COMMITTED' ? 'tone-go' : m.status === 'INTERESTED' ? 'tone-warn' : m.status === 'DECLINED' ? 'tone-stop' : 'tone-muted'}`}>{m.status}</span></span></div>
+              <span className="flex items-center gap-2"><span className="font-mono text-xs">{m.score}% checks passed</span><span className={`tag ${m.status === 'COMMITTED' ? 'tone-go' : m.status === 'INTERESTED' ? 'tone-warn' : m.status === 'DECLINED' ? 'tone-stop' : 'tone-muted'}`}>{m.status}</span></span></div>
+            <p className="mt-1 text-xs text-muted-foreground">{m.reasons.filter((r) => r.startsWith('Buyer standing:') || r.startsWith('Contact permission:')).join(' · ')}</p>
             <ul className="mt-1 list-disc pl-4 text-sm text-muted-foreground">{m.reasons.map((r, i) => <li key={i}>{r}</li>)}</ul>
             {m.mismatches.length > 0 && <p className="mt-1 text-xs text-muted-foreground">Watch: {m.mismatches.join('; ')}</p>}
             {m.status === 'COMMITTED' && m.agreedPrice != null && <p className="mt-1 font-mono text-xs">Agreed {money(m.agreedPrice)}</p>}
@@ -974,7 +1044,7 @@ export function DealOperationsPanel({ detail }: { detail: LeadDetail }) {
         {!live && eligible.length > 0 && <p className="mt-2 text-xs text-muted-foreground">Buyer responses can be recorded once the contract is executed.</p>}
         {excluded.length > 0 && (
           <details className="mt-3" data-testid="list-excluded"><summary className="cursor-pointer text-sm text-muted-foreground">{excluded.length} buyer{excluded.length === 1 ? '' : 's'} excluded</summary>
-            <ul className="mt-2 space-y-1 text-sm">{excluded.map((m) => <li key={m.buyerId}><span className="font-semibold">{m.buyerName}</span>: {m.mismatches.join('; ') || 'does not fit'}
+            <ul className="mt-2 space-y-1 text-sm">{excluded.map((m) => <li key={m.buyerId}><span className="font-semibold">{m.buyerName}</span> <span className="text-xs text-muted-foreground">({m.reasons.find((r) => r.startsWith('Buyer standing:'))?.replace('Buyer standing: ', '') ?? 'unclassified'}; {m.reasons.find((r) => r.startsWith('Contact permission:'))?.replace('Contact permission: ', '') ?? 'contact permission unknown'})</span>: {m.mismatches.join('; ') || 'does not fit'}
               {m.legacyDestinationResponse && <p className="mt-1 border-l-2 border-warn pl-2 text-xs">Prior buyer-workflow response ({m.legacyDestinationResponse.status.replace(/_/g, ' ')}): {m.legacyDestinationResponse.evidence || 'no note'}. It has no retained destination-event time or actor; it is not verified destination activity.</p>}
             </li>)}</ul></details>
         )}

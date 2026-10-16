@@ -9,6 +9,9 @@
 - [Durable execution identity](execution-identity.md) — semantic retry equality across JSONB; routine matching revisions must not replace unchanged outreach intent.
 - [App Storage resource limits](app-storage-resource-limits.md) — if managed storage setup is denied, do not silently substitute temporary files for persistent property media.
 - [Public property-source evidence](property-source-evidence.md) — join by exact parcel identity; a no-match is not resolution, and material source changes keep history.
-- [Seller contact route reconciliation](contact-route-reconciliation.md) — a matching normalized route is not proof of matching recipient identity; retain conflicts until reviewed.
+- [Seller contact route reconciliation](contact-route-reconciliation.md) — route matches do not prove recipient identity; preserve conflicts and keep private contact history role-gated.
 - [Call evidence response shape](call-evidence-contract.md) — keep structured seller answers in call-linked evidence instead of duplicating the full input into widely nested API responses.
+- [Call replay fingerprints](call-replay-fingerprints.md) — fingerprint original submitted call input before enriching its persisted record, so exact retries remain idempotent.
 - [Buyer address disclosure](buyer-address-disclosure.md) — bearer-only buyer links do not prove reader identity; keep street addresses redacted externally unless identity-verified access exists.
+- [Canonical deal versioning](canonical-deal-versioning.md) — the lead row is the aggregate state authority; subordinate module versions protect snapshots and transitions retain audit edges.
+- [OpenAPI document metadata size limit](openapi-document-metadata-limit.md) — rich transaction-document metadata can exceed TypeScript's generated command-center response size; keep it behind a focused boundary.

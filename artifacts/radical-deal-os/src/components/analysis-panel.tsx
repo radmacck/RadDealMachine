@@ -1,5 +1,5 @@
 import { AlertOctagon, ShieldAlert } from 'lucide-react';
-import type { Analysis, Comp, Range } from '@workspace/api-client-react';
+import type { Analysis, Comp, Intelligence, Range } from '@workspace/api-client-react';
 import { fmtDate, money, pct } from '@/lib/format';
 
 const CLS_TONE: Record<string, string> = { STRONG: 'tone-go', NEGOTIABLE: 'tone-warn', PASS: 'tone-stop', INCOMPLETE: 'tone-muted' };
@@ -26,7 +26,7 @@ function Big({ label, value, note, tid }: { label: string; value: string; note?:
   );
 }
 
-export function AnalysisPanel({ analysis, comps, full = true }: { analysis: Analysis | null; comps?: Comp[]; full?: boolean }) {
+export function AnalysisPanel({ analysis, comps, intelligence = [], full = true }: { analysis: Analysis | null; comps?: Comp[]; intelligence?: Intelligence[]; full?: boolean }) {
   if (!analysis) {
     return (
       <div className="ledger p-4" data-testid="analysis-empty">
@@ -38,6 +38,17 @@ export function AnalysisPanel({ analysis, comps, full = true }: { analysis: Anal
   const a = analysis;
   const estimateBlocked = a.repairEstimate.status === 'BLOCKED';
   const label = (id: string) => comps?.find((c) => c.id === id)?.address ?? id;
+  const evidenceFor = (id?: string) => id ? intelligence.find((item) => item.id === id) : undefined;
+  const evidenceClass = (classification?: string) =>
+    classification === 'VERIFIED_FACTS' || classification === 'OBSERVED' ? 'OBSERVED'
+      : classification === 'INDICATED' ? 'REPORTED'
+        : classification === 'AI_HYPOTHESIS' ? 'INFERRED' : 'ESTIMATED';
+  const eligibleComps = (comps ?? []).filter((comp) => a.compDecisions.find((decision) => decision.id === comp.id)?.included);
+  const policy = a.assumptions;
+  const totalCarryingClosingCosts = policy.acquisitionCost + policy.holdingMonthly * policy.holdingMonths;
+  const buyerCeilingBeforeAssignment = a.arv.low * policy.arvMultiplier -
+    a.arv.low * policy.sellingCostPct - a.repairs.high * (1 + policy.contingencyPct) - totalCarryingClosingCosts;
+  const buyerMarginReserve = a.arv.low * (1 - policy.arvMultiplier);
   return (
     <div className="ledger rise p-4" data-testid="analysis-panel">
       <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
@@ -60,6 +71,48 @@ export function AnalysisPanel({ analysis, comps, full = true }: { analysis: Anal
         <RangeRow label="ARV" r={a.arv} />
         <RangeRow label="Repairs" r={a.repairs} />
       </div>
+      {full && <section className="mt-4 border border-border p-3" data-testid="underwriting-evidence-panel">
+        <div className="flex flex-wrap items-baseline justify-between gap-2">
+          <p className="font-semibold">Evidence-backed calculation</p>
+          <p className="text-xs text-muted-foreground">Calculated {fmtDate(a.calculatedAt)} · values are deterministic; offer authority is separate.</p>
+        </div>
+        <p className="mt-1 text-xs text-muted-foreground">Evidence classes: OBSERVED = source-verified record; REPORTED = unverified statement; INFERRED = rule-derived; ESTIMATED = formula/range or configured assumption.</p>
+        <div className="mt-3 grid gap-3 lg:grid-cols-2">
+          <div>
+            <p className="eyebrow mb-1">ARV comps · OBSERVED/REPORTED</p>
+            {eligibleComps.length ? <ul className="space-y-1 text-xs">
+              {eligibleComps.map((comp) => {
+                const sourceEvidence = evidenceFor(comp.saleEvidenceId);
+                return <li key={comp.id} className="border-t border-border/60 pt-1">
+                  <div className="flex flex-wrap justify-between gap-2"><span>{comp.address} · ${money(comp.salePrice)} · sold {comp.soldAt}</span><span>{comp.verified ? 'OBSERVED' : 'REPORTED'}</span></div>
+                  <div className="text-muted-foreground">{sourceEvidence?.source ?? comp.source} · captured {sourceEvidence?.capturedAt ? fmtDate(sourceEvidence.capturedAt) : 'capture time not recorded'} · confidence {sourceEvidence ? pct(sourceEvidence.confidence) : 'not recorded'} · evidence {comp.saleEvidenceId ?? 'unlinked'}</div>
+                </li>;
+              })}
+            </ul> : <p className="text-xs text-destructive">No eligible comps; ARV-dependent offer calculations are blocked.</p>}
+            <p className="mt-2 text-xs text-muted-foreground">Selected comp set produces the displayed low / median / high ARV. Excluded comps and reasons are listed below.</p>
+          </div>
+          <div>
+            <p className="eyebrow mb-1">Repair evidence · ESTIMATED from sourced scope</p>
+            {a.repairEstimate.lines.length ? <ul className="space-y-1 text-xs">
+              {a.repairEstimate.lines.map((line, index) => {
+                const sourceEvidence = evidenceFor(line.evidenceId);
+                return <li key={`${line.evidenceId}-${index}`} className="border-t border-border/60 pt-1">
+                  <div className="flex flex-wrap justify-between gap-2"><span>{line.category} · {line.quantity} {line.unit}</span><span>{money(line.low)} / {money(line.expected)} / {money(line.high)}</span></div>
+                  <div className="text-muted-foreground">{sourceEvidence?.source ?? line.source} · {evidenceClass(sourceEvidence?.classification)} · captured {sourceEvidence?.capturedAt ? fmtDate(sourceEvidence.capturedAt) : fmtDate(a.calculatedAt)} · confidence {sourceEvidence ? pct(sourceEvidence.confidence) : 'rate-card confidence shown above'} · evidence {line.evidenceId}</div>
+                </li>;
+              })}
+            </ul> : <p className="text-xs text-muted-foreground">No sourced repair estimate lines are available.</p>}
+          </div>
+        </div>
+        <div className="mt-3 grid gap-2 border-t border-border pt-3 sm:grid-cols-2 lg:grid-cols-3" data-testid="underwriting-economics-breakdown">
+          <div><p className="eyebrow">Carrying + closing costs</p><p className="font-mono">{money(totalCarryingClosingCosts)}</p><p className="text-xs text-muted-foreground">ESTIMATED · configured assumptions: acquisition {money(policy.acquisitionCost)} + holding {money(policy.holdingMonthly)} × {policy.holdingMonths} months · confidence not empirical · as of {fmtDate(a.calculatedAt)}</p></div>
+          <div><p className="eyebrow">Buyer margin reserve</p><p className="font-mono">{money(buyerMarginReserve)}</p><p className="text-xs text-muted-foreground">INFERRED · source: configured buyer discount assumption · low ARV × (1 − {pct(policy.arvMultiplier)}) · confidence: policy-derived, not empirical · as of {fmtDate(a.calculatedAt)}</p></div>
+          <div><p className="eyebrow">Buyer ceiling before assignment</p><p className="font-mono">{money(buyerCeilingBeforeAssignment)}</p><p className="text-xs text-muted-foreground">ESTIMATED · source: comp, repair, and workspace-cost inputs · confidence: ARV {pct(a.arv.confidence)} / repairs {pct(a.repairs.confidence)} · as of {fmtDate(a.calculatedAt)}</p></div>
+          <div><p className="eyebrow">Assignment target · not realized fee</p><p className="font-mono">{money(policy.assignmentTarget)}</p><p className="text-xs text-muted-foreground">ESTIMATED · source: configured workspace assumption · confidence: policy-derived, not empirical · not buyer demand or a commitment · as of {fmtDate(a.calculatedAt)}</p></div>
+          <div><p className="eyebrow">Calculated MAO</p><p className="font-mono">{estimateBlocked || a.blockers.length ? 'BLOCKED' : money(a.mao)}</p><p className="text-xs text-muted-foreground">INFERRED · source: deterministic buyer-ceiling formula less assignment target · confidence: ARV {pct(a.arv.confidence)} / repairs {pct(a.repairs.confidence)} · as of {fmtDate(a.calculatedAt)}; blocked by any current underwriting blocker.</p></div>
+          <div><p className="eyebrow">Offer authority</p><p className="font-mono">Not authorized by underwriting</p><p className="text-xs text-muted-foreground">Only explicit, terms-specific owner approval can authorize an offer.</p></div>
+        </div>
+      </section>}
       {a.repairEstimate.status !== 'NOT_USED' && (
         <section className="mt-4 border border-border p-3" data-testid="repair-estimate-result">
           <div className="flex flex-wrap items-baseline justify-between gap-2">

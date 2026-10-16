@@ -2,7 +2,7 @@ import { Router, type IRouter, type Request, type Response } from "express";
 import { z } from "zod";
 import * as contract from "@workspace/api-zod";
 import { DomainError } from "@workspace/deal-domain";
-import { authenticated, membership, roles } from "../middlewares/access";
+import { authenticated, membership, roles, sensitiveWorkspaceData } from "../middlewares/access";
 import * as store from "../services/deal-store";
 import * as access from "../services/access";
 import * as offers from "../services/offer-store";
@@ -44,6 +44,7 @@ router.post("/access",async (_req,res) => {
   send(res,contract.ClaimWorkspaceResponse,await access.claimWorkspace(String(res.locals.actor)));
 });
 router.use(membership);
+router.use(sensitiveWorkspaceData);
 router.post("/leads/:id/evidence-intake",research,async(req,res)=>{
   send(res,contract.IntakePropertyEvidenceResponse,await intakePropertyEvidence(leadId(req),parse(contract.IntakePropertyEvidenceBody,req.body),
     {id:String(res.locals.actor),role:String(res.locals.role)}));
@@ -131,6 +132,10 @@ router.post("/leads/:id/offers",research,async (req,res) => {
   await propagateStaleTransactionDocuments(id);
   send(res,contract.CreateOfferDraftResponse,result,201);
 });
+router.get("/leads/:id/offers/:offerId/review",roles("OWNER","ANALYST","OPERATOR"),async(req,res)=>{
+  const {id,offerId}=parse(contract.AuthorizeOfferParams,req.params);
+  send(res,contract.GetOfferReviewResponse,await offers.getOfferReview(id,offerId));
+});
 router.post("/leads/:id/offers/:offerId/authorize",roles("OWNER"),async (req,res) => {
   const {id,offerId} = parse(contract.AuthorizeOfferParams,req.params);
   const result=await offers.authorizeOffer(id,offerId,parse(contract.AuthorizeOfferBody,req.body),{id:String(res.locals.actor),role:String(res.locals.role)});
@@ -169,6 +174,6 @@ router.get("/assumptions",async (_req,res) => send(res,contract.GetAssumptionsRe
 router.put("/assumptions",roles("OWNER"),async (req,res) => {
   send(res,contract.UpdateAssumptionsResponse,await store.saveAssumptions(parse(contract.UpdateAssumptionsBody,req.body),String(res.locals.actor)));
 });
-router.get("/audit",async (_req,res) => send(res,contract.ListAuditResponse,await store.listAudit()));
+router.get("/audit",roles("OWNER"),async (_req,res) => send(res,contract.ListAuditResponse,await store.listAudit()));
 
 export default router;

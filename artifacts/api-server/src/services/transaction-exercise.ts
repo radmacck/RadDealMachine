@@ -2,14 +2,15 @@ import assert from "node:assert/strict";
 import express from "express";
 import { once } from "node:events";
 import { AddressInfo } from "node:net";
-import { randomUUID } from "node:crypto";
+import { createHash, randomUUID } from "node:crypto";
 import { PDFDocument } from "pdf-lib";
-import { db,pool,analysesTable,contractsTable,jobsTable,matchesTable,buyersTable,leadsTable,distributionPacketsTable,transactionDocumentBlobsTable,transactionReadinessExceptionsTable,dealDecisionWorkItemsTable,transactionDocumentTemplatesTable } from "@workspace/db";
+import { db,pool,analysesTable,auditTable,contractsTable,jobsTable,matchesTable,buyersTable,leadsTable,transitionsTable,distributionPacketsTable,transactionDocumentBlobsTable,transactionReadinessExceptionsTable,dealDecisionWorkItemsTable,transactionDocumentTemplatesTable } from "@workspace/db";
 import { and, eq } from "drizzle-orm";
 import { logger } from "../lib/logger";
 import * as seller from "./deal-store";
 import { exerciseEvidence } from "./exercise-evidence";
 import * as offers from "./offer-store";
+import { authorizeReviewedOffer } from "./offer-exercise-helpers";
 import * as transactions from "./transaction-store";
 import * as buyers from "./buyer-store";
 import { dealOperations,refreshMatches } from "./matching-store";
@@ -30,6 +31,10 @@ import { propagateStaleTransactionDocuments } from "./transaction-store";
 import { createTransactionTemplateReviewRouter } from "../routes/operations";
 import { publicBuyerPortalRouter } from "../routes/distribution";
 import { evaluateAllTransactionReadiness, getTransactionReadinessReport } from "./transaction-readiness";
+import {
+  approveExactDistributionMessage, assertExactDistributionApprovalCurrent,
+  assertDistributionSubmissionReady, applyDistributionProviderEvent,
+} from "./buyer-outreach";
 const actor = {id:`synthetic-transaction:${randomUUID()}`,role:"OWNER"};
 const operator = {...actor,role:"OPERATOR"};
 const now = new Date();
@@ -60,6 +65,24 @@ try {
     question:"What is your preferred closing timeline?",action:"Ask the seller and record the actual answer."},actor.id,now);
   detail = await seller.leadDetail(id);
   detail = await seller.transitionLead(id,{version:detail.lead.version,to:"CALL_READY",reason:"Synthetic research complete.",nextAction:"Synthetic call."},actor.id,now);
+  const transitionAudits = await db.select().from(auditTable).where(and(eq(auditTable.entityId,id),eq(auditTable.action,"DEAL_TRANSITION")));
+  const canonicalTransition = transitionAudits.map(row => {
+    try { return JSON.parse(row.detail) as Record<string,unknown>; } catch { return null; }
+  }).find(event => event?.eventType === "CANONICAL_STAGE_TRANSITION" && event.resultingStage === "CALL_READY");
+  const [stageTransition] = await db.select().from(transitionsTable)
+    .where(and(eq(transitionsTable.leadId,id),eq(transitionsTable.to,"CALL_READY")));
+  assert.deepEqual(canonicalTransition && {
+    priorVersion:canonicalTransition.priorVersion,
+    resultingVersion:canonicalTransition.resultingVersion,
+    priorStage:canonicalTransition.priorStage,
+    resultingStage:canonicalTransition.resultingStage,
+    actor:canonicalTransition.actor,
+    evidenceRefs:canonicalTransition.evidenceRefs,
+  },{
+    priorVersion:detail.lead.version-1,resultingVersion:detail.lead.version,
+    priorStage:stageTransition?.from,resultingStage:stageTransition?.to,actor:actor.id,
+    evidenceRefs:detail.analysisSnapshotId?[detail.analysisSnapshotId]:[],
+  },"persisted stage changes must carry the exact canonical version edge and evidence reference");
   const liveDesk = await commandCenter("OWNER",now);
   const callBrief = liveDesk.calls.find(item=>item.lead.id===id);
   assert.ok(callBrief,"A persisted CALL_READY lead with a phone route and current underwriting must appear in CALL NEXT.");
@@ -80,7 +103,7 @@ try {
   detail = await offers.createOfferDraft(id,{version:detail.lead.version,amount:110000,earnestMoney:1000,closingDays:30,
     contingencies:"Synthetic title and diligence",assignmentIntent:true,reason:"Synthetic terms"},actor,now);
   const offerId = detail.offers[0]!.id;
-  detail = await offers.authorizeOffer(id,offerId,{version:detail.lead.version,maximumApprovedAcquisitionPrice:120000,
+  detail = await authorizeReviewedOffer(id,offerId,{version:detail.lead.version,maximumApprovedAcquisitionPrice:120000,
     authorityEvidenceId:authority.id,expiresAt:future(2),reason:"Synthetic owner review",nextAction:"Synthetic exact terms",followUpAt:future(1)},actor,now);
   detail = await offers.communicateOffer(id,offerId,{version:detail.lead.version,amount:110000,channel:"PHONE",
     evidence:"Synthetic human communication only.",nextAction:"Prepare contract.",followUpAt:future(1)},operator,now);
@@ -200,7 +223,18 @@ try {
     "private document bytes must only be retrieved through an authorized operator route");
   const reviewFile = await transactions.downloadPurchaseReviewDocument(id,reviewDocument.id,operator,now);
   assert.equal(reviewFile.bytes.subarray(0,5).toString(),"%PDF-");
+  const unrelatedLead = await seller.createLead({
+    address:"SYNTHETIC UNRELATED RECORD",city:"Synthetic City",state:"TX",county:"Synthetic County",zip:"75002",
+    propertyType:"SINGLE_FAMILY",sqft:900,beds:2,baths:1,units:1,askingPrice:0,
+    sellerName:"SYNTHETIC ONLY",sellerPhone:"000-000-0000",source:"Synthetic cross-record access test",
+  },actor.id,now);
+  await assert.rejects(
+    transactions.downloadPurchaseReviewDocument(unrelatedLead.id,reviewDocument.id,operator,now),
+    (error:unknown)=>(error as {status?:number}).status===404,
+    "a document ID from one property must not disclose bytes when paired with another property ID",
+  );
   const parsedPdf = await PDFDocument.load(reviewFile.bytes);
+  assert.equal(parsedPdf.getPageCount(),2,"Review PDF includes both the frozen terms and contract-data assembly checklist.");
   const fillableNames = parsedPdf.getForm().getFields().map(field=>field.getName());
   assert.ok(fillableNames.includes("seller_legal_name"));
   assert.ok(fillableNames.includes("parcel_legal_description"));
@@ -209,6 +243,17 @@ try {
   const persistedArtifacts = persistedContract?.payload.documentArtifacts as Array<Record<string,unknown>>|undefined;
   assert.equal(persistedArtifacts?.length,1);
   assert.equal(persistedArtifacts?.[0]?.contentHash,reviewDocument.contentHash);
+  const assembly=persistedArtifacts?.[0]?.dataAssembly as {
+    version:number;snapshotHash:string;sourceLinks:Array<{sourceId:string;status:string}>;
+    jurisdiction:{checklistScope:string;purchaseTemplateStatus:string};
+    signatureRouting:{status:string;blockers:string[]};missingRequiredData:string[];
+  }|undefined;
+  assert.equal(assembly?.version,1);
+  assert.match(assembly?.snapshotHash??"",/^[a-f0-9]{64}$/);
+  assert.ok(assembly?.sourceLinks.some(source=>source.sourceId===reviewDocument.sourceOfferId&&source.status==="AUTHORIZED"));
+  assert.equal(assembly?.jurisdiction.checklistScope,"US/TX/SYNTHETIC-COUNTY");
+  assert.equal(assembly?.signatureRouting.status,"BLOCKED");
+  assert.ok(assembly?.missingRequiredData.some(item=>item.includes("Seller legal identity")));
   assert.equal(persistedArtifacts?.[0]?.pdfBase64,undefined,"new document binaries must not be embedded in contract JSON");
   const [persistedBlob] = await db.select().from(transactionDocumentBlobsTable)
     .where(eq(transactionDocumentBlobsTable.documentId,reviewDocument.id));
@@ -267,6 +312,18 @@ try {
   );
   op = await transactions.recordTransactionDeadlineSchedule(id,initialDeadlineSchedule,actor,executionNow);
   assert.equal(op.contract?.deadlineScheduleVersion,1);
+  const ownerCalendar=await commandCenter("OWNER",executionNow);
+  const titleCalendarId=`CALENDAR:MILESTONE:${op.contract!.id}:1:TITLE_CLEARED`;
+  assert.equal(ownerCalendar.actions.filter(action=>action.id===titleCalendarId).length,1,
+    "The unified calendar projects a persisted milestone once with a stable schedule-version key.");
+  assert.equal(ownerCalendar.actions.find(action=>action.id===titleCalendarId)?.dueAt,dateOnly(2));
+  const closingCalendarId=`CALENDAR:CLOSING:${op.contract!.id}:1:${op.contract!.closingAt}`;
+  assert.equal(ownerCalendar.actions.filter(action=>action.id===closingCalendarId).length,1,
+    "The recorded closing term appears exactly once in the calendar.");
+  assert.equal(ownerCalendar.actions.find(action=>action.id===closingCalendarId)?.dueAt,op.contract!.closingAt);
+  const analystCalendar=await commandCenter("ANALYST",executionNow);
+  assert.equal(analystCalendar.actions.some(action=>action.id.startsWith("CALENDAR:")),false,
+    "Calendar reminders containing deal dates are not exposed to analyst-only roles.");
   const deadlineHistoryCount = op.contract?.deadlineScheduleHistory.length;
   op = await transactions.recordTransactionDeadlineSchedule(id,initialDeadlineSchedule,actor,executionNow);
   assert.equal(op.contract?.deadlineScheduleHistory.length,deadlineHistoryCount,"Idempotent schedule replay must not append a second revision.");
@@ -391,6 +448,36 @@ try {
     assert.ok(distribution.packetId);
      assert.equal(distribution.packet?.addressRedacted,true);
      assert.equal(distribution.packet?.location.streetAddress,null);
+      const packetHash=createHash("sha256").update(JSON.stringify(distribution.packet)).digest("hex");
+      const exactBuyerMessage="SYNTHETIC exercise only: review this redacted buyer packet.";
+      const messageApproval=approveExactDistributionMessage({
+        buyerId:buyer.id,channel:"EMAIL",packetVersion:distribution.version,packetSnapshotHash:packetHash,
+        exactMessage:exactBuyerMessage,approvedBy:actor.id,approvedAt:now.toISOString(),
+      });
+      assertExactDistributionApprovalCurrent(messageApproval,{
+        buyerId:buyer.id,channel:"EMAIL",packetVersion:distribution.version,
+        packetSnapshotHash:packetHash,exactMessage:exactBuyerMessage,
+      });
+      assert.throws(()=>assertExactDistributionApprovalCurrent(messageApproval,{
+        buyerId:buyer.id,channel:"EMAIL",packetVersion:distribution.version+1,
+        packetSnapshotHash:packetHash,exactMessage:exactBuyerMessage,
+      }),/stale/,"A changed packet version invalidates message approval.");
+      assert.throws(()=>assertDistributionSubmissionReady(messageApproval,null,"EMAIL",undefined,now),
+        /permission/,"No connected provider or permission means no outbound submission.");
+      const acceptedEvent={eventId:"synthetic-provider-accept",providerId:"synthetic-provider",
+        providerMessageId:"synthetic-message",state:"PROVIDER_ACCEPTED" as const,occurredAt:now.toISOString()};
+      assert.throws(()=>applyDistributionProviderEvent([],{
+        ...acceptedEvent,eventId:"synthetic-provider-delivered",state:"DELIVERED",
+      }),/requires a matching provider-accepted/,"Delivery cannot be asserted from a portal access or draft.");
+      const providerEvents=applyDistributionProviderEvent([],acceptedEvent);
+      assert.deepEqual(applyDistributionProviderEvent(providerEvents,acceptedEvent),providerEvents,
+        "Exact duplicate provider callbacks are idempotent.");
+      const deliveredEvents=applyDistributionProviderEvent(providerEvents,{
+        ...acceptedEvent,eventId:"synthetic-provider-delivered",state:"DELIVERED",
+      });
+      assert.deepEqual(deliveredEvents.map(event=>event.state),["PROVIDER_ACCEPTED","DELIVERED"]);
+      assert.equal((await getDealDistribution(id)).packet?.economics.economicsSnapshotHash,
+        distribution.packet?.economics.economicsSnapshotHash,"Message approval and provider receipts do not alter locked buyer economics.");
      await updateDistributionPreferences({redactAddress:false},actor);
      const stillFrozen = await getDealDistribution(id);
      assert.equal(stillFrozen.packet?.addressRedacted,true,
@@ -991,7 +1078,13 @@ try {
   const deadline = await submitWorkerJob({kind:"REVIEW_DEADLINES",idempotencyKey:"synthetic-deadlines-once"},actor);
   assert.equal((await runWorkerOnce(now,false,deadline.id))?.state,"SUCCEEDED");
   const fail = await submitWorkerJob({kind:"MATCH_BUYERS",leadId:id,idempotencyKey:"synthetic-terminal-failure"},actor);
-  assert.equal((await runWorkerOnce(now,false,fail.id))?.state,"FAILED");
+   const retryingFailure = await runWorkerOnce(now,false,fail.id);
+   assert.equal(retryingFailure?.state,"QUEUED","first retryable worker failure must remain queued rather than dead-letter immediately");
+   assert.equal(retryingFailure?.attempts,1);
+   const [persistedFailure] = await db.select().from(jobsTable).where(eq(jobsTable.id,fail.id));
+   const failureRecovery = persistedFailure?.payload.recovery as Record<string,unknown>;
+   assert.equal(typeof failureRecovery?.nextAttemptAt,"string");
+   assert.equal((failureRecovery?.history as unknown[]).length,1);
   const restart = {version:op.contract!.version,kind:"RESTART_CANCELLED" as const,effectiveAt:now.toISOString(),
     evidenceUrl:"https://example.com/synthetic-restart",note:"SYNTHETIC reviewed attempt restart only."};
   await assert.rejects(recordTransactionException(id,restart,actor,now),/Only an evidenced cancelled/);
@@ -1014,7 +1107,7 @@ try {
     d = await offers.createOfferDraft(nextId,{version:d.lead.version,amount:110000,earnestMoney:1000,closingDays:30,
       contingencies:"SYNTHETIC review",assignmentIntent:true,reason:"SYNTHETIC separate new offer"},actor,now);
     const newOffer = d.offers.find(o=>o.status==="DRAFT")!;
-    d = await offers.authorizeOffer(nextId,newOffer.id,{version:d.lead.version,maximumApprovedAcquisitionPrice:120000,authorityEvidenceId:nextAuthority.id,
+     d = await authorizeReviewedOffer(nextId,newOffer.id,{version:d.lead.version,maximumApprovedAcquisitionPrice:120000,authorityEvidenceId:nextAuthority.id,
       expiresAt:future(2),reason:"SYNTHETIC new approval",nextAction:"Record new exact communication.",followUpAt:future(1)},actor,now);
     d = await offers.communicateOffer(nextId,newOffer.id,{version:d.lead.version,amount:110000,channel:"PHONE",
       evidence:"SYNTHETIC communication, not actual outreach.",nextAction:"Record agreement.",followUpAt:future(1)},operator,now);
@@ -1092,7 +1185,7 @@ try {
     staleDetail = await offers.createOfferDraft(staleId,{version:staleDetail.lead.version,amount:110000,earnestMoney:1000,
       closingDays:30,contingencies:"SYNTHETIC review",assignmentIntent:true,reason:"SYNTHETIC revision test"},actor,now);
     const staleOfferId = staleDetail.offers[0]!.id;
-    staleDetail = await offers.authorizeOffer(staleId,staleOfferId,{version:staleDetail.lead.version,
+     staleDetail = await authorizeReviewedOffer(staleId,staleOfferId,{version:staleDetail.lead.version,
       maximumApprovedAcquisitionPrice:120000,authorityEvidenceId:staleAuthority.id,expiresAt:future(2),
       reason:"SYNTHETIC approval only.",nextAction:"Record communication.",followUpAt:future(1)},actor,now);
     staleDetail = await offers.communicateOffer(staleId,staleOfferId,{version:staleDetail.lead.version,amount:110000,

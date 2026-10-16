@@ -1,3 +1,5 @@
+import { createHash } from "node:crypto";
+
 export type BuyerOutreachChannel = "EMAIL" | "SMS" | "VOICE";
 export type BuyerOutreachState = "DRAFT" | "APPROVED" | "QUEUED" | "SENT" | "CONFIRMED" | "FAILED";
 export type BuyerContactPermission = {
@@ -52,6 +54,92 @@ export interface BuyerOutreachRequest {
 export interface BuyerOutreachReceipt {
   providerMessageId: string;
   acceptedAt: string;
+}
+
+export type DistributionDeliveryState =
+  | "DRAFT" | "QUEUED" | "PROVIDER_ACCEPTED" | "DELIVERED" | "INTERESTED" | "COMMITTED" | "FAILED" | "UNKNOWN";
+export type DistributionProviderEvent = {
+  eventId: string;
+  providerId: string;
+  providerMessageId: string;
+  state: "PROVIDER_ACCEPTED" | "DELIVERED" | "FAILED" | "UNKNOWN";
+  occurredAt: string;
+};
+export type ExactMessageApproval = {
+  buyerId: string;
+  channel: "EMAIL" | "SMS";
+  packetVersion: number;
+  packetSnapshotHash: string;
+  exactMessageHash: string;
+  approvedBy: string;
+  approvedAt: string;
+  approvalHash: string;
+};
+
+const sha256 = (value: string) => createHash("sha256").update(value, "utf8").digest("hex");
+
+/** Create only at an explicit human approval action; bind approval to exact text, recipient, channel and packet snapshot. */
+export function approveExactDistributionMessage(input: {
+  buyerId: string; channel: "EMAIL" | "SMS"; packetVersion: number; packetSnapshotHash: string;
+  exactMessage: string; approvedBy: string; approvedAt: string;
+}): ExactMessageApproval {
+  if (!input.buyerId || !input.approvedBy || !input.exactMessage.trim() || input.packetVersion < 1 ||
+    !/^[a-f0-9]{64}$/.test(input.packetSnapshotHash) || !Number.isFinite(Date.parse(input.approvedAt))) {
+    throw new Error("Exact-message approval requires a recipient, approver, current packet snapshot, and non-empty message.");
+  }
+  const exactMessageHash = sha256(input.exactMessage);
+  const bound = {
+    buyerId: input.buyerId, channel: input.channel, packetVersion: input.packetVersion,
+    packetSnapshotHash: input.packetSnapshotHash, exactMessageHash, approvedBy: input.approvedBy,
+    approvedAt: input.approvedAt,
+  };
+  return { ...bound, approvalHash: sha256(JSON.stringify(bound)) };
+}
+
+export function assertExactDistributionApprovalCurrent(
+  approval: ExactMessageApproval,
+  current: { buyerId: string; channel: "EMAIL" | "SMS"; packetVersion: number; packetSnapshotHash: string; exactMessage: string },
+) {
+  const expected = approveExactDistributionMessage({
+    ...current, approvedBy: approval.approvedBy, approvedAt: approval.approvedAt,
+  });
+  if (approval.buyerId !== expected.buyerId || approval.channel !== expected.channel ||
+    approval.packetVersion !== expected.packetVersion || approval.packetSnapshotHash !== expected.packetSnapshotHash ||
+    approval.exactMessageHash !== expected.exactMessageHash || approval.approvalHash !== expected.approvalHash) {
+    throw new Error("Exact-message approval is stale or does not match the current recipient, channel, packet, and message.");
+  }
+}
+
+/** Provider submit is forbidden unless the exact approval, current channel permission, and provider are all present. */
+export function assertDistributionSubmissionReady(
+  approval: ExactMessageApproval | null,
+  permission: BuyerContactPermission | null | undefined,
+  channel: "EMAIL" | "SMS",
+  provider: BuyerOutreachProvider | undefined,
+  now = new Date(),
+) {
+  if (!approval || approval.channel !== channel) throw new Error("Exact recipient message approval is required before provider submission.");
+  const permissionBlock = buyerOutreachPermissionBlocker(permission, channel, now);
+  if (permissionBlock) throw new Error(permissionBlock);
+  if (!provider?.connected || !provider.channels.includes(channel)) throw new Error("No connected provider supports this channel; message remains unsent.");
+}
+
+/** Provider callback reducer: idempotent by event id and never equates acceptance with delivery. */
+export function applyDistributionProviderEvent(
+  events: DistributionProviderEvent[],
+  incoming: DistributionProviderEvent,
+): DistributionProviderEvent[] {
+  if (!incoming.eventId || !incoming.providerId || !incoming.providerMessageId ||
+    !Number.isFinite(Date.parse(incoming.occurredAt))) throw new Error("Provider event is missing its identity or timestamp.");
+  const duplicate = events.find(event => event.eventId === incoming.eventId);
+  if (duplicate) {
+    if (JSON.stringify(duplicate) !== JSON.stringify(incoming)) throw new Error("Provider event id was replayed with different content.");
+    return events;
+  }
+  const accepted = events.some(event => event.providerMessageId === incoming.providerMessageId &&
+    event.state === "PROVIDER_ACCEPTED");
+  if (incoming.state === "DELIVERED" && !accepted) throw new Error("Delivery requires a matching provider-accepted submission.");
+  return [...events, incoming];
 }
 
 /**

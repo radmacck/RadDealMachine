@@ -1,6 +1,7 @@
 import type { z } from "zod";
 import type { GetCommandCenterResponse } from "@workspace/api-zod";
 import type { AcquisitionQueueItem, LeadDetail } from "./types";
+import { classifyEvidenceFreshness, conflictingEvidence, evidenceResolutionAction, type EvidenceRecord } from "./evidence-integrity";
 
 type CommandCenter = z.infer<typeof GetCommandCenterResponse>;
 export type IntelligenceDecision = CommandCenter["decisions"][number];
@@ -55,7 +56,7 @@ export type IntelligenceLoopInput =
       now: Date;
     };
 
-const RULE_VERSION = "gap-aware-decision-v1";
+const RULE_VERSION = "gap-aware-decision-v3-evidence-integrity";
 const TERMINAL_STAGES = new Set(["CLOSED", "DEAD_DEAL", "PASS"]);
 const unique = (values: Array<string | null | undefined>) => [...new Set(values.filter((value): value is string =>
   typeof value === "string" && value.trim().length > 0).map(value => value.trim()))];
@@ -98,47 +99,82 @@ function leadEvidence(detail: LeadDetail, acquisition: AcquisitionQueueItem | nu
   const known: IntelligenceDecision["known"] = [];
   const conflicts: IntelligenceDecision["conflicts"] = [];
   const staleEvidence: IntelligenceDecision["staleEvidence"] = [];
+  const provenanceGaps: string[] = [];
+  const comparable: EvidenceRecord[] = [];
   const evidenceRefs: string[] = [ref("lead", detail.lead.id)!];
 
   for (const item of detail.lead.propertyQualification?.signals ?? []) {
     const evidenceRef = item.evidenceRef ?? `signal:${item.id}`;
+    const normalized: EvidenceRecord = {
+      ref:evidenceRef, factKey:`property.${item.key}`, value:item.statement,
+      source:item.source, evidenceRef, observedAt:item.capturedAt, evidenceClass:"OBSERVED",
+      confidence:item.confidence,
+    };
+    comparable.push(normalized);
+    const freshness = classifyEvidenceFreshness(normalized, now, 180 * 86_400_000);
     const itemEvidence = {
       ref: evidenceRef,
-      summary: `${item.classification} ${item.key}: ${item.statement} · source ${item.source}`,
+      summary: `Observed property evidence · ${item.classification} ${item.key}: ${item.statement} · source ${item.source}`,
       epistemicStatus: epistemicStatus(item.classification),
       observedAt: item.capturedAt,
-      freshness: Date.parse(item.capturedAt) <= now.getTime() ? "UNKNOWN" as const : "UNKNOWN" as const,
+      freshness,
     };
     known.push(itemEvidence);
     evidenceRefs.push(evidenceRef);
+    if (freshness === "STALE") staleEvidence.push({...itemEvidence,summary:`${itemEvidence.summary} · expired; re-verify before relying on it.`});
+    if (freshness === "UNKNOWN") provenanceGaps.push(`${evidenceRef} needs valid source provenance and observed time.`);
   }
   for (const item of detail.intelligence) {
     const evidenceRef = `intelligence:${item.id}`;
-    const observedAt = item.createdAt;
+    const observedAt = item.capturedAt;
+    const isSeller = /seller|call/i.test(item.sourceType);
+    const isBuyer = /buyer/i.test(item.sourceType);
+    const source = item.source;
+    const evidenceClass = isSeller ? "SELLER_REPORTED" : isBuyer ? "BUYER_REPORTED"
+      : item.classification === "AI_HYPOTHESIS" ? "INFERRED" : "OBSERVED";
+    const normalized: EvidenceRecord = {
+      ref:evidenceRef, factKey:item.category.trim().toLowerCase(), value:item.statement,
+      source, evidenceRef:item.sourceRecordId ?? evidenceRef, observedAt, evidenceClass,
+      confidence:item.confidence,
+    };
+    comparable.push(normalized);
+    const freshness = classifyEvidenceFreshness(normalized, now,
+      isSeller || isBuyer ? 30 * 86_400_000 : undefined);
     const evidence = {
       ref: evidenceRef,
-      summary: `${item.classification} ${item.sourceType} evidence · ${item.category}: ${item.statement}`,
-      epistemicStatus: epistemicStatus(item.classification),
+      summary: `${isSeller ? "Seller-reported" : isBuyer ? "Buyer-reported" : evidenceClass === "INFERRED" ? "Inferred" : "Observed"} ${item.category} · ${item.statement} · source ${item.source} · confidence ${Math.round(item.confidence * 100)}%`,
+      epistemicStatus: isSeller || isBuyer ? "INDICATED" as const
+        : evidenceClass === "INFERRED" ? "AI_HYPOTHESIS" as const : epistemicStatus(item.classification),
       observedAt,
-      freshness: "UNKNOWN" as const,
+      freshness,
     };
     known.push(evidence);
     evidenceRefs.push(evidenceRef);
     if (reconciliationConflict(item)) conflicts.push(evidence);
+    if (freshness === "STALE") staleEvidence.push({...evidence,summary:`${evidence.summary} · expired; re-verify before relying on it.`});
+    if (freshness === "UNKNOWN") provenanceGaps.push(`${evidenceRef} needs valid source provenance and observed time.`);
+  }
+  for (const item of conflictingEvidence(comparable)) {
+    const found = known.find(candidate => candidate.ref === item.ref);
+    if (found && !conflicts.some(candidate => candidate.ref === found.ref)) conflicts.push(found);
   }
   for (const call of detail.calls) evidenceRefs.push(`call:${call.id}`);
   if (detail.analysisSnapshotId) {
     const analysisRef = `analysis:${detail.analysisSnapshotId}`;
     evidenceRefs.push(analysisRef);
     const parsedAt = detail.analysis ? Date.parse(detail.analysis.calculatedAt) : Number.NaN;
-    const isStale = !Number.isFinite(parsedAt) || parsedAt > now.getTime() || now.getTime() - parsedAt >= 7 * 86_400_000;
+    const freshness = classifyEvidenceFreshness({
+      source: "deterministic underwriting", evidenceRef: detail.analysisSnapshotId,
+      observedAt: detail.analysis?.calculatedAt ?? null,
+    }, now, 7 * 86_400_000);
+    const isStale = freshness !== "CURRENT";
     if (isStale) staleEvidence.push({
       ref: analysisRef, summary: "Underwriting snapshot is stale or has an invalid calculation time.",
       epistemicStatus: "OBSERVED", observedAt: detail.analysis?.calculatedAt ?? null, freshness: "STALE",
     });
     else known.push({
       ref: analysisRef,
-      summary: `Deterministic underwriting snapshot · ${detail.analysis?.classification ?? "unknown"} · ARV, repairs and MAO are governed by saved inputs.`,
+      summary: `Estimated deterministic underwriting snapshot · ${detail.analysis?.classification ?? "unknown"} · ARV, repairs and MAO are governed by saved inputs.`,
       epistemicStatus: "OBSERVED", observedAt: detail.analysis?.calculatedAt ?? null, freshness: "CURRENT",
     });
   }
@@ -147,13 +183,23 @@ function leadEvidence(detail: LeadDetail, acquisition: AcquisitionQueueItem | nu
     for (const route of readiness.contactPaths ?? []) {
       const routeRef = `contact-route:${route.id}`;
       evidenceRefs.push(routeRef);
-      known.push({
+      const normalized: EvidenceRecord = {
+        ref:routeRef,factKey:`contact.${route.channel}`,value:route.recipient ?? "unknown",
+        source:route.sourceName,evidenceRef:route.sourceRecordId,observedAt:route.capturedAt,
+        validUntil:route.freshUntilAt,confidence:route.confidence,evidenceClass:"OBSERVED",
+      };
+      comparable.push(normalized);
+      const freshness = classifyEvidenceFreshness(normalized,now);
+      const evidence = {
         ref: routeRef,
-        summary: `${route.channel} contact evidence · recipient ${route.recipient ?? "unknown"} · ${route.routeVerificationStatus}.`,
+        summary: `Observed ${route.channel} contact evidence · recipient ${route.recipient ?? "unknown"} · ${route.routeVerificationStatus} · source ${route.sourceName} · confidence ${Math.round(route.confidence * 100)}%.`,
         epistemicStatus: epistemicStatus(route.classification),
         observedAt: route.capturedAt,
-        freshness: Date.parse(route.freshUntilAt) < now.getTime() ? "STALE" : "CURRENT",
-      });
+        freshness,
+      } as IntelligenceDecision["known"][number];
+      known.push(evidence);
+      if (freshness === "STALE") staleEvidence.push({...evidence,summary:`${evidence.summary} · expired; re-verify before contacting.`});
+      if (freshness === "UNKNOWN") provenanceGaps.push(`${routeRef} needs valid source provenance and observed time.`);
     }
     const selected = readiness.selectedPhonePath;
     if (selected?.id) evidenceRefs.push(`contact-route:${selected.id}`);
@@ -163,10 +209,30 @@ function leadEvidence(detail: LeadDetail, acquisition: AcquisitionQueueItem | nu
       epistemicStatus: "OBSERVED", observedAt: selected?.capturedAt ?? null, freshness: "STALE",
     });
   }
+  const supersededStaleRefs = new Set<string>();
+  for (const old of comparable) {
+    const oldMaxAge = old.evidenceClass === "SELLER_REPORTED" || old.evidenceClass === "BUYER_REPORTED"
+      ? 30 * 86_400_000 : undefined;
+    if (classifyEvidenceFreshness(old, now, oldMaxAge) !== "STALE") continue;
+    const oldAt = Date.parse(old.observedAt ?? "");
+    const reverified = comparable.some(current => {
+      const currentMaxAge = current.evidenceClass === "SELLER_REPORTED" || current.evidenceClass === "BUYER_REPORTED"
+        ? 30 * 86_400_000 : undefined;
+      return current.factKey === old.factKey
+        && current.value.trim().toLocaleLowerCase() === old.value.trim().toLocaleLowerCase()
+        && Date.parse(current.observedAt ?? "") > oldAt
+        && classifyEvidenceFreshness(current, now, currentMaxAge) === "CURRENT";
+    });
+    if (reverified) supersededStaleRefs.add(old.ref);
+  }
+  for (const item of known) if (supersededStaleRefs.has(item.ref)) {
+    item.summary += " · historical evidence retained; a later same-valued record re-verifies this fact.";
+  }
   return {
     known: known.sort((a, b) => a.ref.localeCompare(b.ref)),
     conflicts: conflicts.sort((a, b) => a.ref.localeCompare(b.ref)),
-    staleEvidence: staleEvidence.sort((a, b) => a.ref.localeCompare(b.ref)),
+    staleEvidence: staleEvidence.filter(item => !supersededStaleRefs.has(item.ref)).sort((a, b) => a.ref.localeCompare(b.ref)),
+    provenanceGaps: [...new Set(provenanceGaps)].sort(),
     evidenceRefs: unique(evidenceRefs).sort(),
   };
 }
@@ -236,11 +302,36 @@ function chooseLeadAction(input: Extract<IntelligenceLoopInput, { subjectType: "
       `/leads/${lead.id}`, "ANALYST", 118, true, [...evidenceRefs, ...evidence],
     );
   }
+  if (common.provenanceGaps.length) return action(
+    "RECONCILE_EVIDENCE", `lead:${lead.id}:evidence-provenance`,
+    "Repair missing evidence provenance",
+    evidenceResolutionAction(0,0,common.provenanceGaps.length) ?? "Add source provenance before relying on evidence.",
+    `/leads/${lead.id}`, "ANALYST", 119, true, evidenceRefs,
+  );
+  if (common.staleEvidence.length) return action(
+    "REFRESH_SOURCE_EVIDENCE", `lead:${lead.id}:stale-evidence:${common.staleEvidence.map(item=>item.ref).join(",")}`,
+    "Re-verify expired evidence",
+    evidenceResolutionAction(common.staleEvidence.length,0,0) ?? "Refresh expired evidence before dependent actions.",
+    `/deals/${lead.id}?work=research`, "ANALYST", 120, false,
+    [...evidenceRefs,...common.staleEvidence.map(item=>item.ref)],
+  );
 
   const contract = operations?.contract;
   if (contract && !["CLOSED", "CANCELLED"].includes(contract.status)) {
     const contractRef = `contract:${contract.id}`;
     const refs = [...evidenceRefs, contractRef];
+    const closingAt = contract.closingAt ? Date.parse(contract.closingAt) : Number.NaN;
+    const timeToClose = closingAt - input.now.getTime();
+    if (Number.isFinite(closingAt) && timeToClose <= 72 * 60 * 60_000) {
+      const timing = timeToClose < 0 ? "The recorded closing deadline is overdue."
+        : "The recorded closing deadline is within 72 hours.";
+      return action(
+        "TRANSACTION_NEXT", `contract:${contract.id}:closing-deadline:${contract.closingAt}`,
+        "Resolve the closing deadline",
+        `${timing} Review the current signed-document, funds, title and milestone evidence before changing transaction state.`,
+        `/deals/${lead.id}?work=transaction`, "OWNER", 130, true, refs,
+      );
+    }
     if (contract.committedBuyerId) {
       return action(
         "TRANSACTION_NEXT", `contract:${contract.id}:transaction-progress`,
@@ -396,6 +487,7 @@ function decideLead(input: Extract<IntelligenceLoopInput, { subjectType: "LEAD" 
     ...(operations?.matches ?? []).filter(match => match.eligible).map(match => `buyer-match:${lead.id}:${match.buyerId}`),
   ]).sort();
   const unknowns = unique([
+    ...common.provenanceGaps,
     ...((acquisition?.blockerCode && acquisition.blocker) ? [acquisition.blocker] : []),
     ...(detail.workGuidance?.missingFacts ?? []),
     ...(detail.analysis?.blockers ?? []),

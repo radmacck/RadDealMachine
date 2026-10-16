@@ -1,9 +1,10 @@
 import { useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import {
-  getGetLeadQueryKey, useAuthorizeOffer, useCommunicateOffer, useCreateOfferDraft, useWithdrawOffer,
-  type Intelligence, type LeadDetail, type Lead, type Offer, type OfferCommunicationInput, type OfferCommunicationInputChannel,
+  getGetLeadQueryKey, useAuthorizeOffer, useCommunicateOffer, useCreateOfferDraft, useWithdrawOffer, useGetOfferReview,
+  useGetSellerContactPaths, type Intelligence, type LeadDetail, type Lead, type Offer, type OfferCommunicationInput, type OfferCommunicationInputChannel,
 } from '@workspace/api-client-react';
+import { buildOfferReadinessScorecard, type OfferReadinessInput } from '@workspace/deal-domain';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -124,6 +125,7 @@ export function OffersPanel({ detail, onGoIntel }: { detail: LeadDetail; onGoInt
   const invalidate = useInvalidateWork();
   const { toast } = useToast();
   const { lead, analysis, offers, intelligence } = detail;
+  const contactQuery=useGetSellerContactPaths(lead.id);
   const [mode, setMode] = useState<{ kind: 'draft' } | { kind: 'approve' | 'communicate' | 'withdraw'; offer: Offer } | null>(null);
   const [epoch, setEpoch] = useState(0);
   const create = useCreateOfferDraft();
@@ -141,6 +143,27 @@ export function OffersPanel({ detail, onGoIntel }: { detail: LeadDetail; onGoInt
   const conversationLogged = detail.calls.some(c => c.outcome === 'CONNECTED');
   const canDraftNow = canResearch && draftStages.includes(lead.stage) && fresh && conversationLogged && !!analysis && ['STRONG', 'NEGOTIABLE'].includes(analysis.classification) && !!detail.analysisSnapshotId;
   const draftWhy = !canResearch ? 'Your role cannot draft offers.' : !draftStages.includes(lead.stage) || !conversationLogged ? 'Drafting opens after a logged, connected seller conversation.' : !analysis || !detail.analysisSnapshotId ? 'No current complete underwriting.' : !fresh ? 'Underwriting is over seven days old; refresh before drafting or approving.' : !['STRONG', 'NEGOTIABLE'].includes(analysis.classification) ? `Underwriting says ${analysis.classification}; only Strong or Negotiable leads can be drafted.` : null;
+  const assess=(state:'READY'|'REVIEW'|'BLOCKED',evidence:string[],missingEvidence:string[],remedy:string)=>({state,evidence,missingEvidence,remedy});
+  const propertyFact=intelligence.find(i=>i.classification==='VERIFIED_FACTS'&&i.sourceType==='PUBLIC_RECORD'&&!!i.sourceUrl&&!!i.sourceRecordId&&!!i.verificationNote&&Date.now()-Date.parse(i.capturedAt)>=0&&Date.now()-Date.parse(i.capturedAt)<=30*86_400_000);
+  const ownerEvidence=evid[0];
+  const route=contactQuery.data?.selectedPhonePath;
+  const includedComps=analysis?.compDecisions.filter(c=>c.included).length??0;
+  const requiredComps=analysis?.assumptions.minComps??3;
+  const hasCosts=!!analysis&&[analysis.assumptions.sellingCostPct,analysis.assumptions.acquisitionCost,analysis.assumptions.holdingMonthly,analysis.assumptions.holdingMonths,analysis.assumptions.assignmentTarget,analysis.assumptions.contingencyPct].every(v=>Number.isFinite(v)&&v>=0);
+  const approvalCurrent=offers.some(o=>o.effectiveStatus==='AUTHORIZED'&&!o.blockers.length&&o.analysisSnapshotId===detail.analysisSnapshotId);
+  const assessments:OfferReadinessInput={
+    hardStopKeys:['PROPERTY_IDENTITY','SELLER_AUTHORITY','CONTACTABILITY','COMPS_ARV','REPAIR_ASSUMPTIONS','DETERMINISTIC_MAO','LEGAL_STRATEGY','CURRENT_APPROVAL'],
+    PROPERTY_IDENTITY:propertyFact&&lead.address&&lead.city&&lead.state&&lead.zip?assess('READY',[`${propertyFact.source} · ${propertyFact.sourceRecordId}`],[],`Keep the verified property record attached to this lead.`):assess('BLOCKED',[],['Complete property address and a verified source-linked public-record property fact.'],'Link and review a current public-record fact that identifies this parcel and property.'),
+    SELLER_AUTHORITY:ownerEvidence?assess('READY',[`${ownerEvidence.source} · ${ownerEvidence.sourceRecordId}`],[],`Recheck public-record authority evidence before approval.`):assess('BLOCKED',[],['Current verified public-record seller/owner authority evidence with verification note (30-day limit).'],'Review a current public record for seller authority; do not infer signing authority from a contact route.'),
+    CONTACTABILITY:route&&contactQuery.data?.directRouteStatus==='PHONE_ROUTE_AVAILABLE'&&route.freshnessStatus==='CURRENT'&&route.permissionStatus==='PERMITTED'&&route.routeVerificationStatus==='CONFIRMED'?assess('READY',[`${route.sourceName} · ${route.sourceRecordId} · observed ${fmtDate(route.capturedAt)}`],[],`Reconfirm permission and recipient identity before contact.`):assess('BLOCKED',[],[contactQuery.isLoading?'Contact evidence is loading.':`Current permitted, confirmed phone route is unavailable (${contactQuery.data?.directRouteStatus??'not checked'}).`],'Record or refresh a permitted phone route, then review recipient identity and permission.'),
+    COMPS_ARV:analysis&&fresh&&includedComps>=requiredComps&&analysis.arv.confidence>=analysis.assumptions.minConfidence&&!analysis.blockers.some(b=>/comp|arv/i.test(b))?assess('READY',[`${includedComps} included comps; ARV confidence ${Math.round(analysis.arv.confidence*100)}%; calculated ${fmtDate(analysis.calculatedAt)}`],[],`Recheck comp freshness and source links before any approval.`):assess('BLOCKED',[],[`Current, non-stale comps/ARV evidence: ${includedComps}/${requiredComps} included comps; ${analysis?.blockers.filter(b=>/comp|arv/i.test(b)).join('; ')||'confidence or freshness requirement not met'}.`],'Replace or verify comps, resolve listed comp/ARV blockers, then recalculate underwriting.'),
+    REPAIR_ASSUMPTIONS:analysis&&analysis.repairEstimate.blockers.length===0&&!!analysis.repairEstimate.total&&analysis.repairs.confidence>=analysis.assumptions.minConfidence?assess('READY',[`Repair range ${money(analysis.repairEstimate.total.low)}–${money(analysis.repairEstimate.total.high)}; confidence ${Math.round(analysis.repairs.confidence*100)}%.`],[],`Reconcile new condition evidence before approval.`):assess('BLOCKED',[],analysis?.repairEstimate.blockers.length?analysis.repairEstimate.blockers:['Complete current, source-linked repair assumptions and confidence requirements.'],'Review condition evidence and repair lines; clear estimate blockers and recalculate.'),
+    TRANSACTION_COSTS:hasCosts?assess('READY',['Selling, acquisition, holding, contingency and assignment cost assumptions are present.'],[],`Review cost assumptions against current deal strategy.`):assess('BLOCKED',[],['One or more cost assumptions are missing or invalid.'],'Complete and review the current transaction-cost assumptions.'),
+    DETERMINISTIC_MAO:analysis&&detail.analysisSnapshotId&&fresh&&analysis.blockers.length===0&&analysis.mao>0?assess('READY',[`Deterministic MAO ${money(analysis.mao)} · snapshot ${detail.analysisSnapshotId.slice(0,8)}.`],[],`Recalculate after any material evidence, cost, policy, or property change.`):assess('BLOCKED',[],analysis?.blockers.length?analysis.blockers:['Current immutable underwriting snapshot and positive deterministic MAO are required.'],'Resolve underwriting blockers and refresh the current analysis snapshot; the score does not authorize a price.'),
+    LEGAL_STRATEGY:assess('REVIEW',[],['Deal-specific assignment/transaction strategy has no qualified legal review recorded.'],'Obtain qualified jurisdiction-specific review of strategy, assignment constraints, contract terms, and disclosures before communicating terms.'),
+    CURRENT_APPROVAL:approvalCurrent?assess('READY',['Current exact-version owner approval is active.'],[],`Recheck the approved snapshot and expiry immediately before communication.`):assess('BLOCKED',[],['No active owner approval of the exact current offer version.'],'Owner must review and approve the exact draft version; approval is separate from this scorecard.'),
+  };
+  const scorecard=buildOfferReadinessScorecard(assessments);
 
   return (
     <div className="space-y-4" data-testid="panel-offers">
@@ -148,6 +171,18 @@ export function OffersPanel({ detail, onGoIntel }: { detail: LeadDetail; onGoInt
         <p><b>How this works.</b> An analyst drafts terms. Terms never change after saving. Only the owner authorizes a ceiling, backed by verified authority evidence. A person then makes the offer and records it here. Approval is not title clearance, not a contract, and not a message sent.</p>
         <p className="mt-1 text-xs text-muted-foreground">Research analysis ceiling stays "Not authorized". Authorization lives on the offer below, separate from the research snapshot.</p>
       </div>
+      <section className="ledger space-y-3 p-4" data-testid="panel-offer-readiness-scorecard">
+        <div className="flex items-center justify-between gap-3"><div><p className="eyebrow">Offer readiness · evidence scorecard</p><p className="text-xs text-muted-foreground">Deterministic checklist only; never an offer, approval, or substitute for hard gates.</p></div>
+          <b className="font-mono text-xl" data-testid="text-offer-readiness-score">{scorecard.score}/100</b></div>
+        <p className="text-sm font-medium" data-testid="text-offer-readiness-status">{scorecard.status.replaceAll('_',' ')}</p>
+        <ul className="grid gap-2 md:grid-cols-2">{scorecard.criteria.map(item=><li key={item.key} className="rounded border p-2 text-xs" data-testid={`criterion-${item.key}`}>
+          <div className="flex justify-between gap-2"><b>{item.key.replaceAll('_',' ')}</b><span>{item.state} · {item.points}/{item.weight}</span></div>
+          {item.evidence.map((line,i)=><p key={`e${i}`}>Evidence: {line}</p>)}
+          {item.missingEvidence.map((line,i)=><p className="text-destructive" key={`m${i}`}>Missing/stale: {line}</p>)}
+          {item.state!=='READY'&&<p><b>Remedy:</b> {item.remedy}</p>}
+          {item.hardStop&&<p className="font-semibold text-destructive">Hard stop; no offer action is authorized.</p>}
+        </li>)}</ul>
+      </section>
 
       <div className="flex flex-wrap items-center justify-between gap-2">
         <h3 className="text-xl font-semibold">Offers ({offers.length})</h3>
@@ -155,7 +190,7 @@ export function OffersPanel({ detail, onGoIntel }: { detail: LeadDetail; onGoInt
       </div>
       {draftWhy && <p className="text-xs text-muted-foreground" data-testid="text-draft-blocked">{draftWhy}</p>}
 
-      {mode?.kind === 'draft' && <DraftForm key={`d${epoch}`} lead={lead} pending={create.isPending} error={create.error} onCancel={() => setMode(null)}
+       {mode?.kind === 'draft' && <DraftForm key={`d${epoch}`} detail={detail} lead={lead} pending={create.isPending} error={create.error} onCancel={() => setMode(null)}
         onSubmit={(data) => create.mutate({ id: lead.id, data }, { onSuccess: (d) => ok(d, 'Draft saved') })} />}
 
       {offers.length === 0 && !mode && <p className="border border-dashed border-border p-4 text-sm text-muted-foreground" data-testid="empty-offers">No offers on this lead yet.</p>}
@@ -208,12 +243,14 @@ export function OffersPanel({ detail, onGoIntel }: { detail: LeadDetail; onGoInt
   );
 }
 
-function DraftForm({ lead, pending, error, onSubmit, onCancel }: {
-  lead: Lead; pending: boolean; error: unknown; onSubmit: (d: import('@workspace/api-client-react').OfferDraftInput) => void; onCancel: () => void;
+function DraftForm({ detail, lead, pending, error, onSubmit, onCancel }: {
+  detail: LeadDetail; lead: Lead; pending: boolean; error: unknown; onSubmit: (d: import('@workspace/api-client-react').OfferDraftInput) => void; onCancel: () => void;
 }) {
+  const analysis = detail.analysis!;
   const { base, stale, rebase } = useBaseVersion(lead.version);
-  const [v, setV] = useState({ amount: '', earnest: '', days: '30', cont: '', reason: '' });
+  const [v, setV] = useState({ amount: String(analysis.openingLow), earnest: '', days: '30', cont: 'Subject to inspection, title review, and owner-approved contract terms.', reason: 'Prepared from current underwriting; seller terms require explicit owner review.' });
   const [assign, setAssign] = useState(false);
+  const [expiry, setExpiry] = useState(() => { const d = new Date(Date.now()+48*3600000); d.setMinutes(d.getMinutes()-d.getTimezoneOffset()); return d.toISOString().slice(0,16); });
   const [local, setLocal] = useState<string | null>(null);
   const set = (k: keyof typeof v) => (e: { target: { value: string } }) => setV((p) => ({ ...p, [k]: e.target.value }));
   const submit = () => {
@@ -222,19 +259,29 @@ function DraftForm({ lead, pending, error, onSubmit, onCancel }: {
     if (Number.isNaN(earnest) || earnest < 0 || earnest > amount) return setLocal('Earnest money must be 0 up to the amount.');
     if (!Number.isInteger(days) || days < 1 || days > 180) return setLocal('Closing days must be a whole number from 1 to 180.');
     if (v.cont.trim().length < 3 || v.reason.trim().length < 3) return setLocal('Contingencies and reason each need at least 3 characters.');
+    if (!future(expiry)) return setLocal('Draft expiry must be in the future.');
     setLocal(null);
-    onSubmit({ version: base, amount, earnestMoney: earnest, closingDays: days, contingencies: v.cont.trim(), assignmentIntent: assign, reason: v.reason.trim() });
+    onSubmit({ version: base, amount, earnestMoney: earnest, closingDays: days, contingencies: v.cont.trim(), assignmentIntent: assign, reason: v.reason.trim(), draftExpiresAt: iso(expiry) });
   };
   return (
     <div className="ledger space-y-3 p-4" data-testid="form-offer-draft">
       <p className="eyebrow">New immutable draft</p>
-      <p className="text-xs text-muted-foreground">Saved terms cannot be edited. To change them, cancel the draft and write a new one.</p>
+      <p className="text-xs font-semibold">Internal proposal draft only — not an offer, not approved, and not sent. Saved versions cannot be edited.</p>
+      <div className="rounded border p-3 text-sm" data-testid="offer-preparation-summary">
+        <p className="font-semibold">Deterministic preparation basis</p>
+        <p>Suggested opening {money(analysis.openingLow)}–{money(analysis.openingHigh)}; MAO {money(analysis.mao)}. ARV low/expected/high: {money(analysis.arv.low)} / {money(analysis.arv.expected)} / {money(analysis.arv.high)}.</p>
+        <p>Costs: selling {money(analysis.arv.low*analysis.assumptions.sellingCostPct)}, repairs {money(analysis.repairs.expected)}, acquisition {money(analysis.assumptions.acquisitionCost)}, holding {money(analysis.assumptions.holdingMonthly*analysis.assumptions.holdingMonths)}, contingency {money(analysis.repairs.high*analysis.assumptions.contingencyPct)}, assignment target {money(assign?analysis.assumptions.assignmentTarget:0)}.</p>
+        <p>Assignment strategy is only contemplated subject to local law and contract permission; legality is not assessed.</p>
+        <p>Assumptions: {analysis.assumptions.arvMultiplier} ARV multiplier; {analysis.assumptions.sellingCostPct*100}% selling costs; {analysis.assumptions.holdingMonths} holding months. Risks: {analysis.risks.join('; ')||'none recorded'}.</p>
+        <p>Verified supporting evidence: {detail.intelligence.filter(i=>i.classification==='VERIFIED_FACTS').map(i=>`${i.category} (${i.id.slice(0,8)}): ${i.statement}`).join(' · ')||'Verified comps are referenced by the underwriting snapshot.'}</p>
+      </div>
       {stale && <Stale lead={lead.version} base={base} onRebase={rebase} onDiscard={onCancel} />}
       <div className="grid gap-3 sm:grid-cols-3">
         <div className="space-y-1.5"><Label>Amount (USD)</Label><Input type="number" value={v.amount} onChange={set('amount')} data-testid="input-draft-amount" /></div>
         <div className="space-y-1.5"><Label>Earnest money (USD)</Label><Input type="number" value={v.earnest} onChange={set('earnest')} data-testid="input-draft-earnest" /></div>
         <div className="space-y-1.5"><Label>Closing days (1 to 180)</Label><Input type="number" value={v.days} onChange={set('days')} data-testid="input-draft-days" /></div>
       </div>
+      <div className="space-y-1.5"><Label>Internal draft expiry</Label><Input type="datetime-local" value={expiry} onChange={e=>setExpiry(e.target.value)} data-testid="input-draft-expiry" /></div>
       <div className="space-y-1.5"><Label>Contingencies</Label><Textarea rows={2} value={v.cont} onChange={set('cont')} data-testid="input-draft-contingencies" /></div>
       <label className="flex items-center gap-3 text-sm"><Switch checked={assign} onCheckedChange={setAssign} data-testid="switch-draft-assignment" />We intend to assign this contract</label>
       <div className="space-y-1.5"><Label>Reason for these terms</Label><Textarea rows={2} value={v.reason} onChange={set('reason')} data-testid="input-draft-reason" /></div>
@@ -250,6 +297,7 @@ function ApproveForm({ offer, detail, evid, onGoIntel, pending, error, onSubmit,
   onSubmit: (d: import('@workspace/api-client-react').OfferApprovalInput) => void; onCancel: () => void;
 }) {
   const { lead, analysis } = detail;
+  const review = useGetOfferReview(lead.id, offer.id);
   const { base, stale, rebase } = useBaseVersion(lead.version);
   const [max, setMax] = useState('');
   const [exp, setExp] = useState('');
@@ -258,6 +306,7 @@ function ApproveForm({ offer, detail, evid, onGoIntel, pending, error, onSubmit,
   const [next, setNext] = useState('');
   const [fu, setFu] = useState('');
   const [local, setLocal] = useState<string | null>(null);
+  const [confirmed, setConfirmed] = useState(false);
   if (!analysis) return <p className="text-sm">No current underwriting.</p>;
   const limit = new Date(analysis.calculatedAt).getTime() + 7 * 86400000;
   const submit = () => {
@@ -267,13 +316,17 @@ function ApproveForm({ offer, detail, evid, onGoIntel, pending, error, onSubmit,
     if (!ev) return setLocal('Select authority evidence.');
     if (reason.trim().length < 3 || next.trim().length < 3) return setLocal('Reason and next action each need at least 3 characters.');
     if (!future(fu)) return setLocal('Follow-up must be in the future.');
+    if (!review.data || !confirmed) return setLocal('Review and confirm the exact prepared version before authorizing.');
     setLocal(null);
-    onSubmit({ version: base, maximumApprovedAcquisitionPrice: m, expiresAt: iso(exp), authorityEvidenceId: ev, reason: reason.trim(), nextAction: next.trim(), followUpAt: iso(fu) });
+    onSubmit({ version: base, reviewSnapshotHash: review.data.reviewSnapshotHash, maximumApprovedAcquisitionPrice: m, expiresAt: iso(exp), authorityEvidenceId: ev, reason: reason.trim(), nextAction: next.trim(), followUpAt: iso(fu) });
   };
   return (
     <div className="space-y-3" data-testid="form-offer-approve">
       <p className="eyebrow">Owner authorization</p>
       <p className="text-xs text-muted-foreground">This authorizes the ceiling for a human to offer. It is not title clearance, a contract, or a sent message.</p>
+      {review.data && <details open className="max-h-64 overflow-auto rounded border p-3 text-xs" data-testid="offer-review-packet"><summary>Exact version packet · expires {fmtDate(review.data.draftExpiresAt)} · {review.data.reviewSnapshotHash.slice(0,12)}</summary><pre className="whitespace-pre-wrap">{JSON.stringify(JSON.parse(review.data.reviewSnapshotJson),null,2)}</pre></details>}
+      {review.error && <ErrorNotice error={review.error} />}
+      <label className="flex items-center gap-2 text-sm"><input type="checkbox" checked={confirmed} onChange={e=>setConfirmed(e.target.checked)} data-testid="checkbox-confirm-offer-version" />I reviewed and approve this exact proposal version and its evidence.</label>
       {stale && <Stale lead={lead.version} base={base} onRebase={rebase} onDiscard={onCancel} />}
       {evid.length === 0 ? (
         <div className="border border-destructive/50 bg-destructive/5 p-3 text-sm" data-testid="notice-no-authority">
@@ -294,7 +347,7 @@ function ApproveForm({ offer, detail, evid, onGoIntel, pending, error, onSubmit,
       <div className="space-y-1.5"><Label>Follow up (future)</Label><Input type="datetime-local" value={fu} onChange={(e) => setFu(e.target.value)} data-testid="input-approve-followup" /></div>
       {local && <p className="text-sm text-destructive" data-testid="text-approve-local-error">{local}</p>}
       {error != null && <ErrorNotice error={error} />}
-      <div className="flex justify-end gap-2"><Button variant="ghost" onClick={onCancel} data-testid="button-approve-cancel">Cancel</Button><Button onClick={submit} disabled={pending || evid.length === 0} data-testid="button-approve-confirm">{pending ? 'Authorizing' : 'Authorize offer'}</Button></div>
+       <div className="flex justify-end gap-2"><Button variant="ghost" onClick={onCancel} data-testid="button-approve-cancel">Cancel</Button><Button onClick={submit} disabled={pending || evid.length === 0 || !review.data || !confirmed} data-testid="button-approve-confirm">{pending ? 'Authorizing' : 'Authorize exact version'}</Button></div>
     </div>
   );
 }

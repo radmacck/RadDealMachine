@@ -15,4 +15,5 @@ export type OfferDraftInput = OfferTerms & {
      * @maxLength 2000
      */
   reason: string;
+  draftExpiresAt?: string;
 };

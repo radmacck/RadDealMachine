@@ -12,6 +12,7 @@ import type { CallOutcome } from './callOutcome';
 export interface Call {
   id: string;
   createdAt: string;
+  occurredAt: string;
   actor: string;
   version: number;
   outcome: CallOutcome;

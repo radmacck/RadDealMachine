@@ -41,6 +41,20 @@ export async function getBuyerRecord(id: string, database: Store = db, now = new
   if (!row) throw new DomainError("Buyer not found.",404);
   return buyerRecord(row,now);
 }
+export async function getBuyerContactResearchRecord(id: string, database: Store = db) {
+  const [row] = await database.select().from(buyersTable).where(eq(buyersTable.id,id));
+  if (!row) throw new DomainError("Buyer not found.",404);
+  const history=Array.isArray(row.payload.contactPermissionHistory)?row.payload.contactPermissionHistory:[];
+  const permission=row.payload.contactPermission??null;
+  const routePresent=!!(row.payload.email||row.payload.phone);
+  const nextAction=!routePresent?"Record a route from a permitted source; never invent contact details."
+    :(!row.payload.contactSourceUrl||!row.payload.contactObservedAt)?"Add source record URL and observed timestamp; keep identity and permission unverified."
+      :!permission?"Owner-review current channel-specific permission before outreach."
+        :"Review identity conflicts and ensure permission is current for the selected channel. No message has been sent.";
+  return {buyerId:row.id,version:row.version,contactSourceUrl:row.payload.contactSourceUrl??null,
+    contactObservedAt:row.payload.contactObservedAt??null,contactConfidence:row.payload.contactConfidence??null,
+    contactPermission:permission,contactPermissionHistory:history,nextAction};
+}
 export async function allBuyerRecords(database: Store = db, now = new Date()) {
   return (await database.select().from(buyersTable).orderBy(desc(buyersTable.updatedAt))).map(row=>buyerRecord(row,now));
 }
