@@ -57,7 +57,7 @@ export interface BuyerOutreachReceipt {
 }
 
 export type DistributionDeliveryState =
-  | "DRAFT" | "QUEUED" | "PROVIDER_ACCEPTED" | "DELIVERED" | "INTERESTED" | "COMMITTED" | "FAILED" | "UNKNOWN";
+  | "DRAFT" | "QUEUED" | "ATTEMPTED" | "PROVIDER_ACCEPTED" | "DELIVERED" | "INTERESTED" | "COMMITTED" | "FAILED" | "UNKNOWN";
 export type DistributionProviderEvent = {
   eventId: string;
   providerId: string;
@@ -74,6 +74,7 @@ export type ExactMessageApproval = {
   redactionLevel: "REDACTED" | "ADDRESS_DISCLOSED";
   packageAuthorizationId: string;
   consentSnapshotHash: string;
+  expiresAt: string;
   exactMessageHash: string;
   approvedBy: string;
   approvedAt: string;
@@ -99,12 +100,13 @@ export function approveExactDistributionMessage(input: {
   buyerId: string; channel: "EMAIL" | "SMS"; packetVersion: number; packetSnapshotHash: string;
   recipientRoute: string; redactionLevel: "REDACTED" | "ADDRESS_DISCLOSED";
   packageAuthorizationId: string; consentSnapshotHash: string;
-  exactMessage: string; approvedBy: string; approvedAt: string;
+  exactMessage: string; approvedBy: string; approvedAt: string; expiresAt: string;
 }): ExactMessageApproval {
   if (!input.buyerId || !input.approvedBy || !input.exactMessage.trim() || input.packetVersion < 1 ||
     !/^[a-f0-9]{64}$/.test(input.packetSnapshotHash) || !/^[a-f0-9]{64}$/.test(input.consentSnapshotHash) ||
-    !input.recipientRoute.trim() || !input.packageAuthorizationId || !Number.isFinite(Date.parse(input.approvedAt))) {
-    throw new Error("Exact-message approval requires recipient route, redaction, package authorization, current consent, packet snapshot, approver, and non-empty message.");
+    !input.recipientRoute.trim() || !input.packageAuthorizationId || !Number.isFinite(Date.parse(input.approvedAt)) ||
+    !Number.isFinite(Date.parse(input.expiresAt)) || Date.parse(input.expiresAt) <= Date.parse(input.approvedAt)) {
+    throw new Error("Exact-message approval requires recipient route, redaction, package authorization, current consent, packet snapshot, approver, non-empty message, and a future expiry.");
   }
   const exactMessageHash = sha256(input.exactMessage);
   const bound = {
@@ -112,7 +114,7 @@ export function approveExactDistributionMessage(input: {
     packetSnapshotHash: input.packetSnapshotHash, recipientRouteHash: recipientRouteHash(input.recipientRoute),
     redactionLevel: input.redactionLevel, packageAuthorizationId: input.packageAuthorizationId,
     consentSnapshotHash: input.consentSnapshotHash, exactMessageHash, approvedBy: input.approvedBy,
-    approvedAt: input.approvedAt,
+    approvedAt: input.approvedAt, expiresAt: input.expiresAt,
   };
   return { ...bound, approvalHash: sha256(JSON.stringify(bound)) };
 }
@@ -122,7 +124,7 @@ export function assertExactDistributionApprovalCurrent(
   current: {
     buyerId: string; channel: "EMAIL" | "SMS"; packetVersion: number; packetSnapshotHash: string;
     recipientRoute: string; redactionLevel: "REDACTED" | "ADDRESS_DISCLOSED";
-    packageAuthorizationId: string; consentSnapshotHash: string; exactMessage: string;
+    packageAuthorizationId: string; consentSnapshotHash: string; exactMessage: string; expiresAt: string;
   },
 ) {
   const expected = approveExactDistributionMessage({
@@ -133,6 +135,7 @@ export function assertExactDistributionApprovalCurrent(
     approval.recipientRouteHash !== expected.recipientRouteHash || approval.redactionLevel !== expected.redactionLevel ||
     approval.packageAuthorizationId !== expected.packageAuthorizationId ||
     approval.consentSnapshotHash !== expected.consentSnapshotHash ||
+    approval.expiresAt !== expected.expiresAt ||
     approval.exactMessageHash !== expected.exactMessageHash || approval.approvalHash !== expected.approvalHash) {
     throw new Error("Exact-message approval is stale or does not match the current recipient route, channel, package version/redaction/authorization, consent, and message.");
   }
@@ -145,6 +148,7 @@ export function assertDistributionSubmissionReady(
     buyerId: string; channel: "EMAIL" | "SMS"; packetVersion: number; packetSnapshotHash: string;
     recipientRoute: string; redactionLevel: "REDACTED" | "ADDRESS_DISCLOSED";
     packageAuthorizationId: string; consentSnapshotHash: string; exactMessage: string;
+    expiresAt: string;
   },
   permission: BuyerContactPermission | null | undefined,
   channel: "EMAIL" | "SMS",
@@ -156,6 +160,9 @@ export function assertDistributionSubmissionReady(
   if (!approval || approval.channel !== channel) throw new Error("Exact recipient message approval is required before provider submission.");
   if (current.consentSnapshotHash !== buyerConsentSnapshotHash(permission)) {
     throw new Error("Contact consent changed after approval; exact-message approval is stale.");
+  }
+  if (!Number.isFinite(Date.parse(current.expiresAt)) || Date.parse(current.expiresAt) <= now.getTime()) {
+    throw new Error("Exact-message approval or package has expired; reauthorize before submission.");
   }
   assertExactDistributionApprovalCurrent(approval, current);
   if (current.redactionLevel === "ADDRESS_DISCLOSED" && !recipientIdentityVerified) {

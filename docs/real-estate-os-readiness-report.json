@@ -1,29 +1,12 @@
 {
   "gate": "REAL_ESTATE_OS_OPERATIONAL_READINESS",
-  "generatedAt": "2026-10-15T17:02:49.981Z",
+  "generatedAt": "2026-10-17T20:20:07.273Z",
   "syntheticWorkflowStatus": "PASS",
-  "permittedSourceStatus": "PASS",
-  "operationalStatus": "NOT_READY",
-  "securityScan": {
-    "scannedAt": "2026-10-15T16:54:17Z",
-    "dependencyAudit": {
-      "critical": 0,
-      "high": 1,
-      "moderate": 1,
-      "low": 0,
-      "info": 0,
-      "remainingFindings": [
-        "GHSA-vfj7-8cjw-p6xm: braces@3.0.3 (no fixed version reported by scanner)",
-        "GHSA-rj75-hqrm-r3gf: postcss-selector-parser@6.0.10 (fix 7.1.6 requires major upgrade)"
-      ],
-      "remediated": [
-        "proxy-addr updated from 2.0.7 to 2.0.8; critical finding cleared"
-      ]
-    },
-    "sastFindings": 0,
-    "houndDogFindings": 0
-  },
-  "failedCheckIds": [],
+  "permittedSourceStatus": "FAIL",
+  "operationalStatus": "FAIL",
+  "failedCheckIds": [
+    "permitted-property-discovery"
+  ],
   "unverifiedLiveCheckIds": [
     "provider-snapshot:phila-property-sources",
     "provider-snapshot:seller-contact-research",
@@ -33,7 +16,7 @@
     "provider-snapshot:private-document-storage",
     "live-owner-and-external-evidence"
   ],
-  "earliestBlocker": "Philadelphia public-record adapters: persisted health is DEGRADED; check kind ADAPTER_REGISTRATION. This is a configuration/history snapshot, not a live network probe.",
+  "earliestBlocker": "permitted-property-discovery failed (exit 1).",
   "checks": [
     {
       "id": "auth",
@@ -86,8 +69,8 @@
     {
       "id": "permitted-property-discovery",
       "category": "PERMITTED_SOURCE_CHECK",
-      "status": "PASS",
-      "detail": "permitted-property-discovery completed successfully."
+      "status": "FAIL",
+      "detail": "permitted-property-discovery failed (exit 1)."
     },
     {
       "id": "seller-contactability",
@@ -213,7 +196,7 @@
   "readinessMatrix": [
     {
       "area": "Permitted property discovery, provenance, and deduplication",
-      "syntheticStatus": "PASS",
+      "syntheticStatus": "FAIL",
       "syntheticScope": "Public Philadelphia feeds queried in an isolated persisted exercise; no raw discovery becomes an active lead.",
       "liveStatus": "UNVERIFIED",
       "evidenceCheckIds": [
@@ -323,8 +306,7 @@
     {
       "area": "Security",
       "syntheticStatus": "PASS",
-      "syntheticScope": "Authentication/provider-boundary tests pass. Security scan is FAIL: 1 high and 1 moderate dependency finding remain; SAST and HoundDog each report 0 findings. See securityScan.",
-      "scannerStatus": "FAIL",
+      "syntheticScope": "Authentication and provider-boundary tests; latest dependency/SAST/privacy scanner findings are recorded in the checkpoint.",
       "liveStatus": "UNVERIFIED",
       "evidenceCheckIds": [
         "auth",

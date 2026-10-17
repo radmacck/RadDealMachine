@@ -78,6 +78,31 @@ test("underwriting formula is deterministic and never grants offer authority", (
   assert.equal(result.assumptions.assignmentTarget, 15000);
 });
 
+test("each cost component moves MAO by the documented amount while margin changes classification only", () => {
+  const policy = structuredClone(DEFAULT_ASSUMPTIONS);
+  const baseline = analyzeDeal(lead, input, policy, now);
+  const recalculate = (override: Partial<typeof policy>) =>
+    analyzeDeal(lead, input, { ...policy, ...override }, now);
+
+  assert.equal(recalculate({ acquisitionCost: policy.acquisitionCost + 500 }).mao, baseline.mao - 500);
+  assert.equal(recalculate({ holdingMonthly: policy.holdingMonthly + 100 }).mao,
+    baseline.mao - 100 * policy.holdingMonths);
+  assert.equal(recalculate({ assignmentTarget: policy.assignmentTarget + 1_000 }).mao, baseline.mao - 1_000);
+  assert.equal(recalculate({ sellingCostPct: policy.sellingCostPct + 0.01 }).mao,
+    baseline.mao - baseline.arv.low * 0.01);
+  assert.equal(recalculate({ contingencyPct: policy.contingencyPct + 0.1 }).mao,
+    baseline.mao - input.repairs[0]!.high * 0.1);
+  assert.equal(recalculate({ arvMultiplier: policy.arvMultiplier + 0.01 }).mao,
+    baseline.mao + baseline.arv.low * 0.01);
+
+  const strongBoundary = analyzeDeal({ ...lead, askingPrice: baseline.mao - policy.strongMargin }, input, policy, now);
+  const aboveStrongBoundary = analyzeDeal({ ...lead, askingPrice: baseline.mao - policy.strongMargin + 0.01 }, input, policy, now);
+  assert.equal(strongBoundary.classification, "STRONG", "The configured strong-margin boundary is inclusive.");
+  assert.equal(aboveStrongBoundary.classification, "NEGOTIABLE");
+  const largerMargin = recalculate({ strongMargin: policy.strongMargin + 1_000 });
+  assert.equal(largerMargin.mao, baseline.mao, "Margin is a classification rule, not an extra cost or MAO deduction.");
+});
+
 test("stale and contradictory comps fail the configured evidence threshold", () => {
   const stale = analyzeDeal(lead, {
     ...input,

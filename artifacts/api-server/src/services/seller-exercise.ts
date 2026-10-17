@@ -85,21 +85,48 @@ async function exercise() {
     assert.ok(brief!.questions.includes("What timeline works?"));
     assert.match(brief!.boundaries,/No price is authorized/);
     const followUpAt = new Date(now.getTime()+86_400_000).toISOString();
-    const call = {version:detail.lead.version,outcome:"CONNECTED" as const,notes:"Synthetic seller answered.",nextAction:"Prepare for authorization workflow; do not release an offer.",followUpAt,
+    const call = {version:detail.lead.version,idempotencyKey:`synthetic-seller-call:${id}`,
+      outcome:"CONNECTED" as const,notes:"Synthetic seller answered.",nextAction:"Prepare for authorization workflow; do not release an offer.",followUpAt,
       sellerAnswers:{occupancy:"Synthetic seller reports vacant."}};
     detail = await store.recordCall(id,call,actor,now);
     assert.equal(detail.lead.stage,"CONVERSATION");
     assert.equal(detail.calls.length,1);
     assert.equal(detail.lead.followUpAt,followUpAt);
+    assert.equal(detail.calls[0]?.notes,call.notes);
+    assert.ok(detail.intelligence.some(item => item.sourceRecordId===detail.calls[0]?.id
+      && item.category==="seller_call_occupancy"
+      && item.statement.includes(call.sellerAnswers.occupancy)),
+      "Structured seller-reported facts reload as call-linked evidence without duplicating the input object in call history.");
+    assert.equal(detail.calls[0]?.analysisInvalidated,true,
+      "Material human-entered seller facts must explicitly invalidate pre-call underwriting.");
+    assert.equal(detail.analysis,null);
     assert.ok(detail.transitions.some(t => t.to === "ANALYZED"));
     assert.ok(detail.transitions.some(t => t.to === "CONTACTED"));
     assert.ok(!detail.allowedTransitions.includes("OFFER_READY"));
     const reloaded = await store.leadDetail(id);
     assert.deepEqual(reloaded,detail);
+    const auditBeforeReplay = await db.select().from(auditTable).where(eq(auditTable.entityId,id));
+    const replay = await store.recordCall(id,call,actor,now);
+    assert.equal(replay.calls.length,1,"An exact call retry must reload the original call event.");
+    assert.equal(replay.lead.version,detail.lead.version,"An exact call retry must not advance the deal again.");
+    assert.deepEqual(await db.select().from(auditTable).where(eq(auditTable.entityId,id)),auditBeforeReplay,
+      "An exact call retry must not duplicate audit history or evidence.");
+    await assert.rejects(store.recordCall(id,{...call,notes:"Changed retry"},actor,now),/already used/,
+      "Reusing a call idempotency key with changed content must be rejected.");
+    const dueCommand = await commandCenter("OPERATOR",now);
+    assert.ok(dueCommand.actions.some(action => action.leadId===id&&action.id.startsWith("CALENDAR:SELLER_FOLLOW_UP:")
+      && action.title==="Seller follow-up due"));
+    const overdueCommand = await commandCenter("OPERATOR",new Date(new Date(followUpAt).getTime()+60_000));
+    assert.ok(overdueCommand.actions.some(action => action.leadId===id&&action.id.startsWith("CALENDAR:SELLER_FOLLOW_UP:")
+      && action.title==="Seller follow-up overdue"));
     assert.ok(!(await store.callQueue(now)).some(b => b.lead.id === id));
     const stale = await store.callQueue(new Date(now.getTime()+8*86_400_000));
     assert.ok(!stale.some(b => b.lead.id === id));
-    await assert.rejects(store.recordCall(id,call,actor,now),/changed in another session/);
+    assert.equal(auditBeforeReplay.filter(event=>event.action==="CALL_RECORDED").length,1);
+    assert.ok(auditBeforeReplay.some(event=>event.action==="CALL_RESULT_EVIDENCE_CAPTURED"));
+    assert.ok(auditBeforeReplay.some(event=>event.action==="SELLER_CALL_EVIDENCE_INVALIDATED_AUTHORITY"));
+    await assert.rejects(store.recordCall(id,{...call,idempotencyKey:`stale-version:${id}`},actor,now),/changed in another session/,
+      "A new call event with a stale deal version must conflict even when its idempotency key is new.");
     // Concurrent writers with same version: one wins; other must get explicit conflict.
     const changes = {...payload,version:detail.lead.version,sellerDescription:"Synthetic revised description"};
     const results = await Promise.allSettled([store.updateLead(id,changes,actor,now),store.updateLead(id,changes,actor,now)]);

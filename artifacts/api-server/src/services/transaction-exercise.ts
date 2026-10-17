@@ -120,6 +120,9 @@ try {
   assert.equal(detail.analysisSnapshotId,approvedSnapshot);
   assert.equal(detail.offers[0]?.effectiveStatus,"COMMUNICATED");
   await assert.rejects(transactions.createContract(id,{version:detail.lead.version,offerId,closingAt:future(31)},operator,now),/approved closing/);
+  await assert.rejects(transactions.createContract(id,{version:detail.lead.version,offerId:randomUUID(),closingAt:future(20)},operator,now),
+    /current owner-approved, actually communicated exact-term offer/i,
+    "A transaction cannot be assembled from an offer without persisted approval and communication.");
   let op = await transactions.createContract(id,{version:detail.lead.version,offerId,closingAt:future(20)},operator,now);
   assert.equal(op.contract?.status,"DRAFT"); assert.equal(op.contract?.purchasePrice,110000);
   const partyChecklist=buildTransactionReadinessChecklist(detail,op.contract!,now);
@@ -255,6 +258,7 @@ try {
     version:number;snapshotHash:string;sourceLinks:Array<{sourceId:string;status:string}>;
     jurisdiction:{checklistScope:string;purchaseTemplateStatus:string};
     signatureRouting:{status:string;blockers:string[]};missingRequiredData:string[];
+     clauseNotice:string;
   }|undefined;
   assert.equal(assembly?.version,1);
   assert.match(assembly?.snapshotHash??"",/^[a-f0-9]{64}$/);
@@ -262,6 +266,8 @@ try {
   assert.equal(assembly?.jurisdiction.checklistScope,"US/TX/SYNTHETIC-COUNTY");
   assert.equal(assembly?.signatureRouting.status,"BLOCKED");
   assert.ok(assembly?.missingRequiredData.some(item=>item.includes("Seller legal identity")));
+   assert.match(assembly?.clauseNotice??"",/not generated or inserted/i,
+     "Special clauses stay outside the assembled contract data until qualified review and separate human approval.");
   assert.equal(persistedArtifacts?.[0]?.pdfBase64,undefined,"new document binaries must not be embedded in contract JSON");
   const [persistedBlob] = await db.select().from(transactionDocumentBlobsTable)
     .where(eq(transactionDocumentBlobsTable.documentId,reviewDocument.id));
@@ -285,6 +291,13 @@ try {
     sellerSignedAt:now.toISOString(),acquisitionSignedAt:now.toISOString(),reviewNote:"Synthetic owner verification, not real signatures."};
   await assert.rejects(transactions.executeContract(id,execute,operator,now),e=>(e as {status:number}).status===403);
   await assert.rejects(transactions.executeContract(id,{...execute,sellerSignedAt:future(1)},actor,now),/future/);
+  const offerExpiry=detail.offers.find(item=>item.id===offerId)?.expiresAt;
+  assert.ok(offerExpiry,"The communicated offer carries its persisted approval expiry.");
+  const afterOfferExpiry=new Date(Date.parse(offerExpiry!)+1000);
+  await assert.rejects(transactions.executeContract(id,{
+    ...execute,sellerSignedAt:afterOfferExpiry.toISOString(),acquisitionSignedAt:afterOfferExpiry.toISOString(),
+  },actor,new Date(afterOfferExpiry.getTime()+1000)),/precede its expiry/i,
+  "Signatures after exact offer approval expiry cannot execute the transaction.");
   // Recording after approval expiry is allowed ONLY for historically valid signatures.
   // Evaluate after the title due date's local end-of-day boundary; the deadline engine
   // intentionally does not mark a due-date milestone overdue before its local day ends.
@@ -375,14 +388,25 @@ try {
   detail = await seller.recordCall(id,{version:detail.lead.version,outcome:"CONNECTED",notes:"Synthetic closing coordination; no external call.",
     nextAction:"Confirm escrow status.",followUpAt:future(1)},actor.id,now);
   assert.equal(detail.lead.stage,"UNDER_CONTRACT");
-  assert.equal((await dealOperations(id,now)).contract?.purchasePrice,110000);
-  let buyer = await buyers.createBuyer({name:"SYNTHETIC QUALIFIED BUYER",email:"synthetic@example.com",phone:"",
-    source:"Synthetic service exercise",status:"ACTIVE",criteria:{states:["TX"],cities:["Synthetic City"],zipCodes:[],
+   const operationsBeforeBuyerMatch=await dealOperations(id,now);
+   assert.equal(operationsBeforeBuyerMatch.contract?.purchasePrice,110000);
+   const economicsBeforeBuyerMatch = {
+     purchasePrice:operationsBeforeBuyerMatch.contract?.purchasePrice,
+     assignmentTarget:operationsBeforeBuyerMatch.contract?.assignmentTarget,
+     earnestMoney:operationsBeforeBuyerMatch.contract?.earnestMoney,
+     analysisSnapshotId:detail.analysisSnapshotId,
+     mao:detail.analysis?.mao,
+   };
+   let buyer = await buyers.createBuyer({name:"SYNTHETIC QUALIFIED BUYER",email:"synthetic@example.com",phone:"",
+     source:"Owner-reviewed qualification scenario (isolated exercise)",status:"ACTIVE",criteria:{states:["TX"],cities:["Synthetic City"],zipCodes:[],
       propertyTypes:["SINGLE_FAMILY"],maxPurchasePrice:200000,maxRepairs:50000,minBeds:2,minSqft:500,maxSqft:2000,closingDays:3,
       counties:[],excludedCounties:[],excludedCities:[],excludedZipCodes:[],minPurchasePrice:0,minUnits:1,maxUnits:1,
       minBaths:1,rehabTolerance:"HEAVY",strategies:["FLIP"],fundingTypes:["CASH"],maxConcurrentDeals:2}},actor);
    op = await refreshMatches(id,now);
-   assert.equal(op.matches.find(m=>m.buyerId===buyer.id)?.eligible,false);
+   const unverifiedMatch=op.matches.find(m=>m.buyerId===buyer.id)!;
+   assert.equal(unverifiedMatch.eligible,false);
+   assert.ok(unverifiedMatch.mismatches.some(reason=>/identity\/funding review is missing or stale/i.test(reason)),
+     `Match exclusions must explain the persisted buyer-proof gap; got: ${JSON.stringify(unverifiedMatch.mismatches)}`);
    const initialBuyerDemandWork = await db.select().from(dealDecisionWorkItemsTable)
      .where(and(eq(dealDecisionWorkItemsTable.leadId,id),eq(dealDecisionWorkItemsTable.actionCode,"BUYER_DEMAND")));
    assert.ok(initialBuyerDemandWork.some(item=>item.status==="READY"),
@@ -413,6 +437,14 @@ try {
   op = await dealOperations(id,now);
   assert.equal(op.matches.find(m=>m.buyerId===buyer.id)?.eligible,true);
   assert.equal((await seller.leadDetail(id)).lead.stage,"BUYER_MATCHED");
+   const economicsAfterBuyerMatch = await seller.leadDetail(id,db,now);
+   assert.deepEqual({
+     purchasePrice:op.contract?.purchasePrice,
+     assignmentTarget:op.contract?.assignmentTarget,
+     earnestMoney:op.contract?.earnestMoney,
+     analysisSnapshotId:economicsAfterBuyerMatch.analysisSnapshotId,
+     mao:economicsAfterBuyerMatch.analysis?.mao,
+   },economicsBeforeBuyerMatch,"Buyer match evaluation must not change persisted deal economics or its approved analysis snapshot.");
    await reviewHandoffs(now);
    const stoppedQualification = (await listHandoffs()).find(h=>h.id===qualificationHandoff.id)!;
    assert.equal(stoppedQualification.state,"CANCELLED");
@@ -455,8 +487,8 @@ try {
    assert.equal(workspaceOperations.matches.find(item=>item.buyerId===buyer.id)?.eligible,true);
    assert.ok(workspaceOperations.jobs.some(item=>item.kind==="MATCH_BUYERS"&&item.state==="SUCCEEDED"),
      "Workspace eligibility and job status must reflect persisted backend records.");
-  let competitor = await buyers.createBuyer({name:"SYNTHETIC SECOND QUALIFIED BUYER",email:"synthetic-second@example.com",phone:"",
-    source:"Synthetic first-commitment ordering fixture",status:"ACTIVE",criteria:buyer.criteria},actor);
+   let competitor = await buyers.createBuyer({name:"SYNTHETIC SECOND QUALIFIED BUYER",email:"synthetic-second@example.com",phone:"",
+     source:"Owner-reviewed competing qualification scenario (isolated exercise)",status:"ACTIVE",criteria:buyer.criteria},actor);
   competitor = await buyers.verifyBuyer(competitor.id,{...verificationInput,version:competitor.version},actor,now);
     await buyers.recordBuyerContactPermission(competitor.id,{version:competitor.version,status:"GRANTED",channels:["EMAIL"],
      source:"SYNTHETIC transaction fixture permission",evidenceUrl:"https://example.com/synthetic-second-buyer-permission",
@@ -500,6 +532,7 @@ try {
          recipientRoute:approvedRecipientRoute,redactionLevel:"REDACTED" as const,
          packageAuthorizationId:distribution.packetId!,
          consentSnapshotHash:buyerConsentSnapshotHash(approvedConsent),
+          expiresAt:distribution.expiresAt!,
        };
       const messageApproval=approveExactDistributionMessage({
         buyerId:buyer.id,channel:"EMAIL",packetVersion:distribution.version,packetSnapshotHash:packetHash,
@@ -555,7 +588,7 @@ try {
      const unverifiedBuyer = await buyers.createBuyer({name:"SYNTHETIC UNVERIFIED BUYER",email:"unverified@example.com",phone:"",
        source:"Synthetic fixture only; no current buyer evidence",status:"ACTIVE",criteria:buyer.criteria},actor);
      let staleBuyer = await buyers.createBuyer({name:"SYNTHETIC STALE BUYER",email:"stale@example.com",phone:"",
-       source:"Synthetic fixture only; evidence deliberately expires before distribution",status:"ACTIVE",criteria:buyer.criteria},actor);
+     source:"Owner-reviewed qualification scenario (isolated expiry test)",status:"ACTIVE",criteria:buyer.criteria},actor);
      const olderEvidenceAt = new Date(now.getTime()-29*86400000);
      staleBuyer = await buyers.verifyBuyer(staleBuyer.id,{...verificationInput,version:staleBuyer.version,
        evidenceAt:olderEvidenceAt.toISOString(),buyingEvidenceAt:olderEvidenceAt.toISOString(),
@@ -565,7 +598,11 @@ try {
      assert.equal(expiredBuyer.approvalStatus,"REVERIFICATION_REQUIRED");
       await assert.rejects(shareDistributionRecipients(distribution.packetId!,{
         version:distribution.version,buyerIds:[staleBuyer.id],
-      },operator,now),/contact permission/i,
+      },operator,now),/cannot perform this operation/i,
+      "Operators cannot authorize a capability link for external sharing.");
+      await assert.rejects(shareDistributionRecipients(distribution.packetId!,{
+        version:distribution.version,buyerIds:[staleBuyer.id],
+      },actor,now),/contact permission/i,
       "A verified buyer without current channel-specific permission cannot receive a capability link.");
       await buyers.recordBuyerContactPermission(staleBuyer.id,{version:staleBuyer.version,status:"GRANTED",channels:["EMAIL"],
         source:"SYNTHETIC stale-buyer permission fixture",evidenceUrl:"https://example.com/synthetic-stale-buyer-permission",
@@ -573,18 +610,49 @@ try {
       staleBuyer = await getBuyerRecord(staleBuyer.id,db,now);
      await assert.rejects(shareDistributionRecipients(distribution.packetId!,{
        version:distribution.version,buyerIds:[unverifiedBuyer.id],
-     },operator,now),/no longer qualified/i,
+     },actor,now),/no longer qualified/i,
      "An unverified prospect cannot receive an authorized multi-buyer packet.");
      await assert.rejects(shareDistributionRecipients(distribution.packetId!,{
        version:distribution.version,buyerIds:[staleBuyer.id],
-     },operator,afterExpiry),/no longer qualified/i,
+     },actor,afterExpiry),/no longer qualified/i,
      "A buyer whose current verification expired cannot receive a packet.");
      assert.equal((await getDealDistribution(id)).recipients.length,0,
        "Failed stale/unverified recipient checks must not persist distribution links.");
       const staleAccessShare = await shareDistributionRecipients(distribution.packetId!,{
         version:distribution.version,buyerIds:[staleBuyer.id],
-      },operator,now);
-      assert.equal(staleAccessShare.links.length,1,"A buyer current at invite time may receive a capability.");
+       },actor,now);
+       assert.equal(staleAccessShare.links.length,1,"The owner may issue a capability after current eligibility and permission checks.");
+       const [linkAuthorizationRow] = await db.select().from(distributionRecipientsTable).where(and(
+         eq(distributionRecipientsTable.packetId,distribution.packetId!),eq(distributionRecipientsTable.buyerId,staleBuyer.id)));
+       const linkAuthorization=linkAuthorizationRow?.payload.linkAuthorization as {
+         kind:string; packetId:string; buyerId:string; contentHash:string; economicsSnapshotHash:string;
+         redactionLevel:string; recipientRouteHash:string; consentSnapshotHash:string; expiresAt:string; approvedBy:string;
+       }|undefined;
+       assert.equal(linkAuthorization?.kind,"LINK_ISSUANCE_ONLY");
+       assert.equal(linkAuthorization?.packetId,distribution.packetId);
+       assert.equal(linkAuthorization?.buyerId,staleBuyer.id);
+       assert.equal(linkAuthorization?.economicsSnapshotHash,distribution.packet?.economics.economicsSnapshotHash);
+       assert.equal(linkAuthorization?.redactionLevel,"REDACTED");
+       assert.match(linkAuthorization?.contentHash??"",/^[a-f0-9]{64}$/);
+       assert.match(linkAuthorization?.recipientRouteHash??"",/^[a-f0-9]{64}$/);
+       assert.match(linkAuthorization?.consentSnapshotHash??"",/^[a-f0-9]{64}$/);
+       assert.equal(linkAuthorization?.expiresAt,distribution.expiresAt);
+       assert.equal(linkAuthorization?.approvedBy,actor.id);
+       const authorizationPayload=linkAuthorizationRow!.payload;
+       await db.update(distributionRecipientsTable).set({payload:{
+         ...authorizationPayload,
+         linkAuthorization:{...linkAuthorization!,contentHash:"f".repeat(64)},
+       }}).where(eq(distributionRecipientsTable.id,linkAuthorizationRow!.id));
+       await assert.rejects(getBuyerPortalDeal(staleAccessShare.links[0]!.token,now),/owner authorization is stale/i,
+         "A changed frozen packet hash must invalidate a previously authorized recipient link.");
+       await db.update(distributionRecipientsTable).set({payload:authorizationPayload})
+         .where(eq(distributionRecipientsTable.id,linkAuthorizationRow!.id));
+       const [staleBuyerRow] = await db.select().from(buyersTable).where(eq(buyersTable.id,staleBuyer.id));
+       await db.update(buyersTable).set({payload:{...staleBuyerRow!.payload,email:"changed-route@example.com"}})
+         .where(eq(buyersTable.id,staleBuyer.id));
+       await assert.rejects(getBuyerPortalDeal(staleAccessShare.links[0]!.token,now),/owner authorization is stale/i,
+         "Changing the recipient route must invalidate the prior owner authorization.");
+       await db.update(buyersTable).set({payload:staleBuyerRow!.payload}).where(eq(buyersTable.id,staleBuyer.id));
        const [permissionBoundRecipient] = await db.select().from(distributionRecipientsTable).where(and(
          eq(distributionRecipientsTable.packetId,distribution.packetId!),eq(distributionRecipientsTable.buyerId,staleBuyer.id)));
        const permissionSnapshot = permissionBoundRecipient?.payload.contactPermissionSnapshot as {channels?:string[];checkedAt?:string}|undefined;
@@ -609,7 +677,7 @@ try {
            purchasePrice:Number(contractBeforeStalePacketCheck.payload.purchasePrice)+1},
          version:contractBeforeStalePacketCheck.version+1,
        }).where(eq(contractsTable.id,contractBeforeStalePacketCheck.id));
-       await assert.rejects(getBuyerPortalDeal(staleAccessShare.links[0]!.token,now),/package is stale against current contract terms/i,
+       await assert.rejects(getBuyerPortalDeal(staleAccessShare.links[0]!.token,now),/owner authorization is stale|package is stale against current contract terms/i,
          "A changed executed price must stale the immutable buyer package and block existing links.");
        await db.update(contractsTable).set({
          payload:contractBeforeStalePacketCheck.payload,version:contractBeforeStalePacketCheck.version,
@@ -619,9 +687,9 @@ try {
        assert.equal(eventsAfterStalePacketCheck,accessEventsBeforeStalePacketCheck,
          "A stale-package rejection must not record a successful portal access.");
       distribution = await getDealDistribution(id);
-      await assert.rejects(getBuyerPortalDeal(staleAccessShare.links[0]!.token,afterExpiry),/no longer current/i,
+       await assert.rejects(getBuyerPortalDeal(staleAccessShare.links[0]!.token,afterExpiry),/owner authorization is stale|no longer current|no longer available/i,
         "A buyer whose funding/qualification evidence expires after invitation cannot reopen the packet.");
-      await assert.rejects(downloadBuyerPacketPdf(staleAccessShare.links[0]!.token,afterExpiry),/no longer current/i,
+       await assert.rejects(downloadBuyerPacketPdf(staleAccessShare.links[0]!.token,afterExpiry),/owner authorization is stale|no longer current|no longer available/i,
         "A stale buyer cannot download the packet after invitation.");
       const staleReadRecipients = distribution.recipients as Array<{buyerId:string;events:Array<unknown>}>;
       assert.equal(staleReadRecipients.find((item) => item.buyerId === staleBuyer.id)?.events.length,0,
@@ -633,17 +701,17 @@ try {
       }}).where(eq(distributionPacketsTable.id,distribution.packetId!));
       await assert.rejects(shareDistributionRecipients(distribution.packetId!,{
         version:distribution.version,buyerIds:[buyer.id],
-      },operator,now),/recipient identity is not verified/i,
+      },actor,now),/recipient identity is not verified/i,
       "Address-disclosing packets must not be exposed through bearer-only buyer links.");
       assert.equal((await getDealDistribution(id)).recipients.length,recipientCountBeforeAddressDisclosure,
         "Blocked address-disclosing access must not create recipients.");
       await db.update(distributionPacketsTable).set({snapshot:distribution.packet as unknown as Record<string,unknown>})
         .where(eq(distributionPacketsTable.id,distribution.packetId!));
-    const shared = await shareDistributionRecipients(distribution.packetId!,{version:distribution.version,buyerIds:[buyer.id,competitor.id]},operator,now);
+    const shared = await shareDistributionRecipients(distribution.packetId!,{version:distribution.version,buyerIds:[buyer.id,competitor.id]},actor,now);
     assert.equal(shared.links.length,2);
      const linkAudit = await db.select().from(auditTable)
        .where(and(eq(auditTable.entityId,id),eq(auditTable.action,"DISTRIBUTION_LINKS_CREATED")));
-     assert.ok(linkAudit.some(row=>row.actor===operator.id&&/Created or rotated 2 private capability link/.test(row.detail)),
+     assert.ok(linkAudit.some(row=>row.actor===actor.id&&/Created or rotated 2 private capability link/.test(row.detail)),
        "Recipient link creation retains actor and exact operation in audit history.");
      const issuedRecipients = await db.select().from(distributionRecipientsTable)
        .where(eq(distributionRecipientsTable.packetId,distribution.packetId!));
@@ -780,7 +848,7 @@ try {
    assert.equal(openDistribution.status,"ACTIVE","A soft acceptance must not close or reserve the distribution.");
    assert.equal(openDistribution.acceptedBuyerId,buyer.id,"The earliest response is informational only.");
    const lateQualified = await buyers.createBuyer({name:"SYNTHETIC LATE QUALIFIED BUYER",email:"late@example.com",phone:"",
-     source:"Synthetic post-acceptance distribution fixture",status:"ACTIVE",criteria:buyer.criteria},actor);
+     source:"Owner-reviewed post-acceptance qualification scenario (isolated exercise)",status:"ACTIVE",criteria:buyer.criteria},actor);
    const lateVerified = await buyers.verifyBuyer(lateQualified.id,{...verificationInput,version:lateQualified.version,
      identityEvidenceUrl:"https://example.com/synthetic-late-id",fundingEvidenceUrl:"https://example.com/synthetic-late-funds",
      buyingEvidenceUrl:"https://example.com/synthetic-late-buying",criteriaEvidenceUrl:"https://example.com/synthetic-late-criteria"},actor,now);
@@ -791,8 +859,8 @@ try {
    openDistribution = await getDealDistribution(id);
    const thirdShare = await shareDistributionRecipients(openDistribution.packetId!,{
      version:openDistribution.version,buyerIds:[lateVerified.id],
-   },operator,now);
-   assert.equal(thirdShare.links.length,1,"The owner/operator can add a new qualified buyer after soft acceptances.");
+   },actor,now);
+   assert.equal(thirdShare.links.length,1,"The owner can add a new qualified buyer after soft acceptances.");
    const latePortal = await getBuyerPortalDeal(thirdShare.links[0]!.token,now);
    assert.deepEqual(latePortal.packet,portal.packet,"Later recipients receive the same frozen authorized package.");
    const lateInterest = await respondToBuyerPortalDeal(thirdShare.links[0]!.token,{
@@ -856,12 +924,12 @@ try {
      .filter(event=>event.action==="PORTAL_ACCESSED").length,closedAccessCount,
      "A committed/closed link rejection must not record another portal access.");
   let destination = await buyers.createBuyer({name:"SYNTHETIC GURU DESTINATION",email:"synthetic-guru@example.com",phone:"",
-    source:"Synthetic destination exercise",status:"ACTIVE",destinationKind:"GURU",qualifiedDealFee:500,feeTermsSource:"Synthetic quoted terms, not receipt",
+     source:"Owner-reviewed destination scenario (isolated exercise)",status:"ACTIVE",destinationKind:"GURU",qualifiedDealFee:500,feeTermsSource:"Synthetic quoted terms, not receipt",
     criteria:buyer.criteria},actor);
   destination = await buyers.verifyBuyer(destination.id,{version:destination.version,identityEvidenceUrl:"https://example.com/synthetic-guru-id",
     verificationNote:"Synthetic destination identity/criteria review; no bank or payment claim.",evidenceAt:now.toISOString(),validUntil:future(25),
     currentBuyingStatus:"BUYING",buyingEvidenceAt:now.toISOString(),buyingEvidenceUrl:"https://example.com/synthetic-guru-accepting",
-    criteriaEvidenceUrl:"https://example.com/synthetic-guru-criteria",verificationSource:"Synthetic reviewed destination",confidence:0.9},actor,now);
+     criteriaEvidenceUrl:"https://example.com/synthetic-guru-criteria",verificationSource:"Owner-reviewed isolated destination scenario",confidence:0.9},actor,now);
   assert.equal(destination.approvalStatus,"APPROVED");
    const destinationSubmission = {version:op.contract!.version,buyerVersion:destination.version,eventKey:"synthetic-guru-submission",
      kind:"SUBMITTED" as const,occurredAt:now.toISOString(),evidenceUrl:"https://example.com/synthetic-guru-submission",
@@ -946,7 +1014,7 @@ try {
   assert.ok(!op.contract?.milestones.some(m=>m.kind==="ASSIGNMENT_SIGNED"));
   assert.ok(op.contract?.history?.some(h=>h.kind==="RELEASE_BUYER"&&h.previousState.committedBuyerId===oldBuyerId));
   buyer = await buyers.createBuyer({name:"SYNTHETIC REPLACEMENT",email:"replacement@example.com",phone:"",
-    source:"SYNTHETIC replacement fixture",status:"ACTIVE",criteria:buyer.criteria},actor);
+    source:"Owner-reviewed replacement qualification scenario (isolated exercise)",status:"ACTIVE",criteria:buyer.criteria},actor);
   buyer = await buyers.verifyBuyer(buyer.id,{version:buyer.version,verifiedFundingTypes:["CASH"],identityEvidenceUrl:"https://example.com/synthetic-replacement-id",
     fundingEvidenceUrl:"https://example.com/synthetic-replacement-funds",availableFunds:200000,verificationNote:"SYNTHETIC replacement review only.",
     evidenceAt:now.toISOString(),validUntil:future(25),currentBuyingStatus:"BUYING",buyingEvidenceAt:now.toISOString(),
@@ -1397,6 +1465,10 @@ try {
    assert.equal(buyerCallDetail.offers.length,0,"logging a buyer call cannot create or authorize an offer");
    const followups=await seller.listBuyerCallFollowUps(now);
    assert.ok(followups.items.some(item=>item.callId===persistedBuyerCall?.id));
+    const overdueBuyerFollowUps=await seller.listBuyerCallFollowUps(new Date(new Date(future(1)).getTime()+60_000));
+    const overdueBuyerFollowUp=overdueBuyerFollowUps.items.find(item=>item.callId===persistedBuyerCall?.id);
+    assert.ok(overdueBuyerFollowUp&&Date.parse(overdueBuyerFollowUp.dueAt)<Date.parse(overdueBuyerFollowUps.generatedAt),
+      "an open buyer-call event remains individually visible after its due time so the dashboard can mark it overdue");
    const deskWithBuyerFollowUp=await commandCenter("OWNER",now);
    assert.ok(deskWithBuyerFollowUp.actions.some(action=>action.id===`BUYER_CALL_FOLLOW_UP:${persistedBuyerCall?.id}`),
      "open buyer follow-up appears in the command-center next-action queue");

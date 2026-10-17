@@ -32,7 +32,7 @@ export default function Landing() {
               <Button asChild size="lg" data-testid="button-hero-sign-in"><Link href="/sign-in">Sign in to the desk <ArrowRight className="ml-2 h-4 w-4" /></Link></Button>
               <Button asChild size="lg" variant="outline" data-testid="button-hero-sign-up"><Link href="/sign-up">Create your account</Link></Button>
             </div>
-            <p className="mt-3 text-xs text-muted-foreground" data-testid="text-owner-start">First owner: create your own account, complete verification, then claim the workspace. Existing users can sign in above. Claim before sharing this link; new teammates then need owner approval. No seller data is visible before sign-in.</p>
+            <p className="mt-3 text-xs text-muted-foreground" data-testid="text-owner-start">First owner: create your account and complete verification, then configure <code>INITIAL_WORKSPACE_OWNER_USER_ID</code> with its Clerk user ID before claiming. New teammates need owner approval. No seller data is visible before sign-in.</p>
           </div>
           <div className="ledger self-start p-4" data-testid="panel-provenance-legend">
             <p className="eyebrow mb-3">Every statement is filed as one of</p>

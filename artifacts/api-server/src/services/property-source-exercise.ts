@@ -920,6 +920,29 @@ try {
     version: discovery.version,
     reviewReason: "SYNTHETIC exercise only: evidence threshold and independent source groups were deliberately supplied.",
   }, actor, now);
+  const promotionReplay = await promotePropertyDiscovery(discovery.id, {
+    version: promoted.discovery.version,
+    reviewReason: "SYNTHETIC exact retry of the saved promotion.",
+  }, actor, now);
+  assert.equal(promotionReplay.leadId, promoted.leadId, "A replayed promotion must return the original canonical lead identity.");
+  assert.equal(promotionReplay.discovery.version, promoted.discovery.version, "An exact promotion replay must not create another aggregate revision.");
+  await assert.rejects(
+    () => promotePropertyDiscovery(discovery.id, {
+      version: discovery.version,
+      reviewReason: "SYNTHETIC stale promotion retry.",
+    }, actor, now),
+    /changed in another session/i,
+    "A promotion replay with a stale discovery revision must fail instead of overwriting current state.",
+  );
+  const canonicalLeadRows = await db.select().from(leadsTable).where(sql`
+    upper(${leadsTable.payload}->>'state') = ${property.state.toUpperCase()}
+    AND upper(${leadsTable.payload}->>'city') = ${property.city.toUpperCase()}
+    AND left(${leadsTable.payload}->>'zip',5) = ${property.zip.slice(0,5)}
+    AND regexp_replace(upper(${leadsTable.payload}->>'address'),'[^A-Z0-9]','','g') =
+      regexp_replace(upper(${property.address}),'[^A-Z0-9]','','g')
+  `);
+  assert.equal(canonicalLeadRows.length, 1, "Promotion and exact replay must retain one canonical lead for the property identity.");
+  assert.equal(canonicalLeadRows[0]?.id, promoted.leadId);
   assert.equal(promoted.discovery.status, "QUALIFIED_LEAD");
   assert.equal(promoted.discovery.leadId, promoted.leadId);
   assert.equal(promoted.discovery.canPromote, false);
@@ -994,11 +1017,25 @@ try {
   assert.deepEqual(detail.underwriting, underwriting);
   assert.equal(detail.offers.length, 0);
 
-  const unsupported = await createLead({
+  const unsupportedInput = {
     address: "123 Synthetic Test Street", city: "Test", state: "FL", county: "Test", zip: "33101",
     propertyType: "SINGLE_FAMILY", sqft: 1000, beds: 3, baths: 2, units: 1,
     sellerName: "SYNTHETIC", source: "Isolated unsupported-source fixture; NOT a real seller.",
-  }, actor.id, now);
+  } as const;
+  const parallelManualCreates = await Promise.allSettled([
+    createLead(unsupportedInput, actor.id, now),
+    createLead(unsupportedInput, actor.id, now),
+  ]);
+  const createdManualDeals = parallelManualCreates.filter(
+    (result): result is PromiseFulfilledResult<Awaited<ReturnType<typeof createLead>>> => result.status === "fulfilled",
+  );
+  const rejectedManualDeals = parallelManualCreates.filter(
+    (result): result is PromiseRejectedResult => result.status === "rejected",
+  );
+  assert.equal(createdManualDeals.length, 1, "Concurrent duplicate manual creates must produce one canonical lead.");
+  assert.equal(rejectedManualDeals.length, 1);
+  assert.match(String(rejectedManualDeals[0]?.reason), /canonical deal instead of creating a duplicate/i);
+  const unsupported = createdManualDeals[0]!.value;
   await assert.rejects(() => refreshSourceResearch(unsupported.id, unsupported.version, true, actor, now), /jurisdiction/);
   const weakProperty = search.records.find((record) => record.id !== property.id);
   assert.ok(weakProperty, "A second parcel is needed to verify the pass workflow.");
@@ -1254,7 +1291,7 @@ try {
         ? "No registered connector has a terms-reviewed LISTING_DESCRIPTION capability; Zillow/Redfin remarks were not collected."
         : "Only registered connectors may supply remarks; adapter result counts are taken from persisted source observations.",
     },
-    checks: "real OPA, L&I enforcement/vacancy, residential permits, demolition, and sheriff-deed source observation persistence; no lead on raw discovery; exact same-source and cross-source dedupe; raw public event records retained OBSERVED without motivation points; AI hypothesis exclusion; synthetic provenance-backed qualification; human promotion; source research/comps; pass retention; evidence-digest change invalidation of pre-execution underwriting/offers/drafts; preservation of executed terms with a persisted research-review action and buyer-rematch job",
+    checks: "real OPA, L&I enforcement/vacancy, residential permits, demolition, and sheriff-deed source observation persistence; no lead on raw discovery; exact same-source and cross-source dedupe; raw public event records retained OBSERVED without motivation points; AI hypothesis exclusion; synthetic provenance-backed qualification; human promotion; source research/comps; pass retention; synthetic contact blocked from CALL_READY; source evidence change invalidates pre-execution underwriting",
   }, "Selective property qualification exercise PASSED (isolated schema; actual public records including permits, demolitions, and sheriff deeds; synthetic qualification evidence only)");
 } finally {
   await pool.end();

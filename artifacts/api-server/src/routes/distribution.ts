@@ -55,7 +55,7 @@ internalDistributionRouter.post("/deals/:id/distribution/authorize", roles("OWNE
   );
   res.status(201).json(schemas.AuthorizeDealDistributionResponse.parse(result));
 });
-internalDistributionRouter.post("/distribution/:id/recipients", roles("OWNER", "OPERATOR"), async (req, res) => {
+internalDistributionRouter.post("/distribution/:id/recipients", roles("OWNER"), async (req, res) => {
   const { id } = parse(schemas.ShareDistributionRecipientsParams, req.params);
   const result = await distribution.shareDistributionRecipients(
     id, parse(schemas.ShareDistributionRecipientsBody, req.body), actor(res),

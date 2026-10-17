@@ -14,3 +14,9 @@ Exact outbound approval must also bind a non-reversible recipient-route fingerpr
 **Why:** Recipient identity, consent, and disclosure can change independently of packet terms or message text, and a stale approval must not authorize a later external action.
 
 **How to apply:** Persist these bindings with the outbound operation before provider submission. When no provider is configured, keep the state NOT SENT and expose the exact setup blocker rather than creating simulated acceptance or delivery.
+
+Owner approval to issue a recipient-specific private package link is not approval of an external message. Bind link issuance to that buyer, immutable packet content/economics, redaction, current route and consent, and expiry; recheck before portal access. Keep it OWNER-only. Until a provider-backed outbound workflow persists exact text/channel approval and provider receipts, every delivery remains NOT SENT.
+
+**Why:** A capability link grants access even when no email/SMS was sent, while copy/paste outside the app cannot provide trustworthy send or delivery evidence.
+
+**How to apply:** Treat link creation as access authorization only. Do not infer message approval, provider submission, delivery, or buyer interest from link issuance, copying, or portal access.

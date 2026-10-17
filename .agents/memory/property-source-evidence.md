@@ -22,3 +22,9 @@ An exact-parcel sheriff-deed row is OBSERVED transfer activity only; it does not
 **Why:** Public records can be stale, incomplete, or changed without establishing a property's present condition, occupancy, title, or seller motivation. A public page also does not by itself establish permission for automated collection. A strict event-time cutoff can also hide persisted source updates, so paged views must state their refresh behavior instead of implying an immutable snapshot.
 
 **How to apply:** For parcel-source connectors, keep no-match, stale, and undated results distinct; use freshness to control qualification weight, preserve changed evidence history, and route uncertainty to a verification action. Keep one discovery per exact parcel identity while retaining each source's own record observation. For paged discovery, use stable keyset tie-breakers, page unmatched observations separately, and restart from the first page after refresh; never substitute a fixed first-page cap for access to the full pool. Before activating a new connector, verify and encode its permitted access method and source-specific limits.
+
+Relevance signals must be freshness-checked at scoring and again at promotion; otherwise old captured evidence can keep a cached candidate eligible after it ages. Retain stale signals for audit, but do not award them points or let them support promotion.
+
+**Why:** qualification previously scored signal strength and provenance classification without considering `capturedAt`, allowing stale evidence to cross a promotion threshold.
+
+**How to apply:** Evaluate against an explicit current time, exclude invalid/future/expired signal captures, show a refresh blocker, and derive unpromoted discovery status from current eligible evidence instead of a cached status.

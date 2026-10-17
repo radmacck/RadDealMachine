@@ -20,6 +20,7 @@ import { lockedLead, leadDetail, move, audit } from "./deal-store";
 import { allBuyerRecords, buyerRecord, contractRecord, type Store, type Tx } from "./operations-records";
 import { lockDealEconomics } from "./locked-economics";
 import { buyerOutreachPermissionBlocker, type BuyerContactPermission, type BuyerOutreachChannel } from "./buyer-outreach";
+import { buyerConsentSnapshotHash } from "./buyer-outreach";
 
 type Intent = z.infer<typeof RespondToBuyerPortalDealBody>;
 type Packet = typeof distributionPacketsTable.$inferSelect;
@@ -40,6 +41,71 @@ function currentDistributionPermission(buyer: { contactPermission?: BuyerContact
   return { channels: channels as BuyerOutreachChannel[], snapshot: permission };
 }
 const hashToken = (token: string) => createHash("sha256").update(token, "utf8").digest("hex");
+const hashValue = (value: unknown) => createHash("sha256").update(JSON.stringify(value), "utf8").digest("hex");
+const recipientRouteHash = (buyer: { email?: string | null; phone?: string | null }) =>
+  hashValue({ email: buyer.email?.trim().toLowerCase() ?? null, phone: buyer.phone?.replace(/\D/g, "") ?? null });
+
+type LinkAuthorization = {
+  kind: "LINK_ISSUANCE_ONLY";
+  authorizationId: string;
+  packetId: string;
+  buyerId: string;
+  contentHash: string;
+  economicsSnapshotHash: string;
+  redactionLevel: "REDACTED" | "ADDRESS_DISCLOSED";
+  recipientRouteHash: string;
+  consentSnapshotHash: string;
+  expiresAt: string;
+  approvedBy: string;
+  approvedAt: string;
+};
+
+function createLinkAuthorization(
+  packet: Packet,
+  buyer: { id: string; email?: string | null; phone?: string | null; contactPermission?: BuyerContactPermission | null },
+  now: Date,
+  approvedBy: string,
+): LinkAuthorization {
+  const snapshot = packet.snapshot as unknown as DistributionPacketSnapshot;
+  const permission = currentDistributionPermission(buyer, now);
+  return {
+    kind: "LINK_ISSUANCE_ONLY",
+    authorizationId: randomUUID(),
+    packetId: packet.id,
+    buyerId: buyer.id,
+    contentHash: hashValue(snapshot),
+    economicsSnapshotHash: snapshot.economics.economicsSnapshotHash,
+    redactionLevel: snapshot.addressRedacted ? "REDACTED" : "ADDRESS_DISCLOSED",
+    recipientRouteHash: recipientRouteHash(buyer),
+    consentSnapshotHash: buyerConsentSnapshotHash(permission.snapshot),
+    expiresAt: packet.expiresAt.toISOString(),
+    approvedBy,
+    approvedAt: now.toISOString(),
+  };
+}
+
+function assertLinkAuthorizationCurrent(
+  authorization: LinkAuthorization | undefined,
+  packet: Packet,
+  buyer: { id: string; email?: string | null; phone?: string | null; contactPermission?: BuyerContactPermission | null },
+  now: Date,
+) {
+  if (!authorization || authorization.kind !== "LINK_ISSUANCE_ONLY") {
+    throw new DomainError("This link has no persisted owner authorization.", 403);
+  }
+  const snapshot = packet.snapshot as unknown as DistributionPacketSnapshot;
+  const permission = currentDistributionPermission(buyer, now);
+  if (authorization.packetId !== packet.id || authorization.buyerId !== buyer.id ||
+    authorization.contentHash !== hashValue(snapshot) ||
+    authorization.economicsSnapshotHash !== snapshot.economics.economicsSnapshotHash ||
+    authorization.redactionLevel !== (snapshot.addressRedacted ? "REDACTED" : "ADDRESS_DISCLOSED") ||
+    authorization.recipientRouteHash !== recipientRouteHash(buyer) ||
+    authorization.consentSnapshotHash !== buyerConsentSnapshotHash(permission.snapshot) ||
+    authorization.expiresAt !== packet.expiresAt.toISOString() ||
+    Date.parse(authorization.expiresAt) <= now.getTime()) {
+    throw new DomainError("This buyer link's owner authorization is stale against its recipient, packet, consent, redaction, or expiry.", 409);
+  }
+}
 
 function validateToken(token: string | undefined) {
   if (!token || !/^[A-Za-z0-9_-]{43}$/.test(token)) throw new DomainError("This buyer link is invalid or no longer active.", 404);
@@ -305,7 +371,7 @@ export async function shareDistributionRecipients(
   actor: OfferActor,
   now = new Date(),
 ) {
-  assertOperationsRole(actor, ["OWNER", "OPERATOR"]);
+  assertOperationsRole(actor, ["OWNER"]);
   const parsed = ShareDistributionRecipientsBody.parse(input);
   if (new Set(parsed.buyerIds).size !== parsed.buyerIds.length) throw new DomainError("Choose each buyer only once.");
   const links: { buyerId: string; buyerName: string; token: string }[] = [];
@@ -353,6 +419,7 @@ export async function shareDistributionRecipients(
       const nextPayload = {
         ...(existing?.payload ?? {}),
         events: Array.isArray(existing?.payload.events) ? existing.payload.events : [],
+        linkAuthorization: createLinkAuthorization(packet, candidate, now, actor.id),
         contactPermissionSnapshot: {
           ...permission.snapshot,
           channels: permission.channels,
@@ -398,7 +465,12 @@ async function loadPortalRecord(tx: Store, tokenHash: string, now: Date) {
   const buyers = await allBuyerRecords(tx,now);
   if (buyerIdentityConflicts(buyer,buyers).length)
     throw new DomainError("This buyer has a conflicting identity/contact route record. Ask the owner to resolve it before using the package link.",403);
-  currentDistributionPermission(buyer, now);
+  assertLinkAuthorizationCurrent(
+    recipient.payload.linkAuthorization as LinkAuthorization | undefined,
+    packet,
+    buyer,
+    now,
+  );
   const detail = await assertPacketSnapshotCurrent(tx, packet, contractRow, contract, now);
   const contracts = (await tx.select().from(contractsTable)).map(contractRecord);
   const reservations = buyerReservations(contracts, buyer.id, contract.id);

@@ -91,7 +91,7 @@ function AuthFrame({ children }: { children: ReactNode }) {
     <div className="flex min-h-[100dvh] flex-col items-center justify-center gap-4 bg-background px-4 py-8">
       {children}
       <div className="max-w-sm space-y-2 text-center text-xs text-muted-foreground" data-testid="auth-owner-instructions">
-        <p><b>First owner:</b> create your own app account, complete the verification shown, then choose “Claim workspace as owner.” No auth configuration is needed.</p>
+        <p><b>First owner:</b> create your account and complete verification. Configure <code>INITIAL_WORKSPACE_OWNER_USER_ID</code> with that account’s Clerk user ID before claiming; other accounts cannot claim.</p>
         <p>Already have an account? Sign in with that same account. Once the workspace is claimed, new teammates need owner approval.</p>
         <a className="inline-block underline" href={window.location.href} target="_blank" rel="noopener noreferrer" data-testid="link-auth-new-tab">Open this page in a new tab</a>
       </div>

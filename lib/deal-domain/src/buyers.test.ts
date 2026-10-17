@@ -8,7 +8,7 @@ import { buyerQualification, criteriaSignature } from "./buyer-qualification";
 import { evaluateCurrentBuyerDemand } from "./lead-qualification";
 const now = new Date("2026-10-04T12:00:00Z");
 const buyer: Buyer = {
-  id:"synthetic-buyer",version:1,name:"SYNTHETIC BUYER",email:"synthetic@example.com",phone:"",source:"Synthetic test",status:"ACTIVE",
+  id:"synthetic-buyer",version:1,name:"SYNTHETIC BUYER",email:"synthetic@example.com",phone:"",source:"Owner-reviewed buyer profile",status:"ACTIVE",
   criteria:{states:["TX"],cities:["Test City"],zipCodes:[],propertyTypes:["SINGLE_FAMILY"],maxPurchasePrice:200000,maxRepairs:50000,
     minBeds:2,minSqft:500,maxSqft:2000,closingDays:3,counties:[],excludedCounties:[],excludedCities:[],excludedZipCodes:[],
     minPurchasePrice:0,minUnits:1,maxUnits:1,minBaths:1,rehabTolerance:"HEAVY",strategies:["FLIP"],fundingTypes:["CASH"],maxConcurrentDeals:2},
@@ -82,11 +82,15 @@ test("match records distinguish verified buyers, synthetic fixtures and contact 
   assert.ok(matchBuyer({...record,validUntil:"2026-10-03T12:00:00Z"},detail,contract,now).reasons.includes("Buyer standing: stale."));
 });
 test("a synthetic fixture can never display as an approved real buyer, even with current-looking proof fields",()=>{
-  const fixture={...buyer,source:"SYNTHETIC FIXTURE: complete qualification example"};
-  const qualification=buyerQualification(fixture,now);
-  assert.notEqual(qualification.approvalStatus,"APPROVED");
-  assert.ok(qualification.qualificationBlockers.some(reason=>/Synthetic fixture is not a real buyer/.test(reason)));
-  assert.equal(matchBuyer(fixture,detail,contract,now).eligible,false);
+  for (const fixture of [
+    {...buyer,source:"Synthetic buyer exercise record"},
+    {...buyer,source:"Owner-reviewed buyer profile",syntheticFixture:true},
+  ]) {
+    const qualification=buyerQualification(fixture,now);
+    assert.notEqual(qualification.approvalStatus,"APPROVED");
+    assert.ok(qualification.qualificationBlockers.some(reason=>/Synthetic fixture is not a real buyer/.test(reason)));
+    assert.equal(matchBuyer(fixture,detail,contract,now).eligible,false);
+  }
 });
 test("buyer ranking is deterministic: eligible, then checklist fit, then stable buyer ID",()=>{
   const rows = [
@@ -103,7 +107,7 @@ test("duplicate email or phone routes block recipient eligibility without mergin
     "Contact route conflicts with 1 other buyer record(s); resolve identity before package distribution.",
   ]);
   const samePhone={...buyer,id:"duplicate-phone",email:"other@example.com",phone:"+1 (555) 123-4567"};
-  const routeOwner={...samePhone,id:"route-owner",phone:"15551234567"};
+  const routeOwner={...samePhone,id:"route-owner",phone:"5551234567"};
   assert.equal(buyerIdentityConflicts(samePhone,[samePhone,routeOwner]).length,1);
   assert.deepEqual(buyerIdentityConflicts(buyer,[buyer]),[]);
 });
@@ -155,6 +159,14 @@ test("actual committed price is checked against available funds; evidence refere
   assert.throws(()=>evidenceUrl("javascript:alert(1)"));
   assert.throws(()=>evidenceUrl("https://synthetic:synthetic@example.com/evidence"));
   assert.equal(evidenceUrl("https://example.com/evidence"),"https://example.com/evidence");
+});
+test("maximum price and available funds are inclusive at the exact verified boundary",()=>{
+  assert.equal(matchBuyer(buyer,detail,contract,now,buyer.criteria!.maxPurchasePrice).eligible,true);
+  assert.equal(matchBuyer(buyer,detail,contract,now,buyer.criteria!.maxPurchasePrice+0.01).eligible,false);
+  assert.equal(matchBuyer({...buyer,availableFunds:buyer.criteria!.maxPurchasePrice},detail,contract,now,
+    buyer.criteria!.maxPurchasePrice).eligible,true);
+  assert.equal(matchBuyer({...buyer,availableFunds:buyer.criteria!.maxPurchasePrice-0.01},detail,contract,now,
+    buyer.criteria!.maxPurchasePrice).eligible,false);
 });
 test("bank verification alone never grandfathers a buyer into the approved current pool",()=>{
   const legacy = {...buyer,currentBuyingStatus:undefined,buyingVerifiedAt:undefined};

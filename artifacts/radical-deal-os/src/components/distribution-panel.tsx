@@ -32,7 +32,7 @@ export function DistributionPanel({ detail, contract, matches, onChanged }: {
   const [selected, setSelected] = useState<string[]>([]);
   const [reason, setReason] = useState('');
   const [links, setLinks] = useState<{ buyerId: string; buyerName: string; token: string }[]>([]);
-  const canShare = isOwner || canCall;
+  const canShare = isOwner;
   const qualified = useMemo(() => matches.filter((match) =>
     match.eligible
       && (match.destinationKind ?? 'BUYER') === 'BUYER'
@@ -59,7 +59,7 @@ export function DistributionPanel({ detail, contract, matches, onChanged }: {
         setLinks(result.links);
         setSelected([]);
         refresh();
-        toast({ title: 'Private buyer links created', description: 'No email or message was sent. Share each link through your approved channel.' });
+        toast({ title: 'Private buyer links created', description: 'Owner authorization covers link issuance only. No message was sent or approved by this action.' });
       },
     });
   };
@@ -71,7 +71,7 @@ export function DistributionPanel({ detail, contract, matches, onChanged }: {
   return <section className="ledger space-y-4 p-4" data-testid="panel-distribution">
     <div>
       <p className="eyebrow mb-1">Buyer distribution</p>
-      <p className="text-sm text-muted-foreground">The owner authorizes one frozen buyer price from the executed contract. Operators can then create private links for currently qualified acquisition buyers. Referral contacts are excluded.</p>
+      <p className="text-sm text-muted-foreground">The owner authorizes one frozen buyer price from the executed contract and separately approves each recipient link. Referral contacts are excluded.</p>
     </div>
     <div className="border border-border p-3" data-testid="buyer-address-redaction-setting">
       <label className="flex items-start gap-2 text-sm">
@@ -146,7 +146,7 @@ export function DistributionPanel({ detail, contract, matches, onChanged }: {
         {canShare && lifecycleOpen && !contract.committedBuyerId && new Date(contract.closingAt).getTime() > Date.now() && ['ACTIVE', 'FIRST_ACCEPTED'].includes(distribution.status ?? '') && (
           <div className="space-y-3">
             <p className="eyebrow">Share with qualified buyers</p>
-            <p className="text-xs text-muted-foreground">A buyer’s acceptance is non-binding; this packet remains open until the first valid, owner-reviewed commitment.</p>
+            <p className="text-xs text-muted-foreground">Each link is an owner-authorized capability tied to one recipient, current permission, and this frozen packet. Link issuance does not approve or send a message. No outbound provider is connected; any delivery remains NOT SENT unless separately evidenced.</p>
             {qualified.length === 0 ? <p className="text-sm text-muted-foreground">
               No acquisition buyer currently passes both package-fit and contact-permission gates. A durable buyer-demand task is queued for acquisition or re-verification; interest and referral destinations do not qualify as commitments. <Link href="/buyers" className="underline">Review the buyer pool</Link>.
             </p> :
@@ -176,7 +176,7 @@ export function DistributionPanel({ detail, contract, matches, onChanged }: {
         )}
         {links.length > 0 && <div className="space-y-2 border-t border-border pt-3" data-testid="list-distribution-links">
           <p className="text-sm font-semibold">Copy these private links now</p>
-          <p className="text-xs text-muted-foreground">They are returned once and cannot be recovered later. Creating a replacement invalidates the prior link. The system has not sent them.</p>
+          <p className="text-xs text-muted-foreground">They are returned once and cannot be recovered later. Creating a replacement invalidates the prior link. This owner action authorizes link issuance only—not external message content or sending. The system has not sent them.</p>
           {links.map((link) => <div key={link.buyerId} className="flex flex-col gap-2 border border-border p-2 sm:flex-row sm:items-center">
             <div className="min-w-0 flex-1"><p className="text-sm font-semibold">{link.buyerName}</p><p className="break-all font-mono text-[11px] text-muted-foreground">{linkFor(link.token)}</p></div>
             <Button size="sm" variant="outline" onClick={() => void navigator.clipboard.writeText(linkFor(link.token))}>Copy link</Button>

@@ -27,6 +27,21 @@ import { evaluatePropertyContactabilityGate, type SellerContactabilityEvidence }
 type Tx = Parameters<Parameters<typeof db.transaction>[0]>[0];
 const jsonRecord = (value: object): Record<string, unknown> => ({ ...value });
 const iso = (d: Date) => d.toISOString();
+function canonicalLeadIdentity(input: Pick<LeadInput, "address" | "city" | "state" | "zip">) {
+  return [
+    input.city.trim().toUpperCase(),
+    input.state.trim().toUpperCase(),
+    input.zip.slice(0, 5),
+    input.address.toUpperCase().replace(/[^A-Z0-9]/g, ""),
+  ].join(":");
+}
+export async function lockCanonicalLeadIdentity(
+  tx: Tx,
+  input: Pick<LeadInput, "address" | "city" | "state" | "zip">,
+) {
+  const identity = canonicalLeadIdentity(input);
+  await tx.execute(sql`select pg_advisory_xact_lock(hashtextextended(current_schema() || ${identity},0))`);
+}
 export function toLead(row: LeadRow): Lead {
   const qualification = row.payload.propertyQualification;
   const responsePayload = qualification && typeof qualification === "object"
@@ -229,6 +244,15 @@ export async function createLead(input: LeadInput, actor: string, now = new Date
   const write = async (tx: Tx) => {
     const action = input.nextAction?.trim() || "Research ownership, confirm property characteristics and collect sourced comps and repair scope.";
     const payload = { ...input, state:input.state.toUpperCase() };
+    await lockCanonicalLeadIdentity(tx, input);
+    const [existing] = await tx.select({ id: leadsTable.id }).from(leadsTable).where(sql`
+      upper(${leadsTable.payload}->>'state') = ${input.state.toUpperCase()}
+      AND upper(${leadsTable.payload}->>'city') = ${input.city.toUpperCase()}
+      AND left(${leadsTable.payload}->>'zip',5) = ${input.zip.slice(0,5)}
+      AND regexp_replace(upper(${leadsTable.payload}->>'address'),'[^A-Z0-9]','','g') =
+        regexp_replace(upper(${input.address}),'[^A-Z0-9]','','g')
+    `).limit(1);
+    if (existing) throw new DomainError("A deal already exists for this property identity. Reopen the canonical deal instead of creating a duplicate.", 409);
     const [row] = await tx.insert(leadsTable).values({
       payload:jsonRecord(payload), nextAction:action, createdAt:now, updatedAt:now,
     }).returning();

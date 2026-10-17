@@ -162,12 +162,16 @@ test("distribution approval is bound to exact buyer, channel, packet version, sn
     packetSnapshotHash: "a".repeat(64), exactMessage: "Approved terms; redacted link.",
     recipientRoute: "BUYER@example.com", redactionLevel: "REDACTED" as const,
     packageAuthorizationId: "packet-auth-1", consentSnapshotHash: buyerConsentSnapshotHash(consent),
+    expiresAt: "2026-10-20T10:00:00.000Z",
   };
   const approval = approveExactDistributionMessage({
     ...current, approvedBy: "owner-1", approvedAt: "2026-10-15T12:00:00.000Z",
   });
   assertExactDistributionApprovalCurrent(approval, current);
   assert.throws(() => assertExactDistributionApprovalCurrent(approval, { ...current, exactMessage: "Changed terms." }), /stale/);
+  assert.throws(() => assertExactDistributionApprovalCurrent(approval, {
+    ...current, expiresAt: "2026-10-19T10:00:00.000Z",
+  }), /stale/, "A changed approval/package expiry invalidates the exact-message authorization.");
   assert.throws(() => assertExactDistributionApprovalCurrent(approval, { ...current, packetVersion: 5 }), /stale/);
   assert.throws(() => assertExactDistributionApprovalCurrent(approval, { ...current, packetSnapshotHash: "b".repeat(64) }), /stale/);
   assert.throws(() => assertExactDistributionApprovalCurrent(approval, { ...current, buyerId: "buyer-2" }), /stale/);
@@ -192,6 +196,7 @@ test("provider submission is blocked before exact approval, current channel perm
     packetSnapshotHash: "a".repeat(64), exactMessage: "Exact approved test text.",
     recipientRoute: "buyer@example.com", redactionLevel: "REDACTED" as const,
     packageAuthorizationId: "packet-auth-1", consentSnapshotHash: buyerConsentSnapshotHash(permission),
+    expiresAt: "2026-10-20T10:00:00.000Z",
   };
   assert.throws(() => assertDistributionSubmissionReady(null, current, permission, "EMAIL", undefined, now, true), /approval is required/);
   const approval = approveExactDistributionMessage({
@@ -221,6 +226,9 @@ test("provider submission is blocked before exact approval, current channel perm
   };
   assert.doesNotThrow(() => assertDistributionSubmissionReady(approval, current, permission, "EMAIL", provider, now, true));
   assert.equal(sends, 0, "The readiness guard validates eligibility only and never submits a message.");
+  assert.throws(() => assertDistributionSubmissionReady(
+    approval, current, permission, "EMAIL", provider, new Date("2026-10-21T12:00:00Z"), true,
+  ), /expired/i, "An otherwise-current exact approval cannot be submitted after its bound expiry.");
 });
 
 test("provider acceptance, delivery, duplicate callbacks, and conflicts preserve delivery truth", () => {

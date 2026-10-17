@@ -32,7 +32,7 @@ test("coverage counts only fresh, verified buyers with hard price, proof and cap
 test("stale proof, duplicate identity conflicts and synthetic fixtures never inflate coverage",()=>{
   const stale=buyer({id:"stale",email:"stale@example.test",phone:"5551001",evidenceAt:"2026-09-01T00:00:00Z",validUntil:"2026-09-30T00:00:00Z",approvalStatus:"REVERIFICATION_REQUIRED",verificationStatus:"STALE"});
   const duplicate=buyer({id:"dup",email:"buyer@example.test",phone:"5552000"});
-  const fixture=buyer({id:"fixture",email:"fixture@example.test",phone:"5553000",source:"Synthetic fixture: buyer"});
+   const fixture=buyer({id:"fixture",email:"fixture@example.test",phone:"5553000",source:"Owner-reviewed fixture record",syntheticFixture:true});
   const rows=buyerPoolCoverage([buyer(),stale,duplicate,fixture],now);
   const low=rows.find(r=>r.market==="STATE:PA"&&r.propertyType==="SINGLE_FAMILY"&&r.priceBand==="0-150k")!;
   assert.equal(low.eligibleBuyerCount,0);

@@ -2,7 +2,7 @@ import { eq, sql } from "drizzle-orm";
 import type { z } from "zod";
 import { db, buyersTable } from "@workspace/db";
 import { CreateBuyerBody, RecordBuyerContactPermissionBody, UpdateBuyerBody, VerifyBuyerBody } from "@workspace/api-zod";
-import { assertOperationsRole, criteriaSignature, criteriaBlockers, validateCriteria, evidenceUrl, pastInstant, DAY, DomainError, type OfferActor } from "@workspace/deal-domain";
+import { assertOperationsRole, criteriaSignature, criteriaBlockers, validateCriteria, evidenceUrl, pastInstant, DAY, DomainError, normalizeBuyerPhone, isSyntheticBuyerSource, type OfferActor } from "@workspace/deal-domain";
 import { buyerRecord, queueJob } from "./operations-records";
 import { audit } from "./deal-store";
 
@@ -23,19 +23,19 @@ export async function createBuyer(input: z.infer<typeof CreateBuyerBody>, actor:
   return db.transaction(async tx=>{
     const routeKeys = [
       payload.email ? `email:${payload.email.trim().toLowerCase()}` : "",
-      payload.phone ? `phone:${payload.phone.replace(/\D/g,"")}` : "",
+      payload.phone ? `phone:${normalizeBuyerPhone(payload.phone)}` : "",
     ].filter(Boolean).sort();
     for (const key of routeKeys) {
       await tx.execute(sql`select pg_advisory_xact_lock(hashtextextended(current_schema() || ${`buyer-route:${key}`},0))`);
     }
     if (routeKeys.length) {
       const existing = await tx.select().from(buyersTable);
-      const digits = payload.phone.replace(/\D/g,"");
+       const digits = normalizeBuyerPhone(payload.phone);
       const email = payload.email.trim().toLowerCase();
       const name = payload.name.trim().toLowerCase().replace(/[^a-z0-9]+/g," ").trim();
       const conflict = existing.find(row => {
         const prior = buyerRecord(row);
-        const priorDigits = (prior.phone ?? "").replace(/\D/g,"");
+         const priorDigits = normalizeBuyerPhone(prior.phone ?? "");
         return (!!email && (prior.email ?? "").trim().toLowerCase() === email) ||
           (!!digits && priorDigits === digits && digits.length >= 7);
       });
@@ -46,7 +46,7 @@ export async function createBuyer(input: z.infer<typeof CreateBuyerBody>, actor:
         throw new DomainError(`${kind} (record ${conflict.id}). Review the existing record; records are not automatically merged.`,409);
       }
     }
-    const [row] = await tx.insert(buyersTable).values({payload}).returning();
+     const [row] = await tx.insert(buyersTable).values({payload:{...payload,syntheticFixture:isSyntheticBuyerSource(payload.source)}}).returning();
     if (!row) throw new Error("Buyer insert failed.");
     await audit(tx,actor.id,"BUYER_CREATED",row.id,"Criteria recorded. Identity and funding remain unverified.");
     await queueJob(tx,"MATCH_BUYERS",null,`buyer:${row.id}:${row.version}`,actor.id);
@@ -64,14 +64,14 @@ export async function updateBuyer(id: string, input: z.infer<typeof UpdateBuyerB
     if (row.version!==parsed.version) throw new DomainError("Buyer changed. Reload before saving.",409);
     const routeKeys=[
       payload.email?`email:${payload.email.trim().toLowerCase()}`:"",
-      payload.phone?`phone:${payload.phone.replace(/\D/g,"")}`:"",
+      payload.phone?`phone:${normalizeBuyerPhone(payload.phone)}`:"",
     ].filter(Boolean).sort();
     for(const key of routeKeys) await tx.execute(sql`select pg_advisory_xact_lock(hashtextextended(current_schema() || ${`buyer-route:${key}`},0))`);
     const others=await tx.select().from(buyersTable);
-    const email=payload.email.trim().toLowerCase(),digits=payload.phone.replace(/\D/g,"");
+    const email=payload.email.trim().toLowerCase(),digits=normalizeBuyerPhone(payload.phone);
     const conflict=others.find(other=>{
       if(other.id===id)return false;
-      const prior=buyerRecord(other), priorDigits=(prior.phone??"").replace(/\D/g,"");
+      const prior=buyerRecord(other), priorDigits=normalizeBuyerPhone(prior.phone??"");
       return (!!email&&(prior.email??"").trim().toLowerCase()===email)||
         (!!digits&&digits.length>=7&&priorDigits===digits);
     });

@@ -12,8 +12,19 @@ export async function getAccess(userId: string, database: AccessDatabase = db) {
   const owners = await database.select({id:membersTable.id}).from(membersTable).where(eq(membersTable.role,"OWNER")).limit(1);
   return GetAccessResponse.parse({userId,role:member?.role ?? "PENDING",unclaimed:!owners.length});
 }
-/** First owner must explicitly claim before sharing the app. One claim, serialized across instances. */
-export async function claimWorkspace(userId: string, database: AccessDatabase = db) {
+/** First owner is explicitly configured; claim is serialized across instances. */
+export async function claimWorkspace(
+  userId: string,
+  database: AccessDatabase = db,
+  initialOwnerUserId = process.env.INITIAL_WORKSPACE_OWNER_USER_ID,
+) {
+  const configuredOwnerId = initialOwnerUserId?.trim();
+  if (!configuredOwnerId) {
+    throw new DomainError("First-owner claim is disabled until INITIAL_WORKSPACE_OWNER_USER_ID is configured.",503);
+  }
+  if (userId !== configuredOwnerId) {
+    throw new DomainError("This authenticated account is not configured as the initial workspace owner.",403);
+  }
   await database.transaction(async tx => {
     await tx.execute(sql`select pg_advisory_xact_lock(814923701)`);
     const owners = await tx.select().from(membersTable).where(eq(membersTable.role,"OWNER")).limit(1);

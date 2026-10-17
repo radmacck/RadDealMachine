@@ -2,7 +2,7 @@ import { eq, desc, and, gte } from "drizzle-orm";
 import { isDeepStrictEqual } from "node:util";
 import { db, buyersTable, contractsTable, jobsTable } from "@workspace/db";
 import { GetBuyerResponse, GetDealOperationsResponse, ListWorkerJobsResponse } from "@workspace/api-zod";
-import { buyerQualification, verificationStatus, buyerReservations, DomainError } from "@workspace/deal-domain";
+import { buyerQualification, verificationStatus, buyerReservations, DomainError, isSyntheticBuyerSource } from "@workspace/deal-domain";
 import { buyerOutreachReadiness, type BuyerContactPermission } from "./buyer-outreach";
 
 export type Tx = Parameters<Parameters<typeof db.transaction>[0]>[0];
@@ -15,12 +15,12 @@ export function buyerRecord(row: typeof buyersTable.$inferSelect, now = new Date
     "status" in rawPermission && "channels" in rawPermission
     ? rawPermission as BuyerContactPermission
     : null;
-  const withPermission = {...candidate,contactPermission};
+  const withPermission = {...candidate,syntheticFixture:row.payload.syntheticFixture===true||isSyntheticBuyerSource(candidate.source),contactPermission};
   const qualificationTask = candidate.qualificationTask
     ? {...candidate.qualificationTask,outreachReadiness:buyerOutreachReadiness({...withPermission,contactRouteVerified:false},now)}
     : candidate.qualificationTask;
-  return {...candidate,destinationKind:candidate.destinationKind??"BUYER",currentBuyingStatus:candidate.currentBuyingStatus??"UNKNOWN",
-    contactPermission:withPermission.contactPermission,qualificationTask,verificationStatus:verificationStatus(candidate,now),
+  return {...withPermission,destinationKind:candidate.destinationKind??"BUYER",currentBuyingStatus:candidate.currentBuyingStatus??"UNKNOWN",
+    qualificationTask,verificationStatus:verificationStatus(candidate,now),
     ...buyerQualification(withPermission,now)};
 }
 export function contractRecord(row: typeof contractsTable.$inferSelect) {

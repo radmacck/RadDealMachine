@@ -46,9 +46,11 @@ export function AccessGate({ children }: { children: ReactNode }) {
         <p className="eyebrow">First-time setup</p>
         <h1 className="text-3xl font-semibold">This workspace has no owner</h1>
         <p className="text-sm text-muted-foreground" data-testid="text-claim-account">Signed in as {user?.primaryEmailAddress?.emailAddress ?? user?.fullName ?? 'your app account'}. Claiming grants ownership to this account, not your Replit login.</p>
+        <p className="text-sm text-muted-foreground">Configure <code>INITIAL_WORKSPACE_OWNER_USER_ID</code> with this Clerk user ID before claiming:</p>
+        <code className="block break-all border border-border bg-muted/50 p-3 text-left text-xs" data-testid="text-initial-owner-id">{user?.id ?? 'Clerk user ID unavailable'}</code>
         <div className="flex gap-3 border border-signal bg-signal/10 p-3 text-sm" data-testid="notice-setup">
           <ShieldAlert className="mt-0.5 h-4 w-4 shrink-0 text-signal" />
-          <p><b>Claim first owner before sharing this link.</b> Whoever claims becomes the only owner. Every person who signs in after that waits as pending until the owner approves them.</p>
+          <p><b>Only the configured first-owner account can claim this workspace.</b> Set <code>INITIAL_WORKSPACE_OWNER_USER_ID</code> to this account's Clerk user ID before claiming. Other signed-in accounts remain unable to claim; after setup, every new account waits for owner approval.</p>
         </div>
         {claim.isError && <ErrorNotice error={claim.error} />}
         <Button className="w-full" disabled={claim.isPending} data-testid="button-claim-workspace"

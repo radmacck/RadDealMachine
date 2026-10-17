@@ -54,6 +54,20 @@ test("two sourced acquisition signals plus independent support can qualify a lea
   assert.equal(result.scoredSignals.length, 3);
 });
 
+test("stale, undated, and future-dated signals cannot qualify a property", () => {
+  const now = new Date("2026-10-17T12:00:00.000Z");
+  const signals = [
+    { ...signal("SELLER_MOTIVATION", "MOTIVATION", "VERIFIED", 0.95), capturedAt: "2026-08-01T12:00:00.000Z" },
+    { ...signal("REPORTED_POOR_CONDITION", "CONDITION", "OBSERVED", 0.9), capturedAt: "not-a-date" },
+    { ...signal("TAX_DELINQUENCY", "DISTRESS", "OBSERVED", 0.85), capturedAt: "2026-10-18T12:00:00.000Z" },
+  ];
+  const result = evaluatePropertyRelevance(signals, DEFAULT_PROPERTY_QUALIFICATION_CRITERIA, now);
+  assert.equal(result.score, 0);
+  assert.equal(result.canPromote, false);
+  assert.ok(result.scoredSignals.every((item) => item.points === 0));
+  assert.ok(result.missingInformation.some((item) => /stale, undated, or future-dated.*excluded/i.test(item)));
+});
+
 test("repeated references do not multiply score or count as independent evidence", () => {
   const first = { ...signal("SELLER_MOTIVATION", "MOTIVATION"), evidenceRef: "same-record:1" };
   const duplicate = { ...first, id: "duplicate-entry" };

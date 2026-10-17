@@ -3,6 +3,14 @@ import { DAY, verificationStatus } from "./buyers";
 import { DomainError } from "./types";
 import { assessEvidenceConfidence } from "./evidence-integrity";
 
+export function isSyntheticBuyerSource(source: string): boolean {
+  return /^(?:synthetic|fixture|test fixture|demo fixture)(?:\b|:)/i.test(source.trim());
+}
+
+export function isSyntheticBuyer(buyer: Pick<Buyer,"source"> & {syntheticFixture?: boolean}): boolean {
+  return buyer.syntheticFixture === true || isSyntheticBuyerSource(buyer.source);
+}
+
 export function criteriaBlockers(c: Buyer["criteria"]): string[] {
   if (!c) return ["Structured buying criteria have not been qualified."];
   const missing = ["counties","excludedCounties","excludedCities","excludedZipCodes","minPurchasePrice","minUnits",
@@ -31,7 +39,7 @@ export function criteriaSignature(c: Buyer["criteria"]): string {
 }
 export function buyerQualification(b: Buyer, now: Date) {
   const blockers = criteriaBlockers(b.criteria);
-  if (/^synthetic fixture:/i.test(b.source.trim()))
+  if (isSyntheticBuyer(b))
     blockers.push("Synthetic fixture is not a real buyer and cannot be qualified or counted as live demand.");
   const replyAt = Date.parse(b.lastOutreachReplyAt??"");
   if (Number.isFinite(replyAt)&&replyAt>Date.parse(b.buyingEvidenceAt??"1970-01-01"))

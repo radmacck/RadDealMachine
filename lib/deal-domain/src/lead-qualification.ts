@@ -147,7 +147,13 @@ const classificationLabel = (classification: EvidenceClassification) => classifi
 export function evaluatePropertyRelevance(
   signals: PropertyRelevanceSignal[],
   criteria: PropertyQualificationCriteria,
+  now = new Date(),
 ): QualificationEvaluation {
+  const staleSignalIds = new Set(signals.filter((signal) => {
+    const capturedAt = Date.parse(signal.capturedAt);
+    return !Number.isFinite(capturedAt) || capturedAt > now.getTime() + 60_000 ||
+      now.getTime() - capturedAt > 30 * 24 * 60 * 60_000;
+  }).map((signal) => signal.id));
   const rules = new Map(criteria.signalRules.map((rule) => [rule.key, rule]));
   for (const [key, points] of Object.entries(defaultPoints) as Array<[PropertySignalKey, number]>) {
     if (!rules.has(key)) rules.set(key, { key, points, enabled: true });
@@ -158,7 +164,7 @@ export function evaluatePropertyRelevance(
     const evidenceKey = `${signal.key}|${signal.evidenceRef ?? signal.sourceUrl ?? signal.statement.trim().toLowerCase()}`;
     const duplicate = seenEvidence.has(evidenceKey);
     seenEvidence.add(evidenceKey);
-    const contribution = !duplicate && rule?.enabled
+    const contribution = !duplicate && !staleSignalIds.has(signal.id) && rule?.enabled
       ? Math.round(rule.points * classificationFactor[signal.classification] * signal.confidence)
       : 0;
     return { ...signal, points: contribution };
@@ -187,10 +193,16 @@ export function evaluatePropertyRelevance(
   if (!strengthGroupPresent) {
     promotionBlockers.push(`Add sourced motivation, distress, listing-pressure, or vacancy evidence before qualification.`);
   }
+  if (staleSignalIds.size && !qualifiesAsCandidate) {
+    promotionBlockers.push("Refresh stale, undated, or future-dated source evidence before qualifying this property.");
+  }
   const reason = usable.length
     ? `${status === "RELEVANT_CANDIDATE" ? "Candidate selected" : "Discovery retained"} from ${usable.length} scored signal${usable.length === 1 ? "" : "s"} across ${groups.size} independent group${groups.size === 1 ? "" : "s"} (${score}/100). ${usable.map((signal) => `${signal.statement} [${classificationLabel(signal.classification)}; ${signal.source}]`).join(" ")}`
     : "No sourced relevance signals are present. A public property record by itself is not a lead.";
   const missingInformation = [
+    ...(staleSignalIds.size
+      ? [`${staleSignalIds.size} source-backed relevance signal(s) are stale, undated, or future-dated and were excluded from qualification scoring; refresh them from the permitted source.`]
+      : []),
     ...(signals.some((signal) => signal.classification === "AI_HYPOTHESIS")
       ? ["AI hypotheses are retained for review but add no qualification points; corroborate them with independent source-backed evidence."]
       : []),

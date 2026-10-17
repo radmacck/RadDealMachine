@@ -6,7 +6,6 @@
  * OpenAPI spec version: 1.0.0
  */
 import * as zod from 'zod';
-import type { CommandCenter } from './types/commandCenter';
 
 
 export const GetSellerContactPathsParams = zod.object({
@@ -15531,10 +15530,7 @@ export const getCommandCenterResponseAutomationFailedJobsMin = 0;
 
 
 
-type CommandCenterShape = { [K in keyof CommandCenter]: zod.ZodType<CommandCenter[K]> } & {
-  decisions: zod.ZodArray<zod.ZodType<CommandCenter["decisions"][number]>>;
-};
-export const GetCommandCenterResponse: zod.ZodObject<CommandCenterShape> = zod.object({
+export const GetCommandCenterResponse = zod.object({
   "generatedAt": zod.string(),
   "actions": zod.array(zod.object({
   "id": zod.string(),
@@ -18460,7 +18456,7 @@ export const GetCommandCenterResponse: zod.ZodObject<CommandCenterShape> = zod.o
   "href": zod.string().nullable()
 }))
 })
-}) as zod.ZodObject<CommandCenterShape>;
+})
 
 
 export const ListBuyerCallFollowUpsResponse = zod.object({

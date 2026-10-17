@@ -26,7 +26,7 @@ import {
   propertyById,
   type PropertyContactPath, type PropertySourceRefresh,
 } from "@workspace/property-sources";
-import { audit, createLead, move } from "./deal-store";
+import { audit, createLead, lockCanonicalLeadIdentity, move } from "./deal-store";
 import { allBuyerRecords, queueJob } from "./operations-records";
 import { invalidateOffers } from "./offer-records";
 import {
@@ -404,7 +404,7 @@ async function toDiscoveryResponse(
   now = new Date(),
 ) {
   const payload = parsePayload(row.payload);
-  const evaluation = evaluatePropertyRelevance(payload.signals, criteria);
+  const evaluation = evaluatePropertyRelevance(payload.signals, criteria, now);
   const buyers = currentBuyers ?? await allBuyerRecords(database, now);
   const evaluatedDemand = evaluateCurrentBuyerDemand({
     state: payload.property.state,
@@ -426,8 +426,10 @@ async function toDiscoveryResponse(
     .where(eq(propertySourceObservationsTable.discoveryId, row.id))
     .orderBy(desc(propertySourceObservationsTable.lastObservedAt));
   const factBlockers = factCompletenessBlockers(payload.property);
-  const status = row.status as PropertyDiscoveryStatus;
-  const promotionBlockers = status === "QUALIFIED_LEAD" || status === "CALL_READY" || status === "DISQUALIFIED"
+  const storedStatus = row.status as PropertyDiscoveryStatus;
+  const terminalStatus = storedStatus === "QUALIFIED_LEAD" || storedStatus === "CALL_READY" || storedStatus === "DISQUALIFIED";
+  const status = terminalStatus ? storedStatus : evaluation.status;
+  const promotionBlockers = terminalStatus
     ? []
     : [...evaluation.promotionBlockers, ...factBlockers];
   const canPromote = status === "RELEVANT_CANDIDATE" && evaluation.canPromote && factBlockers.length === 0 && !row.leadId;
@@ -1966,7 +1968,7 @@ export async function addPropertyRelevanceSignal(
     const criteria = await getCriteriaFrom(tx, current.marketKey);
     const payload = parsePayload(current.payload);
     payload.signals = [...payload.signals, signal];
-    const evaluation = evaluatePropertyRelevance(payload.signals, criteria);
+    const evaluation = evaluatePropertyRelevance(payload.signals, criteria, now);
     const [saved] = await tx.update(propertyDiscoveriesTable).set({
       status: evaluation.status,
       score: evaluation.score,
@@ -2037,13 +2039,14 @@ export async function promotePropertyDiscovery(
       };
     }
     const criteria = await getCriteriaFrom(tx, current.marketKey);
-    const evaluation = evaluatePropertyRelevance(payload.signals, criteria);
+    const evaluation = evaluatePropertyRelevance(payload.signals, criteria, now);
     const missingFacts = factCompletenessBlockers(payload.property);
     if (!evaluation.canPromote || missingFacts.length) {
       throw new DomainError([...evaluation.promotionBlockers, ...missingFacts].join(" "), 409);
     }
     const sourceKey = `phila-opa:${payload.property.id}`;
     const identity = normalAddress(payload.property.address);
+    await lockCanonicalLeadIdentity(tx, payload.property);
     const possibleExisting = await tx.select().from(leadsTable).where(sql`
       upper(${leadsTable.payload}->>'state') = ${payload.property.state.toUpperCase()}
       AND upper(${leadsTable.payload}->>'city') = ${payload.property.city.toUpperCase()}

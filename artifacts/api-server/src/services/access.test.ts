@@ -33,7 +33,7 @@ test("signing in creates pending membership, never automatic ownership",async ()
 test("explicit first-owner claim persists and audits only the authenticated caller",async () => {
   await isolated(async tx => {
     await getAccess("synthetic-owner-candidate",tx);
-    const claimed = await claimWorkspace("synthetic-owner-candidate",tx);
+    const claimed = await claimWorkspace("synthetic-owner-candidate",tx,"synthetic-owner-candidate");
     assert.equal(claimed.role,"OWNER");
     assert.equal(claimed.unclaimed,false);
     const audits = await tx.select().from(auditTable);
@@ -44,16 +44,16 @@ test("explicit first-owner claim persists and audits only the authenticated call
 });
 test("another user cannot take over a claimed workspace or repeat its claim",async () => {
   await isolated(async tx => {
-    await claimWorkspace("synthetic-owner-candidate",tx);
-    await assert.rejects(claimWorkspace("synthetic-second-account",tx),e => (e as {status:number}).status===409);
-    await assert.rejects(claimWorkspace("synthetic-owner-candidate",tx),e => (e as {status:number}).status===409);
+    await claimWorkspace("synthetic-owner-candidate",tx,"synthetic-owner-candidate");
+    await assert.rejects(claimWorkspace("synthetic-second-account",tx,"synthetic-owner-candidate"),e => (e as {status:number}).status===403);
+    await assert.rejects(claimWorkspace("synthetic-owner-candidate",tx,"synthetic-owner-candidate"),e => (e as {status:number}).status===409);
     assert.equal((await getAccess("synthetic-second-account",tx)).role,"PENDING");
     assert.equal((await tx.select().from(auditTable)).length,1);
   });
 });
 test("only owner can approve teammate roles, including below the HTTP boundary",async () => {
   await isolated(async tx => {
-    await claimWorkspace("synthetic-owner-candidate",tx);
+    await claimWorkspace("synthetic-owner-candidate",tx,"synthetic-owner-candidate");
     await getAccess("synthetic-teammate",tx);
     await assert.rejects(updateMember("synthetic-teammate",{role:"ANALYST"},"synthetic-teammate",tx),e => (e as {status:number}).status===403);
     const approved = await updateMember("synthetic-teammate",{role:"OPERATOR"},"synthetic-owner-candidate",tx);
@@ -67,7 +67,7 @@ test("only owner can approve teammate roles, including below the HTTP boundary",
 });
 test("membership editing cannot create another owner or demote the first owner",async () => {
   await isolated(async tx => {
-    await claimWorkspace("synthetic-owner-candidate",tx);
+    await claimWorkspace("synthetic-owner-candidate",tx,"synthetic-owner-candidate");
     await getAccess("synthetic-teammate",tx);
     await assert.rejects(updateMember("synthetic-owner-candidate",{role:"VIEWER"},"synthetic-owner-candidate",tx),e => (e as {status:number}).status===409);
     await assert.rejects(updateMember("synthetic-teammate",{role:"OWNER" as "OPERATOR"},"synthetic-owner-candidate",tx),e => (e as {status:number}).status===400);
@@ -77,12 +77,23 @@ test("membership editing cannot create another owner or demote the first owner",
 });
 test("revoked teammate access returns to pending without changing workspace ownership",async () => {
   await isolated(async tx => {
-    await claimWorkspace("synthetic-owner-candidate",tx);
+    await claimWorkspace("synthetic-owner-candidate",tx,"synthetic-owner-candidate");
     await getAccess("synthetic-teammate",tx);
     await updateMember("synthetic-teammate",{role:"OPERATOR"},"synthetic-owner-candidate",tx);
     await updateMember("synthetic-teammate",{role:"PENDING"},"synthetic-owner-candidate",tx);
     assert.equal((await getAccess("synthetic-teammate",tx)).role,"PENDING");
     assert.equal((await getAccess("synthetic-owner-candidate",tx)).role,"OWNER");
+  });
+});
+
+test("first-owner claim fails closed without the configured identity and denies other authenticated users",async () => {
+  await isolated(async tx => {
+    await assert.rejects(claimWorkspace("synthetic-attacker",tx,""),e => (e as {status:number}).status===503);
+    await assert.rejects(claimWorkspace("synthetic-attacker",tx,"synthetic-owner-candidate"),e => (e as {status:number}).status===403);
+    assert.equal((await tx.select().from(membersTable)).length,0);
+    assert.equal((await tx.select().from(auditTable)).length,0);
+    const claimed = await claimWorkspace("synthetic-owner-candidate",tx,"synthetic-owner-candidate");
+    assert.equal(claimed.role,"OWNER");
   });
 });
 test("owner-only role middleware rejects pending, viewer, analyst and operator",() => {
@@ -95,6 +106,20 @@ test("owner-only role middleware rejects pending, viewer, analyst and operator",
     roles("OWNER")({} as Request,res,() => { continued=true; });
     assert.equal(continued,role==="OWNER");
     assert.equal(status,role==="OWNER"?undefined:403);
+  }
+});
+
+test("call logging and follow-up middleware permits only owner and operator roles",() => {
+  for (const role of ["PENDING","VIEWER","ANALYST","OPERATOR","OWNER"]) {
+    let status: number|undefined;
+    let continued = false;
+    const res = {
+      locals:{role},status(n:number) { status=n; return this; },json(_value:unknown) { return this; },
+    } as unknown as Response;
+    roles("OWNER","OPERATOR")({} as Request,res,() => { continued=true; });
+    const allowed = role==="OWNER"||role==="OPERATOR";
+    assert.equal(continued,allowed,`${role} call/follow-up access must match the route's operation roles.`);
+    assert.equal(status,allowed?undefined:403);
   }
 });
 

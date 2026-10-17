@@ -2,20 +2,24 @@ import type { z } from "zod";
 import type { ListBuyersResponse, GetDealOperationsResponse } from "@workspace/api-zod";
 import { DomainError, type LeadDetail } from "./types";
 import type { OfferActor } from "./offers";
-import { buyerQualification } from "./buyer-qualification";
+import { buyerQualification, isSyntheticBuyer } from "./buyer-qualification";
 import { extendedCriteriaChecks } from "./buyer-criteria";
 import { classifyEvidenceFreshness } from "./evidence-integrity";
 
-export type Buyer = z.infer<typeof ListBuyersResponse>[number];
+export type Buyer = z.infer<typeof ListBuyersResponse>[number] & { syntheticFixture?: boolean };
 export type DealContract = NonNullable<z.infer<typeof GetDealOperationsResponse>["contract"]>;
 export type BuyerMatch = z.infer<typeof GetDealOperationsResponse>["matches"][number];
 export const DAY = 86_400_000;
+export function normalizeBuyerPhone(value: string): string {
+  const digits = value.replace(/\D/g, "");
+  return digits.length === 11 && digits.startsWith("1") ? digits.slice(1) : digits;
+}
 export function buyerIdentityConflicts(buyer: Buyer, pool: Buyer[]): string[] {
   const email = buyer.email.trim().toLowerCase();
-  const phone = buyer.phone.replace(/\D/g, "");
+  const phone = normalizeBuyerPhone(buyer.phone);
   const conflicts = pool.filter(other => other.id !== buyer.id && (
     (!!email && other.email.trim().toLowerCase() === email) ||
-    (phone.length >= 7 && other.phone.replace(/\D/g, "") === phone)
+    (phone.length >= 7 && normalizeBuyerPhone(other.phone) === phone)
   ));
   return conflicts.length
     ? [`Contact route conflicts with ${conflicts.length} other buyer record(s); resolve identity before package distribution.`]
@@ -59,7 +63,7 @@ export function matchBuyer(buyer: Buyer, detail: LeadDetail, contract: DealContr
     Date.parse(permission.validUntil)>now.getTime() && permission.channels?.length;
   const contactPermissionStatus = permission?.status==="OPTED_OUT" ? "OPTED_OUT" :
     !permission || permission.status!=="GRANTED" ? "NOT_REVIEWED" : permissionFresh ? "PERMITTED" : "STALE";
-  const syntheticFixture = /^synthetic fixture:/i.test(buyer.source.trim());
+  const syntheticFixture = isSyntheticBuyer(buyer);
   const standing = syntheticFixture ? "SYNTHETIC_FIXTURE" :
     (buyer.destinationKind??"BUYER")!=="BUYER" ? "DESTINATION" :
       buyerQualification(buyer,now).approvalStatus==="APPROVED" ? "VERIFIED_BUYER" :
