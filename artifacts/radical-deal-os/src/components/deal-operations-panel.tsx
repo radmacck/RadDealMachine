@@ -2,12 +2,12 @@ import { useState } from 'react';
 import { Link } from 'wouter';
 import { Download, FileText, RefreshCw } from 'lucide-react';
 import {
-  getGetDealOperationsQueryKey, useCreateContract, useExecuteContract, useGetDealOperations, useGetTransactionDocumentReadiness, usePreparePurchaseReviewDocument, useTransitionTransactionDocument, useRecordBuyerResponse, useRecordDestinationActivity,
+  useCreateContract, useExecuteContract, useGetTransactionDocumentReadiness, usePreparePurchaseReviewDocument, useTransitionTransactionDocument, useRecordBuyerResponse, useRecordDestinationActivity,
   useCreateClauseReviewRequest, useGetClauseReviewRequests,
   useRecordClosingMilestone, useRecordDealOutcome, useRecordTransactionDeadlineSchedule, useRecordTransactionException, useRefreshMatches,
   type BuyerMatch, type BuyerResponseInputStatus, type ClosingMilestoneInputKind, type ClosingMilestoneInputEvidenceKind,
   type TransactionMilestoneDeadlineItemKind, type TransactionMilestoneDeadlineItemDisposition, type DealContract, type DealOutcomeInputOutcome,
-  type DestinationActivityEvent, type DestinationActivityInputKind, type TransactionExceptionInputKind, type LeadDetail,
+  type DestinationActivityEvent, type DestinationActivityInputKind, type TransactionExceptionInputKind, type LeadDetail, type DealOperations,
 } from '@workspace/api-client-react';
 import { ErrorNotice, RowsSkeleton } from '@/components/state-views';
 import { EvidenceLink, Field, SELECT } from '@/components/field-row';
@@ -828,20 +828,25 @@ function DestinationActivityHistory({ events }: { events: DestinationActivityEve
   );
 }
 
-export function DealOperationsPanel({ detail }: { detail: LeadDetail }) {
+export function DealOperationsPanel({ detail, operations, loading, error, onRetry }: {
+  detail: LeadDetail;
+  operations?: DealOperations;
+  loading: boolean;
+  error: unknown;
+  onRetry: () => void;
+}) {
   const [timelineFilter, setTimelineFilter] = useState("ALL");
   const id = detail.lead.id;
   const invalidate = useInvalidateWork();
   const { canResearch, canCall, isOwner } = useAccess();
   const { toast } = useToast();
   const [respondTo, setRespondTo] = useState<string | null>(null);
-  const q = useGetDealOperations(id, { query: { queryKey: getGetDealOperationsQueryKey(id), enabled: !!id, staleTime: 5_000, refetchInterval: 10_000 } });
   const refresh = useRefreshMatches();
   const done = () => { invalidate(id); setRespondTo(null); };
 
-  if (q.isLoading) return <RowsSkeleton rows={4} />;
-  if (q.isError || !q.data) return <ErrorNotice error={q.error} onRetry={() => q.refetch()} />;
-  const ops = q.data;
+  if (loading) return <RowsSkeleton rows={4} />;
+  if (error || !operations) return <ErrorNotice error={error} onRetry={onRetry} />;
+  const ops = operations;
   const c = ops.contract;
   const live = c && (c.status === 'UNDER_CONTRACT' || c.status === 'CLOSING');
   const eligible = ops.matches.filter((m) => m.eligible);
@@ -891,7 +896,8 @@ export function DealOperationsPanel({ detail }: { detail: LeadDetail }) {
     ]),
     ...detail.calls.map((event) => ({
       id: `call:${event.id}`, at: event.occurredAt, recordedAt: event.createdAt,
-      category: 'SELLER' as const, title: `Seller call: ${event.outcome.replaceAll('_', ' ')}`,
+      category: event.counterpartyKind === 'BUYER' ? 'BUYER' as const : 'SELLER' as const,
+      title: `${event.counterpartyKind === 'BUYER' ? 'Buyer' : 'Seller'} call: ${event.outcome.replaceAll('_', ' ')}`,
       detail: 'Call note content is withheld from the shared timeline.',
       evidence: event.evidenceClassification === 'OBSERVED'
         ? 'Operator call record; not an external recording.' : 'Seller-reported content; not independently verified.',

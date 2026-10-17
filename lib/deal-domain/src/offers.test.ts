@@ -3,6 +3,7 @@ import assert from "node:assert/strict";
 import {
   analyzeDeal, DEFAULT_ASSUMPTIONS, evaluateOffer, validateOfferDraft, validateOfferApproval,
   validateOfferCommunication, validateOfferWithdrawal, assertOfferPermission, assertTransitionPermission, buildCallBrief,
+  offerReviewSnapshotJson,
   type Lead, type OfferContext, type StoredOffer, type OfferApprovalInput,
   type OfferCommunicationInput, type OfferDraftInput,
 } from "./index";
@@ -18,21 +19,29 @@ const lead: Lead = {
   stage:"CONVERSATION",version:5,nextAction:"Prepare owner-reviewed proposal.",
   createdAt:now.toISOString(),updatedAt:now.toISOString(),followUpAt:null,
 };
-const analysis = analyzeDeal(lead,{
+const compEvidenceId = "00000000-0000-4000-8000-000000000005";
+const underwriting = {
   version:1,comps:[290000,300000,310000].map((salePrice,i) => ({
     id:`comp-${i}`,address:`SYNTHETIC COMP ${i}`,salePrice,sqft:1000,soldAt:"2026-09-30",
-    distanceMiles:0.5,propertyType:"SINGLE_FAMILY",condition:"RENOVATED",source:"Synthetic record",verified:true,
+    distanceMiles:0.5,propertyType:"SINGLE_FAMILY" as const,condition:"RENOVATED" as const,source:"Synthetic record",verified:true,
+    ...(i===0?{saleEvidenceId:compEvidenceId}:{}),
   })),
   repairs:[{category:"Whole scope",low:10000,expected:20000,high:30000,confidence:0.8,source:"Synthetic quote"}],
-  repairsComplete:true,conditionConfirmed:true,
-},DEFAULT_ASSUMPTIONS,now);
+  repairsComplete:true,conditionConfirmed:true,subjectEvidenceId:"00000000-0000-4000-8000-000000000006",
+};
+const analysis = analyzeDeal(lead,underwriting,DEFAULT_ASSUMPTIONS,now);
 const ctx: OfferContext = {
-  lead,analysis,analysisSnapshotId:snapshotId,currentPolicy:DEFAULT_ASSUMPTIONS,conversationLogged:true,now,
+  lead,analysis,analysisSnapshotId:snapshotId,underwriting,underwritingSnapshot:{id:snapshotId,lead,input:underwriting,analysis},currentPolicy:DEFAULT_ASSUMPTIONS,conversationLogged:true,now,
   intelligence:[{
     id:evidenceId,leadId:lead.id,classification:"VERIFIED_FACTS",category:"ownership",
     statement:"Synthetic seller is record owner.",source:"Synthetic public-record fixture",
     sourceType:"PUBLIC_RECORD",confidence:0.9,capturedAt:now.toISOString(),
     verificationNote:"Synthetic checked deed fixture, not real title evidence.",createdBy:"test",createdAt:now.toISOString(),
+  },{
+    id:compEvidenceId,leadId:lead.id,classification:"VERIFIED_FACTS",category:"comp_sale:comp-0",
+    statement:"Synthetic comp sale source.",source:"Synthetic public sale record",sourceType:"PUBLIC_RECORD",
+    sourceUrl:"https://example.com/synthetic-comp",confidence:0.82,capturedAt:now.toISOString(),
+    verificationNote:"Synthetic source review.",createdBy:"test",createdAt:now.toISOString(),
   }],
 };
 const draft: StoredOffer = {
@@ -83,6 +92,26 @@ test("complete reviewed draft authorizes deterministically without modifying res
   assert.deepEqual(ctx.analysis,before);
   assert.equal(ctx.analysis!.maximumApprovedAcquisitionPrice,null);
 });
+test("offer review packet binds full immutable underwriting inputs and only their linked source evidence",()=>{
+  const json=offerReviewSnapshotJson(draft,ctx);
+  const packet=JSON.parse(json);
+  assert.equal(packet.underwritingSnapshot.id,snapshotId);
+  assert.deepEqual(packet.underwritingSnapshot.input,underwriting);
+  assert.deepEqual(packet.underwritingSnapshot.analysis,analysis);
+  assert.equal(packet.sourceEvidence.length,1);
+  assert.equal(packet.sourceEvidence[0].id,compEvidenceId);
+  assert.equal(packet.sourceEvidence[0].confidence,0.82);
+  assert.ok(packet.missingEvidence.some((item:string)=>item.includes("Referenced underwriting source 00000000-0000-4000-8000-000000000006 is missing")));
+
+  const prepared={...draft,reviewSnapshotJson:json};
+  const hypothesis={...ctx.intelligence[0]!,id:"synthetic-hypothesis",classification:"AI_HYPOTHESIS" as const,
+    category:"unlinked",statement:"Model text must not affect offer economics."};
+  assert.equal(evaluateOffer(prepared,{...ctx,intelligence:[...ctx.intelligence,hypothesis]}).effectiveStatus,"DRAFT",
+    "unlinked model text cannot mutate the frozen offer review packet");
+  assert.equal(evaluateOffer(prepared,{...ctx,intelligence:ctx.intelligence.map(item=>item.id===compEvidenceId?{...item,confidence:0.4}:item)}).effectiveStatus,"INVALIDATED",
+    "a changed linked source invalidates the exact reviewed offer packet");
+  assert.equal(evaluateOffer(prepared,{...ctx,analysisSnapshotId:"00000000-0000-4000-8000-000000000009"}).effectiveStatus,"INVALIDATED");
+});
 test("offer approval rejects above-MAO ceilings and underfunded draft amounts",() => {
   assert.throws(() => validateOfferApproval(draft,{...approval,maximumApprovedAcquisitionPrice:130000.01},ctx),/MAO/);
   assert.throws(() => validateOfferApproval(draft,{...approval,maximumApprovedAcquisitionPrice:109999},ctx),/Draft amount exceeds/);
@@ -127,6 +156,14 @@ test("communication blocks draft, expired, already communicated and stale approv
     assert.throws(() => validateOfferCommunication(unavailable,communication,ctx));
   }
   assert.throws(() => validateOfferCommunication(approved,communication,{...ctx,now:new Date("2026-10-07T12:00:00Z")}),/expired/);
+});
+test("unapproved terms and approvals bound to an old underwriting snapshot cannot be communicated",() => {
+  assert.throws(() => validateOfferCommunication(draft,communication,ctx),
+    /approved|authorized|status/i,"A prepared draft is not permission to communicate terms.");
+  const changedSnapshot = {...ctx,analysisSnapshotId:"00000000-0000-4000-8000-000000000009"};
+  assert.equal(evaluateOffer(approved,changedSnapshot).effectiveStatus,"INVALIDATED");
+  assert.throws(() => validateOfferCommunication(approved,communication,changedSnapshot),
+    /stale|invalidated|snapshot/i,"Changed underwriting invalidates the old authorization before communication.");
 });
 test("operators cannot change an approved price even inside the owner's ceiling",() => {
   for (const amount of [109999,115000,130000]) assert.throws(() => validateOfferCommunication(approved,{...communication,amount},ctx),/exact approved/);

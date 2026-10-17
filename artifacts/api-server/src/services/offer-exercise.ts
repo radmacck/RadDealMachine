@@ -53,6 +53,8 @@ async function exercise() {
     const savedSnapshotId = detail.analysisSnapshotId;
     const savedAnalysis = structuredClone(detail.analysis);
     const savedAnalysisCount = (await db.select().from(analysesTable).where(eq(analysesTable.leadId,id))).length;
+    const [initialSnapshotRow]=await db.select().from(analysesTable).where(eq(analysesTable.id,savedSnapshotId));
+    const immutableSnapshotBefore=structuredClone(initialSnapshotRow?.snapshot);
     const scenarioResult = analyzeDealScenarios(detail.analysis!,20);
     assert.equal(scenarioResult.scenarios.length,3);
     assert.equal(scenarioResult.calculationAvailable,true);
@@ -75,10 +77,27 @@ async function exercise() {
     assert.equal(detail.offers[0]!.effectiveStatus,"DRAFT",JSON.stringify(detail.offers[0]!.blockers));
     assert.deepEqual(detail.analysis,analysisBeforeDraft,"Draft preparation must not alter deterministic underwriting.");
     const firstReview=await offers.getOfferReview(id,firstId);
-    const reviewJson=JSON.parse(firstReview.reviewSnapshotJson) as {purchasePrice:number;assignment:{legalStatus:string};analysisSnapshotId:string};
+    const reviewJson=JSON.parse(firstReview.reviewSnapshotJson) as {
+      purchasePrice:number;assignment:{legalStatus:string};analysisSnapshotId:string;
+      underwritingSnapshot:{id:string;input:UnderwritingInput;analysis:unknown};
+      sourceEvidence:Array<{id:string;confidence:number}>;missingEvidence:string[];
+      downsideScenario:{name:string;mao:number};
+    };
     assert.equal(reviewJson.purchasePrice,draftInput.amount);
     assert.equal(reviewJson.assignment.legalStatus,"NOT_ASSESSED");
     assert.equal(reviewJson.analysisSnapshotId,detail.analysisSnapshotId);
+    assert.equal(reviewJson.underwritingSnapshot.id,savedSnapshotId);
+    assert.deepEqual(reviewJson.underwritingSnapshot.input,detail.underwriting,
+      "Offer packet must contain the exact persisted deterministic underwriting input.");
+    assert.deepEqual(reviewJson.underwritingSnapshot.analysis,detail.analysis,
+      "Offer packet must contain the immutable analysis result referenced by its snapshot id.");
+    const [persistedSnapshot]=await db.select().from(analysesTable).where(eq(analysesTable.id,savedSnapshotId));
+    const persistedSnapshotContent=persistedSnapshot?.snapshot as {input:UnderwritingInput}|undefined;
+    assert.deepEqual(reviewJson.underwritingSnapshot.input,persistedSnapshotContent?.input,
+      "Offer review content must match the immutable analysis row, not a separately reconstructed calculation.");
+    assert.ok(reviewJson.sourceEvidence.length>=7,"Offer packet should resolve source evidence linked to subject, comps and repair scope.");
+    assert.equal(reviewJson.missingEvidence.length,0,"Ready synthetic exercise inputs have no missing evidence.");
+    assert.equal(reviewJson.downsideScenario.name,"LOW");
     await assert.rejects(offers.communicateOffer(id,firstId,{
       version:detail.lead.version,amount:110000,channel:"PHONE",evidence:"Must not succeed before approval.",
       nextAction:"Blocked before approval.",followUpAt:future(1),
@@ -234,6 +253,9 @@ async function exercise() {
     assert.equal(detail.analysisSnapshotId,null);
     assert.equal(detail.lead.stage,"ENRICHING");
     assert.equal(detail.offers.find(o => o.id === finalId)!.status,"INVALIDATED");
+    const [oldSnapshotAfterInputChange]=await db.select().from(analysesTable).where(eq(analysesTable.id,savedSnapshotId));
+    assert.deepEqual(oldSnapshotAfterInputChange?.snapshot,immutableSnapshotBefore,
+      "A material property change invalidates the active approval without rewriting its immutable underwriting snapshot.");
     await assert.rejects(offers.communicateOffer(id,finalId,{...communication,amount:108000,version:detail.lead.version},operator,now),e => (e as {status:number}).status===409);
     assert.equal((await db.select().from(analysesTable).where(eq(analysesTable.leadId,id))).length,1);
     assert.equal((await db.select().from(offersTable).where(eq(offersTable.leadId,id))).length,5);

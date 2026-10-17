@@ -34,7 +34,7 @@ import { createTransactionTemplateReviewRouter } from "../routes/operations";
 import { publicBuyerPortalRouter } from "../routes/distribution";
 import { evaluateAllTransactionReadiness, getTransactionReadinessReport } from "./transaction-readiness";
 import {
-  approveExactDistributionMessage, assertExactDistributionApprovalCurrent,
+  approveExactDistributionMessage, assertExactDistributionApprovalCurrent, buyerConsentSnapshotHash,
   assertDistributionSubmissionReady, applyDistributionProviderEvent,
 } from "./buyer-outreach";
 const actor = {id:`synthetic-transaction:${randomUUID()}`,role:"OWNER"};
@@ -50,6 +50,8 @@ try {
     propertyType:"SINGLE_FAMILY",sqft:1000,beds:3,baths:2,units:1,askingPrice:100000,
     sellerName:"SYNTHETIC ONLY",sellerPhone:"000-000-0000",source:"Synthetic service exercise, not a real deal"},actor.id,now);
   const id = lead.id;
+  const [syntheticLeadRow] = await db.select().from(leadsTable).where(eq(leadsTable.id,id));
+  await db.update(leadsTable).set({payload:{...syntheticLeadRow!.payload,synthetic:true}}).where(eq(leadsTable.id,id));
   const authority = await seller.addIntelligence(id,{classification:"VERIFIED_FACTS",category:"ownership",
     statement:"Synthetic record owner",source:"Synthetic public-record test fixture",sourceType:"PUBLIC_RECORD",confidence:0.9,
     capturedAt:now.toISOString(),verificationNote:"Synthetic comparison only, not actual ownership evidence."},actor.id,now);
@@ -379,8 +381,14 @@ try {
       propertyTypes:["SINGLE_FAMILY"],maxPurchasePrice:200000,maxRepairs:50000,minBeds:2,minSqft:500,maxSqft:2000,closingDays:3,
       counties:[],excludedCounties:[],excludedCities:[],excludedZipCodes:[],minPurchasePrice:0,minUnits:1,maxUnits:1,
       minBaths:1,rehabTolerance:"HEAVY",strategies:["FLIP"],fundingTypes:["CASH"],maxConcurrentDeals:2}},actor);
-  op = await refreshMatches(id,now);
-  assert.equal(op.matches.find(m=>m.buyerId===buyer.id)?.eligible,false);
+   op = await refreshMatches(id,now);
+   assert.equal(op.matches.find(m=>m.buyerId===buyer.id)?.eligible,false);
+   const initialBuyerDemandWork = await db.select().from(dealDecisionWorkItemsTable)
+     .where(and(eq(dealDecisionWorkItemsTable.leadId,id),eq(dealDecisionWorkItemsTable.actionCode,"BUYER_DEMAND")));
+   assert.ok(initialBuyerDemandWork.some(item=>item.status==="READY"),
+     "No eligible acquisition buyer creates a durable buyer-demand work item.");
+   assert.equal(initialBuyerDemandWork.find(item=>item.status==="READY")?.payload.synthetic,true,
+     "Synthetic transaction fixtures remain visibly synthetic and cannot count as real demand.");
    await reviewHandoffs(now);
    buyer = await getBuyerRecord(buyer.id,db,now);
    let qualificationHandoff = (await listHandoffs()).find(h=>h.subjectId===buyer.id)!;
@@ -433,6 +441,20 @@ try {
      buyer = await getBuyerRecord(buyer.id,db,now);
    op = await refreshMatches(id,now);
    assert.equal(op.matches.find(m=>m.buyerId===buyer.id)?.eligible,true);
+   const workspaceDetail = await seller.leadDetail(id,db,now);
+   const workspaceOperations = await dealOperations(id,now);
+   assert.equal(workspaceDetail.lead.id,id);
+   assert.ok(workspaceDetail.calls.some(call=>call.outcome==="CONNECTED"),
+     "Workspace call history must load persisted seller outcomes rather than infer a call from a stage.");
+   const workspaceOffer=workspaceDetail.offers.find(item=>item.id===offerId);
+   assert.equal(workspaceOffer?.effectiveStatus,"INVALIDATED",
+     "The workspace must expose the backend's stale approval state after linked evidence changed.");
+   assert.equal(workspaceOffer?.analysisSnapshotId,approvedSnapshot,
+     "The invalidated offer must retain its original underwriting snapshot lineage.");
+   assert.equal(workspaceOperations.contract?.leadId,id);
+   assert.equal(workspaceOperations.matches.find(item=>item.buyerId===buyer.id)?.eligible,true);
+   assert.ok(workspaceOperations.jobs.some(item=>item.kind==="MATCH_BUYERS"&&item.state==="SUCCEEDED"),
+     "Workspace eligibility and job status must reflect persisted backend records.");
   let competitor = await buyers.createBuyer({name:"SYNTHETIC SECOND QUALIFIED BUYER",email:"synthetic-second@example.com",phone:"",
     source:"Synthetic first-commitment ordering fixture",status:"ACTIVE",criteria:buyer.criteria},actor);
   competitor = await buyers.verifyBuyer(competitor.id,{...verificationInput,version:competitor.version},actor,now);
@@ -472,23 +494,30 @@ try {
      assert.equal(distribution.packet?.location.streetAddress,null);
       const packetHash=createHash("sha256").update(JSON.stringify(distribution.packet)).digest("hex");
       const exactBuyerMessage="SYNTHETIC exercise only: review this redacted buyer packet.";
+       const approvedConsent=buyer.contactPermission!;
+       const approvedRecipientRoute=buyer.email!;
+       const approvalBinding={
+         recipientRoute:approvedRecipientRoute,redactionLevel:"REDACTED" as const,
+         packageAuthorizationId:distribution.packetId!,
+         consentSnapshotHash:buyerConsentSnapshotHash(approvedConsent),
+       };
       const messageApproval=approveExactDistributionMessage({
         buyerId:buyer.id,channel:"EMAIL",packetVersion:distribution.version,packetSnapshotHash:packetHash,
-        exactMessage:exactBuyerMessage,approvedBy:actor.id,approvedAt:now.toISOString(),
+         ...approvalBinding,exactMessage:exactBuyerMessage,approvedBy:actor.id,approvedAt:now.toISOString(),
       });
       assertExactDistributionApprovalCurrent(messageApproval,{
         buyerId:buyer.id,channel:"EMAIL",packetVersion:distribution.version,
-        packetSnapshotHash:packetHash,exactMessage:exactBuyerMessage,
+         packetSnapshotHash:packetHash,...approvalBinding,exactMessage:exactBuyerMessage,
       });
       assert.throws(()=>assertExactDistributionApprovalCurrent(messageApproval,{
         buyerId:buyer.id,channel:"EMAIL",packetVersion:distribution.version+1,
-        packetSnapshotHash:packetHash,exactMessage:exactBuyerMessage,
+         packetSnapshotHash:packetHash,...approvalBinding,exactMessage:exactBuyerMessage,
       }),/stale/,"A changed packet version invalidates message approval.");
        assert.throws(()=>assertDistributionSubmissionReady(messageApproval,{
          buyerId:buyer.id,channel:"EMAIL",packetVersion:distribution.version,
-         packetSnapshotHash:packetHash,exactMessage:exactBuyerMessage,
-       },null,"EMAIL",undefined,now,true),
-        /permission/,"No connected provider or permission means no outbound submission.");
+          packetSnapshotHash:packetHash,...approvalBinding,exactMessage:exactBuyerMessage,
+        },approvedConsent,"EMAIL",undefined,now,true),
+         /provider/,"No connected provider means no outbound submission even with current consent.");
       const acceptedEvent={eventId:"synthetic-provider-accept",providerId:"synthetic-provider",
         providerMessageId:"synthetic-message",state:"PROVIDER_ACCEPTED" as const,occurredAt:now.toISOString()};
       assert.throws(()=>applyDistributionProviderEvent([],{
@@ -612,6 +641,20 @@ try {
         .where(eq(distributionPacketsTable.id,distribution.packetId!));
     const shared = await shareDistributionRecipients(distribution.packetId!,{version:distribution.version,buyerIds:[buyer.id,competitor.id]},operator,now);
     assert.equal(shared.links.length,2);
+     const linkAudit = await db.select().from(auditTable)
+       .where(and(eq(auditTable.entityId,id),eq(auditTable.action,"DISTRIBUTION_LINKS_CREATED")));
+     assert.ok(linkAudit.some(row=>row.actor===operator.id&&/Created or rotated 2 private capability link/.test(row.detail)),
+       "Recipient link creation retains actor and exact operation in audit history.");
+     const issuedRecipients = await db.select().from(distributionRecipientsTable)
+       .where(eq(distributionRecipientsTable.packetId,distribution.packetId!));
+     assert.ok(issuedRecipients.length>=2);
+     assert.ok(issuedRecipients.every(row=>{
+       const history=row.payload.linkHistory as Array<{actor?:string;recordedAt?:string}>|undefined;
+       const permissionSnapshot=row.payload.contactPermissionSnapshot as {checkedAt?:string;channels?:string[]}|undefined;
+       return history?.some(event=>event.actor===operator.id&&event.recordedAt===now.toISOString())
+         && permissionSnapshot?.checkedAt===now.toISOString()
+         && permissionSnapshot.channels?.includes("EMAIL");
+     }),"Each issued recipient capability retains actor/time history and the consent snapshot used.");
      let readinessRuns = await evaluateAllTransactionReadiness(now);
      assert.equal(readinessRuns.length,1);
      assert.equal(readinessRuns[0]?.synthetic,true,"The isolated persisted transaction must remain labelled synthetic.");
@@ -922,7 +965,13 @@ try {
   detail = await seller.leadDetail(id);
   assert.equal(detail.lead.stage,"BUYER_COMMITTED");
   assert.equal(detail.analysis,null);
+  assert.equal(detail.offers.find(item=>item.id===offerId)?.effectiveStatus,"INVALIDATED",
+    "A material linked evidence update must invalidate the approval status returned to the workspace.");
   assert.equal((await dealOperations(id,now)).matches.find(m=>m.buyerId===buyer.id)?.eligible,false);
+  const staleWorkspaceOperations=await dealOperations(id,now);
+  assert.equal(staleWorkspaceOperations.contract?.status,"UNDER_CONTRACT",
+    "Stale underwriting invalidates dependent approval/matching without rewriting executed contract terms.");
+  assert.equal(staleWorkspaceOperations.matches.find(m=>m.buyerId===buyer.id)?.eligible,false);
   detail = await seller.saveUnderwriting(id,{...uw,version:detail.lead.version},actor.id,now);
   assert.equal(detail.lead.stage,"BUYER_COMMITTED");
   assert.equal((await dealOperations(id,now)).contract?.purchasePrice,110000);
@@ -1325,6 +1374,48 @@ try {
    assert.equal(JSON.stringify(firstPacketAgain.snapshot),frozenSnapshot,"later exports cannot mutate prior packet versions");
    assert.equal((redactedPacket as any).export.version,(fullPacket as any).export.version+1);
    assert.match((fullPacket as any).export.contentHash,/^[a-f0-9]{64}$/);
+   const buyerCallLead=await seller.createLead({address:"SYNTHETIC BUYER CALL FOLLOW-UP",city:"Synthetic City",state:"TX",county:"Synthetic County",zip:"75001",
+     propertyType:"SINGLE_FAMILY",sqft:900,beds:2,baths:1,units:1,askingPrice:80000,sellerName:"Synthetic seller",
+     source:"Synthetic buyer-call regression fixture; no real contact."},actor.id,now);
+   let buyerCallDetail=await seller.leadDetail(buyerCallLead.id);
+   const originalSellerDue=buyerCallDetail.lead.followUpAt;
+   const buyerCallInput={version:buyerCallDetail.lead.version,buyerId:buyer.id,idempotencyKey:`synthetic-buyer-call:${buyerCallLead.id}`,
+     outcome:"CONNECTED" as const,notes:"SYNTHETIC buyer call; no actual outreach.",nextAction:"Review the buyer's indicated timing.",
+      followUpAt:future(1),operatorConfidence:0.8};
+   const concurrentBuyerCallReplays=await Promise.all([
+     seller.recordBuyerCall(buyerCallLead.id,buyerCallInput,actor.id,now),
+     seller.recordBuyerCall(buyerCallLead.id,buyerCallInput,actor.id,now),
+   ]);
+   buyerCallDetail=concurrentBuyerCallReplays[0]!;
+   const persistedBuyerCall=buyerCallDetail.calls.find(call=>call.counterpartyKind==="BUYER");
+   assert.ok(persistedBuyerCall?.id);
+   assert.equal(concurrentBuyerCallReplays[1]!.calls.filter(call=>call.counterpartyKind==="BUYER").length,1,
+     "concurrent exact retries must resolve to one persisted buyer call");
+   assert.equal(buyerCallDetail.lead.followUpAt,originalSellerDue,"buyer follow-up must not overwrite the shared seller schedule");
+   assert.equal(persistedBuyerCall?.buyerFollowUpStatus,"OPEN");
+   assert.equal(persistedBuyerCall?.operatorConfidence,0.8,"operator confidence is retained with the original call record");
+   assert.equal(buyerCallDetail.offers.length,0,"logging a buyer call cannot create or authorize an offer");
+   const followups=await seller.listBuyerCallFollowUps(now);
+   assert.ok(followups.items.some(item=>item.callId===persistedBuyerCall?.id));
+   const deskWithBuyerFollowUp=await commandCenter("OWNER",now);
+   assert.ok(deskWithBuyerFollowUp.actions.some(action=>action.id===`BUYER_CALL_FOLLOW_UP:${persistedBuyerCall?.id}`),
+     "open buyer follow-up appears in the command-center next-action queue");
+   const replayedBuyerCall=await seller.recordBuyerCall(buyerCallLead.id,buyerCallInput,actor.id,now);
+   assert.equal(replayedBuyerCall.calls.filter(call=>call.counterpartyKind==="BUYER").length,1,"exact replay remains idempotent");
+   await assert.rejects(seller.recordBuyerCall(buyerCallLead.id,{...buyerCallInput,notes:"Changed replay"},actor.id,now),/already used/);
+   buyerCallDetail=await seller.updateBuyerCallFollowUp(buyerCallLead.id,persistedBuyerCall!.id,
+     {version:buyerCallDetail.lead.version,status:"COMPLETED",note:"SYNTHETIC follow-up reviewed; no commitment recorded."},actor.id,now);
+   const completedBuyerCall=buyerCallDetail.calls.find(call=>call.id===persistedBuyerCall!.id);
+   assert.equal(completedBuyerCall?.buyerFollowUpStatus,"COMPLETED");
+   assert.equal(completedBuyerCall?.buyerFollowUpHistory?.length,2,"follow-up status change is append-only and auditable");
+   assert.equal(buyerCallDetail.lead.followUpAt,originalSellerDue);
+   const repeatedCompletion=await seller.updateBuyerCallFollowUp(buyerCallLead.id,persistedBuyerCall!.id,
+     {version:buyerCallDetail.lead.version,status:"COMPLETED",note:"SYNTHETIC follow-up reviewed; no commitment recorded."},actor.id,now);
+   assert.equal(repeatedCompletion.calls.find(call=>call.id===persistedBuyerCall!.id)?.buyerFollowUpHistory?.length,2,
+     "identical completion retries cannot duplicate follow-up history");
+   await assert.rejects(seller.updateBuyerCallFollowUp(buyerCallLead.id,persistedBuyerCall!.id,
+     {version:buyerCallDetail.lead.version-1,status:"OPEN",note:"Stale edit",dueAt:future(2)},actor.id,now),/changed in another session/);
+   assert.equal((await seller.listBuyerCallFollowUps(now)).items.some(item=>item.callId===persistedBuyerCall?.id),false);
   logger.info("Cancellation/restart PASSED: owner-only, fresh underwriting/approval/communication, distinct attempt, original cancellation/signatures/terms/buyer history retained; CLOSED cannot reopen.");
     logger.info({checks:"persisted document registry and missing-template/private-storage/signing blockers; review PDF bytes separated into protected blob table; party/economic changes stale artifacts; persisted DRAFT → PREPARED → REJECTED/VOID/EXPIRED/REPLACED paths; separately evidenced execution never marks a review worksheet SIGNED; immutable economics hash shared with redacted packet; deadline/evidence exception persistence and terminal work cleanup",readinessSummary},"Full lifecycle persistence exercise PASSED (isolated synthetic schema)");
 } finally { await pool.end(); }

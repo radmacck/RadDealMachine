@@ -19,7 +19,7 @@ export function DistributionPanel({ detail, contract, matches, onChanged }: {
 }) {
   const leadId = detail.lead.id;
   const queryClient = useQueryClient();
-  const { isOwner, canCall } = useAccess();
+  const { isOwner, canCall, canResearch } = useAccess();
   const { toast } = useToast();
   const q = useGetDealDistribution(leadId, {
     query: { queryKey: getGetDealDistributionQueryKey(leadId), enabled: !!contract, refetchInterval: 10_000 },
@@ -34,7 +34,9 @@ export function DistributionPanel({ detail, contract, matches, onChanged }: {
   const [links, setLinks] = useState<{ buyerId: string; buyerName: string; token: string }[]>([]);
   const canShare = isOwner || canCall;
   const qualified = useMemo(() => matches.filter((match) =>
-    match.eligible && (match.destinationKind ?? 'BUYER') === 'BUYER'), [matches]);
+    match.eligible
+      && (match.destinationKind ?? 'BUYER') === 'BUYER'
+      && match.reasons.some((reason) => reason.startsWith('Contact permission: permitted'))), [matches]);
   const distribution = q.data;
 
   if (!contract || contract.status === 'DRAFT') {
@@ -121,9 +123,9 @@ export function DistributionPanel({ detail, contract, matches, onChanged }: {
           <div><p className="eyebrow">Link expiry</p><p className="text-sm">{fmtDate(distribution.expiresAt)}</p></div>
         </div>
         <div className="space-y-1 border-l-2 border-signal pl-3 text-sm">
-          <p><b>Packet is frozen.</b> {distribution.packet?.addressRedacted ? 'Street address is redacted.' : `Street address is disclosed: ${distribution.packet?.location.streetAddress ?? 'missing'}.`} Seller contact details are excluded. Every recipient sees the same terms.</p>
+          <p><b>Packet is frozen.</b> {distribution.packet?.addressRedacted ? 'Street address is redacted.' : canResearch || canCall ? `Street address is disclosed: ${distribution.packet?.location.streetAddress ?? 'missing'}.` : 'Street address is disclosed in the packet snapshot; details are restricted for this role.'} Seller contact details are excluded. Every recipient sees the same terms.</p>
           <p className="text-xs text-muted-foreground">{distribution.packet?.mediaNotice}</p>
-          <p className="text-xs text-muted-foreground">Authorized by {distribution.authorizedBy}; no notification has been sent. Email and SMS providers are not connected. The app has no provider-accepted or delivered message for this packet; portal access is not delivery.</p>
+          <p className="text-xs text-muted-foreground">Authorized by {distribution.authorizedBy}; no notification has been sent. Setup blocker: no permitted email/SMS provider is connected. Configure an approved provider before any external send; this packet has no provider-accepted or delivered message, and portal access is not delivery.</p>
         </div>
         <div className="border border-warn p-3 text-xs" role="status" data-testid="distribution-delivery-gate">
           <b>Delivery gate:</b> drafts, exact-message approvals, provider acceptance, and delivery receipts are separate states. Current state is <b>NOT SENT</b>. Do not treat a copied link or portal access as a sent/delivered message, buyer interest, or commitment.
@@ -146,7 +148,7 @@ export function DistributionPanel({ detail, contract, matches, onChanged }: {
             <p className="eyebrow">Share with qualified buyers</p>
             <p className="text-xs text-muted-foreground">A buyer’s acceptance is non-binding; this packet remains open until the first valid, owner-reviewed commitment.</p>
             {qualified.length === 0 ? <p className="text-sm text-muted-foreground">
-              No current approved buyers match this deal. <Link href="/buyers" className="underline">Add or review a real buyer’s buy box and funding evidence</Link>, have an owner verify current proof, then refresh matching.
+              No acquisition buyer currently passes both package-fit and contact-permission gates. A durable buyer-demand task is queued for acquisition or re-verification; interest and referral destinations do not qualify as commitments. <Link href="/buyers" className="underline">Review the buyer pool</Link>.
             </p> :
               <div className="grid gap-2 sm:grid-cols-2">{qualified.map((match) => {
                 const recipient = distribution.recipients.find((r) => r.buyerId === match.buyerId);
@@ -156,6 +158,16 @@ export function DistributionPanel({ detail, contract, matches, onChanged }: {
                   <span><b>{match.buyerName}</b><span className="block text-xs text-muted-foreground">{recipient ? `Existing link: ${recipient.status.toLowerCase()} (select to rotate if still invited)` : 'Qualified acquisition buyer'}</span></span>
                 </label>;
               })}</div>}
+            <details className="border border-border p-3">
+              <summary className="cursor-pointer text-sm font-medium">Eligibility review for all buyer records ({matches.length})</summary>
+              <div className="mt-3 space-y-2">{matches.map((match) => (
+                <div key={match.buyerId} className="border-l-2 border-border pl-3 text-xs">
+                  <p className="font-semibold">{match.buyerName} · {match.status === 'COMMITTED' ? 'confirmed commitment' : match.status === 'INTERESTED' ? 'expressed interest' : match.eligible ? 'eligible match' : 'not eligible'}</p>
+                  {match.reasons.map((reason, index) => <p key={`${match.buyerId}-reason-${index}`} className="text-muted-foreground">✓ {reason}</p>)}
+                  {match.mismatches.map((reason, index) => <p key={`${match.buyerId}-block-${index}`} className="text-destructive">× {reason}</p>)}
+                </div>
+              ))}</div>
+            </details>
             {share.error && <ErrorNotice error={share.error} />}
             <Button size="sm" disabled={!selected.length || share.isPending} onClick={shareSelected}>
               {share.isPending ? 'Creating…' : `Create private link${selected.length === 1 ? '' : 's'}${selected.length ? ` (${selected.length})` : ''}`}

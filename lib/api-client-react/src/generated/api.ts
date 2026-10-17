@@ -26,6 +26,9 @@ import type {
   Assumptions,
   AuditEvent,
   Buyer,
+  BuyerCallFollowUpUpdate,
+  BuyerCallFollowUps,
+  BuyerCallInput,
   BuyerCapacity,
   BuyerContactPermission,
   BuyerContactPermissionInput,
@@ -1870,6 +1873,174 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
       return useMutation(getRecordCallMutationOptions(options));
     }
 
+export const getRecordBuyerCallUrl = (id: string,) => {
+
+
+
+
+  return `/api/leads/${id}/buyer-calls`
+}
+
+export const recordBuyerCall = async (id: string,
+    buyerCallInput: BuyerCallInput, options?: Parameters<typeof customFetch>[1]): Promise<LeadDetail> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return customFetch<LeadDetail>(getRecordBuyerCallUrl(id),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(buyerCallInput)
+  }
+);}
+
+
+
+
+
+export const getRecordBuyerCallMutationKey = () => ['recordBuyerCall'] as const;
+
+export const getRecordBuyerCallMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof recordBuyerCall>>, TError,RecordBuyerCallMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof recordBuyerCall>>, TError,RecordBuyerCallMutationVariables, TContext> => {
+
+const mutationKey = getRecordBuyerCallMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof recordBuyerCall>>, RecordBuyerCallMutationVariables> = (props) => {
+          const {id,data} = props ?? {};
+
+          return  recordBuyerCall(id,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type RecordBuyerCallMutationResult = NonNullable<Awaited<ReturnType<typeof recordBuyerCall>>>
+    export type RecordBuyerCallMutationBody = BodyType<BuyerCallInput>
+    export type RecordBuyerCallMutationError = ErrorType<unknown>
+    export type RecordBuyerCallMutationVariables = {id: string;data: BodyType<BuyerCallInput>}
+
+    export const useRecordBuyerCall = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof recordBuyerCall>>, TError,RecordBuyerCallMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof recordBuyerCall>>,
+        TError,
+        RecordBuyerCallMutationVariables,
+        TContext
+      > => {
+      return useMutation(getRecordBuyerCallMutationOptions(options));
+    }
+
+export const getUpdateBuyerCallFollowUpUrl = (id: string,
+    callId: string,) => {
+
+
+
+
+  return `/api/leads/${id}/buyer-calls/${callId}/follow-up`
+}
+
+export const updateBuyerCallFollowUp = async (id: string,
+    callId: string,
+    buyerCallFollowUpUpdate: BuyerCallFollowUpUpdate, options?: Parameters<typeof customFetch>[1]): Promise<LeadDetail> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return customFetch<LeadDetail>(getUpdateBuyerCallFollowUpUrl(id,callId),
+  {
+    ...options,
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(buyerCallFollowUpUpdate)
+  }
+);}
+
+
+
+
+
+export const getUpdateBuyerCallFollowUpMutationKey = () => ['updateBuyerCallFollowUp'] as const;
+
+export const getUpdateBuyerCallFollowUpMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateBuyerCallFollowUp>>, TError,UpdateBuyerCallFollowUpMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof updateBuyerCallFollowUp>>, TError,UpdateBuyerCallFollowUpMutationVariables, TContext> => {
+
+const mutationKey = getUpdateBuyerCallFollowUpMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof updateBuyerCallFollowUp>>, UpdateBuyerCallFollowUpMutationVariables> = (props) => {
+          const {id,callId,data} = props ?? {};
+
+          return  updateBuyerCallFollowUp(id,callId,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type UpdateBuyerCallFollowUpMutationResult = NonNullable<Awaited<ReturnType<typeof updateBuyerCallFollowUp>>>
+    export type UpdateBuyerCallFollowUpMutationBody = BodyType<BuyerCallFollowUpUpdate>
+    export type UpdateBuyerCallFollowUpMutationError = ErrorType<unknown>
+    export type UpdateBuyerCallFollowUpMutationVariables = {id: string;callId: string;data: BodyType<BuyerCallFollowUpUpdate>}
+
+    export const useUpdateBuyerCallFollowUp = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateBuyerCallFollowUp>>, TError,UpdateBuyerCallFollowUpMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof updateBuyerCallFollowUp>>,
+        TError,
+        UpdateBuyerCallFollowUpMutationVariables,
+        TContext
+      > => {
+      return useMutation(getUpdateBuyerCallFollowUpMutationOptions(options));
+    }
+
 export const getCreateOfferDraftUrl = (id: string,) => {
 
 
@@ -3036,6 +3207,77 @@ export function useGetCommandCenter<TData = Awaited<ReturnType<typeof getCommand
  ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
 
   const queryOptions = getGetCommandCenterQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getListBuyerCallFollowUpsUrl = () => {
+
+
+
+
+  return `/api/buyer-call-follow-ups`
+}
+
+export const listBuyerCallFollowUps = async ( options?: Parameters<typeof customFetch>[1]): Promise<BuyerCallFollowUps> => {
+
+  return customFetch<BuyerCallFollowUps>(getListBuyerCallFollowUpsUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getListBuyerCallFollowUpsQueryKey = () => {
+    return [
+    `/api/buyer-call-follow-ups`
+    ] as const;
+    }
+
+
+export const getListBuyerCallFollowUpsQueryOptions = <TData = Awaited<ReturnType<typeof listBuyerCallFollowUps>>, TError = ErrorType<unknown>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listBuyerCallFollowUps>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getListBuyerCallFollowUpsQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listBuyerCallFollowUps>>> = ({ signal }) => listBuyerCallFollowUps({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listBuyerCallFollowUps>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type ListBuyerCallFollowUpsQueryResult = NonNullable<Awaited<ReturnType<typeof listBuyerCallFollowUps>>>
+export type ListBuyerCallFollowUpsQueryError = ErrorType<unknown>
+
+
+
+export function useListBuyerCallFollowUps<TData = Awaited<ReturnType<typeof listBuyerCallFollowUps>>, TError = ErrorType<unknown>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listBuyerCallFollowUps>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getListBuyerCallFollowUpsQueryOptions(options)
 
   const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
 

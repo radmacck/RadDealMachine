@@ -32,3 +32,9 @@ Creating a buyer deal-package capability requires current, owner-reviewed permis
 **Why:** Deal fit and buyer identity do not imply consent to receive a private package, and consent can be withdrawn while a capability remains active.
 
 **How to apply:** Gate package-link creation and use separately from match eligibility, retain the exact permission evidence and channels checked, and keep delivery status unconfirmed until a provider supplies a real receipt.
+
+Duplicate normalized buyer email or phone routes are an identity conflict, not evidence that two buyer records are the same person. Keep both records and their history; block match and package-recipient eligibility until a reviewer resolves the conflict. When an active uncommitted deal has no currently eligible acquisition buyer, persist a buyer-demand task even if another higher-priority deal action remains the displayed recommendation.
+
+**Why:** Conflicting recipient identity can disclose a private package to the wrong person, and a single-action recommendation must not hide the independent work needed to find or reverify a buyer.
+
+**How to apply:** Recheck duplicate routes at matching, package-link creation, and portal access. Keep buyer-demand work independently persisted from the primary next action; never let that task itself imply eligibility, permission, outreach, or commitment.

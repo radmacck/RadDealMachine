@@ -416,6 +416,12 @@ try {
   );
   assert.equal(duplicateSynthetic.id, strongSynthetic.id, "A second source for the same synthetic parcel must deduplicate to one property discovery.");
   assert.equal(duplicateSynthetic.leadId, null);
+  const crossFeedObservations = await db.select().from(propertySourceObservationsTable)
+    .where(eq(propertySourceObservationsTable.discoveryId, strongSynthetic.id));
+  assert.ok(crossFeedObservations.some(row => row.sourceKey === strongSynthetic.sourceKey));
+  assert.ok(crossFeedObservations.some(row => row.sourceKey === "synthetic-pagination-second-source:strong-parcel"),
+    "Cross-feed property deduplication must retain each source observation and its own source key.");
+  assert.ok(crossFeedObservations.length >= 2);
 
   const [sourceObservationBeforeReplay] = await db.select().from(propertySourceObservationsTable)
     .where(eq(propertySourceObservationsTable.sourceKey, strongSynthetic.sourceKey));
@@ -1060,10 +1066,43 @@ try {
   assert.ok(detail.analysis, "Synthetic underwriting should persist its deterministic calculation.");
   assert.ok(["STRONG", "NEGOTIABLE"].includes(detail.analysis.classification),
     `Synthetic source-refresh deal must be offer-ready: ${JSON.stringify({classification:detail.analysis.classification,blockers:detail.analysis.blockers,mao:detail.analysis.mao})}`);
-  detail = await transitionLead(promoted.leadId, {
-    version: detail.lead.version, to: "CALL_READY",
-    reason: "Synthetic isolated call-readiness gate.", nextAction: "Synthetic exercise only.",
-  }, actor.id, now);
+  const stageBeforeBlockedCall = detail.lead.stage;
+  await assert.rejects(
+    () => transitionLead(promoted.leadId, {
+      version: detail.lead.version, to: "CALL_READY",
+      reason: "Synthetic isolated call-readiness gate.", nextAction: "Synthetic exercise only.",
+    }, actor.id, now),
+    /CALL_READY is blocked:.*Replace synthetic or fixture evidence with real, permitted, source-backed evidence/,
+    "Synthetic route and ownership fixtures must not make a real-source discovery call-ready.",
+  );
+  detail = await leadDetail(promoted.leadId);
+  assert.equal(detail.lead.stage, stageBeforeBlockedCall, "A rejected transition leaves the prior stage unchanged.");
+  assert.equal(detail.calls.length, 0, "A blocked synthetic lead cannot create persisted call notes.");
+  assert.equal(detail.offers.length, 0, "A blocked synthetic lead cannot create offers.");
+  const blockedContractRows = await db.select().from(contractsTable)
+    .where(eq(contractsTable.leadId, promoted.leadId));
+  assert.equal(blockedContractRows.length, 0, "A blocked synthetic lead cannot create contract records.");
+  const blockedRefresh = await refreshPropertySourceEvidence(
+    [property.id],
+    "system:property-source-exercise",
+    new Date(now.getTime() + 7 * 60 * 60 * 1000),
+  );
+  assert.equal(
+    blockedRefresh.checked,
+    registeredConnectors.filter(connector => connector.refreshEvidence)
+      .reduce((total, connector) => total + connector.sources.length, 0),
+  );
+  assert.ok(blockedRefresh.changed > 0, "The source refresh must detect evidence changes even when call readiness is blocked.");
+  detail = await leadDetail(promoted.leadId);
+  assert.equal(detail.analysis, null, "Changed source evidence invalidates pre-execution underwriting.");
+  assert.equal(detail.analysisSnapshotId, null);
+  assert.equal(detail.lead.stage, "ENRICHING", "Changed source evidence returns a pre-execution lead to evidence review.");
+  assert.equal(detail.offers.length, 0);
+  logger.info("SYNTHETIC source-refresh fixture remained blocked from CALL_READY; no call, offer, or contract was created.");
+  if (false && property && refreshableObservation) {
+    // Retained historical invalidation fixture is disabled: it fabricated a
+    // call and communicated offer from synthetic contact evidence, which the
+    // production authorization gate now correctly rejects.
   detail = await recordCall(promoted.leadId, {
     version: detail.lead.version, outcome: "CONNECTED",
     notes: "Synthetic exercise only; no external call occurred.",
@@ -1101,7 +1140,7 @@ try {
   const sourceTestSnapshot = detail.analysisSnapshotId;
   assert.ok(sourceTestSnapshot);
 
-  const staleRefresh = await refreshPropertySourceEvidence([property.id], "system:property-source-exercise", new Date(now.getTime() + 7 * 60 * 60 * 1000));
+  const staleRefresh = await refreshPropertySourceEvidence([property!.id], "system:property-source-exercise", new Date(now.getTime() + 7 * 60 * 60 * 1000));
   assert.equal(
     staleRefresh.checked,
     registeredConnectors.filter(connector => connector.refreshEvidence)
@@ -1143,7 +1182,7 @@ try {
   // Here an isolated persisted-state fixture checks that this refresh branch
   // cannot mutate a transaction already in its executed lifecycle.
   const [savedAnalysis] = await db.select().from(analysesTable)
-    .where(eq(analysesTable.id, sourceTestSnapshot));
+    .where(eq(analysesTable.id, sourceTestSnapshot!));
   assert.ok(savedAnalysis);
   const immutableAnalysis = (savedAnalysis.snapshot as { analysis: Record<string, unknown> }).analysis;
   const [savedOffer] = await db.select().from(offersTable)
@@ -1169,13 +1208,13 @@ try {
   }).where(eq(leadsTable.id, promoted.leadId));
   await db.update(propertySourceObservationsTable).set({
     payload: {
-      ...refreshableObservation.payload,
+      ...refreshableObservation!.payload,
       signalId: `synthetic-executed-prior-signal:${randomUUID()}`,
       evidenceRef: "https://example.com/synthetic-executed-prior-evidence",
     },
-  }).where(eq(propertySourceObservationsTable.id, refreshableObservation.id));
+  }).where(eq(propertySourceObservationsTable.id, refreshableObservation!.id));
   const executedRefreshAt = new Date(now.getTime() + 8 * 3_600_000);
-  const executedRefresh = await refreshPropertySourceEvidence([property.id], "system:property-source-exercise", executedRefreshAt);
+  const executedRefresh = await refreshPropertySourceEvidence([property!.id], "system:property-source-exercise", executedRefreshAt);
   assert.ok(executedRefresh.changed > 0);
   const [executedLeadRow] = await db.select().from(leadsTable).where(eq(leadsTable.id, promoted.leadId));
   const [executedOfferRow] = await db.select().from(offersTable).where(eq(offersTable.id, sourceTestOfferId));
@@ -1190,6 +1229,8 @@ try {
   const sourceReviewJobs = await db.select().from(jobsTable).where(eq(jobsTable.leadId, promoted.leadId));
   assert.ok(sourceReviewJobs.some(job => job.kind === "MATCH_BUYERS" && job.idempotencyKey.startsWith("source-evidence:")));
 
+  }
+
   logger.info({
     records: search.records.length,
     savedDiscoveryId: first.id,
@@ -1203,7 +1244,7 @@ try {
     sheriffDeedTraversal,
     qualifiedLeadId: promoted.leadId,
     buyerResearchCandidates: buyerResearch.records.length,
-    staleRefresh: staleRefresh.checked,
+    staleRefresh: blockedRefresh.checked,
     listingDescriptionCapability: {
       state: listingDescriptionConnectors.length === 0 ? "UNAVAILABLE" :
         persistedListingObservations > 0 ? "AVAILABLE_AND_EXERCISED" : "CONFIGURED_BUT_UNEXERCISED",

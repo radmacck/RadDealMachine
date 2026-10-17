@@ -1,6 +1,6 @@
 import { eq, and, inArray } from "drizzle-orm";
 import { createHash } from "node:crypto";
-import { db, offersTable, leadsTable, sellerOfferPortalsTable, sellerOfferPortalEventsTable, type OfferRow } from "@workspace/db";
+import { db, offersTable, leadsTable, analysesTable, sellerOfferPortalsTable, sellerOfferPortalEventsTable, type OfferRow } from "@workspace/db";
 import {
   DomainError, assertOfferPermission, validateOfferDraft, validateOfferApproval, offerReviewSnapshotJson,
   validateOfferCommunication, validateOfferWithdrawal,
@@ -13,8 +13,16 @@ import { queueJob } from "./operations-records";
 
 type Tx = Parameters<Parameters<typeof db.transaction>[0]>[0];
 async function context(tx: Tx, detail: LeadDetail, now: Date): Promise<OfferContext> {
+  const [snapshotRow] = detail.analysisSnapshotId
+    ? await tx.select().from(analysesTable).where(and(eq(analysesTable.id,detail.analysisSnapshotId),eq(analysesTable.leadId,detail.lead.id))).limit(1)
+    : [];
+  const snapshotPayload = snapshotRow?.snapshot as {lead?:LeadDetail["lead"];input?:NonNullable<LeadDetail["underwriting"]>;analysis?:NonNullable<LeadDetail["analysis"]>}|undefined;
+  const underwritingSnapshot = snapshotRow && snapshotPayload?.lead && snapshotPayload.input && snapshotPayload.analysis
+    ? {id:snapshotRow.id,lead:snapshotPayload.lead,input:snapshotPayload.input,analysis:snapshotPayload.analysis}
+    : null;
   return {
-    lead:detail.lead,analysis:detail.analysis,analysisSnapshotId:detail.analysisSnapshotId,
+    lead:detail.lead,analysis:detail.analysis,analysisSnapshotId:detail.analysisSnapshotId,underwriting:detail.underwriting,
+    underwritingSnapshot,
     intelligence:detail.intelligence,currentPolicy:await getAssumptions(tx),
     conversationLogged:detail.calls.some(c => c.outcome === "CONNECTED"),now,
   };

@@ -8,3 +8,9 @@ Correlate provider receipts using both provider identity and provider message ID
 **Why:** A callback from a different provider or a late failure must not silently turn an unrelated or already-delivered message into a false delivery state.
 
 **How to apply:** Enforce these rules in provider callback reducers and persisted webhook handlers; keep delivery separate from recipient interest, acceptance, or commitment.
+
+Exact outbound approval must also bind a non-reversible recipient-route fingerprint, channel, immutable package version/hash, redaction level, package authorization identity, consent snapshot, exact content hash, approver, and approval time. At submission, recompute current consent and invalidate on any mismatch; route control alone is not recipient identity verification, and address disclosure remains forbidden through bearer-only recipient links.
+
+**Why:** Recipient identity, consent, and disclosure can change independently of packet terms or message text, and a stale approval must not authorize a later external action.
+
+**How to apply:** Persist these bindings with the outbound operation before provider submission. When no provider is configured, keep the state NOT SENT and expose the exact setup blocker rather than creating simulated acceptance or delivery.

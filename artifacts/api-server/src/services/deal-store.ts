@@ -1,8 +1,8 @@
-import { eq, desc, sql } from "drizzle-orm";
+import { eq, desc, sql, and } from "drizzle-orm";
 import { createHash } from "node:crypto";
 import { queueJob } from "./operations-records";
 import {
-  db, leadsTable, intelligenceTable, analysesTable, callsTable, transitionsTable,
+  db, leadsTable, intelligenceTable, analysesTable, callsTable, buyersTable, transitionsTable,
   auditTable, settingsTable, contractsTable, propertyDiscoveriesTable, propertyQualificationCriteriaTable, type LeadRow,
 } from "@workspace/db";
 import {
@@ -142,8 +142,16 @@ export async function leadDetail(id: string, database: typeof db | Tx = db, now 
     },
   } : null;
   const analysis = evidenceReviewedAnalysis(legacySafeAnalysis,lead,row.underwriting as UnderwritingInput|null,intelligence,now);
+  const [snapshotRow] = row.analysisSnapshotId
+    ? await database.select().from(analysesTable).where(and(eq(analysesTable.id,row.analysisSnapshotId),eq(analysesTable.leadId,id))).limit(1)
+    : [];
+  const snapshotPayload = snapshotRow?.snapshot as {lead?:Lead;input?:UnderwritingInput;analysis?:Analysis}|undefined;
+  const underwritingSnapshot = snapshotRow && snapshotPayload?.lead && snapshotPayload.input && snapshotPayload.analysis
+    ? {id:snapshotRow.id,lead:snapshotPayload.lead,input:snapshotPayload.input,analysis:snapshotPayload.analysis}
+    : null;
   const offers = await offersForLead(database,id,{
-    lead,intelligence,analysis,analysisSnapshotId:row.analysisSnapshotId,
+    lead,intelligence,analysis,analysisSnapshotId:row.analysisSnapshotId,underwriting:row.underwriting as UnderwritingInput|null,
+    underwritingSnapshot,
     currentPolicy:await getAssumptions(database),conversationLogged:calls.some(c => c.payload.outcome === "CONNECTED"),now,
   });
   const detail = {
@@ -807,6 +815,76 @@ export async function recordCall(id: string, input: CallInput, actor: string, no
     if (input.outcome==="CONNECTED") await queueJob(tx,"PREPARE_BRIEF",id,`conversation-brief:${id}:${row.version+1}`,actor);
     return leadDetail(id,tx,now);
   });
+}
+
+export async function recordBuyerCall(id: string, input: {
+  version:number; buyerId:string; idempotencyKey:string; outcome:CallInput["outcome"];
+  notes:string; nextAction:string; occurredAt?:string; followUpAt:string; operatorConfidence:number;
+}, actor:string, now = new Date()):Promise<LeadDetail> {
+  const occurredAt=input.occurredAt ? new Date(input.occurredAt) : now;
+  const dueAt=new Date(input.followUpAt);
+  if (!Number.isFinite(occurredAt.getTime()) || occurredAt.getTime()>now.getTime()) throw new DomainError("Call time must be valid and no later than recording time.",400);
+  if (!Number.isFinite(dueAt.getTime()) || dueAt.getTime()<=now.getTime()) throw new DomainError("Buyer follow-up must have a future due date.",400);
+  const fingerprint=createHash("sha256").update(stableJson(input)).digest("hex");
+  return db.transaction(async tx=>{
+    const row=await lockedLead(tx,id,undefined,true);
+    const priorRows=await tx.select().from(callsTable).where(eq(callsTable.leadId,id));
+    const prior=priorRows.find(call=>call.payload.idempotencyKey===input.idempotencyKey);
+    if(prior){
+      if(prior.actor!==actor||prior.payload.submissionHash!==fingerprint) throw new DomainError("Call submission key was already used for different content or by another operator.",409);
+      return leadDetail(id,tx,now);
+    }
+    if(row.version!==input.version) throw new DomainError("Deal changed in another session. Reload before recording this call.",409);
+    const [buyer]=await tx.select().from(buyersTable).where(eq(buyersTable.id,input.buyerId));
+    if(!buyer) throw new DomainError("Buyer record not found.",404);
+    if(buyer.payload.synthetic===true) throw new DomainError("Synthetic buyer fixtures cannot be recorded as real calls.",409);
+    const record={version:input.version,counterpartyKind:"BUYER" as const,buyerId:input.buyerId,
+      idempotencyKey:input.idempotencyKey,submissionHash:fingerprint,outcome:input.outcome,
+      notes:input.notes,nextAction:input.nextAction,occurredAt:occurredAt.toISOString(),followUpAt:dueAt.toISOString(),operatorConfidence:input.operatorConfidence,
+      actor,evidenceSource:"OPERATOR_ENTERED_BUYER_CALL",evidenceClassification:"OBSERVED",
+      buyerFollowUpStatus:"OPEN",buyerFollowUpNote:"Follow-up scheduled with the buyer.",
+      buyerFollowUpHistory:[{status:"OPEN",actor,at:now.toISOString(),note:"Follow-up scheduled with the buyer.",dueAt:dueAt.toISOString()}]};
+    const [saved]=await tx.insert(callsTable).values({leadId:id,actor,payload:jsonRecord(record)}).returning({id:callsTable.id});
+    await tx.update(callsTable).set({payload:{...record,id:saved.id}}).where(eq(callsTable.id,saved.id));
+    await tx.update(leadsTable).set({version:row.version+1,updatedAt:now}).where(eq(leadsTable.id,id));
+    await audit(tx,actor,"BUYER_CALL_RECORDED",id,JSON.stringify({callId:saved.id,buyerId:input.buyerId,outcome:input.outcome,dueAt:dueAt.toISOString(),dealVersion:row.version+1,offerAuthorityChanged:false,sellerFollowUpChanged:false}));
+    return leadDetail(id,tx,now);
+  });
+}
+
+export async function updateBuyerCallFollowUp(id:string,callId:string,input:{version:number;status:"OPEN"|"COMPLETED";note:string;dueAt?:string|null},actor:string,now=new Date()):Promise<LeadDetail>{
+  return db.transaction(async tx=>{
+    const row=await lockedLead(tx,id,undefined,true);
+    if(row.version!==input.version) throw new DomainError("Deal changed in another session. Reload before updating this follow-up.",409);
+    const [call]=await tx.select().from(callsTable).where(eq(callsTable.id,callId)).for("update");
+    if(!call||call.leadId!==id||call.payload.counterpartyKind!=="BUYER") throw new DomainError("Buyer call follow-up not found.",404);
+    const due=input.dueAt ? new Date(input.dueAt) : call.payload.followUpAt ? new Date(String(call.payload.followUpAt)) : null;
+    if(input.status==="OPEN"&&(!due||!Number.isFinite(due.getTime())||due.getTime()<=now.getTime())) throw new DomainError("An open buyer follow-up needs a future due date.",400);
+    if(call.payload.buyerFollowUpStatus===input.status&&call.payload.buyerFollowUpNote===input.note
+      &&String(call.payload.followUpAt??"")===String(due?.toISOString()??"")) return leadDetail(id,tx,now);
+    const priorHistory=Array.isArray(call.payload.buyerFollowUpHistory)?call.payload.buyerFollowUpHistory:[];
+    const history=[...priorHistory,{status:input.status,actor,at:now.toISOString(),note:input.note,dueAt:due?.toISOString()??null}];
+    await tx.update(callsTable).set({payload:{...call.payload,buyerFollowUpStatus:input.status,buyerFollowUpNote:input.note,buyerFollowUpHistory:history,followUpAt:due?.toISOString()??null}}).where(eq(callsTable.id,callId));
+    await tx.update(leadsTable).set({version:row.version+1,updatedAt:now}).where(eq(leadsTable.id,id));
+    await audit(tx,actor,"BUYER_CALL_FOLLOW_UP_UPDATED",id,JSON.stringify({callId,status:input.status,note:input.note,dueAt:due?.toISOString()??null,historyCount:history.length}));
+    return leadDetail(id,tx,now);
+  });
+}
+
+export async function listBuyerCallFollowUps(now=new Date()) {
+  const [calls,leads]=await Promise.all([db.select().from(callsTable),db.select().from(leadsTable)]);
+  const leadById=new Map(leads.map(lead=>[lead.id,lead]));
+  return {generatedAt:now.toISOString(),items:calls.flatMap(call=>{
+    const p=call.payload,lead=leadById.get(call.leadId);
+    if(p.counterpartyKind!=="BUYER"||p.buyerFollowUpStatus!=="OPEN"||!lead||typeof p.buyerId!=="string"||typeof p.followUpAt!=="string") return [];
+    return [{leadId:lead.id,callId:call.id,buyerId:p.buyerId,address:`${lead.payload.city}, ${lead.payload.state}`,
+      outcome:p.outcome as CallInput["outcome"],notes:String(p.notes??""),nextAction:String(p.nextAction??""),
+      dueAt:p.followUpAt,status:"OPEN" as const,actor:call.actor,
+      updatedAt:typeof p.buyerFollowUpHistory==="object"&&Array.isArray(p.buyerFollowUpHistory)
+        ? String((p.buyerFollowUpHistory.at(-1) as {at?:string})?.at??call.createdAt.toISOString()) : call.createdAt.toISOString(),
+      updatedBy:typeof p.buyerFollowUpHistory==="object"&&Array.isArray(p.buyerFollowUpHistory)
+        ? String((p.buyerFollowUpHistory.at(-1) as {actor?:string})?.actor??call.actor) : call.actor}];
+  }).sort((a,b)=>Date.parse(a.dueAt)-Date.parse(b.dueAt))};
 }
 export async function callQueue(now = new Date()) {
   const rows = await db.select().from(leadsTable).where(sql`${leadsTable.stage} in ('CALL_READY','CONTACTED','CONVERSATION','OFFER_READY','OFFER_SENT','NEGOTIATING','CONTRACT_PENDING')`);

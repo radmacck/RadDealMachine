@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { evaluatePropertyContactabilityGate } from "./property-discovery-store";
+import { evaluatePropertyContactabilityGate, hasLegitimateSellerCallRoute } from "./property-contactability-gate";
 
 const now = new Date("2026-10-16T12:00:00Z");
 const route = (overrides: Record<string, unknown> = {}) => ({
@@ -61,6 +61,21 @@ test("route permission and freshness are separate gates from owner/identity evid
   assert.ok(missingRoute.some(item => /No direct phone route/i.test(item)));
 });
 
+test("a source-only discovery with no reviewed contact case cannot qualify for CALL NEXT", () => {
+  const gaps = evaluatePropertyContactabilityGate(evidence({
+    sourceName: "Philadelphia public property discovery",
+    sourceType: "PUBLIC_RECORD",
+    identityMatch: "UNKNOWN",
+    permissionBasis: "UNKNOWN",
+    evidenceReference: null,
+    candidateRoutes: [],
+  }), now);
+
+  assert.ok(gaps.some(item => /Match the seller to the property with current, source-backed identity evidence/i.test(item)));
+  assert.ok(gaps.some(item => /Document the source terms or other lawful basis/i.test(item)));
+  assert.ok(gaps.some(item => /No direct phone route candidate/i.test(item)));
+});
+
 test("seller-provided evidence uses its cited conversation record without requiring a public URL", () => {
   const gaps = evaluatePropertyContactabilityGate(evidence({
     sourceType: "SELLER_PROVIDED",
@@ -68,4 +83,13 @@ test("seller-provided evidence uses its cited conversation record without requir
     evidenceReference: "seller-call-note-2026-10-15",
   }), now);
   assert.ok(!gaps.some(item => /public records\/pages also require their source URL/i.test(item)));
+});
+
+test("only a fresh, permission-backed, identity-matched, conflict-free route is legitimate for seller calling", () => {
+  assert.equal(hasLegitimateSellerCallRoute(evidence(), now), true);
+  assert.equal(hasLegitimateSellerCallRoute(evidence({ identityMatch: "RECORDED_OWNER_ONLY" }), now), false);
+  assert.equal(hasLegitimateSellerCallRoute(evidence({ observedAt: "2025-01-01T00:00:00Z" }), now), false);
+  assert.equal(hasLegitimateSellerCallRoute(evidence({ permissionBasis: "UNKNOWN" }), now), false);
+  assert.equal(hasLegitimateSellerCallRoute(evidence({ identityMatch: "CONFLICTING" }), now), false);
+  assert.equal(hasLegitimateSellerCallRoute(evidence({ candidateRoutes: [] }), now), false);
 });

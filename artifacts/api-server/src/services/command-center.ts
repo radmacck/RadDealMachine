@@ -6,9 +6,10 @@ import {
   type IntelligenceLoopInput,
   type CommandAction,
 } from "@workspace/deal-domain";
-import { listLeads, leadDetail, callQueue } from "./deal-store";
+import { listLeads, leadDetail, callQueue, listBuyerCallFollowUps } from "./deal-store";
 import { dealOperations } from "./matching-store";
 import { allBuyerRecords, jobRecord } from "./operations-records";
+import { hasLegitimateSellerCallRoute, type SellerContactabilityEvidence } from "./property-contactability-gate";
 import { db, jobsTable } from "@workspace/db";
 import { and, count, desc, eq, ne } from "drizzle-orm";
 import { listPropertyDiscoveries } from "./property-discovery-store";
@@ -114,7 +115,7 @@ function sourceDiscoveryLane(
 export async function commandCenter(role: string, now = new Date()) {
   const allPropertyDiscoveries = await listPropertyDiscoveries({
     marketKey: "PHILADELPHIA_PA",
-    statuses: ["RELEVANT_CANDIDATE", "QUALIFIED_LEAD"],
+    statuses: ["DISCOVERED_PROPERTY", "RELEVANT_CANDIDATE", "QUALIFIED_LEAD"],
     limit: 5,
   });
   const propertyDiscoveries = allPropertyDiscoveries;
@@ -151,7 +152,7 @@ export async function commandCenter(role: string, now = new Date()) {
     return persistIntelligenceDecision(decisionInput, "system:command-center", now);
   }));
   const candidateDecisions = await Promise.all(propertyDiscoveries.records
-    .filter(candidate => candidate.status === "RELEVANT_CANDIDATE" && !candidate.leadId)
+    .filter(candidate => ["DISCOVERED_PROPERTY", "RELEVANT_CANDIDATE"].includes(candidate.status) && !candidate.leadId)
     .map(candidate => {
       const source = candidate as unknown as {
         updatedAt?: string; createdAt?: string;
@@ -172,6 +173,8 @@ export async function commandCenter(role: string, now = new Date()) {
           observedAt: source.sourceObservations?.[0]?.lastObservedAt ?? source.updatedAt ?? source.createdAt ?? null,
           missingInformation: candidate.missingInformation,
           signalRefs: candidate.signals.map(signal => signal.evidenceRef ?? `signal:${signal.id}`),
+          contactRouteEstablished: hasLegitimateSellerCallRoute(
+            candidate.contactResearchCase as SellerContactabilityEvidence | undefined, now),
         },
         now,
       };
@@ -492,6 +495,9 @@ export async function commandCenter(role: string, now = new Date()) {
     if (code === "QUALIFY_DISCOVERY" || code === "REVIEW_CANDIDATE") {
       return "A human reviewer must inspect source provenance and explicitly promote or pass; opening this link does not create a lead.";
     }
+    if (code === "RESEARCH_CONTACT" || code === "REFRESH_CONTACT") {
+      return "Research only through a permitted source; record the source, observation time, identity evidence, permission basis, freshness and conflicts. Do not contact the seller unless all readiness gates pass.";
+    }
     if (code === "RECONCILE_EVIDENCE") return "A reviewer must resolve the conflict with dated evidence while retaining the conflicting history.";
     if (!required) return "No consequential action is implied. The system may prepare or organize evidence; verify the saved result before relying on it.";
     if (code === "CALL_NEXT") return "An operator must place the call and explicitly record the actual outcome; the link does not call the seller.";
@@ -499,7 +505,9 @@ export async function commandCenter(role: string, now = new Date()) {
     if (code === "TRANSACTION_NEXT") return "An authorized owner must review the current terms and evidence; signatures, commitment and funds are not inferred.";
     return `Human review or authorization is required before: ${title}.`;
   };
-  const ctaForDecision = (category: CommandAction["category"]) => ({
+  const ctaForDecision = (category: CommandAction["category"], code?: string) => code === "RESEARCH_CONTACT"
+    ? "Research seller contact"
+    : ({
     CALL: "Open seller call",
     FOLLOW_UP: "Open follow-up",
     OFFER_APPROVAL: "Review offer authority",
@@ -526,7 +534,7 @@ export async function commandCenter(role: string, now = new Date()) {
       priority: next.priority,
       title: next.title,
       href: next.href,
-      cta: ctaForDecision(category),
+      cta: ctaForDecision(category, next.code),
       currentState: decision.currentState,
       responsibleRole: next.responsibleRole,
       dueAt: existing?.dueAt ?? null,
@@ -552,7 +560,7 @@ export async function commandCenter(role: string, now = new Date()) {
       reason: next.reason,
       leadId: decision.leadId,
       href: next.href,
-      cta: ctaForDecision(category),
+      cta: ctaForDecision(category, next.code),
       dueAt: existing?.dueAt ?? null,
       workGuidance: guidance,
     }];
@@ -615,6 +623,13 @@ export async function commandCenter(role: string, now = new Date()) {
     }
   }
   const commandActions = [...preservedActions, ...decisionActions, ...calendarActions]
+    .concat((await listBuyerCallFollowUps(now)).items.map(item=>({
+      id:`BUYER_CALL_FOLLOW_UP:${item.callId}`,category:"FOLLOW_UP" as const,
+      priority:Date.parse(item.dueAt)<=now.getTime()?160:110,
+      title:`Buyer follow-up: ${item.nextAction}`,
+      reason:`Open buyer call follow-up due ${item.dueAt}; seller schedule and offer authority are unchanged.`,
+      leadId:item.leadId,href:`/leads/${item.leadId}?work=call`,cta:"Review buyer follow-up",dueAt:item.dueAt,
+    })))
     .sort((a,b)=>b.priority-a.priority||a.id.localeCompare(b.id));
   const displayDeals = commandDeals.map(deal => {
     const decision = decisionByLead.get(deal.lead.id);

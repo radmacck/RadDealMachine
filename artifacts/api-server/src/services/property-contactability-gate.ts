@@ -1,6 +1,7 @@
 import { reconcileContactPaths, type PropertyContactPath } from "@workspace/property-sources";
 
 export type SellerContactabilityEvidence = {
+  status: "OPEN" | "EVIDENCE_RECORDED" | "NO_DIRECT_ROUTE_FOUND" | "NEEDS_REVIEW" | "BLOCKED";
   sourceName: string;
   sourceType: "PUBLIC_RECORD" | "PUBLIC_PAGE" | "OWNER_SUPPLIED" | "SELLER_PROVIDED" | "MANUAL_RESEARCH" | "INFERRED" | "OTHER";
   sourceUrl: string | null;
@@ -17,6 +18,10 @@ export function evaluatePropertyContactabilityGate(caseRecord: SellerContactabil
   const routes = reconcileContactPaths(caseRecord.candidateRoutes ?? [], now);
   const phones = routes.filter(path => path.channel === "PHONE");
   const gaps: string[] = [];
+  if (!["PUBLIC_RECORD", "PUBLIC_PAGE", "OWNER_SUPPLIED", "SELLER_PROVIDED", "MANUAL_RESEARCH", "INFERRED", "OTHER"].includes(caseRecord.sourceType))
+    gaps.push("Select a recognized evidence source type.");
+  if (!["UNKNOWN", "PUBLIC_SOURCE_TERMS", "CONSENT", "OTHER_DOCUMENTED", "PROHIBITED"].includes(caseRecord.permissionBasis))
+    gaps.push("Document a recognized permission basis before using the route.");
   const requiresPublicUrl = caseRecord.sourceType === "PUBLIC_RECORD" || caseRecord.sourceType === "PUBLIC_PAGE";
   if (!caseRecord.sourceName.trim() || !caseRecord.evidenceReference?.trim() || (requiresPublicUrl && !caseRecord.sourceUrl))
     gaps.push("Add the exact ownership/identity source record and evidence reference; public records/pages also require their source URL.");
@@ -55,4 +60,12 @@ export function evaluatePropertyContactabilityGate(caseRecord: SellerContactabil
   if (phones.some(path => path.confidence < 0.85))
     gaps.push("Route confidence must be at least 0.85 for owner confirmation.");
   return [...new Set(gaps)];
+}
+
+export function hasLegitimateSellerCallRoute(
+  caseRecord: SellerContactabilityEvidence | null | undefined,
+  now: Date,
+): boolean {
+  return !!caseRecord && caseRecord.status === "EVIDENCE_RECORDED" &&
+    evaluatePropertyContactabilityGate(caseRecord, now).length === 0;
 }

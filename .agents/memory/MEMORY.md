@@ -1,7 +1,7 @@
 - [Canonical build direction](build-direction.md) — reuse-first two-sided engine; preserve approved canvas flows, verified vertical slices, and the Oct 4–18 delivery window.
-- [Buyer verification boundary](buyer-verification.md) — self-reports are indicated only; current matching approval requires owner-reviewed dated evidence.
+- [Buyer verification boundary](buyer-verification.md) — self-reports are indicated only; conflicts block eligibility, and no-match demand remains a separate persisted task.
 - [Domain interoperability](domain-interoperability.md) — wire dates stay strings; calendar dates differ from timestamps across reusable adapters.
-- [Offer authority boundaries](offer-authority.md) — a ceiling is not permission to vary commercial terms; preserve prior communication when approval changes.
+- [Offer authority boundaries](offer-authority.md) — approval binds exact terms and a persisted, source-linked underwriting snapshot; preserve prior communication when authority changes.
 - [Destination activity boundaries](destination-activity.md) — referral events stay independent of buyer authority and closing; profile fee quotes never imply receipt.
 - [Managed workflow port conflicts](workflow-port-conflicts.md) — a failed workflow can coexist with an old listener; verify process ownership before restarting.
 - [Executed transaction boundaries](executed-transactions.md) — supplemental reasoning and ordinary coordination cannot erase financial authority or external commitments.
@@ -14,6 +14,7 @@
 - [Call replay fingerprints](call-replay-fingerprints.md) — fingerprint original submitted call input before enriching its persisted record, so exact retries remain idempotent.
 - [Buyer address disclosure](buyer-address-disclosure.md) — bearer-only buyer links do not prove reader identity; keep street addresses redacted externally unless identity-verified access exists.
 - [Canonical deal versioning](canonical-deal-versioning.md) — the lead row is the aggregate state authority; subordinate module versions protect snapshots and transitions retain audit edges.
-- [OpenAPI document metadata size limit](openapi-document-metadata-limit.md) — rich transaction-document metadata can exceed TypeScript's generated command-center response size; keep it behind a focused boundary.
+- [OpenAPI aggregate response type size limit](openapi-document-metadata-limit.md) — keep new workflow payloads behind focused endpoints; broad generated command-center types can hit TS7056.
 - [Actionable alerts](operational-alerts.md) — deduplicate by canonical source action; keep snooze/dismiss durable and auditable, and never send external notifications implicitly.
-- [Outbound provider receipts](outbound-provider-receipts.md) — correlate receipts by provider and message ID; terminal events cannot be rewritten and retries use a new message ID.
+- [Outbound provider receipts](outbound-provider-receipts.md) — exact approval binds recipient route, redaction, authorization, consent and content; retries use new provider message IDs.
+- [Human decision boundaries](human-decision-boundaries.md) — automation prepares and queues work; humans make calls, approve/communicate terms, authorize consequential actions, and review clauses.

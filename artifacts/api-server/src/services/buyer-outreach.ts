@@ -70,6 +70,10 @@ export type ExactMessageApproval = {
   channel: "EMAIL" | "SMS";
   packetVersion: number;
   packetSnapshotHash: string;
+  recipientRouteHash: string;
+  redactionLevel: "REDACTED" | "ADDRESS_DISCLOSED";
+  packageAuthorizationId: string;
+  consentSnapshotHash: string;
   exactMessageHash: string;
   approvedBy: string;
   approvedAt: string;
@@ -77,20 +81,37 @@ export type ExactMessageApproval = {
 };
 
 const sha256 = (value: string) => createHash("sha256").update(value, "utf8").digest("hex");
+const recipientRouteHash = (route: string) => sha256(route.trim().toLowerCase());
+export function buyerConsentSnapshotHash(permission: BuyerContactPermission | null | undefined) {
+  if (!permission) return sha256("missing-consent");
+  return sha256(JSON.stringify({
+    status: permission.status,
+    channels: [...permission.channels].sort(),
+    evidenceUrl: permission.evidenceUrl ?? null,
+    source: permission.source ?? null,
+    capturedAt: permission.capturedAt ?? null,
+    validUntil: permission.validUntil ?? null,
+  }));
+}
 
 /** Create only at an explicit human approval action; bind approval to exact text, recipient, channel and packet snapshot. */
 export function approveExactDistributionMessage(input: {
   buyerId: string; channel: "EMAIL" | "SMS"; packetVersion: number; packetSnapshotHash: string;
+  recipientRoute: string; redactionLevel: "REDACTED" | "ADDRESS_DISCLOSED";
+  packageAuthorizationId: string; consentSnapshotHash: string;
   exactMessage: string; approvedBy: string; approvedAt: string;
 }): ExactMessageApproval {
   if (!input.buyerId || !input.approvedBy || !input.exactMessage.trim() || input.packetVersion < 1 ||
-    !/^[a-f0-9]{64}$/.test(input.packetSnapshotHash) || !Number.isFinite(Date.parse(input.approvedAt))) {
-    throw new Error("Exact-message approval requires a recipient, approver, current packet snapshot, and non-empty message.");
+    !/^[a-f0-9]{64}$/.test(input.packetSnapshotHash) || !/^[a-f0-9]{64}$/.test(input.consentSnapshotHash) ||
+    !input.recipientRoute.trim() || !input.packageAuthorizationId || !Number.isFinite(Date.parse(input.approvedAt))) {
+    throw new Error("Exact-message approval requires recipient route, redaction, package authorization, current consent, packet snapshot, approver, and non-empty message.");
   }
   const exactMessageHash = sha256(input.exactMessage);
   const bound = {
     buyerId: input.buyerId, channel: input.channel, packetVersion: input.packetVersion,
-    packetSnapshotHash: input.packetSnapshotHash, exactMessageHash, approvedBy: input.approvedBy,
+    packetSnapshotHash: input.packetSnapshotHash, recipientRouteHash: recipientRouteHash(input.recipientRoute),
+    redactionLevel: input.redactionLevel, packageAuthorizationId: input.packageAuthorizationId,
+    consentSnapshotHash: input.consentSnapshotHash, exactMessageHash, approvedBy: input.approvedBy,
     approvedAt: input.approvedAt,
   };
   return { ...bound, approvalHash: sha256(JSON.stringify(bound)) };
@@ -98,30 +119,48 @@ export function approveExactDistributionMessage(input: {
 
 export function assertExactDistributionApprovalCurrent(
   approval: ExactMessageApproval,
-  current: { buyerId: string; channel: "EMAIL" | "SMS"; packetVersion: number; packetSnapshotHash: string; exactMessage: string },
+  current: {
+    buyerId: string; channel: "EMAIL" | "SMS"; packetVersion: number; packetSnapshotHash: string;
+    recipientRoute: string; redactionLevel: "REDACTED" | "ADDRESS_DISCLOSED";
+    packageAuthorizationId: string; consentSnapshotHash: string; exactMessage: string;
+  },
 ) {
   const expected = approveExactDistributionMessage({
     ...current, approvedBy: approval.approvedBy, approvedAt: approval.approvedAt,
   });
   if (approval.buyerId !== expected.buyerId || approval.channel !== expected.channel ||
     approval.packetVersion !== expected.packetVersion || approval.packetSnapshotHash !== expected.packetSnapshotHash ||
+    approval.recipientRouteHash !== expected.recipientRouteHash || approval.redactionLevel !== expected.redactionLevel ||
+    approval.packageAuthorizationId !== expected.packageAuthorizationId ||
+    approval.consentSnapshotHash !== expected.consentSnapshotHash ||
     approval.exactMessageHash !== expected.exactMessageHash || approval.approvalHash !== expected.approvalHash) {
-    throw new Error("Exact-message approval is stale or does not match the current recipient, channel, packet, and message.");
+    throw new Error("Exact-message approval is stale or does not match the current recipient route, channel, package version/redaction/authorization, consent, and message.");
   }
 }
 
 /** Provider submit is forbidden unless the exact approval, current channel permission, and provider are all present. */
 export function assertDistributionSubmissionReady(
   approval: ExactMessageApproval | null,
-  current: { buyerId: string; channel: "EMAIL" | "SMS"; packetVersion: number; packetSnapshotHash: string; exactMessage: string },
+  current: {
+    buyerId: string; channel: "EMAIL" | "SMS"; packetVersion: number; packetSnapshotHash: string;
+    recipientRoute: string; redactionLevel: "REDACTED" | "ADDRESS_DISCLOSED";
+    packageAuthorizationId: string; consentSnapshotHash: string; exactMessage: string;
+  },
   permission: BuyerContactPermission | null | undefined,
   channel: "EMAIL" | "SMS",
   provider: BuyerOutreachProvider | undefined,
   now = new Date(),
   contactRouteVerified = false,
+  recipientIdentityVerified = false,
 ) {
   if (!approval || approval.channel !== channel) throw new Error("Exact recipient message approval is required before provider submission.");
+  if (current.consentSnapshotHash !== buyerConsentSnapshotHash(permission)) {
+    throw new Error("Contact consent changed after approval; exact-message approval is stale.");
+  }
   assertExactDistributionApprovalCurrent(approval, current);
+  if (current.redactionLevel === "ADDRESS_DISCLOSED" && !recipientIdentityVerified) {
+    throw new Error("Address-disclosing package requires independently verified recipient identity; submission is blocked.");
+  }
   if (!contactRouteVerified) throw new Error("The recipient route is not independently verified; message remains unsent.");
   const permissionBlock = buyerOutreachPermissionBlocker(permission, channel, now);
   if (permissionBlock) throw new Error(permissionBlock);

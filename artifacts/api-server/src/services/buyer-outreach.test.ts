@@ -4,6 +4,7 @@ import {
   assertBuyerOutreachTransition,
   buyerOutreachPermissionBlocker,
   buyerOutreachReadiness,
+  buyerConsentSnapshotHash,
   registerBuyerOutreachProvider,
   approveExactDistributionMessage,
   assertExactDistributionApprovalCurrent,
@@ -54,6 +55,31 @@ test("unconnected buyer outreach remains explicitly not sent and permission-bloc
   assert.equal(readiness.providerStatus, "NOT_CONNECTED");
   assert.deepEqual(readiness.availableChannels, []);
   assert.ok(readiness.missingCapabilities.some(reason => reason.includes("permission")));
+  assert.ok(readiness.missingCapabilities.some(reason => reason.includes("provider")));
+});
+
+test("verified route and current permission cannot make a disconnected provider ready", t => {
+  const now = new Date("2026-10-16T12:00:00.000Z");
+  const unregister = registerBuyerOutreachProvider({
+    id: "synthetic-disconnected-provider",
+    connected: false,
+    channels: ["EMAIL"],
+    async send() { throw new Error("Disconnected provider must never be invoked."); },
+  });
+  t.after(unregister);
+  const readiness = buyerOutreachReadiness({
+    email: "buyer@example.invalid",
+    contactRouteVerified: true,
+    contactPermission: {
+      status: "GRANTED", channels: ["EMAIL"], evidenceUrl: "https://example.invalid/synthetic-consent",
+      source: "synthetic owner-reviewed permission", capturedAt: "2026-10-16T10:00:00Z",
+      validUntil: "2026-10-20T10:00:00Z",
+    },
+  }, now);
+  assert.equal(readiness.status, "NO_CONNECTED_PROVIDER");
+  assert.equal(readiness.deliveryStatus, "NOT_SENT");
+  assert.equal(readiness.workflowState, "DRAFT");
+  assert.deepEqual(readiness.availableChannels, []);
   assert.ok(readiness.missingCapabilities.some(reason => reason.includes("provider")));
 });
 
@@ -126,9 +152,16 @@ test("source and consent do not substitute for independent recipient-route verif
 });
 
 test("distribution approval is bound to exact buyer, channel, packet version, snapshot and text", () => {
+  const consent = {
+    status: "GRANTED" as const, channels: ["EMAIL" as const],
+    evidenceUrl: "https://example.com/consent", source: "synthetic owner-reviewed consent",
+    capturedAt: "2026-10-15T10:00:00.000Z", validUntil: "2026-10-20T10:00:00.000Z",
+  };
   const current = {
     buyerId: "buyer-1", channel: "EMAIL" as const, packetVersion: 4,
     packetSnapshotHash: "a".repeat(64), exactMessage: "Approved terms; redacted link.",
+    recipientRoute: "BUYER@example.com", redactionLevel: "REDACTED" as const,
+    packageAuthorizationId: "packet-auth-1", consentSnapshotHash: buyerConsentSnapshotHash(consent),
   };
   const approval = approveExactDistributionMessage({
     ...current, approvedBy: "owner-1", approvedAt: "2026-10-15T12:00:00.000Z",
@@ -139,6 +172,12 @@ test("distribution approval is bound to exact buyer, channel, packet version, sn
   assert.throws(() => assertExactDistributionApprovalCurrent(approval, { ...current, packetSnapshotHash: "b".repeat(64) }), /stale/);
   assert.throws(() => assertExactDistributionApprovalCurrent(approval, { ...current, buyerId: "buyer-2" }), /stale/);
   assert.throws(() => assertExactDistributionApprovalCurrent(approval, { ...current, channel: "SMS" }), /stale/);
+  assert.throws(() => assertExactDistributionApprovalCurrent(approval, { ...current, recipientRoute: "other@example.com" }), /stale/);
+  assert.throws(() => assertExactDistributionApprovalCurrent(approval, { ...current, redactionLevel: "ADDRESS_DISCLOSED" }), /stale/);
+  assert.throws(() => assertExactDistributionApprovalCurrent(approval, { ...current, packageAuthorizationId: "new-packet-auth" }), /stale/);
+  assert.throws(() => assertExactDistributionApprovalCurrent(approval, {
+    ...current, consentSnapshotHash: buyerConsentSnapshotHash({ ...consent, status: "OPTED_OUT" }),
+  }), /stale/);
 });
 
 test("provider submission is blocked before exact approval, current channel permission, or connected provider", () => {
@@ -151,6 +190,8 @@ test("provider submission is blocked before exact approval, current channel perm
   const current = {
     buyerId: "buyer-1", channel: "EMAIL" as const, packetVersion: 1,
     packetSnapshotHash: "a".repeat(64), exactMessage: "Exact approved test text.",
+    recipientRoute: "buyer@example.com", redactionLevel: "REDACTED" as const,
+    packageAuthorizationId: "packet-auth-1", consentSnapshotHash: buyerConsentSnapshotHash(permission),
   };
   assert.throws(() => assertDistributionSubmissionReady(null, current, permission, "EMAIL", undefined, now, true), /approval is required/);
   const approval = approveExactDistributionMessage({
@@ -159,7 +200,21 @@ test("provider submission is blocked before exact approval, current channel perm
   assert.throws(() => assertDistributionSubmissionReady(approval, { ...current, exactMessage: "Changed after approval." },
     permission, "EMAIL", undefined, now, true), /stale/);
   assert.throws(() => assertDistributionSubmissionReady(approval, current, permission, "EMAIL", undefined, now), /route is not independently verified/);
-  assert.throws(() => assertDistributionSubmissionReady(approval, current, { ...permission, status: "OPTED_OUT" }, "EMAIL", undefined, now, true), /not recorded/);
+  assert.throws(() => assertDistributionSubmissionReady(approval, current, { ...permission, status: "OPTED_OUT" }, "EMAIL", undefined, now, true), /consent changed/);
+  assert.throws(() => assertDistributionSubmissionReady(approval, {
+    ...current, redactionLevel: "ADDRESS_DISCLOSED",
+  }, permission, "EMAIL", {
+    id: "fixture", connected: true, channels: ["EMAIL"], async send() { throw new Error("Not invoked."); },
+  }, now, false), /stale/);
+  const addressApproval = approveExactDistributionMessage({
+    ...current, redactionLevel: "ADDRESS_DISCLOSED", approvedBy: "owner-1", approvedAt: now.toISOString(),
+  });
+  assert.throws(() => assertDistributionSubmissionReady(addressApproval, {
+    ...current, redactionLevel: "ADDRESS_DISCLOSED",
+  }, permission, "EMAIL", {
+    id: "fixture", connected: true, channels: ["EMAIL"], async send() { throw new Error("Not invoked."); },
+  }, now, true, false), /recipient identity/,
+  "Verifying control of an email route does not by itself verify recipient identity for address disclosure.");
   let sends = 0;
   const provider = {
     id: "fixture", connected: true, channels: ["EMAIL" as const], async send() { sends++; throw new Error("Not invoked."); },

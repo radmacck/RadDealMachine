@@ -3,10 +3,18 @@ import {
 } from "@workspace/api-zod";
 import {
   DomainError, type Lead, type Analysis, type Assumptions, type Intelligence,
-  type Offer, type StoredOffer, type OfferDraftInput, type OfferApprovalInput,
+  type Offer, type StoredOffer, type UnderwritingInput, type OfferDraftInput, type OfferApprovalInput,
   type OfferCommunicationInput, type OfferWithdrawalInput,
 } from "./types";
 import { callReadyBlockers } from "./workflow";
+import { analyzeDealScenarios } from "./deal-scenarios";
+
+export interface ImmutableUnderwritingSnapshot {
+  id: string;
+  lead: Lead;
+  input: UnderwritingInput;
+  analysis: Analysis;
+}
 
 export const ANALYSIS_LIFETIME_MS = 7 * 86_400_000;
 export const OFFER_STAGES = ["CONVERSATION","OFFER_READY","OFFER_SENT","NEGOTIATING","CONTRACT_PENDING"];
@@ -14,6 +22,8 @@ export interface OfferContext {
   lead: Lead;
   analysis: Analysis | null;
   analysisSnapshotId: string | null;
+  underwriting: UnderwritingInput | null;
+  underwritingSnapshot: ImmutableUnderwritingSnapshot | null;
   currentPolicy: Assumptions;
   intelligence: Intelligence[];
   conversationLogged: boolean;
@@ -21,9 +31,11 @@ export interface OfferContext {
 }
 export interface OfferActor { id: string; role: string }
 const canonicalJson = (value: unknown): string => {
+  if (value === undefined) return "null";
   if (Array.isArray(value)) return `[${value.map(canonicalJson).join(",")}]`;
   if (value && typeof value === "object") {
     return `{${Object.entries(value as Record<string,unknown>).sort(([a],[b])=>a.localeCompare(b))
+      .filter(([,item])=>item!==undefined)
       .map(([key,item])=>`${JSON.stringify(key)}:${canonicalJson(item)}`).join(",")}}`;
   }
   return JSON.stringify(value);
@@ -31,27 +43,51 @@ const canonicalJson = (value: unknown): string => {
 export type OfferReviewTerms = Pick<OfferDraftInput,"amount"|"earnestMoney"|"closingDays"|"contingencies"|"assignmentIntent"|"draftExpiresAt"|"reason"|"parentOfferId"|"sellerResponseSource"|"sellerResponseEventKey"|"sellerResponseEvidence">;
 export function offerReviewSnapshotJson(terms: OfferReviewTerms, ctx: OfferContext): string {
   const a = ctx.analysis!;
-  const assumptions = a.assumptions;
-  const evidence = ctx.intelligence.filter(i => i.classification === "VERIFIED_FACTS")
-    .map(i => ({id:i.id,category:i.category,statement:i.statement,sourceType:i.sourceType,source:i.source,capturedAt:i.capturedAt,verificationNote:i.verificationNote}))
+  const snapshot = ctx.underwritingSnapshot;
+  const snapshotAnalysis = snapshot?.analysis ?? a;
+  const assumptions = snapshotAnalysis.assumptions;
+  const input = snapshot?.input ?? ctx.underwriting;
+  const sourceIds = new Set([
+    input?.subjectEvidenceId,input?.conditionEvidenceId,input?.sellerContactEvidenceId,
+    ...(input?.comps ?? []).flatMap(c => [c.saleEvidenceId,c.conditionEvidenceId]),
+    ...(input?.repairs ?? []).map(r => r.evidenceId),
+    ...(input?.repairObservations ?? []).map(o => o.evidenceId),
+    ...(input?.repairEstimate?.lines ?? []).map(line => line.evidenceId),
+  ].filter((id): id is string => Boolean(id)));
+  const evidence = ctx.intelligence.filter(i => sourceIds.has(i.id))
+    .map(i => ({id:i.id,classification:i.classification,category:i.category,statement:i.statement,sourceType:i.sourceType,source:i.source,sourceUrl:i.sourceUrl,capturedAt:i.capturedAt,confidence:i.confidence,verificationNote:i.verificationNote}))
     .sort((x,y) => x.id.localeCompare(y.id));
+  const foundIds = new Set(evidence.map(i=>i.id));
+  const missingEvidence = [...new Set([
+    ...a.blockers,
+    ...snapshotAnalysis.blockers,
+    ...snapshotAnalysis.repairEstimate.blockers,
+    ...[...sourceIds].filter(id=>!foundIds.has(id)).map(id=>`Referenced underwriting source ${id} is missing from current deal evidence.`),
+  ])].sort();
   return canonicalJson({
-    version:1, analysisSnapshotId:ctx.analysisSnapshotId, calculatedAt:a.calculatedAt,
-     subject:{sellerName:ctx.lead.sellerName,address:ctx.lead.address,city:ctx.lead.city,state:ctx.lead.state,propertyType:ctx.lead.propertyType,sqft:ctx.lead.sqft,askingPrice:ctx.lead.askingPrice},
+      version:1, analysisSnapshotId:ctx.analysisSnapshotId, calculatedAt:snapshotAnalysis.calculatedAt,
+      subject:{sellerName:snapshot?.lead.sellerName??ctx.lead.sellerName,address:snapshot?.lead.address??ctx.lead.address,city:snapshot?.lead.city??ctx.lead.city,state:snapshot?.lead.state??ctx.lead.state,propertyType:snapshot?.lead.propertyType??ctx.lead.propertyType,sqft:snapshot?.lead.sqft??ctx.lead.sqft,askingPrice:snapshot?.lead.askingPrice??ctx.lead.askingPrice},
     purchasePrice:terms.amount,reason:terms.reason,terms:{earnestMoney:terms.earnestMoney,closingDays:terms.closingDays,contingencies:terms.contingencies},
     assignment:{intended:terms.assignmentIntent,strategy:terms.assignmentIntent?"Potential contractual assignment only after local-law and contract review":"No assignment intended",legalStatus:"NOT_ASSESSED"},
     draftExpiresAt:terms.draftExpiresAt,
      negotiationLineage:terms.parentOfferId?{parentOfferId:terms.parentOfferId,responseSource:terms.sellerResponseSource,
        ...(terms.sellerResponseEventKey?{responseEventKey:terms.sellerResponseEventKey}:{}),
        responseEvidence:terms.sellerResponseEvidence}:null,
-    underwriting:{engineVersion:a.engineVersion,classification:a.classification,arv:a.arv,repairs:a.repairs,mao:a.mao,openingLow:a.openingLow,openingHigh:a.openingHigh,formula:a.formula,compDecisions:a.compDecisions},
+     underwritingSnapshot:snapshot?{
+       id:snapshot.id,
+       subject:{id:snapshot.lead.id,address:snapshot.lead.address,city:snapshot.lead.city,state:snapshot.lead.state,
+         propertyType:snapshot.lead.propertyType,sqft:snapshot.lead.sqft,units:snapshot.lead.units,
+         askingPrice:snapshot.lead.askingPrice,createdAt:snapshot.lead.createdAt},
+       input:snapshot.input,analysis:snapshot.analysis,
+     }:null,
+     currentReadiness:{classification:a.classification,blockers:a.blockers},
+     downsideScenario:analyzeDealScenarios(snapshotAnalysis,20).scenarios[0],
     costs:{sellingCostLow:a.arv.low*assumptions.sellingCostPct,sellingCostExpected:a.arv.expected*assumptions.sellingCostPct,
       repairsExpected:a.repairs.expected,repairContingency:a.repairs.high*assumptions.contingencyPct,
       acquisitionCost:assumptions.acquisitionCost,holdingCost:assumptions.holdingMonthly*assumptions.holdingMonths,
       assignmentTarget:terms.assignmentIntent?assumptions.assignmentTarget:0},
-    assumptions,risks:a.risks,verifiedEvidence:evidence,
+     assumptions,risks:a.risks,sourceEvidence:evidence,missingEvidence,
     compEvidenceIds:a.compDecisions.filter(c=>c.included).map(c=>c.id).sort(),
-    sellerReports:ctx.intelligence.filter(i=>i.classification==="INDICATED"&&i.category.startsWith("seller_call_")).map(i=>({id:i.id,category:i.category,statement:i.statement,sourceRecordId:i.sourceRecordId})).sort((x,y)=>x.id.localeCompare(y.id)),
   });
 }
 export function assertOfferPermission(action: "DRAFT"|"AUTHORIZE"|"COMMUNICATE"|"WITHDRAW", role: string, offer?: StoredOffer): void {
@@ -71,6 +107,9 @@ function future(value: string, now: Date, label: string) {
 export function offerResearchBlockers(ctx: OfferContext): string[] {
   const blockers = callReadyBlockers(ctx.lead,ctx.analysis,ctx.now);
   if (!ctx.analysisSnapshotId) blockers.push("Refresh underwriting to create an identifiable immutable analysis snapshot.");
+  if (!ctx.underwritingSnapshot || ctx.underwritingSnapshot.id !== ctx.analysisSnapshotId)
+    blockers.push("The referenced immutable underwriting snapshot is missing or mismatched; refresh underwriting before preparing an offer.");
+  if (!ctx.underwriting) blockers.push("The exact source-backed underwriting inputs are missing; refresh underwriting before preparing an offer.");
   if (!OFFER_STAGES.includes(ctx.lead.stage)) blockers.push("Offers require an active seller conversation.");
   if (!ctx.conversationLogged) blockers.push("Log a connected seller conversation before creating or authorizing an offer.");
   if (ctx.analysis && !samePolicy(ctx.analysis.assumptions,ctx.currentPolicy)) blockers.push("Underwriting uses an older workspace policy; refresh it before authorizing an offer.");

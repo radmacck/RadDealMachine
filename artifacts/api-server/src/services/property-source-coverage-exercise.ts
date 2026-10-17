@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
-import { db, jobsTable, leadsTable, propertyDiscoveriesTable } from "@workspace/db";
+import { eq } from "drizzle-orm";
+import { db, jobsTable, leadsTable, propertyDiscoveriesTable, propertySourceObservationsTable } from "@workspace/db";
 import { GetPropertySourceCoverageResponse } from "@workspace/api-zod";
 import { getPropertySourceCoverage } from "./property-source-store";
 import { recordPropertyObservation } from "./property-discovery-store";
@@ -80,6 +81,26 @@ const duplicateObservation = await recordPropertyObservation(
 );
 assert.equal(firstObservation.id, duplicateObservation.id, "Duplicate source ingestion retains one discovery identity.");
 assert.equal(duplicateObservation.leadId, null, "Raw source observations remain distinct from active seller leads.");
-assert.equal((await db.select().from(propertyDiscoveriesTable)).length, 1);
+const secondFeed = await recordPropertyObservation({
+  ...property, id: "SYNTHETIC-COVERAGE-SECOND-SOURCE", provider: "SYNTHETIC_SECOND_FEED",
+  address: "100 synthetic coverage street.", sourceUrl: "https://example.invalid/synthetic-second-feed",
+}, "synthetic-second-feed:parcel", actor, new Date(now.getTime() + 120_000));
+assert.equal(secondFeed.id, firstObservation.id, "A second feed for the exact parcel merges into the same normalized discovery.");
+const sourceTrail = await db.select().from(propertySourceObservationsTable)
+  .where(eq(propertySourceObservationsTable.discoveryId, firstObservation.id));
+assert.deepEqual(new Set(sourceTrail.map(row => row.sourceKey)), new Set([
+  "synthetic-coverage:parcel", "synthetic-second-feed:parcel",
+]), "Property deduplication must retain provenance from each independent source feed.");
+const fallbackIdentity = await recordPropertyObservation({
+  ...property, id: "SYNTHETIC-COVERAGE-ADDRESS-ONE", parcelId: "",
+  address: "200 Synthetic Avenue", sourceUrl: "https://example.invalid/address-one",
+}, "synthetic-address-feed:one", actor, new Date(now.getTime() + 180_000));
+const normalizedAddressDuplicate = await recordPropertyObservation({
+  ...property, id: "SYNTHETIC-COVERAGE-ADDRESS-TWO", parcelId: "",
+  address: "200 synthetic avenue.", zip: "19103-1234", sourceUrl: "https://example.invalid/address-two",
+}, "synthetic-address-feed:two", actor, new Date(now.getTime() + 240_000));
+assert.equal(normalizedAddressDuplicate.id, fallbackIdentity.id,
+  "Address fallback identity normalizes case, punctuation, and ZIP+4 without merging different street numbers.");
+assert.equal((await db.select().from(propertyDiscoveriesTable)).length, 2);
 assert.equal((await db.select().from(leadsTable)).length, 0, "Coverage reporting never promotes raw observations to active leads.");
 console.log("PASS SYNTHETIC persisted source coverage: no false check/zero, terms version, exact connector counts, rate limits, stale data, schedule eligibility and raw/lead separation.");

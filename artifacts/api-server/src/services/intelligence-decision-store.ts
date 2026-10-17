@@ -357,7 +357,8 @@ export async function evaluateLeadDecision(leadId: string, actor = "system:decis
         committedBuyerId: operations.contract.committedBuyerId ?? null,
         closingAt: operations.contract.closingAt,
       } : null,
-      matches: operations.matches.map(match => ({ buyerId: match.buyerId, eligible: match.eligible })),
+      matches: operations.matches.filter(match => match.destinationKind === "BUYER")
+        .map(match => ({ buyerId: match.buyerId, eligible: match.eligible })),
       nextAction: operations.nextAction,
     },
     synthetic: persistedLead?.payload.synthetic === true,

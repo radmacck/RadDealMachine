@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import { randomUUID } from "node:crypto";
 import { and, eq } from "drizzle-orm";
 import {
-  db, dealDecisionEvaluationsTable, dealDecisionWorkItemsTable, jobsTable, leadsTable,
+  db, dealDecisionEvaluationsTable, dealDecisionWorkItemsTable, jobsTable, leadsTable, propertyDiscoveriesTable,
 } from "@workspace/db";
 import type { AcquisitionQueueItem, IntelligenceLoopInput, LeadDetail } from "@workspace/deal-domain";
 import { persistIntelligenceDecision } from "./intelligence-decision-store";
@@ -156,6 +156,44 @@ const afterRetry = await db.select().from(dealDecisionEvaluationsTable)
   .where(eq(dealDecisionEvaluationsTable.subjectId, aId));
 assert.equal(afterRetry.length, beforeRetry.length, "same synthetic evidence snapshot is idempotent");
 
+const discoveryId = randomUUID();
+await db.insert(propertyDiscoveriesTable).values({
+  id: discoveryId, identityKey: `synthetic-discovery:${discoveryId}`, ownerKey: null,
+  marketKey: "SYNTHETIC_TEST", status: "DISCOVERED_PROPERTY", score: 60, confidence: 0.9,
+  version: 1, leadId: null,
+  payload: { synthetic: true, property: { address: "SYNTHETIC CONTACT TASK ONLY" } },
+  createdAt: now, updatedAt: now,
+});
+const discoveryInput: Extract<IntelligenceLoopInput, { subjectType: "DISCOVERY" }> = {
+  subjectType: "DISCOVERY", subjectId: discoveryId, discoveryId, leadId: null, synthetic: true, now,
+  discovery: {
+    id: discoveryId, status: "DISCOVERED_PROPERTY", leadId: null, address: "SYNTHETIC CONTACT TASK ONLY",
+    reason: `${syntheticPrefix} no seller route exists.`,
+    nextAction: "Research permitted contactability.", observedAt: now.toISOString(),
+    missingInformation: [], signalRefs: [`synthetic-source:${discoveryId}`], contactRouteEstablished: false,
+  },
+};
+const noRouteDecision = await persistIntelligenceDecision(discoveryInput, "synthetic:discovery-no-route", now);
+assert.equal(noRouteDecision.recommendedAction?.code, "RESEARCH_CONTACT");
+assert.ok(noRouteDecision.eligibleActions.some(item => item.code === "QUALIFY_DISCOVERY"),
+  "Raw source discoveries retain a separate relevance review while contact research is actionable.");
+assert.equal(noRouteDecision.blockedActions.find(item => item.code === "CALL_NEXT")?.eligible, false);
+const [contactTask] = await db.select().from(dealDecisionWorkItemsTable)
+  .where(and(eq(dealDecisionWorkItemsTable.discoveryId, discoveryId), eq(dealDecisionWorkItemsTable.actionCode, "RESEARCH_CONTACT")));
+assert.ok(contactTask, "A persisted actionable contact research task must be created for a route-less candidate.");
+assert.equal(contactTask.status, "READY");
+assert.equal(contactTask.payload.synthetic, true);
+const routeResolvedDecision = await persistIntelligenceDecision({
+  ...discoveryInput,
+  discovery: { ...discoveryInput.discovery, contactRouteEstablished: true },
+}, "synthetic:discovery-route-resolved", now);
+assert.ok(!routeResolvedDecision.eligibleActions.some(item => item.code === "RESEARCH_CONTACT"));
+const [expiredContactTask] = await db.select().from(dealDecisionWorkItemsTable)
+  .where(eq(dealDecisionWorkItemsTable.id, contactTask.id));
+assert.equal(expiredContactTask?.status, "EXPIRED", "A later fully gated route resolves the old research task without making the discovery call-ready.");
+assert.equal((await db.select().from(leadsTable)).length, 1,
+  "Discovery-to-contact research must not create a lead or falsely promote the source record.");
+
 const bId = await seedLead();
 await evaluate(inputFor(bId, makeDetail(bId, { analysis: currentAnalysis }), callable(bId)), "B-callable", "CALL_NEXT");
 
@@ -278,7 +316,7 @@ assert.ok(k.result.known.some(item => item.summary.includes("historical evidence
 
 const rows = await db.select().from(dealDecisionEvaluationsTable);
 const work = await db.select().from(dealDecisionWorkItemsTable);
-assert.equal(rows.length, 12, "A-K persist eleven scenarios, with C retaining both before/after snapshots");
+assert.equal(rows.length, 14, "A-K persist eleven lead scenarios plus two route-task lifecycle snapshots");
 assert.ok(work.length >= 12, "each decision scenario persists idempotent action/outcome work");
 const workerLeadId = await seedLead();
 const workerKey = `synthetic:decision-worker:${workerLeadId}`;

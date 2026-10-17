@@ -10,6 +10,17 @@ export type Buyer = z.infer<typeof ListBuyersResponse>[number];
 export type DealContract = NonNullable<z.infer<typeof GetDealOperationsResponse>["contract"]>;
 export type BuyerMatch = z.infer<typeof GetDealOperationsResponse>["matches"][number];
 export const DAY = 86_400_000;
+export function buyerIdentityConflicts(buyer: Buyer, pool: Buyer[]): string[] {
+  const email = buyer.email.trim().toLowerCase();
+  const phone = buyer.phone.replace(/\D/g, "");
+  const conflicts = pool.filter(other => other.id !== buyer.id && (
+    (!!email && other.email.trim().toLowerCase() === email) ||
+    (phone.length >= 7 && other.phone.replace(/\D/g, "") === phone)
+  ));
+  return conflicts.length
+    ? [`Contact route conflicts with ${conflicts.length} other buyer record(s); resolve identity before package distribution.`]
+    : [];
+}
 export function assertOperationsRole(actor: OfferActor, allowed: string[]) {
   if (!allowed.includes(actor.role)) throw new DomainError("Your role cannot perform this operation.",403);
 }

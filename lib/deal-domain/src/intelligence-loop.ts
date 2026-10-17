@@ -32,6 +32,7 @@ export type DecisionDiscovery = {
   observedAt: string | null;
   missingInformation: string[];
   signalRefs: string[];
+  contactRouteEstablished: boolean;
 };
 
 export type IntelligenceLoopInput =
@@ -56,7 +57,7 @@ export type IntelligenceLoopInput =
       now: Date;
     };
 
-const RULE_VERSION = "gap-aware-decision-v3-evidence-integrity";
+const RULE_VERSION = "gap-aware-decision-v6-persistent-buyer-demand";
 const TERMINAL_STAGES = new Set(["CLOSED", "DEAD_DEAL", "PASS"]);
 const unique = (values: Array<string | null | undefined>) => [...new Set(values.filter((value): value is string =>
   typeof value === "string" && value.trim().length > 0).map(value => value.trim()))];
@@ -250,14 +251,27 @@ function decideDiscovery(input: Extract<IntelligenceLoopInput, { subjectType: "D
     `/sources?discovery=${encodeURIComponent(discovery.id)}`,
     "ANALYST", discovery.status === "DISCOVERED_PROPERTY" ? 45 : 65, false, evidenceRefs,
   );
+  const contactResearch = !terminal
+    && ["DISCOVERED_PROPERTY", "RELEVANT_CANDIDATE"].includes(discovery.status)
+    && !discovery.contactRouteEstablished
+    ? action(
+      "RESEARCH_CONTACT", `discovery:${discovery.id}:seller-contact`,
+      `Research a permitted seller contact route for ${discovery.address}`,
+      "No current route passed seller-identity, source-permission, freshness, and conflict checks. Research through a permitted source and record evidence or an explicit no-route result; do not infer a phone number or call.",
+      `/sources?discovery=${encodeURIComponent(discovery.id)}`,
+      "ANALYST", 86, true, evidenceRefs,
+    )
+    : null;
   const unknowns = unique([
     ...discovery.missingInformation,
     "No seller identity or signing authority is established by property-source ownership evidence.",
-    "No permitted direct seller contact route is attached to this discovery.",
+    ...(!discovery.contactRouteEstablished ? ["No permitted direct seller contact route is attached to this discovery."] : []),
   ]);
   const blockedCall = action(
     "CALL_NEXT", `discovery:${discovery.id}:not-call-ready`, "Call seller",
-    "A raw discovery or relevance candidate is not a callable lead; direct contact, identity review and underwriting gates are not satisfied.",
+    discovery.contactRouteEstablished
+      ? "A verified route does not promote a property discovery into a lead or satisfy qualification and deterministic underwriting gates."
+      : "A raw discovery or relevance candidate is not a callable lead; direct contact, identity review and underwriting gates are not satisfied.",
     `/sources?discovery=${encodeURIComponent(discovery.id)}`, "OPERATOR", 0, true, evidenceRefs, false,
   );
   const outcomeRecord = terminal ? `${discovery.status} is retained as the discovery disposition; it is not promoted to a lead.` : null;
@@ -272,10 +286,10 @@ function decideDiscovery(input: Extract<IntelligenceLoopInput, { subjectType: "D
     unknowns,
     conflicts: [],
     staleEvidence: [],
-    eligibleActions: next ? [next] : [],
+    eligibleActions: [...(contactResearch ? [contactResearch] : []), ...(next ? [next] : [])],
     blockedActions: [blockedCall],
-    recommendedAction: next,
-    humanAuthorizationRequired: next?.requiresHumanAuthorization ?? false,
+    recommendedAction: contactResearch ?? next,
+    humanAuthorizationRequired: (contactResearch ?? next)?.requiresHumanAuthorization ?? false,
     evidenceRefs,
     outcomeRecord,
   };
@@ -481,6 +495,18 @@ function decideLead(input: Extract<IntelligenceLoopInput, { subjectType: "LEAD" 
   const currentState = lead.stage;
   const terminal = TERMINAL_STAGES.has(lead.stage);
   const selected = chooseLeadAction(input, common);
+  const buyerDemand = operations?.contract
+    && !operations.contract.committedBuyerId
+    && !["CLOSED", "CANCELLED"].includes(operations.contract.status)
+    && !operations.matches.some(match => match.eligible)
+    ? action(
+      "BUYER_DEMAND", `contract:${operations.contract.id}:no-current-match`,
+      "Review current buyer demand",
+      "No current eligible acquisition buyer match is recorded for this active transaction; qualify or reverify buyers. Interest and stale records do not count as commitment.",
+      "/buyers", "OWNER", 105, true,
+      [...common.evidenceRefs, `contract:${operations.contract.id}`],
+    )
+    : null;
   const evidenceRefs = unique([
     ...common.evidenceRefs,
     ...(operations?.contract ? [`contract:${operations.contract.id}`] : []),
@@ -522,7 +548,9 @@ function decideLead(input: Extract<IntelligenceLoopInput, { subjectType: "LEAD" 
     unknowns: unique(unknowns),
     conflicts: common.conflicts,
     staleEvidence: common.staleEvidence,
-    eligibleActions: selected && !terminal ? [selected] : [],
+    eligibleActions: !terminal
+      ? [...(selected ? [selected] : []), ...(buyerDemand ? [buyerDemand] : [])]
+      : [],
     blockedActions: blocked,
     recommendedAction: selected && !terminal ? selected : null,
     humanAuthorizationRequired: selected?.requiresHumanAuthorization ?? false,

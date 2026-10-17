@@ -8,7 +8,7 @@ import {
 } from "@workspace/db";
 import {
   type Analysis, type DealContract, type Lead, type OfferActor,
-  type UnderwritingInput, DomainError, assertOperationsRole, buyerReservations, matchBuyer, wholeDollars, DAY,
+  type UnderwritingInput, DomainError, assertOperationsRole, buyerIdentityConflicts, buyerReservations, matchBuyer, wholeDollars, DAY,
 } from "@workspace/deal-domain";
 import {
   AuthorizeDealDistributionBody, ShareDistributionRecipientsBody,
@@ -338,6 +338,8 @@ export async function shareDistributionRecipients(
         throw new DomainError("Deal-finder and guru contacts cannot receive acquisition-buyer commitments.", 409);
       }
       const reservations = buyerReservations(contractRows, candidate.id, contract.id);
+      const identityConflicts = buyerIdentityConflicts(candidate,candidates);
+      if (identityConflicts.length) throw new DomainError(`${candidate.name} is not eligible: ${identityConflicts.join("; ")}`,409);
       const match = matchBuyer(candidate, detail, contract, now, undefined, reservations.count, reservations.funds);
       if (!match.eligible) throw new DomainError(`${candidate.name} is no longer qualified for this deal: ${match.mismatches.join("; ")}`, 409);
       const permission = currentDistributionPermission(candidate, now);
@@ -393,6 +395,9 @@ async function loadPortalRecord(tx: Store, tokenHash: string, now: Date) {
   const [buyerRow] = await tx.select().from(buyersTable).where(eq(buyersTable.id, recipient.buyerId));
   if (!buyerRow) throw new DomainError("This buyer link is invalid or no longer active.", 404);
   const buyer = buyerRecord(buyerRow, now);
+  const buyers = await allBuyerRecords(tx,now);
+  if (buyerIdentityConflicts(buyer,buyers).length)
+    throw new DomainError("This buyer has a conflicting identity/contact route record. Ask the owner to resolve it before using the package link.",403);
   currentDistributionPermission(buyer, now);
   const detail = await assertPacketSnapshotCurrent(tx, packet, contractRow, contract, now);
   const contracts = (await tx.select().from(contractsTable)).map(contractRecord);

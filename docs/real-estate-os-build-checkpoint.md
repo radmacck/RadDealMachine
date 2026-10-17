@@ -1787,3 +1787,315 @@ All successful failure/recovery exercises used isolated synthetic schemas and ve
 **Remaining release risks:** the broad source exercise needs conversion to controlled fixtures; live provider timeouts/receipt persistence and signed-in owner UI behavior remain unverified; synthetic success must not be presented as real seller/buyer/transaction validation.
 
 **Next single task:** repair the broad property-source exercise to use deterministic source fixtures and a deliberately blocked synthetic contactability case, then rerun it without live-source reads.
+
+## Block 67 — Vision Gap Map and Critical-Path Execution — 2026-10-16
+
+**VERDICT: THE CODE SUPPORTS MOST LATER STAGES UNDER ISOLATED TESTS, BUT THE REAL WORKFLOW STOPS AT SELLER CONTACTABILITY. NO SAFE CODE CHANGE CAN CREATE THE MISSING PERMITTED SELLER EVIDENCE.**
+
+### Target workflow status
+
+| Stage | Status | Evidence and remaining gap |
+| --- | --- | --- |
+| Permitted property discovery | **PARTIAL** | Current dev DB has 1 `DISCOVERED_PROPERTY` and 1 `phila-opa` observation, last observed 2026-10-06 00:32 UTC. No successful persisted source job is recent; provider health reports Philadelphia property sources `DEGRADED` (`ADAPTER_REGISTRATION`). Registered connectors and source-provenance code exist. The broad property-source exercise has a known stale fixture failure; no current live source reliability is established. |
+| Evidence-backed contactability | **MISSING for the persisted property; capture path implemented** | The property has no `contactResearchCase`, no current permitted route, and no linked lead. Owner-only manual capture exists in `/sources`; seller contact research provider is `UNCONFIGURED`. No caller, enrichment provider, or human review produced usable evidence. |
+| Call-ready brief | **SYNTHETIC-ONLY** | Brief/queue logic checks route permission, identity, freshness and underwriting. `exercise:acquisition-queue` passed with isolated fixtures and a 36-table persistence reload. Dev DB has 0 leads and 0 call-ready briefs. |
+| Human call and persisted outcome | **SYNTHETIC-ONLY** | The acquisition-queue exercise covers call start/result, notes, audit, replay and stale-version rejection. Dev DB has 0 call records; no real call occurred. |
+| Deterministic underwriting | **IMPLEMENTED; SYNTHETIC-ONLY in exercised deals** | Domain tests and prior isolated exercises cover ARV/comps, repair estimates, costs, margin, assignment and MAO. Dev DB has 0 leads and 0 analysis snapshots, so no real property has a current underwriting snapshot. |
+| Explicitly approved offer | **SYNTHETIC-ONLY** | Exact-snapshot owner authorization and invalidation paths are exercised. Dev DB has 0 offers; no offer was approved or sent. |
+| Current verified buyer match | **SYNTHETIC-ONLY** | Buyer eligibility, fresh evidence, funding/capacity and concurrency gates are tested. Dev DB has 0 buyers and 0 matches. Public buyer-activity reads in isolated exercises are prospects, not verified buyers or commitments. |
+| Approved/redacted package and provider-backed delivery | **PARTIAL; delivery unavailable** | Exact recipient/channel/version approval, redaction, permission rechecks and provider receipt state are implemented and tested. Dev DB has 0 distribution packets. Outbound messaging is `UNCONFIGURED`; no message or delivery receipt exists. |
+| Approved contract, signatures, funds and deadlines | **PARTIAL; synthetic-only evidence** | Versioned contracts, human-reviewed clauses, provider callbacks, funds evidence, deadlines and exceptions are exercised in the isolated transaction suite. Dev DB has 0 contracts and 0 transaction exceptions. Electronic signature and closing coordination are `UNCONFIGURED`; no signature or funds event occurred. |
+| Verified outcome | **SYNTHETIC-ONLY** | Outcome reconciliation and exception handling have isolated exercises. Dev DB has no outcome records, and there is no real closing to reconcile. |
+
+### Earliest blocker and execution decision
+
+- The actual persisted property has a stale public-record observation and no contact-research case. It cannot advance to a call-ready brief without current, permitted seller-identity and route evidence reviewed by an authorized owner.
+- The code already exposes an owner-only manual evidence path and blocks missing identity, permission and route evidence. Provider health confirms that contact research, outbound messaging, electronic signature, closing coordination, and private object storage are unconfigured. The live UI could not be exercised because all workflows were stopped and no authenticated owner session was available.
+- No production data was changed. I did not promote the property, invent a seller route, call anyone, send a package, or weaken the blocker. This first blocker requires owner-supplied/reviewed evidence or an explicitly configured permitted source; it is not safely fixable by a code-only change.
+- Added regression coverage for a source-only discovery with unknown identity, unknown permission and no route; it must remain blocked from `CALL NEXT`.
+
+### Checks run
+
+- `pnpm --filter @workspace/api-server exec tsx --test src/services/property-contactability-gate.test.ts` — **5/5 passed**.
+- `pnpm --filter @workspace/api-server exec tsx --test src/services/property-contactability-gate.test.ts src/services/provider-health.test.ts` — **7/7 passed** before the new missing-case regression was added.
+- `pnpm --filter @workspace/api-server run test:buyer-outreach` — **9/9 passed**.
+- `pnpm --filter @workspace/api-server run exercise:evidence-intake` — passed; isolated persistence reload reconciled 36 tables; synthetic route was correctly blocked from real `CALL_READY`.
+- `pnpm --filter @workspace/api-server run exercise:acquisition-queue` — passed; isolated persistence reload reconciled 36 tables; call outcomes and audit were synthetic.
+- `pnpm --filter @workspace/deal-domain run test` — passed (146 tests, consistent with the prior full run).
+- `pnpm run typecheck` — passed for workspace libraries, API, web, sandbox, and scripts.
+- `PORT=20639 BASE_PATH=/ pnpm run build` — passed for all artifacts; existing web bundle >500 kB warning remains.
+- Read-only dev DB aggregate inspection confirmed 1 property discovery / 1 source observation / 0 leads / calls / offers / buyers / matches / distribution packets / contracts / transaction exceptions. No sensitive route values were queried.
+
+**Next single task:** have an authenticated owner review the existing discovery in `/sources`, record current permitted seller identity/contact evidence through the manual research flow (or configure a permitted provider), then verify the resulting HTTP persistence and call-readiness decision. Keep the property out of CALL NEXT unless the evidence passes.
+
+## Block 70 — Call Outcomes as a Trusted Workflow Handoff — 2026-10-16
+
+**VERDICT: SELLER CALL EVIDENCE CONTINUES THROUGH THE EXISTING APPEND-ONLY HANDOFF. BUYER CALLS NOW HAVE THEIR OWN PERSISTED DEAL EVENTS AND FOLLOW-UP TASKS WITHOUT OVERWRITING SELLER SCHEDULES OR CREATING BUYER COMMITMENTS. SIGNED-IN UI AND REAL CONTACT PERMISSION REMAIN UNVERIFIED.**
+
+- Reused the existing `re_calls` ledger for buyer calls; no CRM or duplicate deal record was added. Buyer events retain actor/time, outcome, original note, operator-entered confidence, source/classification, next action, buyer ID, and a separate future due date. Synthetic buyers explicitly marked synthetic are rejected; recording a call does not send a message, establish buyer eligibility, alter matching, or authorize an offer.
+- Buyer follow-ups have OPEN/COMPLETED state and append-only status/note/time/actor/due-date history. Exact duplicate submissions are idempotent, changed-content key reuse conflicts, concurrent exact retries produce one event, stale follow-up versions are rejected, and exact repeated completion is a no-op.
+- The current UI completes a buyer follow-up but does not yet offer reschedule/reopen controls or a separate multi-buyer/deal-deadline flag. The API accepts a versioned due-date/status update; no buyer follow-up silently changes a transaction deadline.
+- Buyer follow-ups never change the seller's shared `lead.followUpAt`. Open buyer items appear as ranked FOLLOW_UP actions and in a separate command-center panel with upcoming/overdue labels. The deal timeline identifies buyer calls separately from seller calls.
+- Seller call behavior remains unchanged: seller answers stay call-linked and reviewable as indicated evidence; material seller evidence invalidates unexecuted underwriting/offer authority through the existing path; model-generated text cannot authorize an offer.
+
+| Verification | Result | Exact evidence / limitation |
+| --- | --- | --- |
+| Full workspace typecheck | PASS | `pnpm run typecheck` completed for libraries, API server, web app, mockup sandbox, and scripts. After the final confidence-selector UI adjustment, the web typecheck also passed. |
+| OpenAPI generation / library check | PASS WITH WORKAROUND | `pnpm --filter @workspace/api-spec run codegen` generated API clients/Zod schemas but the chained library check hit TS7056 on the large `GetCommandCenterResponse`. A narrow mapped Zod type annotation was applied to retain schema `.shape` typing; `pnpm run typecheck:libs` and the subsequent full typecheck passed. A later codegen run will overwrite that annotation until generation is fixed. |
+| Command-center and shared display-state tests | PASS | `pnpm --filter @workspace/api-server run test:command-center` — **18/18 passed**. |
+| Authorization middleware tests | PASS | `pnpm --filter @workspace/api-server run test:auth` — **8/8 passed**. New buyer-call endpoints use the existing `operate` gate. Unauthenticated `GET /api/buyer-call-follow-ups` returned **HTTP 401**. |
+| Persisted buyer-call and lifecycle exercise | PASS, isolated synthetic schema | `pnpm --filter @workspace/api-server run exercise:transactions` passed the buyer-call assertions for confidence retention, concurrent replay, changed-content conflict, separate seller/buyer schedules, command-center queue visibility, completion history, stale update rejection, and no offer creation. Reload verification: **36 tables reconciled; row counts and fingerprints stable**. No real deal was changed. |
+| API build | PASS | `pnpm --filter @workspace/api-server run build`. |
+| Web build | PASS WITH WARNINGS | `PORT=20639 BASE_PATH=/ pnpm --filter @workspace/radical-deal-os run build`. Existing source-map notices and >500 kB chunk warning remain. |
+| Runtime | PASS | Restarted API server (listening on 8080) and web app (Vite ready). |
+| Signed-in owner UI / real calls | NOT VERIFIED | Preview screenshot showed the sign-in page; no authenticated owner session was available. No real buyer call, route/phone permission, provider delivery, or commitment was validated. The form records operator input only and places no calls. |
+
+No provider send or delivery is claimed. A call record does not establish current buyer contact permission; operators must continue to follow existing route and permission requirements.
+
+**Next single task:** verify the authenticated buyer follow-up action in an owner session and validate current buyer route/phone permission before treating a manually logged call as permitted outbound contact.
+
+## Block 70 — Call Outcomes as a Trusted Workflow Handoff — 2026-10-16
+
+**VERDICT: SELLER CALL EVIDENCE CONTINUES THROUGH THE EXISTING APPEND-ONLY HANDOFF. BUYER CALLS NOW HAVE THEIR OWN PERSISTED DEAL EVENTS AND FOLLOW-UP TASKS WITHOUT OVERWRITING SELLER SCHEDULES OR CREATING BUYER COMMITMENTS. SIGNED-IN UI AND REAL CONTACT PERMISSION REMAIN UNVERIFIED.**
+
+- Reused the existing `re_calls` ledger for buyer calls; no CRM or duplicate deal record was added. Buyer events retain the call actor/time, outcome, original note, operator-entered confidence, source/classification, next action, buyer ID, and an independent future due date. Synthetic buyers explicitly marked synthetic are rejected; recording a call does not send a message, establish buyer eligibility, alter matching, or authorize an offer.
+- Buyer follow-ups have OPEN/COMPLETED state and append-only status/note/time/actor/due-date history. Exact duplicate call submissions are idempotent, changed-content reuse of a key conflicts, concurrent exact retries produce one event, stale follow-up versions are rejected, and exact repeated completion is a no-op.
+- The seller `lead.followUpAt` remains unchanged by buyer calls and their follow-up updates. Open buyer items appear as separately ranked FOLLOW_UP actions and in a dedicated command-center panel with due/overdue labels. The deal timeline labels buyer calls separately from seller calls.
+- Seller call behavior remains unchanged: seller answers stay call-linked and indicated/reviewable, material seller evidence invalidates unexecuted underwriting/offer authority through the existing path, and model-generated text cannot authorize an offer.
+
+| Verification | Result | Exact evidence / limitation |
+| --- | --- | --- |
+| Full workspace typecheck | PASS | `pnpm run typecheck` completed for libraries, API server, web app, mockup sandbox, and scripts. |
+| OpenAPI generation and library check | PASS WITH WORKAROUND | `pnpm --filter @workspace/api-spec run codegen` generated API clients/Zod schemas but its chained library check hit TS7056 on the already-large `GetCommandCenterResponse`. A narrow mapped Zod type annotation was applied to preserve the schema's `.shape` access; `pnpm run typecheck:libs` then passed. Re-running codegen will need that annotation reapplied until the generated response-size issue is addressed. |
+| Command-center / display / state tests | PASS | `pnpm --filter @workspace/api-server run test:command-center` — **18/18 passed**. |
+| Authorization middleware tests | PASS | `pnpm --filter @workspace/api-server run test:auth` — **8/8 passed**. New buyer call endpoints use the existing `operate` permission gate. Unauthenticated `GET /api/buyer-call-follow-ups` returned **HTTP 401**. |
+| Persisted buyer-call/follow-up and transaction exercise | PASS, isolated synthetic schema | `pnpm --filter @workspace/api-server run exercise:transactions` passed assertions for concurrent exact replay, changed-content duplicate conflict, separate seller/buyer follow-ups, due queue visibility, completed-state history, stale update conflict, no new offer, and persistence reload. The isolated reload verifier reported **36 tables reconciled; row counts and fingerprints stable**. No real deal was changed. |
+| API build | PASS | `pnpm --filter @workspace/api-server run build`. |
+| Web build | PASS WITH WARNINGS | `PORT=20639 BASE_PATH=/ pnpm --filter @workspace/radical-deal-os run build`. Existing source-map notices and >500 kB chunk warning remain. |
+| Runtime | PASS | Restarted `artifacts/api-server: API Server` (listening on 8080) and `artifacts/radical-deal-os: web` (Vite ready). No new browser-console errors. |
+| Signed-in owner UI / real call evidence | NOT VERIFIED | Preview screenshot showed the sign-in page; no authenticated owner session was available. No real buyer call, route permission, phone permission, provider delivery, or commitment was validated. The form only records an operator-entered event and does not place calls. |
+
+No provider send or delivery is claimed. Buyer contact permission is not established by a call record; operators must continue to follow the existing permission and route evidence requirements.
+
+**Next single task:** complete the existing authenticated owner-session verification against the actual command center and buyer follow-up actions; separately verify a real buyer’s route and current phone permission before treating any manually logged call as a permitted outbound contact.
+
+## Block 69 Focused Revalidation — 2026-10-16
+
+No additional implementation change was required: the current command-center path already includes raw `DISCOVERED_PROPERTY` records, creates a persisted human `RESEARCH_CONTACT` task when no legitimate route passes the gate, retains qualification review separately, and keeps CALL NEXT blocked.
+
+- `pnpm --filter @workspace/api-server exec tsx --test src/services/property-contactability-gate.test.ts` — **6/6 passed** for stale/weak/conflicting ownership, missing route, permission and freshness boundaries.
+- `pnpm --filter @workspace/api-server run exercise:property-source-coverage` — passed duplicate-feed merge, normalized fallback-address deduplication and provenance retention; isolated persistence reload reconciled 36 tables with stable fingerprints.
+- `pnpm --filter @workspace/api-server run exercise:intelligence-loop` — **14** decision snapshots and **23** synthetic work items; raw discovery research task persisted, route resolution expired the superseded task, CALL NEXT remained blocked; 36-table reload/fingerprint check passed.
+- `pnpm --filter @workspace/api-server run exercise:evidence-intake` — passed provenance, stale/repeated-version and no-false-promotion cases; 36-table persistence reload passed.
+- `pnpm run typecheck:libs` and `pnpm --filter @workspace/api-server run typecheck` — passed.
+
+These exercises use isolated synthetic records; the real development discovery remains unchanged and still needs current owner-reviewed source, identity, permission and route evidence. No contact was attempted and no call was claimed.
+
+## Critical-Path Workflow Re-audit After Block 69 — 2026-10-16
+
+**VERDICT: THE EARLIEST CODE GAP IS FIXED: RAW `DISCOVERED_PROPERTY` RECORDS NOW ENTER CONTACT-RESEARCH WORKFLOW WITHOUT PROMOTION. THE REAL DEAL REMAINS BLOCKED ON STALE SOURCE EVIDENCE AND AUTHORIZED OWNER REVIEW.**
+
+### Current end-to-end status
+
+| Workflow stage | Status | Concrete code, persisted-data, and test evidence |
+| --- | --- | --- |
+| Permitted property discovery | **PARTIAL** | Source ingestion/deduplication and provenance are implemented. Development DB has one `DISCOVERED_PROPERTY` and one source observation; its last observation is 2026-10-06, with no persisted source job. The registered adapter is not proof of a current successful source connection; health is degraded until a persisted successful job exists. |
+| Evidence-backed contactability | **PARTIAL** | `property-contactability-gate` requires a source-backed, permission-backed, fresh, identity-matched, conflict-free route. The actual discovery has `NO_CASE`, unknown identity/permission and zero candidate routes. Contactability tests pass, but no real route is established. |
+| Call-ready brief | **PARTIAL** | Call brief and readiness gates exist, but the actual discovery is not a lead and has no direct route. `CALL_NEXT` remains blocked for discovery even when a route is indicated. |
+| Human call and persisted outcome | **SYNTHETIC-ONLY** | Call logging/outcome persistence and replay/role checks have isolated exercises. Development DB has **0 calls** and no real seller interaction to verify. |
+| Deterministic underwriting | **SYNTHETIC-ONLY** | Deterministic calculations and evidence/version invalidation have unit and isolated persistence coverage. Development DB has **0 leads**, so no real underwriting snapshot exists. |
+| Explicitly approved offer | **SYNTHETIC-ONLY** | Exact-version approval and invalidation are implemented and exercised; development DB has **0 offers**. |
+| Current verified buyer match | **SYNTHETIC-ONLY** | Eligibility, proof freshness, capacity, identity and match gates have tests/exercises; development DB has **0 buyers** and **0 matches**. |
+| Approved/redacted package and provider-backed delivery | **PARTIAL** | Authorization, role redaction and provider receipt states are implemented/tested. Development DB has **0 distribution packets**; provider-backed delivery is not currently configured, so no real delivery is evidenced. |
+| Approved contract, signatures, funds and deadlines | **SYNTHETIC-ONLY** | Versioned terms, signature/funds evidence and deadline states have isolated exercises. Development DB has **0 contracts** and **0 transaction exceptions**; no real signatures or funds are evidenced. |
+| Verified outcome | **SYNTHETIC-ONLY** | Outcome reconciliation is covered by isolated exercises. Development DB has no outcome observation and no real closing to reconcile. |
+
+### Actual development state and provider evidence
+
+- Read-only aggregate inspection returned **1** property discovery, **1** source observation, and **0** leads, calls, offers, buyers, matches, distribution packets, contracts, or transaction-readiness exceptions. The discovery is version **2**, unlinked to a lead, and has no contact-research case. No discovery decision work items or matching source jobs were present at inspection time.
+- The observation timestamps to **2026-10-06** are stale for current seller contact. No owner identity, permission basis, or route was exposed or inferred during the audit.
+- `provider-health.ts` distinguishes adapter registration from persisted provider success. No source jobs exist in the current development DB, so there is no live source success to claim. The contact-research and closing-coordination providers are explicitly unconfigured. Messaging/signature/storage readiness remains provider-gated; the existing readiness checks and earlier checkpoint show no configured delivery, signature, or managed private-storage provider.
+
+### Earliest blocker fixed and safety boundary
+
+- Before this re-audit, the command center selected only `RELEVANT_CANDIDATE` records; the actual `DISCOVERED_PROPERTY` could not enter the contact-research decision path. The decision engine and command-center query now include raw discoveries and persist a human-authorized `RESEARCH_CONTACT` item when no fully gated route exists. `QUALIFY_DISCOVERY` remains a separate eligible action.
+- Regression coverage verifies a raw discovery can produce the research task while CALL NEXT remains blocked and no lead is created. The persisted exercise uses only isolated synthetic records.
+- No work item was inserted into the real development database: the authenticated command-center request is the intended persistence path, and no owner session was available to invoke or verify it. The new code makes the task available on that request; it does not claim that a human reviewed it.
+- The real-world blocker cannot be cleared safely by code. An owner must refresh/review permitted source evidence and enter identity, permission, route, freshness and conflict evidence—or explicitly record that no route was found.
+
+### Checks
+
+- `pnpm --filter @workspace/deal-domain run test` — **146/146 passed**.
+- `pnpm run typecheck:libs`, `pnpm --filter @workspace/api-server run typecheck`, and workspace typechecks — **passed**.
+- `pnpm --filter @workspace/api-server run test:command-center` — **18/18 passed**.
+- `pnpm --filter @workspace/api-server run exercise:intelligence-loop` — **14 decision snapshots**, **23** persisted synthetic work items; raw-discovery contact task, route-resolution expiry, and blocked CALL NEXT passed; isolated persistence reload reconciled 36 tables with stable row counts/fingerprints.
+- `pnpm --filter @workspace/api-server run exercise:property-source-coverage`, `exercise:property-contact-http`, and `exercise:evidence-intake` — passed in isolated schemas; source deduplication/provenance, role/permission gates, stale evidence, and no false promotion covered.
+- `PORT=20639 BASE_PATH=/ pnpm run build` — all artifact builds and typechecks passed. Existing web bundle-size warning (>500 kB) remains.
+- API workflow restarted and listened on port 8080. The signed-in owner UI and real source/provider responses remain **UNVERIFIED**; preview has no authenticated owner session.
+
+No real deal records were modified, no contact data was invented, and no call, offer, delivery, signature, funding, closing, or outcome was claimed.
+
+**Next single task:** an authenticated owner should open the command center, confirm the persisted contact-research task for the existing discovery, refresh/review permitted source evidence, and record the actual identity/permission/route result. Keep the property out of CALL NEXT until every gate passes.
+
+## Block 69 — Discovery-to-Call-Ready Conversion — 2026-10-16
+
+**VERDICT: RELEVANT SOURCE DISCOVERIES WITHOUT A FULLY GATED DIRECT ROUTE NOW PRODUCE A PERSISTED HUMAN CONTACT-RESEARCH TASK. THIS DOES NOT PROMOTE OR MAKE A PROPERTY CALL-READY.**
+
+- The command-center decision path now evaluates a discovery's contact-research evidence with the same fail-closed gate used for seller contactability. A `RELEVANT_CANDIDATE` with no route passing source provenance, ownership/seller identity, documented permission, freshness, and conflict checks gets a persisted `RESEARCH_CONTACT` work item. The subsequent critical-path re-audit extended this to raw `DISCOVERED_PROPERTY` records as well.
+- A later fully gated route removes the contact-research recommendation and expires the superseded task through the existing decision-work audit lifecycle. A verified route alone still leaves discovery `CALL_NEXT` blocked; promotion and deterministic underwriting remain separate human-reviewed steps. No automated call or contact was made.
+- Property ingestion continues to merge by exact parcel identity where present and normalized address/city/state/five-digit ZIP otherwise. Independent source keys and source observation histories remain separately persisted; the added synthetic coverage exercises duplicate-feed merge, address-case/punctuation/ZIP+4 normalization, and no raw-discovery-to-lead promotion.
+- The contactability gate now fails closed for unrecognized source or permission classifications as well as stale ownership evidence, recorded-owner-only identity, conflicting recipients, missing routes, and prohibited or undocumented permission.
+
+| Verification | Result | Exact evidence / limitation |
+| --- | --- | --- |
+| Deal-domain rules | PASS | `pnpm --filter @workspace/deal-domain run test` — **146/146 passed**. Includes discovery contact-task recommendation and the invariant that even a valid route does not unblock CALL NEXT for an unpromoted discovery. |
+| Contactability boundary tests | PASS | `pnpm --filter @workspace/api-server exec tsx --test src/services/property-contactability-gate.test.ts` — **6/6 passed**, including stale/weak/contradictory ownership, prohibited permission, missing route, freshness and the new complete-route predicate. |
+| Dashboard work-item projection | PASS | `pnpm --filter @workspace/api-server run test:command-center` — **18/18 passed**; discovery decisions project into the existing prioritized action surface. |
+| Persisted discovery/source normalization | PASS, isolated synthetic schema | `pnpm --filter @workspace/api-server run exercise:property-source-coverage` — duplicate source feeds and normalized fallback addresses map to one property while retaining both source records; no lead created; 36-table persistence reload and fingerprints stable. |
+| Persisted contact task and resolution | PASS, isolated synthetic schema | `pnpm --filter @workspace/api-server run exercise:intelligence-loop` — **14 decision snapshots**, **23** persisted work items; no-route discovery creates a synthetic `READY` contact task, subsequent route evidence expires it, and CALL NEXT remains blocked; 36-table reload/fingerprints stable. |
+| Contact-research HTTP permissions and evidence-intake/no-false-promotion | PASS, isolated synthetic schemas | `exercise:property-contact-http` and `exercise:evidence-intake` passed role/owner review, replay, provenance, stale/repeated-version and call-readiness blockers; each reloaded 36 tables. No real call occurred. |
+| Typecheck and full artifact build | PASS | `pnpm run typecheck:libs`, API typecheck, and `PORT=20639 BASE_PATH=/ pnpm run build` passed. A first bare `pnpm run build` stopped because the mockup sandbox requires `PORT`; rerun with the required environment passed. Existing web bundle-size warning remains. |
+| Runtime | PASS | API workflow restarted and listened on port 8080; web workflow remains running. |
+| Real route / owner UI | NOT VERIFIED | No authenticated owner session or current real seller contact evidence was available. Seller-contact research provider remains unconfigured; manual evidence capture remains the allowed path. |
+
+No real property records were changed, no contact details were inferred, and no seller call or external message was claimed.
+
+**Next single task:** an authenticated owner should use the new discovery contact-research action to review permitted sources and record current identity, permission, route, freshness, and conflict evidence—or an explicit no-route result. Keep the discovery out of CALL NEXT unless every gate passes.
+
+## Block 68 — One Real Deal Workspace Across the Lifecycle — 2026-10-16
+
+**VERDICT: THE EXISTING LEAD DETAIL ROUTE NOW SERVES AS A LINKED LIFECYCLE WORKSPACE; IT REUSES PERSISTED DEAL RECORDS AND KEEPS BACKEND STATUSES AUTHORITATIVE. REAL SELLER OPERATIONS REMAIN BLOCKED AT CONTACTABILITY.**
+
+- Extended the existing `/leads/:id` page rather than adding a CRM or parallel deal records. Its refreshable overview and detailed tabs use the persisted lead, call, evidence, underwriting, offer, match, distribution, contract, deadline, exception and outcome records already returned by existing APIs.
+- The overview summarizes qualification/evidence, offer authority, contract version/status, current eligible acquisition buyers, matches and provider/worker jobs. It links back to the originating property discovery and displays evidence capture dates and source references; the existing source record remains authoritative for observation/refresh history.
+- Existing transaction, distribution, seller-contact and evidence panels remain the detailed views for exact versions, approvals, package history, provider responses, signature/funds/deadline evidence and exceptions. Refresh and mutation invalidation use the existing query cache and deal-operations endpoint. The next action continues to come from backend work guidance, not model text.
+- Private address and seller contact fields remain role-gated/redacted in the workspace view. No new API entity or duplicate lifecycle record was introduced.
+- Expanded the isolated persisted transaction exercise to reload linked deal data and assert that call outcomes, offer snapshot lineage/status, contract, buyer eligibility and matching-job state agree across the existing detail and operations responses. A material evidence change must surface `INVALIDATED` offer status and ineligible buyer matching without rewriting the existing contract terms.
+
+| Verification | Result | Exact evidence / limitation |
+| --- | --- | --- |
+| API typecheck | PASS | `pnpm --filter @workspace/api-server run typecheck`. |
+| Command-center and shared display-state tests | PASS | `pnpm --filter @workspace/api-server run test:command-center` — **18/18 passed**. |
+| Workspace role/redaction boundary | PASS | Revalidated with `pnpm --filter @workspace/api-server run test:auth` — **8/8 passed**, including the shared middleware denying VIEWER before sensitive lead/contact/finance/transaction payload handlers run. |
+| Outreach/provider-state tests | PASS | `pnpm --filter @workspace/api-server run test:buyer-outreach` — **9/9 passed**. |
+| Linked lifecycle and stale-approval integration exercise | PASS, isolated synthetic schema | Revalidated `pnpm --filter @workspace/api-server run exercise:transactions` — linked lead/call/offer/buyer/match/contract/deadline/exception/outcome states and stale dependent authority passed; 36 isolated tables reconciled and reload fingerprints remained stable. No real transaction was changed. |
+| Workspace typecheck and artifact builds | PASS | Revalidated `PORT=20639 BASE_PATH=/ pnpm run build` — all workspace typechecks and artifact builds passed. Existing web chunk-size warning (>500 kB) remains. |
+| Final web-page typecheck/build after evidence-freshness display change | PASS | `pnpm --filter @workspace/radical-deal-os run typecheck` and `PORT=20639 BASE_PATH=/ pnpm --filter @workspace/radical-deal-os run build` passed; Vite emitted non-fatal source-map notices for existing UI components and the existing chunk-size warning. |
+| Runtime restart | PASS | API server listened on port 8080; Vite reported ready. No new browser console errors. |
+| Owner-session workspace UI | NOT VERIFIED | Preview rendered the public sign-in page; the preview browser has no authenticated owner session. |
+| Real source/provider validation | NOT VERIFIED | No real seller route, buyer delivery, signature, funds, or closing was validated. Existing provider configuration gaps and the persisted property's contactability blocker remain as documented in Block 67. |
+
+No live deal records were mutated, no outreach was sent, and no delivery/signature/funds/outcome was claimed.
+
+**Next single task:** have an authenticated owner review the existing discovery in `/sources`, record current permitted seller identity/contact evidence through the manual research flow (or configure a permitted provider), then verify the resulting HTTP persistence and call-readiness decision. Keep the property out of CALL NEXT unless the evidence passes.
+
+## Block 71 — Underwriting-to-Offer Single Source of Truth — 2026-10-16
+
+**VERDICT: OFFER DRAFTS NOW INCLUDE THE EXACT PERSISTED UNDERWRITING SNAPSHOT AND ITS LINKED SOURCE EVIDENCE IN THE HASHED REVIEW PACKET. MATERIAL UNDERWRITING CHANGES KEEP THE EXISTING INVALIDATION GATE. REAL OWNER REVIEW REMAINS UNVERIFIED.**
+
+- **Defect fixed:** the offer packet previously recorded the snapshot ID and selected calculation summaries, but omitted the full persisted underwriting input; it also mixed in broad live evidence and seller reports that were not necessarily inputs to that calculation. Reviewers could not inspect the complete source/input lineage, and unrelated live evidence could change the packet hash.
+- Offer context now resolves the immutable analysis row by both snapshot ID and lead ID. Draft review packets embed its exact underwriting-relevant subject, input, and deterministic analysis result, including formula, assumptions, confidence, comp decisions, repair ranges, and missing-evidence blockers. They list provenance metadata only for evidence IDs referenced by those inputs, expose current readiness blockers separately, and include the deterministic LOW/downside scenario. The packet hash binds these contents to the exact offer terms.
+- An absent or mismatched immutable snapshot blocks draft preparation. Unlinked model hypotheses or conversation text do not enter the underwriting packet or alter deterministic math. Only explicit versioned underwriting saves recompute the analysis; existing material-input changes invalidate live drafts/approvals and preserve the old analysis row unchanged.
+- The deterministic formula was not changed. The underwriting panel already shows MAO, carrying/closing costs, buyer-margin reserve, assignment target, low/base/high scenarios, calculation blockers, and formula; the offer review packet now carries the corresponding exact snapshot and downside case. Offer review remains separate from human owner authorization.
+- Canonical JSON serialization now omits undefined object properties and serializes undefined array slots as `null`, avoiding invalid snapshot text/hash content for optional draft terms.
+
+| Verification | Result | Exact evidence / limitation |
+| --- | --- | --- |
+| Deal-domain tests | PASS | `pnpm --filter @workspace/deal-domain test` — **147/147 passed**, including formula determinism, rounding/boundaries, stale/conflicting evidence, offer authorization, scenario-only behavior, and the new exact-packet / linked-source invalidation regression. |
+| Persisted offer exercise | PASS, isolated synthetic schema | `pnpm --filter @workspace/api-server run exercise:offers` — review input and result matched the persisted analysis row; linked source metadata and missing-evidence state were asserted; a material property update invalidated the offer while the prior snapshot remained unchanged. **36 tables reconciled; row counts and fingerprints stable.** No real deal or seller communication. |
+| Full workspace typecheck | PASS | `pnpm run typecheck` — libraries, API, web, mockup sandbox, and scripts. |
+| API build | PASS | `pnpm --filter @workspace/api-server run build`. |
+| Web build | PASS WITH WARNINGS | `PORT=20639 BASE_PATH=/ pnpm --filter @workspace/radical-deal-os run build`; existing source-map notices and >500 kB chunk warning remain. |
+| Runtime | PASS | API listened on port 8080; Vite reported ready after workflow restart. |
+| Signed-in review UI / real source verification | NOT VERIFIED | The preview browser showed the sign-in page; no authenticated owner session, live property, source provider, or real seller offer was used. |
+
+No offer was approved or sent from this exercise. Model-generated text remains outside deterministic calculation inputs and cannot authorize an offer.
+
+**Next single task:** have an authenticated owner open a real deal’s offer review packet and confirm the displayed snapshot, source links, assumptions, downside case, and blockers before using it for any approval.
+
+## Block 72 — Real Buyer Eligibility and Match-to-Distribution Handoff — 2026-10-16
+
+**VERDICT: PACKAGE RECIPIENT ELIGIBILITY FAILS CLOSED ON CURRENT BUYER EVIDENCE, CONTACT PERMISSION, AND IDENTITY/ROUTE CONFLICTS. NO-MATCH BUYER DEMAND IS NOW PERSISTED EVEN WHEN A HIGHER-PRIORITY DEAL BLOCKER IS RECOMMENDED. REAL BUYERS AND OWNER-SESSION REVIEW REMAIN UNVERIFIED.**
+
+- **Highest-impact defect fixed:** the decision engine persisted only its single top-priority action. An unrelated stale/conflicting evidence action could therefore suppress `BUYER_DEMAND`, so an active deal with no eligible acquisition buyer had no durable acquisition/reverification work item.
+- Decision snapshots now retain an eligible `BUYER_DEMAND` action for an active uncommitted contract with zero current eligible acquisition-buyer matches, alongside the existing top-priority recommended action. That work item is persisted with the evaluated snapshot and uses the existing buyer-pool workflow; it does not send messages or make a buyer eligible. Referral destinations are filtered out of acquisition-buyer demand.
+- Existing buyer matching applies hard identity/verification, criteria, proof/funding/capacity, freshness, and deal-constraint gates and retains reasons/mismatches. Duplicate normalized email/phone routes now explicitly block eligibility without merging buyer records. Package-link issuance and each portal access recheck identity conflict and channel-specific permission; bearer links remain unable to disclose a street address.
+- The distribution panel exposes reason and blocker detail for every buyer record and only offers recipient selection when both package fit and the match's current permission status pass. It keeps prospects, eligible matches, expressed interest, and committed status distinct. A selected link still is not a sent message or delivery receipt.
+- The persisted synthetic transaction exercise now asserts that a no-match deal produces a READY buyer-demand task and that the task retains its explicit synthetic marker. It also exercises package economics, stale/unverified buyers, permission, address redaction, and provider-not-sent behavior. No real buyer or deal was modified.
+
+| Verification | Result | Exact evidence / limitation |
+| --- | --- | --- |
+| Buyer and domain regression suite | PASS | `pnpm --filter @workspace/deal-domain run test` — **149/149 passed**, including hard buy-box/funding/capacity/freshness constraints, synthetic-versus-real separation, duplicate-route conflict detection, buyer-demand retention alongside a higher-priority evidence blocker, and no commitment inference. |
+| Persisted matching/distribution/transaction exercise | PASS, isolated synthetic schema | `pnpm --filter @workspace/api-server run exercise:transactions` — no-match buyer-demand work item persisted READY and retained `synthetic: true`; transaction/distribution checks passed; **36 tables reconciled and row counts/fingerprints stable**. One deliberately failed worker-attempt warning was expected by the retry/failure exercise; overall exercise reported PASS. |
+| Workspace typecheck and artifact builds | PASS | `PORT=20639 BASE_PATH=/ pnpm run build` — all libraries, API, web, and mockup-sandbox typechecks/builds passed. Existing web chunk-size warning (>500 kB) remains. An initial build without `PORT` failed at mockup-sandbox configuration; rerunning with the required `PORT` and `BASE_PATH` succeeded. |
+| Final recipient-picker UI check | PASS WITH EXISTING WARNINGS | After requiring a current `Contact permission: permitted` match reason in the recipient picker: `pnpm --filter @workspace/radical-deal-os run typecheck` and `PORT=20639 BASE_PATH=/ pnpm --filter @workspace/radical-deal-os run build` both passed. Existing source-map notices and >500 kB chunk-size warning remain. |
+| Runtime | PASS | API and web workflows restarted after implementation and reported running. |
+| Signed-in eligibility UI / actual buyer evidence | NOT VERIFIED | Preview has no authenticated owner session. Persisted buyer data was absent during the read-only development aggregate inspection; no real buyer identity, current permission, funding/capacity proof, or real package recipient was verified. |
+| Provider-backed distribution | NOT CONFIGURED / NOT VERIFIED | Email/SMS provider is unconfigured. No real message was sent and no delivery was claimed. Portal access and synthetic fixtures are not delivery, identity verification, interest, or commitment. |
+
+**Earliest remaining blocker:** no current owner-reviewed real buyer identity, contact permission, proof/funding/capacity evidence, or real buyer match is verified in the development records. The package must remain undistributed to real recipients until those records pass the specific deal's gates.
+
+**Next single task:** an authenticated owner should review or acquire a real buyer record, verify identity and current buying criteria/funds/capacity with dated evidence, record current channel permission, then refresh matches and confirm the specific package's address-disclosure level before any authorized distribution.
+
+## Block 73 — Exact-Version Human Approval and Provider-Confirmed Delivery — 2026-10-16
+
+**VERDICT: EXACT BUYER MESSAGE APPROVAL NOW BECOMES STALE WHEN THE ROUTE, PACKAGE VERSION/HASH, ADDRESS REDACTION, PACKAGE AUTHORIZATION, MESSAGE, OR CONSENT SNAPSHOT CHANGES. NO LIVE PROVIDER SUBMISSION OR DELIVERY IS CONFIGURED OR CLAIMED.**
+
+- **Highest-impact defect fixed:** exact-message approval fingerprints previously omitted the destination route, address-disclosure level, package authorization identity, and consent state. A changed route or revoked/replaced consent could leave the same message and packet hash looking approved.
+- Approval hashes now bind buyer ID, a hash of the exact recipient route, channel, immutable packet version and snapshot hash, redaction level, package authorization ID, consent snapshot hash, exact message hash, approver, and approval time. Submission readiness checks current consent against the approved consent snapshot and rejects address-disclosing packets without independently verified recipient identity; route-control verification alone does not satisfy identity verification. Route and disclosure changes invalidate the old approval.
+- Persisted link issuance continues to bind each recipient to the frozen redacted packet, permission snapshot, actor/time link history, and audit action. The transaction exercise now asserts this persisted audit and per-recipient consent/history evidence.
+- **Provider-state boundary:** no permitted email/SMS provider or durable provider-submit endpoint is configured in this workspace. The app exposes “no permitted email/SMS provider is connected” as the setup blocker and retains `NOT SENT`; test adapters only exercise readiness and callback reducers. Seller offer communication remains a human-recorded attestation, not an app send. No queued/submitted/delivered state is claimed without real provider evidence.
+
+| Verification | Result | Exact evidence / limitation |
+| --- | --- | --- |
+| Buyer outreach approval/provider tests | PASS | `pnpm --filter @workspace/api-server run test:buyer-outreach` — **9/9 passed**, including stale route, packet version/hash, redaction, authorization and consent invalidation; revoked permission; verified-route/provider readiness; duplicate/conflicting callbacks; distinct provider-message retry; delivery-vs-interest separation. Fixture providers were not used to send. |
+| Persisted recipient/audit exercise | PASS, isolated synthetic schema | `pnpm --filter @workspace/api-server run exercise:transactions` — actor/action audit history and each recipient’s permission snapshot and link history asserted; redacted package and exact binding tests passed; **36 tables reconciled with stable row counts/fingerprints**. Synthetic data only. |
+| Typechecks | PASS | `pnpm --filter @workspace/api-server run typecheck`, `pnpm --filter @workspace/radical-deal-os run typecheck`, and workspace typechecks within the build passed. |
+| Workspace builds | PASS WITH EXISTING WARNINGS | `PORT=20639 BASE_PATH=/ pnpm run build` passed all artifact builds. Existing source-map notices and >500 kB web chunk warning remain. |
+| Provider configuration / actual delivery | NOT CONFIGURED | Readiness reports no permitted email/SMS provider; no real provider submit, callback, or delivery receipt was produced. |
+| Signed-in owner UI | NOT VERIFIED | Preview browser has no authenticated owner session; UI display was not validated as a signed-in owner. |
+
+**Earliest remaining blocker:** connect and configure a permitted messaging provider, then implement/verify the durable submission and receipt-persistence path against the provider’s actual idempotency and callback contract. Until then, outbound messages stay NOT SENT and seller-side communication remains human-attested only.
+
+**Next single task:** connect an approved messaging provider through the workspace integration flow and verify one explicitly approved, consent-current, redacted buyer message end to end—including idempotent submission, provider receipt persistence, duplicate callback handling, and visible state after reload—before enabling any real sending.
+
+## Block 74 — Human-Only Decisions and Safe Automation Boundaries — 2026-10-16
+
+**VERDICT: CALLS, OFFER APPROVAL, OFFER COMMUNICATION, CONTRACT EXECUTION, BUYER COMMITMENT, CLOSING EVIDENCE, AND SPECIAL-CLAUSE REVIEW REMAIN EXPLICIT HUMAN ACTIONS. AUTOMATION PREPARES OR QUEUES WORK; IT DOES NOT CLAIM THESE EVENTS.**
+
+- Audited the current action boundaries across seller transitions/call recording, offer draft/authorization/communication, buyer package authorization, transaction execution/milestones/outcomes, clause review requests, and worker-triggered preparation.
+- Seller calls are recorded as human-entered call outcomes. A connected call may update the stage and queue a brief/research follow-up, but workers do not place calls, approve terms, or communicate offers.
+- Offer terms are drafted separately, exact-version approved by the owner, then separately recorded as human communication. The communication record is not a provider send. Buyer package authorization, contract execution, settlement outcomes, and special-clause requests also retain separate owner actions and evidence gates.
+- Special-clause requests persist owner-supplied text as `OWNER_SUPPLIED_UNREVIEWED`; requests remain blocked pending qualified jurisdictional review and do not insert clauses into documents.
+- Fixed the transition panel's misleading blocker: when a valid transition is hidden by role, it now identifies the permitted role; terminal deals explain that they cannot be reopened manually; transaction stages explain that only evidence-backed contract/buyer/closing actions can advance them. No empty click handlers or placeholder-link controls were found in the audited app source.
+- Added negative tests that reject operator self-promotion to CALL_READY, manual stage claims for UNDER_CONTRACT / BUYER_COMMITTED / CLOSING / CLOSED, terminal-deal reopening, communication of an unapproved draft, and communication after its underwriting snapshot becomes stale.
+
+| Verification | Result | Exact evidence / limitation |
+| --- | --- | --- |
+| Domain tests | PASS | `pnpm --filter @workspace/deal-domain test` — **151/151 passed**, including role, approval-bypass, stale-authorization, false-completion, terminal-state and evidence-boundary tests. |
+| API persistence exercise | PASS, isolated synthetic schema | `pnpm --filter @workspace/api-server run exercise:transactions` — lifecycle and role gates passed; **36 tables reconciled** with stable row counts/fingerprints. Synthetic records only. |
+| API and web typechecks | PASS | API and Radical Deal OS typechecks passed; workspace typechecks also passed within the build. |
+| Workspace build | PASS WITH EXISTING WARNINGS | `PORT=20639 BASE_PATH=/ pnpm run build` passed; existing source-map notices and the web bundle-size warning remain. |
+| Signed-in transition UI | NOT VERIFIED | The preview browser has no authenticated owner session. The role-specific copy is typechecked, but the signed-in screen was not visually exercised. |
+
+**Remaining boundary:** actual provider-backed buyer messaging, contract-document delivery/signing, and real transaction evidence remain unconfigured or unverified. Controls must continue to show those blockers and must not report completion until actual provider or human evidence is persisted.
+
+## Block 75 — Contract-to-Closing Evidence Chain — 2026-10-16
+
+**VERDICT: THE EXISTING CONTRACT-TO-CLOSING PATH IS VERSIONED AND EVIDENCE-GATED THROUGH SETTLEMENT. SPECIAL-CLAUSE REQUESTS REMAIN REVIEW-ONLY; NO QUALIFIED JURISDICTION-SPECIFIC CLAUSE APPROVAL OR SAFE INSERTION PATH IS CONFIGURED.**
+
+- Confirmed that a current communicated owner-authorized offer seeds frozen contract economics, earnest money, assignment intent, contingencies, and closing date. The generated purchase PDF is an internal review worksheet, versioned against the offer, underwriting snapshot, party identity, jurisdiction/template registry, and content hash; it is not a legal form or signature.
+- The derived closing checklist uses persisted authority, party/signature evidence, template review, transaction milestones, and deadline schedule. Term/party amendments stale downstream documents or schedules; execution, buyer commitment, funds/EMD evidence, and final outcome each use separate owner-reviewed evidence actions.
+- Confirmed that signature times are checked against the exact approved/communicated offer and expiry; closing milestones retain event and record times, amounts, evidence kinds and references; settlement checks signature/commitment, current schedule, required milestones, fees and costs before setting CLOSED.
+- Clause request status remains `BLOCKED_MISSING_APPROVED_TEMPLATE` or `AWAITING_QUALIFIED_REVIEW`; proposed owner text is always `OWNER_SUPPLIED_UNREVIEWED`, qualified review remains `NOT_REVIEWED`, and no text is inserted. A template registry entry alone does not approve a proposed clause. The missing capability is an evidenced, jurisdiction-bound qualified-review and exact-text approval record; do not infer it from owner input or allow unreviewed text into the contract package.
+
+| Verification | Result | Exact evidence / limitation |
+| --- | --- | --- |
+| Domain suite | PASS | `pnpm --filter @workspace/deal-domain test` — **151/151 passed**, covering stale terms/documents, authorization, state transitions, evidence-driven checklists, jurisdiction/template eligibility and non-completion without evidence. |
+| Deadline tests | PASS | `pnpm --filter @workspace/api-server run test:transaction-readiness` — **5/5 passed**, including date/time-zone boundaries, material term changes, request replay hash, and schedule completeness. |
+| Clause review exercise | PASS, isolated synthetic schema | `pnpm --filter @workspace/api-server run exercise:clause-review` — owner-only request, idempotent replay, jurisdiction mismatch rejection, audit, unchanged lead, missing-template blocker and `NOT_REVIEWED`/no-insertion state verified; **36 tables reconciled**. |
+| Full transaction exercise | PASS, isolated synthetic schema | `pnpm --filter @workspace/api-server run exercise:transactions` — version/stale-document checks, duplicate distribution callbacks, provenance and permission checks, deadlines, EMD/funds evidence, closing state and terminal outcomes passed; **36 tables reconciled**. No real transaction was exercised. |
+| Real signature-provider callbacks / final transaction | NOT CONFIGURED / NOT VERIFIED | No signing provider is connected and no real provider callback, signature, escrow receipt, funds receipt, or settlement was observed. Callback reducer tests are not evidence of provider integration. |
+| Qualified clause approval/insertion | NOT IMPLEMENTED / BLOCKED | No jurisdiction-specific reviewer approval event is available; clauses remain outside the review PDF. |
+
+**Earliest remaining blocker:** implement the jurisdiction-bound qualified clause-review evidence path (reviewer identity/qualification, exact approved text and hash, jurisdiction, effective time, source evidence, and stale-version rejection) before allowing a clause to appear in a versioned contract review package. Until that path and suitable approved legal templates exist, clauses stay review-only and the generated document stays a worksheet.

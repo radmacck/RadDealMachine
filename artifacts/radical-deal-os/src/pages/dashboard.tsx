@@ -8,7 +8,8 @@ import {
 import {
   getGetCommandCenterQueryKey, getGetDashboardQueryKey, getGetTransactionReadinessQueryKey, getListPropertyDiscoveriesQueryKey, useGetCommandCenter,
   getListOperationalAlertsQueryKey, useListOperationalAlerts, useUpdateOperationalAlert, useGetDashboard,
-  useGetTransactionReadiness, useListPropertyDiscoveries, type CommandAction, type ListPropertyDiscoveriesParams, type PropertyDiscoveryStatus,
+  useGetTransactionReadiness, useListPropertyDiscoveries, useListBuyerCallFollowUps, getListBuyerCallFollowUpsQueryKey,
+  type CommandAction, type ListPropertyDiscoveriesParams, type PropertyDiscoveryStatus,
 } from '@workspace/api-client-react';
 import { rankPropertyAcquisitionQueue, type AcquisitionQueueViability } from '@workspace/deal-domain';
 import { StageBadge } from '@/components/stage-badge';
@@ -68,6 +69,7 @@ export default function Dashboard() {
   const acquisitionPipeline = useGetDashboard({ query: { queryKey: getGetDashboardQueryKey(), refetchInterval: 30000 } });
   const transactionReadiness = useGetTransactionReadiness({ query: { queryKey: getGetTransactionReadinessQueryKey(), refetchInterval: 30000 } });
   const alertQuery=useListOperationalAlerts({query:{queryKey:getListOperationalAlertsQueryKey(),refetchInterval:15000}});
+  const buyerFollowUps=useListBuyerCallFollowUps({query:{queryKey:getListBuyerCallFollowUpsQueryKey(),refetchInterval:15000}});
   const alertMutation=useUpdateOperationalAlert({mutation:{onSuccess:()=>queryClient.invalidateQueries({queryKey:getListOperationalAlertsQueryKey()})}});
   const [discoveryCursor, setDiscoveryCursor] = useState<string | undefined>();
   const [discoveryPageHistory, setDiscoveryPageHistory] = useState<Array<string | undefined>>([]);
@@ -423,6 +425,21 @@ export default function Dashboard() {
                 </div>
               </article>)}</div>)}
             <small>In-app only. No email, SMS, or other external notification is sent.</small>
+          </section>
+          <section className="fd-actions-section" aria-label="Buyer call follow-ups" data-testid="panel-buyer-call-followups">
+            <div className="fd-section-head"><div className="fd-section-title"><CalendarClock size={16}/>Buyer call follow-ups<small>{buyerFollowUps.data?.items.length ?? 0} open</small></div></div>
+            {buyerFollowUps.isError&&<div className="fd-empty" role="alert">Buyer follow-ups could not be loaded. Retry without changing seller schedules.</div>}
+            {!buyerFollowUps.isError&&(!buyerFollowUps.data?.items.length?<div className="fd-empty" role="status">No open buyer-call follow-ups.</div>:
+              <div className="grid gap-2">{buyerFollowUps.data.items.map(item=>{
+                const overdue=Date.parse(item.dueAt)<=Date.now();
+                return <article key={item.callId} className="fd-start-card" data-testid={`buyer-followup-${item.callId}`}>
+                  <div className="fd-start-card-head"><div><span className={`fd-action-tag ${overdue?'tone-warn':'tone-go'}`}>{overdue?'OVERDUE':'UPCOMING'}</span>
+                    <h3>{item.nextAction}</h3><p>{item.address} · {item.outcome.replaceAll('_',' ')} · Buyer {item.buyerId.slice(0,8)}</p></div>
+                    <b>Due {fmtDate(item.dueAt)}</b></div>
+                  <p className="text-xs">{item.notes}</p><Link className="fd-text-link" href={`/leads/${item.leadId}?work=call`}>Open buyer call and update its follow-up <ArrowRight size={12}/></Link>
+                </article>;
+              })}</div>)}
+            <small>Buyer-call follow-ups are separate from the seller’s deal follow-up date. No buyer is contacted automatically.</small>
           </section>
           <section className="fd-actions-section" data-testid="panel-actions">
             <div className="fd-section-head">

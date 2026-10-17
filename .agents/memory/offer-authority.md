@@ -62,3 +62,9 @@ Negotiation versions must link to a communicated parent, the exact current under
 **Why:** A recorded seller counter is not acceptance, and competing revisions must not inherit stale approval or overwrite the terms already communicated.
 
 **How to apply:** Create a new immutable offer row with provenance and idempotency metadata. Permit only human-entered response evidence or a verified seller-portal counter event; require exact-version owner approval before any new communication.
+
+Every offer review packet must carry the exact persisted underwriting snapshot and only the source records linked by its inputs. Include deterministic assumptions, confidence, formula output, downside case and unresolved evidence; unlinked model or conversation text must not alter the packet or economics.
+
+**Why:** A snapshot ID without its reviewed inputs leaves an approver unable to verify what produced MAO, while aggregating unrelated live evidence can invalidate a draft for non-material changes.
+
+**How to apply:** Resolve the snapshot by its persisted ID and lead, embed the immutable input/result plus linked source metadata in the hashed review packet, and list current readiness blockers separately. Material reviewed changes create a new snapshot and invalidate dependent offers; unlinked hypotheses never enter deterministic terms.

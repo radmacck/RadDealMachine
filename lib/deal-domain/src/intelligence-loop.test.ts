@@ -162,6 +162,25 @@ test("F and G: contracted no-match action differs from already committed transac
   }).recommendedAction?.code, "TRANSACTION_NEXT");
 });
 
+test("an active no-match contract keeps a buyer-demand task alongside higher-priority evidence blockers", () => {
+  const result = evaluateIntelligenceLoop({
+    subjectType: "LEAD",
+    subjectId: "11111111-1111-4111-8111-111111111111",
+    leadId: "11111111-1111-4111-8111-111111111111",
+    discoveryId: "discovery-1",
+    detail: makeDetail({ intelligence: [{
+      id: "conflict-1", sourceType: "SELLER", category: "occupancy",
+      classification: "INDICATED", statement: "Synthetic conflicting seller statement.",
+      createdAt: now.toISOString(), reconciliation: { state: "CONFLICT_REVIEW" },
+    }] }),
+    acquisition: null,
+    operations: ops({ contract: { id: "contract-demand", status: "UNDER_CONTRACT", committedBuyerId: null } }),
+    now,
+  });
+  assert.equal(result.recommendedAction?.code, "RECONCILE_EVIDENCE");
+  assert.ok(result.eligibleActions.some(item => item.code === "BUYER_DEMAND"));
+});
+
 test("H: terminal deal records the outcome and emits no stale recommended action", () => {
   const result = evaluateIntelligenceLoop({
     subjectType: "LEAD", subjectId: "11111111-1111-4111-8111-111111111111",
@@ -184,11 +203,43 @@ test("discovery remains separate from a lead, and AI hypotheses remain explicitl
       id: "22222222-2222-4222-8222-222222222222", status: "DISCOVERED_PROPERTY", leadId: null,
       address: "200 Synthetic Street", reason: "Synthetic source record.",
       nextAction: "Review qualification.", observedAt: now.toISOString(), missingInformation: [], signalRefs: [],
+      contactRouteEstablished: false,
     },
     now,
   });
-  assert.equal(discovery.recommendedAction?.code, "QUALIFY_DISCOVERY");
+  assert.equal(discovery.recommendedAction?.code, "RESEARCH_CONTACT");
+  assert.ok(discovery.eligibleActions.some(item => item.code === "QUALIFY_DISCOVERY"),
+    "Raw discoveries retain the separate relevance-review action while contact research remains actionable.");
   assert.equal(discovery.blockedActions[0]?.code, "CALL_NEXT");
+  const candidate = evaluateIntelligenceLoop({
+    subjectType: "DISCOVERY", subjectId: "22222222-2222-4222-8222-222222222222",
+    discoveryId: "22222222-2222-4222-8222-222222222222", leadId: null,
+    discovery: {
+      id: "22222222-2222-4222-8222-222222222222", status: "RELEVANT_CANDIDATE", leadId: null,
+      address: "200 Synthetic Street", reason: "Synthetic source record.",
+      nextAction: "Research contactability.", observedAt: now.toISOString(), missingInformation: [], signalRefs: [],
+      contactRouteEstablished: false,
+    },
+    now,
+  });
+  assert.equal(candidate.recommendedAction?.code, "RESEARCH_CONTACT");
+  assert.equal(candidate.recommendedAction?.requiresHumanAuthorization, true);
+  assert.ok(candidate.eligibleActions.some(item => item.code === "REVIEW_CANDIDATE"));
+  assert.equal(candidate.blockedActions.find(item => item.code === "CALL_NEXT")?.eligible, false);
+  const verifiedRoute = evaluateIntelligenceLoop({
+    subjectType: "DISCOVERY", subjectId: "22222222-2222-4222-8222-222222222222",
+    discoveryId: "22222222-2222-4222-8222-222222222222", leadId: null,
+    discovery: {
+      id: "22222222-2222-4222-8222-222222222222", status: "RELEVANT_CANDIDATE", leadId: null,
+      address: "200 Synthetic Street", reason: "Synthetic source record.",
+      nextAction: "Review candidate.", observedAt: now.toISOString(), missingInformation: [], signalRefs: [],
+      contactRouteEstablished: true,
+    },
+    now,
+  });
+  assert.ok(!verifiedRoute.eligibleActions.some(item => item.code === "RESEARCH_CONTACT"));
+  assert.equal(verifiedRoute.blockedActions.find(item => item.code === "CALL_NEXT")?.eligible, false,
+    "A verified route alone never promotes a discovery to call-ready.");
 
   const hypothesis = evaluateIntelligenceLoop({
     subjectType: "LEAD", subjectId: "11111111-1111-4111-8111-111111111111",

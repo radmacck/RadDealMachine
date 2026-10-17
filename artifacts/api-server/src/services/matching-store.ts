@@ -1,7 +1,7 @@
 import { eq, and, desc } from "drizzle-orm";
 import { db, buyersTable, contractsTable, matchesTable, jobsTable } from "@workspace/db";
 import { GetDealOperationsResponse } from "@workspace/api-zod";
-import { buyerReservations, matchBuyer, rankBuyerMatches, type BuyerMatch, type DealContract, type LeadDetail, DomainError } from "@workspace/deal-domain";
+import { buyerIdentityConflicts, buyerReservations, matchBuyer, rankBuyerMatches, type BuyerMatch, type DealContract, type LeadDetail, DomainError } from "@workspace/deal-domain";
 import { allBuyerRecords, buyerRecord, getContractRecord, contractRecord, jobRecord, type Store } from "./operations-records";
 import { leadDetail, lockedLead, move, audit } from "./deal-store";
 import { leadsTable } from "@workspace/db";
@@ -17,12 +17,14 @@ async function evaluatedMatches(detail: LeadDetail, contract: DealContract|null,
     const price = status==="COMMITTED"?existing?.payload.agreedPrice as number|undefined:undefined;
     const reservations = buyerReservations(contracts,b.id,contract?.id);
     const evaluated = matchBuyer(b,detail,contract,now,price,reservations.count,reservations.funds);
+    const identityConflicts = buyerIdentityConflicts(b,buyers);
     const legacyDestinationResponse = b.destinationKind!=="BUYER"&&existing
       ? existing.payload.legacyDestinationResponse??(["INTERESTED","COMMITTED","DECLINED"].includes(String(previousStatus))
         ?{status:previousStatus,evidence:typeof existing.payload.evidence==="string"?existing.payload.evidence:null}:undefined)
       : undefined;
-    return {...evaluated,eligible:evaluated.eligible&&status!=="DECLINED",
-      mismatches:status==="DECLINED"?[...evaluated.mismatches,"Buyer declined this exact deal."]:evaluated.mismatches,
+    return {...evaluated,eligible:evaluated.eligible&&status!=="DECLINED"&&!identityConflicts.length,
+      reasons:identityConflicts.length?[...evaluated.reasons,...identityConflicts]:evaluated.reasons,
+      mismatches:[...evaluated.mismatches,...identityConflicts,...(status==="DECLINED"?["Buyer declined this exact deal."]:[])],
       status:status??"MATCHED",agreedPrice:status==="COMMITTED"?existing?.payload.agreedPrice as number|null??null:null,
       evidence:status?existing?.payload.evidence as string|null??null:null,
       ...(legacyDestinationResponse?{legacyDestinationResponse}:{})};
@@ -51,6 +53,7 @@ export async function dealOperations(id: string, now = new Date()) {
   },{isolationLevel:"repeatable read",accessMode:"read only"});
 }
 export async function refreshMatches(id: string, now = new Date()) {
+  let needsBuyerDemandTask = false;
   await db.transaction(async tx=>{
     const row = await lockedLead(tx,id), contract = await getContractRecord(id,tx);
     const detail = await leadDetail(id,tx,now);
@@ -62,6 +65,7 @@ export async function refreshMatches(id: string, now = new Date()) {
     const qualified = results.filter(m=>m.eligible&&m.status!=="DECLINED"&&m.destinationKind==="BUYER");
     const destinations = results.filter(m=>m.eligible&&m.status!=="DECLINED"&&m.destinationKind!=="BUYER");
     if (contract && ["UNDER_CONTRACT","BUYER_MATCHED"].includes(row.stage)) {
+      needsBuyerDemandTask = qualified.length===0;
       if (qualified.length && row.stage==="UNDER_CONTRACT") await move(tx,row,"BUYER_MATCHED","Current criteria, funding and verification passed automatic matching",`Review ${qualified.length} qualified buyers for this exact deal.`, "system:matching",now);
       else row.nextAction = qualified.length?`Review ${qualified.length} qualified buyers for this exact deal.`:
         destinations.length?`Review ${destinations.length} approved deal-finder/guru destinations; record actual interest and qualify a separate acquisition buyer before commitment.`:
@@ -70,6 +74,10 @@ export async function refreshMatches(id: string, now = new Date()) {
     }
     await audit(tx,"system:matching","BUYERS_MATCHED",id,`${qualified.length} qualified of ${results.length} reviewed; every exclusion retains its reasons.`);
   });
+  if (needsBuyerDemandTask) {
+    const { evaluateLeadDecision } = await import("./intelligence-decision-store");
+    await evaluateLeadDecision(id,"system:matching",now);
+  }
   return dealOperations(id,now);
 }
 export async function refreshAllMatches(now = new Date()) {

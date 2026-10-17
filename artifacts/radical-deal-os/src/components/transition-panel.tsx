@@ -41,7 +41,15 @@ export function TransitionPanel({
         <p className="eyebrow mb-1">Move stage</p>
         <p className="mb-3 flex items-center gap-2 text-sm">Currently <StageBadge stage={lead.stage} /></p>
         {choices.length === 0 ? (
-          <p className="text-sm text-muted-foreground" data-testid="text-no-transitions">The server allows no stage changes from here right now. Complete the missing research or underwriting inputs first.</p>
+          <p className="text-sm text-muted-foreground" data-testid="text-no-transitions">
+            {allowedTransitions.length > 0
+              ? `Available stage changes (${allowedTransitions.map((stage) => stage.replace(/_/g, ' ')).join(', ')}) require an owner or analyst. Your role cannot make those changes; operators record human call outcomes and negotiation activity.`
+              : ['CLOSED', 'DEAD_DEAL'].includes(lead.stage)
+                ? `${lead.stage === 'CLOSED' ? 'This deal is closed' : 'This deal is marked dead'}; it cannot be reopened with a manual stage change.`
+                : ['CONTRACT_PENDING', 'UNDER_CONTRACT', 'BUYER_MATCHED', 'BUYER_INTERESTED', 'BUYER_COMMITTED', 'CLOSING'].includes(lead.stage)
+                  ? 'This transaction stage changes only through its evidence-backed contract, buyer, or closing action. Manual stage changes cannot record execution, commitment, or completion.'
+                  : 'No manual stage change is available from this stage. Review current evidence and use the relevant research, call, or offer action; stage labels alone do not record those events.'}
+          </p>
         ) : (
           <div className="flex flex-wrap gap-2">
             {choices.map((s) => (

@@ -282,6 +282,39 @@ paths:
           content:
             application/json:
               schema: { $ref: "#/components/schemas/LeadDetail" }
+  /leads/{id}/buyer-calls:
+    parameters:
+      - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
+    post:
+      operationId: recordBuyerCall
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/BuyerCallInput" }
+      responses:
+        "201":
+          description: Buyer call recorded without changing seller follow-up or offer authority
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/LeadDetail" }
+  /leads/{id}/buyer-calls/{callId}/follow-up:
+    parameters:
+      - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
+      - { name: callId, in: path, required: true, schema: { type: string, format: uuid } }
+    patch:
+      operationId: updateBuyerCallFollowUp
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/BuyerCallFollowUpUpdate" }
+      responses:
+        "200":
+          description: Buyer follow-up updated with audit history
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/LeadDetail" }
   /leads/{id}/offers:
     parameters:
       - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
@@ -476,6 +509,15 @@ paths:
           content:
             application/json:
               schema: { $ref: "#/components/schemas/CommandCenter" }
+  /buyer-call-follow-ups:
+    get:
+      operationId: listBuyerCallFollowUps
+      responses:
+        "200":
+          description: Open buyer-call follow-ups with their deal and individual due dates
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/BuyerCallFollowUps" }
   /alerts:
     get:
       operationId: listOperationalAlerts
@@ -3612,6 +3654,28 @@ components:
         jobs: { type: array, items: { $ref: "#/components/schemas/WorkerJob" } }
         propertyDiscoveries: { $ref: "#/components/schemas/PropertyDiscoveryList" }
         automation: { $ref: "#/components/schemas/AutomationOverview" }
+    BuyerCallFollowUp:
+      type: object
+      required: [leadId, callId, buyerId, address, outcome, notes, nextAction, dueAt, status, actor]
+      properties:
+        leadId: { type: string }
+        callId: { type: string }
+        buyerId: { type: string }
+        address: { type: string }
+        outcome: { type: string, enum: [NO_ANSWER, VOICEMAIL, CONNECTED, NOT_INTERESTED] }
+        notes: { type: string }
+        nextAction: { type: string }
+        dueAt: { type: string, format: date-time }
+        status: { type: string, enum: [OPEN, COMPLETED] }
+        actor: { type: string }
+        updatedAt: { type: string, format: date-time }
+        updatedBy: { type: string }
+    BuyerCallFollowUps:
+      type: object
+      required: [generatedAt, items]
+      properties:
+        generatedAt: { type: string, format: date-time }
+        items: { type: array, items: { $ref: "#/components/schemas/BuyerCallFollowUp" } }
     CommandCenterOpportunity:
       type: object
       required: [lead, intelligence, analysis]
@@ -4124,12 +4188,49 @@ components:
         notes: { type: string, maxLength: 10000 }
         nextAction: { type: string, maxLength: 1000 }
         followUpAt: { type: ["string", "null"], format: date-time }
-        evidenceSource: { type: string, enum: [OPERATOR_ENTERED_SELLER_CONVERSATION, OPERATOR_CALL_ATTEMPT] }
+        operatorConfidence: { type: number, minimum: 0, maximum: 1 }
+        counterpartyKind: { type: string, enum: [SELLER, BUYER] }
+        buyerId: { type: string }
+        buyerFollowUpStatus: { type: string, enum: [OPEN, COMPLETED] }
+        buyerFollowUpNote: { type: string }
+        buyerFollowUpHistory:
+          type: array
+          items:
+            type: object
+            required: [status, actor, at, note]
+            properties:
+              status: { type: string, enum: [OPEN, COMPLETED] }
+              actor: { type: string }
+              at: { type: string, format: date-time }
+              note: { type: string }
+              dueAt: { type: ["string", "null"], format: date-time }
+        evidenceSource: { type: string, enum: [OPERATOR_ENTERED_SELLER_CONVERSATION, OPERATOR_CALL_ATTEMPT, OPERATOR_ENTERED_BUYER_CALL] }
         evidenceClassification: { type: string, enum: [INDICATED, OBSERVED] }
         sellerAnswersCapturedAt: { type: string, format: date-time }
         evidenceIds: { type: array, items: { type: string } }
         materialEvidence: { type: boolean }
         analysisInvalidated: { type: boolean }
+    BuyerCallInput:
+      type: object
+      required: [version, buyerId, idempotencyKey, outcome, notes, nextAction, followUpAt, operatorConfidence]
+      properties:
+        version: { type: integer, minimum: 1 }
+        buyerId: { type: string, format: uuid }
+        idempotencyKey: { type: string, minLength: 8, maxLength: 200 }
+        outcome: { type: string, enum: [NO_ANSWER, VOICEMAIL, CONNECTED, NOT_INTERESTED] }
+        notes: { type: string, minLength: 1, maxLength: 10000 }
+        nextAction: { type: string, minLength: 3, maxLength: 1000 }
+        occurredAt: { type: string, format: date-time }
+        followUpAt: { type: string, format: date-time }
+        operatorConfidence: { type: number, minimum: 0, maximum: 1 }
+    BuyerCallFollowUpUpdate:
+      type: object
+      required: [version, status, note]
+      properties:
+        version: { type: integer, minimum: 1 }
+        status: { type: string, enum: [OPEN, COMPLETED] }
+        note: { type: string, minLength: 1, maxLength: 1000 }
+        dueAt: { type: ["string", "null"], format: date-time }
     AcquisitionQueue:
       type: object
       required: [generatedAt, total, items]

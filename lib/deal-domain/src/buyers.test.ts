@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { matchBuyer, rankBuyerMatches, verificationStatus, evidenceUrl, type Buyer, type DealContract } from "./buyers";
+import { buyerIdentityConflicts, matchBuyer, rankBuyerMatches, verificationStatus, evidenceUrl, type Buyer, type DealContract } from "./buyers";
 import type { LeadDetail } from "./types";
 import { analyzeDeal, DEFAULT_ASSUMPTIONS } from "./underwriting";
 import { qualificationMaintenanceKind } from "./buyer-qualification";
@@ -95,6 +95,17 @@ test("buyer ranking is deterministic: eligible, then checklist fit, then stable 
   ];
   assert.deepEqual(rankBuyerMatches(rows).map(row=>row.buyerId),["a","c","z","b"]);
   assert.deepEqual(rankBuyerMatches(rows).map(row=>row.buyerId),rankBuyerMatches(rows).map(row=>row.buyerId));
+});
+
+test("duplicate email or phone routes block recipient eligibility without merging buyer records",()=>{
+  const sameEmail={...buyer,id:"duplicate-email",email:buyer.email.toUpperCase()};
+  assert.deepEqual(buyerIdentityConflicts(buyer,[buyer,sameEmail]),[
+    "Contact route conflicts with 1 other buyer record(s); resolve identity before package distribution.",
+  ]);
+  const samePhone={...buyer,id:"duplicate-phone",email:"other@example.com",phone:"+1 (555) 123-4567"};
+  const routeOwner={...samePhone,id:"route-owner",phone:"15551234567"};
+  assert.equal(buyerIdentityConflicts(samePhone,[samePhone,routeOwner]).length,1);
+  assert.deepEqual(buyerIdentityConflicts(buyer,[buyer]),[]);
 });
 test("newer actual reply blocks otherwise-qualified matching until dated owner review",()=>{
   const withReply = {...buyer,lastOutreachReplyAt:"2026-10-05T12:00:01Z",lastOutreachReplyEvidenceUrl:"https://example.com/synthetic-new-reply"};

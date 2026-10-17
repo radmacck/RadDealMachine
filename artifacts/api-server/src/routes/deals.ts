@@ -145,6 +145,18 @@ router.post("/leads/:id/calls",operate,async (req,res) => {
   await propagateStaleTransactionDocuments(id);
   send(res,contract.RecordCallResponse,result,201);
 });
+router.post("/leads/:id/buyer-calls",operate,async(req,res)=>{
+  const id=leadId(req),result=await store.recordBuyerCall(id,parse(contract.RecordBuyerCallBody,req.body),String(res.locals.actor));
+  send(res,contract.RecordBuyerCallResponse,result,201);
+});
+router.patch("/leads/:id/buyer-calls/:callId/follow-up",operate,async(req,res)=>{
+  const {id,callId}=parse(contract.UpdateBuyerCallFollowUpParams,req.params);
+  const result=await store.updateBuyerCallFollowUp(id,callId,parse(contract.UpdateBuyerCallFollowUpBody,req.body),String(res.locals.actor));
+  send(res,contract.UpdateBuyerCallFollowUpResponse,result);
+});
+router.get("/buyer-call-follow-ups",operate,async(_req,res)=>{
+  send(res,contract.ListBuyerCallFollowUpsResponse,await store.listBuyerCallFollowUps());
+});
 router.post("/leads/:id/offers",research,async (req,res) => {
   const id=leadId(req),result=await offers.createOfferDraft(id,parse(contract.CreateOfferDraftBody,req.body),
     {id:String(res.locals.actor),role:String(res.locals.role)},

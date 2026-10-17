@@ -5,6 +5,9 @@
  * Radical Deal OS seller intake, underwriting, conversations and approved offers
  * OpenAPI spec version: 1.0.0
  */
+import type { CallBuyerFollowUpHistoryItem } from './callBuyerFollowUpHistoryItem';
+import type { CallBuyerFollowUpStatus } from './callBuyerFollowUpStatus';
+import type { CallCounterpartyKind } from './callCounterpartyKind';
 import type { CallEvidenceClassification } from './callEvidenceClassification';
 import type { CallEvidenceSource } from './callEvidenceSource';
 import type { CallOutcome } from './callOutcome';
@@ -22,6 +25,16 @@ export interface Call {
   nextAction: string;
   /** @nullable */
   followUpAt: string | null;
+  /**
+     * @minimum 0
+     * @maximum 1
+     */
+  operatorConfidence?: number;
+  counterpartyKind?: CallCounterpartyKind;
+  buyerId?: string;
+  buyerFollowUpStatus?: CallBuyerFollowUpStatus;
+  buyerFollowUpNote?: string;
+  buyerFollowUpHistory?: CallBuyerFollowUpHistoryItem[];
   evidenceSource?: CallEvidenceSource;
   evidenceClassification?: CallEvidenceClassification;
   sellerAnswersCapturedAt?: string;

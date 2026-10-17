@@ -4589,12 +4589,37 @@ export const CallOutcome = {
   NOT_INTERESTED: 'NOT_INTERESTED',
 } as const;
 
+export type CallCounterpartyKind = typeof CallCounterpartyKind[keyof typeof CallCounterpartyKind];
+
+
+export const CallCounterpartyKind = {
+  SELLER: 'SELLER',
+  BUYER: 'BUYER',
+} as const;
+
+export type CallBuyerFollowUpStatus = typeof CallBuyerFollowUpStatus[keyof typeof CallBuyerFollowUpStatus];
+
+
+export const CallBuyerFollowUpStatus = {
+  OPEN: 'OPEN',
+  COMPLETED: 'COMPLETED',
+} as const;
+
+export type CallBuyerFollowUpHistoryItemStatus = typeof CallBuyerFollowUpHistoryItemStatus[keyof typeof CallBuyerFollowUpHistoryItemStatus];
+
+
+export const CallBuyerFollowUpHistoryItemStatus = {
+  OPEN: 'OPEN',
+  COMPLETED: 'COMPLETED',
+} as const;
+
 export type CallEvidenceSource = typeof CallEvidenceSource[keyof typeof CallEvidenceSource];
 
 
 export const CallEvidenceSource = {
   OPERATOR_ENTERED_SELLER_CONVERSATION: 'OPERATOR_ENTERED_SELLER_CONVERSATION',
   OPERATOR_CALL_ATTEMPT: 'OPERATOR_CALL_ATTEMPT',
+  OPERATOR_ENTERED_BUYER_CALL: 'OPERATOR_ENTERED_BUYER_CALL',
 } as const;
 
 export type CallEvidenceClassification = typeof CallEvidenceClassification[keyof typeof CallEvidenceClassification];
@@ -4604,6 +4629,15 @@ export const CallEvidenceClassification = {
   INDICATED: 'INDICATED',
   OBSERVED: 'OBSERVED',
 } as const;
+
+export type CallBuyerFollowUpHistoryItem = {
+  status: CallBuyerFollowUpHistoryItemStatus;
+  actor: string;
+  at: string;
+  note: string;
+  /** @nullable */
+  dueAt?: string | null;
+};
 
 export interface Call {
   id: string;
@@ -4618,6 +4652,16 @@ export interface Call {
   nextAction: string;
   /** @nullable */
   followUpAt: string | null;
+  /**
+     * @minimum 0
+     * @maximum 1
+     */
+  operatorConfidence?: number;
+  counterpartyKind?: CallCounterpartyKind;
+  buyerId?: string;
+  buyerFollowUpStatus?: CallBuyerFollowUpStatus;
+  buyerFollowUpNote?: string;
+  buyerFollowUpHistory?: CallBuyerFollowUpHistoryItem[];
   evidenceSource?: CallEvidenceSource;
   evidenceClassification?: CallEvidenceClassification;
   sellerAnswersCapturedAt?: string;
@@ -6305,6 +6349,44 @@ export interface CommandCenter {
   automation: AutomationOverview;
 }
 
+export type BuyerCallFollowUpOutcome = typeof BuyerCallFollowUpOutcome[keyof typeof BuyerCallFollowUpOutcome];
+
+
+export const BuyerCallFollowUpOutcome = {
+  NO_ANSWER: 'NO_ANSWER',
+  VOICEMAIL: 'VOICEMAIL',
+  CONNECTED: 'CONNECTED',
+  NOT_INTERESTED: 'NOT_INTERESTED',
+} as const;
+
+export type BuyerCallFollowUpStatus = typeof BuyerCallFollowUpStatus[keyof typeof BuyerCallFollowUpStatus];
+
+
+export const BuyerCallFollowUpStatus = {
+  OPEN: 'OPEN',
+  COMPLETED: 'COMPLETED',
+} as const;
+
+export interface BuyerCallFollowUp {
+  leadId: string;
+  callId: string;
+  buyerId: string;
+  address: string;
+  outcome: BuyerCallFollowUpOutcome;
+  notes: string;
+  nextAction: string;
+  dueAt: string;
+  status: BuyerCallFollowUpStatus;
+  actor: string;
+  updatedAt?: string;
+  updatedBy?: string;
+}
+
+export interface BuyerCallFollowUps {
+  generatedAt: string;
+  items: BuyerCallFollowUp[];
+}
+
 export interface HealthStatus {
   status: string;
 }
@@ -6504,6 +6586,66 @@ export interface CallInput {
      * @maxLength 24000
      */
   structuredFieldsJson?: string;
+}
+
+export type BuyerCallInputOutcome = typeof BuyerCallInputOutcome[keyof typeof BuyerCallInputOutcome];
+
+
+export const BuyerCallInputOutcome = {
+  NO_ANSWER: 'NO_ANSWER',
+  VOICEMAIL: 'VOICEMAIL',
+  CONNECTED: 'CONNECTED',
+  NOT_INTERESTED: 'NOT_INTERESTED',
+} as const;
+
+export interface BuyerCallInput {
+  /** @minimum 1 */
+  version: number;
+  buyerId: string;
+  /**
+     * @minLength 8
+     * @maxLength 200
+     */
+  idempotencyKey: string;
+  outcome: BuyerCallInputOutcome;
+  /**
+     * @minLength 1
+     * @maxLength 10000
+     */
+  notes: string;
+  /**
+     * @minLength 3
+     * @maxLength 1000
+     */
+  nextAction: string;
+  occurredAt?: string;
+  followUpAt: string;
+  /**
+     * @minimum 0
+     * @maximum 1
+     */
+  operatorConfidence: number;
+}
+
+export type BuyerCallFollowUpUpdateStatus = typeof BuyerCallFollowUpUpdateStatus[keyof typeof BuyerCallFollowUpUpdateStatus];
+
+
+export const BuyerCallFollowUpUpdateStatus = {
+  OPEN: 'OPEN',
+  COMPLETED: 'COMPLETED',
+} as const;
+
+export interface BuyerCallFollowUpUpdate {
+  /** @minimum 1 */
+  version: number;
+  status: BuyerCallFollowUpUpdateStatus;
+  /**
+     * @minLength 1
+     * @maxLength 1000
+     */
+  note: string;
+  /** @nullable */
+  dueAt?: string | null;
 }
 
 export interface AcquisitionQueue {

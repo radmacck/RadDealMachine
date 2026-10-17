@@ -12,4 +12,5 @@ export type CallEvidenceSource = typeof CallEvidenceSource[keyof typeof CallEvid
 export const CallEvidenceSource = {
   OPERATOR_ENTERED_SELLER_CONVERSATION: 'OPERATOR_ENTERED_SELLER_CONVERSATION',
   OPERATOR_CALL_ATTEMPT: 'OPERATOR_CALL_ATTEMPT',
+  OPERATOR_ENTERED_BUYER_CALL: 'OPERATOR_ENTERED_BUYER_CALL',
 } as const;
