@@ -97,7 +97,7 @@ try {
   await assert.rejects(intakePropertyEvidence(lead.id,packet,actor,now),e=>(e as DomainError).status===409);
    await assert.rejects(transitionLeadForActor(lead.id,{version:detail.lead.version,to:"CALL_READY",
      reason:"Synthetic packet is not real contactability evidence.",nextAction:"Obtain permitted owner-reviewed contactability evidence."},actor,now),
-     /CALL_READY is blocked: source-backed ownership\/identity review and a permitted seller route are required/);
+      /CALL_READY is blocked: Complete source-backed ownership, seller identity, contact permission, and route review/);
    detail = await leadDetail(lead.id);
    assert.ok(!(await callQueue(now)).some(b=>b.lead.id===lead.id),
      "Synthetic evidence must never enter the call-ready seller queue.");

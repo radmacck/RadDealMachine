@@ -2761,3 +2761,31 @@ Do not begin these features until Package 10 meets the agreed current-workflow t
 - Add swipe-based offer comparison, counteroffers, and messaging only after the underlying approval, consent, and audit rules are verified.
 - Make compliance content state-specific and versioned. Determine jurisdictional requirements with qualified review; do not invent rules or treat an unreviewed legal-AI result as authority.
 - Keep company-level Naelo separate from each user's personal Naelo. RadID and governed Rad Data integration points should be designed when this phase begins; do not claim they exist or are connected now, and do not send personal data externally without authorization.
+
+## Package 2–3 execution update — 2026-10-18
+
+**Scope completed this run:** Package 2 source discovery/persistence acceptance was rerun and passed; Package 3 persisted evidence intake, deterministic underwriting evidence boundaries, and repair-estimate persistence were exercised. This verifies synthetic workflow behavior and current permitted public-source ingestion, not a real seller or transaction.
+
+### Package 2 — permitted property discovery and persisted provenance
+
+- `pnpm --filter @workspace/api-server run exercise:property-source` — **PASS**, live Philadelphia public-source queries persisted in an isolated PostgreSQL schema; 36 tables reconciled and reloaded with stable row counts/fingerprints.
+- This run observed 580 unique exact-parcel discoveries, 1,767 source observations before synthetic pagination fixtures, and 167 unmatched observations retained. Per-feed observation counts: OPA 580; L&I violations 100 (88 matched, 12 unmatched); unsafe 88; vacancy 88; permits 94 (88 matched, 6 unmatched); demolitions 102 (88 matched, 14 unmatched); sheriff deeds 715 (580 matched, 135 unmatched). Sheriff traversal fetched 17 pages and 642 reported source records. Counts vary with live source contents and are run-specific.
+- The exercise confirmed multi-feed observations share exact-parcel discoveries while retaining source records, stable bounded pages expose all persisted discoveries and unmatched observations, and raw source discovery created **0 active leads**. Current permitted feeds exposed **0 direct phone/email/web/postal/other contact routes**. Synthetic qualification and source-refresh fixtures remained labeled synthetic and did not satisfy seller callability.
+- `pnpm --filter @workspace/api-server run exercise:property-source-coverage` — **PASS**, synthetic isolated PostgreSQL; source terms version, result counts, last-success retention after rate limiting, visible latest failure, stale status, schedule eligibility, and raw-discovery/lead separation passed; 36 tables reconciled/reloaded. This tests failure-state semantics, not a live provider failure.
+- `pnpm --filter @workspace/api-server run test:property-discovery-ranking` — **PASS, 2/2**.
+
+### Package 3 — saved evidence, underwriting inputs, and repair estimates
+
+- First run of `pnpm --filter @workspace/api-server run exercise:evidence-intake` **FAILED at a stale assertion only**: its expected `CALL_READY` error text predated the current gate, which explicitly requires source-backed ownership, seller identity, contact permission, and route review. The gate correctly remained closed.
+- Updated that persisted exercise assertion to match the current error. The same command then **PASSED**: actual public parcel observations remained distinct from explicitly synthetic evidence; the persisted synthetic packet exercised role denial, invalid provenance rejection, atomic persistence/rollback, deterministic `STRONG` analysis, stale/repeated version checks, expiry, and no synthetic entry into the call-ready queue. The exercise reported `CALL NEXT` for its synthetic case and did not contact a real seller or assert real-world contactability.
+- `pnpm --filter @workspace/api-server run exercise:repair-estimate` — **PASS**, synthetic isolated PostgreSQL; inspection-sourced estimate inputs, separately labeled listing-condition hypotheses, deterministic current-rate multiplication, no propagation into MAO, provenance-bound snapshot, immutable rate history, audit, and 36-table reload passed.
+- `pnpm --filter @workspace/deal-domain run test` — **PASS, 156/156**, including evidence classification, freshness, hypothesis exclusion, call readiness, deterministic underwriting, comparable eligibility, and invalid/missing input boundaries.
+- `pnpm --filter @workspace/api-server run typecheck` — **PASS**.
+- `pnpm --filter @workspace/api-server run build` — **PASS**; existing 9.3 MB bundle and source-map output.
+
+### Current boundary and next ordered work
+
+- Package 2 has current permitted public-source and isolated persistence evidence; broader source availability remains limited to the registered Philadelphia feeds. This does not establish source permission beyond the source-specific access already recorded above.
+- Package 3 is verified through the persisted synthetic exercises and domain tests, but no real seller, current contact permission, direct route, real comp/repair estimate, or authenticated operator save/reload was verified.
+- Package 4 remains the earliest incomplete human-gated stage: an authorized operator must verify and save source-linked seller self-identification, current permission scope, and a permitted direct route, then reload the lead and queue. No contact provider is connected; no seller was contacted.
+- Marketplace work remains deferred under the schedule rule above.
