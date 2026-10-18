@@ -2626,3 +2626,50 @@ No code change was safe at the first blocker: removing or weakening the seller-i
 - Restarted `artifacts/radical-deal-os: web`; Vite reported ready.
 
 **Still unverified:** no signed-in operator submitted a contact case, and no real seller identity, route, or permission evidence was available. This fix preserves an operator-provided reference; it does not turn public property records into contact permission or unlock CALL NEXT by itself. The next blocker remains current, permitted seller self-identification and contact-route evidence.
+
+## Focused implementation — Recheck seller contactability across active queue stages — 2026-10-18
+
+**VERDICT: Synthetic regression checks and builds pass for the contactability queue guard. NO-GO for a real seller call or complete deal.** The acquisition queue previously reapplied linked seller identity/permission evidence only at `STRONG`, `NEGOTIABLE`, and `CALL_READY`; an already-progressed seller-contact stage could otherwise be presented as `CALL NEXT` after its evidence became incomplete or stale.
+
+### Behavior changed
+
+- The acquisition queue now reruns the linked discovery's seller contactability evidence check at `STRONG`, `NEGOTIABLE`, and every active seller-contact stage: `CALL_READY`, `CONTACTED`, `CONVERSATION`, `OFFER_READY`, `OFFER_SENT`, `NEGOTIATING`, and `CONTRACT_PENDING`.
+- Any missing, stale, conflicting, synthetic, non-permitted, or non-self-identified evidence produces a blocked queue item with a contact-review next step rather than `CALL NEXT`.
+- The existing strict evaluator remains fail-closed: it requires source-linked seller self-identification, current permission evidence, a fresh permitted direct phone route, owner review/confirmation, and no unresolved route or identity conflict. Synthetic fixture cases cannot satisfy the real readiness predicate.
+- This slice changes queue actionability only. It does not claim that every downstream contract, signature, delivery, or financial endpoint was re-audited here.
+
+### Files changed
+
+- `artifacts/api-server/src/services/property-contactability-gate.ts` — central active seller-contact stage predicate.
+- `artifacts/api-server/src/services/property-contactability-gate.test.ts` — regression for all included pre-call/active stages and excluded research/terminal stages; existing allowed and blocked evidence tests retained.
+- `artifacts/api-server/src/services/acquisition-queue-store.ts` — apply the current evidence gate across all active seller-contact stages.
+
+### Exact verification
+
+| Command | Result |
+| --- | --- |
+| `pnpm --filter @workspace/api-server exec tsx --test src/services/property-contactability-gate.test.ts` | **PASS, 7/7**, including allowed fresh evidence, missing/weak/stale/prohibited/conflicting blocks, and the active-stage boundary regression. Synthetic unit fixtures only. |
+| `pnpm --filter @workspace/api-server run exercise:seller` | **PASS, synthetic isolated PostgreSQL**; 36 isolated tables reconciled and reloaded; a direct lead without linked discovery/contact evidence remains blocked from `CALL_READY`, and its stage/version stay unchanged. |
+| `pnpm --filter @workspace/api-server run exercise:acquisition-queue` | **FAIL, pre-existing synthetic exercise setup does not satisfy the current gate**; it stops at `acquisition-queue-exercise.ts:167` because its would-be positive fixture has no linked source-backed discovery/contact case. No evidence gate was weakened and no fixture was promoted to real evidence. |
+| `pnpm --filter @workspace/api-server run typecheck` | **PASS**. |
+| `pnpm --filter @workspace/api-server run build` | **PASS**; esbuild emitted the existing 9.3 MB bundle and source map. |
+| `pnpm --filter @workspace/radical-deal-os run typecheck` | **PASS**. |
+| `PORT=8080 BASE_PATH=/radical-deal-os pnpm --filter @workspace/radical-deal-os run build` | **PASS**; Vite emitted existing sourcemap-location notices and a large-chunk warning. |
+| `DANGEROUSLY_ALLOW_GIT=1 git diff --check` | **PASS**. |
+
+### Provider truth and manual operator verification
+
+- All gate tests and the seller persistence exercise use synthetic fixtures. No live seller/contact provider, authenticated operator session, seller call, outbound message, or real-world identity/permission verification was used.
+- Public-property providers, where configured, establish property/source observations only; they do not establish seller identity, consent, or a permitted direct calling route.
+- Before live use, an authorized owner/operator must link the property discovery; review current evidence that the seller self-identified; document permission and its scope for the intended contact; verify the direct route through a permitted channel; resolve route/recipient conflicts; and confirm freshness. Then reload the lead and queue and verify the gate's result before initiating any call. If evidence is withdrawn, expires, or conflicts, reload and confirm the active-stage queue no longer shows `CALL NEXT`. Record any actual call only after it occurs; do not infer it from this test.
+
+### Later marketplace/data-platform requirements — NOT IMPLEMENTED
+
+- Support both transaction structures end to end: (1) the company contracts to purchase and assigns its contractual interest; and (2) homeowner-direct-to-buyer matching and coordination.
+- Homeowners list for free. Buyers pay a membership subscription at a price supported by actual operating costs/value and buyers' demonstrated willingness to pay.
+- Disclose transaction, assignment, or finder fees transparently. Do not promise or imply a guaranteed 30-day close.
+- Add relevant licensing, disclosure, cancellation, and consumer-protection reminder checkboxes at applicable workflow checkpoints. Verify applicability and status for the launch jurisdiction before treating any checklist as a legal conclusion.
+- Preserve Rad Data as governed data collection/management. Give each registered user a stable RadID placeholder and maintain a clean, permissioned integration seam for later Naelo and broader Radical Republic ecosystem connections.
+- RadID and Naelo integrations do not currently exist. Do not send personal data to external services without authorization. No marketplace implementation was started in this slice.
+
+**Single next blocker:** an authorized human must verify a real seller's self-identification, contact permission, and currently permitted direct route through a legitimate channel; no such evidence or authorized live contact provider is available in this verification run.

@@ -1,6 +1,10 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { evaluatePropertyContactabilityGate, hasLegitimateSellerCallRoute } from "./property-contactability-gate";
+import {
+  evaluatePropertyContactabilityGate,
+  hasLegitimateSellerCallRoute,
+  requiresCurrentSellerContactabilityEvidence,
+} from "./property-contactability-gate";
 
 const now = new Date("2026-10-16T12:00:00Z");
 const route = (overrides: Record<string, unknown> = {}) => ({
@@ -92,4 +96,16 @@ test("only a fresh, permission-backed, identity-matched, conflict-free route is 
   assert.equal(hasLegitimateSellerCallRoute(evidence({ permissionBasis: "UNKNOWN" }), now), false);
   assert.equal(hasLegitimateSellerCallRoute(evidence({ identityMatch: "CONFLICTING" }), now), false);
   assert.equal(hasLegitimateSellerCallRoute(evidence({ candidateRoutes: [] }), now), false);
+});
+
+test("every active seller-contact stage rechecks current identity, permission, and direct-route evidence", () => {
+  for (const stage of [
+    "STRONG", "NEGOTIABLE", "CALL_READY", "CONTACTED", "CONVERSATION", "OFFER_READY",
+    "OFFER_SENT", "NEGOTIATING", "CONTRACT_PENDING",
+  ]) {
+    assert.equal(requiresCurrentSellerContactabilityEvidence(stage), true, `${stage} must recheck current contactability`);
+  }
+  for (const stage of ["DISCOVERED", "ENRICHING", "ANALYZED", "PASS", "CLOSED"]) {
+    assert.equal(requiresCurrentSellerContactabilityEvidence(stage), false, `${stage} is not an active seller-contact stage`);
+  }
 });

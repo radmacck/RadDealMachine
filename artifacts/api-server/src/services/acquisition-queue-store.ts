@@ -16,9 +16,10 @@ import {
 } from "@workspace/deal-domain";
 import { audit, leadDetail, listLeads, lockedLead, sellerCallReadinessBlockers } from "./deal-store";
 import { getSellerContactPaths } from "./seller-contact-store";
+import { requiresCurrentSellerContactabilityEvidence } from "./property-contactability-gate";
 
 type Tx = Parameters<Parameters<typeof db.transaction>[0]>[0];
-const PROGRESSED_STAGES = new Set([
+const PROGRESSED_STAGES: Set<string> = new Set([
   "CALL_READY", "CONTACTED", "CONVERSATION", "OFFER_READY", "OFFER_SENT",
   "NEGOTIATING", "CONTRACT_PENDING",
 ]);
@@ -139,7 +140,7 @@ function primaryBlocker(
 
 async function buildItem(detail: LeadDetail, role: string, now: Date, rank: number, query: typeof db | Tx = db): Promise<AcquisitionQueueItem> {
   const rawReadiness = await getSellerContactPaths(detail.lead.id, now, query);
-  const identityBlockers = ["STRONG", "NEGOTIABLE", "CALL_READY"].includes(detail.lead.stage)
+  const identityBlockers = requiresCurrentSellerContactabilityEvidence(detail.lead.stage)
     ? await sellerCallReadinessBlockers(detail.lead.id, query, now)
     : [];
   const readiness = identityBlockers.length

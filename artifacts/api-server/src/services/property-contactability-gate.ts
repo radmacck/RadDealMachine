@@ -14,6 +14,15 @@ export type SellerContactabilityEvidence = {
   candidateRoutes?: PropertyContactPath[];
 };
 
+const SELLER_CONTACT_STAGES = new Set([
+  "STRONG", "NEGOTIABLE", "CALL_READY", "CONTACTED", "CONVERSATION", "OFFER_READY", "OFFER_SENT",
+  "NEGOTIATING", "CONTRACT_PENDING",
+]);
+
+export function requiresCurrentSellerContactabilityEvidence(stage: string): boolean {
+  return SELLER_CONTACT_STAGES.has(stage);
+}
+
 export function evaluatePropertyContactabilityGate(caseRecord: SellerContactabilityEvidence, now: Date): string[] {
   const routes = reconcileContactPaths(caseRecord.candidateRoutes ?? [], now);
   const phones = routes.filter(path => path.channel === "PHONE");
