@@ -2,12 +2,12 @@ import { desc } from "drizzle-orm";
 import { db, jobsTable } from "@workspace/db";
 import { allPropertySourceConnectors } from "./property-source-connectors";
 
-export type ProviderHealthStatus = "CONNECTED" | "DISCONNECTED" | "DEGRADED" | "RATE_LIMITED" | "UNCONFIGURED";
+export type ProviderHealthStatus = "CONNECTED" | "DISCONNECTED" | "DEGRADED" | "RATE_LIMITED" | "UNCONFIGURED" | "UNKNOWN";
 export type ProviderCheckKind = "PERSISTED_JOB" | "ADAPTER_REGISTRATION" | "READINESS_CHECK" | "CONFIGURATION_CHECK";
 export type ProviderHealthEntry = {
   id: string;
   name: string;
-  category: "PROPERTY_SOURCE" | "CONTACT_RESEARCH" | "MESSAGING" | "DOCUMENT_SIGNATURE" | "CLOSING_COORDINATION" | "FILE_STORAGE";
+  category: "PROPERTY_SOURCE" | "CONTACT_RESEARCH" | "MESSAGING" | "DOCUMENT_SIGNATURE" | "FUNDING_DEPOSIT" | "EXTERNAL_NOTIFICATIONS" | "CLOSING_COORDINATION" | "FILE_STORAGE";
   status: ProviderHealthStatus;
   checkedAt: string;
   lastSuccessAt: string | null;
@@ -41,6 +41,10 @@ export function classifyProviderHealth(configured: boolean, lastCheck?: {
     status: "CONNECTED", lastSuccessAt: completedAt, checkKind: "PERSISTED_JOB",
     reason: "The latest persisted provider job completed successfully.",
   };
+  if (lastCheck.state === "UNKNOWN") return {
+    status: "UNKNOWN", lastSuccessAt: previousSuccess, checkKind: "PERSISTED_JOB",
+    reason: "The latest persisted provider check has an unknown result; no connection health is claimed.",
+  };
   if (/429|rate[\s_-]?limit|too many requests/i.test(message)) return {
     status: "RATE_LIMITED", lastSuccessAt: previousSuccess, checkKind: "PERSISTED_JOB",
     reason: "The latest persisted provider job reports rate limiting; respect the provider's retry window.",
@@ -69,6 +73,16 @@ export function applyProviderHealthFreshness<T extends Pick<ProviderHealthEntry,
     status: "DEGRADED" as T["status"],
     reason: "The last successful source job is older than 12 hours; refresh it before relying on current connectivity.",
   } : entry;
+}
+
+export function unconfiguredOperationalProviderHealth(now = new Date()): ProviderHealthEntry[] {
+  const base = classifyProviderHealth(false);
+  const checkedAt = now.toISOString();
+  return [
+    { id: "funding-deposits", name: "Funding, escrow and deposits", category: "FUNDING_DEPOSIT", ...base, checkedAt, nextAction: "No bank, escrow, payment or deposit provider is connected. Record owner-reviewed evidence only; the system does not move funds." },
+    { id: "external-notifications", name: "External notifications", category: "EXTERNAL_NOTIFICATIONS", ...base, checkedAt, nextAction: "Workspace alert preferences and in-app alerts remain available; no external email, SMS or push notification provider is connected." },
+    { id: "closing-coordination", name: "Closing/title coordination", category: "CLOSING_COORDINATION", ...base, checkedAt, nextAction: "Continue manual, evidence-linked title/closing milestones; no external closing coordinator is connected." },
+  ];
 }
 
 type ExistingReadiness = {
@@ -111,7 +125,7 @@ export async function providerHealth(now = new Date(), readiness?: ExistingReadi
     { id: "seller-contact-research", name: "Seller contact research", category: "CONTACT_RESEARCH" as const, ...classifyProviderHealth(false), checkedAt: now.toISOString(), nextAction: "Use permitted manual route capture with source, permission, identity and freshness evidence; no enrichment provider is connected." },
     { id: "outbound-messaging", name: "Email/SMS delivery", category: "MESSAGING" as const, ...readinessStatus(deliveryConfigured), checkedAt: now.toISOString(), nextAction: deliveryConfigured ? "Use the provider only after recipient authorization and persist a provider receipt for delivery claims." : "Connect a provider through the workspace integration flow before sending; drafts remain NOT_SENT." },
     { id: "electronic-signature", name: "Document/signature provider", category: "DOCUMENT_SIGNATURE" as const, ...readinessStatus(signingConfigured), checkedAt: now.toISOString(), nextAction: signingConfigured ? "Send only an authorized current document and retain provider envelope/signature receipts." : "No signature request can be sent; connect an approved provider before enabling this action." },
-    { id: "closing-coordination", name: "Closing/title coordination", category: "CLOSING_COORDINATION" as const, ...classifyProviderHealth(false), checkedAt: now.toISOString(), nextAction: "Continue manual, evidence-linked title/closing milestones; no external closing coordinator is connected." },
+    ...unconfiguredOperationalProviderHealth(now),
     { id: "private-document-storage", name: "Private document storage", category: "FILE_STORAGE" as const, ...storageHealth, checkedAt: now.toISOString(), nextAction: storageConfigured ? "Validate authenticated object access on read/write; never expose private document URLs." : "Managed private storage is unavailable; database fallback remains protected but is not managed object storage." },
   ];
 }

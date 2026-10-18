@@ -3226,8 +3226,8 @@ components:
       properties:
         id: { type: string }
         name: { type: string }
-        category: { type: string, enum: [PROPERTY_SOURCE, CONTACT_RESEARCH, MESSAGING, DOCUMENT_SIGNATURE, CLOSING_COORDINATION, FILE_STORAGE] }
-        status: { type: string, enum: [CONNECTED, DISCONNECTED, DEGRADED, RATE_LIMITED, UNCONFIGURED] }
+        category: { type: string, enum: [PROPERTY_SOURCE, CONTACT_RESEARCH, MESSAGING, DOCUMENT_SIGNATURE, FUNDING_DEPOSIT, EXTERNAL_NOTIFICATIONS, CLOSING_COORDINATION, FILE_STORAGE] }
+        status: { type: string, enum: [CONNECTED, DISCONNECTED, DEGRADED, RATE_LIMITED, UNCONFIGURED, UNKNOWN] }
         checkedAt: { type: string, format: date-time }
         lastSuccessAt: { type: ["string", "null"], format: date-time }
         checkKind: { type: string, enum: [PERSISTED_JOB, ADAPTER_REGISTRATION, READINESS_CHECK, CONFIGURATION_CHECK] }

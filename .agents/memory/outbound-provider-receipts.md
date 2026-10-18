@@ -20,3 +20,9 @@ Owner approval to issue a recipient-specific private package link is not approva
 **Why:** A capability link grants access even when no email/SMS was sent, while copy/paste outside the app cannot provide trustworthy send or delivery evidence.
 
 **How to apply:** Treat link creation as access authorization only. Do not infer message approval, provider submission, delivery, or buyer interest from link issuance, copying, or portal access.
+
+Provider health must distinguish adapter registration, persisted job/receipt evidence, configuration checks, and active network probes. A registered adapter or stored configuration alone is not proof of a live connection; preserve an explicit UNKNOWN result and show the check source and timestamp without exposing credentials.
+
+**Why:** This workspace has real public-source adapters but no connected external messaging, signing, funding, or notification providers; configuration and operational readiness are different facts.
+
+**How to apply:** Use evidence-backed status labels and a next action for each capability. Keep manual evidence, in-app alerts, and public data adapters distinct from external service integrations.

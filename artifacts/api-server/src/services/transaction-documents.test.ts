@@ -38,6 +38,23 @@ test("missing legal parties, template and signing provider block signature routi
   assert.match(assembled.clauseNotice, /not generated or inserted/);
 });
 
+test("party review cannot compensate for a missing approved template or disconnected signing provider", () => {
+  const verifiedParties = { priorPartyIdentityVerified:true, priorSigningAuthorityVerified:true };
+  const noApprovedTemplate = assembleContractDataPackage(terms, {
+    version:1,jurisdiction:"US/PA/EXAMPLE-COUNTY",purchaseTemplateStatus:"MISSING_APPROVED_TEMPLATE",
+    signingProviderConnected:true,...verifiedParties,
+  });
+  assert.equal(noApprovedTemplate.signatureRouting.status,"BLOCKED");
+  assert.ok(noApprovedTemplate.signatureRouting.blockers.some(item=>item.includes("jurisdiction-approved purchase agreement template")));
+
+  const noSigningProvider = assembleContractDataPackage(terms, {
+    version:1,jurisdiction:"US/PA/EXAMPLE-COUNTY",purchaseTemplateStatus:"APPROVED_LEGAL",
+    signingProviderConnected:false,...verifiedParties,
+  });
+  assert.equal(noSigningProvider.signatureRouting.status,"BLOCKED");
+  assert.ok(noSigningProvider.signatureRouting.blockers.some(item=>item.includes("signature-routing provider")));
+});
+
 test("changed terms or assembly version produce a different immutable package hash", () => {
   const input = { version: 1, jurisdiction: "US/PA/EXAMPLE-COUNTY", purchaseTemplateStatus: "REVIEW_COPY_ONLY", signingProviderConnected: false };
   const first = assembleContractDataPackage(terms, input);

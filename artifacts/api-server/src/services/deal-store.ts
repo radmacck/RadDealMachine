@@ -21,12 +21,26 @@ import {
 import { CreateLeadResponse, GetLeadResponse, AddIntelligenceResponse, GetAssumptionsResponse } from "@workspace/api-zod";
 import { offersForLead, invalidateOffers, invalidateOffersForPolicyChange } from "./offer-records";
 import { getSellerContactPaths } from "./seller-contact-store";
-import { versionedStageTransition } from "./canonical-deal-state";
+import { versionedStageTransition, type CanonicalStageVersionClock } from "./canonical-deal-state";
 import { evaluatePropertyContactabilityGate, type SellerContactabilityEvidence } from "./property-contactability-gate";
 
 type Tx = Parameters<Parameters<typeof db.transaction>[0]>[0];
+type Query = typeof db | Tx;
 const jsonRecord = (value: object): Record<string, unknown> => ({ ...value });
 const iso = (d: Date) => d.toISOString();
+
+export async function sellerCallReadinessBlockers(id: string, query: Query = db, now = new Date()): Promise<string[]> {
+  const [discovery] = await query.select().from(propertyDiscoveriesTable)
+    .where(eq(propertyDiscoveriesTable.leadId, id));
+  if (!discovery) {
+    return ["Link this lead to a source-backed property discovery and complete ownership, seller identity, contact permission, and route review."];
+  }
+  const contactCase = discovery.payload.contactResearchCase;
+  if (!contactCase || typeof contactCase !== "object") {
+    return ["Complete source-backed ownership, seller identity, contact permission, and route review."];
+  }
+  return evaluatePropertyContactabilityGate(contactCase as SellerContactabilityEvidence, now);
+}
 function canonicalLeadIdentity(input: Pick<LeadInput, "address" | "city" | "state" | "zip">) {
   return [
     input.city.trim().toUpperCase(),
@@ -82,7 +96,10 @@ export async function lockedLead(tx: Tx, id: string, version?: number, allowTerm
   if (!allowTerminal && (row.stage === "DEAD_DEAL" || row.stage === "CLOSED")) throw new DomainError("This lead is terminal and cannot be changed.", 409);
   return row;
 }
-export async function move(tx: Tx, row: LeadRow, to: Stage, reason: string, nextAction: string, actor: string, now: Date) {
+export async function move(
+  tx: Tx, row: LeadRow, to: Stage, reason: string, nextAction: string, actor: string, now: Date,
+  versionClock?: CanonicalStageVersionClock,
+) {
   // Refresh research without pretending an already executed transaction ceased to exist.
   if (["UNDER_CONTRACT","BUYER_MATCHED","BUYER_INTERESTED","BUYER_COMMITTED","CLOSING"].includes(row.stage)
     && ["ENRICHING","ANALYZED","STRONG","NEGOTIABLE","PASS","CONTACTED","CONVERSATION","NEGOTIATING"].includes(to)) {
@@ -91,9 +108,10 @@ export async function move(tx: Tx, row: LeadRow, to: Stage, reason: string, next
     return;
   }
   await tx.insert(transitionsTable).values({ leadId: row.id, from: row.stage, to, reason, nextAction, actor, createdAt: now });
-  await audit(tx, actor, "DEAL_TRANSITION", row.id, JSON.stringify(versionedStageTransition({
+  const transition = versionedStageTransition({
     leadId: row.id,
     priorVersion: row.version,
+    ...(versionClock ? { versionClock } : {}),
     priorStage: row.stage,
     nextStage: to,
     actor,
@@ -101,9 +119,10 @@ export async function move(tx: Tx, row: LeadRow, to: Stage, reason: string, next
     reason,
     nextAction,
     analysisSnapshotId: row.analysisSnapshotId,
-  })));
+  });
+  await audit(tx, actor, "DEAL_TRANSITION", row.id, JSON.stringify(transition));
   await queueJob(tx,"EVALUATE_DECISION",row.id,
-    `decision:${row.id}:transition:${row.version+1}:${row.stage}:${to}`,
+    `decision:${row.id}:transition:${transition.resultingVersion}:${row.stage}:${to}`,
     actor,{trigger:"DEAL_TRANSITION",from:row.stage,to});
   row.stage = to;
   row.nextAction = nextAction;
@@ -169,6 +188,11 @@ export async function leadDetail(id: string, database: typeof db | Tx = db, now 
     underwritingSnapshot,
     currentPolicy:await getAssumptions(database),conversationLogged:calls.some(c => c.payload.outcome === "CONNECTED"),now,
   });
+  const transitionsAllowed = allowedTransitions(lead,analysis,now);
+  if (transitionsAllowed.includes("CALL_READY") &&
+    (await sellerCallReadinessBlockers(id,database,now)).length > 0) {
+    transitionsAllowed.splice(transitionsAllowed.indexOf("CALL_READY"),1);
+  }
   const detail = {
     lead, intelligence, analysis, analysisSnapshotId:row.analysisSnapshotId, underwriting:row.underwriting as UnderwritingInput|null, offers,
     transitions:transitions.map(e => ({...e, createdAt:iso(e.createdAt)})),
@@ -179,7 +203,7 @@ export async function leadDetail(id: string, database: typeof db | Tx = db, now 
       createdAt:iso(e.createdAt),
       occurredAt:(e.payload as CallInput).occurredAt ?? iso(e.createdAt),
     })),
-    allowedTransitions:allowedTransitions(lead,analysis,now),
+    allowedTransitions:transitionsAllowed,
   };
   return GetLeadResponse.parse({...detail,workGuidance:buildDealWorkGuidance(detail,now)});
 }
@@ -348,6 +372,7 @@ export async function addIntelligence(id: string, input: IntelligenceInput, acto
 export async function saveUnderwriting(id: string, input: UnderwritingInput, actor: string, now = new Date(), transaction?: Tx): Promise<LeadDetail> {
   const write = async (tx: Tx) => {
     const row = await lockedLead(tx,id,input.version);
+    const versionClock: CanonicalStageVersionClock = { currentVersion: row.version };
     const lead = toLead(row);
     const assumptions = await getAssumptions(tx);
     const intelligence = (await tx.select().from(intelligenceTable).where(eq(intelligenceTable.leadId,id))).map(e=>AddIntelligenceResponse.parse({...e.payload,id:e.id,leadId:id,createdBy:e.createdBy,createdAt:iso(e.createdAt)}));
@@ -375,16 +400,16 @@ export async function saveUnderwriting(id: string, input: UnderwritingInput, act
     if (!snapshot) throw new Error("Analysis snapshot insert failed");
     await invalidateOffers(tx,id,actor,"Underwriting refreshed; offers must bind to the new snapshot and be approved again.",now);
     if (analysis.classification === "INCOMPLETE") {
-      await move(tx,row,"ENRICHING","Underwriting incomplete",analysis.blockers.join("; "),actor,now);
+      await move(tx,row,"ENRICHING","Underwriting incomplete",analysis.blockers.join("; "),actor,now,versionClock);
     } else {
-      await move(tx,row,"ANALYZED","Deterministic underwriting passed completeness gates","Review classification and call-readiness.",actor,now);
+      await move(tx,row,"ANALYZED","Deterministic underwriting passed completeness gates","Review classification and call-readiness.",actor,now,versionClock);
       const action = analysis.classification === "PASS" ? "Do not call for an offer. Revisit with new sourced information or close the lead."
         : lead.sellerPhone?.trim() ? "Review seller brief and mark CALL READY." : "Obtain permitted seller contact details before CALL READY.";
-      await move(tx,row,analysis.classification,"Classification calculated by deterministic underwriting engine",action,actor,now);
+      await move(tx,row,analysis.classification,"Classification calculated by deterministic underwriting engine",action,actor,now,versionClock);
     }
     await tx.update(leadsTable).set({
       underwriting:jsonRecord(persistedInput),analysis:jsonRecord(analysis),analysisSnapshotId:snapshot.id,stage:row.stage,
-      nextAction:row.nextAction,version:row.version+1,updatedAt:now,
+      nextAction:row.nextAction,version:Math.max(row.version+1,versionClock.currentVersion),updatedAt:now,
     }).where(eq(leadsTable.id,id));
     await audit(tx,actor,"UNDERWRITING_SAVED",id,`${analysis.engineVersion}: ${analysis.classification}; MAO $${analysis.mao}. Snapshot preserves inputs, policy, excluded comps and calculation time. No offer authorized.`);
     await queueJob(tx,"EVALUATE_DECISION",id,`decision:${id}:analysis:${snapshot.id}`,actor,{trigger:"UNDERWRITING_SAVED",analysisSnapshotId:snapshot.id});
@@ -409,16 +434,8 @@ export async function transitionLead(id: string, input: TransitionInput, actor: 
     const row = await lockedLead(tx,id,input.version);
     const detail = await leadDetail(id,tx,now);
     if (input.to === "CALL_READY") {
-      const [linkedDiscovery] = await tx.select().from(propertyDiscoveriesTable)
-        .where(eq(propertyDiscoveriesTable.leadId, id)).for("update");
-      if (linkedDiscovery) {
-        const contactCase = linkedDiscovery.payload.contactResearchCase;
-        if (!contactCase || typeof contactCase !== "object") {
-          throw new DomainError("CALL_READY is blocked: source-backed ownership/identity review and a permitted seller route are required.", 409);
-        }
-        const blockers = evaluatePropertyContactabilityGate(contactCase as SellerContactabilityEvidence, now);
-        if (blockers.length) throw new DomainError(`CALL_READY is blocked: ${blockers.join(" ")}`, 409);
-      }
+      const blockers = await sellerCallReadinessBlockers(id,tx,now);
+      if (blockers.length) throw new DomainError(`CALL_READY is blocked: ${blockers.join(" ")}`, 409);
     }
     validateTransition(toLead(row),detail.analysis,input,now);
     if (["ENRICHING","DEAD_DEAL"].includes(input.to)) await invalidateOffers(tx,id,actor,`Deal moved to ${input.to}; offer approval invalidated.`,now);
@@ -691,6 +708,7 @@ export async function recordCall(id: string, input: CallInput, actor: string, no
   }
   return db.transaction(async tx => {
     const row = await lockedLead(tx,id,undefined,true);
+    const versionClock: CanonicalStageVersionClock = { currentVersion: row.version };
     if (input.idempotencyKey) {
       const priorCalls = await tx.select().from(callsTable).where(eq(callsTable.leadId,id));
       const prior = priorCalls.find(call => call.payload.idempotencyKey === input.idempotencyKey);
@@ -711,6 +729,10 @@ export async function recordCall(id: string, input: CallInput, actor: string, no
     if (!["CALL_READY","CONTACTED","CONVERSATION","OFFER_READY","OFFER_SENT","NEGOTIATING","CONTRACT_PENDING"].includes(row.stage)&&!executed) throw new DomainError("Calls can only be recorded for call-ready or active seller/closing conversations.");
     const before = await leadDetail(id,tx,now);
     if (row.stage === "CALL_READY") {
+      const contactBlockers = await sellerCallReadinessBlockers(id,tx,now);
+      if (contactBlockers.length) {
+        throw new DomainError(`CALL READY evidence is stale or incomplete. ${contactBlockers.join(" ")}`,409);
+      }
       if (!before.analysis || before.analysis.blockers.length) {
         throw new DomainError("CALL READY evidence is stale or incomplete. Refresh the seller phone source and underwriting before recording outreach.",409);
       }
@@ -816,7 +838,7 @@ export async function recordCall(id: string, input: CallInput, actor: string, no
         noteAnchorsValidated: true, underwritingChanged: false }));
     // A connected first call must preserve CONTACTED before CONVERSATION.
     if (row.stage === "CALL_READY" && stage === "CONVERSATION") {
-      await move(tx,row,"CONTACTED","Seller answered the call","Continue the seller conversation.",actor,now);
+      await move(tx,row,"CONTACTED","Seller answered the call","Continue the seller conversation.",actor,now,versionClock);
     }
     // No-answer followups cannot regress an existing CONVERSATION.
     const nextStage: Stage = (executed || ["CONVERSATION","OFFER_READY","OFFER_SENT","NEGOTIATING","CONTRACT_PENDING"].includes(row.stage)) && stage !== "DEAD_DEAL" ? toLead(row).stage : stage;
@@ -828,15 +850,16 @@ export async function recordCall(id: string, input: CallInput, actor: string, no
         version:draft.version+1,updatedAt:now,
       }).where(eq(contractsTable.id,draft.id));
     }
-    await move(tx,row,nextStage,`Call outcome: ${input.outcome}. ${input.notes}`,effectiveNextAction,actor,now);
+    await move(tx,row,nextStage,`Call outcome: ${input.outcome}. ${input.notes}`,effectiveNextAction,actor,now,versionClock);
+    const resultingVersion = Math.max(row.version+1,versionClock.currentVersion);
     await tx.update(leadsTable).set({
-      stage:row.stage,nextAction:effectiveNextAction,followUpAt,version:row.version+1,updatedAt:now,
+      stage:row.stage,nextAction:effectiveNextAction,followUpAt,version:resultingVersion,updatedAt:now,
       payload:updatedPayload,
       ...(analysisInvalidated ? {analysis:null,analysisSnapshotId:null} : {}),
     }).where(eq(leadsTable.id,id));
     await audit(tx,actor,"CALL_RECORDED",id,`${input.outcome}; follow-up ${followUpAt?.toISOString() ?? "none (terminal)"}; next: ${input.nextAction}`);
-    await queueJob(tx,"EVALUATE_DECISION",id,`decision:${id}:call:${row.version+1}`,actor,{trigger:"SELLER_CALL_RECORDED",leadVersion:row.version+1});
-    if (input.outcome==="CONNECTED") await queueJob(tx,"PREPARE_BRIEF",id,`conversation-brief:${id}:${row.version+1}`,actor);
+    await queueJob(tx,"EVALUATE_DECISION",id,`decision:${id}:call:${resultingVersion}`,actor,{trigger:"SELLER_CALL_RECORDED",leadVersion:resultingVersion});
+    if (input.outcome==="CONNECTED") await queueJob(tx,"PREPARE_BRIEF",id,`conversation-brief:${id}:${resultingVersion}`,actor);
     return leadDetail(id,tx,now);
   });
 }
@@ -915,6 +938,8 @@ export async function callQueue(now = new Date()) {
   const briefs = await Promise.all(rows.map(async row => {
     const detail = await leadDetail(row.id,db,now);
     const approved = detail.offers.find(o => ["AUTHORIZED","COMMUNICATED"].includes(o.effectiveStatus)) ?? null;
+    if (detail.lead.stage === "CALL_READY" &&
+      (await sellerCallReadinessBlockers(row.id,db,now)).length > 0) return null;
     if (!detail.analysis) return null;
     const contactBlocked = detail.analysis.blockers.some(blocker => blocker.toLowerCase().includes("seller contact"));
     if (contactBlocked) return null;

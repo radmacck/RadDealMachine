@@ -18,6 +18,7 @@ import { Input } from '@/components/ui/input';
 import { useAccess } from '@/hooks/use-access';
 import { useInvalidateWork } from '@/hooks/use-invalidate';
 import { useToast } from '@/hooks/use-toast';
+import { normalizeContactResearchEvidenceReference } from '@/lib/contact-research-evidence';
 
 type Lane = 'properties' | 'buyer_candidates';
 const DISCOVERY_PAGE_SIZE = 25;
@@ -34,6 +35,7 @@ function ContactResearchCaseEditor({
   const [name, setName] = useState(sourceName);
   const [url, setUrl] = useState(sourceUrl ?? '');
   const [note, setNote] = useState('');
+  const [evidenceReference, setEvidenceReference] = useState('');
   const [identity, setIdentity] = useState<PropertyContactResearchInput['identityMatch']>('RECORDED_OWNER_ONLY');
   const [permission, setPermission] = useState<PropertyContactResearchInput['permissionBasis']>('UNKNOWN');
   const [status, setStatus] = useState<PropertyContactResearchInput['status']>('OPEN');
@@ -55,6 +57,7 @@ function ContactResearchCaseEditor({
   const [identityEvidenceRef, setIdentityEvidenceRef] = useState('');
   const [routeVerification, setRouteVerification] = useState<'UNREVIEWED'|'CONFIRMED'|'REJECTED'>('UNREVIEWED');
   const [verificationNote, setVerificationNote] = useState('');
+  const normalizedEvidenceReference = normalizeContactResearchEvidenceReference(evidenceReference);
   const validRouteObservedAt = Number.isFinite(new Date(routeObservedAt).getTime());
   const candidateRoute = routeValue.trim() && validRouteObservedAt ? {
     channel: routeChannel, routeValue: routeValue.trim(), recipient: recipient.trim(), recipientRole,
@@ -84,6 +87,10 @@ function ContactResearchCaseEditor({
       <label className="grid gap-1 text-xs">Confidence (0–1)<Input type="number" min="0" max="1" step="0.05" value={confidence} onChange={e=>setConfidence(e.target.value)} /></label>
     </div>
     <label className="grid gap-1 text-xs">What was checked / what did the evidence actually say?<textarea className="min-h-16 rounded border bg-background p-2 text-sm" value={note} onChange={e=>setNote(e.target.value)} maxLength={2000} /></label>
+    <label className="grid gap-1 text-xs">Exact evidence reference (record, page, or document ID)
+      <Input value={evidenceReference} onChange={e=>setEvidenceReference(e.target.value)} placeholder="For example: parcel record 12345 or deed page 7" />
+      <span className="text-muted-foreground">Required for review; the source URL alone is not a precise evidence reference.</span>
+    </label>
     <details className="rounded border p-3">
       <summary className="cursor-pointer text-xs font-medium">Add candidate direct route (optional)</summary>
       <div className="mt-2 grid gap-2 sm:grid-cols-2">
@@ -106,11 +113,11 @@ function ContactResearchCaseEditor({
         <label className="grid gap-1 text-xs sm:col-span-2">Owner verification note<textarea className="min-h-12 rounded border bg-background p-2 text-sm" value={verificationNote} onChange={e=>setVerificationNote(e.target.value)} /></label>
       </div>
     </details>
-    <Button type="button" variant="outline" disabled={pending || name.trim().length < 2 || note.trim().length < 3 || (url.trim() !== '' && !url.trim().startsWith('https://')) || (!!routeValue.trim() && (!recipient.trim() || !routeSourceId.trim() || !routeSourceName.trim() || !routeRecordId.trim() || !routeSourceUrl.trim().startsWith('https://')))} onClick={()=>onSave({
+    <Button type="button" variant="outline" disabled={pending || name.trim().length < 2 || note.trim().length < 3 || !normalizedEvidenceReference || (url.trim() !== '' && !url.trim().startsWith('https://')) || (!!routeValue.trim() && (!recipient.trim() || !routeSourceId.trim() || !routeSourceName.trim() || !routeRecordId.trim() || !routeSourceUrl.trim().startsWith('https://')))} onClick={()=>onSave({
       version, status, confidence: Number(confidence), sourceName: name.trim(),
       sourceType: url.trim() ? 'PUBLIC_RECORD' : 'OTHER', sourceUrl: url.trim() || null,
       observedAt: new Date().toISOString(), identityMatch: identity, permissionBasis: permission,
-      evidenceReference: null, note: note.trim(), candidateRoute,
+      evidenceReference: normalizedEvidenceReference, note: note.trim(), candidateRoute,
     })}>{pending ? 'Saving case…' : 'Save contact research case'}</Button>
   </div>;
 }

@@ -14,7 +14,7 @@ import {
   type AcquisitionQueueItem,
   type LeadDetail,
 } from "@workspace/deal-domain";
-import { audit, leadDetail, listLeads, lockedLead } from "./deal-store";
+import { audit, leadDetail, listLeads, lockedLead, sellerCallReadinessBlockers } from "./deal-store";
 import { getSellerContactPaths } from "./seller-contact-store";
 
 type Tx = Parameters<Parameters<typeof db.transaction>[0]>[0];
@@ -138,12 +138,30 @@ function primaryBlocker(
 }
 
 async function buildItem(detail: LeadDetail, role: string, now: Date, rank: number, query: typeof db | Tx = db): Promise<AcquisitionQueueItem> {
-  const readiness = await getSellerContactPaths(detail.lead.id, now, query);
+  const rawReadiness = await getSellerContactPaths(detail.lead.id, now, query);
+  const identityBlockers = ["STRONG", "NEGOTIABLE", "CALL_READY"].includes(detail.lead.stage)
+    ? await sellerCallReadinessBlockers(detail.lead.id, query, now)
+    : [];
+  const readiness = identityBlockers.length
+    ? {
+        ...rawReadiness,
+        directRouteStatus: "NEEDS_REVIEW" as const,
+        selectedPhonePath: null,
+        nextAction: identityBlockers.join(" "),
+      }
+    : rawReadiness;
   const qualification = detail.lead.propertyQualification;
   const propertySignals = qualification?.signals ?? [];
   const evidenceScore = acquisitionEvidenceScore(propertySignals, now);
   const selectedPhone = readiness.selectedPhonePath;
-  const blocker = primaryBlocker(detail, readiness.directRouteStatus, role, now, selectedPhone?.routeValue ?? null);
+  let blocker = primaryBlocker(detail, readiness.directRouteStatus, role, now, selectedPhone?.routeValue ?? null);
+  if (blocker && identityBlockers.length) {
+    blocker = {
+      ...blocker,
+      text: identityBlockers.join(" "),
+      nextAction: `Complete source-backed seller identity and contact review: ${identityBlockers.join(" ")}`,
+    };
+  }
   const decision = blocker ? "BLOCKED" : "CALL_NEXT";
   const callBrief = !blocker && detail.analysis && selectedPhone?.routeValue
     ? {

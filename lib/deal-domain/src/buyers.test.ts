@@ -104,12 +104,27 @@ test("buyer ranking is deterministic: eligible, then checklist fit, then stable 
 test("duplicate email or phone routes block recipient eligibility without merging buyer records",()=>{
   const sameEmail={...buyer,id:"duplicate-email",email:buyer.email.toUpperCase()};
   assert.deepEqual(buyerIdentityConflicts(buyer,[buyer,sameEmail]),[
-    "Contact route conflicts with 1 other buyer record(s); resolve identity before package distribution.",
+    "Contact route conflicts with 1 other buyer record(s); resolve identity before buyer matching or package distribution.",
   ]);
   const samePhone={...buyer,id:"duplicate-phone",email:"other@example.com",phone:"+1 (555) 123-4567"};
   const routeOwner={...samePhone,id:"route-owner",phone:"5551234567"};
   assert.equal(buyerIdentityConflicts(samePhone,[samePhone,routeOwner]).length,1);
   assert.deepEqual(buyerIdentityConflicts(buyer,[buyer]),[]);
+});
+test("stale or unverified buyer matches preserve deal economics while identity conflicts remain explicit",()=>{
+  const before={mao:detail.analysis?.mao,analysisSnapshotId:detail.analysisSnapshotId,purchasePrice:contract.purchasePrice,
+    assignmentTarget:contract.assignmentTarget,earnestMoney:contract.earnestMoney};
+  const conflict={...buyer,id:"conflicting-buyer",email:buyer.email.toUpperCase()};
+  assert.match(buyerIdentityConflicts(buyer,[buyer,conflict]).join("; "),/resolve identity before buyer matching/);
+
+  const expired={...buyer,validUntil:"2026-10-03T12:00:00Z"};
+  const unverified={...buyer,verifiedBy:null,verifiedAt:null,verificationStatus:"UNVERIFIED" as const};
+  assert.equal(matchBuyer(expired,detail,contract,now).eligible,false);
+  assert.ok(matchBuyer(expired,detail,contract,now).mismatches.some(reason=>/missing or stale/i.test(reason)));
+  assert.equal(matchBuyer(unverified,detail,contract,now).eligible,false);
+  assert.ok(matchBuyer(unverified,detail,contract,now).mismatches.some(reason=>/missing or stale/i.test(reason)));
+  assert.deepEqual({mao:detail.analysis?.mao,analysisSnapshotId:detail.analysisSnapshotId,purchasePrice:contract.purchasePrice,
+    assignmentTarget:contract.assignmentTarget,earnestMoney:contract.earnestMoney},before);
 });
 test("newer actual reply blocks otherwise-qualified matching until dated owner review",()=>{
   const withReply = {...buyer,lastOutreachReplyAt:"2026-10-05T12:00:01Z",lastOutreachReplyEvidenceUrl:"https://example.com/synthetic-new-reply"};

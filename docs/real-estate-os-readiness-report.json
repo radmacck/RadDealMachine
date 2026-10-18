@@ -1,12 +1,10 @@
 {
   "gate": "REAL_ESTATE_OS_OPERATIONAL_READINESS",
-  "generatedAt": "2026-10-17T20:20:07.273Z",
+  "generatedAt": "2026-10-17T20:34:40.116Z",
   "syntheticWorkflowStatus": "PASS",
-  "permittedSourceStatus": "FAIL",
-  "operationalStatus": "FAIL",
-  "failedCheckIds": [
-    "permitted-property-discovery"
-  ],
+  "permittedSourceStatus": "PASS",
+  "operationalStatus": "NOT_READY",
+  "failedCheckIds": [],
   "unverifiedLiveCheckIds": [
     "provider-snapshot:phila-property-sources",
     "provider-snapshot:seller-contact-research",
@@ -16,7 +14,7 @@
     "provider-snapshot:private-document-storage",
     "live-owner-and-external-evidence"
   ],
-  "earliestBlocker": "permitted-property-discovery failed (exit 1).",
+  "earliestBlocker": "Philadelphia public-record adapters: persisted health is DEGRADED; check kind ADAPTER_REGISTRATION. This is a configuration/history snapshot, not a live network probe.",
   "checks": [
     {
       "id": "auth",
@@ -69,8 +67,8 @@
     {
       "id": "permitted-property-discovery",
       "category": "PERMITTED_SOURCE_CHECK",
-      "status": "FAIL",
-      "detail": "permitted-property-discovery failed (exit 1)."
+      "status": "PASS",
+      "detail": "permitted-property-discovery completed successfully."
     },
     {
       "id": "seller-contactability",
@@ -196,7 +194,7 @@
   "readinessMatrix": [
     {
       "area": "Permitted property discovery, provenance, and deduplication",
-      "syntheticStatus": "FAIL",
+      "syntheticStatus": "PASS",
       "syntheticScope": "Public Philadelphia feeds queried in an isolated persisted exercise; no raw discovery becomes an active lead.",
       "liveStatus": "UNVERIFIED",
       "evidenceCheckIds": [

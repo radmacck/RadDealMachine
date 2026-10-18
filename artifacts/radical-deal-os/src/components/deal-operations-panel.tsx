@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Link } from 'wouter';
 import { Download, FileText, RefreshCw } from 'lucide-react';
 import {
@@ -17,7 +17,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { useAccess } from '@/hooks/use-access';
 import { useInvalidateWork } from '@/hooks/use-invalidate';
 import { useToast } from '@/hooks/use-toast';
-import { ago, fmtDate, fromLocalInput, isOverdue, money, num, toLocalInput } from '@/lib/format';
+import { ago, errInfo, fmtDate, fromLocalInput, isOverdue, money, num, toLocalInput } from '@/lib/format';
 import { DistributionPanel } from '@/components/distribution-panel';
 import { buildDealTimeline, TIMELINE_FILTERS, type DealTimelineEvent } from '@/lib/deal-timeline';
 import { buildTransactionReadinessChecklist } from '@workspace/deal-domain';
@@ -646,7 +646,9 @@ function OutcomeForm({ contract, onDone }: { contract: DealContract; onDone: () 
   );
 }
 
-function ExceptionForm({ contract, reopened, onDone }: { contract: DealContract; reopened: boolean; onDone: () => void }) {
+function ExceptionForm({ contract, reopened, onDone, onReloadLatest }: {
+  contract: DealContract; reopened: boolean; onDone: () => void; onReloadLatest: () => void;
+}) {
   const { isOwner } = useAccess();
   const rec = useRecordTransactionException();
   const { toast } = useToast();
@@ -659,6 +661,9 @@ function ExceptionForm({ contract, reopened, onDone }: { contract: DealContract;
   const [kind, setKind] = useState<TransactionExceptionInputKind | ''>(kinds[0]?.k ?? '');
   const [url, setUrl] = useState(''); const [note, setNote] = useState(''); const [eff, setEff] = useState(''); const [newAt, setNewAt] = useState(''); const [consent, setConsent] = useState('');
   const [local, setLocal] = useState<string | null>(null);
+  useEffect(() => {
+    setKind(current => kinds.some(item => item.k === current) ? current : kinds[0]?.k ?? '');
+  }, [contract.status, contract.committedBuyerId, reopened]);
   if (kinds.length === 0) return <p className="text-sm text-muted-foreground">No exception applies to this contract state. A closed deal cannot be restarted, and a cancelled deal that is already reopened cannot be restarted again.</p>;
   const submit = () => {
     const e = fromLocalInput(eff); const n = fromLocalInput(newAt);
@@ -687,7 +692,9 @@ function ExceptionForm({ contract, reopened, onDone }: { contract: DealContract;
       {kind === 'AMEND_CLOSING' && contract.committedBuyerId && <Field label="Buyer consent evidence link" hint="Separate from the amendment"><Input value={consent} onChange={(e) => setConsent(e.target.value)} disabled={!isOwner} data-testid="input-exception-consent" /></Field>}
       <Field label="Note"><Textarea rows={2} value={note} onChange={(e) => setNote(e.target.value)} disabled={!isOwner} data-testid="input-exception-note" /></Field>
       {local && <p className="text-sm text-destructive" data-testid="text-exception-error">{local}</p>}
-      {rec.error != null && <ErrorNotice error={rec.error} />}
+      {rec.error != null && <ErrorNotice error={rec.error}
+        retryLabel={errInfo(rec.error).status === 409 ? 'Reload latest contract and keep this draft' : undefined}
+        onRetry={errInfo(rec.error).status === 409 ? onReloadLatest : undefined} />}
       <Button size="sm" disabled={!isOwner || rec.isPending} onClick={submit} data-testid="button-record-exception">{rec.isPending ? 'Recording...' : 'Record exception'}</Button>
       {!isOwner && <p className="text-xs text-muted-foreground">Only the owner can amend closing dates, release a committed buyer or restart a cancelled deal. Other roles can read the history below.</p>}
     </div>
@@ -1115,7 +1122,7 @@ export function DealOperationsPanel({ detail, operations, loading, error, onRetr
         {c && c.status !== 'DRAFT' && (
         <Block title="Exceptions and history" tid="panel-exceptions">
           <div className="grid gap-5 lg:grid-cols-2">
-            <ExceptionForm key={`${c.version}:${c.status}:${detail.lead.stage === 'DEAD_DEAL'}`} reopened={detail.lead.stage !== 'DEAD_DEAL'} contract={c} onDone={done} />
+            <ExceptionForm reopened={detail.lead.stage !== 'DEAD_DEAL'} contract={c} onDone={done} onReloadLatest={onRetry} />
             <div className="border-border lg:border-l lg:pl-5"><ExceptionHistory contract={c} /></div>
           </div>
         </Block>

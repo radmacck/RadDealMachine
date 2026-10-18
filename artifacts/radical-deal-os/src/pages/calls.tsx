@@ -138,6 +138,11 @@ export default function Calls() {
                 <CallLogForm key={current.lead.id} lead={current.lead}
                   priorAnswers={sellerAnswersFromEvidence(leadDetail.data?.intelligence ?? [])}
                   disabled={!canCall || !sessionReady} pending={rec.isPending} error={rec.error}
+                  onReloadLatest={() => {
+                    void Promise.all([q.refetch(), leadDetail.refetch()]).then(([queueResult, detailResult]) => {
+                      if (!queueResult.isError && !detailResult.isError) rec.reset();
+                    });
+                  }}
                   onSubmit={(data, done) => rec.mutate({ id: current.lead.id, data }, { onSuccess: () => { invalidate(current.lead.id); done(); toast({ title: 'Call result saved', description: `${current.lead.address}: operator-entered evidence and follow-up recorded.` }); } })} />
                 {!sessionReady && <p className="mt-2 text-xs text-muted-foreground">Start call work first; this rechecks direct phone evidence and underwriting. Telephony is not connected.</p>}
               </>

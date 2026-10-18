@@ -27,8 +27,13 @@ assert.match(emptyReadiness.capabilities.privateDocumentStorage.nextAction,/priv
 assert.equal(emptyReadiness.capabilities.providers.find(item=>item.id==="seller-contact-research")?.status,"UNCONFIGURED");
 assert.equal(emptyReadiness.capabilities.providers.find(item=>item.id==="outbound-messaging")?.status,"UNCONFIGURED");
 assert.equal(emptyReadiness.capabilities.providers.find(item=>item.id==="electronic-signature")?.status,"UNCONFIGURED");
+assert.equal(emptyReadiness.capabilities.providers.find(item=>item.id==="funding-deposits")?.status,"UNCONFIGURED");
+assert.equal(emptyReadiness.capabilities.providers.find(item=>item.id==="external-notifications")?.status,"UNCONFIGURED");
+assert.match(emptyReadiness.capabilities.providers.find(item=>item.id==="funding-deposits")?.nextAction ?? "",/does not move funds/);
+assert.match(emptyReadiness.capabilities.providers.find(item=>item.id==="external-notifications")?.nextAction ?? "",/in-app alerts remain available/);
 assert.equal(emptyReadiness.capabilities.providers.find(item=>item.id==="private-document-storage")?.status,"DEGRADED");
-assert.ok(emptyReadiness.capabilities.providers.every(item=>item.checkedAt && !/api[_-]?key|secret|token/i.test(item.reason)));
+assert.equal(new Set(emptyReadiness.capabilities.providers.map(item=>item.category)).size,8);
+assert.ok(emptyReadiness.capabilities.providers.every(item=>item.checkedAt && !/api[_-]?key|secret|token|password/i.test(item.reason)));
 assert.equal(emptyReadiness.capabilities.jurisdictionTemplates.status,"NOT_EVALUATED");
 assert.match(emptyReadiness.capabilities.jurisdictionTemplates.nextAction,/jurisdiction/i);
 const [lead] = await db.insert(leadsTable).values({

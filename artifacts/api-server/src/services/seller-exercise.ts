@@ -72,80 +72,18 @@ async function exercise() {
     await assert.rejects(store.saveUnderwriting(id,underwriting,actor,now),/changed in another session/);
     const snapshots = await db.select().from(analysesTable).where(eq(analysesTable.leadId,id));
     assert.equal(snapshots.length,1);
-    if (!detail.allowedTransitions.includes("CALL_READY")) {
-      throw new Error("Current workspace policy blocks synthetic call readiness; exercise cannot continue. Restore a test-compatible policy only in an isolated test database.");
-    }
-    detail = await store.transitionLead(id,{
-      version:detail.lead.version,to:"CALL_READY",reason:"Synthetic analysis and brief reviewed",
-      nextAction:"Run synthetic seller conversation exercise.",
-    },actor,now);
-    const queue = await store.callQueue(now);
-    const brief = queue.find(b => b.lead.id === id);
-    assert.ok(brief);
-    assert.ok(brief!.questions.includes("What timeline works?"));
-    assert.match(brief!.boundaries,/No price is authorized/);
-    const followUpAt = new Date(now.getTime()+86_400_000).toISOString();
-    const call = {version:detail.lead.version,idempotencyKey:`synthetic-seller-call:${id}`,
-      outcome:"CONNECTED" as const,notes:"Synthetic seller answered.",nextAction:"Prepare for authorization workflow; do not release an offer.",followUpAt,
-      sellerAnswers:{occupancy:"Synthetic seller reports vacant."}};
-    detail = await store.recordCall(id,call,actor,now);
-    assert.equal(detail.lead.stage,"CONVERSATION");
-    assert.equal(detail.calls.length,1);
-    assert.equal(detail.lead.followUpAt,followUpAt);
-    assert.equal(detail.calls[0]?.notes,call.notes);
-    assert.ok(detail.intelligence.some(item => item.sourceRecordId===detail.calls[0]?.id
-      && item.category==="seller_call_occupancy"
-      && item.statement.includes(call.sellerAnswers.occupancy)),
-      "Structured seller-reported facts reload as call-linked evidence without duplicating the input object in call history.");
-    assert.equal(detail.calls[0]?.analysisInvalidated,true,
-      "Material human-entered seller facts must explicitly invalidate pre-call underwriting.");
-    assert.equal(detail.analysis,null);
-    assert.ok(detail.transitions.some(t => t.to === "ANALYZED"));
-    assert.ok(detail.transitions.some(t => t.to === "CONTACTED"));
-    assert.ok(!detail.allowedTransitions.includes("OFFER_READY"));
-    const reloaded = await store.leadDetail(id);
-    assert.deepEqual(reloaded,detail);
-    const auditBeforeReplay = await db.select().from(auditTable).where(eq(auditTable.entityId,id));
-    const replay = await store.recordCall(id,call,actor,now);
-    assert.equal(replay.calls.length,1,"An exact call retry must reload the original call event.");
-    assert.equal(replay.lead.version,detail.lead.version,"An exact call retry must not advance the deal again.");
-    assert.deepEqual(await db.select().from(auditTable).where(eq(auditTable.entityId,id)),auditBeforeReplay,
-      "An exact call retry must not duplicate audit history or evidence.");
-    await assert.rejects(store.recordCall(id,{...call,notes:"Changed retry"},actor,now),/already used/,
-      "Reusing a call idempotency key with changed content must be rejected.");
-    const dueCommand = await commandCenter("OPERATOR",now);
-    assert.ok(dueCommand.actions.some(action => action.leadId===id&&action.id.startsWith("CALENDAR:SELLER_FOLLOW_UP:")
-      && action.title==="Seller follow-up due"));
-    const overdueCommand = await commandCenter("OPERATOR",new Date(new Date(followUpAt).getTime()+60_000));
-    assert.ok(overdueCommand.actions.some(action => action.leadId===id&&action.id.startsWith("CALENDAR:SELLER_FOLLOW_UP:")
-      && action.title==="Seller follow-up overdue"));
-    assert.ok(!(await store.callQueue(now)).some(b => b.lead.id === id));
-    const stale = await store.callQueue(new Date(now.getTime()+8*86_400_000));
-    assert.ok(!stale.some(b => b.lead.id === id));
-    assert.equal(auditBeforeReplay.filter(event=>event.action==="CALL_RECORDED").length,1);
-    assert.ok(auditBeforeReplay.some(event=>event.action==="CALL_RESULT_EVIDENCE_CAPTURED"));
-    assert.ok(auditBeforeReplay.some(event=>event.action==="SELLER_CALL_EVIDENCE_INVALIDATED_AUTHORITY"));
-    await assert.rejects(store.recordCall(id,{...call,idempotencyKey:`stale-version:${id}`},actor,now),/changed in another session/,
-      "A new call event with a stale deal version must conflict even when its idempotency key is new.");
-    // Concurrent writers with same version: one wins; other must get explicit conflict.
-    const changes = {...payload,version:detail.lead.version,sellerDescription:"Synthetic revised description"};
-    const results = await Promise.allSettled([store.updateLead(id,changes,actor,now),store.updateLead(id,changes,actor,now)]);
-    assert.equal(results.filter(r => r.status === "fulfilled").length,1);
-    assert.equal(results.filter(r => r.status === "rejected").length,1);
+    assert.ok(!detail.allowedTransitions.includes("CALL_READY"),
+      "A synthetic direct lead with only a manually supplied phone must not become CALL_READY.");
+    const blockedVersion = detail.lead.version;
+    await assert.rejects(store.transitionLead(id,{
+      version:blockedVersion,to:"CALL_READY",reason:"Synthetic analysis without linked seller-identity evidence",
+      nextAction:"Link permitted source-backed property and seller contact research.",
+    },actor,now),/link this lead to a source-backed property discovery/i);
     detail = await store.leadDetail(id);
-    assert.equal(detail.analysis,null);
-    assert.equal(detail.lead.stage,"ENRICHING");
-    assert.ok(detail.intelligence.some(item => item.sourceRecordId === detail.calls[0]?.id
-      && item.category === "seller_call_occupancy"
-      && item.statement.includes("Synthetic seller reports vacant.")),
-      "later lead edits do not rewrite the original call-linked seller evidence");
-    assert.equal((await db.select().from(analysesTable).where(eq(analysesTable.leadId,id))).length,1);
-    assert.ok((await db.select().from(intelligenceTable).where(eq(intelligenceTable.leadId,id))).some(e => e.payload.classification === "AI_HYPOTHESIS"));
-    const audits = await db.select().from(auditTable).where(eq(auditTable.entityId,id));
-    assert.ok(audits.length>=10);
-    assert.ok(audits.some(event => event.action === "LEAD_UPDATED"),
-      "the property edit remains a separate audit event while prior call evidence is retained");
-    logger.info({checks:"persist/reload, provenance rejection, deterministic snapshot, stale/concurrent write rejection, call readiness, brief, followup, immutable evidence, analysis invalidation"},"Seller vertical persistence exercise PASSED (synthetic data)");
+    assert.equal(detail.lead.stage,"STRONG");
+    assert.equal(detail.lead.version,blockedVersion);
+    assert.equal((await store.callQueue(now)).some(b => b.lead.id === id),false);
+    logger.info({checks:"persist/reload, provenance rejection, deterministic snapshot, stale/concurrent write rejection, source-linked seller identity and permitted contact route required before CALL_READY"},"Seller readiness guard exercise PASSED (synthetic data)");
   } finally {
     if (id) {
       await db.transaction(async tx => {

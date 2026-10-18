@@ -38,3 +38,21 @@ test("transition without an analysis snapshot does not invent evidence reference
   assert.deepEqual(event.evidenceRefs, []);
   assert.equal(event.resultingVersion, 2);
 });
+
+test("multiple canonical transitions within one operation form a contiguous version chain", () => {
+  const versionClock = { currentVersion: 12 };
+  const first = versionedStageTransition({
+    leadId: "lead-1", priorVersion: 12, versionClock, priorStage: "CONTACTED", nextStage: "CONVERSATION",
+    actor: "owner-1", occurredAt: new Date("2026-10-17T12:00:00.000Z"),
+    reason: "Seller answered.", nextAction: "Continue qualification.",
+  });
+  const second = versionedStageTransition({
+    leadId: "lead-1", priorVersion: 12, versionClock, priorStage: "CONVERSATION", nextStage: "NEGOTIATING",
+    actor: "owner-1", occurredAt: new Date("2026-10-17T12:00:00.000Z"),
+    reason: "Terms discussed.", nextAction: "Review exact terms.",
+  });
+  assert.deepEqual(
+    [first.priorVersion, first.resultingVersion, second.priorVersion, second.resultingVersion, versionClock.currentVersion],
+    [12, 13, 13, 14, 14],
+  );
+});

@@ -22,7 +22,7 @@ export function buyerIdentityConflicts(buyer: Buyer, pool: Buyer[]): string[] {
     (phone.length >= 7 && normalizeBuyerPhone(other.phone) === phone)
   ));
   return conflicts.length
-    ? [`Contact route conflicts with ${conflicts.length} other buyer record(s); resolve identity before package distribution.`]
+    ? [`Contact route conflicts with ${conflicts.length} other buyer record(s); resolve identity before buyer matching or package distribution.`]
     : [];
 }
 export function assertOperationsRole(actor: OfferActor, allowed: string[]) {

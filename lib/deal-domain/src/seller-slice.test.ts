@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import {
-  analyzeDeal, DEFAULT_ASSUMPTIONS, validateProvenance, groupIntelligence,
+  analyzeDeal, analyzeDealScenarios, DEFAULT_ASSUMPTIONS, validateProvenance, groupIntelligence,
   allowedTransitions, validateTransition, buildCallBrief, prioritizeCallQueue,
   type Lead, type UnderwritingInput, type IntelligenceInput,
 } from "./index";
@@ -43,6 +43,26 @@ test("ARV, repairs, MAO, opening ranges and spread have exact reproducible arith
     "buyer margin at asking must include the configured assignment target, not only the pre-assignment ceiling");
   assert.equal(result.classification,"STRONG");
   assert.equal(result.maximumApprovedAcquisitionPrice,null);
+});
+test("scenario LOW MAO reconciles exactly to conservative underwriting and BASE uses expected evidence ranges",() => {
+  const result = analyzeDeal(lead,input,DEFAULT_ASSUMPTIONS,now);
+  const scenarios = analyzeDealScenarios(result,0);
+  const [low,base] = scenarios.scenarios;
+  const costs = DEFAULT_ASSUMPTIONS.acquisitionCost +
+    DEFAULT_ASSUMPTIONS.holdingMonthly * DEFAULT_ASSUMPTIONS.holdingMonths;
+  const expectedBaseMao = Math.max(0,Math.round((
+    result.arv.expected * DEFAULT_ASSUMPTIONS.arvMultiplier -
+    result.arv.expected * DEFAULT_ASSUMPTIONS.sellingCostPct -
+    result.repairs.expected * (1 + DEFAULT_ASSUMPTIONS.contingencyPct) -
+    costs - DEFAULT_ASSUMPTIONS.assignmentTarget
+  ) * 100) / 100);
+
+  assert.equal(low!.mao,result.mao,
+    "With zero sensitivity, the scenario's low ARV/high repairs must equal the saved conservative MAO.");
+  assert.equal(base!.mao,expectedBaseMao,
+    "Base MAO must use persisted expected ARV/repairs and the same configured costs, contingency, and assignment target.");
+  assert.deepEqual(analyzeDealScenarios(result,0),scenarios,
+    "Scenario rounding and ordering must be deterministic on the exact saved analysis.");
 });
 test("assignment economics reduce buyer spread and MAO dollar-for-dollar without authorizing an offer",() => {
   const noAssignment = analyzeDeal(lead,input,{...DEFAULT_ASSUMPTIONS,assignmentTarget:0},now);

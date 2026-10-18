@@ -5340,6 +5340,8 @@ export const ProviderHealthEntryCategory = {
   CONTACT_RESEARCH: 'CONTACT_RESEARCH',
   MESSAGING: 'MESSAGING',
   DOCUMENT_SIGNATURE: 'DOCUMENT_SIGNATURE',
+  FUNDING_DEPOSIT: 'FUNDING_DEPOSIT',
+  EXTERNAL_NOTIFICATIONS: 'EXTERNAL_NOTIFICATIONS',
   CLOSING_COORDINATION: 'CLOSING_COORDINATION',
   FILE_STORAGE: 'FILE_STORAGE',
 } as const;
@@ -5353,6 +5355,7 @@ export const ProviderHealthEntryStatus = {
   DEGRADED: 'DEGRADED',
   RATE_LIMITED: 'RATE_LIMITED',
   UNCONFIGURED: 'UNCONFIGURED',
+  UNKNOWN: 'UNKNOWN',
 } as const;
 
 export type ProviderHealthEntryCheckKind = typeof ProviderHealthEntryCheckKind[keyof typeof ProviderHealthEntryCheckKind];

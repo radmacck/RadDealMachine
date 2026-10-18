@@ -19,7 +19,7 @@ Explicit synthetic-fixture records must remain unqualified even if their fields 
 
 **Why:** Test/demo records can contain plausible criteria, identity, and funding values but are not real buyer demand.
 
-**How to apply:** Apply the synthetic-fixture marker consistently in qualification status, matching, pool views, and metrics; preserve buyer-reported criteria separately from owner-reviewed evidence.
+**How to apply:** Apply the synthetic-fixture marker consistently in qualification status, matching, pool views, metrics, property-discovery ranking, and next-action projections; preserve buyer-reported criteria separately from owner-reviewed evidence. Synthetic profiles must not create aligned-demand counts, ranking boosts, or buyer-demand next-action text in real-property views.
 
 Buyer-pool coverage must count only current owner-approved buyers with fresh identity, buying-intent, criteria, and funding evidence. Deduct active contract funds and concurrent-deal reservations, and exclude synthetic fixtures from both coverage counts and the market/type grid.
 
@@ -33,8 +33,8 @@ Creating a buyer deal-package capability requires current, owner-reviewed permis
 
 **How to apply:** Gate package-link creation and use separately from match eligibility, retain the exact permission evidence and channels checked, and keep delivery status unconfirmed until a provider supplies a real receipt.
 
-Duplicate normalized buyer email or phone routes are an identity conflict, not evidence that two buyer records are the same person. Keep both records and their history; block match and package-recipient eligibility until a reviewer resolves the conflict. When an active uncommitted deal has no currently eligible acquisition buyer, persist a buyer-demand task even if another higher-priority deal action remains the displayed recommendation.
+Duplicate normalized buyer email or phone routes are an identity conflict, not evidence that two buyer records are the same person. Keep both records and their history; block match, buyer interest/commitment responses, and package-recipient eligibility until a reviewer resolves the conflict. When an active uncommitted deal has no currently eligible acquisition buyer, persist a buyer-demand task even if another higher-priority deal action remains the displayed recommendation.
 
 **Why:** Conflicting recipient identity can disclose a private package to the wrong person, and a single-action recommendation must not hide the independent work needed to find or reverify a buyer.
 
-**How to apply:** Recheck duplicate routes at matching, package-link creation, and portal access. Keep buyer-demand work independently persisted from the primary next action; never let that task itself imply eligibility, permission, outreach, or commitment.
+**How to apply:** Recheck duplicate routes at matching, buyer response recording, package-link creation, and portal access. Keep buyer-demand work independently persisted from the primary next action; never let that task itself imply eligibility, permission, outreach, or commitment.

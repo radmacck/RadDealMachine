@@ -27,6 +27,12 @@ try {
   assert.match(String(created.blocker), /No approved legal template/);
   const replay = await createClauseReviewRequest(lead.id, request, actor);
   assert.equal(replay.id, created.id, "idempotent replay must not create another request");
+  await assert.rejects(createClauseReviewRequest(lead.id, {
+    ...request, proposedText: "Changed wording must not reuse the original idempotency key.",
+  }, actor), /already used for different clause content/);
+  await assert.rejects(createClauseReviewRequest(lead.id, request, {
+    id: `synthetic-other-owner:${randomUUID()}`, role: "OWNER",
+  }), /belongs to another clause request/);
   const rows = await listClauseReviewRequests(lead.id, actor);
   assert.equal(rows.length, 1);
   assert.equal(rows[0]?.id, created.id);

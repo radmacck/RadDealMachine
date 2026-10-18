@@ -6,7 +6,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { ErrorNotice } from '@/components/state-views';
 import type { CallInput, CallInputOutcome, Lead } from '@workspace/api-client-react';
-import { fromLocalInput, toLocalInput } from '@/lib/format';
+import { errInfo, fromLocalInput, toLocalInput } from '@/lib/format';
 import { reuseSellerAnswerDraft } from '@/lib/seller-answer-reuse';
 import { editSellerConversationField, extractSellerConversationFields, type SellerConversationField } from '@workspace/deal-domain';
 
@@ -16,8 +16,9 @@ const OUTCOMES: { v: CallInputOutcome; label: string }[] = [
 ];
 const CONDITION_CATEGORIES = ['ROOF', 'KITCHEN', 'BATH', 'HVAC', 'ELECTRICAL', 'PLUMBING', 'FLOORING', 'EXTERIOR', 'FOUNDATION', 'WINDOWS', 'OTHER'] as const;
 
-export function CallLogForm({ lead, disabled, pending, error, onSubmit, priorAnswers }: {
+export function CallLogForm({ lead, disabled, pending, error, onSubmit, onReloadLatest, priorAnswers }: {
   lead: Lead; disabled: boolean; pending: boolean; error: unknown; onSubmit: (d: CallInput, done: () => void) => void;
+  onReloadLatest?: () => void;
   priorAnswers?: CallInput['sellerAnswers'];
 }) {
   const [idempotencyKey, setIdempotencyKey] = useState(() => crypto.randomUUID());
@@ -180,7 +181,9 @@ export function CallLogForm({ lead, disabled, pending, error, onSubmit, priorAns
         </div>
       </div>
       {local && <p className="text-sm text-destructive" data-testid="text-call-local-error">{local}</p>}
-      {error != null && <ErrorNotice error={error} />}
+      {error != null && <ErrorNotice error={error}
+        retryLabel={errInfo(error).status === 409 ? 'Reload latest record and keep this draft' : undefined}
+        onRetry={errInfo(error).status === 409 ? onReloadLatest : undefined} />}
       {disabled && <p className="text-xs text-muted-foreground">Your role can read call briefs but not log calls.</p>}
       <Button className="w-full" onClick={submit} disabled={disabled || pending} data-testid="button-save-call">{pending ? 'Saving call' : 'Save call'}</Button>
     </div>

@@ -781,7 +781,9 @@ try {
     confidence: 0.9,
     verifiedFundingTypes: ["CASH"],
   }, actor, now);
-  assert.equal(verifiedDemandBuyer.approvalStatus, "APPROVED");
+  assert.equal(verifiedDemandBuyer.approvalStatus, "QUALIFICATION_REQUIRED",
+    "Synthetic buyer fixtures must remain excluded from qualified live demand even after a complete evidence-shaped verification exercise.");
+  assert.ok(verifiedDemandBuyer.qualificationBlockers.some(reason => /synthetic fixture is not a real buyer/i.test(reason)));
   const [demandJob] = await db.select().from(jobsTable)
     .where(eq(jobsTable.idempotencyKey, `buyer-demand:${demandBuyer.id}:${verifiedDemandBuyer.version}`));
   assert.ok(demandJob, "Current buyer evidence must queue a durable demand refresh.");
@@ -793,9 +795,11 @@ try {
   assert.equal(demandSubject.id, secondary.id);
   assert.equal(demandSubject.status, secondary.status, "Demand matching cannot promote or alter seller qualification.");
   assert.equal(demandSubject.leadId, null);
-  assert.equal(demandSubject.demandFit.alignedBuyerCount, 1);
+  assert.equal(demandSubject.demandFit.alignedBuyerCount, 0,
+    "A synthetic buyer must not count as eligible demand for a real public-source discovery.");
   assert.equal(demandSubject.demandFit.snapshotFresh, true);
-  assert.ok(demandSubject.priorityScore > demandSubject.score, "Verified current demand affects ranking independently of seller relevance.");
+  assert.ok(demandSubject.priorityScore <= demandSubject.score,
+    "Synthetic buyers do not increase discovery priority as though current real demand existed.");
   assert.ok(demandSubject.demandFit.missingInformation.length > 0, "Early demand fit must disclose missing deal-level underwriting inputs.");
 
   const resolvableFixture: PropertySourceRefresh = {
@@ -954,7 +958,8 @@ try {
   "Stale/conflicting candidate records are not attached as usable lead routes.");
   const sellerNextAction = "Verify seller identity and contact permission, then establish condition and underwriting inputs before any offer.";
   assert.ok(promoted.discovery.nextAction.startsWith(sellerNextAction));
-  assert.match(promoted.discovery.nextAction, /Current buyer demand aligns with 1 profile/);
+  assert.doesNotMatch(promoted.discovery.nextAction, /Current buyer demand aligns with/i,
+    "Synthetic buyer fixtures must not change a real discovery's principal seller next action.");
   assert.ok(promoted.discovery.missingInformation.some((item) => /seller identity/i.test(item)));
   let detail = await leadDetail(promoted.leadId);
   assert.equal(detail.lead.stage, "ENRICHING");
@@ -978,7 +983,8 @@ try {
   assert.equal(qualifiedOpportunity?.status, "QUALIFIED_LEAD");
   assert.equal(qualifiedOpportunity?.reason, promoted.discovery.reason);
   assert.equal(qualifiedOpportunity?.nextAction, promoted.discovery.nextAction);
-  assert.equal(qualifiedOpportunity?.demandFit.alignedBuyerCount, 1);
+  assert.equal(qualifiedOpportunity?.demandFit.alignedBuyerCount, 0,
+    "The command center must not count synthetic buyer fixtures as aligned live demand.");
   assert.equal(detail.lead.askingPrice, null);
   assert.equal(detail.lead.sellerName, "Seller not yet identified");
   assert.equal(detail.analysis, null);

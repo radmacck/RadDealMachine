@@ -14,3 +14,9 @@ Keep contact-route provenance and permission history in a narrow, role-gated con
 **Why:** Broad aggregate responses are reused across many views; exposing private route and consent history there widens disclosure and can make generated response types impractically large.
 
 **How to apply:** Add contact-specific read/write contracts for source, observed time, confidence, identity/conflict, freshness, and permission history. Keep external distribution redacted and require explicit review before readiness or outreach.
+
+`CALL_READY` requires a linked source-backed property discovery and a contact research case that independently clears seller identity, permission, freshness, route, and conflict checks. A manually entered phone or a verified route to a recorded owner is not seller identity evidence. Recheck this evidence when transitioning, listing a call brief, and recording an outcome.
+
+**Why:** Leads without linked discovery previously bypassed the contactability gate and could appear callable from a phone string or recorded-owner route alone.
+
+**How to apply:** Keep the same fail-closed rule in stage transitions, allowed-transition responses, call queues, and call-result persistence. Synthetic route fixtures must remain visibly unverified and cannot stand in for a seller identity review.

@@ -33053,8 +33053,8 @@ export const GetTransactionReadinessResponse = zod.object({
   "providers": zod.array(zod.object({
   "id": zod.string(),
   "name": zod.string(),
-  "category": zod.enum(['PROPERTY_SOURCE', 'CONTACT_RESEARCH', 'MESSAGING', 'DOCUMENT_SIGNATURE', 'CLOSING_COORDINATION', 'FILE_STORAGE']),
-  "status": zod.enum(['CONNECTED', 'DISCONNECTED', 'DEGRADED', 'RATE_LIMITED', 'UNCONFIGURED']),
+  "category": zod.enum(['PROPERTY_SOURCE', 'CONTACT_RESEARCH', 'MESSAGING', 'DOCUMENT_SIGNATURE', 'FUNDING_DEPOSIT', 'EXTERNAL_NOTIFICATIONS', 'CLOSING_COORDINATION', 'FILE_STORAGE']),
+  "status": zod.enum(['CONNECTED', 'DISCONNECTED', 'DEGRADED', 'RATE_LIMITED', 'UNCONFIGURED', 'UNKNOWN']),
   "checkedAt": zod.string().datetime({"offset":true}),
   "lastSuccessAt": zod.string().datetime({"offset":true}).nullish(),
   "checkKind": zod.enum(['PERSISTED_JOB', 'ADAPTER_REGISTRATION', 'READINESS_CHECK', 'CONFIGURATION_CHECK']),

@@ -15,4 +15,5 @@ export const ProviderHealthEntryStatus = {
   DEGRADED: 'DEGRADED',
   RATE_LIMITED: 'RATE_LIMITED',
   UNCONFIGURED: 'UNCONFIGURED',
+  UNKNOWN: 'UNKNOWN',
 } as const;

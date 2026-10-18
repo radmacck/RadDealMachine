@@ -19,6 +19,7 @@ import {
 import { lockedLead, leadDetail, move, audit } from "./deal-store";
 import { contractRecord, buyerRecord, queueJob, type Tx } from "./operations-records";
 import { dealOperations, refreshMatches } from "./matching-store";
+import { assertBuyerResponseIdentityClear } from "./buyer-response-guard";
 import {
   assembleContractDataPackage, buildPurchaseReviewPdf, purchaseReviewSnapshotHash, type PurchaseReviewSnapshot,
 } from "./transaction-documents";
@@ -439,6 +440,8 @@ export async function recordBuyerResponse(id: string,buyerId: string,input: z.in
       throw new DomainError("Deal-finder/guru activity must use the separate destination history; it cannot change buyer interest, commitment, or closing.",409);
     if (buyerRow.version!==parsed.buyerVersion) throw new DomainError("Buyer criteria or evidence changed. Review the current match.",409);
     const buyer = buyerRecord(buyerRow,now), detail = await leadDetail(id,tx,now);
+    const buyerPool = (await tx.select().from(buyersTable)).map(row=>buyerRecord(row,now));
+    assertBuyerResponseIdentityClear(buyer,buyerPool,parsed.status);
     const reservations = buyerReservations((await tx.select().from(contractsTable)).map(contractRecord),buyer.id,contract.id);
     const evaluated = matchBuyer(buyer,detail,contract,now,parsed.status==="COMMITTED"?parsed.agreedPrice:undefined,reservations.count,reservations.funds);
     const [existing] = await tx.select().from(matchesTable).where(and(eq(matchesTable.leadId,id),eq(matchesTable.buyerId,buyerId)));

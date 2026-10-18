@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { applyProviderHealthFreshness, classifyProviderHealth } from "./provider-health";
+import { applyProviderHealthFreshness, classifyProviderHealth, unconfiguredOperationalProviderHealth } from "./provider-health";
 
 test("unconfigured provider reports no external request and exposes no credential values", () => {
   const status = classifyProviderHealth(false);
@@ -21,6 +21,8 @@ test("provider job success, authorization failure, degradation, rate limits, and
   assert.equal(classifyProviderHealth(true, { state: "FAILED", message: "HTTP 429 rate limit" }).status, "RATE_LIMITED");
   assert.equal(classifyProviderHealth(true, { state: "FAILED", message: "HTTP 503 upstream failure" }).status, "DEGRADED");
   assert.equal(classifyProviderHealth(true, { state: "RUNNING", message: "retry attempt 2" }).status, "DEGRADED");
+  assert.equal(classifyProviderHealth(true, { state: "UNKNOWN" }).status, "UNKNOWN");
+  assert.match(classifyProviderHealth(true, { state: "UNKNOWN" }).reason, /no connection health is claimed/);
   assert.equal(classifyProviderHealth(true).status, "DEGRADED");
 });
 
@@ -30,4 +32,17 @@ test("old successful source checks become degraded instead of appearing currentl
   const stale = applyProviderHealthFreshness(recent, new Date("2026-10-14T23:00:00Z"));
   assert.equal(stale.status, "DEGRADED");
   assert.match(stale.reason, /older than 12 hours/);
+});
+
+test("manual funding and in-app notifications are not represented as connected external providers", () => {
+  const providers = unconfiguredOperationalProviderHealth(new Date("2026-10-17T12:00:00.000Z"));
+  const funding = providers.find(provider => provider.id === "funding-deposits");
+  const notifications = providers.find(provider => provider.id === "external-notifications");
+  assert.equal(funding?.category, "FUNDING_DEPOSIT");
+  assert.equal(funding?.status, "UNCONFIGURED");
+  assert.match(funding?.nextAction ?? "", /does not move funds/);
+  assert.equal(notifications?.category, "EXTERNAL_NOTIFICATIONS");
+  assert.equal(notifications?.status, "UNCONFIGURED");
+  assert.match(notifications?.nextAction ?? "", /in-app alerts remain available/);
+  assert.doesNotMatch(JSON.stringify(providers), /(api[_-]?key|secret|token|password)/i);
 });

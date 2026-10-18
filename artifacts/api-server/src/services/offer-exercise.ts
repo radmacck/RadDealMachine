@@ -6,7 +6,7 @@
 import assert from "node:assert/strict";
 import { randomUUID } from "node:crypto";
 import { eq, and } from "drizzle-orm";
-import { db, pool, leadsTable, offersTable, analysesTable, auditTable } from "@workspace/db";
+import { db, pool, leadsTable, offersTable, analysesTable, auditTable, callsTable } from "@workspace/db";
 import { analyzeDealScenarios, buildOfferReadinessScorecard, type LeadInput, type UnderwritingInput, type OfferApprovalInput, type OfferReadinessInput, type OfferReadinessKey } from "@workspace/deal-domain";
 import { logger } from "../lib/logger";
 import * as store from "./deal-store";
@@ -48,8 +48,23 @@ async function exercise() {
       })),
       repairs:[{category:"Whole synthetic scope",low:10000,expected:20000,high:30000,confidence:0.8,source:"Synthetic repair quote"}],
     };
+    const underwritingPriorVersion = detail.lead.version;
+    const underwritingPriorStage = detail.lead.stage;
     detail = await store.saveUnderwriting(id,await exerciseEvidence(id,underwriting,actorId,now),actorId,now);
     assert.ok(detail.analysisSnapshotId);
+    const underwritingTransitionAudits = await db.select().from(auditTable)
+      .where(and(eq(auditTable.entityId,id),eq(auditTable.action,"DEAL_TRANSITION")));
+    const underwritingEdges = underwritingTransitionAudits.map(row => JSON.parse(row.detail) as Record<string,unknown>)
+      .filter(event => event.eventType === "CANONICAL_STAGE_TRANSITION"
+        && Number(event.priorVersion) >= underwritingPriorVersion
+        && Number(event.resultingVersion) <= detail.lead.version);
+    assert.deepEqual(underwritingEdges.map(event => [
+      event.priorVersion,event.resultingVersion,event.priorStage,event.resultingStage,
+    ]),[
+      [underwritingPriorVersion,underwritingPriorVersion+1,underwritingPriorStage,"ANALYZED"],
+      [underwritingPriorVersion+1,underwritingPriorVersion+2,"ANALYZED",detail.lead.stage],
+    ],"A multi-stage underwriting save must persist a contiguous canonical version chain.");
+    assert.equal(detail.lead.version,underwritingPriorVersion+2);
     const savedSnapshotId = detail.analysisSnapshotId;
     const savedAnalysis = structuredClone(detail.analysis);
     const savedAnalysisCount = (await db.select().from(analysesTable).where(eq(analysesTable.leadId,id))).length;
@@ -68,8 +83,41 @@ async function exercise() {
     };
     await assert.rejects(offers.createOfferDraft(id,draftInput,analyst,now),/conversation/i);
     detail = await store.transitionLead(id,{version:detail.lead.version,to:"CALL_READY",reason:"Synthetic research reviewed.",nextAction:"Run synthetic conversation."},actorId,now);
-    detail = await store.recordCall(id,{version:detail.lead.version,outcome:"CONNECTED",notes:"Synthetic seller conversation logged.",nextAction:"Review synthetic offer.",followUpAt:future(1)},actorId,now);
+    const callPriorVersion = detail.lead.version;
+    const callInput = {
+      version:callPriorVersion,outcome:"CONNECTED" as const,notes:"Synthetic seller conversation logged.",
+      nextAction:"Review synthetic offer.",followUpAt:future(1),idempotencyKey:`synthetic-call:${randomUUID()}`,
+    };
+    detail = await store.recordCall(id,callInput,actorId,now);
+    const callTransitionAudits = await db.select().from(auditTable)
+      .where(and(eq(auditTable.entityId,id),eq(auditTable.action,"DEAL_TRANSITION")));
+    const callEdges = callTransitionAudits.map(row => JSON.parse(row.detail) as Record<string,unknown>)
+      .filter(event => event.eventType === "CANONICAL_STAGE_TRANSITION"
+        && Number(event.priorVersion) >= callPriorVersion
+        && Number(event.resultingVersion) <= detail.lead.version);
+    assert.deepEqual(callEdges.map(event => [
+      event.priorVersion,event.resultingVersion,event.priorStage,event.resultingStage,
+    ]),[
+      [callPriorVersion,callPriorVersion+1,"CALL_READY","CONTACTED"],
+      [callPriorVersion+1,callPriorVersion+2,"CONTACTED","CONVERSATION"],
+    ],"A connected call's intermediate CONTACTED state must not share a canonical version with CONVERSATION.");
+    assert.equal(detail.lead.version,callPriorVersion+2);
+    const callsBeforeReplay = (await db.select().from(callsTable).where(eq(callsTable.leadId,id))).length;
+    const versionBeforeReplay = detail.lead.version;
+    const replayedCall = await store.recordCall(id,callInput,actorId,now);
+    assert.equal(replayedCall.lead.version,versionBeforeReplay,"An exact call replay must not advance canonical deal state.");
+    assert.equal((await db.select().from(callsTable).where(eq(callsTable.leadId,id))).length,callsBeforeReplay,
+      "An exact call replay must not append a second call record.");
+    const transitionsBeforeInvalid = (await db.select().from(auditTable)
+      .where(and(eq(auditTable.entityId,id),eq(auditTable.action,"DEAL_TRANSITION")))).length;
     await assert.rejects(store.transitionLead(id,{version:detail.lead.version,to:"OFFER_READY",reason:"Attempt stage bypass.",nextAction:"Must remain blocked."},actorId,now),/not available/);
+    const afterInvalidTransition = await store.leadDetail(id);
+    assert.equal(afterInvalidTransition.lead.stage,"CONVERSATION");
+    assert.equal(afterInvalidTransition.lead.version,versionBeforeReplay,"Rejected transitions must not mutate canonical stage/version.");
+    assert.equal((await db.select().from(auditTable)
+      .where(and(eq(auditTable.entityId,id),eq(auditTable.action,"DEAL_TRANSITION")))).length,transitionsBeforeInvalid,
+      "Rejected transitions must not append a canonical audit edge.");
+    detail = afterInvalidTransition;
     await assert.rejects(offers.createOfferDraft(id,{...draftInput,version:detail.lead.version},operator,now),e => (e as {status:number}).status===403);
     const analysisBeforeDraft=structuredClone(detail.analysis);
     detail = await offers.createOfferDraft(id,{...draftInput,version:detail.lead.version},analyst,now);
@@ -127,6 +175,13 @@ async function exercise() {
     const approved = detail.offers.find(o => o.effectiveStatus === "AUTHORIZED")!;
     const approvalAudits=await db.select().from(auditTable).where(and(eq(auditTable.entityId,id),eq(auditTable.action,"OFFER_AUTHORIZED")));
     assert.ok(approvalAudits.some(a=>{const x=JSON.parse(a.detail);return x.actor===owner.id&&x.reviewSnapshotHash&&x.exactTerms?.amount===approved.amount&&x.approvedAt;}),"Approval audit must preserve actor, timestamp, hash, exact terms, and approved amount.");
+    const authorizedVersion = detail.lead.version;
+    await assert.rejects(authorizeReviewedOffer(id,approved.id,approval,owner,now),/changed in another session/);
+    const afterApprovalReplay = await store.leadDetail(id);
+    assert.equal(afterApprovalReplay.lead.version,authorizedVersion,"Replaying an approval against its old deal version must not advance state.");
+    assert.equal((await db.select().from(auditTable).where(and(eq(auditTable.entityId,id),eq(auditTable.action,"OFFER_AUTHORIZED")))).length,
+      approvalAudits.length,"A stale approval replay must not append another approval event.");
+    detail = afterApprovalReplay;
     const contactResearchSnapshot = {
       analysis:structuredClone(detail.analysis),
       analysisSnapshotId:detail.analysisSnapshotId,
