@@ -30,6 +30,7 @@ import {
   isCalendarDate, isValidTimeZone, scheduleCoversAllMilestones, transactionDeadlineRequestHash,
   transactionTermsHash, TRANSACTION_DEADLINE_KINDS,
 } from "./transaction-deadlines";
+import { reconcileSettlementProceeds, validateDestinationFeeFields } from "./transaction-fees";
 
 export async function lockedContract(tx: Tx, id: string, version: number) {
   const [row] = await tx.select().from(contractsTable).where(eq(contractsTable.leadId,id)).for("update");
@@ -518,11 +519,10 @@ export async function recordDestinationActivity(id: string,buyerId: string,input
   const occurredAt = new Date(eventAt).toISOString();
   const evidence = evidenceUrl(parsed.evidenceUrl);
   const termEvent = parsed.kind==="TERMS_REVIEWED"||parsed.kind==="TERMS_ACCEPTED";
-  const feeEvent = ["FEE_RECEIVED","FEE_DISPUTED","FEE_WAIVED"].includes(parsed.kind);
   if (termEvent&&!parsed.exactTerms) throw new DomainError("Terms review and acceptance must record the exact evidenced terms.");
   if (!termEvent&&parsed.exactTerms) throw new DomainError("Exact commercial terms belong on a terms-review or terms-acceptance event.");
-  if (feeEvent&&(parsed.feeAmount==null||!parsed.currency)) throw new DomainError("Fee outcomes need the exact evidenced amount and currency; no quoted fee is assumed.");
-  if (!feeEvent&&(parsed.feeAmount!=null||parsed.currency)) throw new DomainError("Fee amount and currency belong on a fee outcome.");
+  const feeEvent = ["FEE_RECEIVED","FEE_DISPUTED","FEE_WAIVED"].includes(parsed.kind);
+  validateDestinationFeeFields(parsed.kind, parsed.feeAmount, parsed.currency);
 
   await db.transaction(async tx=>{
     const [lead] = await tx.select({id:leadsTable.id}).from(leadsTable).where(eq(leadsTable.id,id)).for("update");
@@ -809,11 +809,10 @@ export async function recordDealOutcome(id: string,input: z.infer<typeof RecordD
           contract.deadlineSchedule.termsHash!==transactionTermsHash(contract))
         throw new DomainError("Missing evidence: a current owner-reviewed milestone deadline schedule tied to the latest executed terms and buyer party is required before settlement.",409);
       if (parsed.assignmentFeeReceived==null || parsed.closingCosts==null) throw new DomainError("Record actual received assignment fee and actual closing costs.");
-      wholeDollars(parsed.assignmentFeeReceived,"Received fee"); wholeDollars(parsed.closingCosts,"Closing costs");
       const expectedFee = Math.round(((contract.agreedBuyerPrice??0)-contract.purchasePrice)*100)/100;
-      if (parsed.assignmentFeeReceived!==expectedFee) throw new DomainError("Received assignment fee must reconcile to the frozen committed price minus acquisition price.");
+      const netProceeds = reconcileSettlementProceeds(expectedFee, parsed.assignmentFeeReceived, parsed.closingCosts);
       Object.assign(contract,{status:"CLOSED",assignmentFeeReceived:parsed.assignmentFeeReceived,closingCosts:parsed.closingCosts,
-        netProceeds:Math.round((parsed.assignmentFeeReceived-parsed.closingCosts)*100)/100,closedAt:eventTime.toISOString()});
+        netProceeds,closedAt:eventTime.toISOString()});
       await move(tx,lead,"CLOSED","Owner recorded evidenced settlement and reconciled proceeds","Preserve settlement evidence and review deal outcome.",actor.id,now);
     } else {
       if (contract.committedBuyerId) {

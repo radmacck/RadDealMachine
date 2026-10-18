@@ -7,4 +7,4 @@ Deeply extending nested OpenAPI response trees can expand inferred `GetCommandCe
 
 **Why:** The broad aggregate response composes many nested schemas; even a small new nested collection can push its generated type over the compiler limit. Orval can finish generation while its chained library typecheck fails.
 
-**How to apply:** Keep rich or independent workflow data behind focused endpoints. If the aggregate response itself still triggers TS7056, use a mapped `ZodObject` type annotation that preserves accessed `.shape` members, then rerun library and artifact typechecks. Reapply that narrow annotation after codegen if necessary.
+**How to apply:** Keep rich or independent workflow data behind focused endpoints. If the aggregate response itself still triggers TS7056, use a mapped Zod type annotation that preserves accessed `.shape` members and apply it through a deterministic, tested codegen post-step—not a manual generated-file edit. Rerun codegen twice and compare generated outputs, then rerun library and artifact typechecks.
