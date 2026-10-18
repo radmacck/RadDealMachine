@@ -2673,3 +2673,91 @@ No code change was safe at the first blocker: removing or weakening the seller-i
 - RadID and Naelo integrations do not currently exist. Do not send personal data to external services without authorization. No marketplace implementation was started in this slice.
 
 **Single next blocker:** an authorized human must verify a real seller's self-identification, contact permission, and currently permitted direct route through a legitimate channel; no such evidence or authorized live contact provider is available in this verification run.
+
+## Ordered workflow work packages — current deal workflow first — 2026-10-18
+
+**Schedule rule:** complete and prove the existing acquisition/deal workflow before starting any marketplace implementation. These are ordered slices, not claims of completion. Work vertically; do not begin a later package while its predecessor's gate is unresolved. The first real-world gate requires an authorized person and genuine evidence; synthetic fixtures cannot satisfy it.
+
+### Package 1 — Prove persisted synthetic qualification remains blocked without seller evidence — DONE, SYNTHETIC ONLY
+
+- Inspected the actual repository state and this checkpoint first. The worktree was clean before this package; no pre-existing user edits or records were overwritten.
+- Ran the narrowest useful persisted deal exercise, `pnpm --filter @workspace/api-server run exercise:seller`. The existing workflow creates a synthetic lead, saves deterministic underwriting, and confirms the `CALL_READY` transition is rejected without linked seller evidence.
+- First blocker: an authorized human has not provided current seller self-identification, contact permission, and a permitted direct contact route. The old `exercise:acquisition-queue` additionally has a purported positive fixture that lacks linked seller evidence and fails at `acquisition-queue-exercise.ts:167`; that failure is not permission to make the fixture callable.
+- Bounded change: `artifacts/api-server/src/services/seller-exercise.ts` now also persists an explicitly synthetic qualification linked to a discovery, reloads the acquisition queue through its real service, and asserts the lead remains `BLOCKED`, has no call brief, and exposes a seller identity/contact-review next action. The attempted transition assertion was updated to match the more specific source-linked evidence blocker. No seller, permission, source, or call was fabricated.
+- Verification after the change:
+  - `pnpm --filter @workspace/api-server run exercise:seller` — **PASS**; isolated PostgreSQL; 36 schema tables reconciled and reloaded; synthetic qualified lead with a manually entered phone remains blocked from `CALL_READY` and `CALL NEXT`; no actionable brief.
+  - `pnpm --filter @workspace/api-server run exercise:acquisition-queue` — **FAIL, known stale positive-fixture expectation** at `acquisition-queue-exercise.ts:167`; it lacks a linked source-backed seller-contact case. No bypass was introduced.
+  - `pnpm --filter @workspace/api-server run typecheck` — **PASS**.
+  - `pnpm --filter @workspace/api-server run build` — **PASS**; existing 9.3 MB bundle/source-map output.
+  - `DANGEROUSLY_ALLOW_GIT=1 git diff --check` — **PASS**.
+- Still unverified: signed-in UI submission/reload; real seller identity, permission, and route; live call and outcome. The seller exercise is synthetic and does not prove a real opportunity.
+
+### Package 2 — Reconcile property discovery, persistence, and deduplication
+
+- **Depends on:** Package 1's fail-closed seller boundary.
+- **Acceptance:** permitted source observations persist and reload with source URL/time; exact-property and cross-feed deduplication preserve each source's provenance; unmatched observations remain unmatched; raw discovery alone creates no active lead or seller-contact route. Partial/failed source status must not be replaced with stale success.
+- **Verify:** `pnpm --filter @workspace/api-server run exercise:property-source`; `pnpm --filter @workspace/api-server run exercise:property-source-coverage`.
+- **Truth boundary:** public property/enforcement feeds are not seller identity, motivation, contact permission, or verified buyer demand.
+
+### Package 3 — Verify qualification and property analysis from saved evidence
+
+- **Depends on:** Package 2's persisted discovery identity and provenance.
+- **Acceptance:** qualification is explainable from persisted, dated signals; hypotheses and seller indications remain distinct from verified facts; missing condition/comparable evidence blocks or qualifies deterministic underwriting; refresh/replay does not alter existing source history or silently turn discovery into readiness.
+- **Verify:** `pnpm --filter @workspace/api-server run exercise:evidence-intake`; `pnpm --filter @workspace/api-server run exercise:repair-estimate`; `pnpm --filter @workspace/deal-domain run test`.
+
+### Package 4 — Complete contact research references and prove the seller gate
+
+- **Depends on:** Packages 2–3. The live readiness sub-gate additionally depends on an authorized human's current evidence.
+- **Acceptance:** saved contact research retains exact record/page/document reference, provenance and freshness; route recipient is seller-self-identified rather than merely recorded owner; permission scope is explicit and current; direct route is genuinely permitted, reviewed and conflict-free. Missing, synthetic, stale, prohibited, or conflicting evidence keeps `CALL_READY`, call briefs, and active-stage `CALL NEXT` blocked.
+- **Verify:** `pnpm --filter @workspace/api-server run exercise:property-contact-http`; `pnpm --filter @workspace/api-server run exercise:seller-contact`; `pnpm --filter @workspace/api-server run exercise:seller`; `pnpm --filter @workspace/api-server exec tsx --test src/services/property-contactability-gate.test.ts`.
+- **Manual verification:** authenticated owner/operator reviews legitimate source evidence, saves and reloads it, then confirms the queue's decision. Do not test by contacting a real person without permission.
+
+### Package 5 — Verify offer preparation, exact-version authority, and audit history
+
+- **Depends on:** Packages 3–4; no offer is to be represented as authorized if seller/evidence gates or exact-term approval are missing.
+- **Acceptance:** persisted offer binds to the current underwriting snapshot, exact amount/terms, approver role, and audit record; material evidence changes invalidate prior approval; changed or stale versions cannot be communicated; no fixture is described as a real accepted offer.
+- **Verify:** `pnpm --filter @workspace/api-server run exercise:offers`; run the focused offer tests in `lib/deal-domain` and API offer-record tests located by `find lib/deal-domain artifacts/api-server/src -name '*offer*.test.ts'`.
+- **Limit:** offer exercise currently stops at the seller identity/contactability gate until a valid linked evidence case exists; do not remove that condition to make the exercise pass.
+
+### Package 6 — Prove buyer records and eligibility/readiness
+
+- **Depends on:** persisted deal economics from Package 3 and an offer-ready deal from Package 5.
+- **Acceptance:** buyer prospects remain distinct from approved buyers; identity, current intent, criteria, permission, proof expiry, available capacity, route conflicts, and synthetic-fixture status control eligibility; match explanations cite saved evidence; no buyer message, funding, or commitment is inferred.
+- **Verify:** `pnpm --filter @workspace/api-server run exercise:buyers`; `pnpm --filter @workspace/api-server run exercise:buyer-pool`; `pnpm --filter @workspace/api-server run test:buyer-outreach`.
+
+### Package 7 — Verify transaction status and milestone evidence
+
+- **Depends on:** exact approved offer (Package 5) and eligible acquisition buyer (Package 6).
+- **Acceptance:** contract-ready data matches approved terms; owner-reviewed special clauses and authorized parties remain explicit; deadlines and exceptions are persisted; signature, EMD receipt, funding, assignment, delivery, and closing status require source evidence and authorized role; stale writes and retries preserve prior records.
+- **Verify:** `pnpm --filter @workspace/api-server run test:transaction-readiness`; `pnpm --filter @workspace/api-server run exercise:transaction-readiness`; `pnpm --filter @workspace/api-server run exercise:transactions`.
+- **Limit:** transaction exercises currently stop upstream at seller identity/contact evidence; rerun only after the upstream gate is correctly represented, never with a bypass.
+
+### Package 8 — Reconcile fee calculations, quotes, and actual outcomes
+
+- **Depends on:** Packages 5–7 and locked transaction economics.
+- **Acceptance:** quoted/target assignment fee remains distinct from received fee; an actual fee outcome records exact amount, currency, evidence, related terms event, actor, time, and idempotency; closing net proceeds reconcile to actual received fee less evidenced costs; no projected amount is shown as revenue.
+- **Verify:** `pnpm --filter @workspace/api-server run exercise:transactions`; `pnpm --filter @workspace/api-server run test:transaction-readiness`; inspect/retest `artifacts/api-server/src/services/transaction-store.ts` fee and closing branches.
+
+### Package 9 — Controlled live validation of configured providers and human gates
+
+- **Depends on:** Packages 2–8 pass their synthetic persistence/replay gates.
+- **Acceptance:** provider health reports actual configured/unconfigured/failed status; live public-source checks respect their current terms and record partial failure; no real seller outreach, signature, financial action, or legal action occurs unless an authorized human explicitly verifies the exact route/content/terms and authorizes that action. Record the human verification separately from synthetic exercise results.
+- **Verify:** `pnpm --filter @workspace/api-server run test:provider-health`; `pnpm --filter @workspace/api-server run exercise:property-source`; `pnpm --filter @workspace/api-server run exercise:property-contact-http`.
+- **Manual-only:** seller identity/permission/route review and any actual communications. No contact research provider, messaging provider, or signature provider is treated as connected without verified configuration.
+
+### Package 10 — Run the complete first-deal regression and record release verdict
+
+- **Depends on:** Packages 1–9; a real first-deal acceptance verdict additionally depends on the authorized human verification in Packages 4 and 9.
+- **Acceptance:** one coherent persisted path is demonstrated from permitted discovery through qualification, contact gate, deterministic underwriting, exact offer approval, eligible buyer, authorized delivery, contract review, deadlines, evidence-backed milestones, fee reconciliation, and outcome. Retries are idempotent, stale versions fail safely, partial failures remain visible, and cleanup/rollback never removes existing user records. Synthetic results and real-provider/human results are reported separately.
+- **Verify:** `pnpm --filter @workspace/api-server run exercise:property-source`; `pnpm --filter @workspace/api-server run exercise:evidence-intake`; `pnpm --filter @workspace/api-server run exercise:seller`; `pnpm --filter @workspace/api-server run exercise:offers`; `pnpm --filter @workspace/api-server run exercise:buyers`; `pnpm --filter @workspace/api-server run exercise:transactions`; API/web typechecks and builds; `DANGEROUSLY_ALLOW_GIT=1 git diff --check`.
+- **Release rule:** a synthetic end-to-end path is not a real first deal. No green/release claim until the supported live path has genuine evidence and an authorized human verifies its consequential checkpoints.
+
+### Deferred next phase — marketplace and ecosystem integrations — NOT STARTED
+
+Do not begin these features until Package 10 meets the agreed current-workflow threshold:
+
+- Homeowners list for free; buyers pay a membership subscription priced from operating costs/value and demonstrated buyer willingness to pay.
+- Support seller choice between (1) the company contracting to purchase and assigning its contractual interest and (2) homeowner-direct-to-buyer matching/coordination.
+- Add swipe-based offer comparison, counteroffers, and messaging only after the underlying approval, consent, and audit rules are verified.
+- Make compliance content state-specific and versioned. Determine jurisdictional requirements with qualified review; do not invent rules or treat an unreviewed legal-AI result as authority.
+- Keep company-level Naelo separate from each user's personal Naelo. RadID and governed Rad Data integration points should be designed when this phase begins; do not claim they exist or are connected now, and do not send personal data externally without authorization.

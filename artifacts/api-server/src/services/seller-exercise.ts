@@ -6,11 +6,12 @@
 import assert from "node:assert/strict";
 import { randomUUID } from "node:crypto";
 import { eq, and, sql } from "drizzle-orm";
-import { db, pool, leadsTable, auditTable, analysesTable, intelligenceTable } from "@workspace/db";
+import { db, pool, leadsTable, auditTable, analysesTable, intelligenceTable, propertyDiscoveriesTable } from "@workspace/db";
 import { logger } from "../lib/logger";
 import * as store from "./deal-store";
 import { exerciseEvidence } from "./exercise-evidence";
 import { commandCenter } from "./command-center";
+import { acquisitionQueue } from "./acquisition-queue-store";
 import { DEFAULT_ASSUMPTIONS, type LeadInput, type UnderwritingInput } from "@workspace/deal-domain";
 
 async function exercise() {
@@ -72,21 +73,66 @@ async function exercise() {
     await assert.rejects(store.saveUnderwriting(id,underwriting,actor,now),/changed in another session/);
     const snapshots = await db.select().from(analysesTable).where(eq(analysesTable.leadId,id));
     assert.equal(snapshots.length,1);
+    const [discovery] = await db.insert(propertyDiscoveriesTable).values({
+      identityKey:`synthetic-readiness:${randomUUID()}`,
+      marketKey:"SYNTHETIC_TX",
+      status:"QUALIFIED_LEAD",
+      score:50,
+      confidence:0.8,
+      version:1,
+      leadId:id,
+      payload:{
+        property:{source:"SYNTHETIC exercise only"},
+        signals:[],
+        firstObservedAt:now.toISOString(),
+      },
+      createdAt:now,
+      updatedAt:now,
+    }).returning();
+    assert.ok(discovery);
+    const [leadRow] = await db.select().from(leadsTable).where(eq(leadsTable.id,id));
+    assert.ok(leadRow);
+    await db.update(leadsTable).set({
+      payload:{
+        ...leadRow.payload,
+        propertyQualification:{
+          discoveryId:discovery.id,
+          status:"QUALIFIED_LEAD",
+          score:50,
+          confidence:0.8,
+          criteriaVersion:1,
+          reviewReason:"SYNTHETIC qualification fixture; no real property or seller.",
+          qualifiedBy:actor,
+          qualifiedAt:now.toISOString(),
+          reason:"Synthetic persisted qualification used only to test queue gating.",
+          signals:[],
+          missingInformation:["Seller identity and contact permission are not verified."],
+          nextAction:"Review permitted seller identity and contact evidence.",
+        },
+      },
+    }).where(eq(leadsTable.id,id));
     assert.ok(!detail.allowedTransitions.includes("CALL_READY"),
       "A synthetic direct lead with only a manually supplied phone must not become CALL_READY.");
     const blockedVersion = detail.lead.version;
     await assert.rejects(store.transitionLead(id,{
       version:blockedVersion,to:"CALL_READY",reason:"Synthetic analysis without linked seller-identity evidence",
       nextAction:"Link permitted source-backed property and seller contact research.",
-    },actor,now),/link this lead to a source-backed property discovery/i);
+    },actor,now),/CALL_READY is blocked:.*seller identity, contact permission, and route review/i);
     detail = await store.leadDetail(id);
     assert.equal(detail.lead.stage,"STRONG");
     assert.equal(detail.lead.version,blockedVersion);
     assert.equal((await store.callQueue(now)).some(b => b.lead.id === id),false);
-    logger.info({checks:"persist/reload, provenance rejection, deterministic snapshot, stale/concurrent write rejection, source-linked seller identity and permitted contact route required before CALL_READY"},"Seller readiness guard exercise PASSED (synthetic data)");
+    const queueItem = (await acquisitionQueue("OWNER",now)).items.find(item => item.lead.id === id);
+    assert.equal(queueItem?.decision,"BLOCKED",
+      "A persisted qualified lead with only a manually entered phone must not become CALL NEXT.");
+    assert.equal(queueItem?.callBrief,null,
+      "The blocked synthetic lead must not produce an actionable seller call brief.");
+    assert.match(queueItem?.nextAction ?? "",/seller identity and contact review/i);
+    logger.info({checks:"persist/reload, provenance rejection, deterministic snapshot, stale/concurrent write rejection, linked synthetic qualification, no linked contact case remains blocked from CALL_READY and CALL NEXT; no actionable brief"},"Seller readiness guard exercise PASSED (synthetic data)");
   } finally {
     if (id) {
       await db.transaction(async tx => {
+        await tx.delete(propertyDiscoveriesTable).where(eq(propertyDiscoveriesTable.leadId,id!));
         await tx.delete(leadsTable).where(eq(leadsTable.id,id!));
         await tx.delete(auditTable).where(and(eq(auditTable.entityId,id!),eq(auditTable.actor,actor)));
       });
