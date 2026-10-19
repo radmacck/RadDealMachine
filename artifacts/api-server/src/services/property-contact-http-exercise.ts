@@ -6,6 +6,7 @@ import { DomainError } from "@workspace/deal-domain";
 import type { PublicProperty } from "@workspace/property-sources";
 import { createPropertySourcesRouter } from "../routes/property-sources";
 import { recordPropertyObservation } from "./property-discovery-store";
+import { hasLegitimateSellerCallRoute } from "./property-contactability-gate";
 
 const now = new Date();
 const property = {
@@ -76,8 +77,24 @@ try {
   assert.equal(denied.status, 403, "The actual route rejects viewer-role contact research.");
   assert.equal((await denied.text()).includes("(215) 555-0147"), false,
     "A denied response never echoes a submitted private contact route.");
+  const evidenceOnlyResponse = await request("OWNER", {
+    ...baseCase, status: "OPEN", identityMatch: "RECORDED_OWNER_ONLY", permissionBasis: "UNKNOWN",
+  });
+  assert.equal(evidenceOnlyResponse.status, 200);
+  const evidenceOnly = await evidenceOnlyResponse.json() as {
+    version: number;
+    contactResearchCase?: { missingRequirements: string[]; identityMatch: string; permissionBasis: string; auditHistory: Array<{reason:string}> };
+  };
+  assert.ok(evidenceOnly.contactResearchCase?.missingRequirements.some(item => /does not establish seller identity/i.test(item)));
+  assert.ok(evidenceOnly.contactResearchCase?.missingRequirements.some(item => /lawful basis/i.test(item)));
+  assert.ok(evidenceOnly.contactResearchCase?.missingRequirements.some(item => /No direct phone route/i.test(item)));
+  assert.equal(evidenceOnly.contactResearchCase?.missingRequirements.some(item => /Add the exact ownership\/identity source record/i.test(item)), false,
+    "A saved evidence reference satisfies only the reference requirement, not identity, permission, or route gates.");
+  assert.match(evidenceOnly.contactResearchCase?.auditHistory.at(-1)?.reason ?? "", /status=NONE->OPEN/);
+  assert.match(evidenceOnly.contactResearchCase?.auditHistory.at(-1)?.reason ?? "", /evidenceReference=SYNTHETIC-HTTP-REF/);
   const ownerInput = {
     ...baseCase,
+    version: evidenceOnly.version,
     candidateRoute: {
       channel: "PHONE", routeValue: "(215) 555-0147",
       recipient: "SYNTHETIC HTTP seller", recipientRole: "SELLER_SELF_IDENTIFIED",
@@ -98,10 +115,31 @@ try {
   assert.equal(accepted.status, 200, `An owner can save permitted, supported, confirmed route evidence through HTTP: ${acceptedText}`);
   const saved = JSON.parse(acceptedText) as {
     version: number;
-    contactResearchCase?: { candidateRoutes?: Array<{ sourceRecordId: string; routeVerificationStatus: string }>; auditHistory: unknown[] };
+    contactResearchCase?: {
+      status: "OPEN" | "EVIDENCE_RECORDED" | "NO_DIRECT_ROUTE_FOUND" | "NEEDS_REVIEW" | "BLOCKED";
+      candidateRoutes?: Array<{ sourceRecordId: string; routeVerificationStatus: string }>;
+      auditHistory: Array<{reason:string}>;
+      synthetic: boolean;
+      missingRequirements: string[];
+      sourceName: string;
+      sourceType: "PUBLIC_RECORD" | "PUBLIC_PAGE" | "OWNER_SUPPLIED" | "SELLER_PROVIDED" | "MANUAL_RESEARCH" | "INFERRED" | "OTHER";
+      sourceUrl: string | null;
+      observedAt: string;
+      confidence: number;
+      identityMatch: "UNKNOWN" | "RECORDED_OWNER_ONLY" | "SELLER_SELF_IDENTIFIED" | "CONFLICTING" | "NOT_MATCHED";
+      permissionBasis: "UNKNOWN" | "PUBLIC_SOURCE_TERMS" | "CONSENT" | "OTHER_DOCUMENTED" | "PROHIBITED";
+      evidenceReference: string | null;
+    };
   };
   assert.equal(saved.contactResearchCase?.candidateRoutes?.length, 1);
   assert.equal(saved.contactResearchCase?.candidateRoutes?.[0]?.routeVerificationStatus, "CONFIRMED");
+  assert.equal(saved.contactResearchCase?.synthetic, true);
+  assert.ok(saved.contactResearchCase?.missingRequirements.some(item => /synthetic or fixture evidence/i.test(item)));
+  assert.equal(hasLegitimateSellerCallRoute(saved.contactResearchCase as NonNullable<Parameters<typeof hasLegitimateSellerCallRoute>[0]>, now), false,
+    "A synthetic route with test-shaped consent/identity evidence cannot pass the seller-call gate.");
+  const routeAuditReason = saved.contactResearchCase?.auditHistory.at(-1)?.reason ?? "";
+  assert.match(routeAuditReason, /status=OPEN->EVIDENCE_RECORDED/);
+  assert.match(routeAuditReason, /sourceRecordId=SYNTHETIC-HTTP-ROUTE-1/);
   const auditCount = saved.contactResearchCase?.auditHistory.length;
   const replay = await request("OWNER", { ...ownerInput, version: saved.version });
   assert.equal(replay.status, 200);

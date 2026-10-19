@@ -11,7 +11,7 @@ import {
   type DestinationActivityEvent,
 } from "@workspace/api-zod";
 import {
-  assertOperationsRole, buyerReservations, evidenceUrl, pastInstant, wholeDollars, closingBlockers, matchBuyer, DomainError, DAY,
+  assertOperationsRole, buyerReservations, evidenceUrl, pastInstant, wholeDollars, closingBlockers, assertNewClosingMilestone, matchBuyer, DomainError, DAY,
   evaluateTransactionDocumentTransition, type TransactionDocumentState,
   type OfferActor, type DealContract, type LeadDetail,
   evidenceReviewedAnalysis, type Analysis, type Lead, type UnderwritingInput, type Intelligence,
@@ -592,7 +592,7 @@ export async function recordClosingMilestone(id: string,input: z.infer<typeof Re
   await db.transaction(async tx=>{
     const lead = await lockedLead(tx,id), {row,contract} = await lockedContract(tx,id,parsed.version);
     if (contract.status==="DRAFT") throw new DomainError("Record executed acquisition agreement first.",409);
-    if (contract.milestones.some(m=>m.kind===parsed.kind)) throw new DomainError("This milestone is already recorded; evidence history is immutable.",409);
+    assertNewClosingMilestone(contract.milestones,parsed.kind);
     if (["ASSIGNMENT_SIGNED","FUNDS_CONFIRMED"].includes(parsed.kind) && !contract.committedBuyerId) throw new DomainError("A qualified committed buyer is required before assignment or funds confirmation.",409);
     const effectiveAt = new Date(pastInstant(parsed.effectiveAt,now,"Milestone event time")).toISOString();
     if (parsed.kind==="EARNEST_MONEY_CONFIRMED" || parsed.kind==="FUNDS_CONFIRMED") {

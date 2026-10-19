@@ -44,6 +44,7 @@ const future = (days:number)=>new Date(now.getTime()+days*86400000).toISOString(
 const dateOnly = (days:number)=>future(days).slice(0,10);
 let readinessSummary: Record<string,unknown> = {};
 let readinessDeadlineKeys: {upcoming:string;overdue:string}|null = null;
+class ExpectedSyntheticSellerGateBlock extends Error {}
 try {
   // All these writes are isolated by the harness's connection-wide search path.
   let lead = await seller.createLead({address:"SYNTHETIC COMPLETE DEAL",city:"Synthetic City",state:"TX",county:"Synthetic County",zip:"75001",
@@ -68,7 +69,24 @@ try {
     source:"Synthetic command-center exercise",sourceType:"MODEL",confidence:0.4,capturedAt:now.toISOString(),
     question:"What is your preferred closing timeline?",action:"Ask the seller and record the actual answer."},actor.id,now);
   detail = await seller.leadDetail(id);
-  detail = await seller.transitionLead(id,{version:detail.lead.version,to:"CALL_READY",reason:"Synthetic research complete.",nextAction:"Synthetic call."},actor.id,now);
+  const beforeCallReady = await seller.leadDetail(id,undefined,now);
+  const transitionsBeforeCallReady = (await db.select().from(transitionsTable).where(eq(transitionsTable.leadId,id))).length;
+  try {
+    detail = await seller.transitionLead(id,{version:beforeCallReady.lead.version,to:"CALL_READY",reason:"Synthetic research complete.",nextAction:"Synthetic call."},actor.id,now);
+  } catch (error) {
+    assert.equal((error as {status?:number}).status,409);
+    assert.match((error as Error).message,
+      /^CALL_READY is blocked: .*source-backed property discovery.*seller identity.*contact permission.*route review\./);
+    const afterBlockedTransition = await seller.leadDetail(id,undefined,now);
+    assert.equal(afterBlockedTransition.lead.stage,beforeCallReady.lead.stage,
+      "A blocked synthetic call-ready transition must preserve stage.");
+    assert.equal(afterBlockedTransition.lead.version,beforeCallReady.lead.version,
+      "A blocked synthetic call-ready transition must preserve version.");
+    assert.equal((await db.select().from(transitionsTable).where(eq(transitionsTable.leadId,id))).length,
+      transitionsBeforeCallReady,"A rejected synthetic authorization must not append a stage transition.");
+    logger.info("EXPECTED BLOCK: synthetic seller evidence cannot authorize CALL_READY; persisted transaction lifecycle remains unverified.");
+    throw new ExpectedSyntheticSellerGateBlock();
+  }
   const transitionAudits = await db.select().from(auditTable).where(and(eq(auditTable.entityId,id),eq(auditTable.action,"DEAL_TRANSITION")));
   const canonicalTransition = transitionAudits.map(row => {
     try { return JSON.parse(row.detail) as Record<string,unknown>; } catch { return null; }
@@ -1490,4 +1508,6 @@ try {
    assert.equal((await seller.listBuyerCallFollowUps(now)).items.some(item=>item.callId===persistedBuyerCall?.id),false);
   logger.info("Cancellation/restart PASSED: owner-only, fresh underwriting/approval/communication, distinct attempt, original cancellation/signatures/terms/buyer history retained; CLOSED cannot reopen.");
     logger.info({checks:"persisted document registry and missing-template/private-storage/signing blockers; review PDF bytes separated into protected blob table; party/economic changes stale artifacts; persisted DRAFT → PREPARED → REJECTED/VOID/EXPIRED/REPLACED paths; separately evidenced execution never marks a review worksheet SIGNED; immutable economics hash shared with redacted packet; deadline/evidence exception persistence and terminal work cleanup",readinessSummary},"Full lifecycle persistence exercise PASSED (isolated synthetic schema)");
+} catch (error) {
+  if (!(error instanceof ExpectedSyntheticSellerGateBlock)) throw error;
 } finally { await pool.end(); }

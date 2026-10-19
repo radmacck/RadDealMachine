@@ -436,6 +436,9 @@ async function toDiscoveryResponse(
   let reason = evaluation.reason;
   if (payload.disposition) reason = `Passed by ${payload.disposition.actor}: ${payload.disposition.reason}`;
   else if (payload.promotion) reason = `Human-reviewed lead promotion: ${payload.promotion.reviewReason}. ${evaluation.reason}`;
+  reason += payload.property.parcelId?.trim()
+    ? " Identity basis: exact parcel identifier."
+    : " Identity basis: normalized address fallback; this is not a parcel-confirmed identity.";
   const missingInformation = [
     ...evaluation.missingInformation,
     ...(payload.property.sqft == null ? ["Living area is missing from the source record."] : []),
@@ -644,13 +647,14 @@ export async function savePropertyContactResearchCase(
         nextAction: "", auditHistory: [], synthetic, candidateRoutes,
       }, now),
     ])];
+    const nextStatus = request.permissionBasis === "PROHIBITED" ? "BLOCKED" : request.status;
     const action = request.permissionBasis === "PROHIBITED"
       ? "Stop use of this source and obtain evidence through a permitted route."
       : request.status === "NO_DIRECT_ROUTE_FOUND"
         ? "Keep the property out of CALL NEXT; continue permitted public-record research or complete the owner-reviewed manual contact checklist after qualification."
         : "Review the cited source and recipient identity. If the property is later promoted, record any actual direct route in its existing lead Evidence panel.";
     const caseRecord = {
-      status: request.permissionBasis === "PROHIBITED" ? "BLOCKED" : request.status,
+      status: nextStatus,
       version: (prior?.version ?? 0) + 1,
       confidence: request.confidence,
       sourceName: request.sourceName,
@@ -666,7 +670,7 @@ export async function savePropertyContactResearchCase(
       auditHistory: [...(prior?.auditHistory ?? []), {
         at: now.toISOString(), actor: actor.id,
         action: request.candidateRoute ? "CONTACT_ROUTE_RECORDED" : prior ? "CONTACT_RESEARCH_UPDATED" : "CONTACT_RESEARCH_OPENED",
-        reason: `${request.status}; source=${request.sourceName}; confidence=${request.confidence}; identity=${request.identityMatch}; permission=${request.permissionBasis}.${request.candidateRoute
+        reason: `status=${prior?.status ?? "NONE"}->${nextStatus}; source=${request.sourceName}; evidenceReference=${request.evidenceReference?.trim() || "missing"}; confidence=${request.confidence}; identity=${request.identityMatch}; permission=${request.permissionBasis}.${request.candidateRoute
           ? ` Route evidence: channel=${request.candidateRoute.channel}; sourceId=${request.candidateRoute.sourceId}; sourceRecordId=${request.candidateRoute.sourceRecordId}; capturedAt=${request.candidateRoute.capturedAt}; permission=${request.candidateRoute.permissionStatus}/${request.candidateRoute.permissionBasis}; verification=${request.candidateRoute.routeVerificationStatus}; duplicate=${candidateRoutes.some(path => path.sourceId === request.candidateRoute!.sourceId && path.sourceRecordId === request.candidateRoute!.sourceRecordId && path.capturedAt === request.candidateRoute!.capturedAt)}.`
           : ""} No direct contact route, lead promotion, call, outreach, or economics change was created.`,
       }].slice(-50),
@@ -1189,6 +1193,28 @@ async function persistObservation(
     [existing] = await database.select().from(propertyDiscoveriesTable)
       .where(eq(propertyDiscoveriesTable.identityKey, legacyAddressKey)).for("update");
   }
+  const matchedByAddressFallback = !!existing && existing.identityKey === legacyAddressKey;
+  if (matchedByAddressFallback && !observationForSource) {
+    const existingProperty = parsePayload(existing.payload).property;
+    const conflicts: string[] = [];
+    if (existingProperty.propertyType !== property.propertyType) conflicts.push("property type");
+    if (existingProperty.sqft !== null && property.sqft !== null &&
+      Math.abs(existingProperty.sqft - property.sqft) / Math.max(existingProperty.sqft, property.sqft, 1) > 0.25) {
+      conflicts.push("square footage");
+    }
+    if (existingProperty.beds !== null && property.beds !== null && Math.abs(existingProperty.beds - property.beds) > 2) {
+      conflicts.push("bedroom count");
+    }
+    if (existingProperty.baths !== null && property.baths !== null && Math.abs(existingProperty.baths - property.baths) > 1) {
+      conflicts.push("bathroom count");
+    }
+    if (conflicts.length) {
+      throw new DomainError(
+        `Uncertain normalized-address match has conflicting property attributes (${conflicts.join(", ")}); this source was not merged. Resolve identity before retrying.`,
+        409,
+      );
+    }
+  }
   let discoveryId: string;
   let payload: DiscoveryPayload;
   const existingObservation = observationForSource ? [observationForSource] : [];
@@ -1304,6 +1330,10 @@ export async function recordPropertyObservation(
 ) {
   if (!sourceKey.trim() || !property.id.trim() || !property.provider.trim()) {
     throw new DomainError("A stable source key, source record identifier, and provider are required.", 400);
+  }
+  if (!property.parcelId?.trim() &&
+    (!normalAddress(property.address) || !property.city.trim() || !property.state.trim())) {
+    throw new DomainError("An exact parcel or a complete address with city and state is required for property matching.", 400);
   }
   let sourceUrl: URL;
   try { sourceUrl = new URL(property.sourceUrl); } catch {

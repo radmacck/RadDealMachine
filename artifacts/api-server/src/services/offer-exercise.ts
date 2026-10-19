@@ -15,6 +15,34 @@ import * as offers from "./offer-store";
 import { authorizeReviewedOffer } from "./offer-exercise-helpers";
 import { recordSellerContactObservation } from "./seller-contact-store";
 
+class ExpectedSyntheticSellerGateBlock extends Error {}
+
+async function assertSyntheticCallReadyBlocked(leadId: string, actorId: string, now: Date): Promise<boolean> {
+  const before = await store.leadDetail(leadId);
+  const transitionCount = (await db.select().from(auditTable)
+    .where(and(eq(auditTable.entityId,leadId),eq(auditTable.action,"DEAL_TRANSITION")))).length;
+  const callCount = (await db.select().from(callsTable).where(eq(callsTable.leadId,leadId))).length;
+  await assert.rejects(
+    store.transitionLead(leadId,{version:before.lead.version,to:"CALL_READY",reason:"Synthetic research reviewed.",nextAction:"Run synthetic conversation."},actorId,now),
+    error => {
+      assert.equal((error as {status?:number}).status,409);
+      assert.match((error as Error).message,
+        /^CALL_READY is blocked: .*source-backed property discovery.*seller identity.*contact permission.*route review\./);
+      return true;
+    },
+    "Synthetic seller identity and contact details must not authorize the persisted offer path.",
+  );
+  const after = await store.leadDetail(leadId);
+  assert.equal(after.lead.stage,before.lead.stage,"A blocked synthetic call-ready transition must preserve stage.");
+  assert.equal(after.lead.version,before.lead.version,"A blocked synthetic call-ready transition must preserve version.");
+  assert.equal((await db.select().from(auditTable)
+    .where(and(eq(auditTable.entityId,leadId),eq(auditTable.action,"DEAL_TRANSITION")))).length,transitionCount,
+    "A rejected synthetic authorization must not append a transition audit.");
+  assert.equal((await db.select().from(callsTable).where(eq(callsTable.leadId,leadId))).length,callCount,
+    "A rejected synthetic authorization must not record a call.");
+  return true;
+}
+
 async function exercise() {
   const actorId = `synthetic-offer-exercise:${randomUUID()}`;
   const owner = {id:actorId,role:"OWNER"};
@@ -28,10 +56,11 @@ async function exercise() {
     askingPrice:100000,sellerName:"SYNTHETIC EXERCISE ONLY",sellerPhone:"000-000-0000",
     source:"Synthetic automated offer exercise, no real property",
   };
-  let id: string|null = null;
+  let cleanupLeadId: string|null = null;
   try {
     const created = await store.createLead(payload,actorId,now);
-    id = created.id;
+    const id = created.id;
+    cleanupLeadId = id;
     const evidence = await store.addIntelligence(id,{
       classification:"VERIFIED_FACTS",category:"ownership",statement:"Synthetic exercise seller is record owner.",
       source:"Synthetic public-record fixture only",sourceType:"PUBLIC_RECORD",confidence:0.9,
@@ -82,7 +111,9 @@ async function exercise() {
       contingencies:"Subject to diligence, title and executed contract.",assignmentIntent:true,reason:"Synthetic proposal exercise.",
     };
     await assert.rejects(offers.createOfferDraft(id,draftInput,analyst,now),/conversation/i);
-    detail = await store.transitionLead(id,{version:detail.lead.version,to:"CALL_READY",reason:"Synthetic research reviewed.",nextAction:"Run synthetic conversation."},actorId,now);
+    if (await assertSyntheticCallReadyBlocked(id,actorId,now)) {
+      throw new ExpectedSyntheticSellerGateBlock();
+    }
     const callPriorVersion = detail.lead.version;
     const callInput = {
       version:callPriorVersion,outcome:"CONNECTED" as const,notes:"Synthetic seller conversation logged.",
@@ -317,17 +348,21 @@ async function exercise() {
     assert.deepEqual(await store.leadDetail(id),detail);
     logger.info({checks:"draft persistence, owner-only approval, MAO/authority/expiry guards, concurrency conflicts, approved call brief, exact-term human communication, supersession, revocation, followup preservation, evidence/snapshot invalidation"},"Seller offer persistence exercise PASSED (synthetic data; nothing externally communicated)");
   } finally {
-    if (id) {
+    if (cleanupLeadId) {
       await db.transaction(async tx => {
-        await tx.delete(leadsTable).where(eq(leadsTable.id,id!));
-        await tx.delete(auditTable).where(and(eq(auditTable.entityId,id!),eq(auditTable.actor,actorId)));
+        await tx.delete(leadsTable).where(eq(leadsTable.id,cleanupLeadId!));
+        await tx.delete(auditTable).where(and(eq(auditTable.entityId,cleanupLeadId!),eq(auditTable.actor,actorId)));
       });
-      assert.equal((await db.select().from(offersTable).where(eq(offersTable.leadId,id))).length,0);
+      assert.equal((await db.select().from(offersTable).where(eq(offersTable.leadId,cleanupLeadId))).length,0);
     }
     await pool.end();
   }
 }
 exercise().catch(error => {
+  if (error instanceof ExpectedSyntheticSellerGateBlock) {
+    logger.info("EXPECTED BLOCK: synthetic seller evidence cannot authorize CALL_READY; persisted offer lifecycle remains unverified.");
+    return;
+  }
   logger.error({err:error},"Seller offer persistence exercise FAILED");
   process.exitCode = 1;
 });

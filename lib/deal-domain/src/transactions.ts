@@ -5,6 +5,14 @@ export const CLOSING_MILESTONES = ["TITLE_CLEARED","INSPECTION_COMPLETED","EARNE
 export function wholeDollars(value: number, label: string) {
   if (!Number.isFinite(value) || value<0 || Math.abs(value*100-Math.round(value*100))>0.00001) throw new DomainError(`${label} must be a nonnegative amount in whole cents.`);
 }
+export function assertNewClosingMilestone(
+  milestones: DealContract["milestones"],
+  kind: DealContract["milestones"][number]["kind"],
+) {
+  if (milestones.some(milestone=>milestone.kind===kind)) {
+    throw new DomainError("This milestone is already recorded; evidence history is immutable.",409);
+  }
+}
 export function closingBlockers(contract: DealContract, match: BuyerMatch|undefined) {
   const errors: string[] = [];
   if (contract.status!=="CLOSING") errors.push("Start closing with a qualified committed buyer and evidence milestones.");

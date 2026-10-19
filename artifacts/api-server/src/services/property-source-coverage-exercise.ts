@@ -75,6 +75,7 @@ const property = {
   sourceUrl: "https://example.invalid/synthetic-coverage", capturedAt: now.toISOString(),
 } as Parameters<typeof recordPropertyObservation>[0];
 const firstObservation = await recordPropertyObservation(property, "synthetic-coverage:parcel", actor, now);
+assert.match(firstObservation.reason, /Identity basis: exact parcel identifier/i);
 const duplicateObservation = await recordPropertyObservation(
   { ...property, capturedAt: new Date(now.getTime() + 60_000).toISOString() },
   "synthetic-coverage:parcel", actor, new Date(now.getTime() + 60_000),
@@ -95,12 +96,35 @@ const fallbackIdentity = await recordPropertyObservation({
   ...property, id: "SYNTHETIC-COVERAGE-ADDRESS-ONE", parcelId: "",
   address: "200 Synthetic Avenue", sourceUrl: "https://example.invalid/address-one",
 }, "synthetic-address-feed:one", actor, new Date(now.getTime() + 180_000));
+assert.match(fallbackIdentity.reason, /normalized address fallback; this is not a parcel-confirmed identity/i);
 const normalizedAddressDuplicate = await recordPropertyObservation({
   ...property, id: "SYNTHETIC-COVERAGE-ADDRESS-TWO", parcelId: "",
   address: "200 synthetic avenue.", zip: "19103-1234", sourceUrl: "https://example.invalid/address-two",
 }, "synthetic-address-feed:two", actor, new Date(now.getTime() + 240_000));
 assert.equal(normalizedAddressDuplicate.id, fallbackIdentity.id,
   "Address fallback identity normalizes case, punctuation, and ZIP+4 without merging different street numbers.");
-assert.equal((await db.select().from(propertyDiscoveriesTable)).length, 2);
+const differentStreetNumber = await recordPropertyObservation({
+  ...property, id: "SYNTHETIC-COVERAGE-ADDRESS-DIFFERENT-NUMBER", parcelId: "",
+  address: "202 Synthetic Avenue", sourceUrl: "https://example.invalid/address-different-number",
+}, "synthetic-address-feed:different-number", actor, new Date(now.getTime() + 270_000));
+assert.notEqual(differentStreetNumber.id, fallbackIdentity.id,
+  "Distinct street numbers remain separate address-fallback discoveries.");
+const addressObservationsBeforeConflict = (await db.select().from(propertySourceObservationsTable)
+  .where(eq(propertySourceObservationsTable.discoveryId, fallbackIdentity.id))).length;
+await assert.rejects(recordPropertyObservation({
+  ...property, id: "SYNTHETIC-COVERAGE-ADDRESS-CONFLICT", parcelId: "",
+  address: "200 Synthetic Avenue", propertyType: "TOWNHOUSE", sqft: 2400,
+  sourceUrl: "https://example.invalid/address-conflict",
+}, "synthetic-address-feed:conflict", actor, new Date(now.getTime() + 300_000)),
+/conflicting property attributes/i, "A normalized-address match must not silently merge materially conflicting property attributes.");
+assert.equal((await db.select().from(propertySourceObservationsTable)
+  .where(eq(propertySourceObservationsTable.discoveryId, fallbackIdentity.id))).length, addressObservationsBeforeConflict,
+"A rejected conflicting address match must not attach an observation to the existing discovery.");
+await assert.rejects(recordPropertyObservation({
+  ...property, id: "SYNTHETIC-COVERAGE-INCOMPLETE", parcelId: "",
+  address: "   ", city: "", sourceUrl: "https://example.invalid/incomplete-address",
+}, "synthetic-address-feed:incomplete", actor, new Date(now.getTime() + 360_000)),
+/exact parcel or a complete address/i, "Incomplete identity fields must not generate a shared fallback match key.");
+assert.equal((await db.select().from(propertyDiscoveriesTable)).length, 3);
 assert.equal((await db.select().from(leadsTable)).length, 0, "Coverage reporting never promotes raw observations to active leads.");
 console.log("PASS SYNTHETIC persisted source coverage: no false check/zero, terms version, exact connector counts, rate limits, stale data, schedule eligibility and raw/lead separation.");
