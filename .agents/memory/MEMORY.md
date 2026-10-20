@@ -17,4 +17,4 @@
 - [OpenAPI aggregate response type size limit](openapi-document-metadata-limit.md) — keep new workflow payloads behind focused endpoints; broad generated command-center types can hit TS7056.
 - [Actionable alerts](operational-alerts.md) — deduplicate by canonical source action; keep snooze/dismiss durable and auditable, and never send external notifications implicitly.
 - [Outbound provider receipts](outbound-provider-receipts.md) — exact approval binds recipient route, redaction, authorization, consent and content; retries use new provider message IDs.
-- [Human decision boundaries](human-decision-boundaries.md) — automation prepares and queues work; humans make calls, approve/communicate terms, authorize consequential actions, and review clauses.
+- [Human decision boundaries](human-decision-boundaries.md) — calls are optional; communication is channel-permissioned, and private founder mode follows proven deal workflow before public release.

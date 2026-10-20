@@ -10,6 +10,8 @@ Build the existing product as a reusable acquisition, seller-intelligence, deter
 
 Every slice must implement behavior, run automated tests and an isolated persisted exercise, perform relevant real-system verification, then mark GREEN only when its acceptance criteria are objectively proven. Keep source/time/freshness/confidence/permission/identity/provenance/audit. Maintain VERIFIED FACT, OBSERVED, INDICATED, and AI HYPOTHESIS as distinct classes; seller statements stay seller-reported. Do not invent facts, contacts, buyers, calls, signatures, funds, legal language, provider connections, or external actions. Use deterministic underwriting/matching. Keep protected communication, out-of-authority offers, and legal/contract actions behind human approval. Respect each source's access, terms, licensing, privacy, robots, and rate limits. Naelo/RDC are future adapters only.
 
+**Governing communication requirement:** a phone call is always optional, never a required workflow transition. Support a complete text-only path, including in-platform messages; treat calls, platform messages, and SMS/text as distinct channels with explicit preferences and channel-specific permissions. Record a contact attempt, delivery, or successful response only from actual evidence. Respect consent scope, opt-outs, privacy, and applicable state-specific rules. Use SMS only through a legitimate connected provider and valid permission; no provider or activity may be implied when it is not actually connected.
+
 ## Ordered backlog
 
 | Priority | Scope | State at checkpoint |
@@ -27,10 +29,32 @@ Every slice must implement behavior, run automated tests and an isolated persist
 | **P10** | Command center: authenticated action-centered CALL NEXT / WHY / NEXT, ranked opportunities, blockers/evidence/economics/deadlines/matches/exceptions, complete paginated pools, and no repeated manual hunting/re-entry. | **PARTIAL.** API-backed UX, readiness boundaries, role gates, empty/error/stale states, and persisted service exercise verified. Authenticated owner browser acceptance remains unverified. |
 | **P11** | Outcome learning: persist outcomes and predicted-vs-actual performance; calibrate only from sufficient real evidence with rule/confidence versions; exclude synthetic fixtures from live learning. | **PARTIAL — persisted mechanics exercised, live calibration unverified.** Canonical events project idempotently; owner actuals capture is snapshot-bound; synthetic records are excluded; insufficient evidence is persisted; a synthetic threshold-path preview remains non-deployable. No real outcome exists in the development workspace, so no real threshold-met recommendation or real review/reversal was exercised. |
 | **P12** | End-to-end live proof: permitted discovery through contact, seller conversation, refreshed underwriting, authorized offer, current buyer, confirmed distribution/commitment, approved documents/signature, funds/deadlines/closing, and outcome. Label every synthetic step; never count one as live proof. | Incomplete; no GREEN claim until evidenced end to end. |
+| **P13 — after P12** | Private founder-mode workspace before any public/licensed marketplace: founder-only access to manually add/import and organize buyers and criteria, review system-discovered property opportunities, and start from either buyer criteria→candidate-property matching or property/seller opportunity→buyer matching. Keep matching advisory, explainable, source-backed, and separate from availability, seller consent, funding, and contract states. Support channel preferences and a no-call path. | **NOT STARTED.** Must not begin until P12 reaches its established verification threshold. No public signup is included. |
+| **P14 — after P13** | Public/licensed marketplace and ecosystem phase: free homeowner listings, paid buyer memberships, approved transaction-fee structures, both transaction structures, in-platform offer negotiation/messaging, state-specific versioned compliance checkpoints, and governed Rad Data/RadID and separate company/personal Naelo seams. | **DEFERRED / NOT STARTED.** Requires completed P13, state-specific qualified legal/compliance review, and actual provider connection/health evidence for any integration. |
 
 ## Resume rule
 
 Work one vertical slice at a time, beginning at the earliest non-verified priority. If a required provider or source is unavailable, persist and report that boundary truthfully while continuing only with independent work that can be proven.
+
+## Founder-mode and communication acceptance plan — future order only
+
+This requirement does **not** restart, replace, or add a competing task to the current ten-directive validation queue. Finish P12/current deal-workflow verification first. Then implement P13 as a private founder-only phase before any public or licensed marketplace release. P14 remains later and gated by P13 and legal review.
+
+### P13 — private founder workflow acceptance criteria and tests
+
+- Enforce founder-only workspace authorization on every UI route and server endpoint; unauthenticated users, ordinary future public users, and other tenants cannot read or mutate founder buyer/property data. Public signup stays disabled/separate.
+- Let the founder manually add or import a buyer list and structured buyer criteria. Validate imports, preserve source/provenance, deduplicate without merging unresolved identities, and audit edits and verification-state changes.
+- Support both starting directions: (a) buyer criteria→discover/review/qualify candidate properties and (b) property/seller opportunity→find explainable buyer candidates. Matching must show criteria, property facts, source/freshness, confidence, missing/conflicting evidence, exclusions, and readiness states.
+- Label matches as recommendations only. A match must never imply property availability, seller consent, independently verified buyer funds, offer acceptance, or a contract; no automated transition creates or signs a contract.
+- Exercise each direction with clearly synthetic fixtures, plus no-match, stale-source, conflicting identity, insufficient-data, import replay, cross-account access-denial, and permission-denial cases. Persist/reload and verify audit history. Synthetic fixtures must be excluded from real counts and learning.
+- Prove the workflow succeeds with calls disabled/not selected. In-platform messaging must be independently permissioned and auditable. SMS actions require an actually connected legitimate provider, current channel-specific consent, and opt-out enforcement. Test that opt-out blocks sending and that no “attempted,” “delivered,” or “successful” state appears without a corresponding real event.
+- Keep current app-owned stable internal user identity independent of external-provider identity where feasible; reserve an optional external RadID reference slot without lookup, transmission, or fake connection. Define separate company-level Naelo and per-user personal Naelo interfaces only; do not implement mock provider behavior or claim either is connected.
+
+### P14 — public/licensed release gates
+
+- P13 acceptance is complete and founder-only authorization/data boundaries pass security tests before any public signup or homeowner/buyer access is opened.
+- Qualified legal/compliance review approves the launch-state rules, disclosures, licensing obligations, fee/transaction structure, communication consent and opt-out handling, and required versioned acknowledgments. Code checkboxes are not legal approval.
+- Public listing, membership, both transaction structures, offer negotiation/messaging, and integrations are separately tested. Rad Data/RadID and Naelo remain planned until real authorized connection, health checks, and data-permission reviews succeed.
 
 ## Latest verification checkpoint
 
