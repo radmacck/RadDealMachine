@@ -3289,3 +3289,95 @@ This execution uses the existing repository and checkpoint only. The worktree wa
 Marketplace features remain deferred: free homeowner listings, paid buyer memberships, transaction-related fee structures, seller choice between company-contract/assignment and direct-to-buyer, swipe/counteroffer/reconsideration/editable terms/messaging, state-specific versioned compliance checkpoints, Rad Data/RadID, and separate company-level versus personal Naelo. None is represented as implemented or connected.
 
 **Single next blocker:** an authenticated workspace Owner must provide and review one real seller/property identity, lawful contact permission and current direct contact route. Until that evidence exists, do not advance to genuine seller contact or claim the positive persisted offer/buyer/transaction path. State-specific qualified legal/compliance review remains a separate launch dependency.
+
+## Next ten implementation directives — current deal proof before founder mode — 2026-10-20
+
+This is a checkpointed execution order, not a second Replit task queue. The prior ten-directive validation record remains intact. The current workflow has not passed P12, so directives 6–9 are explicitly gated and founder implementation must not start yet. Evidence from the preceding verification run is reused where the application code has not changed; no tests are described as freshly rerun in this reconciliation.
+
+### Directive status summary
+
+| # | Status | Result |
+| --- | --- | --- |
+| 1. Queue/state reconciliation | **VERIFIED** | Current clean worktree, checkpoint and task/workflow state inspected; previous directive evidence reconciled without treating queued work as complete. |
+| 2. End-to-end synthetic workflow | **BLOCKED** | Available isolated exercises reach the seller gate but do not form a single positive property-to-transaction trace. |
+| 3. Fix the first blocker | **BLOCKED** | Earliest blocker is missing real Owner-verified seller evidence, not a reproducible software defect that can safely be bypassed. |
+| 4. Property provenance and matching | **VERIFIED** | Existing synthetic coverage and source tests pass with observations distinct from leads and verified facts. |
+| 5. Contact-channel neutrality | **BLOCKED** | Current readiness logic is call/phone-specific; no in-platform message or SMS send path was found. Calls must not be treated as universally optional until the no-call path is implemented and tested. |
+| 6. Founder workspace access boundary | **NOT STARTED** | Depends on P12 threshold; no founder-only workspace is claimed. |
+| 7. Buyer-list intake | **NOT STARTED** | Depends on P12 and private founder mode; existing buyer records do not prove founder-list import/UI scope. |
+| 8. Property-first / buyer-first workflows | **NOT STARTED** | Depends on P12 and P13; existing matching services are not the requested founder workflow. |
+| 9. Founder deal pipeline and audit | **NOT STARTED** | Depends on P12 and P13; do not imply the complete founder pipeline exists. |
+| 10. Verification and handoff | **BLOCKED** | Waits on eligible directives and still records the known root build failure; P12 remains the sole operational blocker. |
+
+### Directive 1 — queue/state reconciliation — VERIFIED
+
+- `DANGEROUSLY_ALLOW_GIT=1 git status --short` — **PASS**, empty output; worktree was clean before this checkpoint update.
+- `DANGEROUSLY_ALLOW_GIT=1 git log -1 --format='%h %ad %s' --date=iso` — **PASS**, `97de875 2026-10-20 13:27:21 +0000 Update memory files and document checkpoint progress`.
+- Inspected `docs/real-estate-os-build-checkpoint.md`, including the previous ten-directive status/results, P12/P13/P14 order, and communication acceptance plan. The previous record has P12 incomplete and P13 NOT STARTED.
+- Task snapshot: ref 13, “Verify the seller-response portal with a signed-in owner before live use,” remains `IN_PROGRESS / WAITING_FOR_INPUT`; this is not an executing build. The API, web, and mockup workflows are all `NOT_STARTED`. No parallel task or workflow was started.
+- No reset, stash, cleanup, migration, or user-data operation was performed.
+
+### Directive 2 — end-to-end synthetic workflow — BLOCKED
+
+Commands and results already recorded against the unchanged application code:
+
+- `pnpm --filter @workspace/api-server run exercise:acquisition-pipeline` — **PASS**, synthetic projection/idempotency; 36-table persistence reload.
+- `pnpm --filter @workspace/api-server run exercise:seller` — **PASS**, synthetic qualification and fail-closed readiness; 36-table reload.
+- `pnpm --filter @workspace/api-server run exercise:seller-contact` — **PASS**, synthetic evidence/route cases; no outreach; 36-table reload.
+- `pnpm --filter @workspace/api-server run exercise:offers` — **PASS as expected block**, synthetic evidence rejected at `CALL_READY`; no positive persisted offer assertions.
+- `pnpm --filter @workspace/api-server run exercise:transactions` — **PASS as expected block**, same seller gate; no persisted milestone/fee assertions.
+
+These are separate exercises, not one continuous property trace. The first consequential blocker is current real seller identity, lawful permission, and a reviewed direct route; no synthetic substitute is acceptable.
+
+### Directive 3 — fix the first blocker — BLOCKED
+
+- `pnpm --filter @workspace/api-server exec tsx --test src/services/property-contactability-gate.test.ts` — previously **PASS 7/7**; the gate rejects missing, stale, conflicting, unpermitted, or identity-mismatched routes.
+- `pnpm --filter @workspace/deal-domain exec tsx --test src/offers.test.ts src/offer-readiness.test.ts` — previously **PASS 19/19**, including valid domain preparation and invalid/stale communication cases.
+- `pnpm --filter @workspace/api-server run exercise:offers` — previously **PASS as expected block**, exit 0; it proves a correct denial, not a positive persisted offer.
+- No code fix was made: the current blocker requires a real authorized Owner action and cannot be repaired by changing authorization logic or fabricating evidence. The phone-only limitation is separately assigned to Directive 5 rather than hidden as a test success.
+
+### Directive 4 — property provenance and matching — VERIFIED
+
+- `pnpm --filter @workspace/api-server run exercise:property-source-coverage` — previously **PASS**, synthetic isolated coverage for dedupe, conflicting/incomplete identities, stale/failed source states, and raw-observation/lead separation; 36-table reload.
+- `pnpm --filter @workspace/property-sources run test` — previously **PASS 23/23**, including normalization, source provenance, malformed values, pagination and matching conflicts.
+- Prior `pnpm --filter @workspace/api-server run exercise:property-source` is documented separately for permitted Philadelphia public feeds persisted only in an isolated schema. It does not prove an ongoing provider connection or live lead qualification.
+
+### Directive 5 — contact-channel neutrality — BLOCKED; defect boundary confirmed
+
+- `rg -n -i 'sms|text message|in.platform|platform message|channelPreference|communicationPreference|opt.out|consent.*channel|contactChannel|communication channel|EMAIL|PHONE' artifacts/api-server/src/services lib/deal-domain/src` — code search found phone/email route concepts but no in-platform message or SMS execution path.
+- `rg -n 'router\\.(post|get|put|patch).*call|recordCall|sellerCall|conversation|communication' artifacts/api-server/src/routes artifacts/api-server/src/services` — the seller contact action found is `POST /leads/:id/calls`; no seller-message send endpoint was found.
+- `property-contactability-gate.ts` currently requires a phone route for its gated seller stages (`PHONE` route selection and “No direct phone route candidate” refusal). Existing tests are call-specific; no text-only or platform-message path has been verified.
+- Relevant current check: `pnpm --filter @workspace/api-server exec tsx --test src/services/property-contactability-gate.test.ts` — previously **PASS 7/7**, but this proves the phone-specific gate, not channel neutrality.
+- No channel implementation is claimed. A future eligible slice needs channel-preference/permission/opt-out tests and an in-platform thread path; SMS remains unavailable unless a legitimate provider is actually connected. Do not mark contact attempted/delivered/successful without real event evidence.
+
+### Directive 6 — founder workspace access boundary — NOT STARTED
+
+- **Dependency:** P12 must first meet its existing verification threshold; only then may private P13 founder-mode work begin.
+- **Acceptance:** founder-only API and UI routes; deny unauthenticated, non-founder, and cross-workspace access; keep public registration separate; audit access-sensitive changes.
+- **Focused tests when eligible:** `pnpm --filter @workspace/api-server exec tsx --test src/services/access.test.ts src/services/buyer-response-guard.test.ts` plus focused UI route/access tests. **NOT RUN** for this directive because its prerequisite has not passed and no founder workspace exists to test.
+
+### Directive 7 — buyer-list intake — NOT STARTED
+
+- **Dependency:** Directive 6 and P13 authorization boundary.
+- **Acceptance:** founder can manually add, edit, search, and organize buyers and criteria; any import validates each row and reports rejected rows; self-reported interest remains distinct from verified identity/funding/readiness; persist and audit changes.
+- **Focused tests when eligible:** `pnpm --filter @workspace/api-server exec tsx --test src/services/buyer-response-guard.test.ts src/services/buyer-outreach.test.ts` and `pnpm --filter @workspace/deal-domain exec tsx --test src/buyers.test.ts src/buyer-coverage.test.ts`. **NOT RUN** for founder intake; existing buyer workflow tests are not evidence of founder-list UI/import.
+
+### Directive 8 — property-first / buyer-first workflows — NOT STARTED
+
+- **Dependency:** Directives 6–7 and P13 authorization boundary.
+- **Acceptance:** test both matching directions; show criteria, source, freshness, missing facts, confidence, and exclusions; no-match/weak/strong outcomes are explicit; matching never asserts availability, consent, funding, or a contract.
+- **Focused tests when eligible:** `pnpm --filter @workspace/deal-domain exec tsx --test src/buyers.test.ts src/buyer-coverage.test.ts` plus new founder workflow service/UI tests for no-match, weak, missing-criteria and strong synthetic fixtures. **NOT RUN** for founder workflows; existing matching tests do not prove either founder entry flow.
+
+### Directive 9 — founder deal pipeline and audit — NOT STARTED
+
+- **Dependency:** P12, then Directives 6–8.
+- **Acceptance:** founder can track reviewed properties through qualification, permission review, offer/contract preparation, buyer match, and milestones; each consequential transition is human-authorized, source-linked, versioned, auditable, and clearly synthetic or real.
+- **Focused tests when eligible:** `pnpm --filter @workspace/api-server run exercise:seller && pnpm --filter @workspace/api-server run exercise:offers && pnpm --filter @workspace/api-server run exercise:buyers && pnpm --filter @workspace/api-server run exercise:transactions`, plus `pnpm --filter @workspace/api-server exec tsx --test src/services/transaction-readiness.test.ts src/services/transaction-fees.test.ts`. **NOT RUN** as a founder pipeline; current deal exercises stop at the seller gate.
+
+### Directive 10 — verification and handoff — BLOCKED by dependencies
+
+- **Acceptance:** after eligible implementation, run focused regressions, all relevant tests, typechecks/builds and diff checks; record changed files and separate synthetic evidence from live operations. Do not start public marketplace work before P13 passes and qualified state-specific legal/compliance review is complete.
+- Most recent recorded final commands remain: `pnpm --filter @workspace/deal-domain run test` — **PASS 160/160**; `pnpm --filter @workspace/api-server exec tsx --test 'src/services/*.test.ts'` — **PASS 71/71**; `pnpm run typecheck` — **PASS**; `pnpm run build` — **FAIL** because `PORT` is missing in mockup-sandbox; artifact-specific web, mockup and API builds — **PASS**; `DANGEROUSLY_ALLOW_GIT=1 git diff --check` — **PASS**. These were not rerun during this queue reconciliation.
+- Changed files for this reconciliation: **`docs/real-estate-os-build-checkpoint.md` only**. No application code changed.
+
+**One next blocker:** an authenticated Owner must verify one real seller/property identity, lawful contact permission, and a current permitted direct route. Until that happens, P12 cannot be completed and founder-mode directives 6–9 remain unstarted. No public marketplace or RadID/Naelo integration work is authorized by this queue.
