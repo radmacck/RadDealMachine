@@ -3195,7 +3195,7 @@ All items below are future architecture requirements only. They are not complete
 
 This execution uses the existing repository and checkpoint only. The worktree was clean before the checks; no source code was changed during this run. “VERIFIED” below means the stated automated or baseline claim is supported by the commands/results listed, not that a real transaction or production launch is verified. Test fixtures remained synthetic unless explicitly stated.
 
-### Directive status summary (1–15)
+### Directive status summary (1–16)
 
 | # | Status | Evidence boundary |
 | --- | --- | --- |
@@ -3214,6 +3214,7 @@ This execution uses the existing repository and checkpoint only. The worktree wa
 | 13. Buyer-first property discovery and matching | **BLOCKED** | Depends on proven core workflow and completed Directives 11–12; neither founder readiness nor buyer intake is evidenced. |
 | 14. Property-first buyer matching and deal workspace | **BLOCKED** | Depends on proven core workflow and completed/tested Directives 11–13; those prerequisites remain blocked or incomplete. |
 | 15. Founder-mode end-to-end verification and public-marketplace gate | **BLOCKED** | Directives 11–14 are blocked; no private founder journey exists to test end to end, and the core workflow remains unproven. |
+| 16. Sheriff-deed HTTP 400 investigation | **PARTIAL** | Current bounded live traversal succeeds; the historical 400 cannot be diagnosed because its response body was not captured. Error diagnostics and regression tests now preserve bounded provider details. |
 
 ### Directive 1 — baseline and safe working tree — VERIFIED
 
@@ -3482,3 +3483,19 @@ Fresh isolated synthetic exercise run for Task 2 (all seven commands exited `0`;
 - **No founder-mode end-to-end tests, implementation, or marketplace work were started.** New tests, typechecks, and builds for this directive were **NOT RUN** because its prerequisites are unmet. Earlier Directive 10 test/build results remain the latest available general verification, not founder-readiness evidence.
 - The public marketplace gate is **NOT PASSED**. Keep it deferred along with the specified pricing/membership, transaction-fee, transaction-structure, editable-offer, messaging, state-legal, Rad Data/RadID, and Naelo separation requirements.
 - Existing worktree changes listed in Directive 10 remain preserved; this directive changes only this checkpoint. `git diff --check` is run after this entry. The sole next blocker remains the authenticated Owner evidence recorded under Directive 10; no additional next blocker is introduced.
+
+### Directive 16 — investigate the permitted sheriff-deed feed HTTP 400 — PARTIAL
+
+- **Historical failure evidence:** the earlier `exercise:property-source` run recorded the sheriff-deed connector error only as `Official property API returned HTTP 400.` The old code discarded the provider response body; the original request URL, failing page/cursor, and provider error body were not retained. Therefore the exact cause of that historical 400 is unknown and cannot be attributed to a provider defect or an application query defect.
+- **Current provider request inspected:** the connector makes a read-only `GET https://phl.carto.com/api/v2/sql` with `Accept: application/json`, `redirect: "error"`, and a 20-second timeout. Its SQL selects `record_id`, `opa_account_num`, `display_date::text`, and `document_type` from `RTT_SUMMARY`; filters to exact nine-digit OPA accounts, `SHERIFF'S DEED`, and a bounded 180-day date range; then keyset-paginates 40 rows at a time with a maximum of 1,000 records. No credentials or additional sources are used.
+- **Live reproduction command:** `pnpm --filter @workspace/property-sources exec tsx --eval 'import { discoverPhiladelphiaSheriffDeedParcels } from "./src/index.ts"; (async () => { const realFetch = globalThis.fetch; globalThis.fetch = async (input, init) => { const response = await realFetch(input, init); const url = String(input); if (url.includes("phl.carto.com/api/v2/sql")) console.log(JSON.stringify({url,method:init?.method ?? "GET",headers:init?.headers ?? {},status:response.status,statusText:response.statusText,body:response.ok ? "<omitted successful body>" : await response.clone().text()})); return response; }; try { const result = await discoverPhiladelphiaSheriffDeedParcels(new Date()); console.log(JSON.stringify({ok:true,pagesFetched:result.pagesFetched,sourceRecordCount:result.sourceRecordCount,observationCount:result.observations.length})); } catch (error) { console.error(JSON.stringify({ok:false,error:error instanceof Error ? error.message : String(error)})); process.exitCode=1; } })();'` — **PASS** on 2026-10-21: all 16 bounded requests returned HTTP 200; 614 source rows were traversed and 603 property observations normalized. The request used an exclusive end date of 2026-10-22. This confirms current success, not the cause of the prior 400 or future provider availability.
+- **Demonstrated application-side defect fixed:** non-2xx responses exposed only the status, discarding response detail needed to diagnose the earlier failure. The Carto client now retains a sanitized, bounded (2 KiB maximum) provider error-body excerpt while preserving the HTTP status. Query semantics, source set, page bounds, staleness policy, and successful-source behavior were not broadened or changed.
+- **Focused tests and results:**
+  - `pnpm --filter @workspace/property-sources run test` — **PASS 28/28**, including Carto request shape/success, empty results, malformed JSON/envelopes, timeout, and HTTP 400 detail.
+  - `pnpm --filter @workspace/api-server exec tsx --test src/services/property-source-connectors.test.ts` — **PASS 1/1**, a successful source batch is retained while another source fails with HTTP 400.
+  - `pnpm --filter @workspace/api-server exec tsx --test src/services/worker-job-state.test.ts` — **PASS 1/1**, discovery with source failures remains `PARTIAL`, not `SUCCEEDED`.
+  - `pnpm --filter @workspace/api-server run exercise:property-source-coverage` — **PASS**, synthetic source coverage retained stale-data, rate-limit, partial-source, and raw/lead-separation checks; 36-table reload with stable row counts/fingerprints.
+  - `pnpm --filter @workspace/api-server run typecheck` — **PASS**.
+- **Changed files:** `lib/property-sources/src/phila-public-records.ts`; new `lib/property-sources/src/phila-public-records-http.test.ts`; new `artifacts/api-server/src/services/property-source-connectors.test.ts`; this checkpoint.
+- **Limitation / next provider-specific evidence:** the historical 400 cannot be root-caused without its response body and failing cursor. If it recurs, the new bounded diagnostics will retain provider detail; rerun the same bounded request and record the failing page/body before considering any SQL change. No unsupported retry, stale fallback, or provider-side cause is claimed. The acquisition workflow's separate first blocker remains authenticated Owner review of real seller identity, permission/scope, and a current permitted route.
+- `DANGEROUSLY_ALLOW_GIT=1 git diff --check` — **PASS**, no whitespace errors after this checkpoint update.

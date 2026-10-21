@@ -178,27 +178,71 @@ async function boundedJson(response: Response, maxBytes = 1_000_000) {
   return JSON.parse(Buffer.concat(chunks).toString("utf8")) as unknown;
 }
 
-let cartoQueue: Promise<void> = Promise.resolve();
-let cartoLastRequestAt = 0;
-async function cartoRows(query: string, limit: number) {
-  const work = cartoQueue.then(async () => {
-    const wait = Math.max(0, 1_200 - (Date.now() - cartoLastRequestAt));
-    if (wait) await new Promise(resolve => setTimeout(resolve, wait));
-    cartoLastRequestAt = Date.now();
-    const url = new URL("https://phl.carto.com/api/v2/sql");
-    url.searchParams.set("q", query);
-    const response = await fetch(url, {
-      signal: AbortSignal.timeout(20_000),
-      headers: { Accept: "application/json" },
-      redirect: "error",
-    });
-    if (!response.ok) throw new Error(`Official Philadelphia public-record API returned HTTP ${response.status}.`);
-    const body = z.object({ rows: z.array(z.unknown()).max(limit) }).parse(await boundedJson(response));
-    return body.rows;
-  });
-  cartoQueue = work.then(() => undefined, () => undefined);
-  return work;
+async function boundedErrorText(response: Response, maxBytes = 2_048) {
+  const reader = response.body?.getReader();
+  if (!reader) return "";
+  const chunks: Uint8Array[] = [];
+  let bytes = 0;
+  let truncated = false;
+  for (;;) {
+    const part = await reader.read();
+    if (part.done) break;
+    const remaining = maxBytes - bytes;
+    if (part.value.length > remaining) {
+      if (remaining > 0) chunks.push(part.value.subarray(0, remaining));
+      truncated = true;
+      await reader.cancel();
+      break;
+    }
+    chunks.push(part.value);
+    bytes += part.value.length;
+  }
+  const text = Buffer.concat(chunks).toString("utf8")
+    .replace(/[\u0000-\u001f\u007f]+/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+  return `${text}${truncated ? " [provider error body truncated]" : ""}`.slice(0, maxBytes);
 }
+
+type CartoRowsClientOptions = {
+  fetchImpl?: typeof fetch;
+  requestIntervalMs?: number;
+  timeoutMs?: number;
+};
+
+/** Isolated transport seam for bounded, read-only Carto SQL requests and their regressions. */
+export function createCartoRowsClient({
+  fetchImpl = fetch,
+  requestIntervalMs = 1_200,
+  timeoutMs = 20_000,
+}: CartoRowsClientOptions = {}) {
+  let queue: Promise<void> = Promise.resolve();
+  let lastRequestAt = 0;
+  return async function cartoRows(query: string, limit: number) {
+    const work = queue.then(async () => {
+      const wait = Math.max(0, requestIntervalMs - (Date.now() - lastRequestAt));
+      if (wait) await new Promise(resolve => setTimeout(resolve, wait));
+      lastRequestAt = Date.now();
+      const url = new URL("https://phl.carto.com/api/v2/sql");
+      url.searchParams.set("q", query);
+      const response = await fetchImpl(url, {
+        signal: AbortSignal.timeout(timeoutMs),
+        headers: { Accept: "application/json" },
+        redirect: "error",
+      });
+      if (!response.ok) {
+        const detail = await boundedErrorText(response);
+        throw new Error(`Official Philadelphia public-record API returned HTTP ${response.status}${detail ? `: ${detail}` : "."}`);
+      }
+      const body = z.object({ rows: z.array(z.unknown()).max(limit) }).parse(await boundedJson(response));
+      return body.rows;
+    });
+    queue = work.then(() => undefined, () => undefined);
+    return work;
+  };
+}
+
+const cartoRows = createCartoRowsClient();
 
 function parcelFor(row: CartoViolation): string | null {
   for (const value of [row.opa_account_num, row.parcel_id_num]) {
