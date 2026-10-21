@@ -9,6 +9,7 @@ import { and, eq } from "drizzle-orm";
 import { logger } from "../lib/logger";
 import * as seller from "./deal-store";
 import { exerciseEvidence } from "./exercise-evidence";
+import { assertSyntheticCallReadyBlocked, seedSyntheticPostGateContacted } from "./synthetic-post-gate-fixture";
 import * as offers from "./offer-store";
 import { authorizeReviewedOffer } from "./offer-exercise-helpers";
 import * as transactions from "./transaction-store";
@@ -44,7 +45,6 @@ const future = (days:number)=>new Date(now.getTime()+days*86400000).toISOString(
 const dateOnly = (days:number)=>future(days).slice(0,10);
 let readinessSummary: Record<string,unknown> = {};
 let readinessDeadlineKeys: {upcoming:string;overdue:string}|null = null;
-class ExpectedSyntheticSellerGateBlock extends Error {}
 try {
   // All these writes are isolated by the harness's connection-wide search path.
   let lead = await seller.createLead({address:"SYNTHETIC COMPLETE DEAL",city:"Synthetic City",state:"TX",county:"Synthetic County",zip:"75001",
@@ -69,59 +69,12 @@ try {
     source:"Synthetic command-center exercise",sourceType:"MODEL",confidence:0.4,capturedAt:now.toISOString(),
     question:"What is your preferred closing timeline?",action:"Ask the seller and record the actual answer."},actor.id,now);
   detail = await seller.leadDetail(id);
-  const beforeCallReady = await seller.leadDetail(id,undefined,now);
-  const transitionsBeforeCallReady = (await db.select().from(transitionsTable).where(eq(transitionsTable.leadId,id))).length;
-  try {
-    detail = await seller.transitionLead(id,{version:beforeCallReady.lead.version,to:"CALL_READY",reason:"Synthetic research complete.",nextAction:"Synthetic call."},actor.id,now);
-  } catch (error) {
-    assert.equal((error as {status?:number}).status,409);
-    assert.match((error as Error).message,
-      /^CALL_READY is blocked: .*source-backed property discovery.*seller identity.*contact permission.*route review\./);
-    const afterBlockedTransition = await seller.leadDetail(id,undefined,now);
-    assert.equal(afterBlockedTransition.lead.stage,beforeCallReady.lead.stage,
-      "A blocked synthetic call-ready transition must preserve stage.");
-    assert.equal(afterBlockedTransition.lead.version,beforeCallReady.lead.version,
-      "A blocked synthetic call-ready transition must preserve version.");
-    assert.equal((await db.select().from(transitionsTable).where(eq(transitionsTable.leadId,id))).length,
-      transitionsBeforeCallReady,"A rejected synthetic authorization must not append a stage transition.");
-    logger.info("EXPECTED BLOCK: synthetic seller evidence cannot authorize CALL_READY; persisted transaction lifecycle remains unverified.");
-    throw new ExpectedSyntheticSellerGateBlock();
-  }
-  const transitionAudits = await db.select().from(auditTable).where(and(eq(auditTable.entityId,id),eq(auditTable.action,"DEAL_TRANSITION")));
-  const canonicalTransition = transitionAudits.map(row => {
-    try { return JSON.parse(row.detail) as Record<string,unknown>; } catch { return null; }
-  }).find(event => event?.eventType === "CANONICAL_STAGE_TRANSITION" && event.resultingStage === "CALL_READY");
-  const [stageTransition] = await db.select().from(transitionsTable)
-    .where(and(eq(transitionsTable.leadId,id),eq(transitionsTable.to,"CALL_READY")));
-  assert.deepEqual(canonicalTransition && {
-    priorVersion:canonicalTransition.priorVersion,
-    resultingVersion:canonicalTransition.resultingVersion,
-    priorStage:canonicalTransition.priorStage,
-    resultingStage:canonicalTransition.resultingStage,
-    actor:canonicalTransition.actor,
-    evidenceRefs:canonicalTransition.evidenceRefs,
-  },{
-    priorVersion:detail.lead.version-1,resultingVersion:detail.lead.version,
-    priorStage:stageTransition?.from,resultingStage:stageTransition?.to,actor:actor.id,
-    evidenceRefs:detail.analysisSnapshotId?[detail.analysisSnapshotId]:[],
-  },"persisted stage changes must carry the exact canonical version edge and evidence reference");
-  const liveDesk = await commandCenter("OWNER",now);
-  const callBrief = liveDesk.calls.find(item=>item.lead.id===id);
-  assert.ok(callBrief,"A persisted CALL_READY lead with a phone route and current underwriting must appear in CALL NEXT.");
-  assert.equal(callBrief.lead.address,"SYNTHETIC COMPLETE DEAL");
-  assert.equal(callBrief.lead.sellerPhone,"000-000-0000");
-  assert.ok(callBrief.analysis.arv,"The call brief carries current ARV evidence.");
-  assert.ok(callBrief.analysis.repairs,"The call brief carries current repair assumptions.");
-  assert.ok(callBrief.intelligence.some(item=>item.classification==="VERIFIED_FACTS"));
-  assert.ok(callBrief.intelligence.some(item=>item.classification==="AI_HYPOTHESIS"),
-    "Call preparation must preserve hypothesis status instead of presenting it as a seller fact.");
-  assert.ok(callBrief.questions.includes("What is your preferred closing timeline?"),
-    "The seller's next question is carried into the call brief without re-entry.");
-  const callAction = liveDesk.actions.find(action=>action.leadId===id);
-  assert.equal(callAction?.href,`/calls?lead=${id}`);
-  assert.ok(callAction?.workGuidance?.humanMustDo);
-  assert.match(callAction?.workGuidance?.currentState??"",/call[_ ]ready/i);
+  await assertSyntheticCallReadyBlocked(id, actor.id, now);
+  logger.info("EXPECTED SECURITY BLOCK: CALL_READY returned 409; CALL NEXT and gate-success assertions are skipped for this synthetic record.");
+  detail = await seedSyntheticPostGateContacted(id, actor.id, now);
   detail = await seller.recordCall(id,{version:detail.lead.version,outcome:"CONNECTED",notes:"Synthetic conversation, no external call.",nextAction:"Review terms.",followUpAt:future(1)},actor.id,now);
+  assert.equal(detail.lead.stage,"CONVERSATION","Downstream transaction checks run only from an explicitly seeded synthetic post-gate state.");
+  logger.info("SYNTHETIC POST-GATE FIXTURE: downstream transaction assertions may proceed; no authorization success or real contact is claimed.");
   detail = await offers.createOfferDraft(id,{version:detail.lead.version,amount:110000,earnestMoney:1000,closingDays:30,
     contingencies:"Synthetic title and diligence",assignmentIntent:true,reason:"Synthetic terms"},actor,now);
   const offerId = detail.offers[0]!.id;
@@ -1292,7 +1245,8 @@ try {
   async function prepareNewAttempt() {
     let d = await seller.leadDetail(nextId,undefined,now);
     d = await seller.saveUnderwriting(nextId,{...newUw,version:d.lead.version},actor.id,now);
-    d = await seller.transitionLead(nextId,{version:d.lead.version,to:"CALL_READY",reason:"SYNTHETIC refreshed evidence",nextAction:"Synthetic call."},actor.id,now);
+    await assertSyntheticCallReadyBlocked(nextId,actor.id,now);
+    d = await seedSyntheticPostGateContacted(nextId,actor.id,now);
     d = await seller.recordCall(nextId,{version:d.lead.version,outcome:"CONNECTED",notes:"SYNTHETIC new-attempt conversation.",
       nextAction:"Review fresh exact terms.",followUpAt:future(1)},actor.id,now);
     d = await offers.createOfferDraft(nextId,{version:d.lead.version,amount:110000,earnestMoney:1000,closingDays:30,
@@ -1369,8 +1323,8 @@ try {
     };
     const staleUnderwriting = await exerciseEvidence(staleId,staleBase,actor.id,now);
     staleDetail = await seller.saveUnderwriting(staleId,staleUnderwriting,actor.id,now);
-    staleDetail = await seller.transitionLead(staleId,{version:staleDetail.lead.version,to:"CALL_READY",
-      reason:"SYNTHETIC complete source fixture.",nextAction:"Synthetic call."},actor.id,now);
+    await assertSyntheticCallReadyBlocked(staleId,actor.id,now);
+    staleDetail = await seedSyntheticPostGateContacted(staleId,actor.id,now);
     staleDetail = await seller.recordCall(staleId,{version:staleDetail.lead.version,outcome:"CONNECTED",notes:"SYNTHETIC only.",
       nextAction:"Review terms.",followUpAt:future(1)},actor.id,now);
     staleDetail = await offers.createOfferDraft(staleId,{version:staleDetail.lead.version,amount:110000,earnestMoney:1000,
@@ -1508,6 +1462,4 @@ try {
    assert.equal((await seller.listBuyerCallFollowUps(now)).items.some(item=>item.callId===persistedBuyerCall?.id),false);
   logger.info("Cancellation/restart PASSED: owner-only, fresh underwriting/approval/communication, distinct attempt, original cancellation/signatures/terms/buyer history retained; CLOSED cannot reopen.");
     logger.info({checks:"persisted document registry and missing-template/private-storage/signing blockers; review PDF bytes separated into protected blob table; party/economic changes stale artifacts; persisted DRAFT → PREPARED → REJECTED/VOID/EXPIRED/REPLACED paths; separately evidenced execution never marks a review worksheet SIGNED; immutable economics hash shared with redacted packet; deadline/evidence exception persistence and terminal work cleanup",readinessSummary},"Full lifecycle persistence exercise PASSED (isolated synthetic schema)");
-} catch (error) {
-  if (!(error instanceof ExpectedSyntheticSellerGateBlock)) throw error;
 } finally { await pool.end(); }

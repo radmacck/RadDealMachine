@@ -15,6 +15,7 @@ import * as offers from "./offer-store";
 import { authorizeReviewedOffer } from "./offer-exercise-helpers";
 import * as portals from "./seller-offer-portals";
 import { exerciseEvidence } from "./exercise-evidence";
+import { assertSyntheticCallReadyBlocked, seedSyntheticPostGateContacted } from "./synthetic-post-gate-fixture";
 
 const now = new Date();
 const actorId = `synthetic-seller-portal-exercise:${randomUUID()}`;
@@ -57,10 +58,9 @@ async function createCommunicatedOffer(label: string) {
   detail = await store.saveUnderwriting(
     lead.id, await exerciseEvidence(lead.id, underwriting, actorId, now), actorId, now,
   );
-  detail = await store.transitionLead(lead.id, {
-    version: detail.lead.version, to: "CALL_READY", reason: "Synthetic seller portal fixture.",
-    nextAction: "Run synthetic seller conversation.",
-  }, actorId, now);
+  await assertSyntheticCallReadyBlocked(lead.id, actorId, now);
+  logger.info("EXPECTED SECURITY BLOCK: CALL_READY returned 409; portal downstream checks use a separate synthetic post-gate fixture.");
+  detail = await seedSyntheticPostGateContacted(lead.id, actorId, now);
   detail = await store.recordCall(lead.id, {
     version: detail.lead.version, outcome: "CONNECTED", notes: "Synthetic conversation fixture.",
     nextAction: "Review synthetic offer.", followUpAt: future(1),
