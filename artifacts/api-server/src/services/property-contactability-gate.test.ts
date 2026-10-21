@@ -65,6 +65,34 @@ test("route permission and freshness are separate gates from owner/identity evid
   assert.ok(missingRoute.some(item => /No direct phone route/i.test(item)));
 });
 
+test("invalid identity references and expired routes cannot satisfy seller contactability", () => {
+  const invalidEvidence = evaluatePropertyContactabilityGate(evidence({
+    observedAt: "not-a-date",
+    evidenceReference: " ",
+  }), now);
+  assert.ok(invalidEvidence.some(item => /missing, future-dated, or older than 180 days/i.test(item)));
+  assert.ok(invalidEvidence.some(item => /exact ownership\/identity source record and evidence reference/i.test(item)));
+
+  const expiredRoute = evidence({
+    candidateRoutes: [route({
+      freshnessStatus: "CURRENT",
+      freshUntilAt: new Date(now.getTime() - 1).toISOString(),
+    })],
+  });
+  assert.ok(evaluatePropertyContactabilityGate(expiredRoute, now).some(item => /phone route is stale/i.test(item)));
+  assert.equal(hasLegitimateSellerCallRoute(expiredRoute, now), false,
+    "An expired route stays blocked even if its stored freshness label incorrectly says CURRENT.");
+});
+
+test("an email-only route does not satisfy the current phone-specific CALL NEXT gate", () => {
+  const emailOnly = evidence({
+    candidateRoutes: [route({ channel: "EMAIL", routeValue: "seller@example.invalid" })],
+  });
+  assert.ok(evaluatePropertyContactabilityGate(emailOnly, now).some(item => /No direct phone route candidate/i.test(item)));
+  assert.equal(hasLegitimateSellerCallRoute(emailOnly, now), false);
+  assert.equal(requiresCurrentSellerContactabilityEvidence("CALL_READY"), true);
+});
+
 test("a source-only discovery with no reviewed contact case cannot qualify for CALL NEXT", () => {
   const gaps = evaluatePropertyContactabilityGate(evidence({
     sourceName: "Philadelphia public property discovery",

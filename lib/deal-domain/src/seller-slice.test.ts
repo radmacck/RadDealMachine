@@ -2,7 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import {
   analyzeDeal, analyzeDealScenarios, DEFAULT_ASSUMPTIONS, validateProvenance, groupIntelligence,
-  allowedTransitions, validateTransition, buildCallBrief, prioritizeCallQueue,
+  allowedTransitions, validateTransition, buildCallBrief, prioritizeCallQueue, underwritingRangeStatus,
   type Lead, type UnderwritingInput, type IntelligenceInput,
 } from "./index";
 
@@ -84,8 +84,24 @@ test("classification uses explicit conservative and expected-case thresholds",()
 });
 test("missing or incomplete repairs never become zero-cost completed underwriting",() => {
   for (const incomplete of [{...input,repairs:[]},{...input,repairsComplete:false},{...input,conditionConfirmed:false}]) {
-    assert.equal(analyzeDeal(lead,incomplete,DEFAULT_ASSUMPTIONS,now).classification,"INCOMPLETE");
+    const result = analyzeDeal(lead,incomplete,DEFAULT_ASSUMPTIONS,now);
+    assert.equal(result.classification,"INCOMPLETE");
+    assert.equal(underwritingRangeStatus(result,"repairs"),"INCOMPLETE");
   }
+});
+test("unsupported and low-confidence ranges are explicitly distinguishable from available estimates",() => {
+  const noComps = analyzeDeal(lead,{...input,comps:[]},DEFAULT_ASSUMPTIONS,now);
+  assert.equal(noComps.arv.expected,0,"The calculation retains its numeric wire shape for compatibility.");
+  assert.equal(underwritingRangeStatus(noComps,"arv"),"MISSING");
+
+  const lowConfidence = analyzeDeal(lead,{...input,comps:input.comps.slice(0,1)},DEFAULT_ASSUMPTIONS,now);
+  assert.equal(underwritingRangeStatus(lowConfidence,"arv"),"LOW_CONFIDENCE");
+  assert.equal(underwritingRangeStatus(lowConfidence,"repairs"),"AVAILABLE");
+
+  const lowRepairConfidence = analyzeDeal(lead,{
+    ...input, repairs:[{...input.repairs[0]!,confidence:0.4}],
+  },DEFAULT_ASSUMPTIONS,now);
+  assert.equal(underwritingRangeStatus(lowRepairConfidence,"repairs"),"LOW_CONFIDENCE");
 });
 test("nonresidential and multi-unit subjects fail explicitly instead of guessing",() => {
   const unsupported = analyzeDeal({...lead,propertyType:"LAND",units:2},input,DEFAULT_ASSUMPTIONS,now);

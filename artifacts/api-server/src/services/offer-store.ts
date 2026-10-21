@@ -10,8 +10,10 @@ import {
 import { lockedLead, leadDetail, toLead, getAssumptions, move, audit, followupDate } from "./deal-store";
 import { toStoredOffer } from "./offer-records";
 import { queueJob } from "./operations-records";
+import { offerDraftReplayHash, isExactOfferDraftReplay } from "./offer-draft-replay";
 
 type Tx = Parameters<Parameters<typeof db.transaction>[0]>[0];
+
 async function context(tx: Tx, detail: LeadDetail, now: Date): Promise<OfferContext> {
   const [snapshotRow] = detail.analysisSnapshotId
     ? await tx.select().from(analysesTable).where(and(eq(analysesTable.id,detail.analysisSnapshotId),eq(analysesTable.leadId,detail.lead.id))).limit(1)
@@ -39,15 +41,17 @@ async function saveOffer(tx: Tx,row: OfferRow,status: string,changes: Record<str
 export async function createOfferDraft(id: string,input: OfferDraftInput,actor: OfferActor,now = new Date()) {
   assertOfferPermission("DRAFT",actor.role);
   return db.transaction(async tx => {
-    if(input.parentOfferId){
+    if(input.parentOfferId || input.idempotencyKey){
       const [locked]=await tx.select().from(leadsTable).where(eq(leadsTable.id,id)).for("update");
       if(!locked)throw new DomainError("Lead not found.",404);
-      const previous=await tx.select().from(offersTable).where(eq(offersTable.leadId,id));
-      const prior=previous.find(row=>row.payload.idempotencyKey===input.idempotencyKey);
-      if(prior){
-        if(prior.payload.idempotencyHash!==createHash("sha256").update(JSON.stringify(input)).digest("hex")||prior.createdBy!==actor.id)
+      if(input.idempotencyKey){
+        const previous=await tx.select().from(offersTable).where(eq(offersTable.leadId,id));
+        const prior=previous.find(row=>row.payload.idempotencyKey===input.idempotencyKey);
+        if(prior){
+          if(!isExactOfferDraftReplay(prior,input,actor.id))
           throw new DomainError("Idempotency key was already used for different terms or another actor.",409);
-        return leadDetail(id,tx,now);
+          return leadDetail(id,tx,now);
+        }
       }
     }
     const lead = await lockedLead(tx,id,input.version);
@@ -78,7 +82,8 @@ export async function createOfferDraft(id: string,input: OfferDraftInput,actor: 
       leadId:id,analysisSnapshotId:detail.analysisSnapshotId!,createdBy:actor.id,createdAt:now,updatedAt:now,
       payload:{
           ...terms,reviewSnapshotJson,reviewSnapshotHash,
-          ...(input.parentOfferId?{idempotencyKey:input.idempotencyKey,idempotencyHash:createHash("sha256").update(JSON.stringify(input)).digest("hex"),parentOfferId:input.parentOfferId,responseEventId}:{}),
+          ...(input.idempotencyKey?{idempotencyKey:input.idempotencyKey,idempotencyHash:offerDraftReplayHash(input)}:{}),
+          ...(input.parentOfferId?{parentOfferId:input.parentOfferId,responseEventId}:{}),
           maximumApprovedAcquisitionPrice:null,authorityEvidenceId:null,
         approvedBy:null,approvedAt:null,approvalReason:null,expiresAt:null,
         communicatedBy:null,communicatedAt:null,communicatedAmount:null,channel:null,evidence:null,withdrawalReason:null,

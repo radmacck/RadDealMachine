@@ -1,18 +1,23 @@
 import { AlertOctagon, ShieldAlert } from 'lucide-react';
 import { useState } from 'react';
 import type { Analysis, Comp, Intelligence, Range } from '@workspace/api-client-react';
-import { analyzeDealScenarios } from '@workspace/deal-domain';
+import { analyzeDealScenarios, underwritingRangeStatus } from '@workspace/deal-domain';
 import { fmtDate, money, pct } from '@/lib/format';
 
 const CLS_TONE: Record<string, string> = { STRONG: 'tone-go', NEGOTIABLE: 'tone-warn', PASS: 'tone-stop', INCOMPLETE: 'tone-muted' };
 
-function RangeRow({ label, r }: { label: string; r: Range }) {
+function RangeRow({ label, r, status }: { label: string; r: Range; status: ReturnType<typeof underwritingRangeStatus> }) {
+  const unavailable = status === 'MISSING' || status === 'INCOMPLETE';
   return (
     <div className="grid grid-cols-[6rem_1fr_1fr_1fr_4rem] items-baseline gap-2 border-b border-border py-2 text-sm last:border-0">
-      <span className="eyebrow">{label}</span>
-      <span className="font-mono">{money(r.low)}</span>
-      <span className="font-mono font-semibold">{money(r.expected)}</span>
-      <span className="font-mono">{money(r.high)}</span>
+      <span className="eyebrow">{label}{status === 'LOW_CONFIDENCE' && <span className="block text-[10px] text-destructive">LOW CONFIDENCE</span>}</span>
+      {unavailable
+        ? <span className="col-span-3 text-xs text-muted-foreground">{status === 'MISSING' ? 'MISSING · no eligible evidence' : 'INCOMPLETE · resolve evidence blockers'}</span>
+        : <>
+          <span className="font-mono">{money(r.low)}</span>
+          <span className="font-mono font-semibold">{money(r.expected)}</span>
+          <span className="font-mono">{money(r.high)}</span>
+        </>}
       <span className="text-right font-mono text-xs text-muted-foreground">{pct(r.confidence)}</span>
     </div>
   );
@@ -41,6 +46,8 @@ export function AnalysisPanel({ analysis, comps, intelligence = [], full = true 
   const a = analysis;
   const estimateBlocked = a.repairEstimate.status === 'BLOCKED';
   const underwritingBlocked = estimateBlocked || a.blockers.length > 0;
+  const arvRangeStatus = underwritingRangeStatus(a, 'arv');
+  const repairRangeStatus = underwritingRangeStatus(a, 'repairs');
   const label = (id: string) => comps?.find((c) => c.id === id)?.address ?? id;
   const evidenceFor = (id?: string) => id ? intelligence.find((item) => item.id === id) : undefined;
   const evidenceClass = (classification?: string) =>
@@ -73,8 +80,8 @@ export function AnalysisPanel({ analysis, comps, intelligence = [], full = true 
         <div className="grid grid-cols-[6rem_1fr_1fr_1fr_4rem] gap-2 border-b border-border pb-1">
           <span /><span className="eyebrow">Low</span><span className="eyebrow">Expected</span><span className="eyebrow">High</span><span className="eyebrow text-right">Conf</span>
         </div>
-        <RangeRow label="ARV" r={a.arv} />
-        <RangeRow label="Repairs" r={a.repairs} />
+        <RangeRow label="ARV" r={a.arv} status={arvRangeStatus} />
+        <RangeRow label="Repairs" r={a.repairs} status={repairRangeStatus} />
       </div>
       {full && <section className="mt-4 border border-border p-3" data-testid="underwriting-evidence-panel">
         <div className="flex flex-wrap items-baseline justify-between gap-2">
@@ -112,7 +119,7 @@ export function AnalysisPanel({ analysis, comps, intelligence = [], full = true 
         <div className="mt-3 grid gap-2 border-t border-border pt-3 sm:grid-cols-2 lg:grid-cols-3" data-testid="underwriting-economics-breakdown">
           <div><p className="eyebrow">Carrying + closing costs</p><p className="font-mono">{money(totalCarryingClosingCosts)}</p><p className="text-xs text-muted-foreground">ESTIMATED · configured assumptions: acquisition {money(policy.acquisitionCost)} + holding {money(policy.holdingMonthly)} × {policy.holdingMonths} months · confidence not empirical · as of {fmtDate(a.calculatedAt)}</p></div>
           <div><p className="eyebrow">Buyer margin reserve</p><p className="font-mono">{money(buyerMarginReserve)}</p><p className="text-xs text-muted-foreground">INFERRED · source: configured buyer discount assumption · low ARV × (1 − {pct(policy.arvMultiplier)}) · confidence: policy-derived, not empirical · as of {fmtDate(a.calculatedAt)}</p></div>
-          <div><p className="eyebrow">Buyer ceiling before assignment</p><p className="font-mono">{money(buyerCeilingBeforeAssignment)}</p><p className="text-xs text-muted-foreground">ESTIMATED · source: comp, repair, and workspace-cost inputs · confidence: ARV {pct(a.arv.confidence)} / repairs {pct(a.repairs.confidence)} · as of {fmtDate(a.calculatedAt)}</p></div>
+          <div><p className="eyebrow">Buyer ceiling before assignment</p><p className="font-mono">{underwritingBlocked ? 'BLOCKED' : money(buyerCeilingBeforeAssignment)}</p><p className="text-xs text-muted-foreground">{underwritingBlocked ? 'Resolve current underwriting blockers before using this calculated value.' : `ESTIMATED · source: comp, repair, and workspace-cost inputs · confidence: ARV ${pct(a.arv.confidence)} / repairs ${pct(a.repairs.confidence)} · as of ${fmtDate(a.calculatedAt)}`}</p></div>
           <div><p className="eyebrow">Assignment target · not realized fee</p><p className="font-mono">{money(policy.assignmentTarget)}</p><p className="text-xs text-muted-foreground">ESTIMATED · source: configured workspace assumption · confidence: policy-derived, not empirical · not buyer demand or a commitment · as of {fmtDate(a.calculatedAt)}</p></div>
           <div><p className="eyebrow">Calculated MAO</p><p className="font-mono">{estimateBlocked || a.blockers.length ? 'BLOCKED' : money(a.mao)}</p><p className="text-xs text-muted-foreground">INFERRED · source: deterministic buyer-ceiling formula less assignment target · confidence: ARV {pct(a.arv.confidence)} / repairs {pct(a.repairs.confidence)} · as of {fmtDate(a.calculatedAt)}; blocked by any current underwriting blocker.</p></div>
           <div><p className="eyebrow">Offer authority</p><p className="font-mono">Not authorized by underwriting</p><p className="text-xs text-muted-foreground">Only explicit, terms-specific owner approval can authorize an offer.</p></div>
@@ -129,8 +136,8 @@ export function AnalysisPanel({ analysis, comps, intelligence = [], full = true 
           </label>
         </div>
         <div className="mt-2 grid gap-1 text-xs text-muted-foreground sm:grid-cols-2">
-          <p>ARV · SOURCED from eligible comp range: {money(a.arv.low)} / {money(a.arv.expected)} / {money(a.arv.high)}; {pct(a.arv.confidence)} confidence.</p>
-          <p>Repairs · ESTIMATED from reviewed range: {money(a.repairs.low)} / {money(a.repairs.expected)} / {money(a.repairs.high)}; {pct(a.repairs.confidence)} confidence. Per-line sources retain OBSERVED/REPORTED status.</p>
+          <p>ARV · {arvRangeStatus === 'MISSING' ? 'MISSING · no eligible comps.' : `${arvRangeStatus === 'LOW_CONFIDENCE' ? 'LOW CONFIDENCE · ' : ''}SOURCED from eligible comp range: ${money(a.arv.low)} / ${money(a.arv.expected)} / ${money(a.arv.high)}; ${pct(a.arv.confidence)} confidence.`}</p>
+          <p>Repairs · {repairRangeStatus === 'INCOMPLETE' ? 'INCOMPLETE · repair scope or condition confirmation is missing.' : `${repairRangeStatus === 'LOW_CONFIDENCE' ? 'LOW CONFIDENCE · ' : ''}ESTIMATED from reviewed range: ${money(a.repairs.low)} / ${money(a.repairs.expected)} / ${money(a.repairs.high)}; ${pct(a.repairs.confidence)} confidence. Per-line sources retain OBSERVED/REPORTED status.`}</p>
           <p>Holding + closing · ESTIMATED configured base {money(policy.acquisitionCost + policy.holdingMonthly * policy.holdingMonths)}; scenario envelope is operator-selected, not observed.</p>
           <p>Buyer margin reserve · INFERRED from configured multiplier {pct(1-policy.arvMultiplier)}. Assignment fee · ESTIMATED configured target {money(policy.assignmentTarget)} with the same sensitivity envelope. Seller/agent-reported inputs stay REPORTED, never verified by this calculation.</p>
         </div>

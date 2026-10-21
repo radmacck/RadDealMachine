@@ -1,9 +1,14 @@
 import assert from "node:assert/strict";
 import { eq } from "drizzle-orm";
-import { db, jobsTable, leadsTable, propertyDiscoveriesTable, propertySourceObservationsTable } from "@workspace/db";
+import {
+  db, jobsTable, leadsTable, propertyDiscoveriesTable, propertySourceObservationsTable,
+  unmatchedPropertySourceObservationsTable,
+} from "@workspace/db";
 import { GetPropertySourceCoverageResponse } from "@workspace/api-zod";
 import { getPropertySourceCoverage } from "./property-source-store";
-import { recordPropertyObservation } from "./property-discovery-store";
+import {
+  persistUnmatchedPropertySourceObservations, promotePropertyDiscovery, recordPropertyObservation,
+} from "./property-discovery-store";
 import { PROPERTY_SOURCE_POLICY_VERSION } from "./property-source-connectors";
 
 const now = new Date("2026-10-16T12:00:00.000Z");
@@ -92,6 +97,18 @@ const sourceTrail = await db.select().from(propertySourceObservationsTable)
 assert.deepEqual(new Set(sourceTrail.map(row => row.sourceKey)), new Set([
   "synthetic-coverage:parcel", "synthetic-second-feed:parcel",
 ]), "Property deduplication must retain provenance from each independent source feed.");
+await assert.rejects(recordPropertyObservation({
+  ...property,
+  id: "SYNTHETIC-COVERAGE-CONFLICTING-SOURCE-ID",
+  parcelId: "SYNTHETIC-COVERAGE-DIFFERENT-PARCEL",
+}, "synthetic-coverage:parcel", actor, new Date(now.getTime() + 150_000)),
+/conflicting property identity/i, "A source key reused for a different parcel identity must be rejected.");
+const [preservedSourceObservation] = await db.select().from(propertySourceObservationsTable)
+  .where(eq(propertySourceObservationsTable.sourceKey, "synthetic-coverage:parcel"));
+assert.equal(preservedSourceObservation?.sourceId, property.id,
+  "Rejecting a conflicting identifier must preserve the original source record.");
+assert.equal(preservedSourceObservation?.discoveryId, firstObservation.id,
+  "A conflicting source identifier must not transfer provenance to another discovery.");
 const fallbackIdentity = await recordPropertyObservation({
   ...property, id: "SYNTHETIC-COVERAGE-ADDRESS-ONE", parcelId: "",
   address: "200 Synthetic Avenue", sourceUrl: "https://example.invalid/address-one",
@@ -125,6 +142,29 @@ await assert.rejects(recordPropertyObservation({
   address: "   ", city: "", sourceUrl: "https://example.invalid/incomplete-address",
 }, "synthetic-address-feed:incomplete", actor, new Date(now.getTime() + 360_000)),
 /exact parcel or a complete address/i, "Incomplete identity fields must not generate a shared fallback match key.");
+const unmatchedFixture = {
+  sourceKey: "synthetic-coverage:unmatched-record",
+  sourceId: "synthetic-coverage-source",
+  propertyId: "999999999",
+  sourceName: "Synthetic unmatched source",
+  sourceUrl: "https://example.invalid/unmatched",
+  capturedAt: now.toISOString(),
+  signal: null,
+  payload: { state: "SOURCE_RECORD_OBSERVED", recordCount: 1, recordIdentities: ["synthetic-record-1"] },
+};
+await persistUnmatchedPropertySourceObservations([unmatchedFixture], actor, now);
+const [unmatchedRecord] = await db.select().from(unmatchedPropertySourceObservationsTable)
+  .where(eq(unmatchedPropertySourceObservationsTable.sourceKey, unmatchedFixture.sourceKey));
+assert.equal(unmatchedRecord?.status, "UNMATCHED");
+assert.equal(unmatchedRecord?.linkedDiscoveryId, null,
+  "Unmatched source records remain unlinked until an exact supported identity match is available.");
 assert.equal((await db.select().from(propertyDiscoveriesTable)).length, 3);
-assert.equal((await db.select().from(leadsTable)).length, 0, "Coverage reporting never promotes raw observations to active leads.");
+await assert.rejects(promotePropertyDiscovery(firstObservation.id, {
+  version: secondFeed.version,
+  reviewReason: "Synthetic attempt to promote a raw observation without qualification evidence.",
+}, { id: "synthetic-coverage-owner", role: "OWNER" }, now),
+/Relevance score 0 is below the market threshold|independent signal groups are required/i,
+"Human review cannot promote a raw observation without the required independent evidence.");
+assert.equal((await db.select().from(leadsTable)).length, 0,
+  "Raw and unmatched observations cannot create leads without required qualification evidence.");
 console.log("PASS SYNTHETIC persisted source coverage: no false check/zero, terms version, exact connector counts, rate limits, stale data, schedule eligibility and raw/lead separation.");

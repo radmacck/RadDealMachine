@@ -3195,20 +3195,25 @@ All items below are future architecture requirements only. They are not complete
 
 This execution uses the existing repository and checkpoint only. The worktree was clean before the checks; no source code was changed during this run. “VERIFIED” below means the stated automated or baseline claim is supported by the commands/results listed, not that a real transaction or production launch is verified. Test fixtures remained synthetic unless explicitly stated.
 
-### Directive status summary
+### Directive status summary (1–15)
 
 | # | Status | Evidence boundary |
 | --- | --- | --- |
-| 1. Baseline and safe working tree | **VERIFIED** | Clean tree at `957d42d`; package scripts inspected; task snapshot and workflows checked. |
-| 2. Synthetic end-to-end trace | **BLOCKED** | Current synthetic trace reaches acquisition, seller qualification and contact research, then stops at the correct `CALL_READY` gate. No single persisted trace reaches offers, buyer matching and transaction milestones. |
-| 3. First blocker fix | **BLOCKED** | Existing exercise correction makes the expected seller-gate refusal pass without weakening authorization. No production defect can safely be fixed to advance the path without real Owner-reviewed seller evidence; positive persisted offer/transaction flow remains untested. |
-| 4. Discovery and persistence | **VERIFIED** | Synthetic source-coverage exercise and 23 property-source tests passed; prior permitted Philadelphia public-feed exercise is documented separately and is not evidence of ongoing provider health. |
-| 5. Deduplication and matching | **VERIFIED** | Property-source coverage exercise and property-source tests passed; conflicts/unmatched records remain visible and raw observations do not promote themselves into leads. |
-| 6. Qualification and property analysis | **VERIFIED** | Seller and repair-estimate isolated exercises passed with synthetic data; estimates retain provenance and remain distinct from verified market values. |
-| 7. Seller evidence and permission gates | **VERIFIED** | Seven contactability gate tests and synthetic contact exercise passed. The live Owner identity/permission/route review and any actual contact remain unverified. |
-| 8. Offers and audit trail | **BLOCKED** | Offer domain tests pass and the persisted synthetic exercise confirms refusal at the seller gate; positive persisted offer lifecycle and audit assertions do not run. |
-| 9. Buyer and transaction accounting | **BLOCKED** | Buyer synthetic exercises and fee/readiness tests pass; transaction persistence remains blocked before milestone and fee lifecycle assertions. |
-| 10. Final verification and checkpoint | **BLOCKED** | Full domain/API tests and typecheck pass, and leaf builds pass. Root recursive build still fails without `PORT`; final diff check is recorded below. |
+| 1. Baseline and safe working tree | **VERIFIED** | Existing project structure and checks were inspected; prior user changes were preserved. |
+| 2. Synthetic end-to-end trace | **BLOCKED** | Separate isolated exercises reach the correct seller `CALL_READY` evidence gate; no continuous persisted offer-to-closing trace is proven. |
+| 3. First blocker fix | **BLOCKED** | No safe defect fix can advance the path without real Owner-reviewed seller evidence; synthetic evidence is not promoted. |
+| 4. Discovery and persistence | **PARTIAL** | Synthetic source coverage and property-source tests pass; the permitted live-feed exercise previously returned PARTIAL after an official sheriff-deed API HTTP 400. |
+| 5. Deduplication and matching | **VERIFIED** | Synthetic conflict/unmatched/raw-promotion assertions, source coverage persistence, and property-source tests pass. |
+| 6. Qualification and property analysis | **VERIFIED** | Domain regressions pass; unsupported and low-confidence estimates are surfaced as uncertain. No real property's ARV or repair amount is claimed. |
+| 7. Seller evidence and permission gates | **PARTIAL** | Evidence gates and synthetic persistence checks pass. No real Owner review is verified, and no in-platform text-first/SMS sending path exists. |
+| 8. Offers and audit trail | **PARTIAL** | Offer domain checks and draft-replay matching pass; positive persisted offer transitions and audit history stop at the seller gate. |
+| 9. Buyer and transaction accounting | **PARTIAL** | Buyer verification and prospect persistence pass synthetically; transaction milestone, fee-outcome, and settlement persistence stop at the seller gate. |
+| 10. Final verification and checkpoint | **VERIFIED for available checks** | Test suites, workspace typechecks, environment-configured recursive build, and diff check pass. This does not make the complete real-world acquisition-to-closing workflow GREEN. |
+| 11. Founder-workspace readiness assessment | **BLOCKED** | No Owner-reviewed real seller identity, lawful contact permission/scope, or current permitted direct route; core acquisition/deal workflow remains unproven. |
+| 12. Founder buyer-list intake and criteria | **BLOCKED** | Depends on Directive 11 readiness; no founder intake implementation or test evidence exists. |
+| 13. Buyer-first property discovery and matching | **BLOCKED** | Depends on proven core workflow and completed Directives 11–12; neither founder readiness nor buyer intake is evidenced. |
+| 14. Property-first buyer matching and deal workspace | **BLOCKED** | Depends on proven core workflow and completed/tested Directives 11–13; those prerequisites remain blocked or incomplete. |
+| 15. Founder-mode end-to-end verification and public-marketplace gate | **BLOCKED** | Directives 11–14 are blocked; no private founder journey exists to test end to end, and the core workflow remains unproven. |
 
 ### Directive 1 — baseline and safe working tree — VERIFIED
 
@@ -3243,52 +3248,86 @@ This execution uses the existing repository and checkpoint only. The worktree wa
 
 ### Directive 5 — deduplication and matching — VERIFIED
 
-- `pnpm --filter @workspace/api-server run exercise:property-source-coverage` — **PASS**, one synthetic exact parcel remains deduplicated while independent observations retain provenance; address fallback, conflicting attributes, incomplete identity, stale data and unmatched records are checked; raw observations do not create leads.
-- `pnpm --filter @workspace/property-sources run test` — **PASS 23/23**, including duplicate route/source observations, conflicting recipient/role claims, exact-parcel behavior and malformed identifiers.
-- These checks verify deterministic synthetic matching only; uncertain/unmatched records are not represented as confirmed real properties.
+- **Task 5 exercise date:** 2026-10-21.
+- **Task 5 focused regression coverage:** extended `property-source-coverage-exercise.ts` with persisted assertions for conflicting parcel identifiers reusing an existing source key, preservation of the original source observation on rejection, unmatched-row retention without a discovery link, and refusal to promote a raw discovery without qualification evidence. Existing assertions cover exact-parcel deduplication across feeds with both source trails retained; normalized-address fallback; separate street numbers; conflicting property attributes; incomplete address rejection; and zero leads from raw observations.
+- `pnpm --filter @workspace/api-server run exercise:property-source-coverage` — **PASS** after fixture corrections; isolated synthetic persistence reload passed for **36 tables**, with row counts and fingerprints stable. The first attempt exposed a stale discovery version in the new promotion assertion (a prior cross-feed write had incremented it); the assertion now uses the current version. API typecheck also caught a missing explicit `signal: null` in the unmatched test fixture; corrected before the passing run.
+- `pnpm --filter @workspace/api-server run typecheck` — **PASS**.
+- `pnpm --filter @workspace/property-sources run test` — **PASS 23/23**.
+- No production defect was demonstrated, so no application behavior was changed. Coverage is synthetic and isolated; it does not establish real-world identity matching, source permissions, or live-feed completeness. Promotion refusal verifies that human review cannot bypass evidence thresholds; it does not claim a positive real-property promotion.
 
 ### Directive 6 — qualification and property analysis — VERIFIED
 
-- `pnpm --filter @workspace/api-server run exercise:repair-estimate` — **PASS**, synthetic isolated persistence; inspection-sourced repair inputs and separately labeled listing-condition hypotheses, rate multiplication, MAO non-propagation, provenance-bound snapshots and audit history checked; 36-table reload.
-- `pnpm --filter @workspace/api-server run exercise:seller` — **PASS**, deterministic synthetic qualification, provenance rejection and stale/concurrent-write rejection; 36-table reload.
-- These results do not establish a real ARV, repair estimate or market price.
+- **Task 6 exercise date:** 2026-10-21.
+- Focused regression fix: added `underwritingRangeStatus` and updated the analysis panel so no eligible comparable sales display **MISSING** instead of a numeric zero; incomplete repair scope/condition displays **INCOMPLETE** instead of partial costs; below-threshold ranges are explicitly marked **LOW CONFIDENCE**. The “buyer ceiling before assignment” is blocked whenever current underwriting blockers exist.
+- `pnpm --filter @workspace/deal-domain exec tsx --test src/seller-slice.test.ts src/lead-qualification.test.ts` — **PASS 25/25**. Covers deterministic formulas, configured acquisition/holding/selling/contingency/assignment costs, MAO and scenario reconciliation, pass/negotiable/strong classifications, missing asking price, incomplete repairs, unsupported property types, stale/future/distant/size/type/condition/unverified and duplicate comps, outliers, invalid/reversed inputs, confidence thresholds, evidence classes and lead-readiness gates. New cases cover missing comps, low-confidence ARV/repairs, and incomplete ranges.
+- `pnpm --filter @workspace/deal-domain run test` — **PASS 161/161**.
+- `pnpm run typecheck` — **PASS** across libraries and artifacts.
+- `PORT=20639 BASE_PATH=/ pnpm --filter @workspace/radical-deal-os run build` — **PASS**; existing unresolved-source-map and >500 kB chunk warnings remain.
+- `pnpm --filter @workspace/api-server run exercise:repair-estimate` — **PASS**, synthetic isolated data; inspection-derived repairs remain separate from condition hypotheses, exact current rate multiplication, MAO non-propagation, source-bound snapshot and audit checked; 36-table reload with stable row counts/fingerprints.
+- `pnpm --filter @workspace/api-server run exercise:seller` — **PASS**, synthetic deterministic qualification, provenance rejection and stale/concurrent-write rejection; 36-table reload.
+- `pnpm --filter @workspace/api-server run exercise:evidence-intake` — **PASS**, permitted official parcel data remained observations with honest blockers; a separate synthetic complete packet exercised deterministic STRONG and CALL NEXT; roles, invalid provenance, stale/repeated versions and expiry checked; 36-table reload.
+- Restarted `artifacts/radical-deal-os: web`; Vite reported ready. Preview screenshot rendered the signed-out landing page, so the authenticated underwriting panel was not visually verified in a signed-in session.
+- **Changed files for Task 6:** `lib/deal-domain/src/underwriting-range-status.ts`, `lib/deal-domain/src/index.ts`, `lib/deal-domain/src/seller-slice.test.ts`, `artifacts/radical-deal-os/src/components/analysis-panel.tsx`, and `docs/real-estate-os-build-checkpoint.md`. No API calculation formula or persisted economics was changed; the fix prevents unsupported numeric outputs from being presented without uncertainty labels.
+- Synthetic exercises and deterministic formulas do not establish any real property's ARV, repair amount, market price or acquisition authority.
 
 ### Directive 7 — seller evidence and permission gates — VERIFIED for automated behavior
 
-- `pnpm --filter @workspace/api-server exec tsx --test src/services/property-contactability-gate.test.ts` — **PASS 7/7**.
-- `pnpm --filter @workspace/api-server run exercise:seller-contact` — **PASS**, synthetic evidence references, route freshness/conflicts and replay checks persist; no outreach; 36-table reload.
-- Human-only validation remains required: an authenticated Owner must verify real seller identity, lawful permission and a current permitted route. No contact was attempted and no consent was invented.
+- **Task 7 exercise date:** 2026-10-21.
+- `pnpm --filter @workspace/api-server exec tsx --test src/services/property-contactability-gate.test.ts` — **PASS 9/9**. Existing coverage checks owner-only/conflicting/unknown identities, prohibited or unknown permission, route freshness, duplicate recipients, source references, stage rechecks, and seller-provided citations. Added cases verify malformed identity timestamps/references block, an expired route remains blocked even if its stored label says `CURRENT`, and EMAIL-only evidence does not pass the current phone-specific `CALL NEXT` gate.
+- `pnpm --filter @workspace/api-server run exercise:property-contact-http` — **PASS**, isolated synthetic HTTP role denial, Owner evidence capture, synthetic-route refusal, idempotent replay, role-gated read and persisted reload; 36-table row-count/fingerprint check. Test middleware is synthetic; no real seller was contacted.
+- `pnpm --filter @workspace/api-server run exercise:seller-contact` — **PASS**, synthetic identity/permission/freshness/conflict and POSTAL/EMAIL/WEB/OTHER/PHONE route cases persisted; no outreach; 36-table reload.
+- `pnpm --filter @workspace/api-server run exercise:seller` — **PASS**, missing reviewed contact evidence kept `CALL_READY` and `CALL NEXT` blocked; 36-table reload.
+- `pnpm --filter @workspace/api-server run test:provider-health` — **PASS 4/4**. Unconfigured messaging is reported as not connected and makes no external request; manual/in-app notifications are not represented as connected external providers.
+- `pnpm --filter @workspace/api-server run typecheck` — **PASS**.
+- **Channel boundary:** code search found no seller in-platform message/thread/send path or SMS send path. Existing `CALL_READY` readiness is intentionally phone-specific. No evidence supports an SMS provider connection. Therefore the seller evidence gate is verified for its current automated behavior, but a complete no-call/text-first workflow remains **BLOCKED / NOT IMPLEMENTED**; do not treat an email route as a platform message path or weaken the call gate.
+- **Human-only live verification remains:** an authenticated Owner must verify one real seller/property identity, lawful purpose and scope, a current permitted route and consent evidence. No real consent, communication attempt, delivery or reply is claimed.
 
 ### Directive 8 — offers and audit trail — BLOCKED at persistence boundary
 
-- `pnpm --filter @workspace/deal-domain exec tsx --test src/offers.test.ts src/offer-readiness.test.ts` — **PASS 19/19**, with successful domain preparation/approval rules and blocked stale, invalid or unauthorized actions.
-- `pnpm --filter @workspace/api-server run exercise:offers` — **PASS as expected block**, exit 0; persisted exercise proves refusal and unchanged state only. It does not exercise positive persisted status transitions, audit history, rejection/withdrawal or legally operative documents for this synthetic lead.
-- No draft is claimed as a contract. A positive persisted lifecycle still depends on a real seller evidence gate.
+- **Task 8 exercise date:** 2026-10-21.
+- `pnpm --filter @workspace/api-server exec tsx --test src/services/offer-draft-replay.test.ts` — **PASS 1/1**. Focused matcher regression covers exact same-actor input and rejects reused keys with changed terms or a different actor; the persisted offer exercise does not reach the draft path.
+- `pnpm --filter @workspace/deal-domain exec tsx --test src/offers.test.ts src/offer-readiness.test.ts` — **PASS 19/19**. Covers required draft fields and economic bounds, owner-only approval, stale/expired/snapshot-invalidated terms, invalid communication, and revocation preserving prior communication evidence. Readiness scoring never authorizes an offer.
+- `pnpm --filter @workspace/api-server run typecheck` — **PASS**.
+- `pnpm --filter @workspace/api-server run exercise:offers` — **PASS as expected block**, exit 0; synthetic contact evidence is correctly refused at `CALL_READY`, and persistence reload/fingerprint checks pass. Offer lifecycle assertions after that gate do **not** run.
+- `pnpm --filter @workspace/api-server run exercise:seller-offer-portal` — **FAIL, exit 1 before offer-response assertions**, with the correct 409 `CALL_READY is blocked` seller-evidence refusal. Its synthetic ACCEPTED/REJECTED, stale-link and audit assertions did not run.
+- **Defect fixed:** an initial draft could accept an optional idempotency key in the request schema but did not persist or check it; a retry therefore could not replay the original draft. Draft creation now locks the lead before lookup, persists the hash/key for initial drafts and counteroffers, returns the existing draft only for an exact same-actor retry, and rejects key reuse with changed input or actor. No seller-evidence gate was weakened.
+- **Remaining limit:** no positive persisted draft/approval/communication/rejection/withdrawal lifecycle or durable audit history was verified because the synthetic seller cannot pass the live seller-evidence gate. The domain revocation test verifies preservation of the previous communication record, not persisted audit rows. The existing isolated exercises contain later assertions, but this run did not reach them.
+- Proposed, authorized, or simulated offers are not signed agreements or executed contracts. No legal sufficiency, real seller response, external communication, or signature is claimed.
+- Changed files for Task 8: `artifacts/api-server/src/services/offer-store.ts`, new `artifacts/api-server/src/services/offer-draft-replay.ts`, new `artifacts/api-server/src/services/offer-draft-replay.test.ts`, and this checkpoint.
 
-### Directive 9 — buyer and transaction accounting — BLOCKED for a continuous transaction path
+### Directive 9 — buyer and transaction accounting — PARTIAL; persisted transaction path blocked
 
-- `pnpm --filter @workspace/api-server run exercise:buyers` — **PASS**, synthetic buyer creation/reload, owner-only verification, dated funding evidence, stale evidence, version conflict, identity invalidation and queued matching; 36-table reload.
-- `pnpm --filter @workspace/api-server run exercise:buyer-pool` — **PASS**, synthetic qualification portal and isolated public-source prospect processing; no real workspace prospect seeded and no communication sent; 36-table reload.
-- `pnpm --filter @workspace/api-server exec tsx --test src/services/transaction-readiness.test.ts src/services/transaction-fees.test.ts` — **PASS 7/7**, fee event exactness, settlement reconciliation, deadline handling, replay and stale-schedule rules.
-- `pnpm --filter @workspace/api-server run exercise:transactions` — **PASS as expected block**, exit 0; synthetic seller cannot enter `CALL_READY`; persisted transaction milestones, receipts and settlement assertions do not run. No verified buyer funding, transaction, closing or revenue is claimed.
+- **Task 9 exercise date:** 2026-10-21.
+- `pnpm --filter @workspace/deal-domain exec tsx --test src/buyers.test.ts src/buyer-coverage.test.ts src/transactions.test.ts src/transaction-checklist.test.ts` — **PASS 31/31**. Covers buyer readiness and stale/current evidence, synthetic fixture exclusion, criteria validation/signatures, deterministic match explanations and exclusions, funding/capacity limits, transaction closing blockers, evidence milestones, and duplicate milestone rejection.
+- `pnpm --filter @workspace/api-server exec tsx --test src/services/transaction-readiness.test.ts src/services/transaction-fees.test.ts` — **PASS 7/7**. Covers exact fee-event amount/currency, prohibited fee fields on ordinary events, settlement reconciliation against frozen buyer-minus-acquisition price, cost subtraction, deadline boundaries, schedule replay, and milestone dispositions.
+- `pnpm --filter @workspace/api-server run exercise:buyers` — **PASS**, isolated synthetic buyer creation/reload, owner-only verification, dated funding evidence, stale evidence, version conflict, identity invalidation, and queued matching; 36-table reload. Synthetic review does not establish real buyer identity, proof of funds, or intent.
+- `pnpm --filter @workspace/api-server run exercise:buyer-pool` — **PASS**, isolated feed exercise persisted 110 observed prospects and 114 source observations from permitted OPA and recorded-transfer feeds; all prospects remained unapproved and no communication was sent; 36-table reload. These are prospects, not verified current buyers.
+- `pnpm --filter @workspace/api-server run exercise:transactions` — **PASS as expected block**, exit 0; synthetic seller is refused at `CALL_READY`; transaction persistence assertions after the gate do not run.
+- **Funding/closing distinction:** self-reported or synthetic funding is not independently verified capacity; only current owner-reviewed evidence qualifies in the buyer rules. A fee quote is not a received fee. No verified funding, executed closing, received fee, or revenue is established by these tests.
+- **Remaining persistence gap:** positive transaction milestones, fee outcomes, and settlement persistence were not verified because the transaction exercise stops at seller contactability. Passing unit tests establish validation/calculation behavior, not durable transaction accounting.
+- Buyer matching and closing checks do not require a phone call; this task added no call requirement. Founder marketplace/P13 work remains **NOT STARTED** pending the existing acquisition/deal workflow verification threshold.
+- No defect was demonstrated in the focused checks, so no application change or new regression test was added. No real buyer, commitment, closing, fee receipt, or revenue is claimed.
 
-### Directive 10 — final verification — BLOCKED by root build configuration
+### Directive 10 — final verification — VERIFIED for available checks; full workflow remains blocked
 
-- `pnpm --filter @workspace/deal-domain run test` — **PASS 160/160**.
-- `pnpm --filter @workspace/api-server exec tsx --test 'src/services/*.test.ts'` — **PASS 71/71**.
-- `pnpm run typecheck` — **PASS**, workspace libraries plus API, web, mockup sandbox and scripts.
-- `pnpm run build` — **FAIL, exit 1** after typechecks pass; recursive build cannot load the mockup sandbox Vite config because `PORT` is not set.
-- `PORT=20639 BASE_PATH=/ pnpm --filter @workspace/radical-deal-os run build` — **PASS with sourcemap-location and large-chunk warnings**.
-- `PORT=8081 BASE_PATH=/__mockup pnpm --filter @workspace/mockup-sandbox run build` — **PASS**.
-- `pnpm --filter @workspace/api-server run build` — **PASS with existing 9.3 MB bundle warning**.
-- `DANGEROUSLY_ALLOW_GIT=1 git diff --check` — **PASS** after this section was appended; no whitespace errors.
-- Current changed files from this run: **none in application code**; this checkpoint section is the only intended workspace change.
+- `pnpm --filter @workspace/deal-domain run test` — **PASS 161/161**.
+- `pnpm --filter @workspace/property-sources run test` — **PASS 23/23**.
+- `pnpm --filter @workspace/api-server exec tsx --test 'src/services/*.test.ts'` — **PASS 74/74**.
+- `pnpm --filter @workspace/radical-deal-os exec tsx --test src/lib/command-center-display.test.ts src/lib/deal-timeline.test.ts src/lib/seller-answer-reuse.test.ts src/lib/command-center-state.test.ts src/lib/worker-retry.test.ts src/lib/contact-research-evidence.test.ts` — **PASS 25/25**.
+- `pnpm run typecheck` — **PASS**; library project references, API, web, mockup sandbox, and scripts typechecks all completed.
+- `PORT=20639 BASE_PATH=/ pnpm run build` — **PASS**; root typecheck and recursive mockup, API, and web builds completed. Existing warnings: web bundle exceeds 500 kB and API bundle is about 9.3 MB.
+- `pnpm --filter @workspace/api-server run exercise:property-source-coverage` — **PASS**, synthetic persisted coverage and raw/lead separation; 36-table reload with stable counts/fingerprints.
+- Final Task 9 persistence results are recorded above: buyer and buyer-pool exercises **PASS**; transaction exercise **PASS as expected block** at seller `CALL_READY`. Task 8 offer portal exercise **FAILS before offer assertions** at the same correct 409 gate; `exercise:offers` exits 0 as an expected block. These results are not positive offer/transaction lifecycle passes.
+- `DANGEROUSLY_ALLOW_GIT=1 git diff --check` — **PASS**, no whitespace errors.
+- **Current modified/untracked paths preserved from Tasks 5–8 and this checkpoint update:** `artifacts/api-server/src/services/offer-store.ts`; `artifacts/api-server/src/services/offer-draft-replay.ts`; `artifacts/api-server/src/services/offer-draft-replay.test.ts`; `artifacts/api-server/src/services/property-contactability-gate.test.ts`; `artifacts/api-server/src/services/property-source-coverage-exercise.ts`; `artifacts/radical-deal-os/src/components/analysis-panel.tsx`; `lib/deal-domain/src/index.ts`; `lib/deal-domain/src/seller-slice.test.ts`; `lib/deal-domain/src/underwriting-range-status.ts`; `docs/real-estate-os-build-checkpoint.md`. Task 10 changed only this checkpoint file; no reset, stash, or cleanup was performed.
+- **Real vs. synthetic boundary:** the tests and isolated persistence exercises use synthetic records except the separately recorded permitted public-feed exercise, which was partial and disposable. No real seller contactability, buyer funding, executed agreement, closing, fee receipt, or revenue is verified. Generated legal forms are not claimed legally sufficient.
+- **Deferred scope:** do not begin founder mode, then public marketplace, state-specific compliance, Rad Data/RadID, or company-level/personal Naelo work until the existing acquisition/deal workflow is proven. P13 remains NOT STARTED.
 
-### Deferred marketplace scope and one next blocker
+### Deferred marketplace scope and prior blocker note
 
 Marketplace features remain deferred: free homeowner listings, paid buyer memberships, transaction-related fee structures, seller choice between company-contract/assignment and direct-to-buyer, swipe/counteroffer/reconsideration/editable terms/messaging, state-specific versioned compliance checkpoints, Rad Data/RadID, and separate company-level versus personal Naelo. None is represented as implemented or connected.
 
-**Single next blocker:** an authenticated workspace Owner must provide and review one real seller/property identity, lawful contact permission and current direct contact route. Until that evidence exists, do not advance to genuine seller contact or claim the positive persisted offer/buyer/transaction path. State-specific qualified legal/compliance review remains a separate launch dependency.
+At the time of this earlier checkpoint, the blocker was an authenticated workspace Owner reviewing real seller/property identity, lawful contact permission, and a current direct contact route. The current next blocker is restated once in the final verification section below.
 
 ## Next ten implementation directives — current deal proof before founder mode — 2026-10-20
 
@@ -3298,49 +3337,68 @@ This is a checkpointed execution order, not a second Replit task queue. The prio
 
 | # | Status | Result |
 | --- | --- | --- |
-| 1. Queue/state reconciliation | **VERIFIED** | Current clean worktree, checkpoint and task/workflow state inspected; previous directive evidence reconciled without treating queued work as complete. |
+| 1. Queue/state reconciliation | **VERIFIED** | Baseline was clean at `d2561e2`; this task's checkpoint update is the only working-tree change. Checkpoint, package scripts, session task snapshot, and running workflow status were inspected. |
 | 2. End-to-end synthetic workflow | **BLOCKED** | Available isolated exercises reach the seller gate but do not form a single positive property-to-transaction trace. |
 | 3. Fix the first blocker | **BLOCKED** | Earliest blocker is missing real Owner-verified seller evidence, not a reproducible software defect that can safely be bypassed. |
-| 4. Property provenance and matching | **VERIFIED** | Existing synthetic coverage and source tests pass with observations distinct from leads and verified facts. |
+| 4. Property provenance and matching | **BLOCKED at complete live-feed verification** | Synthetic normalization, provenance, persistence, malformed/incomplete, and controlled empty/error cases pass. Current public-source exercise returned `PARTIAL` with a sheriff-deed HTTP 400 and failed its all-sources-`SUCCEEDED` assertion. |
 | 5. Contact-channel neutrality | **BLOCKED** | Current readiness logic is call/phone-specific; no in-platform message or SMS send path was found. Calls must not be treated as universally optional until the no-call path is implemented and tested. |
 | 6. Founder workspace access boundary | **NOT STARTED** | Depends on P12 threshold; no founder-only workspace is claimed. |
 | 7. Buyer-list intake | **NOT STARTED** | Depends on P12 and private founder mode; existing buyer records do not prove founder-list import/UI scope. |
 | 8. Property-first / buyer-first workflows | **NOT STARTED** | Depends on P12 and P13; existing matching services are not the requested founder workflow. |
 | 9. Founder deal pipeline and audit | **NOT STARTED** | Depends on P12 and P13; do not imply the complete founder pipeline exists. |
-| 10. Verification and handoff | **BLOCKED** | Waits on eligible directives and still records the known root build failure; P12 remains the sole operational blocker. |
+| 10. Verification and handoff | **VERIFIED for available checks** | Current domain/API/property-source/web test suites, workspace typechecks, environment-configured recursive build, and diff check pass. Positive offer/transaction persistence and real Owner evidence remain unverified; P12 is the sole operational blocker. |
 
 ### Directive 1 — queue/state reconciliation — VERIFIED
 
-- `DANGEROUSLY_ALLOW_GIT=1 git status --short` — **PASS**, empty output; worktree was clean before this checkpoint update.
-- `DANGEROUSLY_ALLOW_GIT=1 git log -1 --format='%h %ad %s' --date=iso` — **PASS**, `97de875 2026-10-20 13:27:21 +0000 Update memory files and document checkpoint progress`.
-- Inspected `docs/real-estate-os-build-checkpoint.md`, including the previous ten-directive status/results, P12/P13/P14 order, and communication acceptance plan. The previous record has P12 incomplete and P13 NOT STARTED.
-- Task snapshot: ref 13, “Verify the seller-response portal with a signed-in owner before live use,” remains `IN_PROGRESS / WAITING_FOR_INPUT`; this is not an executing build. The API, web, and mockup workflows are all `NOT_STARTED`. No parallel task or workflow was started.
-- No reset, stash, cleanup, migration, or user-data operation was performed.
+- Baseline `git status --short` — **PASS**, empty output; `git status --short --untracked-files=all | wc -l` returned `0`.
+- Baseline `git diff --stat` — **PASS**, empty output. `DANGEROUSLY_ALLOW_GIT=1 git diff --check` — **PASS**, no output.
+- `git log -1 --format='%h %cI %s'` — **PASS**, `d2561e2 2026-10-20T16:42:24Z Document real estate OS build steps`.
+- `git show --format= --name-status HEAD` — **PASS**, latest commit changes only `docs/real-estate-os-build-checkpoint.md`; at baseline there were no uncommitted or untracked paths.
+- Inspected this checkpoint’s prior ten-directive results and current ten-directive statuses, plus P12/P13/P14 dependencies. P12 remains incomplete; P13 is gated and not started. No queued directive is treated as completed without its listed evidence.
+- Root scripts inspected: `pnpm run typecheck` and `pnpm run build`; build invokes typecheck then recursive package builds. `artifacts/api-server/package.json` exposes acquisition, seller/contact, offer, buyer, and transaction exercises, plus service tests and typecheck/build. `lib/deal-domain/package.json` and `lib/property-sources/package.json` expose `pnpm --filter @workspace/deal-domain run test` and `pnpm --filter @workspace/property-sources run test`; web and mockup packages expose build/typecheck scripts.
+- Task snapshot: ref `13`, “Verify the seller-response portal with a signed-in owner before live use,” is `IN_PROGRESS / WAITING_FOR_INPUT`, not an executing implementation task. Current session workflow status reports the API server, mockup preview server, and web workflow **running**; the prior note that all three were `NOT_STARTED` was stale and is superseded.
+- After recording this baseline, `DANGEROUSLY_ALLOW_GIT=1 git diff --check` — **PASS**; `git status --short` shows only `M docs/real-estate-os-build-checkpoint.md`; `git diff --stat` reports 1 file changed, 10 insertions and 6 deletions. No app code or new task was created.
+- No reset, stash, cleanup, migration, overwrite, or user-data operation was performed.
+- **Next runnable verification command:** `pnpm --filter @workspace/api-server run exercise:acquisition-pipeline` — available and previously recorded as a passing synthetic exercise, but not rerun in this baseline-only task. It is the next suitable automated trace check; it does not prove the missing continuous seller-to-transaction path or live seller evidence.
 
 ### Directive 2 — end-to-end synthetic workflow — BLOCKED
 
-Commands and results already recorded against the unchanged application code:
+Fresh isolated synthetic exercise run for Task 2 (all seven commands exited `0`; each `exercise:` invocation used the registered isolated-schema harness, which clones the `re_%` table structure, sets a per-process PostgreSQL search path, verifies row counts/fingerprints after reload, and drops the temporary schema):
 
-- `pnpm --filter @workspace/api-server run exercise:acquisition-pipeline` — **PASS**, synthetic projection/idempotency; 36-table persistence reload.
-- `pnpm --filter @workspace/api-server run exercise:seller` — **PASS**, synthetic qualification and fail-closed readiness; 36-table reload.
-- `pnpm --filter @workspace/api-server run exercise:seller-contact` — **PASS**, synthetic evidence/route cases; no outreach; 36-table reload.
-- `pnpm --filter @workspace/api-server run exercise:offers` — **PASS as expected block**, synthetic evidence rejected at `CALL_READY`; no positive persisted offer assertions.
-- `pnpm --filter @workspace/api-server run exercise:transactions` — **PASS as expected block**, same seller gate; no persisted milestone/fee assertions.
+- `pnpm --filter @workspace/api-server run exercise:acquisition-pipeline` — output: `PASS SYNTHETIC persisted acquisition pipeline: stage definitions reconcile to source records; repeat calculation is idempotent and non-mutating.` Then `{"persistenceReload":"PASS","isolatedTablesReconciled":36,"rowCountsAndFingerprintsStable":true}`. This creates a synthetic discovery projection, not a live provider observation.
+- `pnpm --filter @workspace/api-server run exercise:seller` — output: `Seller readiness guard exercise PASSED (synthetic data)`; checks included persistence/reload, provenance rejection, deterministic snapshot, stale/concurrent-write rejection, linked synthetic qualification, and no actionable brief while `CALL_READY` is blocked. Reload: 36 tables, counts/fingerprints stable.
+- `pnpm --filter @workspace/api-server run exercise:seller-contact` — output: `PASS SYNTHETIC persisted seller-contact exercise` covering provenance/dedupe/ranking and no-route, review, conflict, stale, postal-only, email-only, web, other-route, and phone-route cases; identity/signing authority remain unverified, permissions/replay checked, and no outreach. Reload: 36 tables, counts/fingerprints stable.
+- `pnpm --filter @workspace/api-server run exercise:offers` — output: `[INFO] EXPECTED BLOCK: synthetic seller evidence cannot authorize CALL_READY; persisted offer lifecycle remains unverified.` Reload: 36 tables, counts/fingerprints stable. Exit 0 indicates the denial assertion passed, not that an offer lifecycle ran.
+- `pnpm --filter @workspace/api-server run exercise:buyers` — output: `Buyer persistence exercise PASSED (synthetic data)`; create/reload, owner-only verification, dated funding, stale evidence, version conflict, identity invalidation, and queued matching checked. Reload: 36 tables, counts/fingerprints stable.
+- `pnpm --filter @workspace/api-server run exercise:buyer-pool` — output: `Buyer pool exercise PASSED. No real workspace prospect seeded and no communication sent.` It reported 110 observed prospects and 114 source observations from its OPA/recorded-transfer public-feed exercise in the isolated schema. This is a separate public-source buyer-pool check, not synthetic property-to-deal continuity and not evidence of seller contact or a connected communication provider.
+- `pnpm --filter @workspace/api-server run exercise:transactions` — output: `[INFO] EXPECTED BLOCK: synthetic seller evidence cannot authorize CALL_READY; persisted transaction lifecycle remains unverified.` Reload: 36 tables, counts/fingerprints stable. The exercise stops at the gate; it did not reach buyer matching, transaction milestones, or closing assertions.
 
-These are separate exercises, not one continuous property trace. The first consequential blocker is current real seller identity, lawful permission, and a reviewed direct route; no synthetic substitute is acceptable.
+**First reproducible blocker:** the transaction exercise's synthetic lead is not linked to a source-backed property discovery. `sellerCallReadinessBlockers` therefore returns `Link this lead to a source-backed property discovery and complete ownership, seller identity, contact permission, and route review.` `transitionLead` rejects the attempted `CALL_READY` transition with HTTP/domain status 409; the exercise verifies stage, version, and transition-audit count remain unchanged, then logs the expected block above. Even a synthetic contact case cannot satisfy the gate because `synthetic:true` is explicitly a blocker and a current, permission-reviewed direct phone route is required for this call-specific transition.
+
+**Conclusion and evidence boundary:** discovery, qualification, contact-evidence, offer-denial, buyer persistence, and transaction-gate behaviors are covered by separate isolated exercises. They do **not** form a single continuous path: `exercise:acquisition-pipeline` inserts an unlinked discovery in its own disposable schema, whereas `exercise:transactions` starts from a separate synthetic lead and terminates before positive offer/deal progression, buyer matching, or milestones. No real seller identity, permission, contact attempt, buyer funds, provider response, executed contract, closing, or revenue was established. No code was changed for this task.
 
 ### Directive 3 — fix the first blocker — BLOCKED
 
-- `pnpm --filter @workspace/api-server exec tsx --test src/services/property-contactability-gate.test.ts` — previously **PASS 7/7**; the gate rejects missing, stale, conflicting, unpermitted, or identity-mismatched routes.
-- `pnpm --filter @workspace/deal-domain exec tsx --test src/offers.test.ts src/offer-readiness.test.ts` — previously **PASS 19/19**, including valid domain preparation and invalid/stale communication cases.
-- `pnpm --filter @workspace/api-server run exercise:offers` — previously **PASS as expected block**, exit 0; it proves a correct denial, not a positive persisted offer.
-- No code fix was made: the current blocker requires a real authorized Owner action and cannot be repaired by changing authorization logic or fabricating evidence. The phone-only limitation is separately assigned to Directive 5 rather than hidden as a test success.
+- Task 2 supplies reproducible evidence, but review found no safe production-code defect to fix. The transaction fixture begins with a direct synthetic lead that is intentionally not linked to a source-backed discovery. The supported `promotePropertyDiscovery` flow already creates/links a qualified lead; its existing source exercise records successful promotion and then confirms synthetic evidence cannot pass `CALL_READY`. Thus the fixture's missing link is not evidence that the supported promotion path is broken.
+- `pnpm --filter @workspace/api-server exec tsx --test src/services/property-contactability-gate.test.ts` — **PASS 7/7** in this task. Covered valid current/permission-backed identity-matched route acceptance and blocked owner-only, stale, inferred, prohibited, conflicting, missing-permission, missing-route, and source-only cases.
+- `pnpm --filter @workspace/api-server run exercise:property-source-coverage` — **PASS** in this task: synthetic source coverage/rate-limit/staleness/raw-observation separation; 36-table persistence reload with stable row counts/fingerprints.
+- `pnpm --filter @workspace/api-server run exercise:seller` — **PASS** in this task: persisted synthetic qualification succeeds, while a linked synthetic contact case remains blocked from `CALL_READY` and `CALL NEXT`; 36-table persistence reload.
+- `pnpm --filter @workspace/deal-domain exec tsx --test src/offers.test.ts src/offer-readiness.test.ts` — previously **PASS 19/19**, including valid domain preparation and invalid/stale communication cases. `pnpm --filter @workspace/api-server run exercise:offers` — Task 2 **PASS as expected block**, exit 0; not a positive persisted offer lifecycle.
+- **No application fix or new regression test was added. Status remains BLOCKED, not VERIFIED.** Passing the gate would require real authorized Owner-supplied seller/property identity, lawful contact permission, and a currently permitted route; fabricating those in a fixture or weakening the gate would be unsafe. The test code already checks positive qualification/promotion and negative synthetic-contact denial, but this does not prove real-world seller evidence or a positive persisted transaction. The separate phone-specific/no-call-channel gap remains Directive 5; relaxing this call gate without a permitted alternative communication path would create an unsafe false progression.
+- Changed files for Task 3: `docs/real-estate-os-build-checkpoint.md` only; no production source or test files changed. `DANGEROUSLY_ALLOW_GIT=1 git diff --check` is the final documentation verification command for this task.
 
-### Directive 4 — property provenance and matching — VERIFIED
+### Directive 4 — property provenance and matching — BLOCKED at complete live-feed verification
 
-- `pnpm --filter @workspace/api-server run exercise:property-source-coverage` — previously **PASS**, synthetic isolated coverage for dedupe, conflicting/incomplete identities, stale/failed source states, and raw-observation/lead separation; 36-table reload.
-- `pnpm --filter @workspace/property-sources run test` — previously **PASS 23/23**, including normalization, source provenance, malformed values, pagination and matching conflicts.
-- Prior `pnpm --filter @workspace/api-server run exercise:property-source` is documented separately for permitted Philadelphia public feeds persisted only in an isolated schema. It does not prove an ongoing provider connection or live lead qualification.
+### Task 4 — property discovery and source provenance — BLOCKED at complete live-feed verification
+
+- `pnpm --filter @workspace/property-sources run test` — **PASS 23/23**. Covered normalization, source provenance, nullable source fields, bounded pagination, malformed dates/negative values/identifiers, and observed-vs-verified distinctions. No provider calls are made by these unit tests.
+- `pnpm --filter @workspace/api-server exec tsx --test src/services/property-discovery-ranking.test.ts` — **PASS 2/2**. Ranking order is deterministic and AI hypotheses remain excluded from verified facts and ranking points.
+- `pnpm --filter @workspace/api-server run exercise:property-source-coverage` — **PASS** in Task 3; synthetic isolated fixture covers no-run versus zero count, recorded success, HTTP 429/rate-limit status, stale success, a no-source-evidence job, duplicate and cross-source provenance persistence, malformed/incomplete addresses and conflicting attributes; 36-table reload. It does not exercise live provider calls.
+- `pnpm --filter @workspace/api-server run exercise:property-source` — **FAIL, exit 1**, during this task. Its controlled fixture checks ran first: an empty synthetic connector returned an empty batch without discarding the other source, a throwing synthetic connector was retained as a source-specific DISCOVER failure, and a synthetic refresh failure was recorded separately. The same command then made real permitted public-feed reads inside the disposable isolated schema. Actual worker result was `PARTIAL`, not `SUCCEEDED`: OPA returned 20 matched property records/0 unmatched; L&I enforcement 14/6; building permits 10/30; demolitions 26/14. The sheriff-deed connector returned `Official property API returned HTTP 400.` The exercise assertion at `property-source-exercise.ts:120` expected `SUCCEEDED`, so the command failed. It also reported 50 unmatched observations, 420 refreshed observations, 58 current indicators, 58 changed evidence snapshots, 70 buyer-demand records checked, and no qualified leads, active lead, outreach, or distribution. The isolated schema was dropped by the harness after failure; these are not durable workspace observations.
+- The current run **did** query public providers, as shown by the worker output; this is not a claim that all sources succeeded, remain connected, or ran for buyers. The source-specific failure remained visible in the partial worker result. No automatic retry of that failed feed was verified, and the exercise's success-only assertion prevented downstream live pagination and later assertions from running.
+- Synthetic/source-fixture provenance and malformed/empty/error behavior are verified by the passing commands above. Complete live-feed verification is **not**. No source-code defect is established by the observed HTTP 400 alone; the exact upstream cause is not in the captured response. No code fix or new regression was made.
+- Earlier Task 3 remains blocked on a real Owner verifying seller/property identity, contact permission, and a current permitted route. That human dependency does not prevent the synthetic ingestion checks, but prevents a real seller-contact workflow.
+- Changed files for Task 4: `docs/real-estate-os-build-checkpoint.md` only. `DANGEROUSLY_ALLOW_GIT=1 git diff --check` — **PASS** after this checkpoint update.
 
 ### Directive 5 — contact-channel neutrality — BLOCKED; defect boundary confirmed
 
@@ -3374,10 +3432,53 @@ These are separate exercises, not one continuous property trace. The first conse
 - **Acceptance:** founder can track reviewed properties through qualification, permission review, offer/contract preparation, buyer match, and milestones; each consequential transition is human-authorized, source-linked, versioned, auditable, and clearly synthetic or real.
 - **Focused tests when eligible:** `pnpm --filter @workspace/api-server run exercise:seller && pnpm --filter @workspace/api-server run exercise:offers && pnpm --filter @workspace/api-server run exercise:buyers && pnpm --filter @workspace/api-server run exercise:transactions`, plus `pnpm --filter @workspace/api-server exec tsx --test src/services/transaction-readiness.test.ts src/services/transaction-fees.test.ts`. **NOT RUN** as a founder pipeline; current deal exercises stop at the seller gate.
 
-### Directive 10 — verification and handoff — BLOCKED by dependencies
+### Directive 10 — verification and handoff — VERIFIED for available checks
 
 - **Acceptance:** after eligible implementation, run focused regressions, all relevant tests, typechecks/builds and diff checks; record changed files and separate synthetic evidence from live operations. Do not start public marketplace work before P13 passes and qualified state-specific legal/compliance review is complete.
-- Most recent recorded final commands remain: `pnpm --filter @workspace/deal-domain run test` — **PASS 160/160**; `pnpm --filter @workspace/api-server exec tsx --test 'src/services/*.test.ts'` — **PASS 71/71**; `pnpm run typecheck` — **PASS**; `pnpm run build` — **FAIL** because `PORT` is missing in mockup-sandbox; artifact-specific web, mockup and API builds — **PASS**; `DANGEROUSLY_ALLOW_GIT=1 git diff --check` — **PASS**. These were not rerun during this queue reconciliation.
-- Changed files for this reconciliation: **`docs/real-estate-os-build-checkpoint.md` only**. No application code changed.
+- Current final commands and counts are recorded under the preceding Task 10 verification section. `PORT=20639 BASE_PATH=/ pnpm run build` — **PASS**; the older failure from running the recursive build without `PORT` is superseded.
+- The available automated checks are GREEN, but the real-world acquisition-to-closing workflow is not GREEN. The source-feed HTTP 400, lack of authenticated human evidence, phone-specific seller gate, and positive offer/transaction persistence boundary remain documented limitations, not additional next blockers.
+- Scope remains deferred: founder mode, then public marketplace, state-specific compliance, Rad Data/RadID, and separate company-level versus personal Naelo work must wait until the existing acquisition/deal workflow is proven.
 
-**One next blocker:** an authenticated Owner must verify one real seller/property identity, lawful contact permission, and a current permitted direct route. Until that happens, P12 cannot be completed and founder-mode directives 6–9 remain unstarted. No public marketplace or RadID/Naelo integration work is authorized by this queue.
+**Exactly one next blocker:** an authenticated Owner must verify one real seller/property identity, lawful contact permission and scope, and a current permitted direct route. Until that evidence is reviewed and saved, P12 cannot pass and positive offer/transaction flows remain correctly gated. No founder marketplace work should begin before that threshold.
+
+### Directive 11 of 15 — founder-workspace readiness assessment — BLOCKED
+
+- Prerequisite inspection: Directives 1–10 have recorded outcomes above, but they are not all satisfied. Directives 2 and 3 remain blocked; Directive 4 is partial; Directives 7–9 remain partial at the seller evidence/persisted-lifecycle boundary. Directive 10 verifies available automated checks, not the complete live acquisition/deal workflow.
+- Exact unmet evidence: no authenticated Owner has reviewed and saved one real seller/property identity, lawful contact permission and scope, and a current permitted direct route. The current `property-contactability-gate.ts` remains phone-specific, and `deal-store.ts` rejects `CALL_READY` with 409 when its seller-contactability blockers remain. No valid live seller evidence was presented in this assessment.
+- The synthetic `exercise:offers` and `exercise:transactions` stop at this gate; the portal exercise also fails before offer-response assertions at the expected 409. Positive persisted offers, buyer commitment, transaction milestones, fee outcomes, and closing are therefore not proven. The separate permitted-feed exercise also remains partial after the sheriff-deed API returned HTTP 400.
+- Repository state was inspected before this entry: the worktree contains existing changes from Tasks 5–8 and the checkpoint, listed in Directive 10; `git diff --check` passed. No prior changes or user data were reset, stashed, overwritten, or removed.
+- **No founder-workspace readiness assessment or founder-mode implementation was started.** Access-control assumptions and founder capabilities are not assessed as ready because the prerequisite acquisition/deal workflow has not been proven.
+- Founder mode, public marketplace, state-specific compliance, Rad Data/RadID, and separate company-level versus personal Naelo remain deferred. This entry changes only the existing checkpoint; no new app or checkpoint was created.
+
+### Directive 12 of 15 — founder buyer-list intake and criteria — BLOCKED
+
+- Prerequisites are unmet: although Directives 1–10 have recorded outcomes, Directives 2 and 3 are BLOCKED, Directive 4 is PARTIAL, and Directives 7–9 are PARTIAL. Directive 11 explicitly records the private founder-workspace readiness assessment as BLOCKED.
+- The core acquisition/deal workflow is not proven. There is no authenticated Owner-reviewed real seller/property identity, lawful contact permission and scope, or current permitted direct route. The seller gate still rejects `CALL_READY` with 409; positive persisted offer and transaction paths have not been verified.
+- No founder buyer-list intake or criteria implementation, code inspection for that implementation, database change, or test run was started. Buyer-list self-reports, synthetic funding, and existing buyer workflows do not substitute for Directive 11 readiness.
+- Repository inspection showed the existing worktree changes listed under Directive 10; `git diff --check` passed before this entry. All prior changes and user data are preserved. This directive changes only this checkpoint entry.
+- Founder mode and buyer-list work remain NOT STARTED; public marketplace, state-specific compliance, Rad Data/RadID, and separate company-level versus personal Naelo remain deferred.
+
+### Directive 13 of 15 — buyer-first property discovery and matching — BLOCKED
+
+- Required dependency evidence is absent: Directive 11 is recorded **BLOCKED** because an authenticated Owner has not reviewed and saved a real seller/property identity, lawful contact permission and scope, and a current permitted direct route.
+- Directive 12 is recorded **BLOCKED** because it depends on Directive 11; no founder buyer-list intake or criteria implementation has been started or tested.
+- Directives 1–10 have recorded outcomes but are not all complete: Directives 2–3 remain BLOCKED, Directive 4 is PARTIAL, and Directives 7–9 are PARTIAL. The core acquisition/deal workflow is not proven; positive persisted offer and transaction paths stop at the seller `CALL_READY` evidence gate.
+- **No buyer-first property discovery or matching implementation, code inspection, database change, or test run was started.** No listings or provider activity were fabricated, and no prerequisite was bypassed.
+- The existing worktree changes listed in Directive 10 were preserved. This directive changes only the existing checkpoint; no new app or checkpoint was created.
+
+### Directive 14 of 15 — property-first buyer matching and deal workspace — BLOCKED
+
+- Required dependency evidence is absent: Directive 11 remains **BLOCKED** because there is no authenticated Owner-reviewed real seller/property identity, lawful contact permission and scope, or current permitted direct route; the core acquisition/deal workflow remains unproven.
+- Directive 12 remains **BLOCKED**; founder buyer-list intake and criteria have not been implemented or tested. Directive 13 remains **BLOCKED** on those same prerequisites; no buyer-first workflow has been completed or tested.
+- Directives 1–10 have recorded outcomes, but Directives 2–3 remain BLOCKED, Directive 4 is PARTIAL, and Directives 7–9 are PARTIAL. Synthetic buyer matching tests do not satisfy the required founder-workspace dependencies or prove a real property-to-transaction workflow.
+- **No property-first matching or deal-workspace implementation, code inspection, database change, or test run was started.** No buyer readiness, funding, listings, or provider activity was invented, and no call, outreach, or offer was initiated.
+- The current worktree remains as inspected and all existing user changes are preserved. This directive changes only the existing checkpoint; no new app or checkpoint was created.
+
+### Directive 15 of 15 — founder-mode end-to-end verification and public-marketplace gate — BLOCKED
+
+- **Prerequisite status:** Directives 11, 12, 13, and 14 are all recorded BLOCKED. Directives 2–3 are BLOCKED, Directive 4 is PARTIAL, and Directives 7–9 are PARTIAL. Directive 10's passing automated checks do not prove the core live acquisition/deal workflow.
+- **Exact missing evidence and implementation:** no authenticated Owner-reviewed seller/property identity, lawful contact permission and scope, or current permitted direct route; no proven positive persisted offer/transaction path; no private founder workspace readiness; no founder buyer-list intake/criteria; and no buyer-first or property-first founder matching flow.
+- Consequently, neither founder journey can be tested: adding a buyer then matching candidate properties, or selecting a property then matching saved buyers and following evidence/permission gates through offer and milestones. The existing synthetic buyer tests and gated exercises are not evidence that these founder flows exist or work.
+- **No founder-mode end-to-end tests, implementation, or marketplace work were started.** New tests, typechecks, and builds for this directive were **NOT RUN** because its prerequisites are unmet. Earlier Directive 10 test/build results remain the latest available general verification, not founder-readiness evidence.
+- The public marketplace gate is **NOT PASSED**. Keep it deferred along with the specified pricing/membership, transaction-fee, transaction-structure, editable-offer, messaging, state-legal, Rad Data/RadID, and Naelo separation requirements.
+- Existing worktree changes listed in Directive 10 remain preserved; this directive changes only this checkpoint. `git diff --check` is run after this entry. The sole next blocker remains the authenticated Owner evidence recorded under Directive 10; no additional next blocker is introduced.
