@@ -1,4 +1,4 @@
-import { Router, type IRouter } from "express";
+import { Router, type IRouter, type RequestHandler } from "express";
 import * as schemas from "@workspace/api-zod";
 import { authenticated, membership, roles, sensitiveWorkspaceData } from "../middlewares/access";
 import { actor, parse } from "./operations";
@@ -32,8 +32,12 @@ publicBuyerPortalRouter.post("/portal/deal/response", async (req, res) => {
   ));
 });
 
-export const internalDistributionRouter: IRouter = Router();
-internalDistributionRouter.use(authenticated, membership);
+export function createInternalDistributionRouter(
+  auth: RequestHandler = authenticated,
+  member: RequestHandler = membership,
+) {
+const internalDistributionRouter: IRouter = Router();
+internalDistributionRouter.use(auth, member);
 internalDistributionRouter.use(sensitiveWorkspaceData);
 internalDistributionRouter.get("/deals/:id/distribution", async (req, res) => {
   const { id } = parse(schemas.GetDealDistributionParams, req.params);
@@ -68,3 +72,7 @@ internalDistributionRouter.post("/deals/:id/distribution/release-acceptance", ro
     id, parse(schemas.ReleaseDistributionAcceptanceBody, req.body), actor(res),
   )));
 });
+return internalDistributionRouter;
+}
+
+export const internalDistributionRouter: IRouter = createInternalDistributionRouter();

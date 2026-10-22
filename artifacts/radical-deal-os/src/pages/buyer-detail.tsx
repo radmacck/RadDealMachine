@@ -6,6 +6,7 @@ import { getGetBuyerQueryKey, getGetBuyerContactResearchQueryKey, useGetBuyerCon
 import { ErrorNotice, RowsSkeleton } from '@/components/state-views';
 import { BuyerForm } from '@/components/buyer-form';
 import { BuyerVerificationForm } from '@/components/buyer-verification-form';
+import { BuyerPropertyDiscoveryPanel } from '@/components/buyer-property-discovery-panel';
 import { ApprovalTag, VerificationTag, isQualified } from '@/components/buyer-status';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -53,7 +54,7 @@ export default function BuyerDetail() {
     Date.parse(permission.capturedAt)<=Date.now()&&Date.parse(permission.capturedAt)+30*86400000>Date.now()&&Date.parse(permission.validUntil)>Date.now();
   const buyerCurrent=b.destinationKind!=='DEAL_FINDER'&&b.destinationKind!=='GURU';
   const evidenceChecklist=[
-    {label:'Identity',ready:b.verificationStatus==='VERIFIED'&&!!b.identityEvidenceUrl,detail:b.identityEvidenceUrl?'Independent identity evidence recorded.':'No reviewed identity evidence.',next:'Owner: review identity evidence and record the source, review date, and expiry.'},
+     {label:'Identity',ready:b.verificationStatus==='VERIFIED'&&!!b.identityEvidenceUrl,detail:b.identityEvidenceUrl?'Identity evidence reference recorded.':'No reviewed identity evidence.',next:'Owner: confirm the source is independent and record the review date and expiry.'},
     {label:'Current buy box',ready:b.approvalStatus==='APPROVED'&&!!b.criteriaEvidenceUrl,detail:`${b.criteria?.states.join(', ')||'No market'} · ${b.criteria?.propertyTypes.join(', ')||'no property types'} · ${b.criteria?money(b.criteria.minPurchasePrice)+'–'+money(b.criteria.maxPurchasePrice):'no price band'} · ${b.criteria?.rehabTolerance||'no condition tolerance'} · ${b.criteria?.closingDays??'no'} closing days.`,next:'Owner: compare target markets, property types, price band, condition, and timeline to current dated criteria evidence.'},
     {label:'Current buying intent',ready:b.currentBuyingStatus==='BUYING'&&b.approvalStatus==='APPROVED'&&!!b.buyingEvidenceUrl&&!!b.buyingEvidenceAt,detail:`${b.currentBuyingStatus??'UNKNOWN'} · evidence ${b.buyingEvidenceAt?fmtDate(b.buyingEvidenceAt):'missing'}.`,next:'Owner: confirm current buying status from dated evidence; account for any newer reply.'},
     {label:'Proof of funds/capacity',ready:!buyerCurrent||!!b.fundingEvidenceUrl&&!!b.availableFunds&&b.availableFunds>0&&!!b.verifiedFundingTypes?.length,detail:buyerCurrent?`${b.availableFunds?money(b.availableFunds):'No verified capacity'} · methods evidenced: ${b.verifiedFundingTypes?.join(', ')||'none'} · buyer-stated methods: ${(b.criteria?.fundingTypes??[]).join(', ')||'none'}.`:'Not applicable to this destination.',next:'Owner: review current proof and record the amount and methods it actually supports; preferences alone are not capacity.'},
@@ -247,6 +248,9 @@ export default function BuyerDetail() {
       <div className="grid gap-6 lg:grid-cols-2">
         <section className="ledger p-4" data-testid="panel-buyer-criteria">
           <p className="eyebrow mb-3">Contact, destination and buy box</p>
+          <p className="mb-3 text-xs text-muted-foreground" data-testid="buyer-criteria-provenance">
+            Profile source: {b.source || 'not recorded'} · record last updated {fmtDate(b.updatedAt)}. Criteria remain indicated buyer-reported preferences unless current Owner-reviewed evidence is listed above.
+          </p>
           <BuyerForm key={`${b.id}:${epoch}`} buyer={editing?{...editing,...(contactResearch.data??{})}:editing} disabled={!canResearch} submitLabel="Save buyer" pending={update.isPending} error={update.error} onCancel={reloadForms}
             onSubmit={(data) => update.mutate({ id, data: { ...data, version: editing.version } }, { onSuccess: (saved) => { setFormBuyer(saved);invalidate(); setEpoch((e) => e + 1); toast({ title: 'Buyer saved', description: 'Matching queued against open deals.' }); } })} />
         </section>
@@ -256,6 +260,7 @@ export default function BuyerDetail() {
             onSubmit={(data, done) => verify.mutate({ id, data }, { onSuccess: (saved) => {setFormBuyer(saved);setEpoch(e=>e+1);invalidate(); done(); toast({ title: 'Verification recorded' }); } })} />
         </section>
       </div>
+      {isOwner && <BuyerPropertyDiscoveryPanel buyer={b} isOwner={isOwner} />}
     </div>
   );
 }

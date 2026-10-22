@@ -1044,6 +1044,9 @@ export function DealOperationsPanel({ detail, operations, loading, error, onRetr
           <Button size="sm" variant="outline" disabled={!(canResearch || canCall || isOwner) || refresh.isPending} onClick={() => refresh.mutate({ id }, { onSuccess: () => { invalidate(id); toast({ title: 'Matching refreshed' }); } })} data-testid="button-refresh-matches"><RefreshCw className={`mr-1.5 h-3.5 w-3.5 ${refresh.isPending ? 'animate-spin' : ''}`} />Refresh matches</Button>
         </div>
         {refresh.error != null && <div className="mb-3"><ErrorNotice error={refresh.error} /></div>}
+        {ops.matches.length > 0 && <p className="mb-3 text-xs text-muted-foreground" data-testid="buyer-match-readiness-boundary">
+          Match results combine criteria fit with current evidence gates. The score is a checklist count, not a probability or guarantee; matching does not establish new funding, buyer commitment, or a completed closing.
+        </p>}
         {ops.matches.length === 0 && <p className="text-sm text-muted-foreground" data-testid="empty-matches">No buyers evaluated yet. <Link href="/buyers" className="underline">Add a buyer</Link> or refresh matching.</p>}
         {ops.matches.length > 0 && !ops.matches.some((m) => m.eligible && (m.destinationKind ?? 'BUYER') === 'BUYER') && (
           <div className="mb-3 border-l-2 border-warn bg-warn/5 p-3 text-sm" role="status" data-testid="no-qualified-acquisition-buyer">

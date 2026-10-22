@@ -1,4 +1,4 @@
-import { Router, type IRouter, type Request, type Response } from "express";
+import { Router, type IRouter, type Request, type RequestHandler, type Response } from "express";
 import { z } from "zod";
 import * as contract from "@workspace/api-zod";
 import { DomainError } from "@workspace/deal-domain";
@@ -16,6 +16,10 @@ import { propagateStaleTransactionDocuments } from "../services/transaction-stor
 import { exportDealEvidencePacket } from "../services/evidence-packet";
 import { listOperationalAlerts, updateOperationalAlert } from "../services/operational-alerts";
 
+export function createDealsRouter(
+  auth: RequestHandler = authenticated,
+  member: RequestHandler = membership,
+) {
 const router: IRouter = Router();
 // Trim strings before schema validation so required fields cannot be whitespace-only.
 function clean(value: unknown): unknown {
@@ -38,14 +42,14 @@ function send<T extends z.ZodType>(res: Response, schema: T, value: unknown, sta
 const research = roles("OWNER","ANALYST");
 const operate = roles("OWNER","OPERATOR");
 const contactResearch = roles("OWNER","ANALYST","OPERATOR");
-router.use(authenticated);
+router.use(auth);
 router.get("/access",async (_req,res) => {
   send(res,contract.GetAccessResponse,await access.getAccess(String(res.locals.actor)));
 });
 router.post("/access",async (_req,res) => {
   send(res,contract.ClaimWorkspaceResponse,await access.claimWorkspace(String(res.locals.actor)));
 });
-router.use(membership);
+router.use(member);
 router.use(sensitiveWorkspaceData);
 router.post("/leads/:id/evidence-intake",research,async(req,res)=>{
   send(res,contract.IntakePropertyEvidenceResponse,await intakePropertyEvidence(leadId(req),parse(contract.IntakePropertyEvidenceBody,req.body),
@@ -208,4 +212,7 @@ router.put("/assumptions",roles("OWNER"),async (req,res) => {
 });
 router.get("/audit",roles("OWNER"),async (_req,res) => send(res,contract.ListAuditResponse,await store.listAudit()));
 
-export default router;
+return router;
+}
+
+export default createDealsRouter();

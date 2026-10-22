@@ -18,13 +18,14 @@ import * as workers from "../services/workers";
 import { listHandoffs, recordHandoffEvent } from "../services/handoffs";
 import { getWorkspaceSetupStatus, saveWorkspaceSetup } from "../services/workspace-setup";
 
-const router: IRouter = Router();
-router.use(authenticated,membership);
-router.use(sensitiveWorkspaceData);
-router.get("/transaction-documents/readiness",roles("OWNER","OPERATOR"),async(req,res)=>{
-  const {leadId} = parse(z.object({leadId:z.string().uuid().optional()}),req.query);
-  res.json(schemas.GetTransactionDocumentReadinessResponse.parse(await getTransactionDocumentReadiness(actor(res),leadId)));
-});
+export const actor = (res: {locals:Record<string,unknown>}): OfferActor => ({id:String(res.locals.actor),role:String(res.locals.role)});
+export function parse<T extends z.ZodType>(schema: T,value: unknown): z.infer<T> {
+  const clean = (v: unknown): unknown => typeof v==="string"?v.trim():Array.isArray(v)?v.map(clean):
+    v && typeof v==="object"?Object.fromEntries(Object.entries(v).map(([k,x])=>[k,clean(x)])):v;
+  const parsed = schema.safeParse(clean(value));
+  if (!parsed.success) throw new DomainError(parsed.error.issues.map(e=>`${e.path.join(".")}: ${e.message}`).join("; "),400);
+  return parsed.data;
+}
 export function createTransactionTemplateReviewRouter(auth?:RequestHandler,member?:RequestHandler) {
   const reviewRouter=Router();
   if(auth&&member) reviewRouter.use(auth,member);
@@ -34,6 +35,18 @@ export function createTransactionTemplateReviewRouter(auth?:RequestHandler,membe
   });
   return reviewRouter;
 }
+
+export function createOperationsRouter(
+  auth: RequestHandler = authenticated,
+  member: RequestHandler = membership,
+) {
+const router: IRouter = Router();
+router.use(auth,member);
+router.use(sensitiveWorkspaceData);
+router.get("/transaction-documents/readiness",roles("OWNER","OPERATOR"),async(req,res)=>{
+  const {leadId} = parse(z.object({leadId:z.string().uuid().optional()}),req.query);
+  res.json(schemas.GetTransactionDocumentReadinessResponse.parse(await getTransactionDocumentReadiness(actor(res),leadId)));
+});
 router.use(createTransactionTemplateReviewRouter());
 router.get("/deals/:id/contract/clause-review-requests",roles("OWNER","OPERATOR"),async(req,res)=>{
   const {id} = parse(schemas.GetClauseReviewRequestsParams,req.params);
@@ -70,32 +83,24 @@ router.patch("/outcome-learning/recommendations/:id",roles("OWNER"),async(req,re
     id,body.decision,body.note,actor(res),
   )));
 });
-export const actor = (res: {locals:Record<string,unknown>}): OfferActor => ({id:String(res.locals.actor),role:String(res.locals.role)});
-export function parse<T extends z.ZodType>(schema: T,value: unknown): z.infer<T> {
-  const clean = (v: unknown): unknown => typeof v==="string"?v.trim():Array.isArray(v)?v.map(clean):
-    v && typeof v==="object"?Object.fromEntries(Object.entries(v).map(([k,x])=>[k,clean(x)])):v;
-  const parsed = schema.safeParse(clean(value));
-  if (!parsed.success) throw new DomainError(parsed.error.issues.map(e=>`${e.path.join(".")}: ${e.message}`).join("; "),400);
-  return parsed.data;
-}
-router.get("/buyers",async (_req,res)=>{res.json(schemas.ListBuyersResponse.parse(await allBuyerRecords()));});
-router.get("/buyers/capacity",async (_req,res)=>{res.json(schemas.GetBuyerCapacityResponse.parse(await buyerCapacityRecords()));});
-router.post("/buyers/discovered",roles("OWNER","ANALYST"),async(req,res)=>{
+router.get("/buyers",roles("OWNER"),async (_req,res)=>{res.json(schemas.ListBuyersResponse.parse(await allBuyerRecords()));});
+router.get("/buyers/capacity",roles("OWNER"),async (_req,res)=>{res.json(schemas.GetBuyerCapacityResponse.parse(await buyerCapacityRecords()));});
+router.post("/buyers/discovered",roles("OWNER"),async(req,res)=>{
   res.status(201).json(schemas.DiscoverBuyerResponse.parse(await poolOperations.discoverBuyer(parse(schemas.DiscoverBuyerBody,req.body),actor(res))));
 });
 router.get("/worker-capabilities",(_req,res)=>res.json(schemas.GetWorkerCapabilitiesResponse.parse(WORKER_CAPABILITIES)));
-router.post("/buyers",roles("OWNER","ANALYST"),async(req,res)=>{
+router.post("/buyers",roles("OWNER"),async(req,res)=>{
   res.status(201).json(schemas.CreateBuyerResponse.parse(await buyers.createBuyer(parse(schemas.CreateBuyerBody,req.body),actor(res))));
 });
-router.get("/buyers/:id",async(req,res)=>{
+router.get("/buyers/:id",roles("OWNER"),async(req,res)=>{
   const {id} = parse(schemas.GetBuyerParams,req.params);
   res.json(schemas.GetBuyerResponse.parse(await getBuyerRecord(id)));
 });
-router.get("/buyers/:id/contact-research",roles("OWNER","ANALYST","OPERATOR"),async(req,res)=>{
+router.get("/buyers/:id/contact-research",roles("OWNER"),async(req,res)=>{
   const {id}=parse(z.object({id:z.string().uuid()}),req.params);
   res.json(schemas.GetBuyerContactResearchResponse.parse(await getBuyerContactResearchRecord(id)));
 });
-router.patch("/buyers/:id",roles("OWNER","ANALYST"),async(req,res)=>{
+router.patch("/buyers/:id",roles("OWNER"),async(req,res)=>{
   const {id} = parse(schemas.UpdateBuyerParams,req.params);
   res.json(schemas.UpdateBuyerResponse.parse(await buyers.updateBuyer(id,parse(schemas.UpdateBuyerBody,req.body),actor(res))));
 });
@@ -116,7 +121,7 @@ router.post("/buyers/:id/qualification-portal",roles("OWNER"),async(req,res)=>{
   );
   res.status(201).json(schemas.CreateBuyerQualificationPortalInviteResponse.parse(result));
 });
-router.post("/buyers/:id/qualification",roles("OWNER","ANALYST"),async(req,res)=>{
+router.post("/buyers/:id/qualification",roles("OWNER"),async(req,res)=>{
   const {id} = parse(schemas.RequestBuyerQualificationParams,req.params);
   res.json(schemas.RequestBuyerQualificationResponse.parse(await poolOperations.requestBuyerQualification(id,
     parse(schemas.RequestBuyerQualificationBody,req.body),actor(res))));
@@ -202,4 +207,7 @@ router.post("/handoffs/:id/events",roles("OWNER","ANALYST","OPERATOR"),async(req
 router.post("/workers",roles("OWNER","ANALYST"),async(req,res)=>{
   res.status(201).json(schemas.SubmitWorkerJobResponse.parse(await workers.submitWorkerJob(parse(schemas.SubmitWorkerJobBody,req.body),actor(res))));
 });
-export default router;
+return router;
+}
+
+export default createOperationsRouter();

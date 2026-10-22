@@ -158,6 +158,27 @@ const [unmatchedRecord] = await db.select().from(unmatchedPropertySourceObservat
 assert.equal(unmatchedRecord?.status, "UNMATCHED");
 assert.equal(unmatchedRecord?.linkedDiscoveryId, null,
   "Unmatched source records remain unlinked until an exact supported identity match is available.");
+const changedAt=new Date(now.getTime()+5*60_000);
+await persistUnmatchedPropertySourceObservations([{
+  ...unmatchedFixture,capturedAt:changedAt.toISOString(),
+  payload:{state:"SOURCE_RECORD_UPDATED",recordCount:2,recordIdentities:["synthetic-record-1","synthetic-record-2"],
+    evidenceRef:"synthetic changed source snapshot"},
+}],actor,changedAt);
+const [changedUnmatchedRecord]=await db.select().from(unmatchedPropertySourceObservationsTable)
+  .where(eq(unmatchedPropertySourceObservationsTable.sourceKey,unmatchedFixture.sourceKey));
+const unmatchedHistory=changedUnmatchedRecord?.payload.history as Array<Record<string,unknown>>|undefined;
+assert.equal(unmatchedHistory?.length,1,"A material source change appends the superseded evidence exactly once.");
+assert.equal(unmatchedHistory?.[0]?.state,"SOURCE_RECORD_OBSERVED");
+assert.deepEqual(unmatchedHistory?.[0]?.recordIdentities,["synthetic-record-1"]);
+await persistUnmatchedPropertySourceObservations([{
+  ...unmatchedFixture,capturedAt:changedAt.toISOString(),
+  payload:{state:"SOURCE_RECORD_UPDATED",recordCount:2,recordIdentities:["synthetic-record-1","synthetic-record-2"],
+    evidenceRef:"synthetic changed source snapshot"},
+}],actor,changedAt);
+const [replayedUnmatchedRecord]=await db.select().from(unmatchedPropertySourceObservationsTable)
+  .where(eq(unmatchedPropertySourceObservationsTable.sourceKey,unmatchedFixture.sourceKey));
+assert.equal((replayedUnmatchedRecord?.payload.history as unknown[]|undefined)?.length,1,
+  "An exact same-capture source replay must not duplicate its history snapshot.");
 assert.equal((await db.select().from(propertyDiscoveriesTable)).length, 3);
 await assert.rejects(promotePropertyDiscovery(firstObservation.id, {
   version: secondFeed.version,

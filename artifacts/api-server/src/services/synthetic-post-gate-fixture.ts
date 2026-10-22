@@ -9,7 +9,12 @@ function assertExerciseSchema() {
   }
 }
 
-export async function assertSyntheticCallReadyBlocked(leadId: string, actorId: string, now: Date) {
+export async function assertSyntheticCallReadyBlocked(
+  leadId: string,
+  actorId: string,
+  now: Date,
+  expectedMessage = "CALL_READY is blocked: Link this lead to a source-backed property discovery and complete ownership, seller identity, contact permission, and route review.",
+) {
   assertExerciseSchema();
   const before = await store.leadDetail(leadId, undefined, now);
   const transitionCount = (await db.select().from(transitionsTable).where(eq(transitionsTable.leadId, leadId))).length;
@@ -24,8 +29,7 @@ export async function assertSyntheticCallReadyBlocked(leadId: string, actorId: s
     }, actorId, now),
     error => {
       assert.equal((error as { status?: number }).status, 409);
-        assert.equal((error as Error).message,
-          "CALL_READY is blocked: Link this lead to a source-backed property discovery and complete ownership, seller identity, contact permission, and route review.");
+        assert.equal((error as Error).message, expectedMessage);
       return true;
     },
   );

@@ -5,9 +5,16 @@ import { Bell, ClipboardCheck, Gauge, Headphones, House, ListChecks, LogOut, Rad
 import { getGetCommandCenterQueryKey, useGetCommandCenter } from '@workspace/api-client-react';
 import { useAccess } from '@/hooks/use-access';
 import { WorkspaceSearchContext } from '@/components/workspace-search';
+import { showWorkspaceNavigationItem } from '@/lib/founder-workspace-navigation';
 import '@/field-desk.css';
 
 const NAV_GROUPS = [
+  {
+    label: 'Founder workspace',
+    items: [
+      { href: '/workspace', label: 'Workspace home', icon: House },
+    ],
+  },
   {
     label: 'Seller acquisition',
     items: [
@@ -50,7 +57,13 @@ export function AppShell({ children }: { children: ReactNode }) {
   const ready = dash.data?.calls.length ?? 0;
   const failedJobs = dash.data?.jobs.filter((job) => job.state === 'FAILED').length ?? 0;
   const base = import.meta.env.BASE_URL.replace(/\/$/, '');
-  const mainNav = NAV_GROUPS.flatMap((group) => group.items);
+  const navGroups = NAV_GROUPS
+    .map((group) => ({
+      ...group,
+      items: group.items.filter((item) => showWorkspaceNavigationItem(item.href, access.role)),
+    }))
+    .filter((group) => group.items.length > 0);
+  const mainNav = navGroups.flatMap((group) => group.items);
   const currentPage = mainNav.find((item) => loc === item.href || loc.startsWith(`${item.href}/`));
   const pageLabel = loc.startsWith('/deals/') ? 'Deal detail' : currentPage?.label ?? 'Workspace';
   const displayName = user?.fullName || user?.primaryEmailAddress?.emailAddress || 'Workspace account';
@@ -80,7 +93,7 @@ export function AppShell({ children }: { children: ReactNode }) {
             <span><div className="fd-workspace-name">Deal workspace</div><div className="fd-workspace-loc">Owner-controlled operations</div></span>
           </div>
           <nav className="fd-nav-groups" aria-label="Operating systems">
-            {NAV_GROUPS.map((group) => (
+            {navGroups.map((group) => (
               <section className="fd-nav-group" key={group.label} aria-label={group.label}>
                 <div className="fd-nav-label">{group.label}</div>
                 <div className="fd-nav">

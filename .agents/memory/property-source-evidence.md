@@ -28,3 +28,9 @@ Relevance signals must be freshness-checked at scoring and again at promotion; o
 **Why:** qualification previously scored signal strength and provenance classification without considering `capturedAt`, allowing stale evidence to cross a promotion threshold.
 
 **How to apply:** Evaluate against an explicit current time, exclude invalid/future/expired signal captures, show a refresh blocker, and derive unpromoted discovery status from current eligible evidence instead of a cached status.
+
+When promoting a discovery, retain a persisted observation's actual source key and the property's observed county; never hardcode a provider or jurisdiction.
+
+**Why:** A hardcoded provider key breaks source lineage for other permitted feeds, and a hardcoded county can misroute jurisdiction-specific transaction review.
+
+**How to apply:** Promote only from discoveries with persisted observations, choose a deterministic observation reference, and carry observed property geography into the canonical lead.

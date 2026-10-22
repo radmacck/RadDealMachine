@@ -2,8 +2,8 @@ import { useEffect, useState } from 'react';
 import { useLocation } from 'wouter';
 import { useQueryClient } from '@tanstack/react-query';
 import {
-  getGetCommandCenterQueryKey, getListPropertyDiscoveriesQueryKey, getSearchPublicPropertiesQueryKey,
-  useAddPropertyRelevanceSignal, useDisqualifyPropertyDiscovery, useDiscoverBuyer, useListPropertyDiscoveries,
+  getGetCommandCenterQueryKey, getListBuyersQueryKey, getListPropertyDiscoveriesQueryKey, getSearchPublicPropertiesQueryKey,
+  useAddPropertyRelevanceSignal, useDisqualifyPropertyDiscovery, useDiscoverBuyer, useListBuyers, useListPropertyDiscoveries,
   useGetPropertySourceCoverage, usePromotePropertyDiscovery, useRecordPublicPropertyDiscovery,
   useSavePropertyDiscoveryCriteria, useSearchPublicProperties, useSavePropertyContactResearchCase,
   type PropertyEvidenceClassification, type PropertyEvidenceSourceType, type PropertySignalKey,
@@ -13,12 +13,14 @@ import {
 import { PageHeader } from '@/components/page-header';
 import { EmptyState, ErrorNotice, RowsSkeleton } from '@/components/state-views';
 import { RecordFacts } from '@/components/source-research';
+import { PropertyBuyerMatches } from '@/components/property-buyer-matches';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useAccess } from '@/hooks/use-access';
 import { useInvalidateWork } from '@/hooks/use-invalidate';
 import { useToast } from '@/hooks/use-toast';
 import { normalizeContactResearchEvidenceReference } from '@/lib/contact-research-evidence';
+import { isQuerySnapshotCurrent } from '@/lib/command-center-state';
 
 type Lane = 'properties' | 'buyer_candidates';
 const DISCOVERY_PAGE_SIZE = 25;
@@ -124,6 +126,7 @@ function ContactResearchCaseEditor({
 
 export default function Sources() {
   const { canResearch, access } = useAccess();
+  const isOwner = access.role === 'OWNER';
   const canReviewDiscovery = ['OWNER', 'OPERATOR', 'ANALYST'].includes(access.role);
   const [, nav] = useLocation();
   const qc = useQueryClient();
@@ -167,6 +170,7 @@ export default function Sources() {
     ...(unmatchedCursor ? { unmatchedCursor } : {}),
   };
   const discoveries = useListPropertyDiscoveries(discoveryParams);
+  const discoverySnapshotCurrent = isQuerySnapshotCurrent(discoveries.isFetching, discoveries.isError);
   const recordDiscovery = useRecordPublicPropertyDiscovery();
   const addSignal = useAddPropertyRelevanceSignal();
   const promoteDiscovery = usePromotePropertyDiscovery();
@@ -174,6 +178,7 @@ export default function Sources() {
   const saveContactResearch = useSavePropertyContactResearchCase();
   const saveCriteria = useSavePropertyDiscoveryCriteria();
   const discover = useDiscoverBuyer();
+  const buyersQuery = useListBuyers({ query: { queryKey: getListBuyersQueryKey(), enabled: isOwner, staleTime: 10_000, refetchInterval: 20_000 } });
   const src = search.data?.source ?? sourceCoverage.data?.registeredSources[0];
   const criterion = discoveries.data?.criteria;
   useEffect(() => {
@@ -506,6 +511,13 @@ export default function Sources() {
         )}
         {discoveries.isLoading && <RowsSkeleton rows={2} />}
         {discoveries.isError && <ErrorNotice error={discoveries.error} onRetry={() => discoveries.refetch()} />}
+        {discoveries.data && !discoverySnapshotCurrent && (
+          <div role="status" className="rounded border border-signal/50 bg-signal/5 p-3 text-sm" data-testid="discovery-snapshot-stale">
+            {discoveries.isError
+              ? 'Showing the last saved property results. Refresh failed, so these results are stale and qualification actions are paused.'
+              : 'Refreshing property results. Qualification actions are paused until the current results load.'}
+          </div>
+        )}
         {recordDiscovery.error && <ErrorNotice error={recordDiscovery.error} />}
         {addSignal.error && <ErrorNotice error={addSignal.error} />}
         {promoteDiscovery.error && <ErrorNotice error={promoteDiscovery.error} />}
@@ -598,6 +610,23 @@ export default function Sources() {
                     {item.demandFit.snapshotFresh ? "Saved demand snapshot matches current buyer evidence." : "Live buyer evidence is used here; the saved ranking snapshot is waiting for the durable refresh worker."}
                   </p>
                 </div>
+                {isOwner && <PropertyBuyerMatches
+                  property={{
+                    state: item.property.state, city: item.property.city, county: item.property.county,
+                    zip: item.property.zip, propertyType: item.property.propertyType, sqft: item.property.sqft,
+                    beds: item.property.beds, baths: item.property.baths, askingPrice: null,
+                    address: item.property.address, assessedValue: item.property.assessedValue,
+                    lastSalePrice: item.property.lastSalePrice,
+                    provenanceUsed: item.sourceObservations
+                      .map(source => `${source.sourceName} · ${source.lastObservedAt} · ${source.classification ?? 'unclassified'} · ${source.sourceUrl} · ref ${source.evidenceRef ?? 'not recorded'}`)
+                      .sort((a, b) => a.localeCompare(b)),
+                  }}
+                  buyers={buyersQuery.data ?? []}
+                  now={new Date()}
+                  loading={buyersQuery.isLoading}
+                  error={buyersQuery.isError}
+                  onRetry={() => { void buyersQuery.refetch(); }}
+                />}
                 <div className="mt-3 rounded bg-muted/40 p-3" data-testid={`source-observations-${item.id}`}>
                   <p className="text-xs font-semibold uppercase tracking-wide">Source refresh trail</p>
                   <ul className="mt-1 space-y-2 text-xs">
@@ -620,7 +649,7 @@ export default function Sources() {
                     ))}
                   </ul>
                 </div>
-                {canReviewDiscovery && !['QUALIFIED_LEAD', 'CALL_READY', 'DISQUALIFIED'].includes(item.status) && (
+                {canReviewDiscovery && discoverySnapshotCurrent && !['QUALIFIED_LEAD', 'CALL_READY', 'DISQUALIFIED'].includes(item.status) && (
                   <details className="mt-3 rounded border p-3" open={openDiscoveryId === item.id} onToggle={(e) => { if ((e.currentTarget as HTMLDetailsElement).open) setOpenDiscoveryId(item.id); }}>
                     <summary className="cursor-pointer text-sm font-medium">Add sourced evidence or decide this candidate</summary>
                     <div className="mt-3 space-y-3">

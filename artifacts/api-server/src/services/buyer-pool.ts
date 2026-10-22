@@ -344,7 +344,7 @@ export async function reviewBuyerPool(now = new Date()) {
   return `${created} durable qualification/reverification tasks prepared; current approval is computed from dated evidence. No messages sent.`;
 }
 export async function requestBuyerQualification(id:string,input:unknown,actor:OfferActor,now = new Date()) {
-  assertOperationsRole(actor,["OWNER","ANALYST"]);
+  assertOperationsRole(actor,["OWNER"]);
   const p = RequestBuyerQualificationBody.parse(input);
   return db.transaction(async tx=>{
     const [row] = await tx.select().from(buyersTable).where(eq(buyersTable.id,id)).for("update");

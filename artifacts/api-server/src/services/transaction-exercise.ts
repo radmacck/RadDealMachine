@@ -4,7 +4,7 @@ import { once } from "node:events";
 import { AddressInfo } from "node:net";
 import { createHash, randomUUID } from "node:crypto";
 import { PDFDocument } from "pdf-lib";
-import { db,pool,analysesTable,auditTable,contractsTable,jobsTable,matchesTable,buyersTable,leadsTable,transitionsTable,distributionPacketsTable,distributionRecipientsTable,transactionDocumentBlobsTable,transactionReadinessExceptionsTable,dealDecisionWorkItemsTable,transactionDocumentTemplatesTable,evidencePacketExportsTable } from "@workspace/db";
+import { db,pool,analysesTable,auditTable,contractsTable,jobsTable,matchesTable,buyersTable,leadsTable,offersTable,transitionsTable,distributionPacketsTable,distributionRecipientsTable,transactionDocumentBlobsTable,transactionReadinessExceptionsTable,dealDecisionWorkItemsTable,transactionDocumentTemplatesTable,evidencePacketExportsTable,propertyDiscoveriesTable,propertySourceObservationsTable } from "@workspace/db";
 import { and, eq } from "drizzle-orm";
 import { logger } from "../lib/logger";
 import * as seller from "./deal-store";
@@ -15,6 +15,7 @@ import { authorizeReviewedOffer } from "./offer-exercise-helpers";
 import * as transactions from "./transaction-store";
 import * as buyers from "./buyer-store";
 import { dealOperations,refreshMatches } from "./matching-store";
+import { addPropertyRelevanceSignal, promotePropertyDiscovery, recordPropertyObservation } from "./property-discovery-store";
 import { submitWorkerJob,runWorkerOnce } from "./workers";
 import { commandCenter } from "./command-center";
 import { CLOSING_MILESTONES, closingBlockers } from "@workspace/deal-domain";
@@ -47,12 +48,72 @@ let readinessSummary: Record<string,unknown> = {};
 let readinessDeadlineKeys: {upcoming:string;overdue:string}|null = null;
 try {
   // All these writes are isolated by the harness's connection-wide search path.
-  let lead = await seller.createLead({address:"SYNTHETIC COMPLETE DEAL",city:"Synthetic City",state:"TX",county:"Synthetic County",zip:"75001",
-    propertyType:"SINGLE_FAMILY",sqft:1000,beds:3,baths:2,units:1,askingPrice:100000,
-    sellerName:"SYNTHETIC ONLY",sellerPhone:"000-000-0000",source:"Synthetic service exercise, not a real deal"},actor.id,now);
-  const id = lead.id;
+  const traceSourceKey = "synthetic-continuous-trace:parcel";
+  const traceProperty = {
+    id:"SYNTHETIC-CONTINUOUS-TRACE-RECORD",parcelId:"SYNTHETIC-CONTINUOUS-TRACE-PARCEL",
+    provider:"SYNTHETIC_CONTINUOUS_TRACE",classification:"OBSERVED",address:"SYNTHETIC COMPLETE DEAL",
+    city:"Synthetic City",county:"Synthetic County",state:"TX",zip:"75001",propertyType:"SINGLE_FAMILY",
+    sqft:1000,beds:3,baths:2,units:1,recordedOwner:null,entityCandidate:false,assessedValue:null,
+    lastSalePrice:null,lastSaleAt:null,interiorCondition:null,exteriorCondition:null,lat:null,lng:null,
+    contactPaths:[],sourceUrl:"https://example.invalid/synthetic-continuous-trace",capturedAt:now.toISOString(),
+  } as Parameters<typeof recordPropertyObservation>[0];
+  const rawDiscovery = await recordPropertyObservation(traceProperty,traceSourceKey,actor.id,now);
+  assert.equal(rawDiscovery.leadId,null,"A source observation alone must not create a seller lead.");
+  assert.notEqual(rawDiscovery.status,"CALL_READY");
+  const exactSourceReplay = await recordPropertyObservation(traceProperty,traceSourceKey,actor.id,now);
+  assert.equal(exactSourceReplay.id,rawDiscovery.id);
+  assert.equal(exactSourceReplay.version,rawDiscovery.version,"Exact source replay must not advance discovery version.");
+  const [rawObservation] = await db.select().from(propertySourceObservationsTable)
+    .where(eq(propertySourceObservationsTable.sourceKey,traceSourceKey));
+  assert.equal(rawObservation?.sourceId,traceProperty.id);
+  assert.equal(rawObservation?.sourceUrl,traceProperty.sourceUrl);
+  await assert.rejects(promotePropertyDiscovery(rawDiscovery.id,{version:rawDiscovery.version,
+    reviewReason:"Synthetic raw observation must stop before qualification."},actor,now),
+  /Relevance score .* below the market threshold|independent signal groups are required/i);
+  assert.equal((await db.select().from(leadsTable)).length,0,
+    "Raw synthetic source data cannot promote itself to a lead without qualification evidence.");
+  let candidate = await addPropertyRelevanceSignal(rawDiscovery.id,{version:rawDiscovery.version,key:"FORECLOSURE",
+    group:"DISTRESS",classification:"VERIFIED",sourceType:"PUBLIC_RECORD",
+    statement:"SYNTHETIC only: test public-record distress evidence; not a real property fact.",
+    source:"SYNTHETIC isolated continuous trace",sourceUrl:"https://example.invalid/synthetic-trace-distress",
+    evidenceRef:"synthetic:continuous-trace:distress",capturedAt:now.toISOString(),confidence:0.99},actor,now);
+  candidate = await addPropertyRelevanceSignal(rawDiscovery.id,{version:candidate.version,key:"REPORTED_POOR_CONDITION",
+    group:"CONDITION",classification:"OBSERVED",sourceType:"PUBLIC_RECORD",
+    statement:"SYNTHETIC only: test recorded condition signal; not a real property fact.",
+    source:"SYNTHETIC isolated continuous trace",sourceUrl:"https://example.invalid/synthetic-trace-condition",
+    evidenceRef:"synthetic:continuous-trace:condition",capturedAt:now.toISOString(),confidence:0.99},actor,now);
+  candidate = await addPropertyRelevanceSignal(rawDiscovery.id,{version:candidate.version,key:"SELLER_MOTIVATION",
+    group:"MOTIVATION",classification:"INDICATED",sourceType:"SELLER",
+    statement:"SYNTHETIC only: test indicated motivation; no real seller statement occurred.",
+    source:"SYNTHETIC isolated continuous trace",sourceUrl:"https://example.invalid/synthetic-trace-motivation",
+    evidenceRef:"synthetic:continuous-trace:motivation",capturedAt:now.toISOString(),confidence:0.99},actor,now);
+  assert.equal(candidate.leadId,null);
+  assert.equal(candidate.status,"RELEVANT_CANDIDATE");
+  const promotion = await promotePropertyDiscovery(rawDiscovery.id,{version:candidate.version,
+    reviewReason:"SYNTHETIC owner-review fixture; qualifies only within this isolated exercise."},actor,now);
+  const id = promotion.leadId;
+  const promotionReplay = await promotePropertyDiscovery(rawDiscovery.id,{version:promotion.discovery.version,
+    reviewReason:"SYNTHETIC idempotent promotion replay."},actor,now);
+  assert.equal(promotionReplay.leadId,id,"Promotion replay must resolve to the same lead.");
+  assert.equal((await db.select().from(leadsTable).where(eq(leadsTable.id,id))).length,1,
+    "Promotion replay must not create a second canonical lead.");
+  const [traceDiscovery] = await db.select().from(propertyDiscoveriesTable)
+    .where(eq(propertyDiscoveriesTable.id,rawDiscovery.id));
+  assert.equal(traceDiscovery?.leadId,id,"The discovery and canonical lead must retain the same lineage edge.");
+  assert.equal(traceDiscovery?.status,"QUALIFIED_LEAD");
   const [syntheticLeadRow] = await db.select().from(leadsTable).where(eq(leadsTable.id,id));
-  await db.update(leadsTable).set({payload:{...syntheticLeadRow!.payload,synthetic:true}}).where(eq(leadsTable.id,id));
+  await db.update(leadsTable).set({payload:{
+    ...syntheticLeadRow!.payload,
+    synthetic:true,
+    sellerPhone:"000-000-0000",
+    syntheticContactRoute:true,
+  }}).where(eq(leadsTable.id,id));
+  const [traceLeadRow] = await db.select().from(leadsTable).where(eq(leadsTable.id,id));
+  assert.equal(traceLeadRow?.payload.sourceKey,traceSourceKey);
+  assert.equal(traceLeadRow?.payload.synthetic,true);
+  assert.equal(traceLeadRow?.payload.county,"Synthetic County",
+    "Promotion must preserve the source observation's county for jurisdiction-specific checks.");
+  assert.equal((traceLeadRow?.payload.propertyQualification as {discoveryId?:string}|undefined)?.discoveryId,rawDiscovery.id);
   const authority = await seller.addIntelligence(id,{classification:"VERIFIED_FACTS",category:"ownership",
     statement:"Synthetic record owner",source:"Synthetic public-record test fixture",sourceType:"PUBLIC_RECORD",confidence:0.9,
     capturedAt:now.toISOString(),verificationNote:"Synthetic comparison only, not actual ownership evidence."},actor.id,now);
@@ -69,7 +130,8 @@ try {
     source:"Synthetic command-center exercise",sourceType:"MODEL",confidence:0.4,capturedAt:now.toISOString(),
     question:"What is your preferred closing timeline?",action:"Ask the seller and record the actual answer."},actor.id,now);
   detail = await seller.leadDetail(id);
-  await assertSyntheticCallReadyBlocked(id, actor.id, now);
+  await assertSyntheticCallReadyBlocked(id,actor.id,now,
+    "CALL_READY is blocked: Complete source-backed ownership, seller identity, contact permission, and route review.");
   logger.info("EXPECTED SECURITY BLOCK: CALL_READY returned 409; CALL NEXT and gate-success assertions are skipped for this synthetic record.");
   detail = await seedSyntheticPostGateContacted(id, actor.id, now);
   detail = await seller.recordCall(id,{version:detail.lead.version,outcome:"CONNECTED",notes:"Synthetic conversation, no external call.",nextAction:"Review terms.",followUpAt:future(1)},actor.id,now);
@@ -78,6 +140,8 @@ try {
   detail = await offers.createOfferDraft(id,{version:detail.lead.version,amount:110000,earnestMoney:1000,closingDays:30,
     contingencies:"Synthetic title and diligence",assignmentIntent:true,reason:"Synthetic terms"},actor,now);
   const offerId = detail.offers[0]!.id;
+  const [traceOfferRow] = await db.select().from(offersTable).where(eq(offersTable.id,offerId));
+  assert.equal(traceOfferRow?.leadId,id,"The offer must remain attached to the promoted lead in persisted storage.");
   detail = await authorizeReviewedOffer(id,offerId,{version:detail.lead.version,maximumApprovedAcquisitionPrice:120000,
     authorityEvidenceId:authority.id,expiresAt:future(2),reason:"Synthetic owner review",nextAction:"Synthetic exact terms",followUpAt:future(1)},actor,now);
   detail = await offers.communicateOffer(id,offerId,{version:detail.lead.version,amount:110000,channel:"PHONE",
@@ -339,9 +403,29 @@ try {
   assert.ok(deadlineReport.exceptions.some(item=>
     item.contractId===op.contract?.id&&item.issueKey==="MILESTONE_SCHEDULE_REVIEW_REQUIRED"&&item.status==="RESOLVED"),
     "The owner-reviewed schedule resolves the missing-schedule exception without recording milestone completion.");
+  const milestoneVersionBeforeRecord = op.contract!.version;
   op = await transactions.recordClosingMilestone(id,{version:op.contract!.version,kind:"INSPECTION_COMPLETED",
     evidenceUrl:"https://example.com/synthetic-inspection-report",
     note:"SYNTHETIC inspection evidence only; no real property was inspected.",effectiveAt:now.toISOString()},actor,executionNow);
+  const milestoneVersionAfterRecord = op.contract!.version;
+  const milestoneCountAfterRecord = op.contract!.milestones.length;
+  const milestoneAuditCountAfterRecord = (await db.select().from(auditTable)
+    .where(and(eq(auditTable.entityId,id),eq(auditTable.action,"CLOSING_MILESTONE_RECORDED")))).length;
+  await assert.rejects(transactions.recordClosingMilestone(id,{version:milestoneVersionAfterRecord,kind:"INSPECTION_COMPLETED",
+    evidenceUrl:"https://example.com/synthetic-inspection-report-replay",
+    note:"SYNTHETIC duplicate milestone attempt.",effectiveAt:now.toISOString()},actor,executionNow),
+  /already recorded; evidence history is immutable/);
+  await assert.rejects(transactions.recordClosingMilestone(id,{version:milestoneVersionBeforeRecord,kind:"TITLE_CLEARED",
+    evidenceUrl:"https://example.com/synthetic-stale-title",
+    note:"SYNTHETIC stale milestone attempt.",effectiveAt:now.toISOString()},actor,executionNow),
+  /Transaction changed/);
+  const afterDuplicateMilestone = await dealOperations(id,executionNow);
+  assert.equal(afterDuplicateMilestone.contract?.version,milestoneVersionAfterRecord,
+    "Duplicate and stale milestone attempts must not revise the persisted transaction.");
+  assert.equal(afterDuplicateMilestone.contract?.milestones.length,milestoneCountAfterRecord);
+  assert.equal((await db.select().from(auditTable)
+    .where(and(eq(auditTable.entityId,id),eq(auditTable.action,"CLOSING_MILESTONE_RECORDED")))).length,
+  milestoneAuditCountAfterRecord,"Rejected duplicate/stale milestone attempts must not append audit events.");
   await evaluateAllTransactionReadiness(executionNow);
   deadlineReport = await getTransactionReadinessReport(executionNow);
   assert.ok(deadlineReport.exceptions.some(item=>
@@ -406,7 +490,11 @@ try {
   assert.equal(races.find(Boolean)?.state,"SUCCEEDED");
   assert.equal((await db.select().from(jobsTable).where(eq(jobsTable.id,job.id)))[0]?.attempts,1);
   op = await dealOperations(id,now);
-  assert.equal(op.matches.find(m=>m.buyerId===buyer.id)?.eligible,true);
+  const continuousTraceMatch = op.matches.find(m=>m.buyerId===buyer.id);
+  assert.equal(continuousTraceMatch?.eligible,true);
+  const [persistedTraceMatch] = await db.select().from(matchesTable).where(and(
+    eq(matchesTable.leadId,id),eq(matchesTable.buyerId,buyer.id)));
+  assert.ok(persistedTraceMatch,"The buyer match must be persisted for the same promoted lead.");
   assert.equal((await seller.leadDetail(id)).lead.stage,"BUYER_MATCHED");
    const economicsAfterBuyerMatch = await seller.leadDetail(id,db,now);
    assert.deepEqual({
@@ -444,6 +532,30 @@ try {
      buyer = await getBuyerRecord(buyer.id,db,now);
    op = await refreshMatches(id,now);
    assert.equal(op.matches.find(m=>m.buyerId===buyer.id)?.eligible,true);
+    const [matchHistoryRow]=await db.select().from(matchesTable).where(and(
+      eq(matchesTable.leadId,id),eq(matchesTable.buyerId,buyer.id)));
+    const matchHistory=matchHistoryRow?.payload.evaluationHistory as Array<{
+      buyerVersion:number;buyerSource:string;criteriaEvidenceRef:string|null;
+      contactPermission:{source:string|null;evidenceRef:string|null};
+      propertySourceKey:string|null;propertyDiscoveryId:string|null;
+      eligible:boolean;status:string;recordedAt:string;snapshotHash:string;
+    }>|undefined;
+    assert.ok(matchHistory&&matchHistory.length>=2,
+      "Buyer-version/evidence changes must append persisted match evaluations rather than overwrite prior explanations.");
+    assert.equal(matchHistory?.at(-1)?.buyerSource,buyer.source);
+    assert.equal(matchHistory?.at(-1)?.criteriaEvidenceRef,"https://example.com/synthetic-criteria");
+    assert.equal(matchHistory?.at(-1)?.contactPermission.source,"SYNTHETIC transaction fixture permission");
+    assert.equal(matchHistory?.at(-1)?.contactPermission.evidenceRef,"https://example.com/synthetic-buyer-permission");
+    assert.equal(matchHistory?.at(-1)?.propertySourceKey,traceSourceKey);
+    assert.equal(matchHistory?.at(-1)?.propertyDiscoveryId,rawDiscovery.id);
+    assert.equal(matchHistory?.at(-1)?.eligible,true);
+    assert.ok(matchHistory?.every(event=>/^[a-f0-9]{64}$/.test(event.snapshotHash)));
+    const evaluationCount=matchHistory!.length;
+    await refreshMatches(id,now);
+    const [replayedMatchHistoryRow]=await db.select().from(matchesTable).where(and(
+      eq(matchesTable.leadId,id),eq(matchesTable.buyerId,buyer.id)));
+    assert.equal((replayedMatchHistoryRow?.payload.evaluationHistory as unknown[]|undefined)?.length,evaluationCount,
+      "An identical refresh must not duplicate a persisted match evaluation.");
    const workspaceDetail = await seller.leadDetail(id,db,now);
    const workspaceOperations = await dealOperations(id,now);
    assert.equal(workspaceDetail.lead.id,id);
@@ -1028,6 +1140,9 @@ try {
      "An operator without owner authority cannot attest EMD completion.");
   await assert.rejects(transactions.recordClosingMilestone(id,{...earnestEvidence,amount:earnestEvidence.amount+1,
     version:op.contract!.version},actor,now),/equal the earnest money/);
+   await assert.rejects(transactions.recordClosingMilestone(id,{...earnestEvidence,currency:"EUR",
+     version:op.contract!.version} as unknown as Parameters<typeof transactions.recordClosingMilestone>[1],actor,now),
+   error=>String(error).includes("Expected 'USD', received 'EUR'"));
   const buyerFundsEvidence = {
     kind:"FUNDS_CONFIRMED" as const,evidenceUrl:buyer.fundingEvidenceUrl!,
     note:"Synthetic current funding evidence reviewed; no real funds moved.",amount:buyer.availableFunds!,
@@ -1059,8 +1174,20 @@ try {
   const recordedFunds = op.contract?.milestones.find(m=>m.kind==="FUNDS_CONFIRMED");
   assert.equal(recordedEarnest?.amount,op.contract?.earnestMoney);
   assert.equal(recordedEarnest?.effectiveAt,now.toISOString());
+   assert.equal(recordedEarnest?.currency,"USD");
+   assert.equal(recordedEarnest?.evidenceKind,"ESCROW_RECEIPT");
+   assert.equal(recordedEarnest?.counterpartyName,"SYNTHETIC ESCROW");
+   assert.equal(recordedEarnest?.paymentReference,"SYN-ESCROW-001");
+   assert.equal(recordedEarnest?.recordedBy,actor.id);
+   assert.equal(recordedEarnest?.recordedAt,now.toISOString());
   assert.equal(recordedFunds?.amount,buyer.availableFunds);
   assert.equal(recordedFunds?.evidenceUrl,buyer.fundingEvidenceUrl);
+   assert.equal(recordedFunds?.currency,"USD");
+   assert.equal(recordedFunds?.evidenceKind,"BANK_CONFIRMATION");
+   assert.equal(recordedFunds?.counterpartyName,"SYNTHETIC BANK");
+   assert.equal(recordedFunds?.paymentReference,"SYN-FUNDS-001");
+   assert.equal(recordedFunds?.recordedBy,actor.id);
+   assert.equal(recordedFunds?.recordedAt,now.toISOString());
   const latestAmendmentForSchedule = [...(op.contract!.history??[])]
     .filter(item=>item.kind==="AMEND_CLOSING"&&!!item.evidenceUrl)
     .sort((a,b)=>Date.parse(a.effectiveAt)-Date.parse(b.effectiveAt)).at(-1);
@@ -1172,6 +1299,44 @@ try {
   op = await transactions.recordDealOutcome(id,{...outcome,version:op.contract!.version,occurredAt:future(2)},actor,new Date(now.getTime()+5*86400000));
   assert.equal(op.contract?.status,"CLOSED"); assert.equal(op.contract?.netProceeds,18000);
   assert.equal(op.contract?.closedAt,future(2)); assert.equal(op.contract?.outcomeRecordedAt,future(5));
+  const [persistedTraceObservation] = await db.select().from(propertySourceObservationsTable)
+    .where(eq(propertySourceObservationsTable.sourceKey,traceSourceKey));
+  const [persistedTraceDiscovery] = await db.select().from(propertyDiscoveriesTable)
+    .where(eq(propertyDiscoveriesTable.id,rawDiscovery.id));
+  const [persistedTraceLead] = await db.select().from(leadsTable).where(eq(leadsTable.id,id));
+  const [persistedTraceOffer] = await db.select().from(offersTable).where(eq(offersTable.id,offerId));
+  const [persistedTraceContract] = await db.select().from(contractsTable).where(eq(contractsTable.leadId,id));
+  const persistedTraceMatches = await db.select().from(matchesTable).where(and(
+    eq(matchesTable.leadId,id),eq(matchesTable.buyerId,buyer.id)));
+  assert.equal(persistedTraceObservation?.discoveryId,rawDiscovery.id);
+  assert.equal(persistedTraceDiscovery?.leadId,id);
+  assert.equal(persistedTraceLead?.payload.sourceKey,traceSourceKey);
+  assert.equal(persistedTraceLead?.payload.synthetic,true);
+  assert.equal((persistedTraceLead?.payload.propertyQualification as {discoveryId?:string}|undefined)?.discoveryId,rawDiscovery.id);
+  assert.equal(persistedTraceOffer?.leadId,id);
+  assert.equal(persistedTraceMatches.length,1);
+  assert.equal(persistedTraceContract?.leadId,id);
+  assert.ok(op.contract?.milestones.length===CLOSING_MILESTONES.length,
+    "The persisted synthetic trace reaches all required transaction milestones on the same lead.");
+   const reloadedWorkspaceLead = await seller.leadDetail(id);
+   const reloadedWorkspaceOperations = await dealOperations(id,new Date(now.getTime()+5*86400000));
+   assert.equal((reloadedWorkspaceLead.lead.propertyQualification as {discoveryId?:string}|undefined)?.discoveryId,rawDiscovery.id,
+     "Reloaded deal workspace must link the selected property qualification to its source discovery.");
+   assert.ok(reloadedWorkspaceLead.offers.some(item=>item.id===offerId),
+     "Reloaded deal workspace must show the offer attached to the selected lead.");
+   assert.equal(reloadedWorkspaceOperations.contract?.leadId,id,
+     "Reloaded operations must return the transaction attached to the selected lead.");
+   assert.ok(reloadedWorkspaceOperations.matches.some(item=>item.buyerId===buyer.id),
+     "Reloaded operations must retain the selected buyer match link.");
+   assert.equal(reloadedWorkspaceOperations.contract?.milestones.length,CLOSING_MILESTONES.length,
+     "Reloaded operations must retain the transaction milestone history.");
+   const workspaceAudit = await db.select({action:auditTable.action}).from(auditTable).where(eq(auditTable.entityId,id));
+   for (const action of ["OFFER_DRAFT_CREATED","OFFER_AUTHORIZED","CONTRACT_PREPARED",
+     "CONTRACT_EXECUTION_RECORDED","CLOSING_MILESTONE_RECORDED"]) {
+     assert.ok(workspaceAudit.some(event=>event.action===action),
+       `Reloaded private workspace must retain ${action} in its audit history.`);
+   }
+  logger.info("CONTINUOUS SYNTHETIC DEAL TRACE PASSED: source observation -> qualification -> blocked real CALL_READY -> synthetic-only downstream fixture -> offer -> buyer match -> transaction milestones; no external outreach.");
    await assert.rejects(transactions.recordClosingMilestone(id,{version:op.contract!.version,kind:"TITLE_CLEARED",
      evidenceUrl:"https://example.com/synthetic-post-close-title",note:"SYNTHETIC post-close mutation attempt.",
      effectiveAt:future(2)},actor,new Date(future(6))),/terminal and cannot be changed/i,
@@ -1198,7 +1363,22 @@ try {
      eventKey:"synthetic-invalid-post-close-submission",kind:"SUBMITTED",occurredAt:future(3),
      evidenceUrl:"https://example.com/synthetic-post-close-submission",note:"SYNTHETIC submission after terminal close is not valid."},actor,new Date(future(6))),
      /actually occurred before closing/);
-   op = await transactions.recordDestinationActivity(id,destination.id,{...feeReceivedDetails,version:op.contract!.version},actor,new Date(future(6)));
+    const feeVersionBeforeReceipt = op.contract!.version;
+    op = await transactions.recordDestinationActivity(id,destination.id,{...feeReceivedDetails,version:op.contract!.version},actor,new Date(future(6)));
+    const feeVersionAfterReceipt = op.contract!.version;
+    const feeHistoryLengthAfterReceipt = op.contract?.destinationActivityHistory?.length;
+    op = await transactions.recordDestinationActivity(id,destination.id,{...feeReceivedDetails,version:feeVersionAfterReceipt},actor,new Date(future(6)));
+    assert.equal(op.contract?.version,feeVersionAfterReceipt,"An exact fee-receipt retry must not create another transaction revision.");
+    assert.equal(op.contract?.destinationActivityHistory?.length,feeHistoryLengthAfterReceipt,
+      "An exact fee-receipt retry must not append another fee event.");
+    await assert.rejects(transactions.recordDestinationActivity(id,destination.id,{
+      ...feeReceivedDetails,version:feeVersionAfterReceipt,feeAmount:501,
+    },actor,new Date(future(6))),/different destination activity/);
+    await assert.rejects(transactions.recordDestinationActivity(id,destination.id,{
+      ...feeReceivedDetails,eventKey:"synthetic-stale-fee-event",version:feeVersionBeforeReceipt,
+    },actor,new Date(future(6))),e=>(e as {status?:number}).status===409);
+    assert.equal(op.contract?.version,feeVersionAfterReceipt,
+      "Conflicting replay and stale-version fee events must not change the closed transaction.");
    assert.equal(op.contract?.status,"CLOSED");
    assert.equal(op.contract?.closedAt,future(2));
    assert.equal(op.contract?.assignmentFeeReceived,20000);
@@ -1216,8 +1396,32 @@ try {
      relatedEventKey:lateDispute.eventKey};
    op = await transactions.recordDestinationActivity(id,destination.id,lateWaiver,actor,new Date(future(8)));
    assert.equal(op.contract?.destinationActivityHistory?.length,7);
+    const destinationFeeHistory = op.contract?.destinationActivityHistory ?? [];
+    for (const [eventKey,kind,occurredAt,recordedAt,evidenceUrl,relatedEventKey] of [
+      [feeReceivedDetails.eventKey,"FEE_RECEIVED",future(3),future(6),feeReceivedDetails.evidenceUrl,termsAccepted.eventKey],
+      [lateDispute.eventKey,"FEE_DISPUTED",future(4),future(7),lateDispute.evidenceUrl,feeReceivedDetails.eventKey],
+      [lateWaiver.eventKey,"FEE_WAIVED",future(5),future(8),lateWaiver.evidenceUrl,lateDispute.eventKey],
+    ] as const) {
+      const event = destinationFeeHistory.find(item=>item.eventKey===eventKey);
+      assert.ok(event,`${kind} must remain in the persisted destination-fee history.`);
+      assert.equal(event.kind,kind);
+      assert.equal(event.feeAmount,500);
+      assert.equal(event.currency,"USD");
+      assert.equal(event.occurredAt,occurredAt);
+      assert.equal(event.recordedAt,recordedAt);
+      assert.equal(event.evidenceUrl,evidenceUrl);
+      assert.equal(event.relatedEventKey,relatedEventKey);
+      assert.equal(event.recordedBy,actor.id);
+      const auditEvents = await db.select().from(auditTable)
+        .where(and(eq(auditTable.entityId,id),eq(auditTable.action,`DESTINATION_${kind}`)));
+      assert.equal(auditEvents.length,1,`${kind} must produce one auditable event.`);
+    }
    assert.equal(op.contract?.status,"CLOSED");
    assert.equal((await seller.leadDetail(id)).lead.stage,"CLOSED");
+    assert.equal(op.contract?.assignmentFeeReceived,20000,
+      "Later destination-fee disputes and waivers must not rewrite acquisition settlement accounting.");
+    assert.equal(op.contract?.netProceeds,18000,
+      "Later destination-fee disputes and waivers must not change settled net proceeds.");
   const deadline = await submitWorkerJob({kind:"REVIEW_DEADLINES",idempotencyKey:"synthetic-deadlines-once"},actor);
   assert.equal((await runWorkerOnce(now,false,deadline.id))?.state,"SUCCEEDED");
   const fail = await submitWorkerJob({kind:"MATCH_BUYERS",leadId:id,idempotencyKey:"synthetic-terminal-failure"},actor);

@@ -23,6 +23,7 @@ import { DealOperationsPanel } from '@/components/deal-operations-panel';
 import { CallLogForm } from '@/components/call-log-form';
 import { BuyerCallForm } from '@/components/buyer-call-form';
 import { sellerAnswersFromEvidence } from '@/lib/seller-answer-reuse';
+import { isQuerySnapshotCurrent } from '@/lib/command-center-state';
 import { SellerContactPanel } from '@/components/seller-contact-panel';
 import { TransitionPanel } from '@/components/transition-panel';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
@@ -73,7 +74,8 @@ export default function LeadDetailPage() {
   }
   const d = q.data;
   const lead = d.lead;
-  const operations = operationsQuery.data;
+  const operationsSnapshotCurrent = isQuerySnapshotCurrent(operationsQuery.isFetching, operationsQuery.isError);
+  const operations = operationsSnapshotCurrent ? operationsQuery.data : undefined;
   const canViewPrivateDetails = canResearch || canCall;
   const eligibleBuyerCount = operations?.matches.filter(match =>
     match.eligible && (match.destinationKind ?? 'BUYER') === 'BUYER').length ?? 0;
@@ -179,7 +181,7 @@ export default function LeadDetailPage() {
            </button>
            <button type="button" onClick={() => setTab('tx')} className="text-left border-l-2 border-border bg-muted/35 p-3 hover:bg-muted" data-testid="button-workspace-transaction">
              <span className="eyebrow">03 / Transaction</span>
-             <span className="mt-1 block text-sm font-semibold">{operationsQuery.isLoading ? 'Loading persisted operations…' : operations?.contract ? `${operations.contract.status.replaceAll('_', ' ')} · v${operations.contract.version}` : operationsQuery.isError ? 'Operations unavailable' : 'No contract record'}</span>
+              <span className="mt-1 block text-sm font-semibold">{operationsQuery.isError ? 'Operations unavailable' : operationsQuery.isFetching ? 'Refreshing persisted operations…' : operations?.contract ? `${operations.contract.status.replaceAll('_', ' ')} · v${operations.contract.version}` : 'No contract record'}</span>
              <span className="mt-1 block text-xs text-muted-foreground">{operations ? `${eligibleBuyerCount} currently eligible acquisition buyer(s) · ${operations.matches.length} persisted match(es) · ${operations.jobs.length} provider/job record(s)` : 'Contract, buyer eligibility, responses and deadlines'}</span>
            </button>
            <button type="button" onClick={() => setTab('intel')} className="text-left border-l-2 border-border bg-muted/35 p-3 hover:bg-muted" data-testid="button-workspace-contact">
@@ -287,7 +289,7 @@ export default function LeadDetailPage() {
         </TabsContent>
 
         <TabsContent value="tx" forceMount className={KEEP}>
-          <DealOperationsPanel detail={d} operations={operations} loading={operationsQuery.isLoading} error={operationsQuery.error} onRetry={() => operationsQuery.refetch()} />
+          <DealOperationsPanel detail={d} operations={operations} loading={operationsQuery.isFetching} error={operationsQuery.error} onRetry={() => operationsQuery.refetch()} />
         </TabsContent>
 
         <TabsContent value="record" forceMount className={KEEP}>

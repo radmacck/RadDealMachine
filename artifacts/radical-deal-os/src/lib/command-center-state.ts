@@ -12,6 +12,10 @@ const exercisedPhiladelphiaSources = new Set([
   "phila-li-building-permits", "phila-li-demolitions", "phila-sheriff-deed-records",
 ]);
 
+export function isQuerySnapshotCurrent(isFetching: boolean, isError: boolean) {
+  return !isFetching && !isError;
+}
+
 export function discoveryOrigin(observations: DiscoverySourceObservationLite[]) {
   const ids = observations.map((item) => item.sourceId.toLowerCase());
   if (ids.some((id) => /synthetic|fixture|test/.test(id))) return "SYNTHETIC_EXERCISE";

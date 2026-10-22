@@ -6,6 +6,7 @@ import {
   buyerDistributionSummary,
   classifyApiViewState,
   isEmptyCommandCenter,
+  isQuerySnapshotCurrent,
   isCurrentApprovedBuyer,
   discoveryOrigin,
   discoveryContactState,
@@ -48,6 +49,12 @@ test("401 and 403 deny cached private command-center data instead of rendering i
 
 test("a failed refresh with cached data is explicitly stale, not current", () => {
   assert.equal(classifyApiViewState({ isLoading: false, isError: true, data: emptyDesk, error: new Error("network failed") }), "STALE");
+});
+
+test("cached discovery snapshots are read-only while refreshing or after a failed refresh", () => {
+  assert.equal(isQuerySnapshotCurrent(false, false), true);
+  assert.equal(isQuerySnapshotCurrent(true, false), false);
+  assert.equal(isQuerySnapshotCurrent(false, true), false);
 });
 
 test("discovery provenance labels only exercised source IDs as live and never relabels unknown records", () => {

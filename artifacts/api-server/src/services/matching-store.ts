@@ -5,6 +5,7 @@ import { buyerIdentityConflicts, buyerReservations, matchBuyer, rankBuyerMatches
 import { allBuyerRecords, buyerRecord, getContractRecord, contractRecord, jobRecord, type Store } from "./operations-records";
 import { leadDetail, lockedLead, move, audit } from "./deal-store";
 import { leadsTable } from "@workspace/db";
+import { appendMatchEvaluationHistory } from "./match-evaluation-history";
 
 async function evaluatedMatches(detail: LeadDetail, contract: DealContract|null, database: Store, now: Date) {
   const buyers = await allBuyerRecords(database,now);
@@ -58,9 +59,51 @@ export async function refreshMatches(id: string, now = new Date()) {
     const row = await lockedLead(tx,id), contract = await getContractRecord(id,tx);
     const detail = await leadDetail(id,tx,now);
     const results = await evaluatedMatches(detail,contract,tx,now);
+    const priorRows = await tx.select().from(matchesTable).where(eq(matchesTable.leadId,id));
+    const buyerRows = await tx.select().from(buyersTable);
+    const buyerById = new Map(buyerRows.map(item=>[item.id,item]));
+    const qualification = detail.lead.propertyQualification as {
+      discoveryId?:unknown;
+      signals?:Array<{evidenceRef?:unknown;sourceName?:unknown}>;
+    }|null|undefined;
+    const propertyEvidenceRefs = [...new Set((qualification?.signals??[])
+      .map(signal=>typeof signal.evidenceRef==="string"?signal.evidenceRef:null)
+      .filter((item):item is string=>!!item))].sort();
     for (const result of results) {
-      await tx.insert(matchesTable).values({leadId:id,buyerId:result.buyerId,payload:result,updatedAt:now})
-        .onConflictDoUpdate({target:[matchesTable.leadId,matchesTable.buyerId],set:{payload:result,updatedAt:now}});
+      const prior=priorRows.find(item=>item.buyerId===result.buyerId);
+      const buyerRow=buyerById.get(result.buyerId);
+      const buyerPayload=buyerRow?.payload as Record<string,unknown>|undefined;
+      const permission=buyerPayload?.contactPermission as Record<string,unknown>|undefined;
+      const snapshot = {
+        leadId:id,
+        buyerId:result.buyerId,
+        buyerVersion:result.buyerVersion,
+        buyerSource:typeof buyerPayload?.source==="string"?buyerPayload.source:"Unknown buyer source",
+        criteriaEvidenceRef:typeof buyerPayload?.criteriaEvidenceUrl==="string"?buyerPayload.criteriaEvidenceUrl:null,
+        verificationEvidenceRefs:[
+          buyerPayload?.identityEvidenceUrl,buyerPayload?.fundingEvidenceUrl,buyerPayload?.buyingEvidenceUrl,
+        ].filter((item):item is string=>typeof item==="string"),
+        contactPermission:{
+          status:typeof permission?.status==="string"?permission.status:null,
+          source:typeof permission?.source==="string"?permission.source:null,
+          evidenceRef:typeof permission?.evidenceUrl==="string"?permission.evidenceUrl:null,
+          capturedAt:typeof permission?.capturedAt==="string"?permission.capturedAt:null,
+          validUntil:typeof permission?.validUntil==="string"?permission.validUntil:null,
+        },
+        propertySourceKey:typeof row.payload.sourceKey==="string"?row.payload.sourceKey:null,
+        propertyDiscoveryId:typeof qualification?.discoveryId==="string"?qualification.discoveryId:null,
+        propertyEvidenceRefs,
+        analysisSnapshotId:detail.analysisSnapshotId,
+        status:result.status,
+        eligible:result.eligible,
+        score:result.score,
+        reasons:result.reasons,
+        mismatches:result.mismatches,
+      };
+      const evaluationHistory=appendMatchEvaluationHistory(prior?.payload.evaluationHistory,snapshot,now.toISOString());
+      const payload={...prior?.payload,...result,evaluationHistory};
+      await tx.insert(matchesTable).values({leadId:id,buyerId:result.buyerId,payload,updatedAt:now})
+        .onConflictDoUpdate({target:[matchesTable.leadId,matchesTable.buyerId],set:{payload,updatedAt:now}});
     }
     const qualified = results.filter(m=>m.eligible&&m.status!=="DECLINED"&&m.destinationKind==="BUYER");
     const destinations = results.filter(m=>m.eligible&&m.status!=="DECLINED"&&m.destinationKind!=="BUYER");

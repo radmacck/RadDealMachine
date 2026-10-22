@@ -25,6 +25,8 @@ import Sources from '@/pages/sources';
 import BuyerPacketPage from '@/pages/buyer-packet';
 import SellerOfferPage from '@/pages/seller-offer';
 import BuyerQualificationPortalPage from '@/pages/buyer-qualification-portal';
+import FounderWorkspace from '@/pages/founder-workspace';
+import { useAccess } from '@/hooks/use-access';
 
 const clerkPubKey = publishableKeyFromHost(window.location.hostname, import.meta.env.VITE_CLERK_PUBLISHABLE_KEY);
 const clerkProxyUrl = import.meta.env.VITE_CLERK_PROXY_URL;
@@ -138,12 +140,23 @@ function Protected({ children }: { children: ReactNode }) {
   );
 }
 
+function OwnerOnly({ children }: { children: ReactNode }) {
+  const { isOwner } = useAccess();
+  if (isOwner) return children;
+  return <section className="ledger max-w-2xl space-y-2 p-6" data-testid="buyer-owner-denied">
+    <p className="eyebrow">Private buyer records</p>
+    <h1 className="font-display text-2xl font-semibold">Owner access only</h1>
+    <p className="text-sm text-muted-foreground">Buyer records are restricted to the workspace Owner.</p>
+  </section>;
+}
+
 function RoutedErrorBoundary({ children }: { children: ReactNode }) {
   const [location] = useLocation();
   return <ErrorBoundary resetKey={location}>{children}</ErrorBoundary>;
 }
 
 const page = (C: () => ReactNode) => () => <Protected><C /></Protected>;
+const ownerPage = (C: () => ReactNode) => () => <Protected><OwnerOnly><C /></OwnerOnly></Protected>;
 const DashboardRoute = page(Dashboard);
 const DealsRoute = page(Deals);
 const LeadsRoute = page(Leads);
@@ -151,10 +164,11 @@ const LeadRoute = page(LeadDetailPage);
 const CallsRoute = page(Calls);
 const SettingsRoute = page(Settings);
 const AuditRoute = page(Audit);
-const BuyersRoute = page(Buyers);
-const BuyerDetailRoute = page(BuyerDetail);
+const BuyersRoute = ownerPage(Buyers);
+const BuyerDetailRoute = ownerPage(BuyerDetail);
 const WorkersRoute = page(Workers);
 const SourcesRoute = page(Sources);
+const FounderWorkspaceRoute = page(FounderWorkspace);
 
 function ClerkProviderWithRoutes() {
   const [, setLocation] = useLocation();
@@ -186,6 +200,7 @@ function ClerkProviderWithRoutes() {
               <Route path="/sign-in/*?" component={SignInPage} />
               <Route path="/sign-up/*?" component={SignUpPage} />
               <Route path="/dashboard" component={DashboardRoute} />
+              <Route path="/workspace" component={FounderWorkspaceRoute} />
               <Route path="/deals" component={DealsRoute} />
               <Route path="/leads" component={LeadsRoute} />
               <Route path="/leads/:id" component={LeadRoute} />

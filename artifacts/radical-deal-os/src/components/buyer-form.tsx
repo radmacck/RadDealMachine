@@ -33,7 +33,7 @@ export function BuyerForm({ buyer, disabled, pending, error, submitLabel, onSubm
   const [phone, setPhone] = useState(buyer?.phone ?? '');
   const [source, setSource] = useState(buyer?.source ?? '');
   const [contactSourceUrl,setContactSourceUrl]=useState(buyer?.contactSourceUrl??'');
-  const [contactObservedAt,setContactObservedAt]=useState(buyer?.contactObservedAt?localDateTime(new Date(buyer.contactObservedAt)):localDateTime());
+   const [contactObservedAt,setContactObservedAt]=useState(buyer?.contactObservedAt?localDateTime(new Date(buyer.contactObservedAt)):'');
   const [contactConfidence,setContactConfidence]=useState(buyer?.contactConfidence==null?'':String(buyer.contactConfidence));
   const [status, setStatus] = useState<BuyerInputStatus>(buyer?.status ?? 'ACTIVE');
   const [dest, setDest] = useState<BuyerInputDestinationKind>(buyer?.destinationKind ?? 'BUYER');
@@ -57,6 +57,7 @@ export function BuyerForm({ buyer, disabled, pending, error, submitLabel, onSubm
   const set = (k: string) => (e: { target: { value: string } }) => setF((p) => ({ ...p, [k]: e.target.value }));
   const inp = (k: string, tid: string, ph?: string) => <Input inputMode="decimal" placeholder={ph} value={f[k]} disabled={disabled || noCrit} onChange={set(k)} data-testid={`input-buyer-${tid}`} />;
   const nul = (k: string) => (f[k].trim() === '' ? null : Number(f[k]));
+  const optNum = (k: string) => (f[k].trim() === '' ? undefined : Number(f[k]));
 
   const submit = () => {
     if (!criteriaOnly && (!name.trim() || !source.trim())) return setLocal('Name and source are required.');
@@ -77,23 +78,38 @@ export function BuyerForm({ buyer, disabled, pending, error, submitLabel, onSubm
     if (st.length === 0 || st.some((x) => x.length !== 2)) return setLocal('Enter at least one two-letter state.');
     const zipBad = [...csv(f.zips), ...csv(f.exZips)].some((z) => !/^\d{5}$/.test(z));
     if (zipBad) return setLocal('ZIP codes must be five digits.');
-    if (types.length === 0 || !rehab || strats.length === 0 || fund.length === 0) return setLocal('Select property types, rehab tolerance, strategies and funding types.');
-    const req = ['minPrice', 'maxPrice', 'minUnits', 'maxUnits', 'minSqft', 'maxSqft', 'minBeds', 'minBaths', 'maxRepairs', 'closing', 'conc'];
-    if (req.some((k) => !Number.isFinite(num(f[k])))) return setLocal('Minimum price, units, square feet, beds, baths, repairs, closing days and capacity must be entered explicitly. Use 0 where the buyer has no floor.');
-    const opt = ['minArv', 'maxArv', 'maxBeds', 'maxBaths', 'spread', 'cap'];
+    if (types.length === 0) return setLocal('Select at least one property type.');
+    const req = ['maxPrice', 'maxRepairs', 'minBeds', 'minSqft', 'maxSqft', 'closing'];
+    if (req.some((k) => !Number.isFinite(num(f[k])))) return setLocal('Maximum price, repairs, minimum beds, minimum and maximum square feet, and closing days are required.');
+    const opt = ['minPrice', 'minUnits', 'maxUnits', 'minBaths', 'conc', 'minArv', 'maxArv', 'maxBeds', 'maxBaths', 'spread', 'cap'];
     if (opt.some((k) => f[k].trim() !== '' && !Number.isFinite(Number(f[k])))) return setLocal('Optional bounds must be numbers or blank.');
     if (num(f.maxPrice) <= 0 || num(f.maxSqft) <= 0) return setLocal('Maximum price and square feet must be above zero.');
-    if (num(f.minPrice) > num(f.maxPrice) || num(f.minUnits) > num(f.maxUnits) || num(f.minSqft) > num(f.maxSqft)) return setLocal('A minimum exceeds its maximum.');
+    const minUnitsValue = optNum('minUnits');
+    const maxUnitsValue = optNum('maxUnits');
+    if (num(f.minPrice) > num(f.maxPrice) || (minUnitsValue !== undefined && maxUnitsValue !== undefined && minUnitsValue > maxUnitsValue) || num(f.minSqft) > num(f.maxSqft)) return setLocal('A minimum exceeds its maximum.');
     setLocal(null);
     const capN = nul('cap');
+    const minPurchasePrice = optNum('minPrice');
+    const minUnits = optNum('minUnits');
+    const maxUnits = optNum('maxUnits');
+    const minBaths = optNum('minBaths');
+    const maxConcurrentDeals = optNum('conc');
     const criteria: BuyerCriteria = {
       states: st, counties: csv(f.counties), cities: csv(f.cities), zipCodes: csv(f.zips),
       excludedCounties: csv(f.exCounties), excludedCities: csv(f.exCities), excludedZipCodes: csv(f.exZips),
-      propertyTypes: types as BuyerCriteria['propertyTypes'], minPurchasePrice: num(f.minPrice), maxPurchasePrice: num(f.maxPrice),
-      minArv: nul('minArv'), maxArv: nul('maxArv'), minUnits: num(f.minUnits), maxUnits: num(f.maxUnits),
-      minSqft: num(f.minSqft), maxSqft: num(f.maxSqft), minBeds: num(f.minBeds), maxBeds: nul('maxBeds'), minBaths: num(f.minBaths), maxBaths: nul('maxBaths'),
-      maxRepairs: num(f.maxRepairs), rehabTolerance: rehab as BuyerCriteria['rehabTolerance'], strategies: strats as BuyerCriteria['strategies'],
-      fundingTypes: fund as BuyerCriteria['fundingTypes'], closingDays: num(f.closing), maxConcurrentDeals: num(f.conc),
+      propertyTypes: types as BuyerCriteria['propertyTypes'], maxPurchasePrice: num(f.maxPrice),
+      ...(minPurchasePrice === undefined ? {} : { minPurchasePrice }),
+      minArv: nul('minArv'), maxArv: nul('maxArv'),
+      ...(minUnits === undefined ? {} : { minUnits }),
+      ...(maxUnits === undefined ? {} : { maxUnits }),
+      minSqft: num(f.minSqft), maxSqft: num(f.maxSqft), minBeds: num(f.minBeds), maxBeds: nul('maxBeds'),
+      ...(minBaths === undefined ? {} : { minBaths }),
+      maxBaths: nul('maxBaths'),
+      maxRepairs: num(f.maxRepairs),
+      ...(rehab ? { rehabTolerance: rehab as BuyerCriteria['rehabTolerance'] } : {}),
+      ...(strats.length ? { strategies: strats as BuyerCriteria['strategies'] } : {}),
+      ...(fund.length ? { fundingTypes: fund as BuyerCriteria['fundingTypes'] } : {}),
+      closingDays: num(f.closing), ...(maxConcurrentDeals === undefined ? {} : { maxConcurrentDeals }),
       minSpread: nul('spread'), minCapRate: capN == null ? null : capN / 100,
     };
     onSubmit({ ...base, criteria });
@@ -122,37 +138,41 @@ export function BuyerForm({ buyer, disabled, pending, error, submitLabel, onSubm
         {criteriaOnly
           ? <p className="mb-3 text-sm text-muted-foreground">Confirm or correct the profile already on file. This response is self-reported and will not approve you for deal matching.</p>
           : <label className="mb-3 flex items-center gap-2 text-sm"><input type="checkbox" className="h-4 w-4" checked={noCrit} disabled={disabled} onChange={(e) => setNoCrit(e.target.checked)} data-testid="check-no-criteria" />Criteria not collected yet. Nothing is assumed and the buyer cannot be approved.</label>}
+        <p className="eyebrow">Required matching criteria</p>
+        <p className="text-xs text-muted-foreground">State, property type, maximum price, repairs, minimum beds, square-foot range, and closing days are required to save a structured profile. Optional preferences may stay blank; missing information can still block Owner approval.</p>
         <div className="grid gap-3 sm:grid-cols-3">
-          <Field label="Target states" hint="Two letters, comma separated">{inp('states', 'states')}</Field>
-          <Field label="Counties">{inp('counties', 'counties')}</Field>
-          <Field label="Cities" hint="Blank means any">{inp('cities', 'cities')}</Field>
-          <Field label="ZIP codes">{inp('zips', 'zips')}</Field>
-          <Field label="Excluded counties">{inp('exCounties', 'ex-counties')}</Field>
-          <Field label="Excluded cities">{inp('exCities', 'ex-cities')}</Field>
-          <Field label="Excluded ZIPs">{inp('exZips', 'ex-zips')}</Field>
+          <Field label="Target states · required" hint="Two letters, comma separated">{inp('states', 'states')}</Field>
+          <Field label="Counties · optional preference">{inp('counties', 'counties')}</Field>
+          <Field label="Cities · optional preference" hint="Blank means any">{inp('cities', 'cities')}</Field>
+          <Field label="ZIP codes · optional preference">{inp('zips', 'zips')}</Field>
+          <Field label="Excluded counties · optional preference">{inp('exCounties', 'ex-counties')}</Field>
+          <Field label="Excluded cities · optional preference">{inp('exCities', 'ex-cities')}</Field>
+          <Field label="Excluded ZIPs · optional preference">{inp('exZips', 'ex-zips')}</Field>
         </div>
+        <p className="eyebrow mt-4">Optional buyer preferences</p>
+        <p className="text-xs text-muted-foreground">Leave any preference blank if it was not stated. Funding types are preferences, not proof of funds.</p>
         <div className="mt-3 space-y-3">
-          <div><p className="mb-1 text-xs text-muted-foreground">Property types</p><Toggles items={PROPERTY_TYPES} value={types} onChange={setTypes} disabled={disabled || noCrit} tid="type" /></div>
-          <div><p className="mb-1 text-xs text-muted-foreground">Strategies</p><Toggles items={STRATS} value={strats} onChange={setStrats} disabled={disabled || noCrit} tid="strategy" /></div>
-          <div><p className="mb-1 text-xs text-muted-foreground">Funding types</p><Toggles items={FUNDS} value={fund} onChange={setFund} disabled={disabled || noCrit} tid="funding" /></div>
+          <div><p className="mb-1 text-xs text-muted-foreground">Property types · required</p><Toggles items={PROPERTY_TYPES} value={types} onChange={setTypes} disabled={disabled || noCrit} tid="type" /></div>
+          <div><p className="mb-1 text-xs text-muted-foreground">Strategies · optional preference</p><Toggles items={STRATS} value={strats} onChange={setStrats} disabled={disabled || noCrit} tid="strategy" /></div>
+          <div><p className="mb-1 text-xs text-muted-foreground">Funding types · optional preference, not proof of funds</p><Toggles items={FUNDS} value={fund} onChange={setFund} disabled={disabled || noCrit} tid="funding" /></div>
         </div>
         <div className="mt-3 grid gap-3 sm:grid-cols-3">
-          <Field label="Rehab tolerance"><select className={SELECT} value={rehab} disabled={disabled || noCrit} onChange={(e) => setRehab(e.target.value)} data-testid="select-buyer-rehab"><option value="">Select</option>{REHAB.map((r) => <option key={r} value={r}>{r}</option>)}</select></Field>
-          <Field label="Price band · minimum">{inp('minPrice', 'min-price')}</Field>
-          <Field label="Price band · maximum">{inp('maxPrice', 'max-price')}</Field>
-          <Field label="Min ARV" hint="Blank clears">{inp('minArv', 'min-arv')}</Field>
-          <Field label="Max ARV" hint="Blank clears">{inp('maxArv', 'max-arv')}</Field>
-          <Field label="Max repairs">{inp('maxRepairs', 'max-repairs')}</Field>
-          <Field label="Min units">{inp('minUnits', 'min-units')}</Field>
-          <Field label="Max units">{inp('maxUnits', 'max-units')}</Field>
-          <Field label="Target closing days">{inp('closing', 'closing')}</Field>
-          <Field label="Min beds">{inp('minBeds', 'min-beds')}</Field>
-          <Field label="Max beds" hint="Blank clears">{inp('maxBeds', 'max-beds')}</Field>
-          <Field label="Max concurrent deals">{inp('conc', 'concurrent')}</Field>
-          <Field label="Min baths">{inp('minBaths', 'min-baths')}</Field>
-          <Field label="Max baths" hint="Blank clears">{inp('maxBaths', 'max-baths')}</Field>
-          <Field label="Min sqft">{inp('minSqft', 'min-sqft')}</Field>
-          <Field label="Max sqft">{inp('maxSqft', 'max-sqft')}</Field>
+          <Field label="Rehab tolerance · optional preference"><select className={SELECT} value={rehab} disabled={disabled || noCrit} onChange={(e) => setRehab(e.target.value)} data-testid="select-buyer-rehab"><option value="">Not recorded</option>{REHAB.map((r) => <option key={r} value={r}>{r}</option>)}</select></Field>
+          <Field label="Price band · minimum · optional">{inp('minPrice', 'min-price')}</Field>
+          <Field label="Price band · maximum · required">{inp('maxPrice', 'max-price')}</Field>
+          <Field label="Min ARV · optional preference" hint="Blank clears">{inp('minArv', 'min-arv')}</Field>
+          <Field label="Max ARV · optional preference" hint="Blank clears">{inp('maxArv', 'max-arv')}</Field>
+          <Field label="Max repairs · required">{inp('maxRepairs', 'max-repairs')}</Field>
+          <Field label="Min units · optional preference">{inp('minUnits', 'min-units')}</Field>
+          <Field label="Max units · optional preference">{inp('maxUnits', 'max-units')}</Field>
+          <Field label="Target closing days · required">{inp('closing', 'closing')}</Field>
+          <Field label="Min beds · required">{inp('minBeds', 'min-beds')}</Field>
+          <Field label="Max beds · optional preference" hint="Blank clears">{inp('maxBeds', 'max-beds')}</Field>
+          <Field label="Max concurrent deals · optional preference">{inp('conc', 'concurrent')}</Field>
+          <Field label="Min baths · optional preference">{inp('minBaths', 'min-baths')}</Field>
+          <Field label="Max baths · optional preference" hint="Blank clears">{inp('maxBaths', 'max-baths')}</Field>
+          <Field label="Min sqft · required">{inp('minSqft', 'min-sqft')}</Field>
+          <Field label="Max sqft · required">{inp('maxSqft', 'max-sqft')}</Field>
           <Field label="Min spread" hint="Policy buyer ceiling minus buyer price. Blank clears.">{inp('spread', 'spread')}</Field>
           <Field label="Min cap rate, %" hint="Blank clears; no evidence blocks match">{inp('cap', 'cap')}</Field>
         </div>

@@ -2074,7 +2074,14 @@ export async function promotePropertyDiscovery(
     if (!evaluation.canPromote || missingFacts.length) {
       throw new DomainError([...evaluation.promotionBlockers, ...missingFacts].join(" "), 409);
     }
-    const sourceKey = `phila-opa:${payload.property.id}`;
+    const [primaryObservation] = await tx.select().from(propertySourceObservationsTable)
+      .where(eq(propertySourceObservationsTable.discoveryId, discoveryId))
+      .orderBy(asc(propertySourceObservationsTable.firstObservedAt), asc(propertySourceObservationsTable.id))
+      .limit(1);
+    if (!primaryObservation) {
+      throw new DomainError("A persisted source observation is required before a property can be promoted.", 409);
+    }
+    const sourceKey = primaryObservation.sourceKey;
     const identity = normalAddress(payload.property.address);
     await lockCanonicalLeadIdentity(tx, payload.property);
     const possibleExisting = await tx.select().from(leadsTable).where(sql`
@@ -2097,7 +2104,7 @@ export async function promotePropertyDiscovery(
       address: payload.property.address,
       city: payload.property.city,
       state: payload.property.state,
-      county: "Philadelphia",
+      county: payload.property.county,
       zip: payload.property.zip,
       propertyType: payload.property.propertyType,
       sqft: payload.property.sqft!,

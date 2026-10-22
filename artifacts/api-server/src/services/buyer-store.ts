@@ -8,6 +8,9 @@ import { audit } from "./deal-store";
 
 function normalize(input: z.infer<typeof CreateBuyerBody>) {
   const parsed = CreateBuyerBody.parse(input);
+  if (!parsed.name.trim() || !parsed.source.trim()) {
+    throw new DomainError("Buyer name and source are required.");
+  }
   if (parsed.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(parsed.email)) throw new DomainError("Enter a valid buyer email.");
   if (parsed.contactSourceUrl && !/^https:\/\//i.test(parsed.contactSourceUrl)) throw new DomainError("Buyer contact evidence URL must use HTTPS.");
   if (parsed.contactObservedAt && (!Number.isFinite(Date.parse(parsed.contactObservedAt)) || Date.parse(parsed.contactObservedAt) > Date.now())) {
@@ -17,19 +20,44 @@ function normalize(input: z.infer<typeof CreateBuyerBody>) {
   return {...parsed,name:parsed.name.trim(),source:parsed.source.trim(),destinationKind:parsed.destinationKind??"BUYER",criteria:parsed.criteria?{...parsed.criteria,
     states:parsed.criteria.states.map(s=>s.trim().toUpperCase()),cities:parsed.criteria.cities.map(s=>s.trim())}:null};
 }
+function buyerProfileFingerprint(input: {
+  name?: unknown; email?: unknown; phone?: unknown; source?: unknown; status?: unknown;
+  destinationKind?: unknown; criteria?: unknown; qualifiedDealFee?: unknown; feeTermsSource?: unknown;
+  contactSourceUrl?: unknown; contactObservedAt?: unknown; contactConfidence?: unknown;
+}) {
+  return JSON.stringify({
+    name: String(input.name ?? "").trim().toLowerCase().replace(/\s+/g, " "),
+    email: String(input.email ?? "").trim().toLowerCase(),
+    phone: normalizeBuyerPhone(String(input.phone ?? "")),
+    source: String(input.source ?? "").trim().toLowerCase().replace(/\s+/g, " "),
+    status: input.status ?? "ACTIVE",
+    destinationKind: input.destinationKind ?? "BUYER",
+    criteria: input.criteria ?? null,
+    qualifiedDealFee: input.qualifiedDealFee ?? null,
+    feeTermsSource: String(input.feeTermsSource ?? "").trim().toLowerCase(),
+    contactSourceUrl: input.contactSourceUrl ?? null,
+    contactObservedAt: input.contactObservedAt ?? null,
+    contactConfidence: input.contactConfidence ?? null,
+  });
+}
 export async function createBuyer(input: z.infer<typeof CreateBuyerBody>, actor: OfferActor) {
-  assertOperationsRole(actor,["OWNER","ANALYST"]);
+  assertOperationsRole(actor,["OWNER"]);
   const payload = normalize(input);
   return db.transaction(async tx=>{
     const routeKeys = [
       payload.email ? `email:${payload.email.trim().toLowerCase()}` : "",
       payload.phone ? `phone:${normalizeBuyerPhone(payload.phone)}` : "",
+      `profile:${buyerProfileFingerprint(payload)}`,
     ].filter(Boolean).sort();
     for (const key of routeKeys) {
       await tx.execute(sql`select pg_advisory_xact_lock(hashtextextended(current_schema() || ${`buyer-route:${key}`},0))`);
     }
-    if (routeKeys.length) {
+    {
       const existing = await tx.select().from(buyersTable);
+      const profileConflict = existing.find(row => buyerProfileFingerprint(row.payload) === buyerProfileFingerprint(payload));
+      if (profileConflict) {
+        throw new DomainError(`An identical buyer profile already exists (record ${profileConflict.id}). Review the existing record; records are not automatically merged.`,409);
+      }
        const digits = normalizeBuyerPhone(payload.phone);
       const email = payload.email.trim().toLowerCase();
       const name = payload.name.trim().toLowerCase().replace(/[^a-z0-9]+/g," ").trim();
@@ -56,7 +84,7 @@ export async function createBuyer(input: z.infer<typeof CreateBuyerBody>, actor:
   });
 }
 export async function updateBuyer(id: string, input: z.infer<typeof UpdateBuyerBody>, actor: OfferActor) {
-  assertOperationsRole(actor,["OWNER","ANALYST"]);
+  assertOperationsRole(actor,["OWNER"]);
   const parsed = UpdateBuyerBody.parse(input), payload = normalize(parsed);
   return db.transaction(async tx=>{
     const [row] = await tx.select().from(buyersTable).where(eq(buyersTable.id,id)).for("update");
@@ -65,9 +93,12 @@ export async function updateBuyer(id: string, input: z.infer<typeof UpdateBuyerB
     const routeKeys=[
       payload.email?`email:${payload.email.trim().toLowerCase()}`:"",
       payload.phone?`phone:${normalizeBuyerPhone(payload.phone)}`:"",
+      `profile:${buyerProfileFingerprint(payload)}`,
     ].filter(Boolean).sort();
     for(const key of routeKeys) await tx.execute(sql`select pg_advisory_xact_lock(hashtextextended(current_schema() || ${`buyer-route:${key}`},0))`);
     const others=await tx.select().from(buyersTable);
+    const profileConflict=others.find(other=>other.id!==id&&buyerProfileFingerprint(other.payload)===buyerProfileFingerprint(payload));
+    if(profileConflict) throw new DomainError(`An identical buyer profile already exists (${profileConflict.id}). Review identity evidence; records are not automatically merged.`,409);
     const email=payload.email.trim().toLowerCase(),digits=normalizeBuyerPhone(payload.phone);
     const conflict=others.find(other=>{
       if(other.id===id)return false;
@@ -86,7 +117,8 @@ export async function updateBuyer(id: string, input: z.infer<typeof UpdateBuyerB
     if(identityChanged&&(!payload.contactSourceUrl||!payload.contactObservedAt)){
       delete savedPayload.contactSourceUrl;delete savedPayload.contactObservedAt;delete savedPayload.contactConfidence;
     }
-    const [saved] = await tx.update(buyersTable).set({payload:savedPayload,version:row.version+1,updatedAt:new Date()}).where(eq(buyersTable.id,id)).returning();
+    const updatedAt = new Date(Math.max(Date.now(),row.updatedAt.getTime()+1));
+    const [saved] = await tx.update(buyersTable).set({payload:savedPayload,version:row.version+1,updatedAt}).where(eq(buyersTable.id,id)).returning();
     if (!saved) throw new Error("Buyer update failed.");
     await audit(tx,actor.id,"BUYER_UPDATED",id,identityChanged?"Identity changed; verification invalidated. Matching queued.":"Criteria/status revised; matching queued.");
     await queueJob(tx,"MATCH_BUYERS",null,`buyer:${id}:${saved.version}`,actor.id);
