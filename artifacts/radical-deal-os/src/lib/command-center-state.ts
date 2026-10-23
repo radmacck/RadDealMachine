@@ -16,6 +16,10 @@ export function isQuerySnapshotCurrent(isFetching: boolean, isError: boolean) {
   return !isFetching && !isError;
 }
 
+export function mayDisplayPrivateSnapshot(state: ApiViewState) {
+  return state !== "UNAUTHENTICATED" && state !== "FORBIDDEN";
+}
+
 export function discoveryOrigin(observations: DiscoverySourceObservationLite[]) {
   const ids = observations.map((item) => item.sourceId.toLowerCase());
   if (ids.some((id) => /synthetic|fixture|test/.test(id))) return "SYNTHETIC_EXERCISE";
@@ -104,6 +108,7 @@ export function buyerIntakeState(search: string) {
 
 export type ApiViewState =
   | "LOADING"
+  | "REFRESHING"
   | "READY"
   | "EMPTY"
   | "STALE"
@@ -113,6 +118,7 @@ export type ApiViewState =
 
 export function classifyApiViewState<T>(query: {
   isLoading: boolean;
+  isFetching?: boolean;
   isError: boolean;
   data: T | undefined;
   error: unknown;
@@ -122,6 +128,7 @@ export function classifyApiViewState<T>(query: {
   if (query.isError && status === 403) return "FORBIDDEN";
   if (query.isError) return query.data === undefined ? "ERROR" : "STALE";
   if (query.data === undefined || query.isLoading) return "LOADING";
+  if (query.isFetching) return "REFRESHING";
   return isEmpty(query.data) ? "EMPTY" : "READY";
 }
 

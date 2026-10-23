@@ -1,6 +1,7 @@
 import { createHash } from "node:crypto";
 import { ConnectorRegistry } from "@workspace/property-sources";
 import type { ListingRetentionPolicy } from "@workspace/deal-domain";
+import { sanitizeOperationalError } from "./operational-error-sanitizer";
 import {
   PHILA_DEMOLITIONS_SOURCE,
   PHILA_LI_PERMITS_SOURCE,
@@ -290,7 +291,7 @@ export async function refreshListingDescriptionsFromRegisteredSources(
         connectorId: connector.id,
         sourceIds: connector.sources.filter(source => source.capabilities.includes("LISTING_DESCRIPTION")).map(source => source.id),
         operation: "REFRESH",
-        message: error instanceof Error ? error.message : "Unknown listing-description source failure",
+        message: sanitizeOperationalError(error, "Listing-description source failed."),
       });
     }
   }
@@ -322,7 +323,7 @@ export async function runPropertyDiscoveryConnectors(
         connectorId: connector.id,
         sourceIds: connector.sources.map(source => source.id),
         operation: "DISCOVER",
-        message: (error instanceof Error ? error.message : "Unknown source error").slice(0, 300),
+        message: sanitizeOperationalError(error, "Property source discovery failed."),
       });
     }
   }
@@ -352,7 +353,7 @@ export async function runPropertyEvidenceRefresh(
           connectorId: connector.id,
           sourceIds: connector.sources.map(source => source.id),
           operation: "REFRESH",
-          message: (error instanceof Error ? error.message : "Unknown source error").slice(0, 300),
+          message: sanitizeOperationalError(error, "Property source refresh failed."),
         });
       }
     }

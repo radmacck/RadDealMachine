@@ -6,6 +6,7 @@ import { authenticated, membership, roles, sensitiveWorkspaceData } from "../mid
 import * as sources from "../services/property-source-store";
 import * as discoveries from "../services/property-discovery-store";
 import { propagateStaleTransactionDocuments } from "../services/transaction-store";
+import { exportPropertyDiscoveryRecord } from "../services/founder-record-export";
 
 export function createPropertySourcesRouter(
   auth: RequestHandler = authenticated,
@@ -36,6 +37,13 @@ router.post("/property-sources/phila-opa/records/:recordId/import",research,asyn
 router.get("/property-discoveries",async(req,res)=>{
   const p = parse(contract.ListPropertyDiscoveriesQueryParams,req.query);
   res.json(await discoveries.listPropertyDiscoveries(p));
+});
+router.get("/property-discoveries/:id/export",roles("OWNER"),async(req,res)=>{
+  const {id}=parse(contract.ExportPropertyDiscoveryRecordParams,req.params);
+  const result=contract.ExportPropertyDiscoveryRecordResponse.parse(await exportPropertyDiscoveryRecord(id,actor(res)));
+  res.setHeader("Content-Type","application/json");
+  res.setHeader("Content-Disposition",`attachment; filename="property-${id}-redacted.json"`);
+  res.json(result);
 });
 router.post("/property-discoveries/phila-opa/:recordId",review,async(req,res)=>{
   const p = parse(contract.RecordPublicPropertyDiscoveryParams,req.params);

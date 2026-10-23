@@ -82,6 +82,7 @@ export function AppShell({ children }: { children: ReactNode }) {
 
   return (
     <div className="field-desk">
+      <a className="fd-skip-link" href="#main-content">Skip to main content</a>
       <div className="fd-shell">
         <aside className="fd-sidebar">
           <Link href="/dashboard" className="fd-brand" data-testid="link-home">
@@ -143,7 +144,7 @@ export function AppShell({ children }: { children: ReactNode }) {
               <button className="fd-icon-button fd-mobile-logout" type="button" onClick={() => signOut({ redirectUrl: base || '/' })} data-testid="button-sign-out-mobile" aria-label="Sign out"><LogOut size={15} /></button>
             </div>
           </header>
-          <main className="fd-content">
+          <main className="fd-content" id="main-content" tabIndex={-1}>
             <WorkspaceSearchContext.Provider value={{ open: searchOpen, query: searchQuery, setQuery: setSearchQuery }}>
               {children}
             </WorkspaceSearchContext.Provider>

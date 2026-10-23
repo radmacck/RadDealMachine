@@ -685,7 +685,10 @@ export async function savePropertyContactResearchCase(
     const [saved] = await tx.update(propertyDiscoveriesTable).set({
       payload: payloadRecord, version: current.version + 1, updatedAt: now,
     }).where(eq(propertyDiscoveriesTable.id, discoveryId)).returning();
-    await audit(tx, actor.id, "PROPERTY_CONTACT_RESEARCH_RECORDED", discoveryId, caseRecord.auditHistory.at(-1)!.reason);
+    await audit(tx, actor.id, "PROPERTY_CONTACT_RESEARCH_RECORDED", discoveryId,
+      `Contact research v${caseRecord.version} saved; status ${prior?.status ?? "NONE"} -> ${nextStatus}; ` +
+      `identity ${request.identityMatch}; permission ${request.permissionBasis}; candidate routes ${candidateRoutes.length}; ` +
+      `synthetic ${Boolean(synthetic)}. Detailed evidence remains on the access-controlled property record.`);
     if (!saved) throw new DomainError("Could not save contact research.", 500);
     return discoveryResponse(saved, tx);
   });

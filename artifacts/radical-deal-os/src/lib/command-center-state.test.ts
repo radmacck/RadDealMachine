@@ -7,6 +7,7 @@ import {
   classifyApiViewState,
   isEmptyCommandCenter,
   isQuerySnapshotCurrent,
+  mayDisplayPrivateSnapshot,
   isCurrentApprovedBuyer,
   discoveryOrigin,
   discoveryContactState,
@@ -45,10 +46,17 @@ test("command-center query state distinguishes loading, empty, authenticated dat
 test("401 and 403 deny cached private command-center data instead of rendering it", () => {
   assert.equal(classifyApiViewState({ isLoading: false, isError: true, data: emptyDesk, error: { status: 401 } }), "UNAUTHENTICATED");
   assert.equal(classifyApiViewState({ isLoading: false, isError: true, data: emptyDesk, error: { status: 403 } }), "FORBIDDEN");
+  assert.equal(mayDisplayPrivateSnapshot("UNAUTHENTICATED"), false);
+  assert.equal(mayDisplayPrivateSnapshot("FORBIDDEN"), false);
+  assert.equal(mayDisplayPrivateSnapshot("STALE"), true);
 });
 
 test("a failed refresh with cached data is explicitly stale, not current", () => {
   assert.equal(classifyApiViewState({ isLoading: false, isError: true, data: emptyDesk, error: new Error("network failed") }), "STALE");
+});
+
+test("a cached response is labeled refreshing until the request completes", () => {
+  assert.equal(classifyApiViewState({ isLoading: false, isFetching: true, isError: false, data: emptyDesk, error: null }), "REFRESHING");
 });
 
 test("cached discovery snapshots are read-only while refreshing or after a failed refresh", () => {

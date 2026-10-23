@@ -20,6 +20,11 @@ async function withServer<T>(serverApp: express.Express, callback: (baseUrl: str
 
 test("consequential private routes reject missing and malformed sessions before handlers run", async () => {
   await withServer(app,async baseUrl => {
+    const expiredShapedToken = [
+      Buffer.from(JSON.stringify({ alg: "HS256", typ: "JWT" })).toString("base64url"),
+      Buffer.from(JSON.stringify({ sub: "synthetic-expired-session", iat: 0, exp: 1 })).toString("base64url"),
+      "synthetic-invalid-signature",
+    ].join(".");
     const requests: Array<{path:string;init?:RequestInit}> = [
       { path: "/api/deals/command-center" },
       { path: "/api/leads/00000000-0000-4000-8000-000000000001" },
@@ -60,14 +65,17 @@ test("consequential private routes reject missing and malformed sessions before 
       { path: "/api/workspace-setup" },
       { path: "/api/deals/audit" },
     ];
-    for (const session of ["missing","malformed"] as const) {
+    for (const session of ["missing","malformed","expired-shaped"] as const) {
       for (const {path,init} of requests) {
         const headers = new Headers(init?.headers);
         if (session==="malformed") headers.set("Authorization","Bearer invalid.session.token");
+        if (session==="expired-shaped") headers.set("Authorization",`Bearer ${expiredShapedToken}`);
         const response = await fetch(`${baseUrl}${path}`,{...init,headers});
         assert.equal(response.status,401,`${session} session ${path}`);
         const body = await response.json() as { error?: string };
         assert.match(body.error ?? "",/sign in|authenticated|session/i,`${session} session ${path}`);
+        assert.doesNotMatch(JSON.stringify(body),/synthetic-expired-session|synthetic-invalid-signature|invalid\.session\.token/,
+          "Authentication failures must not echo bearer credentials.");
       }
     }
   });

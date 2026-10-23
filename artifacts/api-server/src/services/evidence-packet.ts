@@ -10,8 +10,8 @@ import { leadDetail } from "./deal-store";
 
 type Purpose="INTERNAL_REVIEW"|"OWNER_AUDIT"|"TITLE_HANDOFF"|"LEGAL_REVIEW"|"BUYER_HANDOFF";
 const alwaysPrivate=/(token|password|secret|authorization|pdfbase64|privatekey)/i;
-const personal=/(address|street|zip|postal|phone|email|sellername|buyername|ownername|fullname|personal|contactdetails|contactroute|contactname)/i;
-function sanitize(value:unknown,allowSensitive:boolean):unknown {
+const personal=/(address|street|zip|postal|phone|email|sellername|buyername|ownername|recordedowner|fullname|personal|contactdetails|contactroute|contactname)/i;
+export function sanitizeEvidenceExport(value:unknown,allowSensitive:boolean):unknown {
   const privateValues:string[]=[];
   const collect=(v:unknown,key="")=>{
     if(!v||typeof v!=="object"){if(!allowSensitive&&personal.test(key)&&typeof v==="string"&&v.length>=3)privateValues.push(v);return;}
@@ -38,9 +38,9 @@ function recordClass(payload:unknown,fallback:"SYNTHETIC"|"UNMARKED"="UNMARKED")
   const p=payload&&typeof payload==="object"?payload as Record<string,unknown>:{};
   return p.synthetic===true||p.fixture===true?"SYNTHETIC":fallback;
 }
-function stable(v:unknown):string {
-  if(Array.isArray(v))return `[${v.map(stable).join(",")}]`;
-  if(v&&typeof v==="object")return `{${Object.entries(v as Record<string,unknown>).sort(([a],[b])=>a.localeCompare(b)).map(([k,x])=>`${JSON.stringify(k)}:${stable(x)}`).join(",")}}`;
+export function stableEvidenceJson(v:unknown):string {
+  if(Array.isArray(v))return `[${v.map(stableEvidenceJson).join(",")}]`;
+  if(v&&typeof v==="object")return `{${Object.entries(v as Record<string,unknown>).sort(([a],[b])=>a.localeCompare(b)).map(([k,x])=>`${JSON.stringify(k)}:${stableEvidenceJson(x)}`).join(",")}}`;
   return JSON.stringify(v);
 }
 export async function exportDealEvidencePacket(id:string,actor:{id:string;role:string},purpose:Purpose,includeSensitive=false) {
@@ -111,8 +111,8 @@ export async function exportDealEvidencePacket(id:string,actor:{id:string;role:s
       sections:classified,
       priorExports:prior.map(row=>({id:row.id,version:row.version,contentHash:row.contentHash,purpose:row.purpose,generatedBy:row.generatedBy,createdAt:row.createdAt,redactionLevel:row.redactionLevel})),
     };
-    const snapshot=sanitize(packet,allowSensitive) as Record<string,unknown>;
-    const hash=createHash("sha256").update(stable(snapshot)).digest("hex");
+    const snapshot=sanitizeEvidenceExport(packet,allowSensitive) as Record<string,unknown>;
+    const hash=createHash("sha256").update(stableEvidenceJson(snapshot)).digest("hex");
     const version=(prior[0]?.version??0)+1,createdAt=new Date();
     const [saved]=await tx.insert(evidencePacketExportsTable).values({leadId:id,version,contentHash:hash,generatedBy:actor.id,purpose,
       redactionLevel:allowSensitive?"OWNER_AUDIT_AUTHORIZED":"REDACTED",snapshot,createdAt}).returning();

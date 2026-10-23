@@ -1,4 +1,4 @@
-import type { ReactNode } from 'react';
+import React, { type ReactNode } from 'react';
 import { Link } from 'wouter';
 import { AlertTriangle, Inbox } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
@@ -49,8 +49,11 @@ export function EmptyState({ title, body, action }: { title: string; body: strin
 
 export function RowsSkeleton({ rows = 5 }: { rows?: number }) {
   return (
-    <div className="space-y-2" data-testid="skeleton-rows">
-      {Array.from({ length: rows }).map((_, i) => <Skeleton key={i} className="h-12 w-full" />)}
+    <div className="space-y-2" data-testid="skeleton-rows" role="status" aria-live="polite">
+      <span className="sr-only">Loading records</span>
+      <div aria-hidden="true">
+        {Array.from({ length: rows }).map((_, i) => <Skeleton key={i} className="h-12 w-full" />)}
+      </div>
     </div>
   );
 }

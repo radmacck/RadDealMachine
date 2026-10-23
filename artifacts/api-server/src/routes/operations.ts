@@ -16,6 +16,7 @@ import { recordTransactionException } from "../services/transaction-exceptions";
 import { createClauseReviewRequest, listClauseReviewRequests } from "../services/transaction-clause-requests";
 import * as workers from "../services/workers";
 import { listHandoffs, recordHandoffEvent } from "../services/handoffs";
+import { exportBuyerRecord } from "../services/founder-record-export";
 import { getWorkspaceSetupStatus, saveWorkspaceSetup } from "../services/workspace-setup";
 
 export const actor = (res: {locals:Record<string,unknown>}): OfferActor => ({id:String(res.locals.actor),role:String(res.locals.role)});
@@ -95,6 +96,13 @@ router.post("/buyers",roles("OWNER"),async(req,res)=>{
 router.get("/buyers/:id",roles("OWNER"),async(req,res)=>{
   const {id} = parse(schemas.GetBuyerParams,req.params);
   res.json(schemas.GetBuyerResponse.parse(await getBuyerRecord(id)));
+});
+router.get("/buyers/:id/export",roles("OWNER"),async(req,res)=>{
+  const {id}=parse(schemas.ExportBuyerRecordParams,req.params);
+  const result=schemas.ExportBuyerRecordResponse.parse(await exportBuyerRecord(id,actor(res)));
+  res.setHeader("Content-Type","application/json");
+  res.setHeader("Content-Disposition",`attachment; filename="buyer-${id}-redacted.json"`);
+  res.json(result);
 });
 router.get("/buyers/:id/contact-research",roles("OWNER"),async(req,res)=>{
   const {id}=parse(z.object({id:z.string().uuid()}),req.params);

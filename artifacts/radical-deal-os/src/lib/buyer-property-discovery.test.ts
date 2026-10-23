@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import type { Buyer, PropertyDiscovery } from '@workspace/api-client-react';
-import { discoverBuyerPropertyCandidates } from './buyer-property-discovery';
+import { buyerPropertyCandidateStateLabel, discoverBuyerPropertyCandidates } from './buyer-property-discovery';
 
 const now = new Date('2026-10-22T12:00:00Z');
 const criteria = {
@@ -88,4 +88,11 @@ test('missing criteria, unsupported market, and partial pool are not reported as
   assert.equal(discoverBuyerPropertyCandidates(criteria, [], now, { marketSupported: false }).state, 'UNAVAILABLE');
   assert.equal(discoverBuyerPropertyCandidates(criteria, [], now, { marketSupported: true, hasMore: true }).state, 'PARTIAL_POOL');
   assert.equal(discoverBuyerPropertyCandidates(criteria, [], now, { marketSupported: true, marketPartial: true }).state, 'PARTIAL_POOL');
+});
+
+test('candidate status labels use plain language and do not overstate criteria alignment', () => {
+  assert.equal(buyerPropertyCandidateStateLabel('STRONG_MATCH'), 'Potential criteria fit');
+  assert.equal(buyerPropertyCandidateStateLabel('WEAK_MATCH'), 'Possible fit · facts missing');
+  assert.equal(buyerPropertyCandidateStateLabel('STALE_SOURCE'), 'Source data is stale');
+  assert.equal(buyerPropertyCandidateStateLabel('UNAVAILABLE'), 'Not a current candidate');
 });

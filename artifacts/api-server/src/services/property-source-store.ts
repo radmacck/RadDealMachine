@@ -9,6 +9,7 @@ import {
 import { audit, getAssumptions, leadDetail, lockedLead, saveUnderwriting } from "./deal-store";
 import { allPropertySourceConnectors, getPropertySourceConnector, listPropertySourceDescriptors, PROPERTY_SOURCE_POLICY_VERSION } from "./property-source-connectors";
 import { NOT_CONNECTED_PROPERTY_SOURCE_CAPABILITIES } from "./property-source-availability";
+import { sanitizeOperationalError } from "./operational-error-sanitizer";
 
 type Tx = Parameters<Parameters<typeof db.transaction>[0]>[0];
 type Research = ReturnType<typeof RefreshSourceResearchResponse.parse>;
@@ -26,7 +27,7 @@ function requireReview(actor: OfferActor, termsReviewed: boolean) {
 async function sourceRequest<T>(action: () => Promise<T>) {
   try { return await action(); }
   catch (error) {
-    const message = error instanceof Error ? error.message : "Unknown source failure";
+    const message = sanitizeOperationalError(error, "Property source request failed.");
     throw new DomainError(`Official property source: ${message}. No source success was recorded.`,409);
   }
 }

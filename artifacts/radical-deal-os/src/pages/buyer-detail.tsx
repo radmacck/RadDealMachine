@@ -68,8 +68,13 @@ export default function BuyerDetail() {
       <header className="rise flex flex-wrap items-end justify-between gap-3 border-b border-border pb-4">
         <div><p className="eyebrow mb-2">Buyer / version {b.version}</p><h1 className="text-3xl font-semibold md:text-4xl" data-testid="text-buyer-name">{b.name}</h1>
           <p className="text-sm text-muted-foreground">{[b.email, b.phone].filter(Boolean).join(' / ') || 'no contact on file'} / source: {b.source}</p></div>
-         <div className="flex gap-1.5">{syntheticFixture&&<span className="tag tone-stop" data-testid="tag-synthetic-buyer">SYNTHETIC FIXTURE · excluded</span>}<ApprovalTag buyer={b} /><VerificationTag buyer={b} /><span className="tag tone-ink">{b.status}</span></div>
+          <div className="flex flex-wrap items-center gap-1.5">
+            {syntheticFixture&&<span className="tag tone-stop" data-testid="tag-synthetic-buyer">SYNTHETIC FIXTURE · excluded</span>}
+            <ApprovalTag buyer={b} /><VerificationTag buyer={b} /><span className="tag tone-ink">{b.status}</span>
+            {isOwner&&<a className="inline-flex min-h-9 items-center border px-3 text-xs font-semibold" href={`/api/buyers/${encodeURIComponent(id)}/export`} data-testid="link-export-buyer">Export redacted record</a>}
+          </div>
       </header>
+        {isOwner&&<p className="-mt-4 text-xs text-muted-foreground">Exports are redacted, carry source/history data and a checksum, and label synthetic vs. unmarked records. Unmarked does not mean verified.</p>}
 
       <section className="ledger p-4" data-testid="panel-qualification-task">
         <p className="eyebrow mb-2">Qualification work</p>

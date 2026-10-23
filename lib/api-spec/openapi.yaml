@@ -679,6 +679,17 @@ paths:
           content:
             application/json:
               schema: { $ref: "#/components/schemas/Buyer" }
+  /buyers/{id}/export:
+    get:
+      operationId: exportBuyerRecord
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
+      responses:
+        "200":
+          description: Owner-only redacted buyer record export with stored classification and integrity hash
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/FounderRecordExport" }
   /buyers/{id}/verification:
     parameters:
       - { name: id, in: path, required: true, schema: { type: string } }
@@ -1349,6 +1360,17 @@ paths:
           content:
             application/json:
               schema: { $ref: "#/components/schemas/PropertyDiscovery" }
+  /property-discoveries/{id}/export:
+    get:
+      operationId: exportPropertyDiscoveryRecord
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
+      responses:
+        "200":
+          description: Owner-only redacted property discovery and source-observation export with stored classification and integrity hash
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/FounderRecordExport" }
   /property-discoveries/{id}/contact-research:
     post:
       operationId: savePropertyContactResearchCase
@@ -2663,6 +2685,21 @@ components:
             lastOutreachReplyEvidenceUrl: { type: string }
             createdAt: { type: string }
             updatedAt: { type: string }
+    FounderRecordExport:
+      type: object
+      required: [format, recordType, recordId, recordVersion, exportedAt, recordClass, unmarkedIsNotProofOfRealData, verificationBoundary, redactionLevel, snapshot, contentHash]
+      properties:
+        format: { type: string, enum: [RADICAL_DEAL_PRIVATE_RECORD_EXPORT_V1] }
+        recordType: { type: string, enum: [BUYER, PROPERTY] }
+        recordId: { type: string, format: uuid }
+        recordVersion: { type: integer }
+        exportedAt: { type: string, format: date-time }
+        recordClass: { type: string, enum: [SYNTHETIC, UNMARKED] }
+        unmarkedIsNotProofOfRealData: { type: boolean, enum: [true] }
+        verificationBoundary: { type: string }
+        redactionLevel: { type: string, enum: [PRIVATE_FIELDS_REDACTED] }
+        snapshot: { type: object, additionalProperties: true }
+        contentHash: { type: string, pattern: "^[a-f0-9]{64}$" }
     BuyerCapacity:
       type: object
       required: [buyerId, reservedFunds, reservedDeals]

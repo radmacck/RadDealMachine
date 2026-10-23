@@ -70,6 +70,7 @@ import type {
   DistributionPreferencesInput,
   DistributionShareInput,
   DistributionShareResponse,
+  FounderRecordExport,
   GetSourceResearch200,
   GetTransactionDocumentReadinessParams,
   GetWorkerCapabilities200Item,
@@ -4295,6 +4296,77 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
       return useMutation(getUpdateBuyerMutationOptions(options));
     }
 
+export const getExportBuyerRecordUrl = (id: string,) => {
+
+
+
+
+  return `/api/buyers/${id}/export`
+}
+
+export const exportBuyerRecord = async (id: string, options?: Parameters<typeof customFetch>[1]): Promise<FounderRecordExport> => {
+
+  return customFetch<FounderRecordExport>(getExportBuyerRecordUrl(id),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getExportBuyerRecordQueryKey = (id: string,) => {
+    return [
+    `/api/buyers/${id}/export`
+    ] as const;
+    }
+
+
+export const getExportBuyerRecordQueryOptions = <TData = Awaited<ReturnType<typeof exportBuyerRecord>>, TError = ErrorType<unknown>>(id: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof exportBuyerRecord>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getExportBuyerRecordQueryKey(id);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof exportBuyerRecord>>> = ({ signal }) => exportBuyerRecord(id, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: id !== null && id !== undefined, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof exportBuyerRecord>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type ExportBuyerRecordQueryResult = NonNullable<Awaited<ReturnType<typeof exportBuyerRecord>>>
+export type ExportBuyerRecordQueryError = ErrorType<unknown>
+
+
+
+export function useExportBuyerRecord<TData = Awaited<ReturnType<typeof exportBuyerRecord>>, TError = ErrorType<unknown>>(
+ id: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof exportBuyerRecord>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getExportBuyerRecordQueryOptions(id,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
 export const getVerifyBuyerUrl = (id: string,) => {
 
 
@@ -8080,6 +8152,77 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
       > => {
       return useMutation(getDisqualifyPropertyDiscoveryMutationOptions(options));
     }
+
+export const getExportPropertyDiscoveryRecordUrl = (id: string,) => {
+
+
+
+
+  return `/api/property-discoveries/${id}/export`
+}
+
+export const exportPropertyDiscoveryRecord = async (id: string, options?: Parameters<typeof customFetch>[1]): Promise<FounderRecordExport> => {
+
+  return customFetch<FounderRecordExport>(getExportPropertyDiscoveryRecordUrl(id),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getExportPropertyDiscoveryRecordQueryKey = (id: string,) => {
+    return [
+    `/api/property-discoveries/${id}/export`
+    ] as const;
+    }
+
+
+export const getExportPropertyDiscoveryRecordQueryOptions = <TData = Awaited<ReturnType<typeof exportPropertyDiscoveryRecord>>, TError = ErrorType<unknown>>(id: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof exportPropertyDiscoveryRecord>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getExportPropertyDiscoveryRecordQueryKey(id);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof exportPropertyDiscoveryRecord>>> = ({ signal }) => exportPropertyDiscoveryRecord(id, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: id !== null && id !== undefined, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof exportPropertyDiscoveryRecord>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type ExportPropertyDiscoveryRecordQueryResult = NonNullable<Awaited<ReturnType<typeof exportPropertyDiscoveryRecord>>>
+export type ExportPropertyDiscoveryRecordQueryError = ErrorType<unknown>
+
+
+
+export function useExportPropertyDiscoveryRecord<TData = Awaited<ReturnType<typeof exportPropertyDiscoveryRecord>>, TError = ErrorType<unknown>>(
+ id: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof exportPropertyDiscoveryRecord>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getExportPropertyDiscoveryRecordQueryOptions(id,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
 
 export const getSavePropertyContactResearchCaseUrl = (id: string,) => {
 

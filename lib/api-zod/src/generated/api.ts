@@ -21209,6 +21209,28 @@ export const UpdateBuyerResponse = zod.object({
 }))
 
 
+export const ExportBuyerRecordParams = zod.object({
+  "id": zod.coerce.string().uuid()
+})
+
+export const exportBuyerRecordResponseContentHashRegExp = new RegExp('^[a-f0-9]{64}$');
+
+
+export const ExportBuyerRecordResponse = zod.object({
+  "format": zod.enum(['RADICAL_DEAL_PRIVATE_RECORD_EXPORT_V1']),
+  "recordType": zod.enum(['BUYER', 'PROPERTY']),
+  "recordId": zod.string().uuid(),
+  "recordVersion": zod.number().int(),
+  "exportedAt": zod.string().datetime({"offset":true}),
+  "recordClass": zod.enum(['SYNTHETIC', 'UNMARKED']),
+  "unmarkedIsNotProofOfRealData": zod.literal(true),
+  "verificationBoundary": zod.string(),
+  "redactionLevel": zod.enum(['PRIVATE_FIELDS_REDACTED']),
+  "snapshot": zod.record(zod.string(), zod.unknown()),
+  "contentHash": zod.string().regex(exportBuyerRecordResponseContentHashRegExp)
+})
+
+
 export const VerifyBuyerParams = zod.object({
   "id": zod.coerce.string()
 })
@@ -41667,6 +41689,28 @@ export const DisqualifyPropertyDiscoveryResponse = zod.object({
 })).optional(),
   "synthetic": zod.boolean()
 }).optional()
+})
+
+
+export const ExportPropertyDiscoveryRecordParams = zod.object({
+  "id": zod.coerce.string().uuid()
+})
+
+export const exportPropertyDiscoveryRecordResponseContentHashRegExp = new RegExp('^[a-f0-9]{64}$');
+
+
+export const ExportPropertyDiscoveryRecordResponse = zod.object({
+  "format": zod.enum(['RADICAL_DEAL_PRIVATE_RECORD_EXPORT_V1']),
+  "recordType": zod.enum(['BUYER', 'PROPERTY']),
+  "recordId": zod.string().uuid(),
+  "recordVersion": zod.number().int(),
+  "exportedAt": zod.string().datetime({"offset":true}),
+  "recordClass": zod.enum(['SYNTHETIC', 'UNMARKED']),
+  "unmarkedIsNotProofOfRealData": zod.literal(true),
+  "verificationBoundary": zod.string(),
+  "redactionLevel": zod.enum(['PRIVATE_FIELDS_REDACTED']),
+  "snapshot": zod.record(zod.string(), zod.unknown()),
+  "contentHash": zod.string().regex(exportPropertyDiscoveryRecordResponseContentHashRegExp)
 })
 
 

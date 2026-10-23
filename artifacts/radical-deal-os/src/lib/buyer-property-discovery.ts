@@ -26,6 +26,18 @@ export type BuyerPropertyDiscoveryResult = {
   note: string;
 };
 
+export function buyerPropertyCandidateStateLabel(state: BuyerPropertyCandidate['state']) {
+  switch (state) {
+    case 'STRONG_MATCH': return 'Potential criteria fit';
+    case 'WEAK_MATCH': return 'Possible fit · facts missing';
+    case 'NO_MATCH': return 'Does not fit saved criteria';
+    case 'STALE_SOURCE': return 'Source data is stale';
+    case 'STALE_BUYER': return 'Buyer evidence is stale';
+    case 'INCOMPLETE_PROPERTY': return 'Property details are incomplete';
+    case 'UNAVAILABLE': return 'Not a current candidate';
+  }
+}
+
 const MAX_SOURCE_AGE_MS = 30 * 24 * 60 * 60 * 1000;
 const compareText = (a: string, b: string) => a.localeCompare(b);
 export function discoverBuyerPropertyCandidates(

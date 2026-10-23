@@ -4,6 +4,8 @@ import express, { type RequestHandler } from "express";
 import type { AddressInfo } from "node:net";
 import { DomainError } from "@workspace/deal-domain";
 import type { PublicProperty } from "@workspace/property-sources";
+import { and, desc, eq } from "drizzle-orm";
+import { auditTable, db, propertyDiscoveriesTable } from "@workspace/db";
 import { createPropertySourcesRouter } from "../routes/property-sources";
 import { recordPropertyObservation } from "./property-discovery-store";
 import { hasLegitimateSellerCallRoute } from "./property-contactability-gate";
@@ -140,6 +142,24 @@ try {
   const routeAuditReason = saved.contactResearchCase?.auditHistory.at(-1)?.reason ?? "";
   assert.match(routeAuditReason, /status=OPEN->EVIDENCE_RECORDED/);
   assert.match(routeAuditReason, /sourceRecordId=SYNTHETIC-HTTP-ROUTE-1/);
+  const [auditEvent] = await db.select().from(auditTable)
+    .where(and(eq(auditTable.entityId, discovery.id), eq(auditTable.action, "PROPERTY_CONTACT_RESEARCH_RECORDED")))
+    .orderBy(desc(auditTable.createdAt)).limit(1);
+  assert.ok(auditEvent);
+  assert.match(auditEvent.detail, /identity SELLER_SELF_IDENTIFIED; permission CONSENT; candidate routes 1/);
+  for (const privateValue of [
+    "(215) 555-0147", "SYNTHETIC HTTP seller", "SYNTHETIC-HTTP-REF", "SYNTHETIC-HTTP-ROUTE-1",
+    "Synthetic role-check fixture only", "synthetic-permission",
+  ]) {
+    assert.equal(auditEvent.detail.includes(privateValue), false,
+      `Global audit summary must not duplicate private evidence value: ${privateValue}`);
+  }
+  const [storedDiscovery] = await db.select().from(propertyDiscoveriesTable).where(eq(propertyDiscoveriesTable.id, discovery.id));
+  const storedCase = storedDiscovery?.payload.contactResearchCase as { note?: string; evidenceReference?: string };
+  assert.equal(storedCase.note, "Synthetic role-check fixture only; no seller was contacted.",
+    "Detailed note remains persisted on the access-controlled source record.");
+  assert.equal(storedCase.evidenceReference, "SYNTHETIC-HTTP-REF",
+    "The evidence reference remains persisted with the private record.");
   const auditCount = saved.contactResearchCase?.auditHistory.length;
   const replay = await request("OWNER", { ...ownerInput, version: saved.version });
   assert.equal(replay.status, 200);
@@ -168,11 +188,14 @@ try {
   );
   assert.equal(reloadResponse.status, 200);
   const reload = await reloadResponse.json() as {
-    records: Array<{ id: string; contactResearchCase?: { candidateRoutes?: Array<{ sourceRecordId: string }> } }>;
+    records: Array<{ id: string; contactResearchCase?: { evidenceReference?: string | null; candidateRoutes?: Array<{ sourceRecordId: string; routeValue?: string }> } }>;
   };
-  assert.ok(reload.records.find(row => row.id === discovery.id)?.contactResearchCase?.candidateRoutes
+  const retainedCase = reload.records.find(row => row.id === discovery.id)?.contactResearchCase;
+  assert.ok(retainedCase?.candidateRoutes
     ?.some(route => route.sourceRecordId === "SYNTHETIC-HTTP-ROUTE-1"),
   "A separate HTTP read reloads the persisted contact route.");
+  assert.equal(retainedCase?.candidateRoutes?.[0]?.routeValue, "(215) 555-0147");
+  assert.equal(retainedCase?.evidenceReference, "SYNTHETIC-HTTP-REF");
   console.log("Contact-research HTTP role, owner approval, replay, and persisted reload exercise PASSED (isolated synthetic property; fake identity middleware only; production role and route handlers unchanged).");
 } finally {
   await new Promise<void>((resolve, reject) => server.close(error => error ? reject(error) : resolve()));

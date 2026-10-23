@@ -21,6 +21,7 @@ import { useInvalidateWork } from '@/hooks/use-invalidate';
 import { useToast } from '@/hooks/use-toast';
 import { normalizeContactResearchEvidenceReference } from '@/lib/contact-research-evidence';
 import { isQuerySnapshotCurrent } from '@/lib/command-center-state';
+import { buyerPropertyDiscoveryListLimit } from '@/lib/buyer-property-handoff';
 
 type Lane = 'properties' | 'buyer_candidates';
 const DISCOVERY_PAGE_SIZE = 25;
@@ -162,9 +163,12 @@ export default function Sources() {
   const sourceCoverage = useGetPropertySourceCoverage();
   const params: SearchPublicPropertiesParams = { lane, ...(zip ? { zip } : {}) };
   const search = useSearchPublicProperties(params, { query: { queryKey: getSearchPublicPropertiesQueryKey(params), staleTime: 30_000 } });
+  const searchSnapshotCurrent = isQuerySnapshotCurrent(search.isFetching, search.isError);
   const discoveryParams: ListPropertyDiscoveriesParams = {
     marketKey: 'PHILADELPHIA_PA',
-    limit: DISCOVERY_PAGE_SIZE,
+    // Buyer-first handoffs select from the same first 100 records; load that
+    // same bounded pool so the selected record can be opened immediately.
+    limit: buyerPropertyDiscoveryListLimit(openDiscoveryId, DISCOVERY_PAGE_SIZE),
     ...(statusFilter !== 'ALL' ? { status: statusFilter } : {}),
     ...(discoveryCursor ? { cursor: discoveryCursor } : {}),
     ...(unmatchedCursor ? { unmatchedCursor } : {}),
@@ -551,7 +555,10 @@ export default function Sources() {
                     <p className="mt-1 text-xs text-muted-foreground">Next: {item.nextAction}</p>
                     <p className="mt-1 text-xs text-muted-foreground">Source observations: {item.sourceObservationCount} · properties with recorded owner: {item.relatedOwnerPropertyCount} · first seen {new Date(item.firstObservedAt).toLocaleDateString()} · last seen {new Date(item.lastObservedAt).toLocaleDateString()}</p>
                   </div>
-                  {item.leadId && <Button size="sm" variant="outline" onClick={() => nav(`/deals/${item.leadId}`)}>Open active lead</Button>}
+                  <div className="flex flex-wrap gap-2">
+                    {isOwner&&<a className="inline-flex min-h-9 items-center border px-3 text-xs font-semibold" href={`/api/property-discoveries/${encodeURIComponent(item.id)}/export`} data-testid={`link-export-property-${item.id}`}>Export redacted record</a>}
+                    {item.leadId && <Button size="sm" variant="outline" onClick={() => nav(`/deals/${item.leadId}`)}>Open active lead</Button>}
+                  </div>
                 </div>
                 <div className="mt-3 grid gap-3 md:grid-cols-2">
                   <div className="rounded bg-muted/40 p-3">
@@ -738,10 +745,11 @@ export default function Sources() {
       {lane === 'buyer_candidates' && <p className="ledger border-l-4 border-l-signal p-3 text-sm">Corporate-owner research only. These are not approved buyers: current buying intent, criteria, contact and funds are unknown until you verify them.</p>}
       {discover.error != null && <ErrorNotice error={discover.error} />}
       {recordDiscovery.error != null && <ErrorNotice error={recordDiscovery.error} />}
-      {search.isLoading && <RowsSkeleton rows={5} />}
+      {search.isLoading && <div role="status" aria-label="Searching public property records"><RowsSkeleton rows={5} /></div>}
+      {search.isFetching && !search.isLoading && <p className="border-l-2 border-amber-500 pl-3 text-sm" role="status" data-testid="public-property-search-refreshing">Refreshing source results. Previous results are hidden until the search completes.</p>}
       {search.isError && <ErrorNotice error={search.error} onRetry={() => search.refetch()} />}
-      {search.data && search.data.records.length === 0 && <EmptyState title="No records returned" body="Try another ZIP inside the stated coverage, or clear the ZIP filter." />}
-      {search.data && search.data.records.length > 0 && (
+      {search.data && searchSnapshotCurrent && search.data.records.length === 0 && <EmptyState title="The source returned no records" body={`No records were returned${params.zip ? ` for ZIP ${params.zip}` : ' for this search'} in this completed query. That does not establish that no properties exist. ${src?.coverage ?? ''}`} />}
+      {search.data && searchSnapshotCurrent && search.data.records.length > 0 && (
         <ul className="space-y-2" data-testid="list-source-records">{search.data.records.map((r) => (
           <li key={r.id} className="ledger space-y-2 p-3" data-testid={`record-${r.id}`}>
             <div className="flex flex-wrap items-center justify-between gap-2">

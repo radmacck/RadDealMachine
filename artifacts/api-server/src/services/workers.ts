@@ -19,6 +19,7 @@ import { decisionWorkExecutors, runDecisionWorkOnce } from "./decision-work-life
 import { evaluateAllTransactionReadiness } from "./transaction-readiness";
 import { completedWorkerJobState } from "./worker-job-state";
 import { workerFailureDisposition, workerFailureIsRetryable, workerLeaseExpired, workerRecoveryMessage } from "./worker-recovery";
+import { sanitizeOperationalError } from "./operational-error-sanitizer";
 
 const BUYER_SOURCE_POLICY_VERSION = "phila-buyer-sources-v2";
 
@@ -180,7 +181,7 @@ export async function runWorkerOnce(now = new Date(), schedule = false, onlyJobI
     }).where(and(eq(jobsTable.id,row.id),eq(jobsTable.state,"RUNNING"),eq(jobsTable.attempts,row.attempts))).returning();
     return finished?jobRecord(finished):null;
   } catch (error) {
-    const message = error instanceof Error?error.message:"Worker failed. No success was recorded.";
+    const message = sanitizeOperationalError(error, "Worker failed. No success was recorded.");
     const failedAt = new Date();
     const disposition = workerFailureDisposition(row.attempts,failedAt,workerFailureIsRetryable(error));
     const priorRecovery = row.payload.recovery && typeof row.payload.recovery === "object"

@@ -3066,6 +3066,53 @@ export type Buyer = BuyerProfile & ({
   updatedAt: string;
 });
 
+export type FounderRecordExportFormat = typeof FounderRecordExportFormat[keyof typeof FounderRecordExportFormat];
+
+
+export const FounderRecordExportFormat = {
+  RADICAL_DEAL_PRIVATE_RECORD_EXPORT_V1: 'RADICAL_DEAL_PRIVATE_RECORD_EXPORT_V1',
+} as const;
+
+export type FounderRecordExportRecordType = typeof FounderRecordExportRecordType[keyof typeof FounderRecordExportRecordType];
+
+
+export const FounderRecordExportRecordType = {
+  BUYER: 'BUYER',
+  PROPERTY: 'PROPERTY',
+} as const;
+
+export type FounderRecordExportRecordClass = typeof FounderRecordExportRecordClass[keyof typeof FounderRecordExportRecordClass];
+
+
+export const FounderRecordExportRecordClass = {
+  SYNTHETIC: 'SYNTHETIC',
+  UNMARKED: 'UNMARKED',
+} as const;
+
+export type FounderRecordExportRedactionLevel = typeof FounderRecordExportRedactionLevel[keyof typeof FounderRecordExportRedactionLevel];
+
+
+export const FounderRecordExportRedactionLevel = {
+  PRIVATE_FIELDS_REDACTED: 'PRIVATE_FIELDS_REDACTED',
+} as const;
+
+export type FounderRecordExportSnapshot = { [key: string]: unknown };
+
+export interface FounderRecordExport {
+  format: FounderRecordExportFormat;
+  recordType: FounderRecordExportRecordType;
+  recordId: string;
+  recordVersion: number;
+  exportedAt: string;
+  recordClass: FounderRecordExportRecordClass;
+  unmarkedIsNotProofOfRealData: true;
+  verificationBoundary: string;
+  redactionLevel: FounderRecordExportRedactionLevel;
+  snapshot: FounderRecordExportSnapshot;
+  /** @pattern ^[a-f0-9]{64}$ */
+  contentHash: string;
+}
+
 export interface BuyerCapacity {
   buyerId: string;
   /** @minimum 0 */

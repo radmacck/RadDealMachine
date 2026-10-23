@@ -15,6 +15,7 @@ import { useToast } from '@/hooks/use-toast';
 import { ago, money } from '@/lib/format';
 import { buyerIntakeState } from '@/lib/command-center-state';
 import { buyerPoolCoverage } from '@workspace/deal-domain';
+import { classifyApiViewState, mayDisplayPrivateSnapshot } from '@/lib/command-center-state';
 
 export default function Buyers() {
   const { canResearch } = useAccess();
@@ -28,12 +29,17 @@ export default function Buyers() {
   const [term, setTerm] = useState('');
   const q = useListBuyers({ query: { queryKey: getListBuyersQueryKey(), staleTime: 10_000, refetchInterval: 20_000 } });
   const capacity = useGetBuyerCapacity({query:{queryKey:getGetBuyerCapacityQueryKey(),staleTime:10_000,refetchInterval:20_000}});
+  const buyerState = classifyApiViewState(q, (data) => data.length === 0);
+  const capacityState = classifyApiViewState(capacity);
+  const buyerDataVisible = mayDisplayPrivateSnapshot(buyerState);
+  const buyerRecords = buyerDataVisible ? q.data ?? [] : [];
+  const coverageCurrent = ['READY', 'EMPTY'].includes(buyerState) && ['READY', 'EMPTY'].includes(capacityState);
   const create = useCreateBuyer();
   const discover = useDiscoverBuyer();
   const rows = useMemo(() => {
     const t = term.trim().toLowerCase();
-    return (q.data ?? []).filter((b) => (tab === 'pool') === (b.approvalStatus === 'APPROVED')).filter((b) => !t || [b.name, b.email, b.phone, b.criteria?.states.join(' '), b.criteria?.cities.join(' '), b.criteria?.zipCodes.join(' ')].join(' ').toLowerCase().includes(t));
-  }, [q.data, term, tab]);
+    return buyerRecords.filter((b) => (tab === 'pool') === (b.approvalStatus === 'APPROVED')).filter((b) => !t || [b.name, b.email, b.phone, b.criteria?.states.join(' '), b.criteria?.cities.join(' '), b.criteria?.zipCodes.join(' ')].join(' ').toLowerCase().includes(t));
+  }, [buyerRecords, term, tab]);
   const coverage = useMemo(() => {
     const reserved=new Map((capacity.data??[]).map(item=>[item.buyerId,item]));
     return buyerPoolCoverage((q.data??[]).map(b=>({...b,...reserved.get(b.id)})),new Date());
@@ -48,7 +54,14 @@ export default function Buyers() {
         <Button onClick={() => setOpen(true)} disabled={!canResearch} title={canResearch ? undefined : 'Owner or analyst role required'} data-testid="button-new-buyer"><Plus className="mr-1.5 h-4 w-4" />New buyer</Button>
       </PageHeader>
       <p className="mb-4 max-w-3xl text-sm text-muted-foreground">Buyers are entered by a person. A buyer only counts as qualified after the owner records a human review of identity and funding evidence, and only while it has not expired. Prospects from sources are unverified and carry no criteria until qualified.</p>
-      {q.data && <section className="mb-5 border border-border bg-card p-4" data-testid="buyer-pool-coverage">
+      {!canResearch && <p className="mb-4 border-l-2 border-amber-500 pl-3 text-sm" role="status" data-testid="buyers-view-only">Your role is view-only here. You can review buyer records but cannot add buyers or prospects.</p>}
+      {(q.isLoading || capacity.isLoading) && <p className="mb-3 text-sm text-muted-foreground" role="status">Loading buyer and capacity records…</p>}
+      {(q.isFetching && q.data || capacity.isFetching && capacity.data) && <p className="mb-3 border-l-2 border-amber-500 pl-3 text-sm" role="status" data-testid="buyers-refreshing">Refreshing saved buyer and capacity records. Coverage is hidden until both results are current.</p>}
+      {q.isError && <ErrorNotice error={q.error} onRetry={() => { void q.refetch(); }} />}
+      {capacity.isError && <ErrorNotice error={capacity.error} onRetry={() => { void capacity.refetch(); }} title="Buyer capacity is unavailable" />}
+      {q.isError && q.data && <p className="mb-3 text-xs text-muted-foreground" role="status" data-testid="buyers-stale">The last buyer list is shown for reference only. Verified coverage is not calculated from stale records.</p>}
+      {capacity.isError && capacity.data && <p className="mb-3 text-xs text-muted-foreground" role="status" data-testid="buyer-capacity-stale">The last capacity response is not used to calculate verified coverage.</p>}
+      {q.data && coverageCurrent && <section className="mb-5 border border-border bg-card p-4" data-testid="buyer-pool-coverage">
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div><p className="eyebrow">Verified buyer coverage</p><h2 className="font-display text-xl">Where the real pool is thin</h2>
             <p className="max-w-3xl text-xs text-muted-foreground">Only current owner-approved identity, intent, criteria and funding proof counts. Active contract commitments are deducted from available capacity. Prospects and synthetic fixtures never fill coverage.</p>
@@ -77,13 +90,12 @@ export default function Buyers() {
         </p>)}
       </section>}
       <div className="mb-4 flex gap-2 text-sm">{([['pool', 'Approved pool'], ['prospects', 'Prospects and qualification']] as const).map(([v, l]) => (
-        <button key={v} type="button" onClick={() => setTab(v)} aria-pressed={tab === v} className={`border px-3 py-1.5 ${tab === v ? 'border-signal bg-card font-semibold' : 'border-border'}`} data-testid={`tab-buyers-${v}`}>{l} ({(q.data ?? []).filter((b) => (v === 'pool') === (b.approvalStatus === 'APPROVED')).length})</button>))}</div>
+        <button key={v} type="button" onClick={() => setTab(v)} aria-pressed={tab === v} className={`border px-3 py-1.5 ${tab === v ? 'border-signal bg-card font-semibold' : 'border-border'}`} data-testid={`tab-buyers-${v}`}>{l} ({buyerDataVisible ? buyerRecords.filter((b) => (v === 'pool') === (b.approvalStatus === 'APPROVED')).length : '—'})</button>))}</div>
       <div className="relative mb-4 max-w-md"><Search className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" /><Input className="pl-9" placeholder="Search name, contact, state, city, ZIP" value={term} onChange={(e) => setTerm(e.target.value)} data-testid="input-search-buyers" /></div>
       {q.isLoading && <RowsSkeleton />}
-      {q.isError && <ErrorNotice error={q.error} onRetry={() => q.refetch()} />}
-      {q.data && q.data.length === 0 && <EmptyState title="No buyers yet" body="Add a buyer you actually work with, including the buy box. Matching runs against every open deal as soon as you save." action={canResearch ? <Button onClick={() => setOpen(true)} data-testid="button-empty-new-buyer">Add first buyer</Button> : undefined} />}
-      {q.data && q.data.length > 0 && rows.length === 0 && !term.trim() && <p className="text-sm text-muted-foreground" data-testid="empty-buyers-tab">{tab === 'pool' ? 'No approved buyers yet. Qualify a prospect to bring it here.' : 'No prospects awaiting qualification.'}</p>}
-      {q.data && q.data.length > 0 && rows.length === 0 && term.trim() && <p className="text-sm text-muted-foreground">No buyer matches that search.</p>}
+      {buyerState === 'EMPTY' && <EmptyState title="No buyer records yet" body="Add a buyer you actually work with. A saved profile is not an approved or current buyer; owner review of identity, buying intent, criteria, and funding evidence is required before it counts as qualified." action={canResearch ? <Button onClick={() => setOpen(true)} data-testid="button-empty-new-buyer">Add first buyer</Button> : undefined} />}
+      {buyerState === 'READY' && rows.length === 0 && !term.trim() && <p className="text-sm text-muted-foreground" data-testid="empty-buyers-tab">{tab === 'pool' ? 'No approved buyers yet. Qualify a prospect to bring it here.' : 'No prospects awaiting qualification.'}</p>}
+      {buyerState === 'READY' && rows.length === 0 && term.trim() && <p className="text-sm text-muted-foreground" role="status" data-testid="buyers-search-no-match">No saved buyer record matches “{term.trim()}”. Clear or change the search to see other records.</p>}
       {rows.length > 0 && (
         <div className="ledger overflow-x-auto" data-testid="table-buyers">
           <table className="w-full text-sm">
