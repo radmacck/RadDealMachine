@@ -1,6 +1,8 @@
 import type { Buyer } from '@workspace/api-client-react';
+import { Link } from 'wouter';
 import { Button } from '@/components/ui/button';
 import { matchSavedBuyersToProperty, type PropertyBuyerSubject } from '@/lib/property-buyer-matching';
+import { propertyBuyerProfileHref } from '@/lib/buyer-property-handoff';
 
 export function PropertyBuyerMatches({
   property, buyers, now, loading, error, onRetry,
@@ -21,7 +23,16 @@ export function PropertyBuyerMatches({
       : matches.length ? <ul className="mt-2 space-y-2">{matches.map(match => <li key={match.buyer.id} className="border-t border-border pt-2" data-testid={`property-buyer-match-${match.buyer.id}`}>
       <div className="flex flex-wrap items-center justify-between gap-2">
         <span className="text-sm font-medium">{match.buyer.name}</span>
-        <span className="tag tone-muted">{match.state.replaceAll('_', ' ')}</span>
+        <div className="flex flex-wrap items-center gap-2">
+          <span className="tag tone-muted">{match.state.replaceAll('_', ' ')}</span>
+          <Link
+            className="inline-flex min-h-9 items-center border border-border px-3 text-xs font-semibold underline-offset-4 hover:underline"
+            href={propertyBuyerProfileHref(match.buyer.id)}
+            data-testid={`link-property-buyer-profile-${match.buyer.id}`}
+          >
+            Open buyer record
+          </Link>
+        </div>
       </div>
       <p className="text-xs text-muted-foreground">Profile: {match.buyer.status} · review: {match.buyer.approvalStatus ?? 'not recorded'}</p>
       <p className="text-xs text-muted-foreground">

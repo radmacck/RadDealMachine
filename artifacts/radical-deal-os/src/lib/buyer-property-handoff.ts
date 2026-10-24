@@ -16,3 +16,11 @@ export function buyerPropertyHandoffHref(discovery: Pick<PropertyDiscovery, 'id'
     ? `/deals/${encodeURIComponent(discovery.leadId)}`
     : `/sources?discovery=${encodeURIComponent(discovery.id)}`;
 }
+
+/**
+ * Open the existing Owner-only buyer profile from a property-first match.
+ * This is navigation only; it does not imply buyer approval or commitment.
+ */
+export function propertyBuyerProfileHref(buyerId: string) {
+  return `/buyers/${encodeURIComponent(buyerId)}`;
+}

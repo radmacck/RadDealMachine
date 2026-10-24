@@ -4053,3 +4053,15 @@ Fresh isolated synthetic exercise run for Task 2 (all seven commands exited `0`;
 - **Overall decision:** private founder capabilities are **PARTIAL** and the real acquisition-to-closing workflow remains **BLOCKED / NO-GO** at seller identity/contactability/permission. Domain rules and selected private API behaviors are verified only within their tested synthetic boundaries. Do not release a real transaction workflow or begin marketplace work based on these checks.
 - **Single next action:** obtain and Owner-review one real property's source-backed seller identity/signing authority, current permitted direct contact route, and channel-specific permission; then reassess the existing `CALL_READY` gate without bypassing it or sending contact automatically.
 - **Changed files for Directive 48:** `docs/real-estate-os-build-checkpoint.md` only. Pre-existing code and generated-file changes shown by `git status` were not edited or reverted; no records, schema, new checkpoint, or app were created.
+
+## Private founder workflow navigation follow-up — 2026-10-24
+
+- **Bounded implementation:** the existing property-first buyer-match panel now links each displayed match to that buyer's existing Owner-only profile. The link URL-encodes the buyer ID and is navigation only; it does not change matching, buyer status, access policy, or approval/commitment semantics.
+- **Reuse assessment reconciliation:** buyer-first candidates already link to the existing source-qualification review, or to the existing deal when promoted. That handoff and its bounded discovery-pool selection were present in `buyer-property-handoff.ts`; the earlier checkpoint statement that buyer-first lacked selection/linking is historical and is not the current code state. This follow-up does not claim the full buyer-first to real seller-to-closing journey is complete.
+- **Exact verification:**
+  - `pnpm --filter @workspace/radical-deal-os exec tsx --test src/lib/buyer-property-handoff.test.ts src/components/*.test.tsx src/lib/*.test.ts` — **PASS, 62/62**, including an encoded property-first buyer-profile route regression.
+  - `pnpm run typecheck` — **PASS**.
+  - `PORT=5173 BASE_PATH=/ pnpm run build` — **PASS**; Vite still reports the existing web JavaScript chunk above 500 kB.
+  - `DANGEROUSLY_ALLOW_GIT=1 git diff --check` — **PASS, exit 0** after the checkpoint update.
+- **Changed files:** `artifacts/radical-deal-os/src/components/property-buyer-matches.tsx`; `artifacts/radical-deal-os/src/lib/buyer-property-handoff.ts`; `artifacts/radical-deal-os/src/lib/buyer-property-handoff.test.ts`; and this existing checkpoint. No dependency, schema, app, or persisted record changed.
+- **Limitations and next blocker:** the property-to-buyer link was not visually exercised in an authenticated browser. No live buyer evidence or provider behavior was tested. The highest-priority end-to-end blocker remains the missing Owner-reviewed real seller identity/signing authority, permitted direct route, and channel-specific permission needed to reassess `CALL_READY`. No outreach, consent, contract execution, closing, or revenue is claimed.
