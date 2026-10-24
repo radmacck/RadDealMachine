@@ -24,3 +24,19 @@ export function buyerPropertyHandoffHref(discovery: Pick<PropertyDiscovery, 'id'
 export function propertyBuyerProfileHref(buyerId: string) {
   return `/buyers/${encodeURIComponent(buyerId)}`;
 }
+
+export function propertyDiscoveryElementId(discoveryId: string) {
+  return `property-discovery-${discoveryId}`;
+}
+
+type ScrollTarget = Pick<HTMLElement, 'scrollIntoView'>;
+
+export function scrollPropertyDiscoveryIntoView(
+  discoveryId: string,
+  getElementById: (elementId: string) => ScrollTarget | null,
+) {
+  const target = getElementById(propertyDiscoveryElementId(discoveryId));
+  if (!target) return false;
+  target.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  return true;
+}

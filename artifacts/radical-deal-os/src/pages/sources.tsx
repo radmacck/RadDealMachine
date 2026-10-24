@@ -21,7 +21,11 @@ import { useInvalidateWork } from '@/hooks/use-invalidate';
 import { useToast } from '@/hooks/use-toast';
 import { normalizeContactResearchEvidenceReference } from '@/lib/contact-research-evidence';
 import { isQuerySnapshotCurrent } from '@/lib/command-center-state';
-import { buyerPropertyDiscoveryListLimit } from '@/lib/buyer-property-handoff';
+import {
+  buyerPropertyDiscoveryListLimit,
+  propertyDiscoveryElementId,
+  scrollPropertyDiscoveryIntoView,
+} from '@/lib/buyer-property-handoff';
 
 type Lane = 'properties' | 'buyer_candidates';
 const DISCOVERY_PAGE_SIZE = 25;
@@ -175,6 +179,13 @@ export default function Sources() {
   };
   const discoveries = useListPropertyDiscoveries(discoveryParams);
   const discoverySnapshotCurrent = isQuerySnapshotCurrent(discoveries.isFetching, discoveries.isError);
+  useEffect(() => {
+    if (!openDiscoveryId || !discoveries.data?.records.some(record => record.id === openDiscoveryId)) return;
+    const frame = window.requestAnimationFrame(() => {
+      scrollPropertyDiscoveryIntoView(openDiscoveryId, id => document.getElementById(id));
+    });
+    return () => window.cancelAnimationFrame(frame);
+  }, [discoveries.data?.records, openDiscoveryId]);
   const recordDiscovery = useRecordPublicPropertyDiscovery();
   const addSignal = useAddPropertyRelevanceSignal();
   const promoteDiscovery = usePromotePropertyDiscovery();
@@ -537,7 +548,12 @@ export default function Sources() {
         {discoveries.data && discoveries.data.records.length > 0 && (
           <ol className="space-y-3" data-testid="list-property-discoveries">
             {discoveries.data.records.map((item) => (
-              <li key={item.id} className="rounded border p-3" data-testid={`discovery-${item.id}`}>
+              <li
+                key={item.id}
+                id={propertyDiscoveryElementId(item.id)}
+                className="scroll-mt-20 rounded border p-3"
+                data-testid={`discovery-${item.id}`}
+              >
                 <div className="flex flex-wrap items-start justify-between gap-3">
                   <div>
                     <div className="flex flex-wrap items-center gap-2">
