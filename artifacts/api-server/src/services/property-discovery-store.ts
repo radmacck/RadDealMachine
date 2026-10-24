@@ -14,7 +14,7 @@ import {
   RecordPublicPropertyDiscoveryResponse, SavePropertyDiscoveryCriteriaBody,
   SavePropertyDiscoveryCriteriaResponse,
 } from "@workspace/api-zod";
-import { SavePropertyContactResearchCaseBody, type PropertyContactRouteCandidateInput } from "@workspace/api-zod";
+import { SavePropertyContactResearchCaseBody, type PropertyContactRouteCandidateInput, type PropertySigningAuthorityReviewInput } from "@workspace/api-zod";
 import {
   DEFAULT_PROPERTY_QUALIFICATION_CRITERIA, DomainError, PROPERTY_SIGNAL_GROUP_BY_KEY,
   evaluateCurrentBuyerDemand, evaluatePropertyRelevance, extractListingDescriptionIntelligence, validateProvenance,
@@ -60,6 +60,9 @@ type DiscoveryPayload = {
     evidenceReference: string | null; note: string; missingRequirements: string[];
     nextAction: string; auditHistory: Array<{at:string;actor:string;action:string;reason:string}>; synthetic: boolean;
     candidateRoutes?: PropertyContactPath[];
+    signingAuthorityReview?: PropertySigningAuthorityReviewInput & {
+      reviewedBy: string; reviewedAt: string; freshnessStatus: "CURRENT" | "EXPIRED";
+    };
   };
 };
 
@@ -566,6 +569,13 @@ async function toDiscoveryResponse(
     ...(payload.contactResearchCase ? { contactResearchCase: {
       ...payload.contactResearchCase,
       candidateRoutes: reconcileContactPaths(payload.contactResearchCase.candidateRoutes ?? [], now),
+      ...(payload.contactResearchCase.signingAuthorityReview ? {
+        signingAuthorityReview: {
+          ...payload.contactResearchCase.signingAuthorityReview,
+          freshnessStatus: now.getTime() - Date.parse(payload.contactResearchCase.signingAuthorityReview.observedAt) <= 180 * 24 * 60 * 60_000
+            ? "CURRENT" as const : "EXPIRED" as const,
+        },
+      } : {}),
       status: Date.parse(payload.contactResearchCase.observedAt) < now.getTime() - 30 * 24 * 60 * 60 * 1000
         ? "NEEDS_REVIEW" as const : payload.contactResearchCase.status,
       missingRequirements: [...new Set([
@@ -617,6 +627,40 @@ export async function savePropertyContactResearchCase(
     }
     const payload = parsePayload(current.payload);
     const prior = payload.contactResearchCase;
+    let signingAuthorityReview = prior?.signingAuthorityReview;
+    if (request.signingAuthorityReview) {
+      if (actor.role !== "OWNER") throw new DomainError("Only an Owner can review signing authority.", 403);
+      const authority = request.signingAuthorityReview;
+      const authorityObservedAt = new Date(authority.observedAt);
+      if (!Number.isFinite(authorityObservedAt.getTime()) || authorityObservedAt > now)
+        throw new DomainError("Signing-authority evidence time must be valid and cannot be in the future.", 400);
+      if (!authority.sourceUrl.startsWith("https://"))
+        throw new DomainError("Signing-authority evidence must link to an HTTPS source record.", 400);
+      if (authority.status === "ESTABLISHED" && request.identityMatch !== "SELLER_SELF_IDENTIFIED")
+        throw new DomainError("Signing authority cannot be established until seller identity is source-backed.", 409);
+      const normalizedAuthority = {
+        ...authority,
+        sourceName: authority.sourceName.trim(),
+        evidenceReference: authority.evidenceReference.trim(),
+        observedAt: authorityObservedAt.toISOString(),
+        note: authority.note.trim(),
+      };
+      const sameAuthorityEvidence = prior?.signingAuthorityReview &&
+        prior.signingAuthorityReview.reviewedBy === actor.id &&
+        prior.signingAuthorityReview.status === normalizedAuthority.status &&
+        prior.signingAuthorityReview.sourceName === normalizedAuthority.sourceName &&
+        prior.signingAuthorityReview.sourceUrl === normalizedAuthority.sourceUrl &&
+        prior.signingAuthorityReview.evidenceReference === normalizedAuthority.evidenceReference &&
+        prior.signingAuthorityReview.observedAt === normalizedAuthority.observedAt &&
+        prior.signingAuthorityReview.note === normalizedAuthority.note;
+      signingAuthorityReview = sameAuthorityEvidence ? prior.signingAuthorityReview : {
+        ...normalizedAuthority,
+        reviewedBy: actor.id,
+        reviewedAt: now.toISOString(),
+        freshnessStatus: now.getTime() - authorityObservedAt.getTime() <= 180 * 24 * 60 * 60_000
+          ? "CURRENT" : "EXPIRED",
+      };
+    }
     const candidateRoutes = [...(prior?.candidateRoutes ?? [])];
     if (request.candidateRoute) {
       const path = validateCandidateRoute(request.candidateRoute, actor, request.identityMatch, now);
@@ -644,7 +688,7 @@ export async function savePropertyContactResearchCase(
         sourceType, sourceUrl: request.sourceUrl ?? null, observedAt: observedAt.toISOString(),
         identityMatch: request.identityMatch, permissionBasis: request.permissionBasis,
         evidenceReference: request.evidenceReference ?? null, note: request.note, missingRequirements: [],
-        nextAction: "", auditHistory: [], synthetic, candidateRoutes,
+          nextAction: "", auditHistory: [], synthetic, candidateRoutes, signingAuthorityReview,
       }, now),
     ])];
     const nextStatus = request.permissionBasis === "PROHIBITED" ? "BLOCKED" : request.status;
@@ -672,10 +716,13 @@ export async function savePropertyContactResearchCase(
         action: request.candidateRoute ? "CONTACT_ROUTE_RECORDED" : prior ? "CONTACT_RESEARCH_UPDATED" : "CONTACT_RESEARCH_OPENED",
         reason: `status=${prior?.status ?? "NONE"}->${nextStatus}; source=${request.sourceName}; evidenceReference=${request.evidenceReference?.trim() || "missing"}; confidence=${request.confidence}; identity=${request.identityMatch}; permission=${request.permissionBasis}.${request.candidateRoute
           ? ` Route evidence: channel=${request.candidateRoute.channel}; sourceId=${request.candidateRoute.sourceId}; sourceRecordId=${request.candidateRoute.sourceRecordId}; capturedAt=${request.candidateRoute.capturedAt}; permission=${request.candidateRoute.permissionStatus}/${request.candidateRoute.permissionBasis}; verification=${request.candidateRoute.routeVerificationStatus}; duplicate=${candidateRoutes.some(path => path.sourceId === request.candidateRoute!.sourceId && path.sourceRecordId === request.candidateRoute!.sourceRecordId && path.capturedAt === request.candidateRoute!.capturedAt)}.`
+          : ""}${request.signingAuthorityReview
+          ? ` Signing authority: ${request.signingAuthorityReview.status}; ${request.signingAuthorityReview.sourceName}/${request.signingAuthorityReview.evidenceReference}; reviewedBy=${actor.id}; reviewedAt=${now.toISOString()}.`
           : ""} No direct contact route, lead promotion, call, outreach, or economics change was created.`,
       }].slice(-50),
       synthetic: Boolean(synthetic),
       candidateRoutes,
+      ...(signingAuthorityReview ? { signingAuthorityReview } : {}),
     } as const;
     if (prior && isDeepStrictEqual(
       { ...prior, version: undefined, auditHistory: undefined },

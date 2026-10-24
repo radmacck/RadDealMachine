@@ -97,6 +97,14 @@ try {
   const ownerInput = {
     ...baseCase,
     version: evidenceOnly.version,
+    signingAuthorityReview: {
+      status: "ESTABLISHED",
+      sourceName: "SYNTHETIC authority record",
+      sourceUrl: "https://example.com/synthetic-authority",
+      evidenceReference: "SYNTHETIC-AUTHORITY-PAGE-1",
+      observedAt: now.toISOString(),
+      note: "Synthetic exercise only; no actual authority was verified.",
+    },
     candidateRoute: {
       channel: "PHONE", routeValue: "(215) 555-0147",
       recipient: "SYNTHETIC HTTP seller", recipientRole: "SELLER_SELF_IDENTIFIED",
@@ -112,6 +120,13 @@ try {
       verificationNote: "Synthetic exercise only; no actual call or message.",
     },
   };
+  const analystAuthorityReview = await request("ANALYST", ownerInput);
+  assert.equal(analystAuthorityReview.status, 403, "Only an Owner can record a signing-authority review.");
+  const unsupportedAuthority = await request("OWNER", {
+    ...ownerInput,
+    identityMatch: "UNKNOWN",
+  });
+  assert.equal(unsupportedAuthority.status, 409, "Signing authority cannot be marked established without seller identity evidence.");
   const accepted = await request("OWNER", ownerInput);
   const acceptedText = await accepted.text();
   assert.equal(accepted.status, 200, `An owner can save permitted, supported, confirmed route evidence through HTTP: ${acceptedText}`);
@@ -131,10 +146,14 @@ try {
       identityMatch: "UNKNOWN" | "RECORDED_OWNER_ONLY" | "SELLER_SELF_IDENTIFIED" | "CONFLICTING" | "NOT_MATCHED";
       permissionBasis: "UNKNOWN" | "PUBLIC_SOURCE_TERMS" | "CONSENT" | "OTHER_DOCUMENTED" | "PROHIBITED";
       evidenceReference: string | null;
+      signingAuthorityReview?: { status: string; evidenceReference: string; reviewedBy: string; reviewedAt: string; freshnessStatus: string };
     };
   };
   assert.equal(saved.contactResearchCase?.candidateRoutes?.length, 1);
   assert.equal(saved.contactResearchCase?.candidateRoutes?.[0]?.routeVerificationStatus, "CONFIRMED");
+  assert.equal(saved.contactResearchCase?.signingAuthorityReview?.status, "ESTABLISHED");
+  assert.equal(saved.contactResearchCase?.signingAuthorityReview?.reviewedBy, "synthetic-contact-http-actor");
+  assert.equal(saved.contactResearchCase?.signingAuthorityReview?.freshnessStatus, "CURRENT");
   assert.equal(saved.contactResearchCase?.synthetic, true);
   assert.ok(saved.contactResearchCase?.missingRequirements.some(item => /synthetic or fixture evidence/i.test(item)));
   assert.equal(hasLegitimateSellerCallRoute(saved.contactResearchCase as NonNullable<Parameters<typeof hasLegitimateSellerCallRoute>[0]>, now), false,

@@ -20,3 +20,9 @@ Keep contact-route provenance and permission history in a narrow, role-gated con
 **Why:** Leads without linked discovery previously bypassed the contactability gate and could appear callable from a phone string or recorded-owner route alone.
 
 **How to apply:** Keep the same fail-closed rule in stage transitions, allowed-transition responses, call queues, and call-result persistence. Synthetic route fixtures must remain visibly unverified and cannot stand in for a seller identity review.
+
+`CALL_READY` also requires a current Owner-reviewed signing-authority decision linked to precise source evidence. Missing, not-established, conflicting, or expired authority evidence blocks readiness; the review records its source, evidence reference, reviewer, and timestamp.
+
+**Why:** A self-identified seller and a permitted, verified route establish contactability, not authority to sign for the property.
+
+**How to apply:** Keep authority review distinct from route and identity checks. Treat records older than 180 days as expired, preserve unknown as a visible state, and never infer authority from public tax ownership or route verification.

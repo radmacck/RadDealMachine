@@ -26,6 +26,9 @@ const evidence = (overrides: Record<string, unknown> = {}) => ({
   permissionBasis: "PUBLIC_SOURCE_TERMS", evidenceReference: "OPA parcel 123",
   note: "Seller identity cross-checked against current parcel record.", missingRequirements: [],
   nextAction: "", auditHistory: [], synthetic: false, candidateRoutes: [route()],
+  signingAuthorityReview: {
+    status: "ESTABLISHED", observedAt: "2026-10-15T12:00:00Z", freshnessStatus: "CURRENT",
+  },
   ...overrides,
 }) as Parameters<typeof evaluatePropertyContactabilityGate>[0];
 
@@ -124,6 +127,20 @@ test("only a fresh, permission-backed, identity-matched, conflict-free route is 
   assert.equal(hasLegitimateSellerCallRoute(evidence({ permissionBasis: "UNKNOWN" }), now), false);
   assert.equal(hasLegitimateSellerCallRoute(evidence({ identityMatch: "CONFLICTING" }), now), false);
   assert.equal(hasLegitimateSellerCallRoute(evidence({ candidateRoutes: [] }), now), false);
+});
+
+test("unknown, expired, or conflicting signing authority blocks CALL_READY", () => {
+  assert.equal(hasLegitimateSellerCallRoute(evidence({ signingAuthorityReview: undefined }), now), false);
+  assert.equal(hasLegitimateSellerCallRoute(evidence({ signingAuthorityReview: {
+    status: "ESTABLISHED", observedAt: "2026-01-01T00:00:00Z", freshnessStatus: "EXPIRED",
+  } }), now), false);
+  assert.equal(hasLegitimateSellerCallRoute(evidence({ signingAuthorityReview: {
+    status: "CONFLICTING", observedAt: "2026-10-15T12:00:00Z", freshnessStatus: "CURRENT",
+  } }), now), false);
+  assert.equal(hasLegitimateSellerCallRoute(evidence({ signingAuthorityReview: {
+    status: "NOT_ESTABLISHED", observedAt: "2026-10-15T12:00:00Z", freshnessStatus: "CURRENT",
+  } }), now), false);
+  assert.equal(hasLegitimateSellerCallRoute(evidence(), now), true);
 });
 
 test("every active seller-contact stage rechecks current identity, permission, and direct-route evidence", () => {

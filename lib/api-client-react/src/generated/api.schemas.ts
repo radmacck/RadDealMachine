@@ -1268,6 +1268,36 @@ export const PropertyContactResearchCasePermissionBasis = {
   PROHIBITED: 'PROHIBITED',
 } as const;
 
+export type PropertySigningAuthorityReviewStatus = typeof PropertySigningAuthorityReviewStatus[keyof typeof PropertySigningAuthorityReviewStatus];
+
+
+export const PropertySigningAuthorityReviewStatus = {
+  ESTABLISHED: 'ESTABLISHED',
+  NOT_ESTABLISHED: 'NOT_ESTABLISHED',
+  CONFLICTING: 'CONFLICTING',
+} as const;
+
+export type PropertySigningAuthorityReviewFreshnessStatus = typeof PropertySigningAuthorityReviewFreshnessStatus[keyof typeof PropertySigningAuthorityReviewFreshnessStatus];
+
+
+export const PropertySigningAuthorityReviewFreshnessStatus = {
+  CURRENT: 'CURRENT',
+  EXPIRED: 'EXPIRED',
+} as const;
+
+export interface PropertySigningAuthorityReview {
+  status: PropertySigningAuthorityReviewStatus;
+  sourceName: string;
+  /** @nullable */
+  sourceUrl: string | null;
+  evidenceReference: string;
+  observedAt: string;
+  note: string;
+  reviewedBy: string;
+  reviewedAt: string;
+  freshnessStatus: PropertySigningAuthorityReviewFreshnessStatus;
+}
+
 export type PropertyContactResearchCaseAuditHistoryItem = {
   at: string;
   actor: string;
@@ -1287,8 +1317,7 @@ export interface PropertyContactResearchCase {
   sourceName: string;
   /** PUBLIC_RECORD, PUBLIC_PAGE, OWNER_SUPPLIED, SELLER_PROVIDED, MANUAL_RESEARCH, INFERRED, or OTHER */
   sourceType: string;
-  /** @nullable */
-  sourceUrl?: string | null;
+  sourceUrl?: string;
   observedAt: string;
   identityMatch: PropertyContactResearchCaseIdentityMatch;
   permissionBasis: PropertyContactResearchCasePermissionBasis;
@@ -1299,6 +1328,7 @@ export interface PropertyContactResearchCase {
   nextAction: string;
   auditHistory: PropertyContactResearchCaseAuditHistoryItem[];
   candidateRoutes?: PropertyContactPath[];
+  signingAuthorityReview?: PropertySigningAuthorityReview;
   synthetic: boolean;
 }
 
@@ -1349,6 +1379,36 @@ export interface PropertyDiscovery {
   firstObservedAt: string;
   lastObservedAt: string;
   contactResearchCase?: PropertyContactResearchCase;
+}
+
+export type PropertySigningAuthorityReviewInputStatus = typeof PropertySigningAuthorityReviewInputStatus[keyof typeof PropertySigningAuthorityReviewInputStatus];
+
+
+export const PropertySigningAuthorityReviewInputStatus = {
+  ESTABLISHED: 'ESTABLISHED',
+  NOT_ESTABLISHED: 'NOT_ESTABLISHED',
+  CONFLICTING: 'CONFLICTING',
+} as const;
+
+export interface PropertySigningAuthorityReviewInput {
+  status: PropertySigningAuthorityReviewInputStatus;
+  /**
+     * @minLength 2
+     * @maxLength 200
+     */
+  sourceName: string;
+  sourceUrl: string;
+  /**
+     * @minLength 2
+     * @maxLength 500
+     */
+  evidenceReference: string;
+  observedAt: string;
+  /**
+     * @minLength 3
+     * @maxLength 2000
+     */
+  note: string;
 }
 
 export type PropertyContactRouteCandidateInputChannel = typeof PropertyContactRouteCandidateInputChannel[keyof typeof PropertyContactRouteCandidateInputChannel];
@@ -1545,6 +1605,7 @@ export interface PropertyContactResearchInput {
      */
   note: string;
   candidateRoute?: PropertyContactRouteCandidateInput | null;
+  signingAuthorityReview?: PropertySigningAuthorityReviewInput | null;
 }
 
 export type PropertyDiscoveryListCounts = {

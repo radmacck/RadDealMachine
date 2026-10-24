@@ -10,6 +10,7 @@ import type { PropertyContactResearchCaseAuditHistoryItem } from './propertyCont
 import type { PropertyContactResearchCaseIdentityMatch } from './propertyContactResearchCaseIdentityMatch';
 import type { PropertyContactResearchCasePermissionBasis } from './propertyContactResearchCasePermissionBasis';
 import type { PropertyContactResearchCaseStatus } from './propertyContactResearchCaseStatus';
+import type { PropertySigningAuthorityReview } from './propertySigningAuthorityReview';
 
 export interface PropertyContactResearchCase {
   status: PropertyContactResearchCaseStatus;
@@ -23,8 +24,7 @@ export interface PropertyContactResearchCase {
   sourceName: string;
   /** PUBLIC_RECORD, PUBLIC_PAGE, OWNER_SUPPLIED, SELLER_PROVIDED, MANUAL_RESEARCH, INFERRED, or OTHER */
   sourceType: string;
-  /** @nullable */
-  sourceUrl?: string | null;
+  sourceUrl?: string;
   observedAt: string;
   identityMatch: PropertyContactResearchCaseIdentityMatch;
   permissionBasis: PropertyContactResearchCasePermissionBasis;
@@ -35,5 +35,6 @@ export interface PropertyContactResearchCase {
   nextAction: string;
   auditHistory: PropertyContactResearchCaseAuditHistoryItem[];
   candidateRoutes?: PropertyContactPath[];
+  signingAuthorityReview?: PropertySigningAuthorityReview;
   synthetic: boolean;
 }

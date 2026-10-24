@@ -18284,7 +18284,7 @@ export const GetCommandCenterResponse:
   "confidence": zod.number().min(getCommandCenterResponsePropertyDiscoveriesRecordsItemContactResearchCaseConfidenceMin).max(getCommandCenterResponsePropertyDiscoveriesRecordsItemContactResearchCaseConfidenceMax),
   "sourceName": zod.string(),
   "sourceType": zod.string().describe('PUBLIC_RECORD, PUBLIC_PAGE, OWNER_SUPPLIED, SELLER_PROVIDED, MANUAL_RESEARCH, INFERRED, or OTHER'),
-  "sourceUrl": zod.string().url().nullish(),
+  "sourceUrl": zod.string().url().optional(),
   "observedAt": zod.string().datetime({"offset":true}),
   "identityMatch": zod.enum(['UNKNOWN', 'RECORDED_OWNER_ONLY', 'SELLER_SELF_IDENTIFIED', 'CONFLICTING', 'NOT_MATCHED']),
   "permissionBasis": zod.enum(['UNKNOWN', 'PUBLIC_SOURCE_TERMS', 'CONSENT', 'OTHER_DOCUMENTED', 'PROHIBITED']),
@@ -18365,6 +18365,17 @@ export const GetCommandCenterResponse:
   "recipientIdentityClaimCount": zod.number().int().min(getCommandCenterResponsePropertyDiscoveriesRecordsItemContactResearchCaseCandidateRoutesItemRecipientIdentityClaimCountMin).optional(),
   "rankingReasons": zod.array(zod.string()).optional()
 })).optional(),
+  "signingAuthorityReview": zod.object({
+  "status": zod.enum(['ESTABLISHED', 'NOT_ESTABLISHED', 'CONFLICTING']),
+  "sourceName": zod.string(),
+  "sourceUrl": zod.string().url().nullable(),
+  "evidenceReference": zod.string(),
+  "observedAt": zod.string().datetime({"offset":true}),
+  "note": zod.string(),
+  "reviewedBy": zod.string(),
+  "reviewedAt": zod.string().datetime({"offset":true}),
+  "freshnessStatus": zod.enum(['CURRENT', 'EXPIRED'])
+}).optional(),
   "synthetic": zod.boolean()
 }).optional()
 })),
@@ -39945,7 +39956,7 @@ export const ListPropertyDiscoveriesResponse = zod.object({
   "confidence": zod.number().min(listPropertyDiscoveriesResponseRecordsItemContactResearchCaseConfidenceMin).max(listPropertyDiscoveriesResponseRecordsItemContactResearchCaseConfidenceMax),
   "sourceName": zod.string(),
   "sourceType": zod.string().describe('PUBLIC_RECORD, PUBLIC_PAGE, OWNER_SUPPLIED, SELLER_PROVIDED, MANUAL_RESEARCH, INFERRED, or OTHER'),
-  "sourceUrl": zod.string().url().nullish(),
+  "sourceUrl": zod.string().url().optional(),
   "observedAt": zod.string().datetime({"offset":true}),
   "identityMatch": zod.enum(['UNKNOWN', 'RECORDED_OWNER_ONLY', 'SELLER_SELF_IDENTIFIED', 'CONFLICTING', 'NOT_MATCHED']),
   "permissionBasis": zod.enum(['UNKNOWN', 'PUBLIC_SOURCE_TERMS', 'CONSENT', 'OTHER_DOCUMENTED', 'PROHIBITED']),
@@ -40026,6 +40037,17 @@ export const ListPropertyDiscoveriesResponse = zod.object({
   "recipientIdentityClaimCount": zod.number().int().min(listPropertyDiscoveriesResponseRecordsItemContactResearchCaseCandidateRoutesItemRecipientIdentityClaimCountMin).optional(),
   "rankingReasons": zod.array(zod.string()).optional()
 })).optional(),
+  "signingAuthorityReview": zod.object({
+  "status": zod.enum(['ESTABLISHED', 'NOT_ESTABLISHED', 'CONFLICTING']),
+  "sourceName": zod.string(),
+  "sourceUrl": zod.string().url().nullable(),
+  "evidenceReference": zod.string(),
+  "observedAt": zod.string().datetime({"offset":true}),
+  "note": zod.string(),
+  "reviewedBy": zod.string(),
+  "reviewedAt": zod.string().datetime({"offset":true}),
+  "freshnessStatus": zod.enum(['CURRENT', 'EXPIRED'])
+}).optional(),
   "synthetic": zod.boolean()
 }).optional()
 })),
@@ -40377,7 +40399,7 @@ export const RecordPublicPropertyDiscoveryResponse = zod.object({
   "confidence": zod.number().min(recordPublicPropertyDiscoveryResponseContactResearchCaseConfidenceMin).max(recordPublicPropertyDiscoveryResponseContactResearchCaseConfidenceMax),
   "sourceName": zod.string(),
   "sourceType": zod.string().describe('PUBLIC_RECORD, PUBLIC_PAGE, OWNER_SUPPLIED, SELLER_PROVIDED, MANUAL_RESEARCH, INFERRED, or OTHER'),
-  "sourceUrl": zod.string().url().nullish(),
+  "sourceUrl": zod.string().url().optional(),
   "observedAt": zod.string().datetime({"offset":true}),
   "identityMatch": zod.enum(['UNKNOWN', 'RECORDED_OWNER_ONLY', 'SELLER_SELF_IDENTIFIED', 'CONFLICTING', 'NOT_MATCHED']),
   "permissionBasis": zod.enum(['UNKNOWN', 'PUBLIC_SOURCE_TERMS', 'CONSENT', 'OTHER_DOCUMENTED', 'PROHIBITED']),
@@ -40458,6 +40480,17 @@ export const RecordPublicPropertyDiscoveryResponse = zod.object({
   "recipientIdentityClaimCount": zod.number().int().min(recordPublicPropertyDiscoveryResponseContactResearchCaseCandidateRoutesItemRecipientIdentityClaimCountMin).optional(),
   "rankingReasons": zod.array(zod.string()).optional()
 })).optional(),
+  "signingAuthorityReview": zod.object({
+  "status": zod.enum(['ESTABLISHED', 'NOT_ESTABLISHED', 'CONFLICTING']),
+  "sourceName": zod.string(),
+  "sourceUrl": zod.string().url().nullable(),
+  "evidenceReference": zod.string(),
+  "observedAt": zod.string().datetime({"offset":true}),
+  "note": zod.string(),
+  "reviewedBy": zod.string(),
+  "reviewedAt": zod.string().datetime({"offset":true}),
+  "freshnessStatus": zod.enum(['CURRENT', 'EXPIRED'])
+}).optional(),
   "synthetic": zod.boolean()
 }).optional()
 })
@@ -40879,7 +40912,7 @@ export const AddPropertyRelevanceSignalResponse = zod.object({
   "confidence": zod.number().min(addPropertyRelevanceSignalResponseContactResearchCaseConfidenceMin).max(addPropertyRelevanceSignalResponseContactResearchCaseConfidenceMax),
   "sourceName": zod.string(),
   "sourceType": zod.string().describe('PUBLIC_RECORD, PUBLIC_PAGE, OWNER_SUPPLIED, SELLER_PROVIDED, MANUAL_RESEARCH, INFERRED, or OTHER'),
-  "sourceUrl": zod.string().url().nullish(),
+  "sourceUrl": zod.string().url().optional(),
   "observedAt": zod.string().datetime({"offset":true}),
   "identityMatch": zod.enum(['UNKNOWN', 'RECORDED_OWNER_ONLY', 'SELLER_SELF_IDENTIFIED', 'CONFLICTING', 'NOT_MATCHED']),
   "permissionBasis": zod.enum(['UNKNOWN', 'PUBLIC_SOURCE_TERMS', 'CONSENT', 'OTHER_DOCUMENTED', 'PROHIBITED']),
@@ -40960,6 +40993,17 @@ export const AddPropertyRelevanceSignalResponse = zod.object({
   "recipientIdentityClaimCount": zod.number().int().min(addPropertyRelevanceSignalResponseContactResearchCaseCandidateRoutesItemRecipientIdentityClaimCountMin).optional(),
   "rankingReasons": zod.array(zod.string()).optional()
 })).optional(),
+  "signingAuthorityReview": zod.object({
+  "status": zod.enum(['ESTABLISHED', 'NOT_ESTABLISHED', 'CONFLICTING']),
+  "sourceName": zod.string(),
+  "sourceUrl": zod.string().url().nullable(),
+  "evidenceReference": zod.string(),
+  "observedAt": zod.string().datetime({"offset":true}),
+  "note": zod.string(),
+  "reviewedBy": zod.string(),
+  "reviewedAt": zod.string().datetime({"offset":true}),
+  "freshnessStatus": zod.enum(['CURRENT', 'EXPIRED'])
+}).optional(),
   "synthetic": zod.boolean()
 }).optional()
 })
@@ -41242,7 +41286,7 @@ export const PromotePropertyDiscoveryResponse = zod.object({
   "confidence": zod.number().min(promotePropertyDiscoveryResponseDiscoveryContactResearchCaseConfidenceMin).max(promotePropertyDiscoveryResponseDiscoveryContactResearchCaseConfidenceMax),
   "sourceName": zod.string(),
   "sourceType": zod.string().describe('PUBLIC_RECORD, PUBLIC_PAGE, OWNER_SUPPLIED, SELLER_PROVIDED, MANUAL_RESEARCH, INFERRED, or OTHER'),
-  "sourceUrl": zod.string().url().nullish(),
+  "sourceUrl": zod.string().url().optional(),
   "observedAt": zod.string().datetime({"offset":true}),
   "identityMatch": zod.enum(['UNKNOWN', 'RECORDED_OWNER_ONLY', 'SELLER_SELF_IDENTIFIED', 'CONFLICTING', 'NOT_MATCHED']),
   "permissionBasis": zod.enum(['UNKNOWN', 'PUBLIC_SOURCE_TERMS', 'CONSENT', 'OTHER_DOCUMENTED', 'PROHIBITED']),
@@ -41323,6 +41367,17 @@ export const PromotePropertyDiscoveryResponse = zod.object({
   "recipientIdentityClaimCount": zod.number().int().min(promotePropertyDiscoveryResponseDiscoveryContactResearchCaseCandidateRoutesItemRecipientIdentityClaimCountMin).optional(),
   "rankingReasons": zod.array(zod.string()).optional()
 })).optional(),
+  "signingAuthorityReview": zod.object({
+  "status": zod.enum(['ESTABLISHED', 'NOT_ESTABLISHED', 'CONFLICTING']),
+  "sourceName": zod.string(),
+  "sourceUrl": zod.string().url().nullable(),
+  "evidenceReference": zod.string(),
+  "observedAt": zod.string().datetime({"offset":true}),
+  "note": zod.string(),
+  "reviewedBy": zod.string(),
+  "reviewedAt": zod.string().datetime({"offset":true}),
+  "freshnessStatus": zod.enum(['CURRENT', 'EXPIRED'])
+}).optional(),
   "synthetic": zod.boolean()
 }).optional()
 }),
@@ -41606,7 +41661,7 @@ export const DisqualifyPropertyDiscoveryResponse = zod.object({
   "confidence": zod.number().min(disqualifyPropertyDiscoveryResponseContactResearchCaseConfidenceMin).max(disqualifyPropertyDiscoveryResponseContactResearchCaseConfidenceMax),
   "sourceName": zod.string(),
   "sourceType": zod.string().describe('PUBLIC_RECORD, PUBLIC_PAGE, OWNER_SUPPLIED, SELLER_PROVIDED, MANUAL_RESEARCH, INFERRED, or OTHER'),
-  "sourceUrl": zod.string().url().nullish(),
+  "sourceUrl": zod.string().url().optional(),
   "observedAt": zod.string().datetime({"offset":true}),
   "identityMatch": zod.enum(['UNKNOWN', 'RECORDED_OWNER_ONLY', 'SELLER_SELF_IDENTIFIED', 'CONFLICTING', 'NOT_MATCHED']),
   "permissionBasis": zod.enum(['UNKNOWN', 'PUBLIC_SOURCE_TERMS', 'CONSENT', 'OTHER_DOCUMENTED', 'PROHIBITED']),
@@ -41687,6 +41742,17 @@ export const DisqualifyPropertyDiscoveryResponse = zod.object({
   "recipientIdentityClaimCount": zod.number().int().min(disqualifyPropertyDiscoveryResponseContactResearchCaseCandidateRoutesItemRecipientIdentityClaimCountMin).optional(),
   "rankingReasons": zod.array(zod.string()).optional()
 })).optional(),
+  "signingAuthorityReview": zod.object({
+  "status": zod.enum(['ESTABLISHED', 'NOT_ESTABLISHED', 'CONFLICTING']),
+  "sourceName": zod.string(),
+  "sourceUrl": zod.string().url().nullable(),
+  "evidenceReference": zod.string(),
+  "observedAt": zod.string().datetime({"offset":true}),
+  "note": zod.string(),
+  "reviewedBy": zod.string(),
+  "reviewedAt": zod.string().datetime({"offset":true}),
+  "freshnessStatus": zod.enum(['CURRENT', 'EXPIRED'])
+}).optional(),
   "synthetic": zod.boolean()
 }).optional()
 })
@@ -41756,6 +41822,15 @@ export const savePropertyContactResearchCaseBodyCandidateRouteOneIdentityEvidenc
 
 export const savePropertyContactResearchCaseBodyCandidateRouteOneVerificationNoteMax = 1000;
 
+export const savePropertyContactResearchCaseBodySigningAuthorityReviewOneSourceNameMin = 2;
+export const savePropertyContactResearchCaseBodySigningAuthorityReviewOneSourceNameMax = 200;
+
+export const savePropertyContactResearchCaseBodySigningAuthorityReviewOneEvidenceReferenceMin = 2;
+export const savePropertyContactResearchCaseBodySigningAuthorityReviewOneEvidenceReferenceMax = 500;
+
+export const savePropertyContactResearchCaseBodySigningAuthorityReviewOneNoteMin = 3;
+export const savePropertyContactResearchCaseBodySigningAuthorityReviewOneNoteMax = 2000;
+
 
 
 export const SavePropertyContactResearchCaseBody = zod.object({
@@ -41790,6 +41865,14 @@ export const SavePropertyContactResearchCaseBody = zod.object({
   "identityEvidenceRef": zod.string().max(savePropertyContactResearchCaseBodyCandidateRouteOneIdentityEvidenceRefMax).nullish(),
   "routeVerificationStatus": zod.enum(['UNREVIEWED', 'CONFIRMED', 'REJECTED']),
   "verificationNote": zod.string().max(savePropertyContactResearchCaseBodyCandidateRouteOneVerificationNoteMax).nullish()
+}),zod.null()]).optional(),
+  "signingAuthorityReview": zod.union([zod.object({
+  "status": zod.enum(['ESTABLISHED', 'NOT_ESTABLISHED', 'CONFLICTING']),
+  "sourceName": zod.string().min(savePropertyContactResearchCaseBodySigningAuthorityReviewOneSourceNameMin).max(savePropertyContactResearchCaseBodySigningAuthorityReviewOneSourceNameMax),
+  "sourceUrl": zod.string().url(),
+  "evidenceReference": zod.string().min(savePropertyContactResearchCaseBodySigningAuthorityReviewOneEvidenceReferenceMin).max(savePropertyContactResearchCaseBodySigningAuthorityReviewOneEvidenceReferenceMax),
+  "observedAt": zod.string().datetime({"offset":true}),
+  "note": zod.string().min(savePropertyContactResearchCaseBodySigningAuthorityReviewOneNoteMin).max(savePropertyContactResearchCaseBodySigningAuthorityReviewOneNoteMax)
 }),zod.null()]).optional()
 })
 
@@ -42054,7 +42137,7 @@ export const SavePropertyContactResearchCaseResponse = zod.object({
   "confidence": zod.number().min(savePropertyContactResearchCaseResponseContactResearchCaseConfidenceMin).max(savePropertyContactResearchCaseResponseContactResearchCaseConfidenceMax),
   "sourceName": zod.string(),
   "sourceType": zod.string().describe('PUBLIC_RECORD, PUBLIC_PAGE, OWNER_SUPPLIED, SELLER_PROVIDED, MANUAL_RESEARCH, INFERRED, or OTHER'),
-  "sourceUrl": zod.string().url().nullish(),
+  "sourceUrl": zod.string().url().optional(),
   "observedAt": zod.string().datetime({"offset":true}),
   "identityMatch": zod.enum(['UNKNOWN', 'RECORDED_OWNER_ONLY', 'SELLER_SELF_IDENTIFIED', 'CONFLICTING', 'NOT_MATCHED']),
   "permissionBasis": zod.enum(['UNKNOWN', 'PUBLIC_SOURCE_TERMS', 'CONSENT', 'OTHER_DOCUMENTED', 'PROHIBITED']),
@@ -42135,6 +42218,17 @@ export const SavePropertyContactResearchCaseResponse = zod.object({
   "recipientIdentityClaimCount": zod.number().int().min(savePropertyContactResearchCaseResponseContactResearchCaseCandidateRoutesItemRecipientIdentityClaimCountMin).optional(),
   "rankingReasons": zod.array(zod.string()).optional()
 })).optional(),
+  "signingAuthorityReview": zod.object({
+  "status": zod.enum(['ESTABLISHED', 'NOT_ESTABLISHED', 'CONFLICTING']),
+  "sourceName": zod.string(),
+  "sourceUrl": zod.string().url().nullable(),
+  "evidenceReference": zod.string(),
+  "observedAt": zod.string().datetime({"offset":true}),
+  "note": zod.string(),
+  "reviewedBy": zod.string(),
+  "reviewedAt": zod.string().datetime({"offset":true}),
+  "freshnessStatus": zod.enum(['CURRENT', 'EXPIRED'])
+}).optional(),
   "synthetic": zod.boolean()
 }).optional()
 })

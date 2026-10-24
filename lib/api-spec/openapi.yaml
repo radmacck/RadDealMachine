@@ -1900,7 +1900,7 @@ components:
         confidence: { type: number, minimum: 0, maximum: 1 }
         sourceName: { type: string }
         sourceType: { type: string, description: "PUBLIC_RECORD, PUBLIC_PAGE, OWNER_SUPPLIED, SELLER_PROVIDED, MANUAL_RESEARCH, INFERRED, or OTHER" }
-        sourceUrl: { type: ["string", "null"], format: uri }
+        sourceUrl: { type: string, format: uri }
         observedAt: { type: string, format: date-time }
         identityMatch: { type: string, enum: [UNKNOWN, RECORDED_OWNER_ONLY, SELLER_SELF_IDENTIFIED, CONFLICTING, NOT_MATCHED] }
         permissionBasis: { type: string, enum: [UNKNOWN, PUBLIC_SOURCE_TERMS, CONSENT, OTHER_DOCUMENTED, PROHIBITED] }
@@ -1919,7 +1919,31 @@ components:
               action: { type: string }
               reason: { type: string }
         candidateRoutes: { type: array, items: { $ref: "#/components/schemas/PropertyContactPath" } }
+        signingAuthorityReview: { $ref: "#/components/schemas/PropertySigningAuthorityReview" }
         synthetic: { type: boolean }
+    PropertySigningAuthorityReview:
+      type: object
+      required: [status, sourceName, sourceUrl, evidenceReference, observedAt, note, reviewedBy, reviewedAt, freshnessStatus]
+      properties:
+        status: { type: string, enum: [ESTABLISHED, NOT_ESTABLISHED, CONFLICTING] }
+        sourceName: { type: string }
+        sourceUrl: { type: ["string", "null"], format: uri }
+        evidenceReference: { type: string }
+        observedAt: { type: string, format: date-time }
+        note: { type: string }
+        reviewedBy: { type: string }
+        reviewedAt: { type: string, format: date-time }
+        freshnessStatus: { type: string, enum: [CURRENT, EXPIRED] }
+    PropertySigningAuthorityReviewInput:
+      type: object
+      required: [status, sourceName, sourceUrl, evidenceReference, observedAt, note]
+      properties:
+        status: { type: string, enum: [ESTABLISHED, NOT_ESTABLISHED, CONFLICTING] }
+        sourceName: { type: string, minLength: 2, maxLength: 200 }
+        sourceUrl: { type: string, format: uri }
+        evidenceReference: { type: string, minLength: 2, maxLength: 500 }
+        observedAt: { type: string, format: date-time }
+        note: { type: string, minLength: 3, maxLength: 2000 }
     PropertyContactRouteCandidateInput:
       type: object
       required: [channel, routeValue, recipient, recipientRole, sourceId, sourceName, sourceRecordId, sourceUrl, capturedAt, confidence, permissionStatus, permissionBasis, routeVerificationStatus]
@@ -1959,6 +1983,7 @@ components:
         evidenceReference: { type: ["string", "null"], maxLength: 500 }
         note: { type: string, minLength: 3, maxLength: 2000 }
         candidateRoute: { oneOf: [{ $ref: "#/components/schemas/PropertyContactRouteCandidateInput" }, { type: "null" }] }
+        signingAuthorityReview: { oneOf: [{ $ref: "#/components/schemas/PropertySigningAuthorityReviewInput" }, { type: "null" }] }
     PropertyDiscoveryList:
       type: object
       required: [records, nextCursor, hasMore, unmatchedSourceObservations, unmatchedNextCursor, unmatchedHasMore, counts, contactCoverage, criteria]

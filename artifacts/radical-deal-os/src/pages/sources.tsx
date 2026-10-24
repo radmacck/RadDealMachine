@@ -31,12 +31,19 @@ type Lane = 'properties' | 'buyer_candidates';
 const DISCOVERY_PAGE_SIZE = 25;
 
 function ContactResearchCaseEditor({
-  version, sourceName, sourceUrl, pending, onSave,
+  version, sourceName, sourceUrl, pending, isOwner, authorityReview, onSave,
 }: {
   version: number;
   sourceName: string;
   sourceUrl: string | null;
   pending: boolean;
+  isOwner: boolean;
+  authorityReview?: {
+    status: 'ESTABLISHED' | 'NOT_ESTABLISHED' | 'CONFLICTING';
+    sourceName: string; sourceUrl?: string | null; evidenceReference: string;
+    observedAt: string; note: string; reviewedBy: string; reviewedAt: string;
+    freshnessStatus: 'CURRENT' | 'EXPIRED';
+  };
   onSave: (data: PropertyContactResearchInput) => void;
 }) {
   const [name, setName] = useState(sourceName);
@@ -64,8 +71,25 @@ function ContactResearchCaseEditor({
   const [identityEvidenceRef, setIdentityEvidenceRef] = useState('');
   const [routeVerification, setRouteVerification] = useState<'UNREVIEWED'|'CONFIRMED'|'REJECTED'>('UNREVIEWED');
   const [verificationNote, setVerificationNote] = useState('');
+  const [authorityStatus, setAuthorityStatus] = useState<''|'ESTABLISHED'|'NOT_ESTABLISHED'|'CONFLICTING'>(authorityReview?.status ?? '');
+  const [authoritySource, setAuthoritySource] = useState(authorityReview?.sourceName ?? '');
+  const [authorityUrl, setAuthorityUrl] = useState(authorityReview?.sourceUrl ?? '');
+  const [authorityReference, setAuthorityReference] = useState(authorityReview?.evidenceReference ?? '');
+  const [authorityObservedAt, setAuthorityObservedAt] = useState(() =>
+    authorityReview?.observedAt ? new Date(authorityReview.observedAt).toISOString().slice(0, 16) :
+      new Date(Date.now() - 60_000).toISOString().slice(0, 16));
+  const [authorityNote, setAuthorityNote] = useState(authorityReview?.note ?? '');
   const normalizedEvidenceReference = normalizeContactResearchEvidenceReference(evidenceReference);
   const validRouteObservedAt = Number.isFinite(new Date(routeObservedAt).getTime());
+  const authorityObservedDate = new Date(authorityObservedAt);
+  const authorityReviewInput = isOwner && authorityStatus ? {
+    status: authorityStatus,
+    sourceName: authoritySource.trim(),
+    sourceUrl: authorityUrl.trim(),
+    evidenceReference: authorityReference.trim(),
+    observedAt: Number.isFinite(authorityObservedDate.getTime()) ? authorityObservedDate.toISOString() : '',
+    note: authorityNote.trim(),
+  } as const : undefined;
   const candidateRoute = routeValue.trim() && validRouteObservedAt ? {
     channel: routeChannel, routeValue: routeValue.trim(), recipient: recipient.trim(), recipientRole,
     sourceId: routeSourceId.trim(), sourceName: routeSourceName.trim(), sourceRecordId: routeRecordId.trim(),
@@ -98,6 +122,26 @@ function ContactResearchCaseEditor({
       <Input value={evidenceReference} onChange={e=>setEvidenceReference(e.target.value)} placeholder="For example: parcel record 12345 or deed page 7" />
       <span className="text-muted-foreground">Required for review; the source URL alone is not a precise evidence reference.</span>
     </label>
+    <fieldset className="rounded border p-3" data-testid="panel-signing-authority-review">
+      <legend className="px-1 text-xs font-medium">Signing authority — Owner review</legend>
+      {authorityReview ? <p className="mb-2 text-xs text-muted-foreground" data-testid="text-signing-authority-history">
+        Saved review: {authorityReview.status.replaceAll('_', ' ')} · {authorityReview.freshnessStatus} · reviewer {authorityReview.reviewedBy} · {new Date(authorityReview.reviewedAt).toLocaleString()} · {authorityReview.sourceName} / {authorityReview.evidenceReference}
+      </p> : <p className="mb-2 text-xs text-muted-foreground">Unknown / not reviewed. A recorded tax owner or verified contact route does not establish signing authority.</p>}
+      <div className="grid gap-2 sm:grid-cols-2">
+        <label className="grid gap-1 text-xs">Authority finding<select className="h-9 rounded border bg-background px-2 text-sm" value={authorityStatus} disabled={!isOwner || pending} onChange={e=>setAuthorityStatus(e.target.value as typeof authorityStatus)}>
+          <option value="">Unknown / not reviewed</option>
+          <option value="ESTABLISHED">Established by cited evidence</option>
+          <option value="NOT_ESTABLISHED">Not established</option>
+          <option value="CONFLICTING">Conflicting evidence</option>
+        </select></label>
+        <label className="grid gap-1 text-xs">Authority source name<Input value={authoritySource} disabled={!isOwner || pending} onChange={e=>setAuthoritySource(e.target.value)} /></label>
+        <label className="grid gap-1 text-xs">Authority source URL (HTTPS)<Input value={authorityUrl} disabled={!isOwner || pending} onChange={e=>setAuthorityUrl(e.target.value)} placeholder="https://…" /></label>
+        <label className="grid gap-1 text-xs">Exact authority evidence reference<Input value={authorityReference} disabled={!isOwner || pending} onChange={e=>setAuthorityReference(e.target.value)} placeholder="Document / page / record ID" /></label>
+        <label className="grid gap-1 text-xs">Evidence observed at<Input type="datetime-local" value={authorityObservedAt} disabled={!isOwner || pending} onChange={e=>setAuthorityObservedAt(e.target.value)} /></label>
+        <label className="grid gap-1 text-xs sm:col-span-2">Owner review note<textarea className="min-h-12 rounded border bg-background p-2 text-sm" value={authorityNote} disabled={!isOwner || pending} onChange={e=>setAuthorityNote(e.target.value)} /></label>
+      </div>
+      {!isOwner && <p className="mt-2 text-xs text-muted-foreground">Only an Owner can record the signing-authority decision.</p>}
+    </fieldset>
     <details className="rounded border p-3">
       <summary className="cursor-pointer text-xs font-medium">Add candidate direct route (optional)</summary>
       <div className="mt-2 grid gap-2 sm:grid-cols-2">
@@ -120,11 +164,12 @@ function ContactResearchCaseEditor({
         <label className="grid gap-1 text-xs sm:col-span-2">Owner verification note<textarea className="min-h-12 rounded border bg-background p-2 text-sm" value={verificationNote} onChange={e=>setVerificationNote(e.target.value)} /></label>
       </div>
     </details>
-    <Button type="button" variant="outline" disabled={pending || name.trim().length < 2 || note.trim().length < 3 || !normalizedEvidenceReference || (url.trim() !== '' && !url.trim().startsWith('https://')) || (!!routeValue.trim() && (!recipient.trim() || !routeSourceId.trim() || !routeSourceName.trim() || !routeRecordId.trim() || !routeSourceUrl.trim().startsWith('https://')))} onClick={()=>onSave({
+    <Button type="button" variant="outline" disabled={pending || name.trim().length < 2 || note.trim().length < 3 || !normalizedEvidenceReference || (url.trim() !== '' && !url.trim().startsWith('https://')) || (isOwner && !!authorityStatus && (authoritySource.trim().length < 2 || !authorityUrl.trim().startsWith('https://') || authorityReference.trim().length < 2 || !authorityNote.trim() || !Number.isFinite(authorityObservedDate.getTime()))) || (!!routeValue.trim() && (!recipient.trim() || !routeSourceId.trim() || !routeSourceName.trim() || !routeRecordId.trim() || !routeSourceUrl.trim().startsWith('https://')))} onClick={()=>onSave({
       version, status, confidence: Number(confidence), sourceName: name.trim(),
       sourceType: url.trim() ? 'PUBLIC_RECORD' : 'OTHER', sourceUrl: url.trim() || null,
       observedAt: new Date().toISOString(), identityMatch: identity, permissionBasis: permission,
       evidenceReference: normalizedEvidenceReference, note: note.trim(), candidateRoute,
+      signingAuthorityReview: authorityReviewInput,
     })}>{pending ? 'Saving case…' : 'Save contact research case'}</Button>
   </div>;
 }
@@ -694,6 +739,8 @@ export default function Sources() {
                           sourceName={item.sourceObservations[0]?.sourceName ?? 'Philadelphia public property discovery'}
                           sourceUrl={item.sourceObservations[0]?.sourceUrl ?? null}
                           pending={saveContactResearch.isPending}
+                          isOwner={isOwner}
+                          authorityReview={item.contactResearchCase?.signingAuthorityReview}
                           onSave={(data) => saveContactResearch.mutate({ id: item.id, data }, {
                             onSuccess: () => { invalidateDiscoveries(); toast({ title: 'Contact research saved', description: 'Route candidates transfer only after human promotion and only when owner verification, current freshness, permitted use, and seller identity evidence pass.' }); },
                           })}

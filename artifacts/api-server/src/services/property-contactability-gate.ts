@@ -12,6 +12,11 @@ export type SellerContactabilityEvidence = {
   evidenceReference: string | null;
   synthetic: boolean;
   candidateRoutes?: PropertyContactPath[];
+  signingAuthorityReview?: {
+    status: "ESTABLISHED" | "NOT_ESTABLISHED" | "CONFLICTING";
+    observedAt: string;
+    freshnessStatus: "CURRENT" | "EXPIRED";
+  };
 };
 
 const SELLER_CONTACT_STAGES = new Set([
@@ -66,6 +71,17 @@ export function evaluatePropertyContactabilityGate(caseRecord: SellerContactabil
   if (caseRecord.identityMatch !== "SELLER_SELF_IDENTIFIED" ||
     phones.some(path => path.recipientRole !== "SELLER_SELF_IDENTIFIED" || path.recipientIdentityEvidenceStatus !== "SUPPORTING_RECORD"))
     gaps.push("Match the route recipient to the seller with supporting identity evidence.");
+  if (!caseRecord.signingAuthorityReview)
+    gaps.push("Record an Owner-reviewed, source-backed signing-authority decision.");
+  else if (caseRecord.signingAuthorityReview.freshnessStatus !== "CURRENT" ||
+    !Number.isFinite(Date.parse(caseRecord.signingAuthorityReview.observedAt)) ||
+    Date.parse(caseRecord.signingAuthorityReview.observedAt) > now.getTime() ||
+    now.getTime() - Date.parse(caseRecord.signingAuthorityReview.observedAt) > 180 * 24 * 60 * 60_000)
+    gaps.push("Signing-authority evidence is expired; refresh and review the source record.");
+  else if (caseRecord.signingAuthorityReview.status === "CONFLICTING")
+    gaps.push("Resolve conflicting signing-authority evidence before CALL_READY.");
+  else if (caseRecord.signingAuthorityReview.status !== "ESTABLISHED")
+    gaps.push("Signing authority is not established by current source-backed evidence.");
   if (phones.some(path => path.confidence < 0.85))
     gaps.push("Route confidence must be at least 0.85 for owner confirmation.");
   return [...new Set(gaps)];
