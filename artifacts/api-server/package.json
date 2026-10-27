@@ -19,6 +19,7 @@
     "exercise:property-source": "tsx src/services/isolated-exercise.ts property-source-exercise.ts",
     "exercise:property-source-coverage": "tsx src/services/isolated-exercise.ts property-source-coverage-exercise.ts",
     "exercise:property-contact-http": "tsx src/services/isolated-exercise.ts property-contact-http-exercise.ts",
+    "exercise:deal-finder": "tsx src/services/isolated-exercise.ts deal-finder-submission-exercise.ts",
     "exercise:access-boundaries": "tsx src/services/isolated-exercise.ts access-boundary-exercise.ts",
     "exercise:acquisition-pipeline": "tsx src/services/isolated-exercise.ts acquisition-pipeline-exercise.ts",
     "test:buyer-outreach": "tsx --test src/services/buyer-outreach.test.ts",

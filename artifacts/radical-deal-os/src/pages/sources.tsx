@@ -14,6 +14,7 @@ import { PageHeader } from '@/components/page-header';
 import { EmptyState, ErrorNotice, RowsSkeleton } from '@/components/state-views';
 import { RecordFacts } from '@/components/source-research';
 import { PropertyBuyerMatches } from '@/components/property-buyer-matches';
+import { DealFinderSubmissions } from '@/components/deal-finder-submissions';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useAccess } from '@/hooks/use-access';
@@ -360,6 +361,7 @@ export default function Sources() {
   return (
     <div className="space-y-5">
       <PageHeader eyebrow="Discovery" title="Sources" />
+      <DealFinderSubmissions />
       <section className="ledger p-4 text-sm" data-testid="panel-sources">
         {sourceCoverage.isLoading && <RowsSkeleton rows={1} />}
         {sourceCoverage.isError && <ErrorNotice error={sourceCoverage.error} onRetry={() => sourceCoverage.refetch()} />}

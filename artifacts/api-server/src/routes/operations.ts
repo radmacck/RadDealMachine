@@ -18,6 +18,7 @@ import * as workers from "../services/workers";
 import { listHandoffs, recordHandoffEvent } from "../services/handoffs";
 import { exportBuyerRecord } from "../services/founder-record-export";
 import { getWorkspaceSetupStatus, saveWorkspaceSetup } from "../services/workspace-setup";
+import * as finderSubmissions from "../services/deal-finder-submissions";
 
 export const actor = (res: {locals:Record<string,unknown>}): OfferActor => ({id:String(res.locals.actor),role:String(res.locals.role)});
 export function parse<T extends z.ZodType>(schema: T,value: unknown): z.infer<T> {
@@ -90,6 +91,20 @@ router.post("/buyers/discovered",roles("OWNER"),async(req,res)=>{
   res.status(201).json(schemas.DiscoverBuyerResponse.parse(await poolOperations.discoverBuyer(parse(schemas.DiscoverBuyerBody,req.body),actor(res))));
 });
 router.get("/worker-capabilities",(_req,res)=>res.json(schemas.GetWorkerCapabilitiesResponse.parse(WORKER_CAPABILITIES)));
+router.get("/deal-finder-submissions",roles("OWNER","ANALYST","OPERATOR"),async(_req,res)=>{
+  res.json(schemas.ListDealFinderSubmissionsResponse.parse(await finderSubmissions.listDealFinderSubmissions(actor(res))));
+});
+router.post("/deal-finder-submissions",roles("OWNER","ANALYST","OPERATOR"),async(req,res)=>{
+  res.status(201).json(schemas.CreateDealFinderSubmissionResponse.parse(
+    await finderSubmissions.createDealFinderSubmission(parse(schemas.CreateDealFinderSubmissionBody,req.body),actor(res)),
+  ));
+});
+router.post("/deal-finder-submissions/:id/actions",roles("OWNER"),async(req,res)=>{
+  const {id}=parse(schemas.RecordDealFinderSubmissionActionParams,req.params);
+  res.json(schemas.RecordDealFinderSubmissionActionResponse.parse(
+    await finderSubmissions.recordDealFinderSubmissionAction(id,parse(schemas.RecordDealFinderSubmissionActionBody,req.body),actor(res)),
+  ));
+});
 router.post("/buyers",roles("OWNER"),async(req,res)=>{
   res.status(201).json(schemas.CreateBuyerResponse.parse(await buyers.createBuyer(parse(schemas.CreateBuyerBody,req.body),actor(res))));
 });

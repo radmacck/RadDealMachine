@@ -978,6 +978,44 @@ paths:
           content:
             application/json:
               schema: { $ref: "#/components/schemas/DealOperations" }
+  /deal-finder-submissions:
+    get:
+      operationId: listDealFinderSubmissions
+      responses:
+        "200":
+          description: Private opportunity submissions and immutable finder attribution
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/DealFinderSubmissionList" }
+    post:
+      operationId: createDealFinderSubmission
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/DealFinderSubmissionInput" }
+      responses:
+        "201":
+          description: Idempotently recorded opportunity submission; no seller contact or CALL_READY authority is created
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/DealFinderSubmission" }
+  /deal-finder-submissions/{id}/actions:
+    parameters:
+      - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
+    post:
+      operationId: recordDealFinderSubmissionAction
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/DealFinderSubmissionActionInput" }
+      responses:
+        "200":
+          description: Append-only acceptance, handoff, or fee outcome
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/DealFinderSubmission" }
   /deals/{id}/contract:
     parameters:
       - { name: id, in: path, required: true, schema: { type: string } }
@@ -2802,6 +2840,60 @@ components:
         feeAmount: { type: [number, "null"] }
         currency: { type: [string, "null"] }
         relatedEventKey: { type: [string, "null"] }
+    DealFinderSubmissionInput:
+      type: object
+      required: [idempotencyKey, finderId, propertyAddress, city, state, postalCode, opportunity, evidenceUrl, evidenceReference, authorizedToShare]
+      properties:
+        idempotencyKey: { type: string, minLength: 8, maxLength: 200 }
+        finderId: { type: string, format: uuid }
+        propertyAddress: { type: string, minLength: 5, maxLength: 300 }
+        city: { type: string, minLength: 2, maxLength: 100 }
+        state: { type: string, pattern: "^[A-Z]{2}$" }
+        postalCode: { type: string, minLength: 3, maxLength: 12 }
+        opportunity: { type: string, minLength: 20, maxLength: 4000 }
+        evidenceUrl: { type: string, minLength: 8, maxLength: 2000 }
+        evidenceReference: { type: string, minLength: 3, maxLength: 500 }
+        authorizedToShare: { type: boolean, enum: [true] }
+    DealFinderSubmissionActionInput:
+      type: object
+      required: [version, action, note, evidenceUrl]
+      properties:
+        version: { type: integer, minimum: 1 }
+        action: { type: string, enum: [ACCEPT, DECLINE, HANDOFF, AGREE_FEE, MARK_RECEIVED, DISPUTE_FEE, WAIVE_FEE] }
+        note: { type: string, minLength: 10, maxLength: 2000 }
+        evidenceUrl: { type: string, minLength: 8, maxLength: 2000 }
+        wholesaler: { type: string, minLength: 2, maxLength: 200 }
+        exactFeeTerms: { type: string, minLength: 10, maxLength: 2000 }
+        feeAmount: { type: number, exclusiveMinimum: 0, maximum: 1000000000 }
+        currency: { type: string, pattern: "^[A-Z]{3}$" }
+    DealFinderSubmission:
+      type: object
+      required: [id, version, finderId, finderName, status, propertyAddress, city, state, postalCode, opportunity, evidenceUrl, evidenceReference, submittedBy, submittedAt, authorizedToShare, history, feeStatus]
+      properties:
+        id: { type: string, format: uuid }
+        version: { type: integer }
+        finderId: { type: string, format: uuid }
+        finderName: { type: string }
+        status: { type: string, enum: [SUBMITTED, ACCEPTED, DECLINED, HANDED_OFF] }
+        propertyAddress: { type: string }
+        city: { type: string }
+        state: { type: string }
+        postalCode: { type: string }
+        opportunity: { type: string }
+        evidenceUrl: { type: string }
+        evidenceReference: { type: string }
+        submittedBy: { type: string }
+        submittedAt: { type: string, format: date-time }
+        authorizedToShare: { type: boolean, enum: [true] }
+        wholesaler: { type: [string, "null"] }
+        exactFeeTerms: { type: [string, "null"] }
+        feeAmount: { type: [number, "null"] }
+        currency: { type: [string, "null"] }
+        feeStatus: { type: string, enum: [NOT_AGREED, PENDING, RECEIVED, DISPUTED, WAIVED] }
+        history: { type: array, items: { type: object, additionalProperties: true } }
+    DealFinderSubmissionList:
+      type: array
+      items: { $ref: "#/components/schemas/DealFinderSubmission" }
     ContractInput:
       type: object
       required: [version, offerId, closingAt]

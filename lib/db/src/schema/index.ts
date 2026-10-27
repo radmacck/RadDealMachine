@@ -39,3 +39,4 @@ export * from "./transaction-clause-requests";
 export * from "./seller-playbooks";
 export * from "./operational-alerts";
 export * from "./evidence-packet-exports";
+export * from "./deal-finder-submissions";

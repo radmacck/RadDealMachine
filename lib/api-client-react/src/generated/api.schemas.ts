@@ -3363,6 +3363,147 @@ export interface DestinationActivityEvent {
   relatedEventKey?: string | null;
 }
 
+export interface DealFinderSubmissionInput {
+  /**
+     * @minLength 8
+     * @maxLength 200
+     */
+  idempotencyKey: string;
+  finderId: string;
+  /**
+     * @minLength 5
+     * @maxLength 300
+     */
+  propertyAddress: string;
+  /**
+     * @minLength 2
+     * @maxLength 100
+     */
+  city: string;
+  /** @pattern ^[A-Z]{2}$ */
+  state: string;
+  /**
+     * @minLength 3
+     * @maxLength 12
+     */
+  postalCode: string;
+  /**
+     * @minLength 20
+     * @maxLength 4000
+     */
+  opportunity: string;
+  /**
+     * @minLength 8
+     * @maxLength 2000
+     */
+  evidenceUrl: string;
+  /**
+     * @minLength 3
+     * @maxLength 500
+     */
+  evidenceReference: string;
+  authorizedToShare: true;
+}
+
+export type DealFinderSubmissionActionInputAction = typeof DealFinderSubmissionActionInputAction[keyof typeof DealFinderSubmissionActionInputAction];
+
+
+export const DealFinderSubmissionActionInputAction = {
+  ACCEPT: 'ACCEPT',
+  DECLINE: 'DECLINE',
+  HANDOFF: 'HANDOFF',
+  AGREE_FEE: 'AGREE_FEE',
+  MARK_RECEIVED: 'MARK_RECEIVED',
+  DISPUTE_FEE: 'DISPUTE_FEE',
+  WAIVE_FEE: 'WAIVE_FEE',
+} as const;
+
+export interface DealFinderSubmissionActionInput {
+  /** @minimum 1 */
+  version: number;
+  action: DealFinderSubmissionActionInputAction;
+  /**
+     * @minLength 10
+     * @maxLength 2000
+     */
+  note: string;
+  /**
+     * @minLength 8
+     * @maxLength 2000
+     */
+  evidenceUrl: string;
+  /**
+     * @minLength 2
+     * @maxLength 200
+     */
+  wholesaler?: string;
+  /**
+     * @minLength 10
+     * @maxLength 2000
+     */
+  exactFeeTerms?: string;
+  /**
+     * @maximum 1000000000
+     * @exclusiveMinimum 0
+     */
+  feeAmount?: number;
+  /** @pattern ^[A-Z]{3}$ */
+  currency?: string;
+}
+
+export type DealFinderSubmissionStatus = typeof DealFinderSubmissionStatus[keyof typeof DealFinderSubmissionStatus];
+
+
+export const DealFinderSubmissionStatus = {
+  SUBMITTED: 'SUBMITTED',
+  ACCEPTED: 'ACCEPTED',
+  DECLINED: 'DECLINED',
+  HANDED_OFF: 'HANDED_OFF',
+} as const;
+
+export type DealFinderSubmissionFeeStatus = typeof DealFinderSubmissionFeeStatus[keyof typeof DealFinderSubmissionFeeStatus];
+
+
+export const DealFinderSubmissionFeeStatus = {
+  NOT_AGREED: 'NOT_AGREED',
+  PENDING: 'PENDING',
+  RECEIVED: 'RECEIVED',
+  DISPUTED: 'DISPUTED',
+  WAIVED: 'WAIVED',
+} as const;
+
+export type DealFinderSubmissionHistoryItem = { [key: string]: unknown };
+
+export interface DealFinderSubmission {
+  id: string;
+  version: number;
+  finderId: string;
+  finderName: string;
+  status: DealFinderSubmissionStatus;
+  propertyAddress: string;
+  city: string;
+  state: string;
+  postalCode: string;
+  opportunity: string;
+  evidenceUrl: string;
+  evidenceReference: string;
+  submittedBy: string;
+  submittedAt: string;
+  authorizedToShare: true;
+  /** @nullable */
+  wholesaler?: string | null;
+  /** @nullable */
+  exactFeeTerms?: string | null;
+  /** @nullable */
+  feeAmount?: number | null;
+  /** @nullable */
+  currency?: string | null;
+  feeStatus: DealFinderSubmissionFeeStatus;
+  history: DealFinderSubmissionHistoryItem[];
+}
+
+export type DealFinderSubmissionList = DealFinderSubmission[];
+
 export interface ContractInput {
   /** @minimum 1 */
   version: number;

@@ -28691,6 +28691,153 @@ export const RecordDestinationActivityResponse = zod.object({
 })
 
 
+export const ListDealFinderSubmissionsResponseItem = zod.object({
+  "id": zod.string().uuid(),
+  "version": zod.number().int(),
+  "finderId": zod.string().uuid(),
+  "finderName": zod.string(),
+  "status": zod.enum(['SUBMITTED', 'ACCEPTED', 'DECLINED', 'HANDED_OFF']),
+  "propertyAddress": zod.string(),
+  "city": zod.string(),
+  "state": zod.string(),
+  "postalCode": zod.string(),
+  "opportunity": zod.string(),
+  "evidenceUrl": zod.string(),
+  "evidenceReference": zod.string(),
+  "submittedBy": zod.string(),
+  "submittedAt": zod.string().datetime({"offset":true}),
+  "authorizedToShare": zod.literal(true),
+  "wholesaler": zod.string().nullish(),
+  "exactFeeTerms": zod.string().nullish(),
+  "feeAmount": zod.number().nullish(),
+  "currency": zod.string().nullish(),
+  "feeStatus": zod.enum(['NOT_AGREED', 'PENDING', 'RECEIVED', 'DISPUTED', 'WAIVED']),
+  "history": zod.array(zod.record(zod.string(), zod.unknown()))
+})
+export const ListDealFinderSubmissionsResponse = zod.array(ListDealFinderSubmissionsResponseItem)
+
+
+export const createDealFinderSubmissionBodyIdempotencyKeyMin = 8;
+export const createDealFinderSubmissionBodyIdempotencyKeyMax = 200;
+
+export const createDealFinderSubmissionBodyPropertyAddressMin = 5;
+export const createDealFinderSubmissionBodyPropertyAddressMax = 300;
+
+export const createDealFinderSubmissionBodyCityMin = 2;
+export const createDealFinderSubmissionBodyCityMax = 100;
+
+export const createDealFinderSubmissionBodyStateRegExp = new RegExp('^[A-Z]{2}$');
+export const createDealFinderSubmissionBodyPostalCodeMin = 3;
+export const createDealFinderSubmissionBodyPostalCodeMax = 12;
+
+export const createDealFinderSubmissionBodyOpportunityMin = 20;
+export const createDealFinderSubmissionBodyOpportunityMax = 4000;
+
+export const createDealFinderSubmissionBodyEvidenceUrlMin = 8;
+export const createDealFinderSubmissionBodyEvidenceUrlMax = 2000;
+
+export const createDealFinderSubmissionBodyEvidenceReferenceMin = 3;
+export const createDealFinderSubmissionBodyEvidenceReferenceMax = 500;
+
+
+
+export const CreateDealFinderSubmissionBody = zod.object({
+  "idempotencyKey": zod.string().min(createDealFinderSubmissionBodyIdempotencyKeyMin).max(createDealFinderSubmissionBodyIdempotencyKeyMax),
+  "finderId": zod.string().uuid(),
+  "propertyAddress": zod.string().min(createDealFinderSubmissionBodyPropertyAddressMin).max(createDealFinderSubmissionBodyPropertyAddressMax),
+  "city": zod.string().min(createDealFinderSubmissionBodyCityMin).max(createDealFinderSubmissionBodyCityMax),
+  "state": zod.string().regex(createDealFinderSubmissionBodyStateRegExp),
+  "postalCode": zod.string().min(createDealFinderSubmissionBodyPostalCodeMin).max(createDealFinderSubmissionBodyPostalCodeMax),
+  "opportunity": zod.string().min(createDealFinderSubmissionBodyOpportunityMin).max(createDealFinderSubmissionBodyOpportunityMax),
+  "evidenceUrl": zod.string().min(createDealFinderSubmissionBodyEvidenceUrlMin).max(createDealFinderSubmissionBodyEvidenceUrlMax),
+  "evidenceReference": zod.string().min(createDealFinderSubmissionBodyEvidenceReferenceMin).max(createDealFinderSubmissionBodyEvidenceReferenceMax),
+  "authorizedToShare": zod.literal(true)
+})
+
+export const CreateDealFinderSubmissionResponse = zod.object({
+  "id": zod.string().uuid(),
+  "version": zod.number().int(),
+  "finderId": zod.string().uuid(),
+  "finderName": zod.string(),
+  "status": zod.enum(['SUBMITTED', 'ACCEPTED', 'DECLINED', 'HANDED_OFF']),
+  "propertyAddress": zod.string(),
+  "city": zod.string(),
+  "state": zod.string(),
+  "postalCode": zod.string(),
+  "opportunity": zod.string(),
+  "evidenceUrl": zod.string(),
+  "evidenceReference": zod.string(),
+  "submittedBy": zod.string(),
+  "submittedAt": zod.string().datetime({"offset":true}),
+  "authorizedToShare": zod.literal(true),
+  "wholesaler": zod.string().nullish(),
+  "exactFeeTerms": zod.string().nullish(),
+  "feeAmount": zod.number().nullish(),
+  "currency": zod.string().nullish(),
+  "feeStatus": zod.enum(['NOT_AGREED', 'PENDING', 'RECEIVED', 'DISPUTED', 'WAIVED']),
+  "history": zod.array(zod.record(zod.string(), zod.unknown()))
+})
+
+
+export const RecordDealFinderSubmissionActionParams = zod.object({
+  "id": zod.coerce.string().uuid()
+})
+
+
+export const recordDealFinderSubmissionActionBodyNoteMin = 10;
+export const recordDealFinderSubmissionActionBodyNoteMax = 2000;
+
+export const recordDealFinderSubmissionActionBodyEvidenceUrlMin = 8;
+export const recordDealFinderSubmissionActionBodyEvidenceUrlMax = 2000;
+
+export const recordDealFinderSubmissionActionBodyWholesalerMin = 2;
+export const recordDealFinderSubmissionActionBodyWholesalerMax = 200;
+
+export const recordDealFinderSubmissionActionBodyExactFeeTermsMin = 10;
+export const recordDealFinderSubmissionActionBodyExactFeeTermsMax = 2000;
+
+export const recordDealFinderSubmissionActionBodyFeeAmountExclusiveMin = 0;
+export const recordDealFinderSubmissionActionBodyFeeAmountMax = 1000000000;
+
+export const recordDealFinderSubmissionActionBodyCurrencyRegExp = new RegExp('^[A-Z]{3}$');
+
+
+export const RecordDealFinderSubmissionActionBody = zod.object({
+  "version": zod.number().int().min(1),
+  "action": zod.enum(['ACCEPT', 'DECLINE', 'HANDOFF', 'AGREE_FEE', 'MARK_RECEIVED', 'DISPUTE_FEE', 'WAIVE_FEE']),
+  "note": zod.string().min(recordDealFinderSubmissionActionBodyNoteMin).max(recordDealFinderSubmissionActionBodyNoteMax),
+  "evidenceUrl": zod.string().min(recordDealFinderSubmissionActionBodyEvidenceUrlMin).max(recordDealFinderSubmissionActionBodyEvidenceUrlMax),
+  "wholesaler": zod.string().min(recordDealFinderSubmissionActionBodyWholesalerMin).max(recordDealFinderSubmissionActionBodyWholesalerMax).optional(),
+  "exactFeeTerms": zod.string().min(recordDealFinderSubmissionActionBodyExactFeeTermsMin).max(recordDealFinderSubmissionActionBodyExactFeeTermsMax).optional(),
+  "feeAmount": zod.number().gt(recordDealFinderSubmissionActionBodyFeeAmountExclusiveMin).max(recordDealFinderSubmissionActionBodyFeeAmountMax).optional(),
+  "currency": zod.string().regex(recordDealFinderSubmissionActionBodyCurrencyRegExp).optional()
+})
+
+export const RecordDealFinderSubmissionActionResponse = zod.object({
+  "id": zod.string().uuid(),
+  "version": zod.number().int(),
+  "finderId": zod.string().uuid(),
+  "finderName": zod.string(),
+  "status": zod.enum(['SUBMITTED', 'ACCEPTED', 'DECLINED', 'HANDED_OFF']),
+  "propertyAddress": zod.string(),
+  "city": zod.string(),
+  "state": zod.string(),
+  "postalCode": zod.string(),
+  "opportunity": zod.string(),
+  "evidenceUrl": zod.string(),
+  "evidenceReference": zod.string(),
+  "submittedBy": zod.string(),
+  "submittedAt": zod.string().datetime({"offset":true}),
+  "authorizedToShare": zod.literal(true),
+  "wholesaler": zod.string().nullish(),
+  "exactFeeTerms": zod.string().nullish(),
+  "feeAmount": zod.number().nullish(),
+  "currency": zod.string().nullish(),
+  "feeStatus": zod.enum(['NOT_AGREED', 'PENDING', 'RECEIVED', 'DISPUTED', 'WAIVED']),
+  "history": zod.array(zod.record(zod.string(), zod.unknown()))
+})
+
+
 export const CreateContractParams = zod.object({
   "id": zod.coerce.string()
 })

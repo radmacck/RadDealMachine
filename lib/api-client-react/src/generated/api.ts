@@ -62,6 +62,10 @@ import type {
   ContractInput,
   Dashboard,
   DealDistribution,
+  DealFinderSubmission,
+  DealFinderSubmissionActionInput,
+  DealFinderSubmissionInput,
+  DealFinderSubmissionList,
   DealOperations,
   DealOutcomeInput,
   DestinationActivityInput,
@@ -5997,6 +6001,242 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
         TContext
       > => {
       return useMutation(getRecordDestinationActivityMutationOptions(options));
+    }
+
+export const getListDealFinderSubmissionsUrl = () => {
+
+
+
+
+  return `/api/deal-finder-submissions`
+}
+
+export const listDealFinderSubmissions = async ( options?: Parameters<typeof customFetch>[1]): Promise<DealFinderSubmissionList> => {
+
+  return customFetch<DealFinderSubmissionList>(getListDealFinderSubmissionsUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getListDealFinderSubmissionsQueryKey = () => {
+    return [
+    `/api/deal-finder-submissions`
+    ] as const;
+    }
+
+
+export const getListDealFinderSubmissionsQueryOptions = <TData = Awaited<ReturnType<typeof listDealFinderSubmissions>>, TError = ErrorType<unknown>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listDealFinderSubmissions>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getListDealFinderSubmissionsQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listDealFinderSubmissions>>> = ({ signal }) => listDealFinderSubmissions({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listDealFinderSubmissions>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type ListDealFinderSubmissionsQueryResult = NonNullable<Awaited<ReturnType<typeof listDealFinderSubmissions>>>
+export type ListDealFinderSubmissionsQueryError = ErrorType<unknown>
+
+
+
+export function useListDealFinderSubmissions<TData = Awaited<ReturnType<typeof listDealFinderSubmissions>>, TError = ErrorType<unknown>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listDealFinderSubmissions>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getListDealFinderSubmissionsQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getCreateDealFinderSubmissionUrl = () => {
+
+
+
+
+  return `/api/deal-finder-submissions`
+}
+
+export const createDealFinderSubmission = async (dealFinderSubmissionInput: DealFinderSubmissionInput, options?: Parameters<typeof customFetch>[1]): Promise<DealFinderSubmission> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return customFetch<DealFinderSubmission>(getCreateDealFinderSubmissionUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(dealFinderSubmissionInput)
+  }
+);}
+
+
+
+
+
+export const getCreateDealFinderSubmissionMutationKey = () => ['createDealFinderSubmission'] as const;
+
+export const getCreateDealFinderSubmissionMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createDealFinderSubmission>>, TError,CreateDealFinderSubmissionMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof createDealFinderSubmission>>, TError,CreateDealFinderSubmissionMutationVariables, TContext> => {
+
+const mutationKey = getCreateDealFinderSubmissionMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof createDealFinderSubmission>>, CreateDealFinderSubmissionMutationVariables> = (props) => {
+          const {data} = props ?? {};
+
+          return  createDealFinderSubmission(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type CreateDealFinderSubmissionMutationResult = NonNullable<Awaited<ReturnType<typeof createDealFinderSubmission>>>
+    export type CreateDealFinderSubmissionMutationBody = BodyType<DealFinderSubmissionInput>
+    export type CreateDealFinderSubmissionMutationError = ErrorType<unknown>
+    export type CreateDealFinderSubmissionMutationVariables = {data: BodyType<DealFinderSubmissionInput>}
+
+    export const useCreateDealFinderSubmission = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createDealFinderSubmission>>, TError,CreateDealFinderSubmissionMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof createDealFinderSubmission>>,
+        TError,
+        CreateDealFinderSubmissionMutationVariables,
+        TContext
+      > => {
+      return useMutation(getCreateDealFinderSubmissionMutationOptions(options));
+    }
+
+export const getRecordDealFinderSubmissionActionUrl = (id: string,) => {
+
+
+
+
+  return `/api/deal-finder-submissions/${id}/actions`
+}
+
+export const recordDealFinderSubmissionAction = async (id: string,
+    dealFinderSubmissionActionInput: DealFinderSubmissionActionInput, options?: Parameters<typeof customFetch>[1]): Promise<DealFinderSubmission> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return customFetch<DealFinderSubmission>(getRecordDealFinderSubmissionActionUrl(id),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(dealFinderSubmissionActionInput)
+  }
+);}
+
+
+
+
+
+export const getRecordDealFinderSubmissionActionMutationKey = () => ['recordDealFinderSubmissionAction'] as const;
+
+export const getRecordDealFinderSubmissionActionMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof recordDealFinderSubmissionAction>>, TError,RecordDealFinderSubmissionActionMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof recordDealFinderSubmissionAction>>, TError,RecordDealFinderSubmissionActionMutationVariables, TContext> => {
+
+const mutationKey = getRecordDealFinderSubmissionActionMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof recordDealFinderSubmissionAction>>, RecordDealFinderSubmissionActionMutationVariables> = (props) => {
+          const {id,data} = props ?? {};
+
+          return  recordDealFinderSubmissionAction(id,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type RecordDealFinderSubmissionActionMutationResult = NonNullable<Awaited<ReturnType<typeof recordDealFinderSubmissionAction>>>
+    export type RecordDealFinderSubmissionActionMutationBody = BodyType<DealFinderSubmissionActionInput>
+    export type RecordDealFinderSubmissionActionMutationError = ErrorType<unknown>
+    export type RecordDealFinderSubmissionActionMutationVariables = {id: string;data: BodyType<DealFinderSubmissionActionInput>}
+
+    export const useRecordDealFinderSubmissionAction = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof recordDealFinderSubmissionAction>>, TError,RecordDealFinderSubmissionActionMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof recordDealFinderSubmissionAction>>,
+        TError,
+        RecordDealFinderSubmissionActionMutationVariables,
+        TContext
+      > => {
+      return useMutation(getRecordDealFinderSubmissionActionMutationOptions(options));
     }
 
 export const getCreateContractUrl = (id: string,) => {
