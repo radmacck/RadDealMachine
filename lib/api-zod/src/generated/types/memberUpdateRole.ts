@@ -14,4 +14,5 @@ export const MemberUpdateRole = {
   ANALYST: 'ANALYST',
   VIEWER: 'VIEWER',
   PENDING: 'PENDING',
+  FINDER: 'FINDER',
 } as const;

@@ -8,6 +8,7 @@ import { Logo } from '@/components/logo';
 import { ErrorNotice, RowsSkeleton } from '@/components/state-views';
 import { AccessContext } from '@/hooks/use-access';
 import { useToast } from '@/hooks/use-toast';
+import { FinderPortal } from '@/components/finder-portal';
 
 function Centered({ children }: { children: ReactNode }) {
   return (
@@ -78,6 +79,11 @@ export function AccessGate({ children }: { children: ReactNode }) {
         <Button variant="ghost" onClick={() => signOut({ redirectUrl: base || '/' })} data-testid="button-pending-signout">Sign out</Button>
       </Centered>
     );
+  }
+
+  if (a.role === 'FINDER') {
+    if (!a.finderId) return <Centered><Logo /><p className="text-sm">Finder access is not fully configured. Contact the workspace owner.</p></Centered>;
+    return <FinderPortal />;
   }
 
   return <AccessContext.Provider value={value}>{children}</AccessContext.Provider>;

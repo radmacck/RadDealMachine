@@ -3242,21 +3242,24 @@ export const HealthCheckResponse = zod.object({
 
 export const GetAccessResponse = zod.object({
   "userId": zod.string(),
-  "role": zod.enum(['OWNER', 'OPERATOR', 'ANALYST', 'VIEWER', 'PENDING']),
-  "unclaimed": zod.boolean()
+  "role": zod.enum(['OWNER', 'OPERATOR', 'ANALYST', 'VIEWER', 'PENDING', 'FINDER']),
+  "unclaimed": zod.boolean(),
+  "finderId": zod.string().uuid().nullable()
 })
 
 
 export const ClaimWorkspaceResponse = zod.object({
   "userId": zod.string(),
-  "role": zod.enum(['OWNER', 'OPERATOR', 'ANALYST', 'VIEWER', 'PENDING']),
-  "unclaimed": zod.boolean()
+  "role": zod.enum(['OWNER', 'OPERATOR', 'ANALYST', 'VIEWER', 'PENDING', 'FINDER']),
+  "unclaimed": zod.boolean(),
+  "finderId": zod.string().uuid().nullable()
 })
 
 
 export const ListMembersResponseItem = zod.object({
   "id": zod.string(),
-  "role": zod.enum(['OWNER', 'OPERATOR', 'ANALYST', 'VIEWER', 'PENDING']),
+  "role": zod.enum(['OWNER', 'OPERATOR', 'ANALYST', 'VIEWER', 'PENDING', 'FINDER']),
+  "finderId": zod.string().uuid().nullable(),
   "createdAt": zod.string()
 })
 export const ListMembersResponse = zod.array(ListMembersResponseItem)
@@ -3267,12 +3270,14 @@ export const UpdateMemberParams = zod.object({
 })
 
 export const UpdateMemberBody = zod.object({
-  "role": zod.enum(['OPERATOR', 'ANALYST', 'VIEWER', 'PENDING'])
+  "role": zod.enum(['OPERATOR', 'ANALYST', 'VIEWER', 'PENDING', 'FINDER']),
+  "finderId": zod.string().uuid().nullish()
 })
 
 export const UpdateMemberResponse = zod.object({
   "id": zod.string(),
-  "role": zod.enum(['OWNER', 'OPERATOR', 'ANALYST', 'VIEWER', 'PENDING']),
+  "role": zod.enum(['OWNER', 'OPERATOR', 'ANALYST', 'VIEWER', 'PENDING', 'FINDER']),
+  "finderId": zod.string().uuid().nullable(),
   "createdAt": zod.string()
 })
 
@@ -28776,6 +28781,73 @@ export const CreateDealFinderSubmissionResponse = zod.object({
   "currency": zod.string().nullish(),
   "feeStatus": zod.enum(['NOT_AGREED', 'PENDING', 'RECEIVED', 'DISPUTED', 'WAIVED']),
   "history": zod.array(zod.record(zod.string(), zod.unknown()))
+})
+
+
+export const ListOwnFinderSubmissionsResponseItem = zod.object({
+  "id": zod.string().uuid(),
+  "status": zod.enum(['SUBMITTED', 'ACCEPTED', 'DECLINED', 'HANDED_OFF']),
+  "propertyAddress": zod.string(),
+  "city": zod.string(),
+  "state": zod.string(),
+  "postalCode": zod.string(),
+  "opportunity": zod.string(),
+  "evidenceUrl": zod.string(),
+  "evidenceReference": zod.string(),
+  "submittedAt": zod.string().datetime({"offset":true}),
+  "feeStatus": zod.enum(['NOT_AGREED', 'PENDING', 'RECEIVED', 'DISPUTED', 'WAIVED'])
+})
+export const ListOwnFinderSubmissionsResponse = zod.array(ListOwnFinderSubmissionsResponseItem)
+
+
+export const createOwnFinderSubmissionBodyIdempotencyKeyMin = 8;
+export const createOwnFinderSubmissionBodyIdempotencyKeyMax = 200;
+
+export const createOwnFinderSubmissionBodyPropertyAddressMin = 5;
+export const createOwnFinderSubmissionBodyPropertyAddressMax = 300;
+
+export const createOwnFinderSubmissionBodyCityMin = 2;
+export const createOwnFinderSubmissionBodyCityMax = 100;
+
+export const createOwnFinderSubmissionBodyStateRegExp = new RegExp('^[A-Z]{2}$');
+export const createOwnFinderSubmissionBodyPostalCodeMin = 3;
+export const createOwnFinderSubmissionBodyPostalCodeMax = 12;
+
+export const createOwnFinderSubmissionBodyOpportunityMin = 20;
+export const createOwnFinderSubmissionBodyOpportunityMax = 4000;
+
+export const createOwnFinderSubmissionBodyEvidenceUrlMin = 8;
+export const createOwnFinderSubmissionBodyEvidenceUrlMax = 2000;
+
+export const createOwnFinderSubmissionBodyEvidenceReferenceMin = 3;
+export const createOwnFinderSubmissionBodyEvidenceReferenceMax = 500;
+
+
+
+export const CreateOwnFinderSubmissionBody = zod.object({
+  "idempotencyKey": zod.string().min(createOwnFinderSubmissionBodyIdempotencyKeyMin).max(createOwnFinderSubmissionBodyIdempotencyKeyMax),
+  "propertyAddress": zod.string().min(createOwnFinderSubmissionBodyPropertyAddressMin).max(createOwnFinderSubmissionBodyPropertyAddressMax),
+  "city": zod.string().min(createOwnFinderSubmissionBodyCityMin).max(createOwnFinderSubmissionBodyCityMax),
+  "state": zod.string().regex(createOwnFinderSubmissionBodyStateRegExp),
+  "postalCode": zod.string().min(createOwnFinderSubmissionBodyPostalCodeMin).max(createOwnFinderSubmissionBodyPostalCodeMax),
+  "opportunity": zod.string().min(createOwnFinderSubmissionBodyOpportunityMin).max(createOwnFinderSubmissionBodyOpportunityMax),
+  "evidenceUrl": zod.string().min(createOwnFinderSubmissionBodyEvidenceUrlMin).max(createOwnFinderSubmissionBodyEvidenceUrlMax),
+  "evidenceReference": zod.string().min(createOwnFinderSubmissionBodyEvidenceReferenceMin).max(createOwnFinderSubmissionBodyEvidenceReferenceMax),
+  "authorizedToShare": zod.literal(true)
+})
+
+export const CreateOwnFinderSubmissionResponse = zod.object({
+  "id": zod.string().uuid(),
+  "status": zod.enum(['SUBMITTED', 'ACCEPTED', 'DECLINED', 'HANDED_OFF']),
+  "propertyAddress": zod.string(),
+  "city": zod.string(),
+  "state": zod.string(),
+  "postalCode": zod.string(),
+  "opportunity": zod.string(),
+  "evidenceUrl": zod.string(),
+  "evidenceReference": zod.string(),
+  "submittedAt": zod.string().datetime({"offset":true}),
+  "feeStatus": zod.enum(['NOT_AGREED', 'PENDING', 'RECEIVED', 'DISPUTED', 'WAIVED'])
 })
 
 

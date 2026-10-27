@@ -4,7 +4,7 @@ import { eq, sql } from "drizzle-orm";
 import type { Request, Response } from "express";
 import { db, pool, membersTable, auditTable } from "@workspace/db";
 import { getAccess, claimWorkspace, updateMember } from "./access";
-import { roles, sensitiveWorkspaceData } from "../middlewares/access";
+import { createAuthenticatedMiddleware, roles, sensitiveWorkspaceData } from "../middlewares/access";
 
 type Tx = Parameters<Parameters<typeof db.transaction>[0]>[0];
 
@@ -25,7 +25,7 @@ after(async () => { await pool.end(); });
 test("signing in creates pending membership, never automatic ownership",async () => {
   await isolated(async tx => {
     const access = await getAccess("synthetic-owner-candidate",tx);
-    assert.deepEqual(access,{userId:"synthetic-owner-candidate",role:"PENDING",unclaimed:true});
+    assert.deepEqual(access,{userId:"synthetic-owner-candidate",role:"PENDING",unclaimed:true,finderId:null});
     assert.equal((await tx.select().from(auditTable)).length,0);
     assert.deepEqual(await getAccess("synthetic-owner-candidate",tx),access);
   });
@@ -109,6 +109,19 @@ test("owner-only role middleware rejects pending, viewer, analyst and operator",
   }
 });
 
+test("finder portal routes admit only the approved finder role; operators use internal routes instead",() => {
+  for (const role of ["PENDING","VIEWER","ANALYST","OPERATOR","OWNER","FINDER"]) {
+    let status: number|undefined;
+    let continued = false;
+    const res = {
+      locals:{role},status(n:number) { status=n; return this; },json(_value:unknown) { return this; },
+    } as unknown as Response;
+    roles("FINDER")({} as Request,res,() => {continued=true;});
+    assert.equal(continued,role==="FINDER",`${role} cannot use the limited finder portal route.`);
+    assert.equal(status,role==="FINDER"?undefined:403);
+  }
+});
+
 test("call logging and follow-up middleware permits only owner and operator roles",() => {
   for (const role of ["PENDING","VIEWER","ANALYST","OPERATOR","OWNER"]) {
     let status: number|undefined;
@@ -124,7 +137,7 @@ test("call logging and follow-up middleware permits only owner and operator role
 });
 
 test("sensitive contact, property, finance and transaction routes deny viewer before any payload handler runs", () => {
-  for (const role of ["PENDING","VIEWER","ANALYST","OPERATOR","OWNER"]) {
+  for (const role of ["PENDING","VIEWER","FINDER","ANALYST","OPERATOR","OWNER"]) {
     let status: number|undefined;
     let responseBody: unknown;
     const res = {
@@ -138,4 +151,17 @@ test("sensitive contact, property, finance and transaction routes deny viewer be
     assert.equal(status,allowed?undefined:403);
     assert.deepEqual(responseBody,allowed?undefined:{error:"Your role is not permitted to perform this action."});
   }
+});
+
+test("unauthenticated requests stop before finder authorization", () => {
+  let status: number|undefined;
+  let body: unknown;
+  let continued = false;
+  const res = {
+    locals:{}, status(n:number) {status=n; return this;}, json(value:unknown) {body=value; return this;},
+  } as unknown as Response;
+  createAuthenticatedMiddleware(() => null)({} as Request,res,() => {continued=true;});
+  assert.equal(status,401);
+  assert.equal(continued,false);
+  assert.deepEqual(body,{error:"Sign in to access the internal operating system."});
 });

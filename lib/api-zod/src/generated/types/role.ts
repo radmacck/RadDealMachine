@@ -15,4 +15,5 @@ export const Role = {
   ANALYST: 'ANALYST',
   VIEWER: 'VIEWER',
   PENDING: 'PENDING',
+  FINDER: 'FINDER',
 } as const;

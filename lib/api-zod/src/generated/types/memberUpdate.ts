@@ -9,4 +9,6 @@ import type { MemberUpdateRole } from './memberUpdateRole';
 
 export interface MemberUpdate {
   role: MemberUpdateRole;
+  /** @nullable */
+  finderId?: string | null;
 }

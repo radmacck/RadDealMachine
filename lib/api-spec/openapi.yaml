@@ -1000,6 +1000,28 @@ paths:
           content:
             application/json:
               schema: { $ref: "#/components/schemas/DealFinderSubmission" }
+  /finder/submissions:
+    get:
+      operationId: listOwnFinderSubmissions
+      responses:
+        "200":
+          description: Limited status view of the authenticated finder's own submissions
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/FinderSubmissionList" }
+    post:
+      operationId: createOwnFinderSubmission
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/FinderSubmissionInput" }
+      responses:
+        "201":
+          description: Submitted opportunity attributed to the Owner-bound finder identity
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/FinderSubmission" }
   /deal-finder-submissions/{id}/actions:
     parameters:
       - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
@@ -2894,6 +2916,37 @@ components:
     DealFinderSubmissionList:
       type: array
       items: { $ref: "#/components/schemas/DealFinderSubmission" }
+    FinderSubmissionInput:
+      type: object
+      required: [idempotencyKey, propertyAddress, city, state, postalCode, opportunity, evidenceUrl, evidenceReference, authorizedToShare]
+      properties:
+        idempotencyKey: { type: string, minLength: 8, maxLength: 200 }
+        propertyAddress: { type: string, minLength: 5, maxLength: 300 }
+        city: { type: string, minLength: 2, maxLength: 100 }
+        state: { type: string, pattern: "^[A-Z]{2}$" }
+        postalCode: { type: string, minLength: 3, maxLength: 12 }
+        opportunity: { type: string, minLength: 20, maxLength: 4000 }
+        evidenceUrl: { type: string, minLength: 8, maxLength: 2000 }
+        evidenceReference: { type: string, minLength: 3, maxLength: 500 }
+        authorizedToShare: { type: boolean, enum: [true] }
+    FinderSubmission:
+      type: object
+      required: [id, status, propertyAddress, city, state, postalCode, opportunity, evidenceUrl, evidenceReference, submittedAt, feeStatus]
+      properties:
+        id: { type: string, format: uuid }
+        status: { type: string, enum: [SUBMITTED, ACCEPTED, DECLINED, HANDED_OFF] }
+        propertyAddress: { type: string }
+        city: { type: string }
+        state: { type: string }
+        postalCode: { type: string }
+        opportunity: { type: string }
+        evidenceUrl: { type: string }
+        evidenceReference: { type: string }
+        submittedAt: { type: string, format: date-time }
+        feeStatus: { type: string, enum: [NOT_AGREED, PENDING, RECEIVED, DISPUTED, WAIVED] }
+    FinderSubmissionList:
+      type: array
+      items: { $ref: "#/components/schemas/FinderSubmission" }
     ContractInput:
       type: object
       required: [version, offerId, closingAt]
@@ -3930,26 +3983,29 @@ components:
       properties: { status: { type: string } }
     Role:
       type: string
-      enum: [OWNER, OPERATOR, ANALYST, VIEWER, PENDING]
+      enum: [OWNER, OPERATOR, ANALYST, VIEWER, PENDING, FINDER]
     Access:
       type: object
-      required: [userId, role, unclaimed]
+      required: [userId, role, unclaimed, finderId]
       properties:
         userId: { type: string }
         role: { $ref: "#/components/schemas/Role" }
         unclaimed: { type: boolean }
+        finderId: { type: [string, "null"], format: uuid }
     Member:
       type: object
-      required: [id, role, createdAt]
+      required: [id, role, finderId, createdAt]
       properties:
         id: { type: string }
         role: { $ref: "#/components/schemas/Role" }
+        finderId: { type: [string, "null"], format: uuid }
         createdAt: { type: string }
     MemberUpdate:
       type: object
       required: [role]
       properties:
-        role: { type: string, enum: [OPERATOR, ANALYST, VIEWER, PENDING] }
+        role: { type: string, enum: [OPERATOR, ANALYST, VIEWER, PENDING, FINDER] }
+        finderId: { type: [string, "null"], format: uuid }
     DealStage:
       type: string
       enum: [DISCOVERED, ENRICHING, ANALYZED, STRONG, NEGOTIABLE, PASS, CALL_READY, CONTACTED, CONVERSATION, OFFER_READY, OFFER_SENT, NEGOTIATING, CONTRACT_PENDING, UNDER_CONTRACT, BUYER_MATCHED, BUYER_INTERESTED, BUYER_COMMITTED, CLOSING, CLOSED, DEAD_DEAL]

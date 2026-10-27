@@ -3504,6 +3504,84 @@ export interface DealFinderSubmission {
 
 export type DealFinderSubmissionList = DealFinderSubmission[];
 
+export interface FinderSubmissionInput {
+  /**
+     * @minLength 8
+     * @maxLength 200
+     */
+  idempotencyKey: string;
+  /**
+     * @minLength 5
+     * @maxLength 300
+     */
+  propertyAddress: string;
+  /**
+     * @minLength 2
+     * @maxLength 100
+     */
+  city: string;
+  /** @pattern ^[A-Z]{2}$ */
+  state: string;
+  /**
+     * @minLength 3
+     * @maxLength 12
+     */
+  postalCode: string;
+  /**
+     * @minLength 20
+     * @maxLength 4000
+     */
+  opportunity: string;
+  /**
+     * @minLength 8
+     * @maxLength 2000
+     */
+  evidenceUrl: string;
+  /**
+     * @minLength 3
+     * @maxLength 500
+     */
+  evidenceReference: string;
+  authorizedToShare: true;
+}
+
+export type FinderSubmissionStatus = typeof FinderSubmissionStatus[keyof typeof FinderSubmissionStatus];
+
+
+export const FinderSubmissionStatus = {
+  SUBMITTED: 'SUBMITTED',
+  ACCEPTED: 'ACCEPTED',
+  DECLINED: 'DECLINED',
+  HANDED_OFF: 'HANDED_OFF',
+} as const;
+
+export type FinderSubmissionFeeStatus = typeof FinderSubmissionFeeStatus[keyof typeof FinderSubmissionFeeStatus];
+
+
+export const FinderSubmissionFeeStatus = {
+  NOT_AGREED: 'NOT_AGREED',
+  PENDING: 'PENDING',
+  RECEIVED: 'RECEIVED',
+  DISPUTED: 'DISPUTED',
+  WAIVED: 'WAIVED',
+} as const;
+
+export interface FinderSubmission {
+  id: string;
+  status: FinderSubmissionStatus;
+  propertyAddress: string;
+  city: string;
+  state: string;
+  postalCode: string;
+  opportunity: string;
+  evidenceUrl: string;
+  evidenceReference: string;
+  submittedAt: string;
+  feeStatus: FinderSubmissionFeeStatus;
+}
+
+export type FinderSubmissionList = FinderSubmission[];
+
 export interface ContractInput {
   /** @minimum 1 */
   version: number;
@@ -6652,17 +6730,22 @@ export const Role = {
   ANALYST: 'ANALYST',
   VIEWER: 'VIEWER',
   PENDING: 'PENDING',
+  FINDER: 'FINDER',
 } as const;
 
 export interface Access {
   userId: string;
   role: Role;
   unclaimed: boolean;
+  /** @nullable */
+  finderId: string | null;
 }
 
 export interface Member {
   id: string;
   role: Role;
+  /** @nullable */
+  finderId: string | null;
   createdAt: string;
 }
 
@@ -6674,10 +6757,13 @@ export const MemberUpdateRole = {
   ANALYST: 'ANALYST',
   VIEWER: 'VIEWER',
   PENDING: 'PENDING',
+  FINDER: 'FINDER',
 } as const;
 
 export interface MemberUpdate {
   role: MemberUpdateRole;
+  /** @nullable */
+  finderId?: string | null;
 }
 
 export type LeadUpdate = LeadInput & {

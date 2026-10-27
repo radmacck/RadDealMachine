@@ -1,9 +1,9 @@
 import { asc, eq, sql } from "drizzle-orm";
 import {
-  db, dealFinderSubmissionsTable, buyersTable,
+  db, dealFinderSubmissionsTable, buyersTable, membersTable,
 } from "@workspace/db";
 import {
-  CreateDealFinderSubmissionBody, RecordDealFinderSubmissionActionBody,
+  CreateDealFinderSubmissionBody, RecordDealFinderSubmissionActionBody, CreateOwnFinderSubmissionBody,
 } from "@workspace/api-zod";
 import { DomainError, type OfferActor } from "@workspace/deal-domain";
 import { buyerRecord } from "./operations-records";
@@ -38,12 +38,57 @@ export async function listDealFinderSubmissions(actor: OfferActor) {
   return rows.map(view);
 }
 
-export async function createDealFinderSubmission(input: unknown, actor: OfferActor, now = new Date()) {
+function finderProjection(row: typeof dealFinderSubmissionsTable.$inferSelect) {
+  const p = row.payload;
+  return {
+    id: row.id, status: row.status,
+    propertyAddress: String(p.propertyAddress), city: String(p.city), state: String(p.state),
+    postalCode: String(p.postalCode), opportunity: String(p.opportunity),
+    evidenceUrl: String(p.evidenceUrl), evidenceReference: String(p.evidenceReference),
+    submittedAt: row.submittedAt.toISOString(), feeStatus: String(p.feeStatus ?? "NOT_AGREED"),
+  };
+}
+
+async function boundFinderId(userId: string) {
+  const [member] = await db.select().from(membersTable).where(eq(membersTable.id,userId));
+  if (member?.role !== "FINDER" || !member.finderId) throw new DomainError("An Owner must approve and bind this finder account first.",403);
+  return member.finderId;
+}
+
+export async function listOwnFinderSubmissions(userId: string) {
+  return db.transaction(async tx => {
+    const [member] = await tx.select().from(membersTable).where(eq(membersTable.id,userId)).for("share");
+    if (member?.role !== "FINDER" || !member.finderId) throw new DomainError("An Owner must approve and bind this finder account first.",403);
+    const rows = await tx.select().from(dealFinderSubmissionsTable)
+      .where(eq(dealFinderSubmissionsTable.finderId,member.finderId))
+      .orderBy(asc(dealFinderSubmissionsTable.submittedAt));
+    return rows.map(finderProjection);
+  });
+}
+
+export async function createOwnFinderSubmission(input: unknown, userId: string, now = new Date()) {
+  const finderId = await boundFinderId(userId);
+  const body = CreateOwnFinderSubmissionBody.parse(input);
+  const result = await createDealFinderSubmission({ ...body, finderId }, { id:userId, role:"OPERATOR" }, now, userId);
+  return {
+    id: result.id, status: result.status, propertyAddress: result.propertyAddress, city: result.city,
+    state: result.state, postalCode: result.postalCode, opportunity: result.opportunity,
+    evidenceUrl: result.evidenceUrl, evidenceReference: result.evidenceReference,
+    submittedAt: result.submittedAt, feeStatus: result.feeStatus,
+  };
+}
+
+export async function createDealFinderSubmission(input: unknown, actor: OfferActor, now = new Date(), finderAccountUserId?: string) {
   if (!allowedRoles.includes(actor.role)) throw new DomainError("Not permitted.", 403);
-  const body = CreateDealFinderSubmissionBody.parse(input);
+    const body = CreateDealFinderSubmissionBody.parse(input);
   if (!urlOk(body.evidenceUrl)) throw new DomainError("Opportunity evidence must use HTTPS.", 400);
   if (body.authorizedToShare !== true) throw new DomainError("Confirm authority to share this opportunity before submitting.", 400);
   return db.transaction(async tx => {
+    if (finderAccountUserId) {
+      const [member] = await tx.select().from(membersTable).where(eq(membersTable.id,finderAccountUserId)).for("share");
+      if (member?.role !== "FINDER" || member.finderId !== body.finderId)
+        throw new DomainError("Finder approval or identity binding changed; reload before submitting.",403);
+    }
     await tx.execute(sql`select pg_advisory_xact_lock(hashtextextended(current_schema() || ${`finder-submission:${body.idempotencyKey}`},0))`);
     const [existing] = await tx.select().from(dealFinderSubmissionsTable)
       .where(eq(dealFinderSubmissionsTable.idempotencyKey, body.idempotencyKey)).for("update");

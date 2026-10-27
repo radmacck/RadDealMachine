@@ -11,4 +11,6 @@ export interface Access {
   userId: string;
   role: Role;
   unclaimed: boolean;
+  /** @nullable */
+  finderId: string | null;
 }

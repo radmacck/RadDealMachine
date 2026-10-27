@@ -10,5 +10,7 @@ import type { Role } from './role';
 export interface Member {
   id: string;
   role: Role;
+  /** @nullable */
+  finderId: string | null;
   createdAt: string;
 }
